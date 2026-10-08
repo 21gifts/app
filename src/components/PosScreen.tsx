@@ -78,12 +78,16 @@ function applyRead(reads: { current: TillReads }, seq: number, apply: () => void
 /** Create or cancel that is still talking to the server, across page changes. */
 let tillWrite: Promise<void> | null = null;
 
+/** Paid charges already recorded as seen in this tab, so each is recorded once. */
+const paidSeen = new Set<string>();
+
 /**
- * Drop a till write left behind by a test. Production clears it when the
- * request settles.
+ * Drop a till write and the paid charges recorded as seen, left behind by a
+ * test. Production clears the write when the request settles.
  */
 export function resetPosTillWriteForTests(): void {
   tillWrite = null;
+  paidSeen.clear();
 }
 
 /** Remember `work` until it settles so a later till load does not race it. */
@@ -102,6 +106,8 @@ type PosTillState = {
   qr: string | null;
   showQr: boolean;
   state: PosState | null;
+  /** Session whose till read or create produced `state`. */
+  stateSession: string | null;
   error: string | null;
   charge: PosState['charge'];
   paid: PosState['charge'];
@@ -235,18 +241,6 @@ function usePosTillState(): PosTillState {
       setWatchUntil(null);
     }
   }, [paid]);
-
-  const paidId = paid?.id ?? null;
-  const paidSats = paid?.amountSats ?? 0;
-  const paidFor = till.session;
-  const paidSeen = useRef<string | null>(null);
-  useEffect(() => {
-    if (paidId !== null && paidSeen.current !== paidId) {
-      paidSeen.current = paidId;
-      // Recorded for the member whose till showed it, never for a later session.
-      logInteraction('pos_charge_paid_seen', { chargeId: paidId, amountSats: paidSats }, paidFor);
-    }
-  }, [paidId, paidSats, paidFor]);
 
   useEffect(() => {
     // While a charge is open, and for a minute after it ran out, ask the api
@@ -418,6 +412,7 @@ function usePosTillState(): PosTillState {
     qr,
     showQr,
     state,
+    stateSession: till.session,
     error,
     charge,
     paid,
@@ -462,6 +457,16 @@ export function PosTill(): ReactElement {
   const { fiat } = useFiatPreference();
   const till = usePosTillState();
   const setup = useWalletSetup();
+  const paidId = till.paid?.id ?? null;
+  const paidSats = till.paid?.amountSats ?? 0;
+  const paidFor = till.stateSession;
+  useEffect(() => {
+    if (paidId !== null && !paidSeen.has(paidId)) {
+      paidSeen.add(paidId);
+      // Recorded where the paid charge shows, for the member whose till showed it.
+      logInteraction('pos_charge_paid_seen', { chargeId: paidId, amountSats: paidSats }, paidFor);
+    }
+  }, [paidId, paidSats, paidFor]);
 
   return (
     <Card surface={false}>

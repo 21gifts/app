@@ -1379,6 +1379,24 @@ describe('PosScreen', () => {
       expect(logInteraction).toHaveBeenCalledTimes(1);
     });
 
+    it('records a paid charge once per tab, and never from the amount page', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: PAID, history: [PAID] })),
+      );
+      vi.mocked(logInteraction).mockClear();
+      const amountPage = renderWithLocale(<PosAmount />);
+      await act(async () => undefined);
+      expect(logInteraction).not.toHaveBeenCalled();
+      amountPage.unmount();
+      const first = renderWithLocale(<PosScreen />);
+      expect((await screen.findByRole('status')).textContent).toBe('Paid ✓');
+      first.unmount();
+      renderWithLocale(<PosScreen />);
+      expect((await screen.findByRole('status')).textContent).toBe('Paid ✓');
+      expect(logInteraction).toHaveBeenCalledTimes(1);
+    });
+
     it('shows a paid charge without fiat when there is no spot rate', async () => {
       vi.stubGlobal(
         'fetch',
