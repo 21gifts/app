@@ -394,6 +394,31 @@ describe('logLogout', () => {
     expect(batches().map((names) => names.length)).toEqual([50, 1, 10]);
   });
 
+  it('sends a failed queue batch again before it resolves', async () => {
+    vi.useFakeTimers();
+    fetchMock
+      .mockImplementationOnce(() => Promise.resolve({ ok: false, status: 503 }))
+      .mockImplementationOnce(() => Promise.resolve({ ok: true, status: 204 }));
+    mod.logInteraction('screen_view');
+    const logout = mod.logLogout();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(batches()).toEqual([['screen_view'], ['logout']]);
+    await vi.advanceTimersByTimeAsync(mod.LOGOUT_RETRY_MS);
+    await logout;
+    expect(batches()).toEqual([['screen_view'], ['logout'], ['screen_view']]);
+  });
+
+  it('sends an event queued while the logout request was still retrying', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockImplementationOnce(() => Promise.resolve({ ok: false, status: 503 }));
+    const logout = mod.logLogout();
+    await vi.advanceTimersByTimeAsync(0);
+    mod.logInteraction('screen_view');
+    await vi.advanceTimersByTimeAsync(mod.LOGOUT_RETRY_MS);
+    await logout;
+    expect(batches().flat()).toEqual(['logout', 'logout', 'screen_view']);
+  });
+
   it('is not held back by a flush that does not answer', async () => {
     vi.useFakeTimers();
     fetchMock.mockImplementationOnce(
