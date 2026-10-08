@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { fetchGiftStats } from '@/lib/api';
-import { latestRateDay, type FiatRateDay } from '@/lib/stats-money';
+import { latestRateDayFor, type FiatRateDay } from '@/lib/stats-money';
 
 /** Gift-day rate plus whether that request has finished. */
 export interface LatestRateDayState {
@@ -16,17 +17,20 @@ export interface LatestRateDayState {
  * Latest gift-day totals, and whether the request has settled.
  *
  * Fetches `GET /gifts/stats` once while `enabled` and returns
- * {@link latestRateDay} of `spendOverTime`. `settled` stays false until that
- * request resolves or fails, so a payment screen can refuse to treat the
- * amount as ready while the rate is still loading. A settled `null` means
- * the request finished with no usable rate. Never throws into the caller.
- * Drops the response after unmount via a cancelled flag.
+ * {@link latestRateDayFor} of `spendOverTime` for the preferred fiat.
+ * A newer day whose total for that currency is missing is skipped.
+ * `settled` stays false until that request resolves or fails, so a payment
+ * screen can refuse to treat the amount as ready while the rate is still
+ * loading. A settled `null` means the request finished with no usable rate.
+ * Never throws into the caller. Drops the response after unmount via a
+ * cancelled flag. Changing the preferred fiat reuses the fetched series.
  *
  * @param enabled - When false, skip the fetch. Default true.
  * @returns The latest rate day and whether the request has settled.
  */
 export function useLatestRateDayState(enabled = true): LatestRateDayState {
-  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
+  const { fiat } = useFiatPreference();
+  const [series, setSeries] = useState<readonly FiatRateDay[] | null>(null);
   const [settled, setSettled] = useState(!enabled);
 
   useEffect(() => {
@@ -39,13 +43,13 @@ export function useLatestRateDayState(enabled = true): LatestRateDayState {
     void fetchGiftStats()
       .then((stats) => {
         if (!cancelled) {
-          setRateDay(latestRateDay(stats.spendOverTime));
+          setSeries(stats.spendOverTime);
           setSettled(true);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setRateDay(null);
+          setSeries([]);
           setSettled(true);
         }
       });
@@ -54,6 +58,7 @@ export function useLatestRateDayState(enabled = true): LatestRateDayState {
     };
   }, [enabled]);
 
+  const rateDay = !enabled || series === null ? null : latestRateDayFor(series, fiat);
   return { rateDay, settled };
 }
 

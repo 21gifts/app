@@ -2384,24 +2384,31 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: latestRateDay
 
-- **Purpose:** Picks the last `spendOverTime` day with `sats > 0` so forum notes can scale sats into fiat from gift-day totals.
+- **Purpose:** Picks the last `spendOverTime` day with `sats > 0`, even when a currency total on that day is missing. Conversion does not use this day; it uses `latestRateDayFor`.
 - **Inputs:** Oldest-first series of `{ sats, usd, chf, eur, php }`.
-- **Returns / side effects:** That day, or `null` when every day is empty.
-- **Used by:** `useLatestRateDay`, `PublicMessageLoader`, `MemberProfileScreen`.
+- **Returns / side effects:** That day, or `null` when every day is empty. No I/O.
+- **Used by:** Tests. Callers that convert use `latestRateDayFor`.
+
+## Function: latestRateDayFor
+
+- **Purpose:** Picks the newest gift day that can convert the preferred currency. A newer day with gifts but a null, non-numeric, or zero total for that currency is skipped, so one incomplete gift cannot block the till.
+- **Inputs:** Oldest-first series of `{ sats, usd, chf, eur, php }`, and a `FiatCode`.
+- **Returns / side effects:** That day, or `null` when no day can convert the currency. No I/O.
+- **Used by:** `useLatestRateDayState`, `PublicMessageLoader`, `PublicMessageThread`, `MemberProfileScreen`.
 
 ## Function: useLatestRateDay
 
-- **Purpose:** Latest gift-day totals for preferred-fiat conversion. Returns the `rateDay` from `useLatestRateDayState`. A failed fetch or no day with a usable rate yet resolves `null`. Drops the response after unmount.
+- **Purpose:** Latest gift-day totals for preferred-fiat conversion. Returns the `rateDay` from `useLatestRateDayState`, which skips a newer day that cannot convert the preferred currency. A failed fetch or no usable day yet resolves `null`. Changing the preferred fiat reuses the fetched series. Drops the response after unmount.
 - **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the value stays `null`.
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchGiftStats` once per mount while enabled. Loading and a settled missing rate are both `null`.
-- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`.
+- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`.
 
 ## Function: useLatestRateDayState
 
-- **Purpose:** Latest gift-day totals and whether that `GET /gifts/stats` request has settled. `settled` is false while the request is in flight, so a payment screen does not treat the amount as ready. A settled `null` means the request finished with no usable rate. When `enabled` is false, the fetch is skipped and `settled` is true. Drops the response after unmount.
+- **Purpose:** Latest gift-day totals for the preferred fiat, and whether that `GET /gifts/stats` request has settled. A newer day whose total for that currency is missing or zero is skipped. `settled` is false while the request is in flight, so a payment screen does not treat the amount as ready. A settled `null` means the request finished with no usable rate. When `enabled` is false, the fetch is skipped and `settled` is true. Changing the preferred fiat reuses the fetched series. Drops the response after unmount.
 - **Inputs:** Optional `enabled` (default true).
 - **Returns / side effects:** `{ rateDay: FiatRateDay | null, settled: boolean }`. Calls `fetchGiftStats` once per mount while enabled.
-- **Used by:** `useLatestRateDay`, `MemberHabits`.
+- **Used by:** `useLatestRateDay`, `MemberHabits`, `PayLinkScreen`, `PosTill`, `PosAmount`.
 
 ## Function: shownFiatForSats
 
@@ -2765,7 +2772,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Public payment card: the person's name, an exact satoshi amount, and one BOLT11 invoice.
 - **Inputs:** `lightning` query string.
-- **Returns / side effects:** `PageChrome` with `ProfileChromeLeft` (wordmark `HomeWordmark`) and a light language switcher. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. Renders the shop sticker's storefront for a real pay link, and the welcome glyph only when the link is not valid. After `GET /pay/:username`, shows the name and amount form, or that open till. **Continue** posts the amount and then shows the active payment (locked sats, the default fiat when the gift-day rate is usable, and **Pay**, no amount field). **Pay** is the width of the invoice QR plate, centered, not the page column. Desktop shows the invoice QR. A smartphone does not (`isSmartphoneUserAgent`, not viewport), before or after the payment is active. A new `lightning` value clears the previous person, including an invoice that is still being created. No forum and no auth gate.
+- **Returns / side effects:** `PageChrome` with `ProfileChromeLeft` (wordmark `HomeWordmark`) and a light language switcher. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. Renders the shop sticker's storefront for a real pay link, and the welcome glyph only when the link is not valid. After `GET /pay/:username`, shows the name and amount form, or that open till. **Continue** posts the amount and then shows the active payment (locked sats, the default fiat when the gift-day rate is usable, and **Pay**, no amount field). **Pay** is the width of the invoice QR plate, centered, not the page column. Desktop shows the invoice QR. A smartphone does not (`isSmartphoneUserAgent`, not viewport), before or after the payment is active. A new `lightning` value clears the previous person, including an invoice that is still being created. A positive fiat amount before the gift-day request settles says that currency's rate is still loading. After it settles with no usable day, the alert names that currency. No forum and no auth gate.
 - **Used by:** `PayLinkPage`.
 
 ## Function: PayLinkPage
@@ -4743,9 +4750,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: parseAmountDraft
 
-- **Purpose:** Reads a bitcoin or fiat typing draft into whole sats. Blank is empty. Fiat allows a dot or comma and at most eight fraction digits, so a unit toggle can round-trip.
+- **Purpose:** Reads a bitcoin or fiat typing draft into whole sats. Blank is empty. Fiat allows a dot or comma and at most eight fraction digits, so a unit toggle can round-trip. A positive fiat amount whose gift-day total for that currency is missing, not finite, or zero is `no-rate`. A well-formed amount on a usable total that does not become a safe sat count is `invalid`, not `no-rate`.
 - **Inputs:** `unit` (`btc` or `fiat`), raw `draft`, gift `day` or null, fiat `code`.
-- **Returns / side effects:** `{ kind: 'empty' }`, `{ kind: 'invalid' }`, or `{ kind: 'sats', sats }`. No I/O.
+- **Returns / side effects:** `{ kind: 'empty' }`, `{ kind: 'invalid' }`, `{ kind: 'no-rate' }`, or `{ kind: 'sats', sats }`. No I/O.
 - **Used by:** `AmountEntry`, `replySatsFromDraft`, `paySatsFromDraft`, `parseForumAskAmountInUnit`, `PayLinkScreen`, `PosAmount`.
 
 ## Function: replySatsFromDraft

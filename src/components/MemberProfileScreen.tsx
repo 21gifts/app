@@ -51,7 +51,7 @@ import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import {
-  latestRateDay,
+  latestRateDayFor,
   paySatsFromDraft,
   replySatsFromDraft,
   shownFiatForSats,
@@ -306,7 +306,8 @@ export function MemberProfileScreen({
     setStickerOpen(true);
   }, [qr, address]);
 
-  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
+  const [rateSeries, setRateSeries] = useState<readonly FiatRateDay[] | null>(null);
+  const rateDay = rateSeries === null ? null : latestRateDayFor(rateSeries, fiat);
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
@@ -341,12 +342,12 @@ export function MemberProfileScreen({
     void fetchGiftStats()
       .then((stats) => {
         if (!cancelled) {
-          setRateDay(latestRateDay(stats.spendOverTime));
+          setRateSeries(stats.spendOverTime);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setRateDay(null);
+          setRateSeries([]);
         }
       });
     return () => {
