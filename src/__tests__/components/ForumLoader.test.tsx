@@ -16,6 +16,7 @@ import {
   type NotificationList,
 } from '@/lib/api-types';
 import { FORUM_HOME_EVENT, FORUM_LIST_POLL_MS } from '@/lib/forum-feed';
+import { getCatalog } from '@/lib/messages';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
@@ -4669,6 +4670,45 @@ describe('ForumLoader', () => {
     expect(items).toHaveLength(1);
     expect(items[0]!.textContent).toContain('Hello');
     expect(useAuthStore.getState().account?.hasPosted).toBe(true);
+  });
+
+  it('hands the writer to the board and closes it after a successful post only', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    const created: ForumMessage = {
+      id: 'm2',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
+    postMock.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(created);
+    const onClose = vi.fn();
+    const view = renderWithLocale(
+      <ForumLoader writer={{ open: false, onOpen: () => undefined, onClose }} />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    expect(screen.queryByLabelText('Your message')).toBeNull();
+    view.rerender(<ForumLoader writer={{ open: true, onOpen: () => undefined, onClose }} />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    await waitFor(() => {
+      expect(screen.getByText(getCatalog('en')['forum.errorRequest'])).toBeTruthy();
+    });
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByText('Hello')).toBeTruthy();
   });
 
   it('shows a newly posted note above existing notes', async () => {

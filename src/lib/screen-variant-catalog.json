@@ -834,6 +834,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:wallet-buttons-slim",
+    "label": "/welcome wallet-buttons-slim",
+    "visual": "state-welcome-wallet-buttons-slim",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:wallet-setup-pending",
     "label": "/welcome wallet-setup-pending",
     "visual": "state-welcome-wallet-setup-pending",
@@ -1884,27 +1890,27 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:composer-touch",
-    "label": "/welcome composer-touch",
-    "visual": "state-welcome-composer-touch",
+    "id": "/welcome:writer",
+    "label": "/welcome writer",
+    "visual": "state-welcome-writer",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:writing",
-    "label": "/welcome writing",
-    "visual": "state-welcome-writing",
+    "id": "/welcome:writer-ask",
+    "label": "/welcome writer-ask",
+    "visual": "state-welcome-writer-ask",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:writing-validation-error",
-    "label": "/welcome writing-validation-error",
-    "visual": "state-welcome-writing-validation-error",
+    "id": "/welcome:writer-validation-error",
+    "label": "/welcome writer-validation-error",
+    "visual": "state-welcome-writer-validation-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:writing-place-open",
-    "label": "/welcome writing-place-open",
-    "visual": "state-welcome-writing-place-open",
+    "id": "/welcome:writer-place-open",
+    "label": "/welcome writer-place-open",
+    "visual": "state-welcome-writer-place-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
