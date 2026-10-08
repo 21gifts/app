@@ -659,6 +659,21 @@ async function expandScrollportForFullShot(page: Page): Promise<void> {
   });
 }
 
+/**
+ * The add form sits under the roster. A viewport shot scrolled to a page
+ * alert crops the person field and its suggestion list. Align the form to
+ * the bottom of the scrollport so the alert, the field, and the list stay
+ * in the picture.
+ *
+ * @param page - Page under test.
+ */
+async function scrollAddFormIntoShot(page: Page): Promise<void> {
+  const form = page.locator('form').filter({ has: page.locator('#daily-person-add') });
+  await form.evaluate((node) => {
+    node.scrollIntoView({ block: 'end', inline: 'nearest' });
+  });
+}
+
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
   const problems = await page.evaluate(pageFrameProblems);
   expect(problems, problems.join('\n')).toEqual([]);
@@ -23045,7 +23060,9 @@ test.describe('daily payments', () => {
     await page.getByRole('button', { name: 'Add' }).click();
     const invalidAlert = page.getByText('The amount is not valid.');
     await expect(invalidAlert).toBeVisible();
-    await invalidAlert.scrollIntoViewIfNeeded();
+    await scrollAddFormIntoShot(page);
+    await expect(invalidAlert).toBeInViewport();
+    await expect(page.getByRole('textbox', { name: 'Person' })).toBeInViewport();
     await shotScreen(page, 'state-grants-payments-amounts-invalid');
   });
 
@@ -23094,7 +23111,9 @@ test.describe('daily payments', () => {
     await page.getByRole('button', { name: 'Add' }).click();
     const duplicateAlert = page.getByText('That person is already listed.');
     await expect(duplicateAlert).toBeVisible();
-    await duplicateAlert.scrollIntoViewIfNeeded();
+    await scrollAddFormIntoShot(page);
+    await expect(duplicateAlert).toBeInViewport();
+    await expect(page.getByRole('option', { name: '@cara' })).toBeInViewport();
     await shotScreen(page, 'state-grants-payments-amounts-duplicate');
   });
 
@@ -23198,7 +23217,9 @@ test.describe('daily payments', () => {
     await page.getByRole('button', { name: 'Add' }).click();
     const pickPersonAlert = page.getByText('Choose a person.');
     await expect(pickPersonAlert).toBeVisible();
-    await pickPersonAlert.scrollIntoViewIfNeeded();
+    await scrollAddFormIntoShot(page);
+    await expect(pickPersonAlert).toBeInViewport();
+    await expect(page.getByRole('textbox', { name: 'Person' })).toBeInViewport();
     await shotScreen(page, 'state-grants-payments-amounts-pick-person');
   });
 
@@ -23225,7 +23246,9 @@ test.describe('daily payments', () => {
     await page.getByRole('button', { name: 'Add' }).click();
     const invalidPersonAlert = page.getByText('Choose a person and a valid amount.');
     await expect(invalidPersonAlert).toBeVisible();
-    await invalidPersonAlert.scrollIntoViewIfNeeded();
+    await scrollAddFormIntoShot(page);
+    await expect(invalidPersonAlert).toBeInViewport();
+    await expect(page.getByRole('option', { name: '@cara' })).toBeInViewport();
     await shotScreen(page, 'state-grants-payments-amounts-invalid-person');
   });
 
@@ -23252,7 +23275,9 @@ test.describe('daily payments', () => {
     await page.getByRole('button', { name: 'Add' }).click();
     const unknownPersonAlert = page.getByText('That person was not found.');
     await expect(unknownPersonAlert).toBeVisible();
-    await unknownPersonAlert.scrollIntoViewIfNeeded();
+    await scrollAddFormIntoShot(page);
+    await expect(unknownPersonAlert).toBeInViewport();
+    await expect(page.getByRole('option', { name: '@cara' })).toBeInViewport();
     await shotScreen(page, 'state-grants-payments-amounts-unknown-person');
   });
 
@@ -23279,7 +23304,9 @@ test.describe('daily payments', () => {
     await page.getByRole('button', { name: 'Add' }).click();
     const noLightningAlert = page.getByText('This person has no Wallet of Satoshi address.');
     await expect(noLightningAlert).toBeVisible();
-    await noLightningAlert.scrollIntoViewIfNeeded();
+    await scrollAddFormIntoShot(page);
+    await expect(noLightningAlert).toBeInViewport();
+    await expect(page.getByRole('option', { name: '@cara' })).toBeInViewport();
     await shotScreen(page, 'state-grants-payments-amounts-no-lightning');
   });
 });

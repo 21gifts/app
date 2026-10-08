@@ -112,6 +112,9 @@ function saveErrorKey(err: unknown): SaveErrorKey {
   return 'funding.daily.saveError';
 }
 
+/** Page alerts sit above the roster. Add-form alerts sit on that form. */
+type SaveErrorPlace = 'page' | 'add';
+
 type RosterLoad = {
   session: string;
   editor: boolean;
@@ -121,10 +124,15 @@ type RosterLoad = {
   pending: boolean;
   savingEditor: boolean;
   saveError: SaveErrorKey | null;
-  setSaveError: (error: SaveErrorKey | null) => void;
+  saveErrorPlace: SaveErrorPlace;
+  setSaveError: (error: SaveErrorKey | null, place?: SaveErrorPlace) => void;
   attempt: number;
   retry: () => void;
-  runSave: (task: () => Promise<DailyRoster>, closeEditor?: boolean) => Promise<boolean>;
+  runSave: (
+    task: () => Promise<DailyRoster>,
+    closeEditor?: boolean,
+    place?: SaveErrorPlace,
+  ) => Promise<boolean>;
 };
 
 /**
@@ -143,7 +151,12 @@ function useDailyRoster(): RosterLoad | null {
   const [attempt, setAttempt] = useState(0);
   const [pending, setPending] = useState(false);
   const [savingEditor, setSavingEditor] = useState(false);
-  const [saveError, setSaveError] = useState<SaveErrorKey | null>(null);
+  const [saveError, setSaveErrorState] = useState<SaveErrorKey | null>(null);
+  const [saveErrorPlace, setSaveErrorPlace] = useState<SaveErrorPlace>('page');
+  const setSaveError = (error: SaveErrorKey | null, place: SaveErrorPlace = 'page'): void => {
+    setSaveErrorState(error);
+    setSaveErrorPlace(place);
+  };
 
   useEffect(() => {
     if (session === null || !editor) {
@@ -183,6 +196,7 @@ function useDailyRoster(): RosterLoad | null {
   const runSave = async (
     task: () => Promise<DailyRoster>,
     closeEditor = false,
+    place: SaveErrorPlace = 'page',
   ): Promise<boolean> => {
     setPending(true);
     if (closeEditor) {
@@ -195,7 +209,7 @@ function useDailyRoster(): RosterLoad | null {
       setRoster(next);
       saved = true;
     } catch (err) {
-      setSaveError(saveErrorKey(err));
+      setSaveError(saveErrorKey(err), place);
     } finally {
       setPending(false);
       setSavingEditor(false);
@@ -213,6 +227,7 @@ function useDailyRoster(): RosterLoad | null {
     pending,
     savingEditor,
     saveError,
+    saveErrorPlace,
     setSaveError,
     attempt,
     retry: () => {
@@ -485,7 +500,17 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
     return null;
   }
 
-  const { session, editor, roster, loadError, forbidden, pending, savingEditor, saveError } = load;
+  const {
+    session,
+    editor,
+    roster,
+    loadError,
+    forbidden,
+    pending,
+    savingEditor,
+    saveError,
+    saveErrorPlace,
+  } = load;
   const saveIcon = savingEditor ? (
     <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
   ) : (
@@ -520,21 +545,25 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
     event.preventDefault();
     const amountUsd = parseUsd(addUsd);
     if (amountUsd === null) {
-      load.setSaveError('funding.daily.invalidRow');
+      load.setSaveError('funding.daily.invalidRow', 'add');
       return;
     }
     if (addPerson === null) {
-      load.setSaveError('funding.daily.pickPerson');
+      load.setSaveError('funding.daily.pickPerson', 'add');
       return;
     }
     const accountId = addPerson.id;
-    void load.runSave(async () => {
-      const next = await addDailyRosterRecipient(session, accountId, amountUsd);
-      setAddPerson(null);
-      setAddQuery('');
-      setAddUsd('');
-      return next;
-    });
+    void load.runSave(
+      async () => {
+        const next = await addDailyRosterRecipient(session, accountId, amountUsd);
+        setAddPerson(null);
+        setAddQuery('');
+        setAddUsd('');
+        return next;
+      },
+      false,
+      'add',
+    );
   };
 
   let editorBody: ReactNode = null;
@@ -546,7 +575,7 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
             amount: formatUsdDisplay(String(roster.defaultAmountUsd), numberFormat),
           })}
         </p>
-        {saveError === null ? null : (
+        {saveError === null || saveErrorPlace === 'add' ? null : (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t(saveError)}
           </p>
@@ -692,6 +721,11 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
           </ul>
         )}
         <form className="flex w-full flex-col gap-3" onSubmit={onAdd}>
+          {saveError === null || saveErrorPlace !== 'add' ? null : (
+            <p role="alert" className="text-center text-sm text-app-danger">
+              {t(saveError)}
+            </p>
+          )}
           <Field
             label={t('funding.daily.person')}
             id="daily-person-add"
