@@ -302,6 +302,37 @@ describe('WelcomeScreen writer', () => {
     });
     expect(port.scrollTop).toBe(30);
   });
+
+  it('shows the top of the feed after a post, and leaves Home its own scroll to the top', () => {
+    const view = renderWithLocale(
+      <ChromeBackProvider>
+        <AppShell mode="fill" topLeft={<ProfileChromeLeft hideHistoryArrow />}>
+          <WelcomeScreen />
+        </AppShell>
+      </ChromeBackProvider>,
+    );
+    const port = view.container.querySelector('[data-scrollport]') as HTMLElement;
+    port.scrollTop = 240;
+    fireEvent.click(screen.getByRole('button', { name: 'Write a post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Stub posted' }));
+    expect(screen.queryByTestId('writer')).toBeNull();
+    expect(port.scrollTop).toBe(0);
+    port.scrollTop = 240;
+    fireEvent.click(screen.getByRole('button', { name: 'Write a post' }));
+    port.scrollTop = 12;
+    act(() => {
+      window.dispatchEvent(new Event(FORUM_HOME_EVENT));
+    });
+    expect(screen.queryByTestId('writer')).toBeNull();
+    expect(port.scrollTop).toBe(12);
+  });
+
+  it('posts from a writer opened outside a shell without moving anything', () => {
+    renderWelcome();
+    fireEvent.click(screen.getByRole('button', { name: 'Write a post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Stub posted' }));
+    expect(screen.queryByTestId('writer')).toBeNull();
+  });
 });
 
 describe('WelcomeScreen wallet', () => {

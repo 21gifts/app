@@ -138,9 +138,11 @@ function PanelChromeBack({ onBack, over }: { onBack: () => void; over: boolean }
  * is open the **+**, the feed and the footer are covered; the top-left arrow
  * (a chrome back override, after any Ask step inside) closes it, and so do a
  * successful post, the wordmark and the Menu's Home. Closing takes the focus
- * out of the writer first, so the keyboard closes as a focus change, and
- * brings the feed back at the scroll position it had. Drafts stay for the
- * next opening. The **+** is hidden while a wallet view is open.
+ * out of the writer first, so the keyboard closes as a focus change. The
+ * arrow brings the feed back at the scroll position it had, a successful
+ * post shows the top of the feed with the new note, and Home leaves the
+ * scroll to the forum's own scroll-to-top. Drafts stay for the next opening.
+ * The **+** is hidden while a wallet view is open.
  *
  * In a Playwright build only, a `?visual=send-…` pin opens the Send view.
  *
@@ -159,7 +161,7 @@ export function WelcomeScreen(): ReactElement {
   const shown = hasWallet ? panel.shown : 'none';
   const scroller = useAppShellScroller();
   const [writerOpen, setWriterOpen] = useState(false);
-  /** Feed scroll position when the writer opened. */
+  /** Feed scroll position to show once the writer has closed, or null to leave the page as it is. */
   const feedScroll = useRef<number | null>(null);
   const openWriter = useCallback((): void => {
     feedScroll.current = scroller === null ? null : scroller.scrollTop;
@@ -173,6 +175,13 @@ export function WelcomeScreen(): ReactElement {
     }
     setWriterOpen(false);
   }, []);
+  // After a successful post the new note is at the top of the feed.
+  const closeAfterPost = useCallback((): void => {
+    if (feedScroll.current !== null) {
+      feedScroll.current = 0;
+    }
+    closeWriter();
+  }, [closeWriter]);
   useLayoutEffect(() => {
     const top = feedScroll.current;
     if (writerOpen || scroller === null || top === null) {
@@ -182,8 +191,8 @@ export function WelcomeScreen(): ReactElement {
     scroller.scrollTop = top;
   }, [writerOpen, scroller]);
   const writer = useMemo<ForumWriter>(
-    () => ({ open: writerOpen, onOpen: openWriter, onClose: closeWriter }),
-    [writerOpen, openWriter, closeWriter],
+    () => ({ open: writerOpen, onOpen: openWriter, onClose: closeAfterPost }),
+    [writerOpen, openWriter, closeAfterPost],
   );
   // One element per writer state, so opening or closing a wallet view does not re-render the forum.
   const column = useMemo(() => <WelcomeColumn writer={writer} />, [writer]);
@@ -196,6 +205,8 @@ export function WelcomeScreen(): ReactElement {
 
   useEffect(() => {
     const onForumHome = (): void => {
+      // Home takes the feed to its top (ForumLoader); nothing to restore.
+      feedScroll.current = null;
       closeWriterRef.current();
       closeRef.current();
     };
