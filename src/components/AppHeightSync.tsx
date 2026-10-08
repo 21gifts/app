@@ -109,16 +109,17 @@ export function useAppHeight(): void {
       const held = window.innerWidth === restingWidth ? heldHeight : null;
       // A control that opens no keyboard (a focused button) keeps the hold; a text field ends it.
       if (isTypingField(event.target)) releaseHold();
-      if (inWritingComposer(event.target)) {
-        if (!isTypingField(event.relatedTarget)) {
+      // Focus moving inside the composer keeps what its entry measured.
+      if (inWritingComposer(event.target) && !inWritingComposer(event.relatedTarget)) {
+        if (isTypingField(event.relatedTarget)) {
+          // From another text field the keyboard is already up: no full height to measure.
+          restingHeight = null;
+        } else {
           const height = resolveAppHeight(window.innerHeight, viewport);
           if (height !== null) {
             restingHeight = held === null ? height : Math.max(held, height);
             restingWidth = window.innerWidth;
           }
-        } else if (!inWritingComposer(event.relatedTarget)) {
-          // From another text field the keyboard is already up: no full height to measure.
-          restingHeight = null;
         }
       }
       writeViewport(false);
