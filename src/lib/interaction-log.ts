@@ -375,24 +375,51 @@ export async function logLogout(): Promise<void> {
   if (event === null) {
     return;
   }
-  const queueSent = (async (): Promise<void> => {
-    const running = flushRuns.get(session);
-    if (running !== undefined) {
-      await running;
-    }
-    await flush();
-  })();
+  const queueSent = drainQueue(session);
   while (useAuthStore.getState().session === session) {
     try {
       await postEvents(session, [event]);
       break;
     } catch {
-      await new Promise<void>((resolve) => {
-        setTimeout(resolve, LOGOUT_RETRY_MS);
-      });
+      await waitToRetry();
     }
   }
   await queueSent;
+  // Events queued while the logout request was still retrying.
+  await drainQueue(session);
+}
+
+/**
+ * Waits {@link LOGOUT_RETRY_MS}.
+ *
+ * @returns Resolves after the wait.
+ */
+function waitToRetry(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, LOGOUT_RETRY_MS);
+  });
+}
+
+/**
+ * Sends the queue of `session` until it is empty, after a flush already
+ * running, waiting {@link LOGOUT_RETRY_MS} after each failed batch.
+ *
+ * @param session - The session that is ending.
+ * @returns Resolves when the queue is sent or `session` is no longer the current one.
+ */
+async function drainQueue(session: string): Promise<void> {
+  while (useAuthStore.getState().session === session) {
+    const running = flushRuns.get(session);
+    if (running !== undefined) {
+      await running;
+      continue;
+    }
+    if (!(await flush())) {
+      await waitToRetry();
+    } else if (queue.length === 0 || queueSession !== session) {
+      return;
+    }
+  }
 }
 
 /**
