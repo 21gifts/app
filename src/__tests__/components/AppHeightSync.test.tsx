@@ -601,6 +601,31 @@ describe('useAppHeight and the writing composer', () => {
     expect(written().height).toBe('511px');
   });
 
+  it('measures nothing while the focus moves inside the composer, both ways', () => {
+    const { visualViewport, form, field, other } = openKeyboard();
+    const button = document.createElement('button');
+    form.appendChild(button);
+    // Field, then a composer button, then the field again while the keyboard is up: 852 stays.
+    focusOut(field, button);
+    focusIn(button, field);
+    focusOut(button, field);
+    focusIn(field, button);
+    focusOut(field);
+    expect(written().height).toBe('852px');
+    // Another field, then a composer button, then the field: nothing measured, nothing held.
+    visualViewport.height = 852;
+    viewportListener(visualViewport, 'resize')();
+    focusIn(other);
+    visualViewport.height = 511;
+    viewportListener(visualViewport, 'resize')();
+    focusOut(other, button);
+    focusIn(button, other);
+    focusOut(button, field);
+    focusIn(field, button);
+    focusOut(field);
+    expect(written().height).toBe('511px');
+  });
+
   it('keeps the measured height when the focus moves inside the composer', () => {
     const { form, field } = openKeyboard();
     const button = document.createElement('button');
