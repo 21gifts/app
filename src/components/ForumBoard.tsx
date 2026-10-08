@@ -598,8 +598,9 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
  * never on posts; omitted when `deletedAt` is set), optional shop-note
  * pencil when `shopNoteEdit` and `onShopNoteUpdated` are set (top-level
- * notes; the control hides non-shop text; `onShopNoteSaved` runs once after a
- * whole save), optional shops staff
+ * notes; the control hides non-shop text; `onShopNoteSaved` runs once per
+ * save: after a whole save, or after a partly written one when its editor closes
+ * or unmounts, at the latest once a running save settles), optional shops staff
  * place editor after copy and before staff Delete when `shopPlaceEdit` and
  * `onShopPlaceUpdated` are set, then the shops account editor when
  * `shopAccountEdit` and `onShopAccountUpdated` are set (top-level notes only),
