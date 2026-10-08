@@ -5306,8 +5306,8 @@ export const SCREEN_VARIANTS = [
     route: '/messages/[id]/repayment-list',
     id: 'default',
     image: 'messages-id-repayment-list.png',
-    visual: 'state-messages-id-repayment-list',
-    needle: 'state /messages/[id]/repayment-list',
+    visual: 'screen-messages-id-repayment-list',
+    needle: 'screen /messages/[id]/repayment-list',
   },
   {
     route: '/messages/[id]/author',

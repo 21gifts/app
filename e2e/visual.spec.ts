@@ -10392,7 +10392,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-credit-ledger');
   });
 
-  test('state /messages/[id]/repayment-list', async ({ page }) => {
+  test('screen /messages/[id]/repayment-list', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
     await fulfillRateDay(page);
     await page.route(`**/messages/${id}/repayment`, async (route) => {
@@ -10465,7 +10465,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Due', { exact: true })).toHaveCount(1);
     await expect(page.getByText('Scheduled', { exact: true })).toHaveCount(2);
     await expect(page.getByRole('link', { name: 'Repayment list' })).toHaveCount(0);
-    await shotScreen(page, 'state-messages-id-repayment-list');
+    await shotScreen(page, 'screen-messages-id-repayment-list');
   });
 
   test('state /messages/[id] photos', async ({ page }) => {

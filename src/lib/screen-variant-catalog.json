@@ -4484,7 +4484,7 @@
   {
     "id": "/messages/[id]/repayment-list:default",
     "label": "/messages/[id]/repayment-list default",
-    "visual": "state-messages-id-repayment-list",
+    "visual": "screen-messages-id-repayment-list",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
