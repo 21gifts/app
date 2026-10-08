@@ -23088,8 +23088,8 @@ test.describe('daily payments', () => {
       });
     });
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('textbox', { name: 'Person' }).fill('cara');
-    await page.getByRole('option', { name: 'Cara (@cara)' }).click();
+    await page.getByRole('textbox', { name: 'Person' }).fill('@');
+    await page.getByRole('option', { name: '@cara' }).click();
     await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
     await page.getByRole('button', { name: 'Add' }).click();
     const duplicateAlert = page.getByText('That person is already listed.');
@@ -23162,8 +23162,8 @@ test.describe('daily payments', () => {
       });
     });
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('textbox', { name: 'Person' }).fill('cara');
-    await expect(page.getByRole('option', { name: 'Cara (@cara)' })).toBeVisible();
+    await page.getByRole('textbox', { name: 'Person' }).fill('@');
+    await expect(page.getByRole('option', { name: '@cara' })).toBeVisible();
     await page.locator('#daily-person-add-list').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-grants-payments-amounts-suggest');
   });
@@ -23178,10 +23178,14 @@ test.describe('daily payments', () => {
       });
     });
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('textbox', { name: 'Person' }).fill('cara');
-    await page.getByRole('option', { name: 'Cara (@cara)' }).click();
-    await expect(page.getByRole('option', { name: 'Cara (@cara)' })).toBeHidden();
-    await expect(page.getByRole('textbox', { name: 'Person' })).toHaveValue('Cara');
+    await page.getByRole('textbox', { name: 'Person' }).fill('@');
+    await page.getByRole('option', { name: '@cara' }).click();
+    await expect(page.getByRole('option', { name: '@cara' })).toBeVisible();
+    await expect(page.getByRole('option', { name: '@cara' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(page.getByRole('textbox', { name: 'Person' })).toHaveValue('@cara');
     await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveCount(0);
     await page.getByRole('textbox', { name: 'Person' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-grants-payments-amounts-chosen');
@@ -23215,8 +23219,8 @@ test.describe('daily payments', () => {
       });
     });
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('textbox', { name: 'Person' }).fill('cara');
-    await page.getByRole('option', { name: 'Cara (@cara)' }).click();
+    await page.getByRole('textbox', { name: 'Person' }).fill('@');
+    await page.getByRole('option', { name: '@cara' }).click();
     await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
     await page.getByRole('button', { name: 'Add' }).click();
     const invalidPersonAlert = page.getByText('Choose a person and a valid amount.');
@@ -23242,8 +23246,8 @@ test.describe('daily payments', () => {
       });
     });
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('textbox', { name: 'Person' }).fill('cara');
-    await page.getByRole('option', { name: 'Cara (@cara)' }).click();
+    await page.getByRole('textbox', { name: 'Person' }).fill('@');
+    await page.getByRole('option', { name: '@cara' }).click();
     await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
     await page.getByRole('button', { name: 'Add' }).click();
     const unknownPersonAlert = page.getByText('That person was not found.');
@@ -23269,8 +23273,8 @@ test.describe('daily payments', () => {
       });
     });
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('textbox', { name: 'Person' }).fill('cara');
-    await page.getByRole('option', { name: 'Cara (@cara)' }).click();
+    await page.getByRole('textbox', { name: 'Person' }).fill('@');
+    await page.getByRole('option', { name: '@cara' }).click();
     await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
     await page.getByRole('button', { name: 'Add' }).click();
     const noLightningAlert = page.getByText('This person has no Wallet of Satoshi address.');

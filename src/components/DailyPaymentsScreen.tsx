@@ -60,26 +60,26 @@ function parseUsd(raw: string): number | null {
 }
 
 /**
- * Username prefix for the add-person search, or `null` when the field is not
- * a searchable handle.
+ * Username prefix after a leading `@`, or `null` when the field is not a mention.
  *
- * Trims, strips one leading `@`, lowercases, then accepts 1–32 characters of
- * `a-z`, digits, `.`, `_`, and `-`. Empty text, spaces, and any other string
- * return `null`.
+ * Empty string means the field is exactly `@` and the first suggestion page applies.
+ * Any space, including a trailing one, is not a username and closes the list.
  *
  * @param draft - Current person field text.
- * @returns The prefix, or `null` when no search must run.
+ * @returns The lowercase prefix, `""`, or `null`.
  */
-function personQuery(draft: string): string | null {
-  let prefix = draft.trim();
-  if (prefix.startsWith('@')) {
-    prefix = prefix.slice(1);
+function mentionQuery(draft: string): string | null {
+  if (draft === '@') {
+    return '';
   }
-  prefix = prefix.toLowerCase();
-  if (!PERSON_QUERY.test(prefix)) {
+  if (!draft.startsWith('@') || draft.includes(' ')) {
     return null;
   }
-  return prefix;
+  const query = draft.slice(1).toLowerCase();
+  if (!PERSON_QUERY.test(query)) {
+    return null;
+  }
+  return query;
 }
 
 /**
@@ -429,45 +429,57 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
   const [amountDraft, setAmountDraft] = useState('');
   const [addQuery, setAddQuery] = useState('');
   const [addPerson, setAddPerson] = useState<DailyPerson | null>(null);
-  const [personRows, setPersonRows] = useState<DailyPerson[]>([]);
+  const [seed, setSeed] = useState<readonly DailyPerson[]>([]);
+  const [remote, setRemote] = useState<{
+    query: string;
+    rows: readonly DailyPerson[];
+  } | null>(null);
   const [addUsd, setAddUsd] = useState('');
   const attempt = load === null ? 0 : load.attempt;
   const sessionToken = load === null ? null : load.session;
+  const query = sessionToken === null ? null : mentionQuery(addQuery);
 
   useEffect(() => {
     setEditingAddress(null);
   }, [attempt]);
 
   useEffect(() => {
-    if (sessionToken === null) {
+    if (sessionToken === null || query === null) {
+      setSeed([]);
+      setRemote(null);
       return;
     }
-    if (addPerson !== null && addQuery === addPerson.name) {
-      return;
-    }
-    const prefix = personQuery(addQuery);
-    if (prefix === null) {
-      setPersonRows([]);
-      return;
-    }
+    const current = sessionToken;
+    const requested = query;
     let cancelled = false;
-    void searchMentionAccounts(sessionToken, prefix)
-      .then((accounts) => {
+    if (requested !== '') {
+      setRemote(null);
+    }
+    void searchMentionAccounts(current, requested)
+      .then((rows) => {
         if (cancelled) {
           return;
         }
-        setPersonRows(accounts.slice(0, 8));
+        if (requested === '') {
+          setSeed(rows);
+          return;
+        }
+        setRemote({ query: requested, rows });
       })
       .catch(() => {
         if (cancelled) {
           return;
         }
-        setPersonRows([]);
+        if (requested === '') {
+          setSeed([]);
+          return;
+        }
+        setRemote({ query: requested, rows: [] });
       });
     return () => {
       cancelled = true;
     };
-  }, [addQuery, addPerson, sessionToken]);
+  }, [query, sessionToken]);
 
   if (load === null) {
     return null;
@@ -479,6 +491,14 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
   ) : (
     <Check aria-hidden="true" className="h-4 w-4" />
   );
+  const shown =
+    query === null
+      ? []
+      : query === ''
+        ? seed
+        : remote !== null && remote.query === query
+          ? remote.rows
+          : seed.filter((row) => row.username.toLowerCase().startsWith(query));
 
   const onSaveAmount = (event: FormEvent<HTMLFormElement>, address: string): void => {
     event.preventDefault();
@@ -680,11 +700,14 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
             disabled={pending}
             aria-autocomplete="list"
             aria-controls="daily-person-add-list"
-            aria-expanded={personRows.length > 0}
+            aria-expanded={shown.length > 0}
             onChange={(event) => {
               const next = event.target.value;
               setAddQuery(next);
-              if (addPerson !== null && next !== addPerson.name) {
+              if (
+                addPerson !== null &&
+                next.trim().toLowerCase() !== `@${addPerson.username.toLowerCase()}`
+              ) {
                 setAddPerson(null);
               }
             }}
@@ -692,29 +715,38 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
           <ul
             id="daily-person-add-list"
             role="listbox"
-            aria-label={t('funding.daily.person')}
+            aria-label={t('forum.mentionSuggest')}
             className={
-              personRows.length === 0
+              shown.length === 0
                 ? 'hidden'
                 : 'flex w-full flex-col rounded-xl border border-app-border bg-app-card p-2'
             }
           >
-            {personRows.map((account) => (
+            {shown.map((account) => (
               <li key={account.id} role="presentation">
                 <button
                   type="button"
                   role="option"
-                  aria-selected={false}
+                  aria-label={`@${account.username}`}
+                  aria-selected={
+                    addQuery.trim().toLowerCase() === `@${account.username.toLowerCase()}`
+                  }
                   disabled={pending}
-                  className="flex min-h-11 w-full items-center rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover"
+                  className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    setAddPerson(account);
+                    setAddQuery(`@${account.username}`);
+                  }}
                   onClick={() => {
                     setAddPerson(account);
-                    setAddQuery(account.name);
-                    setPersonRows([]);
+                    setAddQuery(`@${account.username}`);
                   }}
                 >
-                  {account.name}
-                  {account.name !== account.username ? ` (@${account.username})` : null}
+                  <span className="font-medium">@{account.username}</span>
+                  {account.name !== account.username ? (
+                    <span className="text-app-muted">{account.name}</span>
+                  ) : null}
                 </button>
               </li>
             ))}

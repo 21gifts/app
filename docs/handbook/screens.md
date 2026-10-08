@@ -3393,7 +3393,7 @@ Founder presses the pencil **Edit comment**. The stored comment **Daily gift** i
 
 - **Purpose:** Signed-in editor for daily payout amounts only. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. Under the heading, the loaded editor says everyone in the grant program receives the roster `defaultAmountUsd` by default, formatted with `formatUsdDisplay`, and that the page is only for entering a different amount by hand. Someone who should receive the default does not need to be listed. The figure is not written into the catalog. Recipient amounts are the USD figure spend stores (`amountUsd`), typed in `Field`, not `AmountEntry`. The total is that USD sum via `formatUsdDisplay` (visitor grouping, two decimals). The comment is not on this page. There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
 - **Inputs:** Session account via `OnboardingGate screen="welcome"` / `useAuthStore`. Roster from `GET /funding/daily-roster` for an initiator or founder.
-- **Actions:** Turn payments **On** or **Off**. **Add** a recipient. A recipient row shows the formatted amount, a pencil (**Edit** plus the shown name), and a trash (**Delete** plus the shown name) on one line. The shown name is the display name, or Unnamed when the name is null or blank. The add form's first field is Person. No address is typed or shown. The pencil opens the amount field; the check saves and the X cancels. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Actions:** Turn payments **On** or **Off**. **Add** a recipient. A recipient row shows the formatted amount, a pencil (**Edit** plus the shown name), and a trash (**Delete** plus the shown name) on one line. The shown name is the display name, or Unnamed when the name is null or blank. The add form's first field is Person. Typing `@` opens the first page of people. Further letters keep only usernames that start that way. Choosing one fills `@username` and leaves the list open. No address is typed or shown. The pencil opens the amount field; the check saves and the X cancels. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/payments/amounts` (`DailyPaymentAmountsPage`). The **Daily payment amounts** link on `/grants` is shown only to an initiator or founder.
 
 ### Variant: default
@@ -3446,7 +3446,7 @@ Founder turns payments off and spend rejects the switch. Alert **The payments sw
 
 ### Variant: duplicate
 
-Founder types a person prefix, picks that person, and spend answers that the person is already listed. Alert **That person is already listed.** Needle `That person is already listed.`
+Founder types `@`, picks **@cara**, and spend answers that the person is already listed. Alert **That person is already listed.** Needle `That person is already listed.`
 
 ![21.gifts daily payment amounts duplicate](images/grants-payments-amounts-duplicate.png)
 
@@ -3476,13 +3476,13 @@ Founder presses the row pencil **Edit Ada**. The amount field **USD Ada** is ope
 
 ### Variant: suggest
 
-Founder types a person prefix. The suggestion list shows **Cara (@cara)** and stays open. Needle `Cara (@cara)`
+Founder types `@`. The suggestion list shows **@cara** and the name Cara, and stays open. Needle `@cara`
 
 ![21.gifts daily payment amounts suggest](images/grants-payments-amounts-suggest.png)
 
 ### Variant: chosen
 
-Founder types a person prefix and presses that person. The list closes. The Person field shows the chosen name. There is no alert. Needle `state-grants-payments-amounts-chosen`.
+Founder types `@` and presses **@cara**. The Person field shows `@cara`. The list stays open and that row is selected. There is no alert. Needle `state-grants-payments-amounts-chosen`.
 
 ![21.gifts daily payment amounts chosen](images/grants-payments-amounts-chosen.png)
 
@@ -3494,19 +3494,19 @@ Founder types a valid amount and presses Add without choosing a person. Alert **
 
 ### Variant: invalid-person
 
-Founder types a person prefix, picks that person, and spend answers that the person or amount is not valid. Alert **Choose a person and a valid amount.** Needle `Choose a person and a valid amount.`
+Founder types `@`, picks **@cara**, and spend answers that the person or amount is not valid. Alert **Choose a person and a valid amount.** Needle `Choose a person and a valid amount.`
 
 ![21.gifts daily payment amounts invalid person](images/grants-payments-amounts-invalid-person.png)
 
 ### Variant: unknown-person
 
-Founder types a person prefix, picks that person, and spend answers that the person was not found. Alert **That person was not found.** Needle `That person was not found.`
+Founder types `@`, picks **@cara**, and spend answers that the person was not found. Alert **That person was not found.** Needle `That person was not found.`
 
 ![21.gifts daily payment amounts unknown person](images/grants-payments-amounts-unknown-person.png)
 
 ### Variant: no-lightning
 
-Founder types a person prefix, picks that person, and spend answers that the person has no Lightning address. Alert **This person has no Wallet of Satoshi address.** Needle `This person has no Wallet of Satoshi address.`
+Founder types `@`, picks **@cara**, and spend answers that the person has no Lightning address. Alert **This person has no Wallet of Satoshi address.** Needle `This person has no Wallet of Satoshi address.`
 
 ![21.gifts daily payment amounts no lightning](images/grants-payments-amounts-no-lightning.png)
 

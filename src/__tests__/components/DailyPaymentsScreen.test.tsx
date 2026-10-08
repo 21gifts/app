@@ -124,7 +124,7 @@ async function settleAmounts(): Promise<void> {
   });
 }
 
-async function pickPerson(query = 'ada', optionName = 'Ada (@ada)'): Promise<void> {
+async function pickPerson(query = '@ada', optionName = '@ada'): Promise<void> {
   fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
     target: { value: query },
   });
@@ -528,46 +528,48 @@ describe('daily payment subpages', () => {
     const person = screen.getByRole('textbox', { name: 'Person' });
     fireEvent.focus(person);
     fireEvent.change(person, { target: { value: '   ' } });
-    fireEvent.change(person, { target: { value: '@' } });
+    fireEvent.change(person, { target: { value: 'ada' } });
     fireEvent.change(person, { target: { value: 'ada@example.com' } });
     fireEvent.change(person, { target: { value: 'ada bob' } });
+    fireEvent.change(person, { target: { value: '@ada bob' } });
+    fireEvent.change(person, { target: { value: '@ada!' } });
     expect(searchMock).not.toHaveBeenCalled();
     expect(screen.queryByRole('option')).toBeNull();
     expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
-    fireEvent.change(person, { target: { value: 'ada' } });
-    expect(await screen.findByRole('option', { name: 'Ada (@ada)' })).toBeTruthy();
-    fireEvent.change(person, { target: { value: 'ada!' } });
-    await waitFor(() => {
-      expect(screen.queryByRole('option')).toBeNull();
-    });
+    fireEvent.change(person, { target: { value: '@' } });
+    expect(searchMock).toHaveBeenCalledWith('sess', '');
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
     expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
   });
 
-  it('searches a leading @ prefix and lists the matching name', async () => {
+  it('searches a leading @ prefix and lists @username plus the muted name', async () => {
     fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
     renderWithLocale(<DailyPaymentAmountsScreen />);
     expect(await screen.findByText('No recipients')).toBeTruthy();
     fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
       target: { value: '@Ada' },
     });
-    expect(await screen.findByRole('option', { name: 'Ada (@ada)' })).toBeTruthy();
+    const option = await screen.findByRole('option', { name: '@ada' });
     expect(searchMock).toHaveBeenCalledWith('sess', 'ada');
+    expect(option.querySelector('.font-medium')?.textContent).toBe('@ada');
+    expect(option.querySelector('.text-app-muted')?.textContent).toBe('Ada');
     expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
   });
 
-  it('shows only the name when it matches the username', async () => {
+  it('omits the display name when it matches the username', async () => {
     searchMock.mockResolvedValue([{ id: 'acc_ada', username: 'ada', name: 'ada' }]);
     fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
     renderWithLocale(<DailyPaymentAmountsScreen />);
     expect(await screen.findByText('No recipients')).toBeTruthy();
     fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
-      target: { value: 'ada' },
+      target: { value: '@ada' },
     });
-    expect(await screen.findByRole('option', { name: 'ada' })).toBeTruthy();
-    expect(screen.queryByRole('option', { name: 'ada (@ada)' })).toBeNull();
+    const option = await screen.findByRole('option', { name: '@ada' });
+    expect(option.querySelectorAll('span')).toHaveLength(1);
+    expect(option.querySelector('.text-app-muted')).toBeNull();
   });
 
-  it('shows at most eight people', async () => {
+  it('shows the whole page with no local cap of eight', async () => {
     searchMock.mockResolvedValue(
       Array.from({ length: 9 }, (_, index) => ({
         id: `acc_${String(index)}`,
@@ -579,26 +581,41 @@ describe('daily payment subpages', () => {
     renderWithLocale(<DailyPaymentAmountsScreen />);
     expect(await screen.findByText('No recipients')).toBeTruthy();
     fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
-      target: { value: 'name' },
+      target: { value: '@u' },
     });
-    expect(await screen.findByRole('option', { name: 'Name0 (@u0)' })).toBeTruthy();
-    expect(screen.getAllByRole('option')).toHaveLength(8);
+    expect(await screen.findByRole('option', { name: '@u0' })).toBeTruthy();
+    expect(screen.getAllByRole('option')).toHaveLength(9);
   });
 
-  it('closes the list on pick and does not search the chosen name', async () => {
-    searchMock.mockResolvedValue([{ id: 'acc_ada', username: 'ada', name: 'Ada Lovelace' }]);
+  it('keeps the list open on pick, fills @username, and adds by account id', async () => {
     fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
     renderWithLocale(<DailyPaymentAmountsScreen />);
     expect(await screen.findByText('No recipients')).toBeTruthy();
-    await pickPerson('ada', 'Ada Lovelace (@ada)');
-    expect(screen.queryByRole('option')).toBeNull();
-    expect(screen.getByRole('textbox', { name: 'Person' })).toHaveProperty('value', 'Ada Lovelace');
-    const calls = searchMock.mock.calls.length;
-    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
-      target: { value: 'Ada Lovelace' },
+    await pickPerson();
+    const person = screen.getByRole('textbox', { name: 'Person' });
+    expect(person).toHaveProperty('value', '@ada');
+    const option = screen.getByRole('option', { name: '@ada' });
+    expect(option.getAttribute('aria-selected')).toBe('true');
+    fireEvent.change(person, { target: { value: '@ada' } });
+    expect(screen.getByRole('option', { name: '@ada' }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.change(screen.getByRole('textbox', { name: 'USD' }), {
+      target: { value: '1' },
     });
-    expect(searchMock.mock.calls.length).toBe(calls);
-    expect(screen.queryByRole('option')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(addMock).toHaveBeenCalledWith('sess', 'acc_ada', 1);
+  });
+
+  it('chooses the person on mouse down', async () => {
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@' },
+    });
+    const option = await screen.findByRole('option', { name: '@ada' });
+    fireEvent.mouseDown(option);
+    expect(screen.getByRole('textbox', { name: 'Person' })).toHaveProperty('value', '@ada');
+    expect(screen.getByRole('option', { name: '@ada' }).getAttribute('aria-selected')).toBe('true');
   });
 
   it('clears the selection on another edit and searches again', async () => {
@@ -607,10 +624,13 @@ describe('daily payment subpages', () => {
     expect(await screen.findByText('No recipients')).toBeTruthy();
     await pickPerson();
     fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
-      target: { value: 'ad' },
+      target: { value: '@ad' },
     });
-    expect(await screen.findByRole('option', { name: 'Ada (@ada)' })).toBeTruthy();
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
     expect(searchMock).toHaveBeenCalledWith('sess', 'ad');
+    expect(screen.getByRole('option', { name: '@ada' }).getAttribute('aria-selected')).toBe(
+      'false',
+    );
   });
 
   it('shows no rows and no address field when search throws', async () => {
@@ -619,13 +639,63 @@ describe('daily payment subpages', () => {
     renderWithLocale(<DailyPaymentAmountsScreen />);
     expect(await screen.findByText('No recipients')).toBeTruthy();
     fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
-      target: { value: 'ada' },
+      target: { value: '@ada' },
     });
     await waitFor(() => {
       expect(searchMock).toHaveBeenCalledWith('sess', 'ada');
     });
     expect(screen.queryByRole('option')).toBeNull();
     expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+  });
+
+  it('sets no person rows when an empty @ search rejects', async () => {
+    searchMock.mockRejectedValueOnce(new Error('offline'));
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@' },
+    });
+    await waitFor(() => {
+      expect(searchMock).toHaveBeenCalledWith('sess', '');
+    });
+    expect(screen.queryByRole('option')).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+  });
+
+  it('filters the first page while a prefix search is in flight', async () => {
+    let resolvePrefix: (value: PersonHit[]) => void = () => undefined;
+    searchMock.mockImplementation((_session, requested) => {
+      if (requested === '') {
+        return Promise.resolve([
+          { id: 'acc_ada', username: 'ada', name: 'Ada' },
+          { id: 'acc_bob', username: 'bob', name: 'Bob' },
+        ]);
+      }
+      return new Promise((resolve) => {
+        resolvePrefix = resolve;
+      });
+    });
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    const person = screen.getByRole('textbox', { name: 'Person' });
+    fireEvent.change(person, { target: { value: '@' } });
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: '@bob' })).toBeTruthy();
+    fireEvent.change(person, { target: { value: '@ad' } });
+    expect(screen.getByRole('option', { name: '@ada' })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: '@bob' })).toBeNull();
+    await waitFor(() => {
+      expect(searchMock).toHaveBeenCalledWith('sess', 'ad');
+    });
+    await act(async () => {
+      resolvePrefix([{ id: 'acc_ada2', username: 'ada2', name: 'Ada Two' }]);
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('option', { name: '@ada2' })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: '@ada' })).toBeNull();
+    expect(screen.getAllByRole('option')).toHaveLength(1);
   });
 
   it('ignores a slower person search after a newer query', async () => {
@@ -648,11 +718,11 @@ describe('daily payment subpages', () => {
     renderWithLocale(<DailyPaymentAmountsScreen />);
     expect(await screen.findByText('No recipients')).toBeTruthy();
     const person = screen.getByRole('textbox', { name: 'Person' });
-    fireEvent.change(person, { target: { value: 'ad' } });
+    fireEvent.change(person, { target: { value: '@ad' } });
     await waitFor(() => {
       expect(searchMock).toHaveBeenCalledTimes(1);
     });
-    fireEvent.change(person, { target: { value: 'ada' } });
+    fireEvent.change(person, { target: { value: '@ada' } });
     await waitFor(() => {
       expect(searchMock).toHaveBeenCalledTimes(2);
     });
@@ -660,13 +730,13 @@ describe('daily payment subpages', () => {
       resolveNewer([ADA_PERSON]);
       await Promise.resolve();
     });
-    expect(await screen.findByRole('option', { name: 'Ada (@ada)' })).toBeTruthy();
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
     await act(async () => {
       resolveOlder([{ id: 'acc_other', username: 'other', name: 'Other' }]);
       await Promise.resolve();
     });
-    expect(screen.getByRole('option', { name: 'Ada (@ada)' })).toBeTruthy();
-    expect(screen.queryByRole('option', { name: 'Other (@other)' })).toBeNull();
+    expect(screen.getByRole('option', { name: '@ada' })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: '@other' })).toBeNull();
   });
 
   it('keeps newer person rows when an older search fails', async () => {
@@ -689,11 +759,11 @@ describe('daily payment subpages', () => {
     renderWithLocale(<DailyPaymentAmountsScreen />);
     expect(await screen.findByText('No recipients')).toBeTruthy();
     const person = screen.getByRole('textbox', { name: 'Person' });
-    fireEvent.change(person, { target: { value: 'ad' } });
+    fireEvent.change(person, { target: { value: '@ad' } });
     await waitFor(() => {
       expect(searchMock).toHaveBeenCalledTimes(1);
     });
-    fireEvent.change(person, { target: { value: 'ada' } });
+    fireEvent.change(person, { target: { value: '@ada' } });
     await waitFor(() => {
       expect(searchMock).toHaveBeenCalledTimes(2);
     });
@@ -701,12 +771,12 @@ describe('daily payment subpages', () => {
       resolveNewer([ADA_PERSON]);
       await Promise.resolve();
     });
-    expect(await screen.findByRole('option', { name: 'Ada (@ada)' })).toBeTruthy();
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
     await act(async () => {
       rejectOlder(new Error('late'));
       await Promise.resolve();
     });
-    expect(screen.getByRole('option', { name: 'Ada (@ada)' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: '@ada' })).toBeTruthy();
   });
 
   it('ignores a stale person search resolve after unmount', async () => {
@@ -721,7 +791,7 @@ describe('daily payment subpages', () => {
     const view = renderWithLocale(<DailyPaymentAmountsScreen />);
     expect(await screen.findByText('No recipients')).toBeTruthy();
     fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
-      target: { value: 'ada' },
+      target: { value: '@ada' },
     });
     await waitFor(() => {
       expect(searchMock).toHaveBeenCalled();
@@ -746,7 +816,7 @@ describe('daily payment subpages', () => {
     const view = renderWithLocale(<DailyPaymentAmountsScreen />);
     expect(await screen.findByText('No recipients')).toBeTruthy();
     fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
-      target: { value: 'ada' },
+      target: { value: '@ada' },
     });
     await waitFor(() => {
       expect(searchMock).toHaveBeenCalled();
@@ -794,9 +864,9 @@ describe('daily payment subpages', () => {
     expect(list?.className).toContain('hidden');
     expect(list?.className).toBe('hidden');
     fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
-      target: { value: 'ada' },
+      target: { value: '@' },
     });
-    expect(await screen.findByRole('option', { name: 'Ada (@ada)' })).toBeTruthy();
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
     expect(list?.className).not.toContain('hidden');
     expect(list?.className).toBe(
       'flex w-full flex-col rounded-xl border border-app-border bg-app-card p-2',

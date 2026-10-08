@@ -2954,7 +2954,7 @@ export const SCREEN_VARIANTS = [
     id: 'suggest',
     image: 'grants-payments-amounts-suggest.png',
     visual: 'state-grants-payments-amounts-suggest',
-    needle: 'Cara (@cara)',
+    needle: '@cara',
   },
   {
     route: '/grants/payments/amounts',

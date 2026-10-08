@@ -1625,9 +1625,9 @@
     "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala."
   },
   "/grants/payments/amounts:duplicate": {
-    "de": "Der Gründer tippt ein Personenpräfix, wählt diese Person, und Spend antwortet, dass die Person bereits auf der Liste steht. Hinweis Diese Person steht bereits auf der Liste. Nadel Diese Person steht bereits auf der Liste.",
-    "es": "El fundador escribe un prefijo de persona, elige a esa persona, y Spend responde que esa persona ya está en la lista. Alerta Esa persona ya está en la lista. Aguja Esa persona ya está en la lista.",
-    "fil": "Nag-type ang tagapagtatag ng prefix ng tao, pinili ang taong iyon, at sumagot ang Spend na naka-lista na ang taong iyon. Alerto Naka-lista na ang taong iyon. Karayom Naka-lista na ang taong iyon."
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person bereits auf der Liste steht. Hinweis Diese Person steht bereits auf der Liste. Nadel Diese Person steht bereits auf der Liste.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que esa persona ya está en la lista. Alerta Esa persona ya está en la lista. Aguja Esa persona ya está en la lista.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na naka-lista na ang taong iyon. Alerto Naka-lista na ang taong iyon. Karayom Naka-lista na ang taong iyon."
   },
   "/wallet:reveal-open": {
     "de": "Konto, das bereits einen Satz anzeigen kann. Geöffnete Erweiterte Funktionen zeigt Wiederherstellungssatz anzeigen, das auf /wallet/phrase verweist.",
@@ -3460,14 +3460,14 @@
     "fil": "Tagapagtatag na may nakargang listahan. Ulo Mga halaga ng araw-araw na bayad. Nagsisimula ang tala Ang bawat kalahok sa grant program ay tumatanggap ng $1.00 bilang default. Ang pangalan ng hilera na Ada ay isang link sa /members/acc_ada. Ang hilerang walang pangalan ay nagpapakita ng Walang pangalan at hindi isang link. Ang mga accessible na pangalan ng lapis ay I-edit Ada at I-edit Walang pangalan. Mga bayad Naka-on ay nakapindot. Ang kabuuan ay ang kabuuan sa USD, para sa listahang ito $1.30. Hindi ipinapakita ang komento. Karayom Ang bawat kalahok sa grant program ay tumatanggap."
   },
   "/grants/payments/amounts:suggest": {
-    "de": "Der Gründer tippt ein Personenpräfix. Die Vorschlagsliste zeigt Cara (@cara) und bleibt offen. Nadel Cara (@cara)",
-    "es": "El fundador escribe un prefijo de persona. La lista de sugerencias muestra Cara (@cara) y permanece abierta. Aguja Cara (@cara)",
-    "fil": "Nag-type ang tagapagtatag ng prefix ng tao. Ipinapakita ng listahan ng mungkahi ang Cara (@cara) at nananatiling bukas. Karayom Cara (@cara)"
+    "de": "Der Gründer tippt @. Die Vorschlagsliste zeigt @cara und den Namen Cara und bleibt offen. Nadel @cara",
+    "es": "El fundador escribe @. La lista de sugerencias muestra @cara y el nombre Cara, y permanece abierta. Aguja @cara",
+    "fil": "Nag-type ang tagapagtatag ng @. Ipinapakita ng listahan ng mungkahi ang @cara at ang pangalang Cara, at nananatiling bukas. Karayom @cara"
   },
   "/grants/payments/amounts:chosen": {
-    "de": "Der Gründer tippt ein Personenpräfix und drückt diese Person. Die Liste schließt sich. Das Feld Person zeigt den gewählten Namen. Es gibt keinen Hinweis. Nadel state-grants-payments-amounts-chosen.",
-    "es": "El fundador escribe un prefijo de persona y pulsa a esa persona. La lista se cierra. El campo Persona muestra el nombre elegido. No hay alerta. Aguja state-grants-payments-amounts-chosen.",
-    "fil": "Nag-type ang tagapagtatag ng prefix ng tao at pinindot ang taong iyon. Nagsara ang listahan. Ipinapakita ng patlang na Tao ang napiling pangalan. Walang alerto. Karayom state-grants-payments-amounts-chosen."
+    "de": "Der Gründer tippt @ und drückt @cara. Das Feld Person zeigt @cara. Die Liste bleibt offen und diese Zeile ist gewählt. Es gibt keinen Hinweis. Nadel state-grants-payments-amounts-chosen.",
+    "es": "El fundador escribe @ y pulsa @cara. El campo Persona muestra @cara. La lista permanece abierta y esa fila está elegida. No hay alerta. Aguja state-grants-payments-amounts-chosen.",
+    "fil": "Nag-type ang tagapagtatag ng @ at pinindot ang @cara. Ipinapakita ng patlang na Tao ang @cara. Nanatiling bukas ang listahan at napili ang hilera na iyon. Walang alerto. Karayom state-grants-payments-amounts-chosen."
   },
   "/grants/payments/amounts:pick-person": {
     "de": "Der Gründer tippt einen gültigen Betrag und drückt Hinzufügen, ohne eine Person zu wählen. Hinweis Wähle eine Person. Nadel Wähle eine Person.",
@@ -3475,19 +3475,19 @@
     "fil": "Nag-type ang tagapagtatag ng wastong halaga at pinindot ang Idagdag nang hindi pumipili ng tao. Alerto Pumili ng tao. Karayom Pumili ng tao."
   },
   "/grants/payments/amounts:invalid-person": {
-    "de": "Der Gründer tippt ein Personenpräfix, wählt diese Person, und Spend antwortet, dass die Person oder der Betrag ungültig ist. Hinweis Wähle eine Person und einen gültigen Betrag. Nadel Wähle eine Person und einen gültigen Betrag.",
-    "es": "El fundador escribe un prefijo de persona, elige a esa persona, y Spend responde que la persona o el importe no es válido. Alerta Elige una persona y un importe válido. Aguja Elige una persona y un importe válido.",
-    "fil": "Nag-type ang tagapagtatag ng prefix ng tao, pinili ang taong iyon, at sumagot ang Spend na hindi wasto ang tao o ang amount. Alerto Pumili ng tao at isang wastong amount. Karayom Pumili ng tao at isang wastong amount."
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person oder der Betrag ungültig ist. Hinweis Wähle eine Person und einen gültigen Betrag. Nadel Wähle eine Person und einen gültigen Betrag.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que la persona o el importe no es válido. Alerta Elige una persona y un importe válido. Aguja Elige una persona y un importe válido.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na hindi wasto ang tao o ang amount. Alerto Pumili ng tao at isang wastong amount. Karayom Pumili ng tao at isang wastong amount."
   },
   "/grants/payments/amounts:unknown-person": {
-    "de": "Der Gründer tippt ein Personenpräfix, wählt diese Person, und Spend antwortet, dass die Person nicht gefunden wurde. Hinweis Diese Person wurde nicht gefunden. Nadel Diese Person wurde nicht gefunden.",
-    "es": "El fundador escribe un prefijo de persona, elige a esa persona, y Spend responde que esa persona no se encontró. Alerta Esa persona no se encontró. Aguja Esa persona no se encontró.",
-    "fil": "Nag-type ang tagapagtatag ng prefix ng tao, pinili ang taong iyon, at sumagot ang Spend na hindi nahanap ang taong iyon. Alerto Hindi nahanap ang taong iyon. Karayom Hindi nahanap ang taong iyon."
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person nicht gefunden wurde. Hinweis Diese Person wurde nicht gefunden. Nadel Diese Person wurde nicht gefunden.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que esa persona no se encontró. Alerta Esa persona no se encontró. Aguja Esa persona no se encontró.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na hindi nahanap ang taong iyon. Alerto Hindi nahanap ang taong iyon. Karayom Hindi nahanap ang taong iyon."
   },
   "/grants/payments/amounts:no-lightning": {
-    "de": "Der Gründer tippt ein Personenpräfix, wählt diese Person, und Spend antwortet, dass die Person keine Lightning-Adresse hat. Hinweis Diese Person hat keine Wallet of Satoshi address. Nadel Diese Person hat keine Wallet of Satoshi address.",
-    "es": "El fundador escribe un prefijo de persona, elige a esa persona, y Spend responde que esa persona no tiene dirección Lightning. Alerta Esta persona no tiene dirección de Wallet of Satoshi. Aguja Esta persona no tiene dirección de Wallet of Satoshi.",
-    "fil": "Nag-type ang tagapagtatag ng prefix ng tao, pinili ang taong iyon, at sumagot ang Spend na walang Lightning address ang taong iyon. Alerto Walang Wallet of Satoshi address ang taong ito. Karayom Walang Wallet of Satoshi address ang taong ito."
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person keine Lightning-Adresse hat. Hinweis Diese Person hat keine Wallet of Satoshi address. Nadel Diese Person hat keine Wallet of Satoshi address.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que esa persona no tiene dirección Lightning. Alerta Esta persona no tiene dirección de Wallet of Satoshi. Aguja Esta persona no tiene dirección de Wallet of Satoshi.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na walang Lightning address ang taong iyon. Alerto Walang Wallet of Satoshi address ang taong ito. Karayom Walang Wallet of Satoshi address ang taong ito."
   },
   "/welcome:pay-smartphone": {
     "de": "Dasselbe Zahlungsblatt, aufgenommen in der Computeransicht und am Mobilgerät. Bei einem Smartphone-User-Agent: dieselbe Rechnungskarte ohne eingebetteten QrCode; die Schaltfläche Zahlen mit dem Wallet of Satoshi-Symbol bleibt, mit Zahlung wird erwartet… darunter und einem Schließen-(X)-Steuerelement, nicht Zurück. Der Rechnungsschritt zeigt den Sat-Betrag und den Standard-Fiat zum neuesten Kurs des Geschenktags. In der Computeransicht zeigt dieses Szenario die QR-Rechnungskarte.",

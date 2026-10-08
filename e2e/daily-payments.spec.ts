@@ -312,8 +312,8 @@ test('Function: addDailyRosterRecipient — Add posts account id and amount', as
     });
   });
   await page.goto('/grants/payments/amounts');
-  await page.getByRole('textbox', { name: 'Person' }).fill('ada');
-  await page.getByRole('option', { name: 'Ada' }).click();
+  await page.getByRole('textbox', { name: 'Person' }).fill('@');
+  await page.getByRole('option', { name: '@ada' }).click();
   await page.getByLabel('USD').fill('1.5');
   const posted = page.waitForRequest(
     (req) =>
