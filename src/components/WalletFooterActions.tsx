@@ -44,7 +44,9 @@ export interface WalletFooterActionsProps {
  * moves. Within 24 px of the top they are always full. When the scroll stops
  * for 140 ms at an in-between value they glide (320 ms) to the nearer end;
  * with reduced motion they go there at once. The scroll position is clamped
- * to the page, so an iOS overscroll does not count. The progress is the
+ * to the page, so an iOS overscroll does not count, and at the end of the
+ * page the pull-back that the slimmer buttons themselves cause (a taller
+ * port, a shorter scroll range) does not count either. The progress is the
  * `--footer-collapse` custom property on the shell's frame body, so the
  * footer padding and a layer above the buttons (the forum home's **+**)
  * follow it too; `data-footer-snap` on that body marks the glide.
@@ -73,11 +75,10 @@ export function WalletFooterActions({
     if (body === null || scroller === null) {
       return;
     }
-    const scrolled = (): number => {
-      const max = Math.max(scroller.scrollHeight - scroller.clientHeight, 0);
-      return Math.min(Math.max(scroller.scrollTop, 0), max);
-    };
-    let last = scrolled();
+    const range = (): number => Math.max(scroller.scrollHeight - scroller.clientHeight, 0);
+    const scrolled = (max: number): number => Math.min(Math.max(scroller.scrollTop, 0), max);
+    let lastMax = range();
+    let last = scrolled(lastMax);
     let progress = 0;
     let settle: number | null = null;
     const write = (value: number): void => {
@@ -85,9 +86,17 @@ export function WalletFooterActions({
       body.style.setProperty('--footer-collapse', String(value));
     };
     const onScroll = (): void => {
-      const top = scrolled();
+      const max = range();
+      const top = scrolled(max);
       const delta = top - last;
+      const shrank = max < lastMax;
       last = top;
+      lastMax = max;
+      // At the end of the page, slimmer buttons make the port taller and the browser pulls the
+      // scroll position back by that much: not a move by the visitor.
+      if (shrank && delta < 0 && top >= max - 1) {
+        return;
+      }
       delete body.dataset['footerSnap'];
       write(top < FULL_NEAR_TOP ? 0 : Math.min(1, Math.max(0, progress + delta / COLLAPSE_RANGE)));
       if (settle !== null) {

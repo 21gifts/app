@@ -159,6 +159,24 @@ describe('WalletFooterActions', () => {
     expect(collapse(body)).toBe('0');
   });
 
+  it('ignores the pull-back at the end of the page that the slimmer buttons cause', () => {
+    stubMotion(false);
+    const { port, body } = renderInShell();
+    scrollTo(port, 1000);
+    expect(collapse(body)).toBe('1');
+    // The port grew by 28 px: the range is 972 and the browser clamped the position to it.
+    Object.defineProperty(port, 'clientHeight', { configurable: true, value: 628 });
+    scrollTo(port, 972);
+    expect(collapse(body)).toBe('1');
+    // A real move up from there still counts.
+    scrollTo(port, 932);
+    expect(collapse(body)).toBe('0.5');
+    // A shorter range that leaves the position inside the page is a move like any other.
+    Object.defineProperty(port, 'clientHeight', { configurable: true, value: 700 });
+    scrollTo(port, 892);
+    expect(collapse(body)).toBe('0');
+  });
+
   it('glides to the nearer end once the scroll stops in between, and ends the glide on the next scroll', () => {
     vi.useFakeTimers();
     stubMotion(false);
