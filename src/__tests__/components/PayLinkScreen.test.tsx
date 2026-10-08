@@ -69,6 +69,36 @@ describe('PayLinkScreen', () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
+  it('says the exchange rate is still loading instead of claiming there is none', async () => {
+    mockFetch(async (input) => {
+      if (String(input).includes('/gifts/stats')) {
+        return new Promise(() => undefined);
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect((await screen.findByRole('alert')).textContent).toBe('Enter a whole number.');
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'The USD exchange rate is still loading.',
+    );
+    expect(screen.queryByText('No USD exchange rate yet.')).toBeNull();
+  });
+
+  it('says which currency has no exchange rate', async () => {
+    mockFetch(async () => Response.json(profile));
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '1.00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect((await screen.findByRole('alert')).textContent).toBe('No USD exchange rate yet.');
+  });
+
   it('shows the invoice QR after a successful mint', async () => {
     mockFetch(async (input, init) => {
       if (String(input).endsWith('/invoice')) {

@@ -665,6 +665,8 @@ const en = {
   'pos.outside': 'Amount is outside the wallet range.',
   'pos.already': 'A payment is already open.',
   'pos.badAmount': 'Enter a whole number.',
+  'pos.noRate': 'No {code} exchange rate yet.',
+  'pos.rateLoading': 'The {code} exchange rate is still loading.',
   'pos.keypadDelete': 'Delete',
   'profile.message': 'Message',
 
@@ -1763,6 +1765,8 @@ const de = {
   'pos.outside': 'Der Betrag liegt außerhalb der Wallet.',
   'pos.already': 'Es ist schon eine Zahlung offen.',
   'pos.badAmount': 'Gib eine ganze Zahl ein.',
+  'pos.noRate': 'Für {code} gibt es noch keinen Wechselkurs.',
+  'pos.rateLoading': 'Der Wechselkurs für {code} wird noch geladen.',
   'pos.keypadDelete': 'Löschen',
   'profile.message': 'Nachricht',
 
@@ -2874,6 +2878,8 @@ const es = {
   'pos.outside': 'El importe está fuera del rango de la wallet.',
   'pos.already': 'Ya hay un pago abierto.',
   'pos.badAmount': 'Escribe un número entero.',
+  'pos.noRate': 'Aún no hay tipo de cambio para {code}.',
+  'pos.rateLoading': 'El tipo de cambio de {code} todavía se está cargando.',
   'pos.keypadDelete': 'Borrar',
   'profile.message': 'Mensaje',
 
@@ -3972,6 +3978,8 @@ const fil = {
   'pos.outside': 'Labas sa range ng wallet ang halaga.',
   'pos.already': 'May bukas nang bayad.',
   'pos.badAmount': 'Maglagay ng buong bilang.',
+  'pos.noRate': 'Wala pang palitan para sa {code}.',
+  'pos.rateLoading': 'Naglo-load pa ang palitan para sa {code}.',
   'pos.keypadDelete': 'Burahin',
   'profile.message': 'Mensahe',
 

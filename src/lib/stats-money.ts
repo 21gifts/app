@@ -186,7 +186,26 @@ function fiatFieldOnDay(day: FiatRateDay, code: FiatCode): string | null {
 }
 
 /**
+ * True when a gift-day total can scale sats into that currency.
+ *
+ * A null total, a non-numeric total, and `"0.00"` are not rates.
+ *
+ * @param raw - Stored gift-day total, or `null`.
+ * @returns Whether conversion may use it.
+ */
+function fiatTotalUsable(raw: string | null): boolean {
+  if (raw === null) {
+    return false;
+  }
+  const amount = Number(raw);
+  return Number.isFinite(amount) && amount !== 0;
+}
+
+/**
  * Latest spend-over-time day that has gifts, for sats→fiat scaling.
+ *
+ * This is the newest day with gifts, even when a currency total is missing.
+ * Conversion uses {@link latestRateDayFor}, which skips that day.
  *
  * @param series - `GET /gifts/stats` `spendOverTime` (oldest first).
  * @returns Last day with `sats > 0`, or `null`.
@@ -195,6 +214,30 @@ export function latestRateDay(series: readonly FiatRateDay[]): FiatRateDay | nul
   for (let i = series.length - 1; i >= 0; i -= 1) {
     const day = series[i];
     if (day !== undefined && day.sats > 0) {
+      return day;
+    }
+  }
+  return null;
+}
+
+/**
+ * Latest gift day that can convert the preferred currency.
+ *
+ * Walks newest first. A day with gifts but a null or zero total for `code`
+ * is skipped, so one incomplete gift cannot block the till. Returns `null`
+ * when no earlier day has that currency either.
+ *
+ * @param series - `GET /gifts/stats` `spendOverTime` (oldest first).
+ * @param code - Preferred fiat.
+ * @returns That day, or `null`.
+ */
+export function latestRateDayFor(
+  series: readonly FiatRateDay[],
+  code: FiatCode,
+): FiatRateDay | null {
+  for (let i = series.length - 1; i >= 0; i -= 1) {
+    const day = series[i];
+    if (day !== undefined && day.sats > 0 && fiatTotalUsable(fiatFieldOnDay(day, code))) {
       return day;
     }
   }
@@ -301,8 +344,14 @@ export function fiatDraftForSats(
   return null;
 }
 
-/** A trimmed amount draft, as whole sats or a reason it is not. */
-export type AmountDraft = { kind: 'empty' } | { kind: 'invalid' } | { kind: 'sats'; sats: number };
+/**
+ * A trimmed amount draft, as whole sats or a reason it is not.
+ *
+ * `no-rate` means the fiat text is a positive amount and the gift day cannot
+ * convert that currency. It is not a malformed number.
+ */
+export type AmountDraft =
+  { kind: 'empty' } | { kind: 'invalid' } | { kind: 'no-rate' } | { kind: 'sats'; sats: number };
 
 const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
 
@@ -347,8 +396,9 @@ export function fiatToSats(amount: number, day: FiatRateDay | null, code: FiatCo
  * @param draft - Raw field value.
  * @param day - Gift day used for fiat conversion, or `null`.
  * @param code - Preferred fiat.
- * @returns `empty` when blank, `invalid` when the draft or rate cannot be used,
- *   or `sats` (including 0; callers still clamp).
+ * @returns `empty` when blank, `invalid` when the text is not an amount,
+ *   `no-rate` when a fiat amount has no usable gift day, or `sats`
+ *   (including 0; callers still clamp).
  */
 export function parseAmountDraft(
   unit: 'btc' | 'fiat',
@@ -381,7 +431,7 @@ export function parseAmountDraft(
   }
   const sats = fiatToSats(amount, day, code);
   if (sats === null) {
-    return { kind: 'invalid' };
+    return amount > 0 ? { kind: 'no-rate' } : { kind: 'invalid' };
   }
   return { kind: 'sats', sats };
 }
@@ -402,8 +452,11 @@ export function replySatsFromDraft(
   code: FiatCode,
 ): number | 'empty' | 'invalid' {
   const parsed = parseAmountDraft(unit, draft, day, code);
+  if (parsed.kind === 'empty') {
+    return 'empty';
+  }
   if (parsed.kind !== 'sats') {
-    return parsed.kind;
+    return 'invalid';
   }
   return parsed.sats < 1 ? 1 : parsed.sats;
 }

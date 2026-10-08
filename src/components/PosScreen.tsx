@@ -10,7 +10,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
 import { Button, ButtonLink, Card } from '@/components/ui';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
@@ -92,7 +92,7 @@ function usePosTillState(): PosTillState {
   const generation = useRef(0);
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
-  const rateDay = useLatestRateDay(session !== null);
+  const { rateDay, settled: rateSettled } = useLatestRateDayState(session !== null);
   const [state, setState] = useState<PosState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
@@ -205,6 +205,14 @@ function usePosTillState(): PosTillState {
       return;
     }
     const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
+    if (shownUnit === 'fiat' && !rateSettled && parsed.kind === 'no-rate') {
+      setError(t('pos.rateLoading', { code: fiat }));
+      return;
+    }
+    if (parsed.kind === 'no-rate') {
+      setError(t('pos.noRate', { code: fiat }));
+      return;
+    }
     if (parsed.kind !== 'sats' || !Number.isInteger(parsed.sats) || parsed.sats < 1) {
       setError(t('pos.badAmount'));
       return;

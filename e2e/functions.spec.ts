@@ -5850,6 +5850,95 @@ test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 s
   await expect(page.getByText('$0.02').first()).toBeVisible();
 });
 
+test('Function: latestRateDayFor — peso till uses the last day that has PHP', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.context().addCookies([{ name: 'fiat', value: 'PHP', url: 'http://localhost:3000' }]);
+  await stubGiftStats(page, {
+    spendOverTime: [
+      {
+        day: '2026-10-07',
+        sats: 100_000_000,
+        usd: '100000.00',
+        chf: '80000.00',
+        eur: '90000.00',
+        php: '5600000.00',
+      },
+      {
+        day: '2026-10-08',
+        sats: 1000,
+        usd: '10.00',
+        chf: null,
+        eur: null,
+        php: null,
+      },
+    ],
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/me\/amount-unit$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        amountUnit: 'fiat',
+      }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/pos/amount');
+  await page
+    .getByRole('group', { name: 'Bitcoin or fiat' })
+    .getByRole('button', { name: 'PHP' })
+    .click();
+  await page.getByRole('button', { name: '1', exact: true }).click();
+  await page.getByRole('button', { name: '0', exact: true }).click();
+  await page.getByRole('button', { name: '0', exact: true }).click();
+  await expect(page.getByText("\u20BF1'786")).toBeVisible();
+  await expect(page.getByText('Enter a whole number.')).toHaveCount(0);
+});
+
 test('Function: formatFiatTick — populated stats draw the USD chart', async ({ page }) => {
   await stubGiftStats(page, POPULATED_STATS);
   await page.goto('/stats');

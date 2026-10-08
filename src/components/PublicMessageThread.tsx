@@ -25,7 +25,7 @@ import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-req
 import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import {
-  latestRateDay,
+  latestRateDayFor,
   paySatsFromDraft,
   replySatsFromDraft,
   shownFiatForSats,
@@ -210,7 +210,8 @@ export function PublicMessageThread(props: {
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const pendingComposeTextRef = useRef<string | null>(null);
-  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
+  const [rateSeries, setRateSeries] = useState<readonly FiatRateDay[] | null>(null);
+  const rateDay = rateSeries === null ? null : latestRateDayFor(rateSeries, fiat);
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
@@ -239,12 +240,12 @@ export function PublicMessageThread(props: {
     void fetchGiftStats()
       .then((stats) => {
         if (!cancelled) {
-          setRateDay(latestRateDay(stats.spendOverTime));
+          setRateSeries(stats.spendOverTime);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setRateDay(null);
+          setRateSeries([]);
         }
       });
     return () => {

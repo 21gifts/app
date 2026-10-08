@@ -58,6 +58,19 @@ describe('useLatestRateDay', () => {
     expect(fetchGiftStatsMock).toHaveBeenCalledTimes(1);
   });
 
+  it('skips a newer day that cannot convert the preferred fiat', async () => {
+    fetchGiftStatsMock.mockResolvedValue({
+      spendOverTime: [
+        RATE_DAY,
+        { ...RATE_DAY, sats: 1000, usd: '10.00', chf: null, eur: null, php: null },
+      ],
+    } as never);
+    renderWithLocale(<Probe />, 'en', 'ch', 'PHP');
+    await waitFor(() => {
+      expect(screen.getByText(String(RATE_DAY.sats))).toBeTruthy();
+    });
+  });
+
   it('resolves to null when fetchGiftStats resolves an empty spendOverTime', async () => {
     let resolve!: (value: { spendOverTime: FiatRateDay[] }) => void;
     const pending = new Promise<{ spendOverTime: FiatRateDay[] }>((r) => {
