@@ -910,6 +910,82 @@ describe('ShopNoteEditControl', () => {
     expect(onSaved).toHaveBeenCalledTimes(1);
   });
 
+  it('reports once when the editor unmounts while a save is still running', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const deferred = <T,>(): {
+      promise: Promise<T>;
+      resolve: (v: T) => void;
+      reject: (e: unknown) => void;
+    } => {
+      let resolve: (v: T) => void = () => undefined;
+      let reject: (e: unknown) => void = () => undefined;
+      const promise = new Promise<T>((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      return { promise, resolve, reject };
+    };
+    const run = async (finish: 'fail' | 'succeed', unmountAfterText: boolean): Promise<number> => {
+      const text = deferred<ForumMessage>();
+      const user = deferred<ForumMessage>();
+      vi.mocked(setMessageShopText).mockReturnValueOnce(text.promise);
+      vi.mocked(setMessageShopAccount).mockReturnValueOnce(user.promise);
+      const onSaved = vi.fn();
+      const view = renderWithLocale(
+        <ShopNoteEditControl
+          message={{
+            ...shopMessage,
+            shopAccount: { id: 'old', username: 'old', name: 'Old' },
+          }}
+          onUpdated={vi.fn()}
+          onSaved={onSaved}
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+        target: { value: 'Cafe Sol' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+      await waitFor(() => {
+        expect(setMessageShopText).toHaveBeenCalled();
+      });
+      if (!unmountAfterText) {
+        view.unmount();
+      }
+      text.resolve({ ...shopMessage, text: 'Cafe Sol\n\n#21GiftsShop' });
+      await waitFor(() => {
+        expect(setMessageShopAccount).toHaveBeenCalled();
+      });
+      if (unmountAfterText) {
+        view.unmount();
+      }
+      // Nothing is reported while the save is still running.
+      expect(onSaved).not.toHaveBeenCalled();
+      if (finish === 'fail') {
+        user.reject(new Error('no'));
+      } else {
+        user.resolve({ ...shopMessage });
+      }
+      await Promise.resolve();
+      await Promise.resolve();
+      await waitFor(() => {
+        expect(onSaved).toHaveBeenCalled();
+      });
+      vi.mocked(setMessageShopText).mockClear();
+      vi.mocked(setMessageShopAccount).mockClear();
+      return onSaved.mock.calls.length;
+    };
+    expect(await run('fail', false)).toBe(1);
+    expect(await run('succeed', true)).toBe(1);
+    expect(await run('fail', true)).toBe(1);
+  });
+
   it('reads kept stills before a text save can drop their addresses', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);

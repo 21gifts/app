@@ -411,7 +411,10 @@ export interface ForumBoardProps {
   onHeartTip?: (messageId: string) => void;
   /** Per-message heart visuals from `useHeartTip`. Default none. */
   heartTipViews?: Readonly<Record<string, HeartTipView>>;
-  /** Runs once after a shop-note edit is saved in full. */
+  /**
+   * Runs once per shop-note save: after a complete save, or after a partly
+   * written one when its editor closes or unmounts.
+   */
   onShopNoteSaved?: () => void;
 }
 
