@@ -919,4 +919,37 @@ describe('useWalletPay gift record', () => {
     });
     expect(logInteraction).toHaveBeenCalledWith('gift_sent', { amountSats: 21 }, 'token');
   });
+
+  it('records a gift the SDK sent after the app stopped waiting, and not one that failed', async () => {
+    let late: (sent: boolean) => void = () => undefined;
+    const sentLate = new Promise<boolean>((resolve) => {
+      late = resolve;
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(
+      confirmWith(async () => ({ kind: 'failed', sentLate })),
+    );
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    await act(async () => undefined);
+    await act(async () => {
+      result.current.pay();
+    });
+    expect(logInteraction).not.toHaveBeenCalled();
+    await act(async () => {
+      late(true);
+    });
+    expect(logInteraction).toHaveBeenCalledWith('gift_sent', { amountSats: 21 }, 'token');
+  });
+
+  it('records nothing when a send the app stopped waiting for fails later', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue(
+      confirmWith(async () => ({ kind: 'failed', sentLate: Promise.resolve(false) })),
+    );
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    await act(async () => undefined);
+    await act(async () => {
+      result.current.pay();
+    });
+    await act(async () => undefined);
+    expect(logInteraction).not.toHaveBeenCalled();
+  });
 });

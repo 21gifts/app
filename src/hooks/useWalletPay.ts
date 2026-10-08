@@ -204,6 +204,13 @@ export function useWalletPay(
         if (result.kind === 'paid') {
           // Recorded even when the sheet closed meanwhile: the gift went out.
           logInteraction('gift_sent', { amountSats: sats }, session);
+        } else if (result.kind === 'failed' && result.sentLate !== undefined) {
+          // A send the app stopped waiting for that the SDK still sent.
+          void result.sentLate.then((sent) => {
+            if (sent) {
+              logInteraction('gift_sent', { amountSats: sats }, session);
+            }
+          });
         }
         if (run !== generation.current) {
           return;

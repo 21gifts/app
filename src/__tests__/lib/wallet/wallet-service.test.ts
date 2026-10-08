@@ -1329,7 +1329,78 @@ describe('payFromWallet', () => {
     vi.useFakeTimers();
     const pending = result.send();
     await vi.advanceTimersByTimeAsync(WALLET_SEND_TIMEOUT_MS);
-    await expect(pending).resolves.toEqual({ kind: 'failed' });
+    await expect(pending).resolves.toMatchObject({ kind: 'failed' });
+  });
+
+  it('records a send that the SDK finishes after the time limit, under the session of the send', async () => {
+    let finish: (fail?: boolean) => void = () => undefined;
+    await connectPaying({
+      prepare: async () => ({
+        amountSats: 7,
+        feeSats: 1,
+        send: () =>
+          new Promise<void>((resolve, reject) => {
+            finish = (fail) => {
+              if (fail === true) {
+                reject(new Error('send failed'));
+              } else {
+                resolve();
+              }
+            };
+          }),
+      }),
+    });
+    useAuthStore.setState({ session: 'sess' });
+    const result = await payFromWallet({ type: 'input', input: 'a' });
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    vi.useFakeTimers();
+    const pending = result.send();
+    await vi.advanceTimersByTimeAsync(WALLET_SEND_TIMEOUT_MS);
+    const failed = await pending;
+    if (failed.kind !== 'failed' || failed.sentLate === undefined) {
+      throw new Error('expected a late send');
+    }
+    vi.mocked(logInteraction).mockClear();
+    finish();
+    await expect(failed.sentLate).resolves.toBe(true);
+    expect(logInteraction).toHaveBeenCalledWith(
+      'payment_sent',
+      { amountSats: 7, feeSats: 1, onchain: false },
+      'sess',
+    );
+  });
+
+  it('reports a send that fails after the time limit as not sent late', async () => {
+    let fail: () => void = () => undefined;
+    await connectPaying({
+      prepare: async () => ({
+        amountSats: 7,
+        feeSats: 1,
+        send: () =>
+          new Promise<void>((_resolve, reject) => {
+            fail = () => {
+              reject(new Error('send failed'));
+            };
+          }),
+      }),
+    });
+    const result = await payFromWallet({ type: 'input', input: 'a' });
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    vi.useFakeTimers();
+    const pending = result.send();
+    await vi.advanceTimersByTimeAsync(WALLET_SEND_TIMEOUT_MS);
+    const failed = await pending;
+    if (failed.kind !== 'failed' || failed.sentLate === undefined) {
+      throw new Error('expected a late send');
+    }
+    vi.mocked(logInteraction).mockClear();
+    fail();
+    await expect(failed.sentLate).resolves.toBe(false);
+    expect(logInteraction).not.toHaveBeenCalled();
   });
 
   it('refuses to send after the wallet was disconnected', async () => {

@@ -366,7 +366,8 @@ export const LOGOUT_RETRY_MS = 500;
  * session nothing is recorded or sent.
  * Never rejects.
  *
- * @returns Resolves when the logout event and the queue are sent, or the session ended.
+ * @returns Resolves when sending finishes; after the session ended, once the
+ *   requests already started and any retry wait have settled.
  */
 export async function logLogout(): Promise<void> {
   const session = useAuthStore.getState().session;
