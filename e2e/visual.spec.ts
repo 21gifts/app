@@ -20056,8 +20056,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
     await expect(page.getByAltText('Photo from Ada')).toBeVisible();
-    await openHomeWriter(page);
-    await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
     await shotScreen(page, 'state-welcome-photo');
   });
 
@@ -20107,8 +20106,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
     await expect(page.getByAltText('Photo from Ada')).toHaveCount(2);
-    await openHomeWriter(page);
-    await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
     await shotScreen(page, 'state-welcome-photos');
   });
 

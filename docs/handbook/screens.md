@@ -296,7 +296,7 @@ Pinned fixture (`?visual=history-empty`, Playwright builds only). Ready balance,
 
 ### Variant: history-rows
 
-Pinned fixture (`?visual=history-rows`, Playwright builds only; ten synthetic payments that net to the ₿21'000 balance). **Payments** lists them newest first, each row a link with a chevron to its payment screen: **Gift on your post** `+₿2'100` with **Great photo!**, **Gift to @alice** `−₿5'000`, **Coffee & croissant** `+₿12'500`, **bob@example.com** `−₿10'000` with **Thanks for dinner**, **Received** `+₿21'000` with **Happy birthday!**, **Sticker pack #42** marked **Pending**, **Hardware wallet** struck through and marked **Failed**, **On-chain deposit**, **On-chain withdrawal**, and **Posting fee** `−₿1`. Each row shows its date and time and the default fiat.
+Pinned fixture (`?visual=history-rows`, Playwright builds only; ten synthetic payments that net to the ₿21'000 balance). **Payments** lists them newest first, each row a link with a chevron to its payment screen: **Gift on your post** `+₿2'100` with **Great photo!**, **Gift to @alice** `−₿5'000`, **Coffee & croissant** `+₿12'500`, **bob@example.com** `−₿10'000` with **Thanks for dinner**, **Received** `+₿21'000` with **Happy birthday!**, **Sticker pack #42** marked **Pending**, **Hardware wallet** struck through and marked **Failed**, **On-chain deposit**, **On-chain withdrawal**, and **Posting fee** `−₿1`. Each row shows its date and time and the default fiat. The shot is scrolled to the end of the list, so **Receive** and **Send** are slim (36 px); the other `/wallet` home shots, at the top, show them full size.
 ![21.gifts wallet history rows](images/wallet-history-rows.png)
 
 ### Variant: history-error
@@ -2334,13 +2334,13 @@ Signed-in member with an unread `moderator_appointed` notification. Labeled **Yo
 
 ### Variant: photo
 
-On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row from Ada with inline image (**Photo from Ada**) and the attach control visible in the composer.
+On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row from Ada with inline image (**Photo from Ada**), and the **+** that opens the writer (no composer on the page).
 
 ![21.gifts welcome photo](images/welcome-photo.png)
 
 ### Variant: photos
 
-On **All**: photo-only forum row from Ada with two stills (**Photo from Ada** twice, `photoCount: 2`) in `ForumPhotoGallery` (horizontal snap row, `data-scroll-x`, 88% peek, `1/2` chip, dots) and the attach control visible in the composer.
+On **All**: photo-only forum row from Ada with two stills (**Photo from Ada** twice, `photoCount: 2`) in `ForumPhotoGallery` (horizontal snap row, `data-scroll-x`, 88% peek, `1/2` chip, dots), and the **+** that opens the writer (no composer on the page).
 
 ![21.gifts welcome photos](images/welcome-photos.png)
 
