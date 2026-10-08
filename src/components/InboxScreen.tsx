@@ -1261,16 +1261,17 @@ export function InboxScreen({
         ) : null}
         {invoice !== null ? (
           <div className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4">
-            <IconButton
-              type="button"
-              size="sm"
-              variant="ghost"
-              aria-label={t('forum.payClose')}
-              onClick={onPayCancel}
-              className="absolute left-2 top-2"
-            >
-              <X aria-hidden="true" className="h-4 w-4" />
-            </IconButton>
+            <div className="absolute left-3 top-3">
+              <IconButton
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-label={t('forum.payClose')}
+                onClick={onPayCancel}
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </div>
             <p className="px-10 text-center text-sm text-app-muted">
               {t('forum.payConfirm', {
                 amount: formatBitcoin(invoice.amountSats, numberFormat),

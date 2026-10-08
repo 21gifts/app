@@ -1539,7 +1539,10 @@ describe('InboxScreen', () => {
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
     expect(locationStub.href).toBe('http://localhost/');
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(close.className.split(' ')).not.toContain('absolute');
+    expect(close.parentElement?.className).toBe('absolute left-3 top-3');
+    fireEvent.click(close);
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 

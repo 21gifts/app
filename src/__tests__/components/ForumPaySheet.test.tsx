@@ -55,7 +55,12 @@ describe('ForumPaySheet', () => {
     expect(screen.getByText('$0.02')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onPaySubmit).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(close.parentElement?.className).toBe('absolute left-3 top-3');
+    const form = close.closest('[data-pay-sheet]');
+    expect(form?.className).toContain('pl-12');
+    expect(form?.className).toContain('pt-12');
+    fireEvent.click(close);
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 

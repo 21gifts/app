@@ -56,8 +56,8 @@ describe('ForumReplyPayPage', () => {
     const close = screen.getByRole('button', { name: 'Close' });
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
     expect(close.parentElement?.className).toContain('absolute');
-    expect(close.parentElement?.className).toContain('left-2');
-    expect(close.parentElement?.className).toContain('top-2');
+    expect(close.parentElement?.className).toContain('left-3');
+    expect(close.parentElement?.className).toContain('top-3');
     fireEvent.click(close);
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
