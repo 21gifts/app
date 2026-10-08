@@ -3818,5 +3818,10 @@
     "de": "Das Schreiben ist fehlgeschlagen. Dieses Mitglied konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut. Ja und Nein bleiben.",
     "es": "Falló la escritura. No se pudo actualizar a este miembro. Inténtalo de nuevo. Sí y No permanecen.",
     "fil": "Nabigo ang pagsulat. Hindi ma-update ang miyembrong ito. Subukan ulit. Nananatili ang Oo at Hindi."
+  },
+  "/members/[accountId]/verify:deciding": {
+    "de": "Verifizieren-POST unterwegs. Ja deaktiviert mit einem Drehsymbol; Nein deaktiviert. Der Name Ada und die Frage bleiben.",
+    "es": "POST de Verificar en curso. Sí desactivado con un indicador giratorio; No desactivado. El nombre Ada y la pregunta siguen.",
+    "fil": "POST ng I-verify na isinasagawa. Naka-disable ang Oo na may umiikot na pananda; naka-disable ang Hindi. Nananatili ang pangalan na Ada at ang tanong."
   }
 }
