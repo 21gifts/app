@@ -3790,6 +3790,51 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('closes the writer once a text-only post behind the posting fee is paid', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    const onClose = vi.fn();
+    renderWithLocale(<ForumLoader writer={{ open: true, onOpen: () => undefined, onClose }} />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fetchMock
+      .mockResolvedValueOnce(forumPage([]))
+      .mockResolvedValue(
+        forumPage([{ ...SAMPLE, id: 'new-paid', text: 'Hello gifts', sats: 0, payable: false }]),
+      );
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello gifts' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    await waitFor(() => {
+      expect(publicFetchMock).toHaveBeenCalledWith(
+        'fee-note',
+        expect.objectContaining({ sinceSats: 0 }),
+      );
+    });
+    expect(postMock).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('refreshes All after a compose-pay confirms on All', async () => {
     useAuthStore.setState({
       session: 'sess',

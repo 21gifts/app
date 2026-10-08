@@ -362,7 +362,7 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
  * its place or hides a shop, so the parent can reload what depends on the pins.
  * Optional `writer` (the forum home): the living-room composer lives in that
  * writer instead of on the page (see `ForumBoard`), and every successful own
- * post closes it.
+ * post closes it, also one that the posting fee's payment created.
  * @returns The forum board, or `null` without a session.
  */
 export function ForumLoader({
@@ -1509,6 +1509,8 @@ export function ForumLoader({
     postAfterPay = false,
     clearReplyDraft = false,
     baselineReceivedSats?: number,
+    // The visitor's own top-level post behind the posting fee: once it exists, the writer closes.
+    ownPost = false,
   ): void => {
     /* v8 ignore next -- pay polling starts only after a signed-in invoice */
     if (session === null) return;
@@ -1686,6 +1688,10 @@ export function ForumLoader({
               setPosting(false);
               setReplyPosting(false);
               notePostInFlightRef.current = false;
+              if (ownPost && !postAfterPay) {
+                // The payment itself created the note (no media to send afterwards).
+                writerRef.current?.onClose();
+              }
               const current = useAuthStore.getState();
               if (current.session !== session) {
                 return;
@@ -2052,7 +2058,16 @@ export function ForumLoader({
         pendingComposePhotosRef.current = pendingPhotos;
         pendingComposeVideoRef.current = pendingVideo;
         pendingComposeGoalRef.current = askGoal;
-        startPayPoll(target.messageId, target.sats, askGoal === undefined, null, postAfterPay);
+        startPayPoll(
+          target.messageId,
+          target.sats,
+          askGoal === undefined,
+          null,
+          postAfterPay,
+          false,
+          undefined,
+          true,
+        );
         pendingPostRef.current = null;
         setDraft('');
         if (!hasMedia) {
