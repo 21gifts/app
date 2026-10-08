@@ -2804,7 +2804,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 ## Screen: /members/[accountId]/verify
 
 - **Purpose:** The stored-name check only. Heading **Verify**. A moderator who is not the subject, and a basis member with a stored name that is not only whitespace, sees that name as an underlined link to the member card, the question under it, then **Yes** and **No**. A blank name shows the missing sentence and neither button. A signed-in viewer who cannot verify sees **You cannot verify this member.** Loading is **Loading…**. A failed load is the profile error plus **Try again**. An unknown id or a missing member is **This profile could not be found.** A failed verify stays on the page with **Could not update this member. Please try again.** **Yes** and **No** remain. On the device-local Sunday the question and the name stay, **Writing is paused on Sunday.** is shown, and neither button is visible. No in-card back. No Cancel. Chrome back does not post. No route.ts beside the page.
-- **Actions:** **Yes** posts the untrimmed stored name and then opens `/members/[accountId]`. **No** opens `/members/[accountId]` and does not post. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. There is no Cancel control.
+- **Actions:** **Yes** posts the untrimmed stored name and then opens `/members/[accountId]`. While that post is in flight, **Yes** shows a spinner and both buttons are disabled. **No** opens `/members/[accountId]` and does not post. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. There is no Cancel control.
 - **Used by:** route `/members/[accountId]/verify` (`MemberVerifyPage` / `MemberVerifyScreen`). The **Verify** link on `/members/[accountId]` is shown only to a moderator viewing another basis member, inside **Moderator functions**.
 
 ### Variant: default
@@ -2854,6 +2854,12 @@ Device-local Sunday. The question and **Ada** stay. **Writing is paused on Sunda
 The write failed. **Could not update this member. Please try again.** **Yes** and **No** remain.
 
 ![21.gifts member verify failed](images/members-verify-failed.png)
+
+### Variant: deciding
+
+Verify POST in flight. **Yes** disabled with a spinner; **No** disabled. The name **Ada** and the question stay.
+
+![21.gifts member verify deciding](images/members-verify-deciding.png)
 
 ## Screen: /pos
 

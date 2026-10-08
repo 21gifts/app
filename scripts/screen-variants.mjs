@@ -2466,6 +2466,13 @@ export const SCREEN_VARIANTS = [
     needle: 'Could not update this member. Please try again.',
   },
   {
+    route: '/members/[accountId]/verify',
+    id: 'deciding',
+    image: 'members-verify-deciding.png',
+    visual: 'state-members-verify-deciding',
+    needle: "getByRole('button', { name: 'Yes', exact: true })).toBeDisabled()",
+  },
+  {
     route: '/profile',
     id: 'receive',
     image: 'profile-receive.png',

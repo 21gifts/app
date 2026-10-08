@@ -8705,6 +8705,71 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-verify-failed');
   });
 
+  test('state /members/[accountId]/verify deciding', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          location: null,
+          role: 'basis',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          aboutMe: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.route('**/trust/verify', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+      /* hang */
+    });
+    await page.goto(`/members/${memberId}/verify`);
+    await page.getByRole('button', { name: 'Yes', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Yes', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'No', exact: true })).toBeDisabled();
+    await expect(
+      page.getByText('Does this stored name match the name that uniquely identifies this person?'),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ada', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-members-verify-deciding');
+  });
+
   test('state /members sunday', async ({ page }) => {
     const staffId = '11111111-1111-4111-8111-111111111111';
     const memberId = '22222222-2222-4222-8222-222222222222';
