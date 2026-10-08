@@ -1137,7 +1137,8 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
     });
-    renderWithLocale(<ForumLoader feed="shops" />);
+    const shopsChanged = vi.fn();
+    renderWithLocale(<ForumLoader feed="shops" onShopsChanged={shopsChanged} />);
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
@@ -1146,6 +1147,9 @@ describe('ForumLoader', () => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
     });
     expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+    await waitFor(() => {
+      expect(shopsChanged).toHaveBeenCalled();
+    });
   });
 
   it('feed="shops" sends an optional shop username', async () => {
@@ -1485,7 +1489,8 @@ describe('ForumLoader', () => {
       place: { lat: 1, lng: 2, label: 'Stall' },
       shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     });
-    renderWithLocale(<ForumLoader feed="shops" />);
+    const shopsChanged = vi.fn();
+    renderWithLocale(<ForumLoader feed="shops" onShopsChanged={shopsChanged} />);
     await waitFor(() => {
       expect(screen.getByText('Cafe Luna')).toBeTruthy();
     });
@@ -1529,6 +1534,9 @@ describe('ForumLoader', () => {
     expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
     await waitFor(() => {
       expect(photoMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
+    await waitFor(() => {
+      expect(shopsChanged).toHaveBeenCalled();
     });
   });
 
@@ -1593,7 +1601,8 @@ describe('ForumLoader', () => {
       vi.fn().mockResolvedValue({ json: () => Promise.resolve({ key: 'k' }) } as Response),
     );
     vi.stubGlobal('navigator', { ...navigator, geolocation: undefined });
-    renderWithLocale(<ForumLoader feed="shops" />);
+    const shopsChanged = vi.fn();
+    renderWithLocale(<ForumLoader feed="shops" onShopsChanged={shopsChanged} />);
     await waitFor(() => {
       expect(screen.getByText('Cafe Luna')).toBeTruthy();
     });
@@ -1612,6 +1621,9 @@ describe('ForumLoader', () => {
     });
     expect(screen.getByRole('link', { name: 'Keep me' })).toBeTruthy();
     delete (window as { google?: unknown }).google;
+    await waitFor(() => {
+      expect(shopsChanged).toHaveBeenCalled();
+    });
   });
 
   it('feed="shops" clears the listed pin when the save returns no place', async () => {

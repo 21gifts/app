@@ -12,6 +12,30 @@ export type ShopCountryOption = {
 };
 
 /**
+ * Two-letter region codes that `Intl.DisplayNames` names but that are not a
+ * country of ISO 3166-1 alpha-2: groupings (`EU`, `EZ`, `UN`, `QO`), test and
+ * unknown codes (`XA`, `XB`, `ZZ`), and exceptionally reserved areas the api
+ * never returns (`AC`, `CP`, `CQ`, `DG`, `EA`, `IC`, `TA`). `XK` (Kosovo) stays:
+ * the api uses it.
+ */
+const NOT_A_COUNTRY: ReadonlySet<string> = new Set([
+  'AC',
+  'CP',
+  'CQ',
+  'DG',
+  'EA',
+  'EU',
+  'EZ',
+  'IC',
+  'QO',
+  'TA',
+  'UN',
+  'XA',
+  'XB',
+  'ZZ',
+]);
+
+/**
  * Region names in the UI language. `fallback: 'none'` makes an unknown code
  * `undefined` instead of echoing it back.
  *
@@ -25,8 +49,9 @@ function regionNames(locale: Locale): Intl.DisplayNames {
 /**
  * Country code from the `country` query of `/shops`.
  *
- * Two letters in any case that name a known region. Anything else (missing,
- * blank, longer, digits, or an unassigned code) is no country, so the page
+ * Two letters in any case that name a country (a region `Intl.DisplayNames`
+ * knows that is not a grouping such as `EU`). Anything else (missing, blank,
+ * longer, digits, an unassigned code, or a grouping) is no country, so the page
  * shows all countries.
  *
  * @param raw - `URLSearchParams.get('country')`.
@@ -37,7 +62,7 @@ export function shopCountryFromQuery(raw: string | null): string | null {
     return null;
   }
   const code = raw.toUpperCase();
-  return regionNames('en').of(code) === undefined ? null : code;
+  return NOT_A_COUNTRY.has(code) || regionNames('en').of(code) === undefined ? null : code;
 }
 
 /**

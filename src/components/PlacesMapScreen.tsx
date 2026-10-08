@@ -105,8 +105,13 @@ type GoogleWindow = Window & {
   gm_authFailure?: () => void;
 };
 
+/** The Maps script while it loads, so a redraw before `onload` waits for the same script. */
+let pendingMapsLoad: Promise<void> | null = null;
+
 /**
- * Load the Maps JavaScript API once. Resolves when `google.maps` exists.
+ * Load the Maps JavaScript API once. Resolves when `google.maps` exists. A call
+ * while the script is still loading (a redraw for another country) gets the
+ * same promise instead of a second script tag.
  *
  * @param key - Browser key from GET /maps/key. Not logged.
  * @returns Resolves when the script has loaded.
@@ -116,7 +121,10 @@ function loadGoogleMaps(key: string): Promise<void> {
   if (host.google?.maps !== undefined) {
     return Promise.resolve();
   }
-  return new Promise((resolve, reject) => {
+  if (pendingMapsLoad !== null) {
+    return pendingMapsLoad;
+  }
+  const load = new Promise<void>((resolve, reject) => {
     const script = document.createElement('script');
     script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly`;
     script.async = true;
@@ -129,6 +137,12 @@ function loadGoogleMaps(key: string): Promise<void> {
     };
     document.head.appendChild(script);
   });
+  pendingMapsLoad = load;
+  const settle = (): void => {
+    pendingMapsLoad = null;
+  };
+  load.then(settle, settle);
+  return load;
 }
 
 /**
@@ -140,13 +154,19 @@ function loadGoogleMaps(key: string): Promise<void> {
  * the map fits those pins; none left is the empty copy.
  *
  * @param props - `embedded` omits the Map heading and card so `/shops` can reuse the body;
- * `country` (ISO 3166-1 alpha-2, or null for every pin) narrows the pins.
+ * `country` (ISO 3166-1 alpha-2, or null for every pin) narrows the pins; `onShopsChanged`
+ * runs after a moderator saves a shop pin.
  * @returns The map card, or only the body when `embedded` is true.
  */
 export function PlacesMapScreen({
   embedded = false,
   country = null,
-}: { embedded?: boolean; country?: string | null } = {}): ReactElement {
+  onShopsChanged,
+}: {
+  embedded?: boolean;
+  country?: string | null;
+  onShopsChanged?: () => void;
+} = {}): ReactElement {
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const [loadedPlaces, setPlaces] = useState<ForumPlaceRow[] | null>(null);
@@ -243,8 +263,12 @@ export function PlacesMapScreen({
       }
       try {
         await loadGoogleMaps(mapsKey);
-        if (cancelled || authFailedRef.current) {
+        if (authFailedRef.current) {
           frame.replaceChildren();
+          return;
+        }
+        // A newer draw (another country or pin) owns the frame now.
+        if (cancelled) {
           return;
         }
         const maps = (window as GoogleWindow).google?.maps;
@@ -368,6 +392,7 @@ export function PlacesMapScreen({
                   <ShopPinEdit
                     placeId={place.id}
                     onUpdated={(updated) => {
+                      onShopsChanged?.();
                       const pin = updated.place;
                       setPlaces((current) => {
                         /* v8 ignore next 3 -- the list is on screen before a pin editor can save */

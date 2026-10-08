@@ -281,7 +281,8 @@ describe('ShopTable', () => {
       ...SHOP,
       text: 'Cafe Sol\n\n#21GiftsShop',
     });
-    renderWithLocale(<ShopTable />);
+    const shopsChanged = vi.fn();
+    renderWithLocale(<ShopTable onShopsChanged={shopsChanged} />);
     const pencils = await screen.findAllByRole('button', { name: 'Edit shop note' });
     expect(pencils).toHaveLength(2);
     fireEvent.click(pencils[0]!);
@@ -295,5 +296,8 @@ describe('ShopTable', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(await screen.findByText('Cafe Sol')).toBeTruthy();
     expect(screen.getByText('Other stall')).toBeTruthy();
+    await waitFor(() => {
+      expect(shopsChanged).toHaveBeenCalled();
+    });
   });
 });

@@ -242,6 +242,30 @@ describe('PlacesMapScreen', () => {
     expect(await screen.findByRole('link', { name: 'Ada · Boat' })).toBeTruthy();
   });
 
+  it('loads the Maps script once and keeps the newer map when the country changes before it loads', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([
+      { ...ROW, countryCode: 'PH' },
+      { ...SECOND_ROW, countryCode: 'KE' },
+    ]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    const view = renderWithLocale(<PlacesMapScreen embedded country="PH" />);
+    await screen.findByRole('link', { name: 'Ada · Happyland' });
+    view.rerender(<PlacesMapScreen embedded country="KE" />);
+    await screen.findByRole('link', { name: 'Ada · Machakos' });
+    const scripts = document.querySelectorAll('script[data-google-maps="1"]');
+    expect(scripts).toHaveLength(1);
+    const maps = installGoogleMaps(4);
+    (scripts[0] as HTMLScriptElement).onload?.(new Event('load'));
+    await waitFor(() => {
+      expect(maps.Map).toHaveBeenCalledTimes(1);
+    });
+    // Only the Kenya draw runs; the superseded Philippines draw leaves the frame alone.
+    expect(maps.map.setCenter).toHaveBeenCalledWith({ lat: -1.95, lng: 37.84 });
+    expect(screen.getByTestId('places-map').childElementCount).toBe(0);
+    expect(maps.Marker).toHaveBeenCalledTimes(1);
+  });
+
   it('frames every pin when several places have no matching query', async () => {
     useAuthStore.setState({ session: 'tok' });
     fetchPlacesMock.mockResolvedValue([ROW, SECOND_ROW]);
@@ -601,7 +625,8 @@ describe('PlacesMapScreen', () => {
       text: 'Cafe Sol\n\n#21GiftsShop',
       place: { lat: 3, lng: 4, label: 'Stall' },
     });
-    renderWithLocale(<PlacesMapScreen />);
+    const shopsChanged = vi.fn();
+    renderWithLocale(<PlacesMapScreen onShopsChanged={shopsChanged} />);
     expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
     useAuthStore.setState({ session: 'tok', account: { ...moderator, role: 'basis' } });
@@ -667,5 +692,6 @@ describe('PlacesMapScreen', () => {
     await waitFor(() => {
       expect(screen.queryAllByRole('button', { name: 'Edit shop note' })).toHaveLength(0);
     });
+    expect(shopsChanged).toHaveBeenCalled();
   });
 });
