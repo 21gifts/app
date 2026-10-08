@@ -35,6 +35,9 @@ interface InteractionEvent {
 /** How often queued events are sent while the app is open. */
 export const INTERACTION_FLUSH_MS = 10_000;
 
+/** How long one events request may take before it is aborted and counts as failed. */
+export const INTERACTION_REQUEST_TIMEOUT_MS = 10_000;
+
 /** Most events one request carries. */
 export const INTERACTION_BATCH_SIZE = 50;
 
@@ -93,8 +96,8 @@ const queue: InteractionEvent[] = [];
 /** Session the queued events belong to. */
 let queueSession: string | null = null;
 
-/** The flush that is sending (resolving `false` when a batch failed), or `null`. */
-let flushRun: Promise<boolean> | null = null;
+/** The flush that is sending, with its session (`done` is `false` when a batch failed), or `null`. */
+let flushRun: { session: string; done: Promise<boolean> } | null = null;
 
 /**
  * Props reduced to short flat values. A key that is not an identifier or that
@@ -157,12 +160,22 @@ function currentPath(): string {
  * @throws Error on a non-2xx status or a network failure.
  */
 async function postEvents(session: string, events: InteractionEvent[]): Promise<void> {
-  const response = await fetch('/me/events', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${session}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ events }),
-    keepalive: true,
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, INTERACTION_REQUEST_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch('/me/events', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ events }),
+      keepalive: true,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
   if (!response.ok) {
     throw new Error(`Could not send events: ${String(response.status)}`);
   }
@@ -243,11 +256,14 @@ function nextBatch(): InteractionEvent[] {
  * and {@link MAX_BATCH_BYTES}, each with `keepalive`, so a request still in
  * flight when the page closes is delivered. Events go out only with the
  * session they were recorded under: without a session, or with another one,
- * the queue is dropped. A failed batch goes back to the front of the queue and
- * the next flush tries again. Never rejects.
+ * the queue is dropped. A request that has not answered after
+ * {@link INTERACTION_REQUEST_TIMEOUT_MS} is aborted. A failed batch goes back
+ * to the front of the queue and the next flush tries again. One flush per
+ * session runs at a time; a flush of an earlier session does not hold a new
+ * session's queue back. Never rejects.
  *
  * @returns Resolves when the queue is empty, a batch failed, the session
- *   changed, or another flush is running.
+ *   changed, or another flush of this session is running.
  */
 export async function flushInteractions(): Promise<void> {
   await flush();
@@ -259,18 +275,26 @@ export async function flushInteractions(): Promise<void> {
  * @returns `false` when a batch of this flush failed, otherwise `true`.
  */
 function flush(): Promise<boolean> {
-  if (flushRun !== null) {
-    return Promise.resolve(true);
-  }
   const session = useAuthStore.getState().session;
   if (session === null || session !== queueSession) {
     queue.length = 0;
     return Promise.resolve(true);
   }
-  flushRun = sendQueue(session).finally(() => {
-    flushRun = null;
-  });
-  return flushRun;
+  if (flushRun !== null && flushRun.session === session) {
+    return Promise.resolve(true);
+  }
+  // A flush of an earlier session still waiting on its request does not hold
+  // this session's queue back; that flush stops after its batch.
+  const run = {
+    session,
+    done: sendQueue(session).finally(() => {
+      if (flushRun === run) {
+        flushRun = null;
+      }
+    }),
+  };
+  flushRun = run;
+  return run.done;
 }
 
 /**
@@ -312,7 +336,7 @@ export async function logLogout(): Promise<void> {
   const session = useAuthStore.getState().session;
   logInteraction('logout');
   while (session !== null && useAuthStore.getState().session === session) {
-    const running = flushRun;
+    const running = flushRun?.session === session ? flushRun.done : null;
     const sent = await (running ?? flush());
     if (running !== null) {
       continue;
