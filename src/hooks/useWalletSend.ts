@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useWallet, type WalletViewStatus } from '@/hooks/useWallet';
+import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/api';
 import { encodeLnurl } from '@/lib/lnurl';
 import { lnurlPayAddress } from '@/lib/pay-link';
@@ -45,8 +47,8 @@ function walletCanSend(): boolean {
  * - `insufficient`: the balance does not cover amount and fee.
  * - `failed`: prepare or send failed, or the wallet had no connection when the
  *   text was read.
- * - `notReady`: the wallet was not ready when the text was submitted, or
- *   stopped being ready while it was read.
+ * - `unavailable`: a step needs the wallet, and this account has no wallet it
+ *   can use here (the wallet is not configured, or the account cannot hold one).
  * - `unreadable`: reading the text ended in an unexpected error.
  */
 export type WalletSendError =
@@ -58,8 +60,22 @@ export type WalletSendError =
   | 'unsupported'
   | 'insufficient'
   | 'failed'
-  | 'notReady'
+  | 'unavailable'
   | 'unreadable';
+
+/**
+ * What a step that needs the open wallet waits for: `opening` while the
+ * wallet opens, `error` when it could not be opened (or its one-time setup
+ * gave up), so **Try again** shows.
+ */
+export type WalletSendWait = 'opening' | 'error';
+
+/**
+ * How long a Playwright-only pin that opens the wallet waits before it shows
+ * the quote (`?visual=send-confirm-opens`, or **Try again** under
+ * `?visual=send-confirm-wallet-error`).
+ */
+export const WALLET_SEND_PIN_OPEN_MS = 1_500;
 
 /**
  * Lightning address or LNURL on another host, read through the api. `target`
@@ -121,6 +137,15 @@ export type WalletSendState =
       commentError?: true;
     }
   | {
+      /**
+       * The confirm step before its fee is known: the payment waits for the
+       * wallet to open, then is prepared and becomes `confirm` on its own.
+       */
+      step: 'quote';
+      recipient: string;
+      amountSats: number;
+    }
+  | {
       step: 'confirm';
       recipient: string;
       amountSats: number;
@@ -134,8 +159,19 @@ export type WalletSendState =
 export interface UseWalletSendResult {
   /** Current step. */
   state: WalletSendState;
-  /** True while parse, prepare, or send runs. */
+  /** True while parse, prepare, or send runs, or a read or quote waits for the wallet. */
   busy: boolean;
+  /**
+   * What the current step waits for, or `null`: set while a read on the
+   * input step, or the `quote` step, waits for the wallet to open.
+   */
+  walletWait: WalletSendWait | null;
+  /**
+   * **Try again** while `walletWait` is `error`: opens the wallet again (or
+   * runs its one-time setup again). The waiting step continues on its own
+   * once the wallet is ready.
+   */
+  retryWallet: () => void;
   /**
    * True only while a confirmed payment is being sent; `busy` without
    * `sending` on the confirm step is the renewal of an expired quote.
@@ -167,7 +203,7 @@ export interface UseWalletSendResult {
   /** Sends the confirmed payment once. */
   confirm: () => void;
   /**
-   * Closes the amount or confirm step (back to input) or the sent step. While
+   * Closes the amount, quote, or confirm step (back to input) or the sent step. While
    * a confirm send is in flight it closes nothing and still consumes Back;
    * while an expired quote is being renewed it closes the step and drops the
    * renewal.
@@ -372,6 +408,13 @@ function visualState(name: string | null): WalletSendState | null {
       return onchainConfirm('medium', fixture.onchainLowSpendableFeeSats, false);
     case 'send-confirm-onchain-renewed':
       return onchainConfirm('medium', fixture.onchainSpendableFeeSats, true);
+    case 'send-input-opening':
+    case 'send-input-wallet-error':
+      return { step: 'input', error: null };
+    case 'send-confirm-opening':
+    case 'send-confirm-opens':
+    case 'send-confirm-wallet-error':
+      return { step: 'quote', recipient: fixture.recipient, amountSats: fixture.amountSats };
     case 'send-sent':
       return { step: 'sent', amountSats: fixture.amountSats, recipient: fixture.recipient };
     case 'send-unsupported':
@@ -379,7 +422,6 @@ function visualState(name: string | null): WalletSendState | null {
     case 'send-invalid':
       return { step: 'input', error: 'invalid' };
     case 'send-failed':
-    case 'send-alert-not-ready':
       return { step: 'input', error: 'failed' };
     case 'send-insufficient':
       return { step: 'input', error: 'insufficient' };
@@ -391,8 +433,8 @@ function visualState(name: string | null): WalletSendState | null {
       return { step: 'input', error: 'notFound' };
     case 'send-relay-unreachable':
       return { step: 'input', error: 'relayUnreachable' };
-    case 'send-not-ready':
-      return { step: 'input', error: 'notReady' };
+    case 'send-unavailable':
+      return { step: 'input', error: 'unavailable' };
     case 'send-unreadable':
       return { step: 'input', error: 'unreadable' };
     default:
@@ -436,9 +478,46 @@ function relayInputError(error: unknown): WalletSendError {
 }
 
 /**
+ * What a pinned step waits for under `?visual=send-…`, honoured only in a
+ * Playwright build (the pin itself comes from {@link visualPin}).
+ *
+ * @param name - Pin name from {@link visualPin}.
+ * @param retried - Whether **Try again** was pressed under the pin.
+ * @returns The pinned wait, or `null`.
+ */
+function visualWait(name: string | null, retried: boolean): WalletSendWait | null {
+  switch (name) {
+    case 'send-input-opening':
+    case 'send-confirm-opening':
+    case 'send-confirm-opens':
+      return 'opening';
+    case 'send-input-wallet-error':
+    case 'send-confirm-wallet-error':
+      return retried ? 'opening' : 'error';
+    default:
+      return null;
+  }
+}
+
+/** A step held until the wallet is ready, and the run it belongs to. */
+interface HeldWalletStep {
+  run: number;
+  go: () => void;
+}
+
+/**
  * Drives the `/wallet` send flow: paste, read with the SDK's `parse`, an
  * amount (and optional comment) when the receiver asks for one, a confirm
- * step with amount, fee, and recipient, then one send. A base-chain address
+ * step with amount, fee, and recipient, then one send. Only the steps that
+ * need the open wallet wait for it: the SDK read of the text and the
+ * prepare that gives the fee. A text the SDK reads waits on the input step
+ * (`walletWait`) and is read once the wallet is ready; a payment whose fee
+ * is not known yet shows the `quote` step (amount and recipient) and is
+ * prepared once the wallet is ready, then shows `confirm`. While the wallet
+ * cannot be opened, `walletWait` is `error` and `retryWallet` tries again
+ * (or runs the one-time setup again); the text and the step are kept. A
+ * step that needs the wallet when this account has no wallet it can use
+ * here ends on the input step with `unavailable`. A base-chain address
  * (or a `bitcoin:` URI that offers only one) asks for an amount, or uses the
  * URI amount; an amount below the SDK minimum reopens the amount step with
  * that minimum. Its confirm step offers the speeds the balance covers
@@ -446,11 +525,12 @@ function relayInputError(error: unknown): WalletSendError {
  * instead of sent, returning to the confirm step marked `renewed`. A
  * receiver whose server this browser
  * cannot reach shows a plain error. A Lightning address or LNURL on another
- * host (see `lnurlRelayTarget`) is read through the api instead: its pay
- * request gives the bounds and comment length, the api returns the invoice
- * for the chosen amount, and the wallet pays that invoice. A 21.gifts shop on
- * this host (`ownShop`) is asked for an open charge first
- * (`fetchShopChargeInvoice`): with one, the wallet pays its Spark invoice for
+ * host (see `lnurlRelayTarget`) is read through the api instead, without the
+ * wallet: its pay request gives the bounds and comment length, the api
+ * returns the invoice for the chosen amount, and the wallet pays that
+ * invoice. A 21.gifts shop on this host (`ownShop`) is asked for an open
+ * charge first (`fetchShopChargeInvoice`, also without the wallet): with
+ * one, the wallet pays its Spark invoice for
  * exactly that amount, without a fee; with none, no Spark invoice, or a
  * prepare that fails or gives another amount, the text is read as below.
  * When the shop has no open charge (`none`), the amount entered for that
@@ -460,17 +540,20 @@ function relayInputError(error: unknown): WalletSendError {
  * over Lightning as before. An open charge that cannot be paid with a Spark
  * invoice is read as before, without that member step. Other own-host addresses and Spark targets are read by the
  * wallet. No send is retried on its own; only an expired fee quote is
- * prepared again once, before anything is sent. Visual
- * pins (`?visual=send-…`) apply only in a Playwright build and leave the
- * actions inert (so does any `?visual=balance-…`, `?visual=history-…`, or
- * other `?visual=send-…` value there); under `send-input-busy` and `send-amount-busy`, **Continue**
- * only marks that step busy, and under an idle base-chain confirm pin
- * `setSpeed` chooses a covered speed. While the one-time wallet setup is due, the
- * actions stay idle. When the wallet leaves `ready` or the account leaves
- * wallet mode, an open amount or confirm step and any read or prepare in
- * flight are dropped (a send in flight is kept), so a later reconnect starts
- * at the input; a read or prepare that settles once the wallet is no longer
- * ready is dropped too.
+ * prepared again once, before anything is sent. When the wallet stops being
+ * ready, an open confirm step becomes the `quote` step again (its prepared
+ * payment belonged to the closed connection) and a read or prepare that
+ * settles meanwhile waits again; a send in flight is kept, and the amount
+ * step stays. Visual pins (`?visual=send-…`) apply only in a Playwright
+ * build and leave the actions inert (so does any `?visual=balance-…`,
+ * `?visual=history-…`, or other `?visual=send-…` value there); under
+ * `send-input-busy` and `send-amount-busy`, **Continue** only marks that
+ * step busy, and under an idle base-chain confirm pin `setSpeed` chooses a
+ * covered speed. `send-input-opening` and `send-input-wallet-error` pin a
+ * read that waits for the wallet, `send-confirm-opening` and
+ * `send-confirm-wallet-error` the `quote` step; `send-confirm-opens` shows
+ * the confirm fixture {@link WALLET_SEND_PIN_OPEN_MS} after it opened, and so
+ * does **Try again** under `send-confirm-wallet-error`.
  *
  * @returns The current step, drafts, and actions.
  */
@@ -478,6 +561,8 @@ export function useWalletSend(): UseWalletSendResult {
   const [state, setState] = useState<WalletSendState>({ step: 'input', error: null });
   const [busy, setBusy] = useState(false);
   const [pinBusy, setPinBusy] = useState(false);
+  const [pinRetried, setPinRetried] = useState(false);
+  const [pinOpened, setPinOpened] = useState(false);
   const [text, setTextState] = useState('');
   const [comment, setComment] = useState('');
   const [pinSpeed, setPinSpeed] = useState<OnchainSpeed | null>(null);
@@ -486,6 +571,11 @@ export function useWalletSend(): UseWalletSendResult {
   const sendingRef = useRef(false);
   const [sending, setSending] = useState(false);
   const generation = useRef(0);
+  const heldRef = useRef<HeldWalletStep | null>(null);
+  /** Whether a step is held for the wallet now. */
+  const [holding, setHolding] = useState(false);
+  /** Bumped on every hold, so the runner looks again even when `ready` did not change. */
+  const [holds, setHolds] = useState(0);
   const pin = visualPin();
   const pinned = visualState(pin);
   const inert = pinned !== null || (pin !== null && /^(balance|history|send)-/.test(pin));
@@ -493,6 +583,13 @@ export function useWalletSend(): UseWalletSendResult {
   const account = useAuthStore((store) => store.account);
   const session = useAuthStore((store) => store.session);
   const ready = status === 'ready' && canUnlockWallet(account) && !needsWalletSetup(account);
+  const wallet = useWallet();
+  const setup = useWalletSetup();
+  const walletStatus = useRef<WalletViewStatus>(wallet.status);
+
+  useEffect(() => {
+    walletStatus.current = wallet.status;
+  });
 
   useEffect(
     () => () => {
@@ -502,21 +599,65 @@ export function useWalletSend(): UseWalletSendResult {
   );
 
   useEffect(() => {
-    if (inert || ready) {
+    if (pin !== 'send-confirm-opens' && !(pin === 'send-confirm-wallet-error' && pinRetried)) {
       return;
     }
-    if ((state.step === 'input' && !busy) || state.step === 'sent') {
+    const timer = window.setTimeout(() => {
+      setPinOpened(true);
+    }, WALLET_SEND_PIN_OPEN_MS);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [pin, pinRetried]);
+
+  /**
+   * Holds `go` until the wallet is ready, for the step of `run`. Returns
+   * `ready` when the wallet can be used now. When this account has no wallet
+   * it can use here, the flow ends on the input step with `unavailable`.
+   */
+  const holdForWallet = useCallback(
+    (run: number, go: () => void): 'ready' | 'held' | 'unavailable' => {
+      if (walletCanSend()) {
+        return 'ready';
+      }
+      if (walletStatus.current === 'disabled') {
+        heldRef.current = null;
+        setBusy(false);
+        setState({ step: 'input', error: 'unavailable' });
+        return 'unavailable';
+      }
+      heldRef.current = { run, go };
+      setBusy(true);
+      setHolding(true);
+      setHolds((count) => count + 1);
+      return 'held';
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const step = heldRef.current;
+    // The store itself decides: `ready` from the last render may already be stale.
+    if (step === null || !walletCanSend()) {
       return;
     }
-    if (state.step === 'confirm' && busy && sendingRef.current) {
+    heldRef.current = null;
+    setHolding(false);
+    if (step.run === generation.current) {
+      step.go();
+    }
+  }, [ready, holds]);
+
+  useEffect(() => {
+    if (wallet.status !== 'disabled' || heldRef.current === null) {
       return;
     }
+    heldRef.current = null;
     generation.current += 1;
-    sendRef.current = null;
+    setHolding(false);
     setBusy(false);
-    // A text still being read gets an alert instead of a silent return to the input.
-    setState({ step: 'input', error: state.step === 'input' ? 'notReady' : null });
-  }, [inert, ready, state.step, busy]);
+    setState({ step: 'input', error: 'unavailable' });
+  }, [wallet.status, holds]);
 
   const setText = useCallback((value: string): void => {
     setTextState(value);
@@ -527,19 +668,24 @@ export function useWalletSend(): UseWalletSendResult {
 
   /**
    * Ends `run` with one plain alert on the input step when its read rejected
-   * or its handler threw unexpectedly. A run that a Cancel, a new run or a
-   * wallet that stopped being ready already ended stays ended.
+   * or its handler threw unexpectedly. A run that a Cancel or a new run
+   * already ended stays ended.
    */
   const failRun = useCallback((run: number, error: WalletSendError): void => {
-    if (run !== generation.current || !walletCanSend()) {
+    if (run !== generation.current) {
       return;
     }
+    heldRef.current = null;
+    setHolding(false);
     setBusy(false);
     setState({ step: 'input', error });
   }, []);
 
   /**
-   * Prepares `request` and opens the confirm step. A result that is not the
+   * Prepares `request` and opens the confirm step. While the wallet is not
+   * ready, the `quote` step shows `amountSats` and `recipient` and the
+   * prepare runs once it is; a result that settles after the wallet stopped
+   * being ready waits again. A result that is not the
    * expected amount, or that fails, runs `fallback` when given (a balance
    * that is too low still shows that alert), otherwise returns to the input
    * with an alert. An amount the SDK refuses as below its minimum for a
@@ -548,13 +694,32 @@ export function useWalletSend(): UseWalletSendResult {
    * it (marked `renewed`), otherwise with {@link defaultSpeed}.
    */
   const prepare = useCallback(
-    (request: WalletPayRequest, recipient: string, options: PrepareOptions = {}): void => {
+    function prepareSend(
+      request: WalletPayRequest,
+      recipient: string,
+      amountSats: number,
+      options: PrepareOptions = {},
+    ): void {
       const { expectedSats, fallback, onchainTarget, renewSpeed } = options;
       const run = generation.current;
+      const again = (): void => {
+        prepareSend(request, recipient, amountSats, options);
+      };
+      const wait = holdForWallet(run, again);
+      if (wait === 'held') {
+        setState({ step: 'quote', recipient, amountSats });
+      }
+      if (wait !== 'ready') {
+        return;
+      }
       setBusy(true);
       void payFromWallet(request)
         .then((result) => {
-          if (run !== generation.current || !walletCanSend()) {
+          if (run !== generation.current) {
+            return;
+          }
+          if (!walletCanSend()) {
+            again();
             return;
           }
           if (
@@ -614,8 +779,23 @@ export function useWalletSend(): UseWalletSendResult {
           failRun(run, 'failed');
         });
     },
-    [failRun],
+    [holdForWallet, failRun],
   );
+
+  useEffect(() => {
+    if (inert || ready || state.step !== 'confirm' || sendingRef.current) {
+      return;
+    }
+    const last = preparedRef.current;
+    /* v8 ignore next 3 -- a live confirm step is only opened by a prepare that stored it */
+    if (last === null) {
+      return;
+    }
+    // The prepared payment belongs to the connection that closed: quote it again once open.
+    generation.current += 1;
+    sendRef.current = null;
+    prepare(last.request, last.recipient, state.amountSats, last.options);
+  }, [inert, ready, state, prepare]);
 
   /**
    * Pays `sats` to `target` the way **Continue** in the amount step does: the
@@ -638,15 +818,15 @@ export function useWalletSend(): UseWalletSendResult {
             : postLnurlInvoice(session, target.target, sats * 1000, trimmed);
         void request.then(
           (invoice) => {
-            if (run !== generation.current || !walletCanSend()) {
+            if (run !== generation.current) {
               return;
             }
-            prepare({ type: 'input', input: invoice.pr }, target.recipient, {
+            prepare({ type: 'input', input: invoice.pr }, target.recipient, sats, {
               expectedSats: sats,
             });
           },
           (error: unknown) => {
-            if (run !== generation.current || !walletCanSend()) {
+            if (run !== generation.current) {
               return;
             }
             setBusy(false);
@@ -680,6 +860,7 @@ export function useWalletSend(): UseWalletSendResult {
               ...(trimmed === '' ? {} : { comment: trimmed }),
             },
             target.recipient,
+            sats,
           );
         };
         if (target.member === undefined) {
@@ -689,14 +870,14 @@ export function useWalletSend(): UseWalletSendResult {
         const run = generation.current;
         setBusy(true);
         void fetchMemberSparkInvoice(target.member, sats, trimmed).then((sparkInvoice) => {
-          if (run !== generation.current || !walletCanSend()) {
+          if (run !== generation.current) {
             return;
           }
           if (sparkInvoice === null) {
             lightning();
             return;
           }
-          prepare({ type: 'input', input: sparkInvoice }, target.recipient, {
+          prepare({ type: 'input', input: sparkInvoice }, target.recipient, sats, {
             expectedSats: sats,
             fallback: lightning,
           });
@@ -704,12 +885,15 @@ export function useWalletSend(): UseWalletSendResult {
         return;
       }
       if (target.type === 'onchain') {
-        prepare({ type: 'input', input: target.address, amountSats: sats }, target.recipient, {
-          onchainTarget: target,
-        });
+        prepare(
+          { type: 'input', input: target.address, amountSats: sats },
+          target.recipient,
+          sats,
+          { onchainTarget: target },
+        );
         return;
       }
-      prepare({ type: 'input', input: target.input, amountSats: sats }, target.recipient);
+      prepare({ type: 'input', input: target.input, amountSats: sats }, target.recipient, sats);
     },
     [session, prepare],
   );
@@ -739,10 +923,6 @@ export function useWalletSend(): UseWalletSendResult {
     if (busy || state.step !== 'input') {
       return;
     }
-    if (!ready) {
-      setState({ step: 'input', error: 'notReady' });
-      return;
-    }
     const run = generation.current;
     setBusy(true);
     const relay = lnurlRelayTarget(text, window.location.hostname);
@@ -754,7 +934,7 @@ export function useWalletSend(): UseWalletSendResult {
       void request
         .then(
           (payRequest) => {
-            if (run !== generation.current || !walletCanSend()) {
+            if (run !== generation.current) {
               return;
             }
             const minSats = Math.max(1, Math.ceil(payRequest.minSendableMsat / 1000));
@@ -776,7 +956,7 @@ export function useWalletSend(): UseWalletSendResult {
             });
           },
           (error: unknown) => {
-            if (run !== generation.current || !walletCanSend()) {
+            if (run !== generation.current) {
               return;
             }
             setBusy(false);
@@ -789,9 +969,19 @@ export function useWalletSend(): UseWalletSendResult {
       return;
     }
     const readWithWallet = (member: OwnShop | null): void => {
+      const again = (): void => {
+        readWithWallet(member);
+      };
+      if (holdForWallet(run, again) !== 'ready') {
+        return;
+      }
       void parseWalletInput(text)
         .then((parsed) => {
-          if (run !== generation.current || !walletCanSend()) {
+          if (run !== generation.current) {
+            return;
+          }
+          if (!walletCanSend()) {
+            again();
             return;
           }
           if (parsed.kind !== 'target') {
@@ -818,6 +1008,7 @@ export function useWalletSend(): UseWalletSendResult {
               prepare(
                 { type: 'input', input: target.address, amountSats: target.amountSats },
                 target.recipient,
+                target.amountSats,
                 { onchainTarget: { ...target, amountSats: null } },
               );
               return;
@@ -844,6 +1035,7 @@ export function useWalletSend(): UseWalletSendResult {
                 ...(target.amountFromUri === true ? { amountSats: target.amountSats } : {}),
               },
               target.recipient,
+              target.amountSats,
             );
             return;
           }
@@ -862,14 +1054,14 @@ export function useWalletSend(): UseWalletSendResult {
     }
     void fetchShopChargeInvoice(shop.name)
       .then((charge) => {
-        if (run !== generation.current || !walletCanSend()) {
+        if (run !== generation.current) {
           return;
         }
         if (charge.kind !== 'invoice') {
           readWithWallet(charge.kind === 'none' ? shop : null);
           return;
         }
-        prepare({ type: 'input', input: charge.sparkInvoice }, shop.address, {
+        prepare({ type: 'input', input: charge.sparkInvoice }, shop.address, charge.amountSats, {
           expectedSats: charge.amountSats,
           fallback: () => {
             readWithWallet(null);
@@ -879,7 +1071,7 @@ export function useWalletSend(): UseWalletSendResult {
       .catch(() => {
         failRun(run, 'unreadable');
       });
-  }, [pin, inert, ready, busy, state.step, text, session, prepare, askAmount, failRun]);
+  }, [pin, inert, busy, state.step, text, session, prepare, askAmount, failRun, holdForWallet]);
 
   const submitAmount = useCallback(
     (sats: number | null): void => {
@@ -887,7 +1079,7 @@ export function useWalletSend(): UseWalletSendResult {
         setPinBusy(pin === 'send-amount-busy');
         return;
       }
-      if (!ready || busy || state.step !== 'amount') {
+      if (busy || state.step !== 'amount') {
         return;
       }
       const target = state.target;
@@ -898,7 +1090,7 @@ export function useWalletSend(): UseWalletSendResult {
       }
       payAmount(target, sats, comment);
     },
-    [pin, inert, ready, busy, state, comment, payAmount],
+    [pin, inert, busy, state, comment, payAmount],
   );
 
   const confirm = useCallback((): void => {
@@ -920,14 +1112,15 @@ export function useWalletSend(): UseWalletSendResult {
         return;
       }
       const last = preparedRef.current;
-      if (result.kind === 'expired' && last !== null && walletCanSend()) {
-        prepare(last.request, last.recipient, {
+      if (result.kind === 'expired' && last !== null) {
+        prepare(last.request, last.recipient, amountSats, {
           ...last.options,
           renewSpeed: speed ?? 'medium',
         });
         return;
       }
       setBusy(false);
+      /* v8 ignore next 4 -- a send is only offered by a prepare that stored itself */
       if (result.kind === 'expired') {
         setState({ step: 'input', error: null });
         return;
@@ -989,6 +1182,8 @@ export function useWalletSend(): UseWalletSendResult {
       return true;
     }
     generation.current += 1;
+    heldRef.current = null;
+    setHolding(false);
     sendRef.current = null;
     setBusy(false);
     setState({ step: 'input', error: null });
@@ -1000,14 +1195,31 @@ export function useWalletSend(): UseWalletSendResult {
       return;
     }
     generation.current += 1;
+    heldRef.current = null;
+    setHolding(false);
     sendRef.current = null;
     setBusy(false);
     setTextState('');
     setState({ step: 'input', error: null });
   }, [inert]);
 
+  const retryWallet = useCallback((): void => {
+    if (pinned !== null) {
+      setPinRetried(true);
+      return;
+    }
+    if (wallet.setupFailed) {
+      setup.retry();
+      return;
+    }
+    wallet.retry();
+  }, [pinned, wallet, setup]);
+
+  const pinWait = pinOpened ? null : visualWait(pin, pinRetried);
+  const opened = pinOpened ? visualState('send-confirm') : null;
   const shown =
-    pinned !== null &&
+    opened ??
+    (pinned !== null &&
     pinned.step === 'confirm' &&
     pinned.onchain !== undefined &&
     pinSpeed !== null
@@ -1016,12 +1228,24 @@ export function useWalletSend(): UseWalletSendResult {
           feeSats: pinned.onchain.fees[pinSpeed],
           onchain: { ...pinned.onchain, speed: pinSpeed },
         }
-      : pinned;
+      : pinned);
+  const current = shown ?? state;
+  const waits = current.step === 'quote' || (current.step === 'input' && holding);
+  const liveWait: WalletSendWait | null = waits
+    ? wallet.status === 'error'
+      ? 'error'
+      : 'opening'
+    : null;
   const pinSending = pin === 'send-confirm-sending' || pin === 'send-confirm-onchain-sending';
   return {
-    state: shown ?? state,
-    busy: pinned === null ? busy : pinSending || pinBusy || pin === 'send-confirm-onchain-renewing',
+    state: current,
+    busy:
+      pinned === null
+        ? busy
+        : pinSending || pinBusy || pin === 'send-confirm-onchain-renewing' || pinWait !== null,
     sending: pinned === null ? sending : pinSending,
+    walletWait: pinned === null ? liveWait : pinWait,
+    retryWallet,
     text,
     setText,
     comment,

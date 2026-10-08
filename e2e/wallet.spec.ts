@@ -714,7 +714,7 @@ test('wallet key unset shows no balance region', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Show recovery phrase' })).toHaveCount(0);
   await expect(page.getByText('Advanced functions')).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Receive' })).toBeEnabled();
 });
 
@@ -1014,6 +1014,167 @@ test('wallet key unset shows no send region', async ({ page }) => {
   await page.goto('/wallet');
   await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Send Bitcoin' })).toHaveCount(0);
+});
+
+test('Function: useWalletSend — with the key unset, Send opens and a text the wallet reads says the wallet is not available', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await stubCamera(page, { kind: 'blank' });
+  await page.goto('/wallet');
+  await openSend(page);
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await region.getByRole('button', { name: 'Enter manually' }).click();
+  await region.getByLabel('Payment request or address').fill('lnbc1unavailable');
+  await region.getByRole('button', { name: 'Continue' }).click();
+  await expect(region.getByRole('alert')).toHaveText(
+    'Your 21.gifts wallet is not available here, so this cannot be paid.',
+  );
+});
+
+/** Answers the api's read of the outside address bob@example.com and its invoice. */
+async function routeOutsideAddress(page: Page): Promise<void> {
+  await page.route(/\/lnurl\/pay-request$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        target: 'bob@example.com',
+        minSendableMsat: 1_000,
+        maxSendableMsat: 100_000_000,
+        commentAllowed: 10,
+        description: 'Pay bob',
+        domain: 'example.com',
+      }),
+    });
+  });
+  await page.route(/\/lnurl\/invoice$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: 'lnbc10u1mockrelay' }),
+    });
+  });
+}
+
+test.describe('Send while the wallet is still opening', () => {
+  test('Function: useWalletPanel — Send stays enabled while the wallet opens and opens the camera at once', async ({
+    page,
+  }) => {
+    await signInWalletEligible(page);
+    await stubWalletRate(page);
+    await stubCamera(page, { kind: 'blank' });
+    await page.goto('/wallet?visual=setup-pending');
+    await expect(
+      page.getByRole('region', { name: 'Balance' }).getByText('Opening your wallet…'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
+    await openSend(page);
+    const region = page.getByRole('region', { name: 'Send Bitcoin' });
+    await expect(region.locator('video')).toBeVisible();
+    await expect(region.getByRole('button', { name: 'Paste' })).toBeEnabled();
+    await expect(region.getByRole('button', { name: 'Enter manually' })).toBeEnabled();
+  });
+
+  test('Function: useWalletSend — a scanned outside address reaches the amount step, and the confirm step waits with Opening your wallet…', async ({
+    page,
+  }) => {
+    await signInWalletEligible(page);
+    await stubWalletRate(page);
+    await stubCamera(page, { kind: 'qr', text: 'bob@example.com' });
+    await routeOutsideAddress(page);
+    await page.goto('/wallet?visual=setup-pending');
+    await openSend(page);
+    const region = page.getByRole('region', { name: 'Send Bitcoin' });
+    await expect(region.getByText('To bob@example.com')).toBeVisible();
+    await region.getByLabel('Amount').fill('1000');
+    await region.getByRole('button', { name: 'Continue' }).click();
+    await expect(region.getByRole('status')).toHaveText('Opening your wallet…');
+    await expect(region.getByText("₿1'000", { exact: true })).toBeVisible();
+    await expect(region.getByText('To bob@example.com')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(region.getByText('Opening your wallet…')).toHaveCount(0);
+  });
+
+  test('Function: WalletSend — Paste and Enter manually keep the text and show Opening your wallet… until the wallet is open', async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await signInWalletEligible(page);
+    await stubWalletRate(page);
+    await stubCamera(page, { kind: 'blank' });
+    await page.goto('/wallet?visual=setup-pending');
+    await openSend(page);
+    const region = page.getByRole('region', { name: 'Send Bitcoin' });
+    await page.evaluate(() => navigator.clipboard.writeText('lnbc1pastedwhileopening'));
+    await region.getByRole('button', { name: 'Paste' }).click();
+    await expect(region.getByRole('status')).toHaveText('Opening your wallet…');
+    await expect(region.getByRole('button', { name: 'Paste' })).toBeDisabled();
+    await expect(region.getByRole('alert')).toHaveCount(0);
+
+    await page.reload();
+    await openSend(page);
+    await region.getByRole('button', { name: 'Enter manually' }).click();
+    await region.getByLabel('Payment request or address').fill('lnbc1typedwhileopening');
+    await region.getByRole('button', { name: 'Continue' }).click();
+    await expect(region.getByLabel('Payment request or address')).toHaveCount(0);
+    await expect(region.getByRole('status')).toHaveText('Opening your wallet…');
+    await expect(region.getByRole('alert')).toHaveCount(0);
+  });
+
+  test('Function: useWalletSend — send-confirm-opens shows Opening your wallet… on the confirm step, then the quote', async ({
+    page,
+  }) => {
+    await signInWalletEligible(page);
+    await stubWalletRate(page);
+    await page.goto('/wallet?visual=send-confirm-opens');
+    const region = page.getByRole('region', { name: 'Send Bitcoin' });
+    await expect(region.getByRole('status')).toHaveText('Opening your wallet…');
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+    await expect(region.getByText('Fee ₿0', { exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(region.getByText('Opening your wallet…')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
+  });
+
+  test('Function: useWalletSend — a wallet that cannot be opened shows the error with Try again on the step that needs it', async ({
+    page,
+  }) => {
+    await signInWalletEligible(page);
+    await stubWalletRate(page);
+    await page.goto('/wallet?visual=send-confirm-wallet-error');
+    const region = page.getByRole('region', { name: 'Send Bitcoin' });
+    await expect(region.getByRole('alert')).toHaveText(
+      'Your wallet could not be opened. Please try again.',
+    );
+    await expect(region.getByText("₿2'100", { exact: true })).toBeVisible();
+    await region.getByRole('button', { name: 'Try again' }).click();
+    await expect(region.getByRole('status')).toHaveText('Opening your wallet…');
+    await expect(region.getByText('Fee ₿0', { exact: true })).toBeVisible({ timeout: 10_000 });
+
+    await page.goto('/wallet?visual=send-input-wallet-error');
+    await expect(region.getByRole('alert')).toHaveText(
+      'Your wallet could not be opened. Please try again.',
+    );
+    await region.getByRole('button', { name: 'Try again' }).click();
+    await expect(region.getByRole('status')).toHaveText('Opening your wallet…');
+    await expect(region.getByRole('alert')).toHaveCount(0);
+  });
+
+  test('Function: WalletReceive — Receive opens while the wallet opens and shows Opening your wallet… in place of the address', async ({
+    page,
+  }) => {
+    await signInWalletEligible(page);
+    await stubWalletRate(page);
+    await page.goto('/wallet?visual=setup-pending');
+    await page.getByRole('button', { name: 'Receive' }).click();
+    await expect(page.getByRole('status')).toHaveText('Opening your wallet…');
+    await expect(page.getByText('ada@21.gifts')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveAttribute('href', '/pos');
+  });
 });
 
 test('wallet locked pin shows no send region', async ({ page }) => {
@@ -1632,11 +1793,11 @@ test('wallet Send manual sheet: Close and Back return to the camera, the next Ba
   await expect(page.getByRole('region', { name: 'Balance' })).toBeVisible();
 });
 
-test('wallet Send shows the not-ready and unreadable alerts with Try again', async ({ page }) => {
+test('wallet Send shows the unavailable and unreadable alerts with Try again', async ({ page }) => {
   await signInWalletEligible(page);
   await stubWalletRate(page);
   for (const [pin, message] of [
-    ['send-not-ready', 'Your wallet is not ready yet. Please try again in a moment.'],
+    ['send-unavailable', 'Your 21.gifts wallet is not available here, so this cannot be paid.'],
     ['send-unreadable', 'This could not be read. Please try again.'],
   ] as const) {
     await page.goto(`/wallet?visual=${pin}`);

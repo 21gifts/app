@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState, type ReactElement } from 'react';
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
+import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button, ButtonLink } from '@/components/ui';
+import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { useAuthStore } from '@/stores/auth-store';
@@ -13,13 +15,17 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Receive view of the wallet (on `/wallet` and over `/welcome`): the 21.gifts
  * address with a Copy control, its Open CryptoPay QR, and a link to `/pos` to
- * set an amount. Without a username it links to `/profile` instead.
+ * set an amount. Without a username it links to `/profile` instead. The view
+ * opens also while the wallet's one-time setup still runs: until the address
+ * is registered, **Opening your wallet…** stands where the address goes, and
+ * a setup that gave up shows the inline setup note with **Try again**.
  *
  * @returns The receive block.
  */
 export function WalletReceive(): ReactElement {
   const { t } = useTranslations();
   const account = useAuthStore((state) => state.account);
+  const setup = useWalletSetup();
   const [showQr, setShowQr] = useState(false);
   /** Successful copies so far; each one restarts the two-second Copied label. */
   const [copies, setCopies] = useState(0);
@@ -54,7 +60,16 @@ export function WalletReceive(): ReactElement {
       <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
         {t('wallet.receive')}
       </p>
-      {address !== null ? (
+      {setup.failed ? (
+        <WalletSetupNote />
+      ) : setup.due ? (
+        <div className="flex flex-col items-center gap-2 py-6">
+          <Loader2 aria-hidden="true" className="h-6 w-6 animate-spin text-app-subtle" />
+          <p role="status" className="text-center text-sm text-app-muted">
+            {t('wallet.connecting')}
+          </p>
+        </div>
+      ) : address !== null ? (
         <div className="flex w-full flex-col items-center gap-4">
           {showQr && qr !== null ? (
             <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />

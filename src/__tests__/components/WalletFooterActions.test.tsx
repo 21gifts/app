@@ -10,7 +10,7 @@ describe('WalletFooterActions', () => {
     const onReceive = vi.fn();
     const onSend = vi.fn();
     const { container } = renderWithLocale(
-      <WalletFooterActions onReceive={onReceive} onSend={onSend} sendDisabled={false} />,
+      <WalletFooterActions onReceive={onReceive} onSend={onSend} />,
     );
     const receive = screen.getByRole('button', { name: 'Receive' });
     const send = screen.getByRole('button', { name: 'Send' });
@@ -33,9 +33,11 @@ describe('WalletFooterActions', () => {
     expect(onSend).toHaveBeenCalledTimes(1);
   });
 
-  it('disables Send when asked', () => {
-    renderWithLocale(<WalletFooterActions onReceive={vi.fn()} onSend={vi.fn()} sendDisabled />);
-    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+  it('keeps Receive and Send enabled, also while the wallet opens', () => {
+    renderWithLocale(<WalletFooterActions onReceive={vi.fn()} onSend={vi.fn()} />);
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
     expect((screen.getByRole('button', { name: 'Receive' }) as HTMLButtonElement).disabled).toBe(
       false,
     );
@@ -46,7 +48,7 @@ describe('WalletFooterActions', () => {
       <WalletFooterActions
         onReceive={vi.fn()}
         onSend={vi.fn()}
-        sendDisabled={false}
+
         focus="send"
       />,
     );
@@ -56,18 +58,10 @@ describe('WalletFooterActions', () => {
       <WalletFooterActions
         onReceive={vi.fn()}
         onSend={vi.fn()}
-        sendDisabled={false}
+
         focus="receive"
       />,
     );
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Receive' }));
-  });
-
-  it('focuses Receive when Send is disabled by the time Send closed, and keeps it when Send comes back', () => {
-    const props = { onReceive: vi.fn(), onSend: vi.fn(), focus: 'send' as const };
-    const view = renderWithLocale(<WalletFooterActions {...props} sendDisabled />);
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Receive' }));
-    view.rerender(<WalletFooterActions {...props} sendDisabled={false} />);
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Receive' }));
   });
 });

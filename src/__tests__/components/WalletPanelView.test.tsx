@@ -24,7 +24,6 @@ describe('WalletPanelView', () => {
       <WalletPanelView
         panel="receive"
         send={undefined}
-        walletReady
         manualEntry={false}
         onManualEntry={vi.fn()}
       />,
@@ -35,18 +34,12 @@ describe('WalletPanelView', () => {
 
   it('renders Send with the manual-entry state, or nothing without a send flow', () => {
     const view = renderWithLocale(
-      <WalletPanelView panel="send" send={SEND} walletReady manualEntry onManualEntry={vi.fn()} />,
+      <WalletPanelView panel="send" send={SEND} manualEntry onManualEntry={vi.fn()} />,
     );
     expect(screen.getByText('Send stub manual')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Wallet' })).toBeTruthy();
     view.rerender(
-      <WalletPanelView
-        panel="send"
-        send={undefined}
-        walletReady
-        manualEntry={false}
-        onManualEntry={vi.fn()}
-      />,
+      <WalletPanelView panel="send" send={undefined} manualEntry={false} onManualEntry={vi.fn()} />,
     );
     expect(screen.queryByText('Send stub')).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Wallet' })).toBeNull();
@@ -57,7 +50,6 @@ describe('WalletPanelView', () => {
       <WalletPanelView
         panel="receive"
         send={undefined}
-        walletReady
         manualEntry={false}
         onManualEntry={vi.fn()}
       />,
