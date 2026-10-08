@@ -507,6 +507,9 @@ test('Function: ForumLoader — paying the posting fee from the wallet shows the
   await expect(page.getByText(text)).toBeVisible();
   await expect(sheet).toHaveCount(0);
   await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
-  await expect(page.getByLabel('Your message')).toHaveValue('');
+  // The paid post closed the writer; reopened, its field is empty.
+  await expect(page.locator('[data-writing-composer]')).toHaveCount(0);
   await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('All');
+  await openHomeWriter(page);
+  await expect(page.getByLabel('Your message')).toHaveValue('');
 });
