@@ -44,8 +44,9 @@ const SIZE_CLASS: Record<NonNullable<IconButtonProps['size']>, string> = {
  *
  * The `sm` size is `relative`, because its 44px hit slop is positioned against
  * the button. An `absolute` class on an `sm` button loses to that, so a close
- * over card content goes in a positioned wrapper instead (`absolute right-3
- * top-3`, or `left-3 top-3` where back would be; see `docs/ui.md`).
+ * over card content goes in a positioned wrapper instead:
+ * `absolute right-3 top-3`, or `absolute left-3 top-3` where back would be
+ * (see `docs/ui.md`).
  *
  * @param props - Native button props plus variant, size, and tone (default `app`).
  * @returns The icon button element.
