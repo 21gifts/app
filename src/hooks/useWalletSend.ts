@@ -544,9 +544,11 @@ interface HeldWalletStep {
  * wallet. No send is retried on its own; only an expired fee quote is
  * prepared again once, before anything is sent. When the wallet stops being
  * ready, an open confirm step becomes the `quote` step again (its prepared
- * payment belonged to the closed connection) and a read or prepare that
- * settles meanwhile waits again; a send in flight is kept, and the amount
- * step stays. Visual pins (`?visual=send-…`) apply only in a Playwright
+ * payment belonged to the closed connection) and a read or prepare whose
+ * answer arrives meanwhile waits again (one that rejects still ends with its
+ * alert); a send in flight is kept, and the amount step stays. A wallet that
+ * closes and opens again before a render does the same, through a counter
+ * of wallet openings. Visual pins (`?visual=send-…`) apply only in a Playwright
  * build and leave the actions inert (so does any `?visual=balance-…`,
  * `?visual=history-…`, or other `?visual=send-…` value there); under
  * `send-input-busy` and `send-amount-busy`, **Continue** only marks that
@@ -594,12 +596,15 @@ export function useWalletSend(): UseWalletSendResult {
    * from one on the current connection.
    */
   const walletEpoch = useRef(0);
+  /** Mirrors `walletEpoch` for rendering, so an idle confirm step re-quotes on its own. */
+  const [walletReopens, setWalletReopens] = useState(0);
 
   useEffect(
     () =>
       useWalletStore.subscribe((next, previous) => {
         if (previous.status === 'ready' && next.status !== 'ready') {
           walletEpoch.current += 1;
+          setWalletReopens(walletEpoch.current);
         }
       }),
     [],
@@ -803,7 +808,7 @@ export function useWalletSend(): UseWalletSendResult {
   );
 
   useEffect(() => {
-    if (inert || ready || state.step !== 'confirm' || sendingRef.current) {
+    if (inert || state.step !== 'confirm' || sendingRef.current) {
       return;
     }
     const last = preparedRef.current;
@@ -811,11 +816,15 @@ export function useWalletSend(): UseWalletSendResult {
     if (last === null) {
       return;
     }
+    // Ready again before a render saw it close: only an idle step re-quotes; one already doing so stays.
+    if (ready && (busy || last.epoch === walletReopens)) {
+      return;
+    }
     // The prepared payment belongs to the connection that closed: quote it again once open.
     generation.current += 1;
     sendRef.current = null;
     prepare(last.request, last.recipient, state.amountSats, last.options);
-  }, [inert, ready, state, prepare]);
+  }, [inert, ready, busy, walletReopens, state, prepare]);
 
   /**
    * Pays `sats` to `target` the way **Continue** in the amount step does: the
@@ -989,16 +998,18 @@ export function useWalletSend(): UseWalletSendResult {
       return;
     }
     const readWithWallet = (member: OwnShop | null): void => {
+      // The run of this read: a shop charge's fallback can start it after a re-quote bumped it.
+      const read = generation.current;
       const again = (): void => {
         readWithWallet(member);
       };
-      if (holdForWallet(run, again) !== 'ready') {
+      if (holdForWallet(read, again) !== 'ready') {
         return;
       }
       const epoch = walletEpoch.current;
       void parseWalletInput(text)
         .then((parsed) => {
-          if (run !== generation.current) {
+          if (read !== generation.current) {
             return;
           }
           // The wallet closed meanwhile, so this answer is from a closed connection.
@@ -1066,7 +1077,7 @@ export function useWalletSend(): UseWalletSendResult {
           setState({ step: 'amount', target, amountError: false });
         })
         .catch(() => {
-          failRun(run, 'unreadable');
+          failRun(read, 'unreadable');
         });
     };
     const shop = ownShop(text, window.location.hostname);
