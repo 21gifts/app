@@ -12566,7 +12566,9 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('A Bitcoin balance is required for this.')).toBeVisible();
-    await page.getByText('A Bitcoin balance is required for this.').scrollIntoViewIfNeeded();
+    await page.getByText('A Bitcoin balance is required for this.').evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
     await shotScreen(page, 'state-members-heart-needs-balance');
   });
 
