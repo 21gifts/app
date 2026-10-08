@@ -2,11 +2,17 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CannotReceiveError, postMessageInvoice, WalletRequiredError } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
+import { getE2eNow } from '@/lib/config';
 import { HEART_TIP_PLUS_ONE_MS, sendHeartTip, useHeartTip } from '@/lib/heart-tip';
 import { unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
+
+vi.mock('@/lib/config', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/config')>();
+  return { ...actual, getE2eNow: vi.fn() };
+});
 
 vi.mock('@/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api')>();
@@ -35,6 +41,8 @@ const BASE = {
 };
 
 beforeEach(() => {
+  window.history.replaceState({}, '', '/');
+  vi.mocked(getE2eNow).mockReset().mockReturnValue(null);
   vi.mocked(postMessageInvoice).mockReset();
   vi.mocked(payFromWallet).mockReset();
   vi.mocked(unlockWalletPhrase).mockReset();
@@ -267,6 +275,32 @@ describe('sendHeartTip', () => {
       alert: 'needsBalance',
     });
     expect(send).not.toHaveBeenCalled();
+  });
+
+  it('ignores visual=heart-paid in a production build and still invoices', async () => {
+    window.history.replaceState({}, '', '/welcome?visual=heart-paid');
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({
+      kind: 'alert',
+      alert: 'needsBalance',
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns paid for visual=heart-paid in a Playwright build without invoicing', async () => {
+    vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
+    window.history.replaceState({}, '', '/welcome?visual=heart-paid');
+    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'paid' });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('stays silent when signed out or read-only even with visual=heart-paid in Playwright', async () => {
+    vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
+    window.history.replaceState({}, '', '/welcome?visual=heart-paid');
+    await expect(sendHeartTip({ ...BASE, sessionToken: null })).resolves.toEqual({ kind: 'noop' });
+    await expect(sendHeartTip({ ...BASE, readOnly: true })).resolves.toEqual({ kind: 'noop' });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
   it('pays pr when sparkInvoice is empty', async () => {

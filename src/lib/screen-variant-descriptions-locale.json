@@ -589,6 +589,16 @@
     "es": "Tras POST /translate 502: No se pudo traducir esta nota. Inténtalo de nuevo.",
     "fil": "Pagkatapos ng POST /translate 502: Hindi maisalin ang notang ito. Pakisubukan muli."
   },
+  "/messages/[id]:heart-needs-balance": {
+    "de": "Derselbe angemeldete öffentliche Thread nach dem Stubben von POST /messages/*/invoice auf 400 wallet_required und dem Klick auf ₿1 senden. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "El mismo hilo público con sesión iniciada tras simular POST /messages/*/invoice a 400 wallet_required y pulsar Enviar ₿1. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos i-stub ang POST /messages/*/invoice sa 400 wallet_required at pindutin ang Magpadala ng ₿1. Sipi Kailangan ng Bitcoin balance para dito."
+  },
+  "/messages/[id]:heart-paid": {
+    "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Die bezahlte Markierung +1 ist sichtbar.",
+    "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar ₿1. La marca pagada +1 está visible.",
+    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nakikita ang bayad na marka +1."
+  },
   "/welcome:composer-photos-and-text": {
     "de": "Zwei JPEG-Vorschauen plus Bildunterschrift Caption with selected photos., bereit zum Senden.",
     "es": "Dos vistas previas JPEG más pie de foto Caption with selected photos., listo para publicar.",
@@ -1919,10 +1929,30 @@
     "es": "La misma nota en alemán tras fallar POST /translate. Alerta No se pudo traducir esta nota. Inténtalo de nuevo. y el control Traducir permanece.",
     "fil": "Parehong notang Aleman pagkatapos mabigo ang POST /translate. Alerto Hindi maisalin ang notang ito. Pakisubukan muli. at nananatili ang kontrol na Isalin."
   },
+  "/welcome:heart-needs-balance": {
+    "de": "Dieselbe angemeldete deutsche Notiz nach dem Stubben von POST /messages/*/invoice auf 400 wallet_required und dem Klick auf ₿1 senden. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "La misma nota en alemán con sesión iniciada tras simular POST /messages/*/invoice a 400 wallet_required y pulsar Enviar ₿1. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos i-stub ang POST /messages/*/invoice sa 400 wallet_required at pindutin ang Magpadala ng ₿1. Sipi Kailangan ng Bitcoin balance para dito."
+  },
+  "/welcome:heart-paid": {
+    "de": "Dieselbe angemeldete deutsche Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Die bezahlte Markierung +1 ist sichtbar.",
+    "es": "La misma nota en alemán con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar ₿1. La marca pagada +1 está visible.",
+    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nakikita ang bayad na marka +1."
+  },
   "/members/[accountId]:translate-error": {
     "de": "Derselbe deutsche Beitrag nach fehlgeschlagenem POST /translate. Hinweis Diese Notiz konnte nicht übersetzt werden. Bitte erneut versuchen. und die Steuerung Übersetzen bleibt.",
     "es": "La misma publicación en alemán tras fallar POST /translate. Alerta No se pudo traducir esta nota. Inténtalo de nuevo. y el control Traducir permanece.",
     "fil": "Parehong post sa German pagkatapos mabigo ang POST /translate. Alerto Hindi maisalin ang notang ito. Pakisubukan muli. at nananatili ang kontrol na Isalin."
+  },
+  "/members/[accountId]:heart-needs-balance": {
+    "de": "Derselbe deutsche Beitrag im Beitragsfeed nach dem Stubben von POST /messages/*/invoice auf 400 wallet_required und dem Klick auf ₿1 senden. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "La misma publicación en alemán en el feed de publicaciones tras simular POST /messages/*/invoice a 400 wallet_required y pulsar Enviar ₿1. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Parehong post sa German sa feed ng mga post pagkatapos i-stub ang POST /messages/*/invoice sa 400 wallet_required at pindutin ang Magpadala ng ₿1. Sipi Kailangan ng Bitcoin balance para dito."
+  },
+  "/members/[accountId]:heart-paid": {
+    "de": "Derselbe deutsche Beitrag nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Die bezahlte Markierung +1 ist sichtbar.",
+    "es": "La misma publicación en alemán tras abrir ?visual=heart-paid y pulsar Enviar ₿1. La marca pagada +1 está visible.",
+    "fil": "Parehong post sa German pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nakikita ang bayad na marka +1."
   },
   "/grants/applications/[accountId]:translate-error": {
     "de": "Derselbe deutsche Beitrag nach fehlgeschlagenem POST /translate. Hinweis Diese Notiz konnte nicht übersetzt werden. Bitte erneut versuchen. und die Steuerung Übersetzen bleibt.",
@@ -2288,6 +2318,11 @@
     "de": "Abschnitt Benachrichtigungen mit Speicherfehler role=\"alert\" nach dem Stubben von POST /me/notification-level auf 500 und dem Klick auf Aktiv. Text Benachrichtigungsstufe konnte nicht gespeichert werden.",
     "es": "Sección de notificaciones con error de guardado role=\"alert\" tras simular POST /me/notification-level a 500 y pulsar Activas. Texto No se pudo guardar el nivel de notificaciones.",
     "fil": "Bahagi ng mga abiso na may mali sa pag-save na role=\"alert\" pagkatapos i-stub ang POST /me/notification-level sa 500 at pindutin ang Aktibo. Sipi Hindi ma-save ang antas ng notification."
+  },
+  "/profile:heart-notify-error": {
+    "de": "Abschnitt Benachrichtigungen mit Speicherfehler role=\"alert\" nach dem Stubben von POST /me/heart-notifications auf 500 und dem Klick auf Aus in Herzen. Text Die Herzen-Einstellung konnte nicht gespeichert werden.",
+    "es": "Sección de notificaciones con error de guardado role=\"alert\" tras simular POST /me/heart-notifications a 500 y pulsar Desactivado dentro de Corazones. Texto No se pudo guardar el ajuste de corazones.",
+    "fil": "Bahagi ng mga abiso na may mali sa pag-save na role=\"alert\" pagkatapos i-stub ang POST /me/heart-notifications sa 500 at pindutin ang Naka-off sa loob ng Mga puso. Sipi Hindi na-save ang setting ng puso."
   },
   "/welcome:ask-daily": {
     "de": "Um Geld bitten ausgewählt. Schritt 1 von 4 mit Täglich gedrückt auf der Pille über dem Betrag und 1000 in Bitcoin eingegeben, sodass $1.00 unter dem Feld erscheint. Weiter ist aktiviert.",
@@ -2973,6 +3008,16 @@
     "de": "Überschrift Shops, Einleitung, die Pille Post / Karte / Tabelle mit ausgewähltem Post, Shop hinzufügen (kein Wohnzimmer-Eingabefeld), eine Ladennotiz Cafe Luna mit einer #Shop-Pille. Ein Laden mit null Sats würde trotzdem gelistet. Hinweis zu Gesetzen fehlt. Rohes #21GiftsShop ist nicht sichtbar.",
     "es": "Encabezado Tiendas, entradilla, la pastilla Publicación / Mapa / Tabla con Publicación seleccionada, Añadir una tienda (sin cuadro de redacción de salón), una nota de tienda Cafe Luna con una pastilla #Shop. Una tienda con cero sats seguiría listada. No hay pista de leyes. El #21GiftsShop en bruto no está visible.",
     "fil": "Heading na Mga Tindahan, panimula, ang maliit na label na Post / Mapa / Talahanayan na napili ang Post, Magdagdag ng shop (walang kahon ng pagsulat sa sala), isang tala ng tindahan Cafe Luna na may maliit na label na #Shop. Ang tindahang may serong sat ay nakalista pa rin. Walang pahiwatig sa mga batas. Hindi nakikita ang hilaw na #21GiftsShop."
+  },
+  "/shops:heart-needs-balance": {
+    "de": "Shop-Beitragsfeed mit Cafe Luna nach dem Stubben von POST /messages/*/invoice auf 400 wallet_required und dem Klick auf ₿1 senden. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "Feed de publicaciones de tienda con Cafe Luna tras simular POST /messages/*/invoice a 400 wallet_required y pulsar Enviar ₿1. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Feed ng post ng tindahan na may Cafe Luna pagkatapos i-stub ang POST /messages/*/invoice sa 400 wallet_required at pindutin ang Magpadala ng ₿1. Sipi Kailangan ng Bitcoin balance para dito."
+  },
+  "/shops:heart-paid": {
+    "de": "Dieselbe Cafe-Luna-Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Die bezahlte Markierung +1 ist sichtbar.",
+    "es": "La misma publicación de Cafe Luna tras abrir ?visual=heart-paid y pulsar Enviar ₿1. La marca pagada +1 está visible.",
+    "fil": "Parehong post ng Cafe Luna pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nakikita ang bayad na marka +1."
   },
   "/shops:edit-open": {
     "de": "Eine Moderatorin oder ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna angeklickt. Schritt 1 von 5 · Bilder ist geöffnet. Der Fotoschritt schließt mit einem rein ikonischen Schließen (X). Der barrierefreie Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Weiter ist beschriftet. Verlauf liegt unter der Karte.",

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CannotReceiveError, postMessageInvoice, WalletRequiredError } from '@/lib/api';
+import { visualPin } from '@/lib/visual-pin';
 import { canUnlockWallet, unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import { payFromWallet, type WalletPayResult } from '@/lib/wallet/wallet-service';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
@@ -155,6 +156,10 @@ async function payHeartInvoice(payInput: string, input: HeartTipInput): Promise<
 /**
  * Sends a 1-sat heart on a forum note or reply. No amount dialog, no gift
  * sheet, no comment text. A missing session or a read-only board is silent.
+ * In a Playwright build, `?visual=heart-paid` (via {@link visualPin}) returns
+ * paid without invoicing; that pin is ignored in production and does not
+ * override signed-out or read-only. It is read before the Sunday check so a
+ * Sunday clock cannot hide the shot.
  *
  * @param input - Click snapshot for one `messageId`.
  * @returns `noop`, `paid`, or an alert kind for the board.
@@ -162,6 +167,9 @@ async function payHeartInvoice(payInput: string, input: HeartTipInput): Promise<
 export async function sendHeartTip(input: HeartTipInput): Promise<HeartTipOutcome> {
   if (input.sessionToken === null || input.readOnly) {
     return { kind: 'noop' };
+  }
+  if (visualPin() === 'heart-paid') {
+    return { kind: 'paid' };
   }
   if (input.isLocalSunday) {
     return { kind: 'alert', alert: 'sunday' };

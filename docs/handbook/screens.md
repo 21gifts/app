@@ -2206,6 +2206,18 @@ Same German note after POST /translate fails. Alert **Could not translate this n
 
 ![21.gifts welcome translate error](images/welcome-translate-error.png)
 
+### Variant: heart-needs-balance
+
+Same signed-in German note after stubbing POST /messages/*/invoice to 400 `wallet_required` and clicking Send ₿1. Copy **A Bitcoin balance is required for this.**
+
+![21.gifts welcome heart needs balance](images/welcome-heart-needs-balance.png)
+
+### Variant: heart-paid
+
+Same signed-in German note after opening `?visual=heart-paid` and clicking Send ₿1. The paid mark **+1** is visible.
+
+![21.gifts welcome heart paid](images/welcome-heart-paid.png)
+
 ### Variant: note-truncated
 
 Signed-in `/welcome` with one paid note whose body is longer than 560 characters. Collapsed 280-character preview, ellipsis, and **Show more** are visible; the distinctive tail is hidden.
@@ -2725,6 +2737,18 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 Heading **Shops**, lead, the **Post** / **Map** / **Table** pill with **Post** selected, **Add a shop** (no living-room composer), one shop note **Cafe Luna** with a `#Shop` pill. A zero-sat shop would still be listed. Laws hint absent. Raw `#21GiftsShop` is not visible.
 
 ![21.gifts shops](images/shops.png)
+
+### Variant: heart-needs-balance
+
+Shop post feed with **Cafe Luna** after stubbing POST /messages/*/invoice to 400 `wallet_required` and clicking Send ₿1. Copy **A Bitcoin balance is required for this.**
+
+![21.gifts shops heart needs balance](images/shops-heart-needs-balance.png)
+
+### Variant: heart-paid
+
+Same Cafe Luna post after opening `?visual=heart-paid` and clicking Send ₿1. The paid mark **+1** is visible.
+
+![21.gifts shops heart paid](images/shops-heart-paid.png)
 
 ### Variant: mention-suggest
 
@@ -3658,6 +3682,18 @@ Same German post after POST /translate fails. Alert **Could not translate this n
 
 ![21.gifts member translate error](images/members-translate-error.png)
 
+### Variant: heart-needs-balance
+
+Same German post in the posts feed after stubbing POST /messages/*/invoice to 400 `wallet_required` and clicking Send ₿1. Copy **A Bitcoin balance is required for this.**
+
+![21.gifts member heart needs balance](images/members-heart-needs-balance.png)
+
+### Variant: heart-paid
+
+Same German post after opening `?visual=heart-paid` and clicking Send ₿1. The paid mark **+1** is visible.
+
+![21.gifts member heart paid](images/members-heart-paid.png)
+
 ### Variant: about-translate
 
 Signed-in `/members/:id` with a German About me. **Translate** is visible under the About me body.
@@ -4273,6 +4309,12 @@ Owner editor with `role="alert"` save error after stubbing PUT /me/about to 500,
 Notifications section with `role="alert"` save error after stubbing POST /me/notification-level to 500 and clicking Active. Copy **Could not save notification level.**
 
 ![21.gifts profile notification level error](images/profile-notification-level-error.png)
+
+### Variant: heart-notify-error
+
+Notifications section with `role="alert"` save error after stubbing POST /me/heart-notifications to 500 and clicking Off inside Hearts. Copy **Could not save the heart setting.**
+
+![21.gifts profile heart notify error](images/profile-heart-notify-error.png)
 
 ### Variant: push-enable-error
 
@@ -5784,6 +5826,18 @@ After **Show original**: the Languages icon is named **Show translation** and ha
 After POST /translate 502: **Could not translate this note. Please try again.**
 
 ![21.gifts public message translate error](images/messages-id-translate-error.png)
+
+### Variant: heart-needs-balance
+
+Same signed-in public thread after stubbing POST /messages/*/invoice to 400 `wallet_required` and clicking Send ₿1. Copy **A Bitcoin balance is required for this.**
+
+![21.gifts public message heart needs balance](images/messages-id-heart-needs-balance.png)
+
+### Variant: heart-paid
+
+Same signed-in public thread after opening `?visual=heart-paid` and clicking Send ₿1. The paid mark **+1** is visible.
+
+![21.gifts public message heart paid](images/messages-id-heart-paid.png)
 
 ### Variant: thread
 

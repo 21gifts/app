@@ -3428,6 +3428,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'heart-needs-balance',
+    image: 'members-heart-needs-balance.png',
+    visual: 'state-members-heart-needs-balance',
+    needle: 'A Bitcoin balance is required for this.',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'heart-paid',
+    image: 'members-heart-paid.png',
+    visual: 'state-members-heart-paid',
+    needle: '+1',
+  },
+  {
+    route: '/members/[accountId]',
     id: 'about-translate',
     image: 'members-about-translate.png',
     visual: 'state-members-about-translate',
@@ -3852,6 +3866,13 @@ export const SCREEN_VARIANTS = [
     image: 'profile-notification-level-error.png',
     visual: 'state-profile-notification-level-error',
     needle: 'Could not save notification level.',
+  },
+  {
+    route: '/profile',
+    id: 'heart-notify-error',
+    image: 'profile-heart-notify-error.png',
+    visual: 'state-profile-heart-notify-error',
+    needle: 'Could not save the heart setting.',
   },
   {
     route: '/profile',
@@ -5824,6 +5845,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'heart-needs-balance',
+    image: 'welcome-heart-needs-balance.png',
+    visual: 'state-welcome-heart-needs-balance',
+    needle: 'A Bitcoin balance is required for this.',
+  },
+  {
+    route: '/welcome',
+    id: 'heart-paid',
+    image: 'welcome-heart-paid.png',
+    visual: 'state-welcome-heart-paid',
+    needle: '+1',
+  },
+  {
+    route: '/welcome',
     id: 'note-truncated',
     image: 'welcome-note-truncated.png',
     visual: 'state-welcome-note-truncated',
@@ -5933,6 +5968,20 @@ export const SCREEN_VARIANTS = [
     image: 'shops.png',
     visual: 'screen-shops',
     needle: 'Cafe Luna',
+  },
+  {
+    route: '/shops',
+    id: 'heart-needs-balance',
+    image: 'shops-heart-needs-balance.png',
+    visual: 'state-shops-heart-needs-balance',
+    needle: 'A Bitcoin balance is required for this.',
+  },
+  {
+    route: '/shops',
+    id: 'heart-paid',
+    image: 'shops-heart-paid.png',
+    visual: 'state-shops-heart-paid',
+    needle: '+1',
   },
   {
     route: '/shops',
@@ -6507,6 +6556,20 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-translate-error.png',
     visual: 'state-messages-id-translate-error',
     needle: 'Could not translate this note. Please try again.',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'heart-needs-balance',
+    image: 'messages-id-heart-needs-balance.png',
+    visual: 'state-messages-id-heart-needs-balance',
+    needle: 'A Bitcoin balance is required for this.',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'heart-paid',
+    image: 'messages-id-heart-paid.png',
+    visual: 'state-messages-id-heart-paid',
+    needle: '+1',
   },
   {
     route: '/messages/[id]',
