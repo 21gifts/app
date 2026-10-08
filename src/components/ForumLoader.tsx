@@ -356,15 +356,19 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
  *
  * @param props - Optional `feed`: `'living-room'` (default) or `'shops'`; optional
  * `country` (ISO 3166-1 alpha-2) on the shops feed loads only shops pinned in that
- * country. The parent remounts the loader when the country changes.
+ * country. The parent remounts the loader when the country changes. Optional
+ * `onShopsChanged` runs after a shop is created or a moderator saves a shop note or
+ * its place, so the parent can reload what depends on the pins.
  * @returns The forum board, or `null` without a session.
  */
 export function ForumLoader({
   feed = 'living-room',
   country = null,
+  onShopsChanged,
 }: {
   feed?: 'living-room' | 'shops';
   country?: string | null;
+  onShopsChanged?: () => void;
 } = {}): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
@@ -1832,6 +1836,9 @@ export function ForumLoader({
     if (session === null) return;
     composeFeePaidRef.current = false;
     decideFirstPostFree(false);
+    if (feed === 'shops') {
+      onShopsChanged?.();
+    }
     optimisticMessages.current.set(created.id, created);
     setMessages((prev) => {
       if (prev === null) {
@@ -2691,6 +2698,7 @@ export function ForumLoader({
           ? {
               shopPlaceEdit: true as const,
               onShopPlaceUpdated: (messageId: string, place: ForumPlacePin | null) => {
+                onShopsChanged?.();
                 setMessages((prev) =>
                   prev!.map((row) => {
                     if (row.id !== messageId) {
@@ -2734,6 +2742,7 @@ export function ForumLoader({
           ? {
               shopNoteEdit: true as const,
               onShopNoteUpdated: (updated: ForumMessage) => {
+                onShopsChanged?.();
                 setPhotoUrls((prev) => {
                   const prefix = `${updated.id}:`;
                   let changed = false;

@@ -1,9 +1,11 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { useEffect } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShopsScreen } from '@/components/ShopsScreen';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const forumLoader = vi.hoisted(() => vi.fn());
+const mounts = vi.hoisted(() => vi.fn());
 const routerPush = vi.hoisted(() =>
   vi.fn((href: string) => {
     window.history.pushState(null, '', href);
@@ -15,10 +17,24 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/components/ForumLoader', () => ({
-  ForumLoader: ({ feed, country }: { feed: string; country: string | null }) => {
+  ForumLoader: ({
+    feed,
+    country,
+    onShopsChanged,
+  }: {
+    feed: string;
+    country: string | null;
+    onShopsChanged: () => void;
+  }) => {
     forumLoader();
+    useEffect(() => {
+      mounts('forum');
+    }, []);
     return (
       <div data-testid="forum-loader" data-feed={feed} data-country={country ?? 'all'}>
+        <button type="button" onClick={onShopsChanged}>
+          shop changed
+        </button>
         <a href="/shops?pin=p2#map">feed place</a>
         <a href="/shops?country=ke#map">kenya map</a>
       </div>
@@ -33,16 +49,21 @@ vi.mock('@/components/ShopsCountryFilter', () => ({
   }: {
     value: string | null;
     onChange: (value: string | null) => void;
-  }) => (
-    <div data-testid="country-filter" data-value={value ?? 'all'}>
-      <button type="button" onClick={() => onChange('PH')}>
-        choose PH
-      </button>
-      <button type="button" onClick={() => onChange(null)}>
-        choose all
-      </button>
-    </div>
-  ),
+  }) => {
+    useEffect(() => {
+      mounts('filter');
+    }, []);
+    return (
+      <div data-testid="country-filter" data-value={value ?? 'all'}>
+        <button type="button" onClick={() => onChange('PH')}>
+          choose PH
+        </button>
+        <button type="button" onClick={() => onChange(null)}>
+          choose all
+        </button>
+      </div>
+    );
+  },
 }));
 
 /**
@@ -113,6 +134,7 @@ afterEach(() => {
   window.history.replaceState(null, '', window.location.pathname);
   forumLoader.mockClear();
   routerPush.mockClear();
+  mounts.mockClear();
 });
 
 describe('ShopsScreen', () => {
@@ -272,5 +294,18 @@ describe('ShopsScreen', () => {
     renderWithLocale(<ShopsScreen />);
     clickLink(screen.getByText('kenya map'));
     expect(screen.getByTestId('places-map-screen').getAttribute('data-country')).toBe('KE');
+  });
+
+  it('recounts the filter after a shop change and reloads only a filtered view', () => {
+    window.history.replaceState(null, '', '/shops');
+    renderWithLocale(<ShopsScreen />);
+    expect(mounts.mock.calls.map(([name]) => name)).toEqual(['filter', 'forum']);
+    mounts.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'shop changed' }));
+    expect(mounts.mock.calls.map(([name]) => name)).toEqual(['filter']);
+    fireEvent.click(screen.getByRole('button', { name: 'choose PH' }));
+    mounts.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'shop changed' }));
+    expect(mounts.mock.calls.map(([name]) => name).sort()).toEqual(['filter', 'forum']);
   });
 });

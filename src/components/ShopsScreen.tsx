@@ -72,6 +72,13 @@ export function ShopsScreen(): ReactElement {
   const router = useRouter();
   const [view, setView] = useState<ShopsView | null>(null);
   const [country, setCountry] = useState<string | null>(null);
+  // Bumped when a shop or its pin changes: the filter recounts, and a filtered view reloads.
+  const [revision, setRevision] = useState(0);
+  const onShopsChanged = (): void => {
+    setRevision((n) => n + 1);
+  };
+  // A filtered view cannot place a new or moved pin itself; it reloads from the api.
+  const viewKey = country === null ? 'all' : `${country}:${revision}`;
 
   useLayoutEffect(() => {
     const apply = (): void => {
@@ -146,15 +153,26 @@ export function ShopsScreen(): ReactElement {
         {t('shops.heading')}
       </h1>
       <p className="text-center text-sm text-app-fg">{t('shops.lead')}</p>
-      {view !== null ? <ShopsCountryFilter value={country} onChange={selectCountry} /> : null}
+      {view !== null ? (
+        <ShopsCountryFilter key={revision} value={country} onChange={selectCountry} />
+      ) : null}
       {view !== null ? <ShopsViewSwitch value={view} onChange={selectView} /> : null}
-      {view === 'post' ? <ForumLoader key={country ?? ''} feed="shops" country={country} /> : null}
+      {view === 'post' ? (
+        <ForumLoader key={viewKey} feed="shops" country={country} onShopsChanged={onShopsChanged} />
+      ) : null}
       {view === 'map' ? (
         <Suspense>
-          <PlacesMapScreen embedded country={country} />
+          <PlacesMapScreen
+            key={viewKey}
+            embedded
+            country={country}
+            onShopsChanged={onShopsChanged}
+          />
         </Suspense>
       ) : null}
-      {view === 'table' ? <ShopTable key={country ?? ''} country={country} /> : null}
+      {view === 'table' ? (
+        <ShopTable key={viewKey} country={country} onShopsChanged={onShopsChanged} />
+      ) : null}
     </Card>
   );
 }

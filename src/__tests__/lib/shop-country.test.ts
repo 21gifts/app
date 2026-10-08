@@ -26,6 +26,13 @@ describe('shopCountryFromQuery', () => {
     expect(shopCountryFromQuery('P1')).toBeNull();
     expect(shopCountryFromQuery('AA')).toBeNull();
   });
+
+  it('treats a grouping, a test code, or the unknown region as All countries, but keeps Kosovo', () => {
+    for (const code of ['EU', 'eu', 'UN', 'QO', 'ZZ', 'XA', 'IC']) {
+      expect(shopCountryFromQuery(code)).toBeNull();
+    }
+    expect(shopCountryFromQuery('XK')).toBe('XK');
+  });
 });
 
 describe('shopCountryOptions', () => {

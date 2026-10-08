@@ -880,6 +880,8 @@ test('Function: shopCountryFromQuery — a known code filters and anything else 
   await expect(page.getByRole('combobox', { name: 'Country' })).toHaveText('Philippines (1)');
   await page.goto('/shops?country=PHL#table');
   await expect(page.getByRole('combobox', { name: 'Country' })).toHaveText('All countries');
+  await page.goto('/shops?country=EU#table');
+  await expect(page.getByRole('combobox', { name: 'Country' })).toHaveText('All countries');
 });
 
 test('Function: shopCountryOptions — countries with shops, named in the UI language, with counts', async ({

@@ -52,12 +52,14 @@ function placeText(message: ForumMessage): string | null {
  * `/members/:id`. With a country, only shops pinned in that country are
  * loaded (`country` on `GET /forum/messages`).
  *
- * @param props - Optional ISO 3166-1 alpha-2 `country`; null or omitted lists every shop.
+ * @param props - Optional ISO 3166-1 alpha-2 `country` (null or omitted lists every shop) and
+ * `onShopsChanged`, run after a moderator saves a row's shop note.
  * @returns The table, empty copy, or an error with retry. Null without a session.
  */
 export function ShopTable({
   country = null,
-}: { country?: string | null } = {}): ReactElement | null {
+  onShopsChanged,
+}: { country?: string | null; onShopsChanged?: () => void } = {}): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const router = useRouter();
   const replaceRef = useRef(router.replace);
@@ -172,6 +174,7 @@ export function ShopTable({
                       <ShopNoteEditControl
                         message={row}
                         onUpdated={(updated) => {
+                          onShopsChanged?.();
                           setRows((current) => {
                             /* v8 ignore next 3 -- the table is on screen before a row editor can save */
                             if (current === null) {
