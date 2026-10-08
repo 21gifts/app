@@ -5950,8 +5950,12 @@ describe('ForumLoader', () => {
       expect(queuedBeforeScroll).toBeGreaterThan(0);
       scroller.dispatchEvent(new Event('scroll'));
       expect(rafCallbacks).toHaveLength(queuedBeforeScroll);
+      const pendingFrame = rafCallbacks[queuedBeforeScroll - 1];
+      if (pendingFrame === undefined) {
+        throw new Error('expected a pending animation frame');
+      }
       await act(async () => {
-        rafCallbacks[queuedBeforeScroll - 1](0);
+        pendingFrame(0);
       });
       expect(markVisibleForumNoteReadMock).toHaveBeenCalledTimes(1);
       expect(markVisibleForumNoteReadMock).toHaveBeenCalledWith('sess', 'm1');
