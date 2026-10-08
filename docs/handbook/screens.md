@@ -339,7 +339,7 @@ Heading **Send help**, explainer lead, **Open the forum**.
 
 - **URL:** `/pl?lightning=LNURL…` — public, no auth gate. `/pl` without a usable link stays on this page and does not 404.
 - **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none). The shop sticker's storefront sits above the person's name, which is the only heading. With no open payment, under it an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When a payment is active, either because `GET /pay/:username` returned an unexpired `charge` or because **Continue** minted an invoice, that amount field and **Continue** are gone. The page shows the same active payment: five minutes left, the sat amount, the viewer's default fiat beside it, and **Pay**. **Pay** is the width of the invoice QR plate (232px plus its padding and border), centered, not the width of the page. The fiat code is the profile cookie when set, otherwise the language default. Desktop shows the Bitcoin invoice QR only while that payment is active. A smartphone (`isSmartphoneUserAgent`, not viewport) never shows it. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
-- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). An open till mints that exact amount with no amount step. **Pay** opens Wallet of Satoshi. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
+- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. A positive PHP amount while the gift-day request has not returned shows **The PHP exchange rate is still loading.** and keeps the form; after that request settles, a positive PHP amount when no gift day can price PHP shows **No PHP exchange rate yet.** and keeps the form. `{code}` in the product is the preferred fiat; these variants use PHP. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). An open till mints that exact amount with no amount step. **Pay** opens Wallet of Satoshi. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
 - **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `ProfileChromeLeft`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `GET /pay/[username]`, `POST /pay/[username]/invoice`.
 
 ### Variant: default
@@ -359,6 +359,18 @@ After **Continue**, the same active payment as an open till: the shop sticker, f
 **Continue** with an empty or non-whole amount shows **Enter a whole number.** The form stays. No **Pay**.
 
 ![21.gifts pay link amount invalid](images/pl-amount-invalid.png)
+
+### Variant: rate-loading
+
+PHP is pressed and the amount is 100. **Continue** while the gift-day request has not returned. Alert **The PHP exchange rate is still loading.** The form stays. No **Pay**.
+
+![21.gifts pay link rate loading](images/pl-rate-loading.png)
+
+### Variant: no-rate
+
+PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **Continue** shows **No PHP exchange rate yet.** The form stays. No **Pay**.
+
+![21.gifts pay link no rate](images/pl-no-rate.png)
 
 ### Variant: invalid
 
@@ -2948,6 +2960,18 @@ The till request failed. Heading **Amount**. Alert **Point of sale is unavailabl
 **Create payment** while the amount is still empty. Alert **Enter a whole number.** The keypad stays and has no decimal key. No QR.
 
 ![21.gifts point of sale bad amount](images/pos-bad-amount.png)
+
+### Variant: rate-loading
+
+PHP is pressed and the amount is 100. **Create payment** while the gift-day request has not returned. Alert **The PHP exchange rate is still loading.** The keypad stays. No QR.
+
+![21.gifts point of sale rate loading](images/pos-rate-loading.png)
+
+### Variant: no-rate
+
+PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **Create payment** shows **No PHP exchange rate yet.** The keypad stays. No QR.
+
+![21.gifts point of sale no rate](images/pos-no-rate.png)
 
 ### Variant: create-outside
 

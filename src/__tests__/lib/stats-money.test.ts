@@ -251,6 +251,18 @@ describe('parseAmountDraft', () => {
     });
     expect(parseAmountDraft('btc', '9'.repeat(40), RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
     expect(parseAmountDraft('fiat', '9'.repeat(400), RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
+    expect(parseAmountDraft('fiat', '90071992547410', RATE_DAY, 'USD')).toEqual({
+      kind: 'invalid',
+    });
+    expect(parseAmountDraft('fiat', '1.00', { ...RATE_DAY, sats: 0 }, 'USD')).toEqual({
+      kind: 'invalid',
+    });
+    expect(parseAmountDraft('fiat', '1.00', { ...RATE_DAY, php: '0.00' }, 'PHP')).toEqual({
+      kind: 'no-rate',
+    });
+    expect(parseAmountDraft('fiat', '1.00', { ...RATE_DAY, php: 'nope' }, 'PHP')).toEqual({
+      kind: 'no-rate',
+    });
   });
 });
 

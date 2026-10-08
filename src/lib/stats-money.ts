@@ -347,8 +347,9 @@ export function fiatDraftForSats(
 /**
  * A trimmed amount draft, as whole sats or a reason it is not.
  *
- * `no-rate` means the fiat text is a positive amount and the gift day cannot
- * convert that currency. It is not a malformed number.
+ * `no-rate` means a positive fiat amount whose gift-day total for that
+ * currency is missing, not finite, or zero. A well-formed amount on a usable
+ * total that does not become a safe sat count is `invalid`, not `no-rate`.
  */
 export type AmountDraft =
   { kind: 'empty' } | { kind: 'invalid' } | { kind: 'no-rate' } | { kind: 'sats'; sats: number };
@@ -396,9 +397,11 @@ export function fiatToSats(amount: number, day: FiatRateDay | null, code: FiatCo
  * @param draft - Raw field value.
  * @param day - Gift day used for fiat conversion, or `null`.
  * @param code - Preferred fiat.
- * @returns `empty` when blank, `invalid` when the text is not an amount,
- *   `no-rate` when a fiat amount has no usable gift day, or `sats`
- *   (including 0; callers still clamp).
+ * @returns `empty` when blank, `invalid` when the text is not an amount
+ *   or a well-formed amount on a usable total that does not become a safe
+ *   sat count, `no-rate` when a positive fiat amount's gift-day total for
+ *   that currency is missing, not finite, or zero, or `sats` (including 0;
+ *   callers still clamp).
  */
 export function parseAmountDraft(
   unit: 'btc' | 'fiat',
@@ -429,9 +432,15 @@ export function parseAmountDraft(
   if (!Number.isFinite(amount)) {
     return { kind: 'invalid' };
   }
+  if (
+    amount > 0 &&
+    (day === null || !fiatTotalUsable(day === null ? null : fiatFieldOnDay(day, code)))
+  ) {
+    return { kind: 'no-rate' };
+  }
   const sats = fiatToSats(amount, day, code);
   if (sats === null) {
-    return amount > 0 ? { kind: 'no-rate' } : { kind: 'invalid' };
+    return { kind: 'invalid' };
   }
   return { kind: 'sats', sats };
 }

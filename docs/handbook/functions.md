@@ -4750,7 +4750,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: parseAmountDraft
 
-- **Purpose:** Reads a bitcoin or fiat typing draft into whole sats. Blank is empty. Fiat allows a dot or comma and at most eight fraction digits, so a unit toggle can round-trip. A positive fiat amount whose gift day cannot convert that currency is `no-rate`, not an invalid number.
+- **Purpose:** Reads a bitcoin or fiat typing draft into whole sats. Blank is empty. Fiat allows a dot or comma and at most eight fraction digits, so a unit toggle can round-trip. A positive fiat amount whose gift-day total for that currency is missing, not finite, or zero is `no-rate`. A well-formed amount on a usable total that does not become a safe sat count is `invalid`, not `no-rate`.
 - **Inputs:** `unit` (`btc` or `fiat`), raw `draft`, gift `day` or null, fiat `code`.
 - **Returns / side effects:** `{ kind: 'empty' }`, `{ kind: 'invalid' }`, `{ kind: 'no-rate' }`, or `{ kind: 'sats', sats }`. No I/O.
 - **Used by:** `AmountEntry`, `replySatsFromDraft`, `paySatsFromDraft`, `parseForumAskAmountInUnit`, `PayLinkScreen`, `PosAmount`.
