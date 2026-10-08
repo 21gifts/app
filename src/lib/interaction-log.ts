@@ -357,11 +357,13 @@ export const LOGOUT_RETRY_MS = 500;
  * Records `logout` and sends it at once, in a request of its own with the
  * session that is ending, so the caller can clear the session afterwards; a
  * flush already running does not hold it back. It also sends the queued
- * events, after any flush already running, and resolves once both are done. A failed request is sent again every
- * {@link LOGOUT_RETRY_MS} while the session is still the current one (the
- * caller bounds the wait and then clears it; queued events not sent by then
- * are dropped, and a request already in flight still completes, as every
- * request is kept alive). Without a session nothing is recorded or sent.
+ * events, after any flush already running, and resolves once both are done.
+ * A failed request is sent again every {@link LOGOUT_RETRY_MS} while the
+ * session is still the current one. The caller bounds the wait and then
+ * clears the session: queued events not sent by then are dropped, and a
+ * request still in flight keeps running (it is kept alive) until it is
+ * answered or aborted after {@link INTERACTION_REQUEST_TIMEOUT_MS}. Without a
+ * session nothing is recorded or sent.
  * Never rejects.
  *
  * @returns Resolves when the logout event and the queue are sent, or the session ended.
