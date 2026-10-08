@@ -861,7 +861,12 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Expected a JSON body with a positive "sats" integer' });
       return;
     }
-    json(res, 200, { pr: `lnbc${sats}n1test`, amountSats: sats });
+    // A heart is paid only through a fee-free Spark invoice.
+    json(res, 200, {
+      pr: `lnbc${sats}n1test`,
+      amountSats: sats,
+      ...(parsed?.heart === true ? { sparkInvoice: `sparkrt1heart${invoiceMatch[1]}` } : {}),
+    });
     return;
   }
 

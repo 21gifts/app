@@ -11345,6 +11345,131 @@ test('Function: useHeartTip — signed-out board shows the heart', async ({ page
   await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
 });
 
+/**
+ * Serves one forum note on `/welcome` for a heart test.
+ *
+ * @param page - Playwright page.
+ * @param payable - Whether the note's author can receive.
+ */
+async function routeHeartNote(page: Page, payable: boolean): Promise<void> {
+  await page.route(/\/forum\/messages/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '44444444-4444-4444-8444-444444444444',
+            accountId: 'acc-bob',
+            name: 'Bob',
+            text: 'Hello from the heart list.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
+}
+
+test('Function: sendHeartTip — a 503 HEART_UNAVAILABLE shows the unavailable sentence', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeHeartNote(page, true);
+  await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'HEART_UNAVAILABLE' }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Hello from the heart list.')).toBeVisible();
+  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Hearts are not available right now.' }),
+  ).toBeVisible();
+  await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+});
+
+test('Function: sendHeartTip — an invoice without a Spark invoice is not paid', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeHeartNote(page, true);
+  let heartBody: unknown = null;
+  await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+    heartBody = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: 'lnbc1n1heart', amountSats: 1 }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  await expect(page.getByText('Hearts are not available right now.')).toBeVisible();
+  expect(heartBody).toEqual({ sats: 1, heart: true });
+  await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+});
+
+test('Function: ForumBoard — no heart on a note whose author cannot receive', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeHeartNote(page, false);
+  await page.goto('/welcome');
+  await expect(page.getByText('Hello from the heart list.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'React' }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+});
+
+test('Function: ExternalAuthorProfile — the read-only feed shows no heart', async ({ page }) => {
+  await page.route('**/external-profile', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ name: 'Robin', npub: 'npub1example', postCount: 1, replyCount: 0 }),
+    });
+  });
+  await page.route('**/external-posts', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '55555555-5555-4555-8555-555555555555',
+            name: 'Robin',
+            via: 'nostr',
+            text: 'Robin wrote a payable note',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages/11111111-1111-4111-8111-111111111111/author?name=Robin');
+  await page.getByRole('button', { name: '1 post' }).click();
+  await expect(page.getByText('Robin wrote a payable note')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+});
+
 test('Function: accountNotificationLevel — profile selects All when the field is omitted', async ({
   page,
 }) => {

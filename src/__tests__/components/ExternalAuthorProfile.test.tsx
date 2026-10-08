@@ -554,6 +554,25 @@ describe('ExternalAuthorProfile', () => {
     expect(screen.queryByRole('button', { name: 'React' })).toBeNull();
   });
 
+  it('shows no heart on a loaded post, even when its author can receive', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 0,
+    });
+    fetchPosts.mockResolvedValue([{ ...FEED_NOTE, payable: true }]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 post' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    await waitFor(() => {
+      expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+  });
+
   it('omits the truncated status line when the loaded list is not shorter than the count', async () => {
     fetchProfile.mockResolvedValue({
       name: 'Robin',

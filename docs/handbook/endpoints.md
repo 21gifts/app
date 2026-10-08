@@ -574,7 +574,7 @@
 ## Endpoint: POST /messages/[id]/invoice
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty). Success `{ pr, amountSats, sparkInvoice? }`; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
-- **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable. 409 `missing_requirements` is a setup overlay, not a pay-sheet error.
+- **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable. 409 `missing_requirements` is a setup overlay, not a pay-sheet error. A heart (`heart: true`) the api cannot issue as a fee-free Spark invoice is 503 `{ error: 'HEART_UNAVAILABLE' }` with no `pr`; the proxy passes it through unchanged.
 - **Used by:** `postMessageInvoice`.
 - **Auth:** Bearer.
 

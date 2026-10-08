@@ -94,6 +94,8 @@ const HEART_TIP_ALERT_KEY: Record<HeartTipAlert, MessageKey> = {
   authorWallet: 'forum.payErrorAuthorWallet',
   request: 'forum.payErrorRequest',
   payFailed: 'wallet.payFailed',
+  unavailable: 'forum.heartUnavailable',
+  pending: 'forum.heartPending',
 };
 
 /** Top-level compose mode: messenger post or Ask wizard. */
@@ -411,8 +413,8 @@ export interface ForumBoardProps {
    */
   heartViewerId?: string | null;
   /**
-   * Sends a 1-sat heart. Omit to keep the button from paying; click still
-   * stops the card from expanding.
+   * Sends a 1-sat heart. Omit to hide the heart on every note, as on a board
+   * that cannot pay one.
    */
   onHeartTip?: (messageId: string) => void;
   /** Per-message heart visuals from `useHeartTip`. Default none. */
@@ -459,16 +461,18 @@ function fallbackCopy(text: string): boolean {
 }
 
 /**
- * 1-sat heart in a note or reply action row. Hidden on a deleted note and on
- * the viewer's own note. Click stops the card from expanding.
+ * 1-sat heart in a note or reply action row. Hidden on a deleted note, on the
+ * viewer's own note, on a note whose author cannot receive (`payable` false),
+ * and on a board without a heart handler. Click stops the card from expanding.
  *
- * @param props - Message id, author id, deleted stamp, heartViewerId, visual state, click.
+ * @param props - Message id, author id, deleted stamp, payable, heartViewerId, visual state, click.
  * @returns The heart control, or `null` when it must not show.
  */
 function ForumHeartControl({
   messageId,
   accountId,
   deletedAt,
+  payable,
   heartViewerId,
   view,
   onHeartTip,
@@ -476,12 +480,18 @@ function ForumHeartControl({
   messageId: string;
   accountId: string | undefined;
   deletedAt: string | undefined;
+  payable: boolean;
   heartViewerId: string | null;
   view: HeartTipView | undefined;
   onHeartTip: ((id: string) => void) | undefined;
 }): ReactElement | null {
   const { t } = useTranslations();
-  if (deletedAt !== undefined || heartViewerId === accountId) {
+  if (
+    onHeartTip === undefined ||
+    !payable ||
+    deletedAt !== undefined ||
+    heartViewerId === accountId
+  ) {
     return null;
   }
   const pressed = view !== undefined && view.pressed;
@@ -500,9 +510,7 @@ function ForumHeartControl({
           className={filled ? 'scale-110 text-app-accent' : undefined}
           onClick={(event) => {
             event.stopPropagation();
-            if (onHeartTip !== undefined) {
-              onHeartTip(messageId);
-            }
+            onHeartTip(messageId);
           }}
         >
           <Heart
@@ -599,8 +607,8 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * with `goalSats`, React control on posts (`forum.react`, lucide Reply;
  * expands the reply composer; omitted when `deletedAt` is set), a 1-sat heart
  * (`forum.heart`, lucide Heart) on a non-deleted post and a non-deleted reply
- * when `heartViewerId !== accountId` (shown signed-out and when `payable` is
- * false; omitted on the viewer's own note), payable-reply
+ * when `onHeartTip` is set, `payable` is true, and `heartViewerId !== accountId`
+ * (shown signed-out; omitted on the viewer's own note), payable-reply
  * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
  * never on posts; omitted when `deletedAt` is set), optional shop-note
  * pencil when `shopNoteEdit` and `onShopNoteUpdated` are set (top-level
@@ -1341,6 +1349,7 @@ export function ForumBoard({
                     messageId={message.id}
                     accountId={message.accountId}
                     deletedAt={message.deletedAt}
+                    payable={message.payable}
                     heartViewerId={heartViewerId}
                     view={heartTipViews === undefined ? undefined : heartTipViews[message.id]}
                     onHeartTip={onHeartTip}
@@ -1663,6 +1672,7 @@ export function ForumBoard({
                                 messageId={reply.id}
                                 accountId={reply.accountId}
                                 deletedAt={reply.deletedAt}
+                                payable={reply.payable}
                                 heartViewerId={heartViewerId}
                                 view={
                                   heartTipViews === undefined ? undefined : heartTipViews[reply.id]

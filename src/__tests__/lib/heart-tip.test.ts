@@ -3,10 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CannotReceiveError, postMessageInvoice, WalletRequiredError } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { getE2eNow } from '@/lib/config';
-import { HEART_TIP_PLUS_ONE_MS, sendHeartTip, useHeartTip } from '@/lib/heart-tip';
-import { logInteraction } from '@/lib/interaction-log';
+import {
+  HEART_TIP_PLUS_ONE_MS,
+  HEART_TIP_UNSETTLED_MS,
+  sendHeartTip,
+  useHeartTip,
+} from '@/lib/heart-tip';
 import { unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
-import { payFromWallet } from '@/lib/wallet/wallet-service';
+import { logInteraction } from '@/lib/interaction-log';
+import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
+import { listWalletPayments, payFromWallet } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
 
@@ -27,8 +33,37 @@ vi.mock('@/lib/wallet/wallet-phrase', async (importOriginal) => {
 
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
-  return { ...actual, payFromWallet: vi.fn() };
+  return { ...actual, listWalletPayments: vi.fn(), payFromWallet: vi.fn() };
 });
+
+/** Invoice body the api returns for a heart: a fee-free Spark invoice. */
+const HEART_INVOICE = { pr: 'lnbc1', amountSats: 1, sparkInvoice: 'spark1heart' };
+
+/**
+ * One sent wallet payment for a Spark invoice.
+ *
+ * @param invoice - Spark invoice the payment paid.
+ * @param status - Payment status.
+ * @param direction - Payment direction.
+ * @returns The payment.
+ */
+function sentPayment(
+  invoice: string,
+  status: WalletPayment['status'],
+  direction: WalletPayment['direction'] = 'sent',
+): WalletPayment {
+  return {
+    id: `pay-${invoice}`,
+    direction,
+    amountSats: 1,
+    feesSats: 0,
+    timestamp: 1,
+    status,
+    method: 'spark',
+    senderComment: null,
+    info: { invoice },
+  };
+}
 
 const BASE = {
   messageId: 'm1',
@@ -46,6 +81,7 @@ beforeEach(() => {
   vi.mocked(getE2eNow).mockReset().mockReturnValue(null);
   vi.mocked(postMessageInvoice).mockReset();
   vi.mocked(payFromWallet).mockReset();
+  vi.mocked(listWalletPayments).mockReset().mockResolvedValue([]);
   vi.mocked(unlockWalletPhrase).mockReset();
   vi.mocked(logInteraction).mockClear();
   useWalletStore.setState({ status: 'ready', balanceSats: 21, identityPubkey: null });
@@ -54,15 +90,11 @@ beforeEach(() => {
 describe('sendHeartTip', () => {
   it('requests the invoice with heart true and sats 1, then sends without a second confirm', async () => {
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
-    vi.mocked(postMessageInvoice).mockResolvedValue({
-      pr: 'lnbc1',
-      amountSats: 1,
-      sparkInvoice: 'spark1heart',
-    });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({
       kind: 'confirm',
       amountSats: 1,
-      feeSats: 2,
+      feeSats: 0,
       send,
     });
 
@@ -78,52 +110,68 @@ describe('sendHeartTip', () => {
     );
   });
 
-  it('records a heart the SDK sent after the app stopped waiting, and not one that failed', async () => {
-    let late: (sent: boolean) => void = () => undefined;
-    const sentLate = new Promise<boolean>((resolve) => {
-      late = resolve;
-    });
+  it('does not send without a sparkInvoice and never pays pr', async () => {
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
-    vi.mocked(payFromWallet).mockResolvedValue({
-      kind: 'confirm',
+    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc1',
       amountSats: 1,
-      feeSats: 0,
-      send: async () => ({ kind: 'failed', sentLate }),
+      sparkInvoice: null,
     });
-    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'request' });
-    expect(logInteraction).not.toHaveBeenCalled();
-    late(true);
-    await sentLate;
-    await Promise.resolve();
-    expect(logInteraction).toHaveBeenCalledWith(
-      'heart_sent',
-      { messageId: 'm1', amountSats: 1 },
-      'sess',
-    );
-    vi.mocked(logInteraction).mockClear();
-    vi.mocked(payFromWallet).mockResolvedValue({
-      kind: 'confirm',
-      amountSats: 1,
-      feeSats: 0,
-      send: async () => ({ kind: 'failed', sentLate: Promise.resolve(false) }),
-    });
-    await sendHeartTip(BASE);
-    await Promise.resolve();
-    expect(logInteraction).not.toHaveBeenCalled();
+    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    expect(payFromWallet).not.toHaveBeenCalled();
   });
 
-  it('pays pr when the api issued no sparkInvoice', async () => {
+  it('does not send when the fee is above zero', async () => {
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({
       kind: 'confirm',
       amountSats: 1,
+      feeSats: 1,
+      send,
+    });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('does not send when the prepared amount is not 1 sat', async () => {
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 2,
       feeSats: 0,
       send,
     });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 0,
+      feeSats: 0,
+      send,
+    });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    expect(send).not.toHaveBeenCalled();
+  });
 
-    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'paid' });
-    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc1' });
+  it('does not send when the prepare after unlock is not 1 sat fee-free', async () => {
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet)
+      .mockResolvedValueOnce({ kind: 'unlock' })
+      .mockResolvedValueOnce({ kind: 'confirm', amountSats: 1, feeSats: 3, send });
+    vi.mocked(unlockWalletPhrase).mockResolvedValue('unlocked');
+    await expect(
+      sendHeartTip({ ...BASE, walletStatus: 'locked', balanceSats: null }),
+    ).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('maps the api HEART_UNAVAILABLE refusal to unavailable', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValueOnce(new Error('HEART_UNAVAILABLE'));
+    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    expect(payFromWallet).not.toHaveBeenCalled();
   });
 
   it('is silent without a session or on a read-only board', async () => {
@@ -157,7 +205,7 @@ describe('sendHeartTip', () => {
   });
 
   it('needs a balance when prepare reports insufficient', async () => {
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
       kind: 'alert',
@@ -167,7 +215,7 @@ describe('sendHeartTip', () => {
 
   it('unlocks once then prepares and sends', async () => {
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet)
       .mockResolvedValueOnce({ kind: 'unlock' })
       .mockResolvedValueOnce({ kind: 'confirm', amountSats: 1, feeSats: 0, send });
@@ -182,7 +230,7 @@ describe('sendHeartTip', () => {
   });
 
   it('shows payFailed when the wallet still asks to unlock after it was unlocked', async () => {
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet)
       .mockResolvedValueOnce({ kind: 'unlock' })
       .mockResolvedValueOnce({ kind: 'unlock' });
@@ -196,7 +244,7 @@ describe('sendHeartTip', () => {
   });
 
   it('shows payFailed when unlock is cancelled', async () => {
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'unlock' });
     vi.mocked(unlockWalletPhrase).mockResolvedValue('cancelled');
 
@@ -246,7 +294,7 @@ describe('sendHeartTip', () => {
 
   it('needs a balance when send reports insufficient', async () => {
     const send = vi.fn(async () => ({ kind: 'insufficient' as const }));
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({
       kind: 'confirm',
       amountSats: 1,
@@ -261,7 +309,7 @@ describe('sendHeartTip', () => {
 
   it('maps a failed send to request', async () => {
     const send = vi.fn(async () => ({ kind: 'failed' as const }));
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({
       kind: 'confirm',
       amountSats: 1,
@@ -275,7 +323,7 @@ describe('sendHeartTip', () => {
   });
 
   it('maps a failed prepare to request', async () => {
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'failed' });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
       kind: 'alert',
@@ -284,7 +332,7 @@ describe('sendHeartTip', () => {
   });
 
   it('maps a below-minimum prepare to request', async () => {
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'belowMinimum', minSats: 1 });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
       kind: 'alert',
@@ -293,7 +341,7 @@ describe('sendHeartTip', () => {
   });
 
   it('does not unlock when the account cannot unlock', async () => {
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'unlock' });
     await expect(sendHeartTip({ ...BASE, canUnlockWallet: false })).resolves.toEqual({
       kind: 'alert',
@@ -305,7 +353,7 @@ describe('sendHeartTip', () => {
   it('needs a balance when the live ready wallet is empty', async () => {
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
     useWalletStore.setState({ status: 'ready', balanceSats: 0, identityPubkey: null });
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({
       kind: 'confirm',
       amountSats: 1,
@@ -321,7 +369,7 @@ describe('sendHeartTip', () => {
 
   it('ignores visual=heart-paid in a production build and still invoices', async () => {
     window.history.replaceState({}, '', '/welcome?visual=heart-paid');
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
       kind: 'alert',
@@ -337,6 +385,28 @@ describe('sendHeartTip', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('ignores visual=heart-pending in a production build and still invoices', async () => {
+    window.history.replaceState({}, '', '/welcome?visual=heart-pending');
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
+    await expect(sendHeartTip({ ...BASE, messageId: 'pin-prod' })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'needsBalance',
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns pending for visual=heart-pending in a Playwright build without invoicing', async () => {
+    vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
+    window.history.replaceState({}, '', '/welcome?visual=heart-pending');
+    await expect(sendHeartTip({ ...BASE, isLocalSunday: true })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'pending',
+    });
+    await expect(sendHeartTip({ ...BASE, readOnly: true })).resolves.toEqual({ kind: 'noop' });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
   it('stays silent when signed out or read-only even with visual=heart-paid in Playwright', async () => {
     vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
     window.history.replaceState({}, '', '/welcome?visual=heart-paid');
@@ -345,21 +415,320 @@ describe('sendHeartTip', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
-  it('pays pr when sparkInvoice is empty', async () => {
-    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+  it('does not send when sparkInvoice is empty', async () => {
     vi.mocked(postMessageInvoice).mockResolvedValue({
       pr: 'lnbc1',
       amountSats: 1,
       sparkInvoice: '',
     });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+});
+
+describe('sendHeartTip after a send timed out', () => {
+  /**
+   * Prepares a heart whose send times out, sends it, and expects `pending`.
+   *
+   * @param messageId - Note id, unique per test because the guard is per tab.
+   * @param sparkInvoice - Spark invoice of that heart.
+   * @returns Resolves after the timed-out heart.
+   */
+  async function timeOutHeart(messageId: string, sparkInvoice: string): Promise<void> {
+    const send = vi.fn(async () => ({
+      kind: 'failed' as const,
+      sentLate: new Promise<boolean>(() => undefined),
+    }));
+    vi.mocked(postMessageInvoice).mockResolvedValueOnce({ ...HEART_INVOICE, sparkInvoice });
+    vi.mocked(payFromWallet).mockResolvedValueOnce({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send,
+    });
+    await expect(sendHeartTip({ ...BASE, messageId })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'pending',
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+  }
+
+  /**
+   * Prepares a heart that pays at once on the next prepare.
+   *
+   * @returns The send spy.
+   */
+  function payNext(): ReturnType<typeof vi.fn> {
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({
       kind: 'confirm',
       amountSats: 1,
       feeSats: 0,
       send,
     });
-    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'paid' });
-    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc1' });
+    return send;
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('does not pay again on a retap while the payment is pending or not listed yet', async () => {
+    await timeOutHeart('t-pending', 'spark1pending');
+    vi.mocked(postMessageInvoice).mockClear();
+    vi.mocked(listWalletPayments).mockResolvedValueOnce([sentPayment('spark1pending', 'pending')]);
+    await expect(sendHeartTip({ ...BASE, messageId: 't-pending' })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'pending',
+    });
+    vi.mocked(listWalletPayments).mockResolvedValueOnce([
+      sentPayment('spark1other', 'completed'),
+      sentPayment('spark1pending', 'completed', 'received'),
+    ]);
+    await expect(sendHeartTip({ ...BASE, messageId: 't-pending' })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'pending',
+    });
+    vi.mocked(listWalletPayments).mockRejectedValueOnce(new Error('wallet-connect'));
+    await expect(sendHeartTip({ ...BASE, messageId: 't-pending' })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'pending',
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(listWalletPayments).toHaveBeenCalledWith({ offset: 0, limit: 50 });
+  });
+
+  it('counts a completed earlier heart as paid without a new invoice, then pays as usual', async () => {
+    await timeOutHeart('t-done', 'spark1done');
+    vi.mocked(postMessageInvoice).mockClear();
+    vi.mocked(listWalletPayments).mockResolvedValueOnce([sentPayment('spark1done', 'completed')]);
+    await expect(sendHeartTip({ ...BASE, messageId: 't-done' })).resolves.toEqual({
+      kind: 'paid',
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    const send = payNext();
+    await expect(sendHeartTip({ ...BASE, messageId: 't-done' })).resolves.toEqual({
+      kind: 'paid',
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends a new heart once the earlier payment failed', async () => {
+    await timeOutHeart('t-failed', 'spark1failed');
+    vi.mocked(listWalletPayments).mockResolvedValueOnce([sentPayment('spark1failed', 'failed')]);
+    const send = payNext();
+    await expect(sendHeartTip({ ...BASE, messageId: 't-failed' })).resolves.toEqual({
+      kind: 'paid',
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends a new heart once the earlier one is still not listed after the window', async () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
+    await timeOutHeart('t-missing', 'spark1missing');
+    now.mockReturnValue(1_000_000 + HEART_TIP_UNSETTLED_MS - 1);
+    await expect(sendHeartTip({ ...BASE, messageId: 't-missing' })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'pending',
+    });
+    now.mockReturnValue(1_000_000 + HEART_TIP_UNSETTLED_MS);
+    const send = payNext();
+    await expect(sendHeartTip({ ...BASE, messageId: 't-missing' })).resolves.toEqual({
+      kind: 'paid',
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('records a heart sent late and counts it as paid on the retap without a new invoice', async () => {
+    let late: (sent: boolean) => void = () => undefined;
+    const sentLate = new Promise<boolean>((resolve) => {
+      late = resolve;
+    });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send: async () => ({ kind: 'failed', sentLate }),
+    });
+    await expect(sendHeartTip({ ...BASE, messageId: 't-late' })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'pending',
+    });
+    expect(logInteraction).not.toHaveBeenCalled();
+    late(true);
+    await sentLate;
+    await Promise.resolve();
+    expect(logInteraction).toHaveBeenCalledWith(
+      'heart_sent',
+      { messageId: 't-late', amountSats: 1 },
+      'sess',
+    );
+    vi.mocked(postMessageInvoice).mockClear();
+    await expect(sendHeartTip({ ...BASE, messageId: 't-late' })).resolves.toEqual({
+      kind: 'paid',
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(listWalletPayments).not.toHaveBeenCalled();
+  });
+
+  it('forgets a heart whose late send failed and does not record it', async () => {
+    const sentLate = Promise.resolve(false);
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValueOnce({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send: async () => ({ kind: 'failed', sentLate }),
+    });
+    await expect(sendHeartTip({ ...BASE, messageId: 't-late-failed' })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'pending',
+    });
+    await sentLate;
+    await Promise.resolve();
+    expect(logInteraction).not.toHaveBeenCalled();
+    const send = payNext();
+    await expect(sendHeartTip({ ...BASE, messageId: 't-late-failed' })).resolves.toEqual({
+      kind: 'paid',
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(listWalletPayments).not.toHaveBeenCalled();
+  });
+
+  it('keeps a newer timed-out heart when an older late send fails', async () => {
+    let lateOld: (sent: boolean) => void = () => undefined;
+    const oldSentLate = new Promise<boolean>((resolve) => {
+      lateOld = resolve;
+    });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValueOnce({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send: async () => ({ kind: 'failed', sentLate: oldSentLate }),
+    });
+    await sendHeartTip({ ...BASE, messageId: 't-two' });
+    vi.mocked(listWalletPayments).mockResolvedValueOnce([sentPayment('spark1heart', 'failed')]);
+    vi.mocked(payFromWallet).mockResolvedValueOnce({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send: async () => ({ kind: 'failed', sentLate: new Promise<boolean>(() => undefined) }),
+    });
+    await expect(sendHeartTip({ ...BASE, messageId: 't-two' })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'pending',
+    });
+    lateOld(false);
+    await oldSentLate;
+    await Promise.resolve();
+    vi.mocked(postMessageInvoice).mockClear();
+    await expect(sendHeartTip({ ...BASE, messageId: 't-two' })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'pending',
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('maps a failed send without sentLate to request and keeps no heart pending', async () => {
+    const failed = vi.fn(async () => ({ kind: 'failed' as const }));
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValueOnce({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send: failed,
+    });
+    await expect(sendHeartTip({ ...BASE, messageId: 't-rejected' })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'request',
+    });
+    const send = payNext();
+    await expect(sendHeartTip({ ...BASE, messageId: 't-rejected' })).resolves.toEqual({
+      kind: 'paid',
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not start a second heart on a note while one is still sending', async () => {
+    let finish: ((value: { kind: 'paid' }) => void) | undefined;
+    const send = vi
+      .fn(async () => ({ kind: 'paid' as const }))
+      .mockImplementationOnce(
+        () =>
+          new Promise<{ kind: 'paid' }>((resolve) => {
+            finish = resolve;
+          }),
+      );
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send,
+    });
+    const first = sendHeartTip({ ...BASE, messageId: 't-flight' });
+    await vi.waitFor(() => {
+      expect(send).toHaveBeenCalledTimes(1);
+    });
+    await expect(sendHeartTip({ ...BASE, messageId: 't-flight' })).resolves.toEqual({
+      kind: 'alert',
+      alert: 'pending',
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    finish?.({ kind: 'paid' });
+    await expect(first).resolves.toEqual({ kind: 'paid' });
+    await expect(sendHeartTip({ ...BASE, messageId: 't-flight' })).resolves.toEqual({
+      kind: 'paid',
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(2);
+  });
+
+  it('counts a heart as paid when sentLate reports it while the payment list is read', async () => {
+    let late: (sent: boolean) => void = () => undefined;
+    const sentLate = new Promise<boolean>((resolve) => {
+      late = resolve;
+    });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValueOnce({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send: async () => ({ kind: 'failed', sentLate }),
+    });
+    const now = vi.spyOn(Date, 'now').mockReturnValue(2_000_000);
+    await sendHeartTip({ ...BASE, messageId: 't-race' });
+    now.mockReturnValue(2_000_000 + HEART_TIP_UNSETTLED_MS);
+    let listed: (payments: WalletPayment[]) => void = () => undefined;
+    vi.mocked(listWalletPayments).mockReturnValueOnce(
+      new Promise<WalletPayment[]>((resolve) => {
+        listed = resolve;
+      }),
+    );
+    vi.mocked(postMessageInvoice).mockClear();
+    const retap = sendHeartTip({ ...BASE, messageId: 't-race' });
+    await vi.waitFor(() => {
+      expect(listWalletPayments).toHaveBeenCalledTimes(1);
+    });
+    late(true);
+    await sentLate;
+    await Promise.resolve();
+    listed([]);
+    await expect(retap).resolves.toEqual({ kind: 'paid' });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(logInteraction).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps a timed-out heart to its own note', async () => {
+    await timeOutHeart('t-own', 'spark1own');
+    const send = payNext();
+    await expect(sendHeartTip({ ...BASE, messageId: 't-other' })).resolves.toEqual({
+      kind: 'paid',
+    });
+    expect(send).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -387,12 +756,9 @@ async function clickHeart(
 ): Promise<void> {
   await act(async () => {
     result.current.onHeartTip(messageId);
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
+    for (let tick = 0; tick < 12; tick += 1) {
+      await Promise.resolve();
+    }
   });
 }
 
@@ -401,7 +767,7 @@ describe('useHeartTip', () => {
     useAuthStore.setState({ session: 'sess', account: HEART_ACCOUNT });
     useWalletStore.setState({ status: 'ready', balanceSats: 21, identityPubkey: null });
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({
       kind: 'confirm',
       amountSats: 1,
@@ -472,7 +838,7 @@ describe('useHeartTip', () => {
   });
 
   it('ignores a second click on the same id while the invoice is in flight', async () => {
-    let resolveInvoice: ((value: { pr: string; amountSats: number }) => void) | undefined;
+    let resolveInvoice: ((value: typeof HEART_INVOICE) => void) | undefined;
     vi.mocked(postMessageInvoice).mockImplementation(
       () =>
         new Promise((resolve) => {
@@ -488,7 +854,7 @@ describe('useHeartTip', () => {
     });
     expect(postMessageInvoice).toHaveBeenCalledTimes(1);
     await act(async () => {
-      resolveInvoice?.({ pr: 'lnbc1', amountSats: 1 });
+      resolveInvoice?.(HEART_INVOICE);
       await Promise.resolve();
       await Promise.resolve();
       await Promise.resolve();
@@ -552,6 +918,51 @@ describe('useHeartTip', () => {
       alert: null,
     });
     vi.useRealTimers();
+  });
+
+  it('keeps a timed-out heart filled and pending, and a retap does not pay again', async () => {
+    const send = vi.fn(async () => ({
+      kind: 'failed' as const,
+      sentLate: new Promise<boolean>(() => undefined),
+    }));
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      ...HEART_INVOICE,
+      sparkInvoice: 'spark1hook',
+    });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send,
+    });
+    vi.mocked(listWalletPayments).mockResolvedValue([sentPayment('spark1hook', 'pending')]);
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    await clickHeart(result, 'h-timeout');
+    expect(result.current.heartTipViews['h-timeout']).toEqual({
+      pressed: true,
+      plusOne: false,
+      alert: 'pending',
+    });
+    await clickHeart(result, 'h-timeout');
+    expect(result.current.heartTipViews['h-timeout']).toEqual({
+      pressed: true,
+      plusOne: false,
+      alert: 'pending',
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows unavailable with an empty glyph when the api issued no Spark invoice', async () => {
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    await clickHeart(result, 'h-unavailable');
+    expect(result.current.heartTipViews['h-unavailable']).toEqual({
+      pressed: false,
+      plusOne: false,
+      alert: 'unavailable',
+    });
+    expect(payFromWallet).not.toHaveBeenCalled();
   });
 
   it('does not vibrate or pay when readOnly is true', async () => {
