@@ -105,6 +105,26 @@ describe('LogoutButton', () => {
     expect(logoutOrder as number).toBeLessThan(clearOrder as number);
   });
 
+  it('ends the session once when log out is clicked again while it runs', async () => {
+    let finish: () => void = () => undefined;
+    vi.mocked(logLogout).mockReturnValue(
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    renderWithLocale(<LogoutButton />);
+    const button = screen.getByRole('button', { name: /log out/i });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    finish();
+    await waitFor(() => {
+      expect(clearSession).toHaveBeenCalled();
+    });
+    expect(logLogout).toHaveBeenCalledTimes(1);
+    expect(disablePush).toHaveBeenCalledTimes(1);
+    expect(clearSession).toHaveBeenCalledTimes(1);
+  });
+
   it('ends the session after 5 s when the logout event cannot be sent', async () => {
     vi.useFakeTimers();
     vi.mocked(logLogout).mockReturnValue(new Promise(() => undefined));
