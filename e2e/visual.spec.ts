@@ -757,6 +757,17 @@ async function scrollAddFormIntoShot(page: Page): Promise<void> {
 }
 
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
+  // Receive / Send settle at full or slim 140 ms after a scroll; never capture in between.
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const body = document.querySelector('[data-app-body]');
+        const value =
+          body instanceof HTMLElement ? body.style.getPropertyValue('--footer-collapse') : '';
+        return value === '' || value === '0' || value === '1';
+      }),
+    )
+    .toBe(true);
   const problems = await page.evaluate(pageFrameProblems);
   expect(problems, problems.join('\n')).toEqual([]);
   await unstickStickyChrome(page);
