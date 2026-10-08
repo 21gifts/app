@@ -734,6 +734,21 @@ describe('useAppHeight and the writing composer', () => {
     expect(written().height).toBe('300px');
   });
 
+  it('forgets an earlier measurement when a later entry cannot measure', () => {
+    const { visualViewport, field } = openKeyboard();
+    // The keyboard closes and the viewport is full again; then a pinch-zoomed entry measures nothing.
+    focusOut(field);
+    visualViewport.height = 852;
+    visualViewport.offsetTop = 0;
+    viewportListener(visualViewport, 'resize')();
+    (visualViewport as { scale?: number }).scale = 2;
+    focusIn(field);
+    (visualViewport as { scale?: number }).scale = 1;
+    visualViewport.height = 511;
+    focusOut(field);
+    expect(written().height).toBe('511px');
+  });
+
   it('measures nothing while pinch-zoomed', () => {
     stubInnerHeight(852);
     const visualViewport = stubVisualViewport(852, { scale: 2 });

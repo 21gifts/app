@@ -1897,11 +1897,12 @@ export function ForumBoard({
     : writing.writing
       ? 'invisible flex max-h-0 min-w-0 flex-col gap-4 overflow-clip opacity-0'
       : 'flex min-w-0 flex-col gap-4 transition-opacity duration-250 ease-fold';
-  // The feed's sticky pills hide with the feed while writing and fade back in with it.
+  // The feed's sticky pills fold away with the feed while writing (no box left above the
+  // composer) and fade back in with it.
   const pillsHidden = !writing.touch
     ? ''
     : writing.writing
-      ? ' invisible opacity-0'
+      ? ' invisible -mt-4 max-h-0 overflow-clip opacity-0'
       : ' transition-opacity duration-250 ease-fold';
   const phoneShape = writingMode ? ' pointer-coarse:order-first pointer-coarse:basis-full' : '';
   const composerTextClass = writing.writing

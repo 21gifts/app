@@ -111,15 +111,15 @@ export function useAppHeight(): void {
       if (isTypingField(event.target)) releaseHold();
       // Focus moving inside the composer keeps what its entry measured.
       if (inWritingComposer(event.target) && !inWritingComposer(event.relatedTarget)) {
-        if (isTypingField(event.relatedTarget)) {
-          // From another text field the keyboard is already up: no full height to measure.
-          restingHeight = null;
-        } else {
-          const height = resolveAppHeight(window.innerHeight, viewport);
-          if (height !== null) {
-            restingHeight = held === null ? height : Math.max(held, height);
-            restingWidth = window.innerWidth;
-          }
+        // A new entry forgets the last one. From another text field the keyboard is already
+        // up, and while pinch-zoomed nothing can be read: then nothing is measured.
+        restingHeight = null;
+        const height = isTypingField(event.relatedTarget)
+          ? null
+          : resolveAppHeight(window.innerHeight, viewport);
+        if (height !== null) {
+          restingHeight = held === null ? height : Math.max(held, height);
+          restingWidth = window.innerWidth;
         }
       }
       writeViewport(false);

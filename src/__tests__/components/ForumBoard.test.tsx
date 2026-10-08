@@ -8088,7 +8088,8 @@ describe('ForumBoard writing mode', () => {
     for (const pill of pills) expect(pill.className).toContain('transition-opacity duration-250');
     const { field } = parts(container);
     fireEvent.focus(field);
-    for (const pill of pills) expect(pill.className).toContain('invisible opacity-0');
+    for (const pill of pills)
+      expect(pill.className).toContain('invisible -mt-4 max-h-0 overflow-clip opacity-0');
     fireEvent.blur(field);
     for (const pill of pills) expect(pill.className).not.toContain('invisible');
   });
