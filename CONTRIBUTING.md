@@ -629,7 +629,7 @@ Every place that shows a bitcoin amount also shows that amount in the visitor's 
 
 Signed in, the code is the currency stored for that person. `useFiatPreference` is that code: a profile choice they already stored wins. Signed out, there is no profile currency, so the code is the one implied by the UI language (`defaultFiatForLocale`: German CHF, English USD, Spanish EUR, Filipino PHP).
 
-The figure is the fiat string stored on that payment when the payment recorded one. A missing or null stored field uses the current spot rate (`useSpotRate`, `GET /fx/spot`: the price of 1 BTC now, refreshed every few minutes). The statistics pages are the only place that uses a gift day's own rate, because they show historical amounts. A missing or unusable rate is the only reason the fiat line is absent, except for a fee of ₿0 on the wallet send confirm step, which shows no fiat. A payment screen does not treat the amount as ready while that rate is still loading, and its visual baseline includes the fiat line. Omitting the fiat next to a shown bitcoin amount is an undeclared deviation. Reviewers follow `REVIEW.md`.
+The figure is the fiat string stored on that payment when the payment recorded one. A missing or null stored field uses the current spot rate (`useSpotRate`, `GET /fx/spot`: the price of 1 BTC now, refreshed every few minutes). The statistics pages are the only place that uses a gift day's own rate, because they show historical amounts. A missing or unusable rate is the only reason the fiat line is absent, except for a fee of ₿0 on the wallet send confirm step, which shows no fiat, and the **Pay {amount} and post** button on the posting fee, which shows its amount without fiat. A pay sheet's `WalletPay` slot shows no fee row for a fee of ₿0; a fee above ₿0 keeps its fiat. A payment screen does not treat the amount as ready while that rate is still loading, and its visual baseline includes the fiat line. Omitting the fiat next to a shown bitcoin amount is an undeclared deviation. Reviewers follow `REVIEW.md`.
 
 ### Payment QR vs wallet links (hard requirement)
 
@@ -647,8 +647,8 @@ today's repayment), the reply pay page (`ForumReplyPayPage`), and the inbox
 pay sheet (`InboxScreen`) — pay from the member's in-app wallet only
 (`WalletPay`: the `sparkInvoice` when the api issued one, otherwise the
 payment request). The wallet is open whenever the member is signed in. The
-slot prepares the payment, shows its fee, then offers **Send** (or **Pay
-{amount} and post** for a posting fee).
+slot prepares the payment, shows its fee when it is above ₿0, then offers
+**Send** (or **Pay {amount} and post** for a posting fee).
 They never mount the invoice `QrCode` and never show a button to another
 wallet app, on any user agent. Without a usable wallet they say so; there is
 no fallback.
