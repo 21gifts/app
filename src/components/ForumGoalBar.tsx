@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, type ReactElement } from 'react';
+import { type ReactElement } from 'react';
+import Link from 'next/link';
 import { CreditLedger } from '@/components/CreditLedger';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -117,7 +118,7 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * @param goalRepayable - Credit ask. The loan tag sits beside the author, not in this bar.
  * @param goalTermDays - Repayment days. With `goalRepayable`, also shows the daily plan.
  * @param messageId - Posted credit id. Omitted in the wizard, so the ledger stays off.
- * @param ledgerCollapsed - Feed lists hide the ledger behind a control. The note page leaves this false.
+ * @param ledgerCollapsed - Feed lists show a repayment-list link and skip the ledger fetch. The note page leaves this false.
  * @returns The bar, or `null`.
  */
 export function ForumGoalBar({
@@ -158,7 +159,7 @@ export function ForumGoalBar({
   goalTermDays?: number | undefined;
   /** Set on a posted credit so the public ledger can load. Omitted in the wizard. */
   messageId?: string | undefined;
-  /** Feed lists keep the ledger behind a control. The note page leaves this false. */
+  /** Feed lists show a repayment-list link and skip the ledger fetch. The note page leaves this false. */
   ledgerCollapsed?: boolean | undefined;
 }): ReactElement | null {
   const { t } = useTranslations();
@@ -264,31 +265,21 @@ export function ForumGoalBar({
       </div>
       {goalRepayable === true && messageId !== undefined ? (
         ledgerCollapsed ? (
-          <CreditLedgerDisclosure messageId={messageId} />
+          <div className="mt-2">
+            <Link
+              href={`/messages/${encodeURIComponent(messageId)}/repayment-list`}
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+              className="text-xs font-medium text-app-fg underline decoration-app-border underline-offset-2"
+            >
+              {t('forum.creditList')}
+            </Link>
+          </div>
         ) : (
-          <CreditLedger messageId={messageId} />
+          <CreditLedger messageId={messageId} list="summary" />
         )
       ) : null}
-    </div>
-  );
-}
-
-function CreditLedgerDisclosure({ messageId }: { messageId: string }): ReactElement {
-  const { t } = useTranslations();
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="mt-2">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => {
-          setOpen((value) => !value);
-        }}
-        className="text-xs font-medium text-app-fg underline decoration-app-border underline-offset-2"
-      >
-        {t(open ? 'forum.creditClose' : 'forum.creditOpen')}
-      </button>
-      {open ? <CreditLedger messageId={messageId} /> : null}
     </div>
   );
 }

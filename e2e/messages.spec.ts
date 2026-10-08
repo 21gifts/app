@@ -66,6 +66,10 @@ test('e2e:check dynamic path token for /messages/[id]/author', async ({ page }) 
   await page.goto('/messages/[id]/author');
 });
 
+test('e2e:check dynamic path token for /messages/[id]/repayment-list', async ({ page }) => {
+  await page.goto('/messages/[id]/repayment-list');
+});
+
 test('signed-in inbox heading is Messages', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');

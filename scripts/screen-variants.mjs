@@ -661,13 +661,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'goal-credit-open',
-    image: 'welcome-goal-credit-open.png',
-    visual: 'state-welcome-goal-credit-open',
-    needle: 'state /welcome goal-credit-open',
-  },
-  {
-    route: '/welcome',
     id: 'loan-tag-open',
     image: 'welcome-loan-tag-open.png',
     visual: 'state-welcome-loan-tag-open',
@@ -2114,13 +2107,6 @@ export const SCREEN_VARIANTS = [
     image: 'members-posts-open-goal-credit.png',
     visual: 'state-members-posts-open-goal-credit',
     needle: 'state /members posts-open-goal-credit',
-  },
-  {
-    route: '/members/[accountId]',
-    id: 'posts-open-goal-credit-open',
-    image: 'members-posts-open-goal-credit-open.png',
-    visual: 'state-members-posts-open-goal-credit-open',
-    needle: 'state /members posts-open-goal-credit-open',
   },
   {
     route: '/members/[accountId]',
@@ -5315,6 +5301,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-reply-received.png',
     visual: 'state-messages-id-reply-received',
     needle: 'received ₿100',
+  },
+  {
+    route: '/messages/[id]/repayment-list',
+    id: 'default',
+    image: 'messages-id-repayment-list.png',
+    visual: 'state-messages-id-repayment-list',
+    needle: 'state /messages/[id]/repayment-list',
   },
   {
     route: '/messages/[id]/author',
