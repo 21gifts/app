@@ -4718,7 +4718,47 @@ test.describe('onboarding screens', () => {
     const field = page.getByLabel('Your reaction');
     await expect(field).toBeVisible();
     await field.fill('@');
-    await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
+    const list = page.getByRole('listbox', { name: 'People' });
+    await expect(list).toBeVisible();
+    const above = await list.evaluate((node) => {
+      if (node.classList.contains('bottom-full')) {
+        return true;
+      }
+      if (node.classList.contains('top-full')) {
+        return false;
+      }
+      throw new Error('People list has neither bottom-full nor top-full');
+    });
+    if (!above) {
+      await field.fill('');
+      await expect(list).toHaveCount(0);
+      await field.evaluate((node) => {
+        const scroller = node.closest('[data-scrollport]');
+        if (!(scroller instanceof HTMLElement)) {
+          throw new Error('reaction field has no [data-scrollport] ancestor');
+        }
+        const target = window.innerHeight - 16;
+        for (let i = 0; i < 4; i += 1) {
+          const delta = node.getBoundingClientRect().bottom - target;
+          if (Math.abs(delta) <= 1) {
+            return;
+          }
+          const before = scroller.scrollTop;
+          scroller.scrollTop = before + delta;
+          if (scroller.scrollTop === before) {
+            throw new Error(
+              'scrollport clamped before the reaction field reached the window bottom',
+            );
+          }
+        }
+        if (Math.abs(node.getBoundingClientRect().bottom - target) > 1) {
+          throw new Error('reaction field is not within 1px of the window bottom');
+        }
+      });
+      await field.fill('@');
+      await expect(list).toBeVisible();
+      await expect(list).toHaveClass(/\bbottom-full\b/);
+    }
     await shotScreen(page, 'state-welcome-mention-suggest-reply');
   });
 
