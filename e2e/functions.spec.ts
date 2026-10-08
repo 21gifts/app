@@ -2669,6 +2669,7 @@ test('Function: MemberProfilePage — member page heading is visible', async ({ 
 
 test('e2e:check dynamic path token for /members/[accountId]', async ({ page, request }) => {
   await page.goto('/members/[accountId]');
+  await page.goto('/members/[accountId]/verify');
   await request.get('/forum/members/[accountId]');
   await request.get('/forum/members/[accountId]/posts');
   await request.get('/forum/members/[accountId]/replies');
@@ -3358,6 +3359,17 @@ test('Function: parseScreenVariantDescriptions — pay-qr description is visible
 }) => {
   await page.goto('/handbook/screens');
   await expect(page.getByText(/invoice card shows the Bitcoin payment QR/)).toBeVisible();
+});
+
+test('Function: screenVariantDescription — German screen cards follow the locale cookie', async ({
+  page,
+  context,
+}) => {
+  await context.addCookies([{ name: 'locale', value: 'de', url: 'http://localhost:3000' }]);
+  await page.goto('/handbook/screens');
+  await expect(page.getByRole('heading', { name: 'Screens' })).toBeVisible();
+  await expect(page.getByText(/Heutige Rate zahlen/).first()).toBeVisible();
+  await expect(page.getByText(/Desktop\/wide layout/)).toHaveCount(0);
 });
 
 test('Function: topicImageSrc — screens viewer shows an image', async ({ page }) => {
@@ -5836,6 +5848,118 @@ test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 s
   await replyCard.getByLabel('Amount').fill('21');
   await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
   await expect(page.getByText('$0.02').first()).toBeVisible();
+});
+
+test('Function: latestRateDayFor — peso till uses the last day that has PHP', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.context().addCookies([{ name: 'fiat', value: 'PHP', url: 'http://localhost:3000' }]);
+  await stubGiftStats(page, {
+    ...EMPTY_STATS,
+    totalSats: 100_001_000,
+    totalBtc: '1.00001000',
+    totalUsd: '100010.00',
+    totalPhp: '5600000.00',
+    giftCount: 2,
+    firstPaidAt: '2026-10-07T00:00:00.000Z',
+    lastPaidAt: '2026-10-08T00:08:00.000Z',
+    spendOverTime: [
+      {
+        day: '2026-10-07',
+        sats: 100_000_000,
+        cumulativeSats: 100_000_000,
+        btc: '1.00000000',
+        cumulativeBtc: '1.00000000',
+        usd: '100000.00',
+        cumulativeUsd: '100000.00',
+        chf: '80000.00',
+        cumulativeChf: '80000.00',
+        eur: '90000.00',
+        cumulativeEur: '90000.00',
+        php: '5600000.00',
+        cumulativePhp: '5600000.00',
+      },
+      {
+        day: '2026-10-08',
+        sats: 1000,
+        cumulativeSats: 100_001_000,
+        btc: '0.00001000',
+        cumulativeBtc: '1.00001000',
+        usd: '10.00',
+        cumulativeUsd: '100010.00',
+        chf: null,
+        cumulativeChf: null,
+        eur: null,
+        cumulativeEur: null,
+        php: null,
+        cumulativePhp: null,
+      },
+    ],
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/me\/amount-unit$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        amountUnit: 'fiat',
+      }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/pos/amount');
+  const php = page
+    .getByRole('group', { name: 'Bitcoin or fiat' })
+    .getByRole('button', { name: 'PHP' });
+  await php.click();
+  await expect(php).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: '1', exact: true }).click();
+  await page.getByRole('button', { name: '0', exact: true }).click();
+  await page.getByRole('button', { name: '0', exact: true }).click();
+  await expect(page.getByText("\u20BF1'786")).toBeVisible();
+  await expect(page.getByText('Enter a whole number.')).toHaveCount(0);
 });
 
 test('Function: formatFiatTick — populated stats draw the USD chart', async ({ page }) => {
@@ -11235,13 +11359,112 @@ test('Function: StaffFunctions — moderator actions stay closed until opened', 
   });
   await page.goto(`/members/${memberId}`);
   await expect(page.getByText('Moderator functions')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Verify' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Verify' })).toHaveCount(0);
   await page.getByText('Moderator functions').click();
-  await expect(page.getByRole('button', { name: 'Verify' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Verify' })).toBeVisible();
   await seedAdaSession(page);
   await page.goto(`/members/${memberId}`);
   await expect(page.getByText('Moderator functions')).toHaveCount(0);
   await expect(page.getByTestId('state-members-staff-verify')).toHaveCount(0);
+});
+
+test('Function: MemberVerifyPage — moderator sees the stored-name check', async ({ page }) => {
+  await seedAdaSession(page, 'moderator');
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: memberId,
+        name: 'Ada',
+        location: null,
+        role: 'basis',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
+        aboutMe: null,
+        trust: {
+          verifiedBy: null,
+          proposedBy: null,
+          confirmedBy: null,
+          appointedBy: null,
+        },
+      }),
+    });
+  });
+  await page.goto(`/members/${memberId}/verify`);
+  await expect(page.getByRole('heading', { name: 'Verify' })).toBeVisible();
+  await expect(
+    page.getByText('Does this stored name match the name that uniquely identifies this person?'),
+  ).toBeVisible();
+  const ada = page.getByRole('link', { name: 'Ada', exact: true });
+  await expect(ada).toBeVisible();
+  await expect(ada).toHaveAttribute('href', `/members/${memberId}`);
+  await expect(page.getByRole('button', { name: 'Yes', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'No', exact: true })).toBeVisible();
+});
+
+test('Function: MemberVerifyScreen — confirm posts and opens the member card', async ({ page }) => {
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: memberId,
+        name: 'Ada',
+        location: null,
+        role: 'basis',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
+        aboutMe: null,
+        trust: {
+          verifiedBy: null,
+          proposedBy: null,
+          confirmedBy: null,
+          appointedBy: null,
+        },
+      }),
+    });
+  });
+  await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        receivedOverTime: [],
+        donatedOverTime: [],
+      }),
+    });
+  });
+  await seedAdaSession(page);
+  await page.goto(`/members/${memberId}/verify`);
+  await expect(page.getByText('You cannot verify this member.')).toBeVisible();
+  await expect(
+    page.getByText('Does this stored name match the name that uniquely identifies this person?'),
+  ).toHaveCount(0);
+  await seedAdaSession(page, 'moderator');
+  await page.route('**/trust/verify', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: memberId, name: 'Ada', role: 'verified' }),
+    });
+  });
+  await page.goto(`/members/${memberId}/verify`);
+  await expect(page.getByRole('button', { name: 'No', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Yes', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/members/${memberId}(?:\\?.*)?$`));
 });
 
 test('Function: DeletePostControl — ordinary members have no delete action', async ({ page }) => {

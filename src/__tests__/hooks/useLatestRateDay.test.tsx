@@ -1,7 +1,7 @@
 import { act, cleanup, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useLatestRateDay, useLatestRateDayState } from '@/hooks/useLatestRateDay';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -27,6 +27,17 @@ function Probe(): ReactElement {
   return <p>{rateDay === null ? 'null' : rateDay.sats}</p>;
 }
 
+/** Mounts {@link useLatestRateDayState} for assertions. */
+function StateProbe({ enabled }: { enabled: boolean }): ReactElement {
+  const { rateDay, settled } = useLatestRateDayState(enabled);
+  const day = rateDay === null ? 'null' : String(rateDay.sats);
+  return (
+    <p>
+      {settled ? 'settled' : 'pending'}:{day}
+    </p>
+  );
+}
+
 beforeEach(() => {
   fetchGiftStatsMock.mockReset();
 });
@@ -45,6 +56,19 @@ describe('useLatestRateDay', () => {
       expect(screen.getByText(String(RATE_DAY.sats))).toBeTruthy();
     });
     expect(fetchGiftStatsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips a newer day that cannot convert the preferred fiat', async () => {
+    fetchGiftStatsMock.mockResolvedValue({
+      spendOverTime: [
+        RATE_DAY,
+        { ...RATE_DAY, sats: 1000, usd: '10.00', chf: null, eur: null, php: null },
+      ],
+    } as never);
+    renderWithLocale(<Probe />, 'en', 'ch', 'PHP');
+    await waitFor(() => {
+      expect(screen.getByText(String(RATE_DAY.sats))).toBeTruthy();
+    });
   });
 
   it('resolves to null when fetchGiftStats resolves an empty spendOverTime', async () => {
@@ -86,6 +110,40 @@ describe('useLatestRateDay', () => {
     await act(async () => {
       resolve({ spendOverTime: [RATE_DAY] });
     });
+  });
+
+  it('stays settled and does not fetch when disabled', () => {
+    renderWithLocale(<StateProbe enabled={false} />);
+    expect(screen.getByText('settled:null')).toBeTruthy();
+    expect(fetchGiftStatsMock).not.toHaveBeenCalled();
+  });
+
+  it('stays pending until fetchGiftStats resolves, then settles the day', async () => {
+    let resolve!: (value: { spendOverTime: FiatRateDay[] }) => void;
+    const pending = new Promise<{ spendOverTime: FiatRateDay[] }>((r) => {
+      resolve = r;
+    });
+    fetchGiftStatsMock.mockReturnValue(pending as never);
+    renderWithLocale(<StateProbe enabled />);
+    expect(screen.getByText('pending:null')).toBeTruthy();
+    await act(async () => {
+      resolve({ spendOverTime: [RATE_DAY] });
+    });
+    expect(screen.getByText(`settled:${RATE_DAY.sats}`)).toBeTruthy();
+  });
+
+  it('settles with no day when fetchGiftStats rejects', async () => {
+    let reject!: (reason?: unknown) => void;
+    const pending = new Promise<never>((_, r) => {
+      reject = r;
+    });
+    fetchGiftStatsMock.mockReturnValue(pending as never);
+    renderWithLocale(<StateProbe enabled />);
+    expect(screen.getByText('pending:null')).toBeTruthy();
+    await act(async () => {
+      reject(new Error('stats down'));
+    });
+    expect(screen.getByText('settled:null')).toBeTruthy();
   });
 
   it('does not apply a rejection after unmount', async () => {

@@ -477,7 +477,9 @@ export async function proxyTrustProposalsGet(request: Request): Promise<Response
 /**
  * Proxies POST /trust/verify to the 21.gifts api.
  *
- * @param request - Incoming App Router request (Bearer session + JSON `{ accountId }`).
+ * Forwards the JSON body unchanged (`{ accountId, confirmedName }`).
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ accountId, confirmedName }`).
  * @returns The upstream response.
  */
 export async function proxyTrustVerifyPost(request: Request): Promise<Response> {

@@ -64,6 +64,8 @@ afterEach(() => {
   push.mockClear();
   replace.mockClear();
   useAuthStore.setState({ session: null, account: null });
+  vi.mocked(fetchGiftStats).mockReset();
+  vi.mocked(fetchGiftStats).mockResolvedValue({ spendOverTime: [] } as never);
   vi.unstubAllGlobals();
 });
 
@@ -215,6 +217,324 @@ describe('PosScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     expect((await screen.findByRole('alert')).textContent).toContain('Enter a whole number.');
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('says the exchange rate is still loading instead of claiming there is none', async () => {
+    vi.mocked(fetchGiftStats).mockReturnValue(new Promise(() => undefined));
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      if (String(input).includes('/me/amount-unit')) {
+        return jsonResponse({ ...ACCOUNT, amountUnit: 'fiat' });
+      }
+      return jsonResponse({ charge: null, history: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosAmount />, 'en', 'ch', 'PHP');
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'PHP' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'PHP' }).getAttribute('aria-pressed')).toBe('true');
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    expect((await screen.findByRole('alert')).textContent).toBe('Enter a whole number.');
+    await pressAmount('100');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'The PHP exchange rate is still loading.',
+    );
+    expect(screen.queryByText('No PHP exchange rate yet.')).toBeNull();
+    expect(
+      fetchMock.mock.calls.some(
+        (call) =>
+          (call[1] as RequestInit | undefined)?.method === 'POST' &&
+          String(call[0]).includes('/pos'),
+      ),
+    ).toBe(false);
+  });
+
+  it('replaces the loading alert with no rate when the gift day settles', async () => {
+    let resolveStats: (value: { spendOverTime: unknown[] }) => void = () => undefined;
+    vi.mocked(fetchGiftStats).mockReturnValue(
+      new Promise((resolve) => {
+        resolveStats = resolve;
+      }) as never,
+    );
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      if (String(input).includes('/me/amount-unit')) {
+        return jsonResponse({ ...ACCOUNT, amountUnit: 'fiat' });
+      }
+      return jsonResponse({ charge: null, history: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosAmount />, 'en', 'ch', 'PHP');
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'PHP' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'PHP' }).getAttribute('aria-pressed')).toBe('true');
+    });
+    await pressAmount('100');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'The PHP exchange rate is still loading.',
+    );
+    await act(async () => {
+      resolveStats({ spendOverTime: [] });
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('No PHP exchange rate yet.');
+    });
+    expect(
+      fetchMock.mock.calls.some(
+        (call) =>
+          (call[1] as RequestInit | undefined)?.method === 'POST' &&
+          String(call[0]).includes('/pos'),
+      ),
+    ).toBe(false);
+  });
+
+  it('clears the loading alert when the gift day prices a whole sat amount', async () => {
+    let resolveStats: (value: { spendOverTime: unknown[] }) => void = () => undefined;
+    vi.mocked(fetchGiftStats).mockReturnValue(
+      new Promise((resolve) => {
+        resolveStats = resolve;
+      }) as never,
+    );
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      if (String(input).includes('/me/amount-unit')) {
+        return jsonResponse({ ...ACCOUNT, amountUnit: 'fiat' });
+      }
+      return jsonResponse({ charge: null, history: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosAmount />, 'en', 'ch', 'PHP');
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'PHP' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'PHP' }).getAttribute('aria-pressed')).toBe('true');
+    });
+    await pressAmount('100');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'The PHP exchange rate is still loading.',
+    );
+    await act(async () => {
+      resolveStats({
+        spendOverTime: [
+          {
+            day: '2026-10-07',
+            sats: 100_000_000,
+            usd: '100000.00',
+            chf: '80000.00',
+            eur: '90000.00',
+            php: '5600000.00',
+          },
+        ],
+      });
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('The PHP exchange rate is still loading.')).toBeNull();
+    });
+    expect(screen.getByRole('button', { name: 'Create payment' })).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(
+      fetchMock.mock.calls.some(
+        (call) =>
+          (call[1] as RequestInit | undefined)?.method === 'POST' &&
+          String(call[0]).includes('/pos'),
+      ),
+    ).toBe(false);
+  });
+
+  it('keeps a whole-number alert when the settled amount is zero', async () => {
+    let resolveStats: (value: { spendOverTime: unknown[] }) => void = () => undefined;
+    vi.mocked(fetchGiftStats).mockReturnValue(
+      new Promise((resolve) => {
+        resolveStats = resolve;
+      }) as never,
+    );
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      if (String(input).includes('/me/amount-unit')) {
+        return jsonResponse({ ...ACCOUNT, amountUnit: 'fiat' });
+      }
+      return jsonResponse({ charge: null, history: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosAmount />, 'en', 'ch', 'PHP');
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'PHP' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'PHP' }).getAttribute('aria-pressed')).toBe('true');
+    });
+    await pressAmount('1');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'The PHP exchange rate is still loading.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    await pressAmount('0');
+    await act(async () => {
+      resolveStats({
+        spendOverTime: [
+          {
+            day: '2026-10-07',
+            sats: 100_000_000,
+            usd: '100000.00',
+            chf: '80000.00',
+            eur: '90000.00',
+            php: '5600000.00',
+          },
+        ],
+      });
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+    });
+    expect(
+      fetchMock.mock.calls.some(
+        (call) =>
+          (call[1] as RequestInit | undefined)?.method === 'POST' &&
+          String(call[0]).includes('/pos'),
+      ),
+    ).toBe(false);
+  });
+
+  it('replaces the loading alert with a whole number when the settled amount is not a safe sat count', async () => {
+    let resolveStats: (value: { spendOverTime: unknown[] }) => void = () => undefined;
+    vi.mocked(fetchGiftStats).mockReturnValue(
+      new Promise((resolve) => {
+        resolveStats = resolve;
+      }) as never,
+    );
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      if (String(input).includes('/me/amount-unit')) {
+        return jsonResponse({ ...ACCOUNT, amountUnit: 'fiat' });
+      }
+      return jsonResponse({ charge: null, history: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosAmount />, 'en', 'ch', 'PHP');
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'PHP' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'PHP' }).getAttribute('aria-pressed')).toBe('true');
+    });
+    await pressAmount('504403158265496');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'The PHP exchange rate is still loading.',
+    );
+    await act(async () => {
+      resolveStats({
+        spendOverTime: [
+          {
+            day: '2026-10-07',
+            sats: 100_000_000,
+            usd: '100000.00',
+            chf: '80000.00',
+            eur: '90000.00',
+            php: '5600000.00',
+          },
+        ],
+      });
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Enter a whole number.');
+    });
+    expect(
+      fetchMock.mock.calls.some(
+        (call) =>
+          (call[1] as RequestInit | undefined)?.method === 'POST' &&
+          String(call[0]).includes('/pos'),
+      ),
+    ).toBe(false);
+  });
+
+  it('names the currency when no gift day can price it', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      if (String(input).includes('/me/amount-unit')) {
+        return jsonResponse({ ...ACCOUNT, amountUnit: 'fiat' });
+      }
+      return jsonResponse({ charge: null, history: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosAmount />, 'en', 'ch', 'PHP');
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'PHP' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'PHP' }).getAttribute('aria-pressed')).toBe('true');
+    });
+    await pressAmount('100');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    expect((await screen.findByRole('alert')).textContent).toBe('No PHP exchange rate yet.');
+    expect(
+      fetchMock.mock.calls.some(
+        (call) =>
+          (call[1] as RequestInit | undefined)?.method === 'POST' &&
+          String(call[0]).includes('/pos'),
+      ),
+    ).toBe(false);
+  });
+
+  it('prices PHP from the last gift day that has a peso total', async () => {
+    vi.mocked(fetchGiftStats).mockResolvedValue({
+      spendOverTime: [
+        {
+          day: '2026-10-07',
+          sats: 100_000_000,
+          usd: '100000.00',
+          chf: '80000.00',
+          eur: '90000.00',
+          php: '5600000.00',
+        },
+        {
+          day: '2026-10-08',
+          sats: 1000,
+          usd: '10.00',
+          chf: null,
+          eur: null,
+          php: null,
+        },
+      ],
+    } as never);
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).includes('/me/amount-unit')) {
+        return jsonResponse({ ...ACCOUNT, amountUnit: 'fiat' });
+      }
+      if (init?.method === 'POST') {
+        return jsonResponse({
+          charge: {
+            id: 'c-php',
+            amountSats: 1786,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+          },
+        });
+      }
+      return jsonResponse({ charge: null, history: [] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosAmount />, 'en', 'ch', 'PHP');
+    expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'PHP' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'PHP' }).getAttribute('aria-pressed')).toBe('true');
+    });
+    await pressAmount('100');
+    expect(await screen.findByText("\u20BF1'786")).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    await waitFor(() => {
+      const posted = fetchMock.mock.calls.find(
+        (call) =>
+          (call[1] as RequestInit | undefined)?.method === 'POST' &&
+          String(call[0]).includes('/pos'),
+      );
+      expect(posted?.[1]?.body).toBe(JSON.stringify({ amountSats: 1786 }));
+    });
+    expect(screen.queryByText('Enter a whole number.')).toBeNull();
   });
 
   it('shows an API range error and a load error', async () => {

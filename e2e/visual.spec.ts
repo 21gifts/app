@@ -659,6 +659,21 @@ async function expandScrollportForFullShot(page: Page): Promise<void> {
   });
 }
 
+/**
+ * The add form sits under the roster. A viewport shot scrolled to a page
+ * alert crops the person field and its suggestion list. Align the form to
+ * the bottom of the scrollport so the alert, the field, and the list stay
+ * in the picture.
+ *
+ * @param page - Page under test.
+ */
+async function scrollAddFormIntoShot(page: Page): Promise<void> {
+  const form = page.locator('form').filter({ has: page.locator('#daily-person-add') });
+  await form.evaluate((node) => {
+    node.scrollIntoView({ block: 'end', inline: 'nearest' });
+  });
+}
+
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
   const problems = await page.evaluate(pageFrameProblems);
   expect(problems, problems.join('\n')).toEqual([]);
@@ -1112,6 +1127,106 @@ test.describe('screen baselines', () => {
     }
     await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
     await shotScreen(page, 'state-pl-invoice');
+  });
+
+  test('pay link rate loading', async ({ page }) => {
+    const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await page.context().addCookies([{ name: 'fiat', value: 'PHP', url: 'http://localhost:3000' }]);
+    await page.route('**/gifts/stats', () => new Promise(() => undefined));
+    await page.route(
+      (url) => new URL(url).pathname.startsWith('/pay/'),
+      async (route) => {
+        const url = route.request().url();
+        if (url.includes('/invoice')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ pr: 'lnbc210n1paylink', amountSats: 21 }),
+          });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            name: 'Ada Lovelace',
+            username: 'ada',
+            minSats: 1,
+            maxSats: 100000000,
+            charge: null,
+          }),
+        });
+      },
+    );
+    await page.goto(`/pl?lightning=${lnurl}`);
+    await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    const php = page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'PHP' });
+    await php.click();
+    await expect(php).toHaveAttribute('aria-pressed', 'true');
+    await page.getByLabel('Amount').fill('100');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('The PHP exchange rate is still loading.')).toBeVisible();
+    await shotScreen(page, 'state-pl-rate-loading');
+  });
+
+  test('pay link no rate', async ({ page }) => {
+    const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await page.context().addCookies([{ name: 'fiat', value: 'PHP', url: 'http://localhost:3000' }]);
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...RATE_DAY_STATS,
+          totalPhp: null,
+          spendOverTime: RATE_DAY_STATS.spendOverTime.map((row) => ({
+            ...row,
+            php: null,
+            cumulativePhp: null,
+          })),
+        }),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname.startsWith('/pay/'),
+      async (route) => {
+        const url = route.request().url();
+        if (url.includes('/invoice')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ pr: 'lnbc210n1paylink', amountSats: 21 }),
+          });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            name: 'Ada Lovelace',
+            username: 'ada',
+            minSats: 1,
+            maxSats: 100000000,
+            charge: null,
+          }),
+        });
+      },
+    );
+    await page.goto(`/pl?lightning=${lnurl}`);
+    await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    const php = page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'PHP' });
+    await php.click();
+    await expect(php).toHaveAttribute('aria-pressed', 'true');
+    await page.getByLabel('Amount').fill('100');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('No PHP exchange rate yet.')).toBeVisible();
+    await shotScreen(page, 'state-pl-no-rate');
   });
 
   test('screen /pl invalid', async ({ page }) => {
@@ -5399,6 +5514,126 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-pos-bad-amount');
   });
 
+  test('pos rate loading', async ({ page }) => {
+    const ada = {
+      ...E2E_ACCOUNT,
+      name: 'Ada',
+      username: 'alice',
+      lightningAddress: 'alice@walletofsatoshi.com',
+      rulesAgreedAt: 1_700_000_001,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      setup: null,
+      missing: [],
+    };
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(ada),
+      });
+    });
+    await page.route(/\/me\/amount-unit$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...ada, amountUnit: 'fiat' }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.context().addCookies([{ name: 'fiat', value: 'PHP', url: 'http://localhost:3000' }]);
+    await page.route('**/gifts/stats', () => new Promise(() => undefined));
+    await page.goto('/pos/amount');
+    const php = page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'PHP' });
+    await php.click();
+    await expect(php).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: '1', exact: true }).click();
+    await page.getByRole('button', { name: '0', exact: true }).click();
+    await page.getByRole('button', { name: '0', exact: true }).click();
+    await expect(php).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await expect(page.getByText('The PHP exchange rate is still loading.')).toBeVisible();
+    await shotScreen(page, 'state-pos-rate-loading');
+  });
+
+  test('pos no rate', async ({ page }) => {
+    const ada = {
+      ...E2E_ACCOUNT,
+      name: 'Ada',
+      username: 'alice',
+      lightningAddress: 'alice@walletofsatoshi.com',
+      rulesAgreedAt: 1_700_000_001,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      setup: null,
+      missing: [],
+    };
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(ada),
+      });
+    });
+    await page.route(/\/me\/amount-unit$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...ada, amountUnit: 'fiat' }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.context().addCookies([{ name: 'fiat', value: 'PHP', url: 'http://localhost:3000' }]);
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...RATE_DAY_STATS,
+          totalPhp: null,
+          spendOverTime: RATE_DAY_STATS.spendOverTime.map((row) => ({
+            ...row,
+            php: null,
+            cumulativePhp: null,
+          })),
+        }),
+      });
+    });
+    await page.goto('/pos/amount');
+    const php = page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'PHP' });
+    await php.click();
+    await expect(php).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: '1', exact: true }).click();
+    await page.getByRole('button', { name: '0', exact: true }).click();
+    await page.getByRole('button', { name: '0', exact: true }).click();
+    await expect(php).toHaveAttribute('aria-pressed', 'true');
+    await page.getByRole('button', { name: 'Create payment' }).click();
+    await expect(page.getByText('No PHP exchange rate yet.')).toBeVisible();
+    await shotScreen(page, 'state-pos-no-rate');
+  });
+
   test('pos create outside', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -6861,6 +7096,291 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-posts-open-goal-credit-open');
   });
 
+  test('state /members posts-open-repay-today', async ({ page }) => {
+    const memberId = '11111111-1111-4111-8111-111111111111';
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: memberId,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          role: 'basis',
+          location: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 21000,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
+    const repay = page.getByRole('button', { name: "Pay today's repayment" });
+    await expect(repay).toBeVisible();
+    await repay.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-posts-open-repay-today');
+  });
+
+  test('state /members posts-open-repay-today-error', async ({ page }) => {
+    const memberId = '11111111-1111-4111-8111-111111111111';
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: "The author's wallet cannot receive this Bitcoin payment",
+          }),
+        });
+        return;
+      }
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: memberId,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          role: 'basis',
+          location: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 21000,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
+    await page.getByRole('button', { name: "Pay today's repayment" }).click();
+    const walletAlert = page.getByRole('alert').filter({
+      hasText: "The author's wallet cannot receive this Bitcoin payment",
+    });
+    await expect(walletAlert).toBeVisible();
+    await walletAlert.scrollIntoViewIfNeeded();
+    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
+    await shotScreen(page, 'state-members-posts-open-repay-today-error');
+  });
+
+  test('state /members posts-open-repay-today-invoice', async ({ page }) => {
+    const memberId = '11111111-1111-4111-8111-111111111111';
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ pr: 'lnbc21n1repay', amountSats: 700 }),
+        });
+        return;
+      }
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: memberId,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          role: 'basis',
+          location: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 21000,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
+    await page.getByRole('button', { name: "Pay today's repayment" }).click();
+    const wallet = page.getByRole('button', { name: 'Pay with Wallet of Satoshi' });
+    await expect(wallet).toBeVisible();
+    await wallet.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-posts-open-repay-today-invoice');
+  });
+
   test('state /members posts-open-photos', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const postId = '44444444-4444-4444-8444-444444444444';
@@ -8032,13 +8552,457 @@ test.describe('onboarding screens', () => {
     await page.goto(`/members/${memberId}`);
     const disclosure = page.getByText('Moderator functions');
     await disclosure.click();
-    const verify = page.getByRole('button', { name: 'Verify' });
+    const verify = page.getByRole('link', { name: 'Verify' });
     await expect(verify).toBeVisible();
     await expect(page.getByTestId('staff-functions')).toHaveJSProperty('open', true);
     await verify.scrollIntoViewIfNeeded();
     // The member card scrolls inside the page frame. A full-page stitch leaves
     // Verify below the viewport, so this shot is the viewport after that scroll.
     await shotScreen(page, 'state-members-staff-verify-open', false);
+  });
+
+  test('state /members/[accountId]/verify default', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          location: null,
+          role: 'basis',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          aboutMe: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}/verify`);
+    await expect(page.getByRole('heading', { name: 'Verify' })).toBeVisible();
+    await expect(
+      page.getByText('Does this stored name match the name that uniquely identifies this person?'),
+    ).toBeVisible();
+    const ada = page.getByRole('link', { name: 'Ada', exact: true });
+    await expect(ada).toBeVisible();
+    await expect(ada).toHaveAttribute('href', `/members/${memberId}`);
+    await expect(page.getByRole('button', { name: 'Yes', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'No', exact: true })).toBeVisible();
+    await shotScreen(page, 'screen-members-accountId-verify');
+  });
+
+  test('state /members/[accountId]/verify unnamed', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: null,
+          location: null,
+          role: 'basis',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          aboutMe: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}/verify`);
+    await expect(
+      page.getByText('Verification needs a stored name that identifies this person.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Yes', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'No', exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-members-verify-unnamed');
+  });
+
+  test('state /members/[accountId]/verify loading', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, () => new Promise(() => undefined));
+    await page.goto(`/members/${memberId}/verify`);
+    await expect(page.getByRole('heading', { name: 'Verify' })).toBeVisible();
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await expect(page.getByTestId('state-members-verify-loading')).toBeVisible();
+    await shotScreen(page, 'state-members-verify-loading');
+  });
+
+  test('state /members/[accountId]/verify error', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto(`/members/${memberId}/verify`);
+    await expect(page.getByText('Could not load this profile. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-members-verify-error');
+  });
+
+  test('state /members/[accountId]/verify missing', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.goto('/members/not-a-uuid/verify');
+    await expect(page.getByText('This profile could not be found.')).toBeVisible();
+    await shotScreen(page, 'state-members-verify-missing');
+  });
+
+  test('state /members/[accountId]/verify forbidden', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          location: null,
+          role: 'verified',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          aboutMe: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}/verify`);
+    await expect(page.getByText('You cannot verify this member.')).toBeVisible();
+    await expect(
+      page.getByText('Does this stored name match the name that uniquely identifies this person?'),
+    ).toHaveCount(0);
+    await shotScreen(page, 'state-members-verify-forbidden');
+  });
+
+  test('state /members/[accountId]/verify sunday', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          location: null,
+          role: 'basis',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          aboutMe: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}/verify`);
+    await expect(
+      page.getByText('Does this stored name match the name that uniquely identifies this person?'),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ada', exact: true })).toBeVisible();
+    await expect(page.getByText('Writing is paused on Sunday.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Yes', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'No', exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-members-verify-sunday');
+  });
+
+  test('state /members/[accountId]/verify failed', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          location: null,
+          role: 'basis',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          aboutMe: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.route('**/trust/verify', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({ status: 409, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto(`/members/${memberId}/verify`);
+    await page.getByRole('button', { name: 'Yes', exact: true }).click();
+    await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Yes', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'No', exact: true })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/members/${memberId}/verify`));
+    await shotScreen(page, 'state-members-verify-failed');
+  });
+
+  test('state /members/[accountId]/verify deciding', async ({ page }) => {
+    const staffId = '11111111-1111-4111-8111-111111111111';
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: staffId,
+          role: 'moderator',
+          name: 'Severin',
+          lightningAddress: 'sev@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          location: null,
+          role: 'basis',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+          aboutMe: null,
+          trust: {
+            verifiedBy: null,
+            proposedBy: null,
+            confirmedBy: null,
+            appointedBy: null,
+          },
+        }),
+      });
+    });
+    await page.route('**/trust/verify', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+      /* hang */
+    });
+    await page.goto(`/members/${memberId}/verify`);
+    await page.getByRole('button', { name: 'Yes', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Yes', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'No', exact: true })).toBeDisabled();
+    await expect(
+      page.getByText('Does this stored name match the name that uniquely identifies this person?'),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ada', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-members-verify-deciding');
   });
 
   test('state /members sunday', async ({ page }) => {
@@ -16036,6 +17000,81 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu');
   });
 
+  async function menuLayout(page: Page): Promise<'lifted' | 'sheet' | 'dropdown'> {
+    const sheet = await page.locator('html').getAttribute('data-menu-sheet');
+    const cls = (await page.locator('#signed-in-menu').getAttribute('class')) ?? '';
+    if (sheet === '1') {
+      return 'sheet';
+    }
+    if (cls.split(/\s+/).includes('fixed')) {
+      return 'lifted';
+    }
+    return 'dropdown';
+  }
+
+  /**
+   * Wide frame, short window. Mobile projects start at 375, which is always
+   * the narrow sheet, so every combo is forced to 1280px before the shot.
+   */
+  async function resizeWelcomeMenu(
+    page: Page,
+    want: 'lifted' | 'sheet',
+    heights: readonly number[],
+  ): Promise<void> {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Habit-Tracker' })).toBeVisible();
+    const seen: string[] = [];
+    for (const height of heights) {
+      await page.setViewportSize({ width: 1280, height });
+      const matched = await page
+        .waitForFunction(
+          (expected) => {
+            const panel = document.getElementById('signed-in-menu');
+            const sheet = document.documentElement.dataset['menuSheet'] === '1';
+            const fixed = panel?.classList.contains('fixed') === true;
+            let layout = 'dropdown';
+            if (sheet) {
+              layout = 'sheet';
+            } else if (fixed) {
+              layout = 'lifted';
+            }
+            return layout === expected;
+          },
+          want,
+          { timeout: 800 },
+        )
+        .then(() => true)
+        .catch(() => false);
+      const layout = await menuLayout(page);
+      seen.push(`${height}:${layout}`);
+      if (matched && layout === want) {
+        return;
+      }
+    }
+    throw new Error(`welcome menu never became ${want} (${seen.join(', ')})`);
+  }
+
+  test('welcome menu-lifted', async ({ page }) => {
+    await resizeWelcomeMenu(page, 'lifted', [780, 740, 700, 680, 660, 640, 620, 600, 580, 560]);
+    await expect(page.locator('#signed-in-menu')).toHaveClass(/\bfixed\b/);
+    await expect(page.locator('html')).not.toHaveAttribute('data-menu-sheet');
+    await expect(page.getByRole('link', { name: 'Habit-Tracker' })).toBeInViewport();
+    await expect(page.getByRole('button', { name: 'Log out' })).toBeInViewport();
+    await shotScreen(page, 'state-welcome-menu-lifted');
+  });
+
+  test('welcome menu-tall-sheet', async ({ page }) => {
+    await resizeWelcomeMenu(page, 'sheet', [520, 480, 440, 400, 360]);
+    await expect(page.locator('html')).toHaveAttribute('data-menu-sheet', '1');
+    await expect(page.locator('#signed-in-menu')).not.toHaveClass(/\bfixed\b/);
+    await expect(page.getByRole('link', { name: 'Home' })).toBeInViewport();
+    await shotScreen(page, 'state-welcome-menu-tall-sheet');
+  });
+
   test('welcome menu-unread', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
@@ -22094,8 +23133,8 @@ test.describe('daily payments', () => {
     paymentsEnabled: true,
     defaultAmountUsd: 1,
     recipients: [
-      { address: 'ada@walletofsatoshi.com', amountUsd: 1 },
-      { address: 'bob@example.com', amountUsd: 0.3 },
+      { address: 'ada@walletofsatoshi.com', amountUsd: 1, accountId: 'acc_ada', name: 'Ada' },
+      { address: 'bob@example.com', amountUsd: 0.3, accountId: null, name: null },
     ],
   };
 
@@ -22147,7 +23186,11 @@ test.describe('daily payments', () => {
     await expect(page.getByText('Daily gift')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Edit comment' })).toBeVisible();
     await expect(page.getByText('Everyone in the grant program receives')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Ada' })).toHaveCount(0);
+    await expect(page.getByText('Unnamed')).toHaveCount(0);
     await expect(page.getByText('ada@w...')).toHaveCount(0);
+    await expect(page.getByText('ada@walletofsatoshi.com')).toHaveCount(0);
+    await expect(page.getByText('bob@example.com')).toHaveCount(0);
     await shotScreen(page, 'screen-grants-payments-comment');
   });
 
@@ -22243,7 +23286,14 @@ test.describe('daily payments', () => {
     await page.goto('/grants/payments/amounts');
     await expect(page.getByRole('heading', { name: 'Daily payment amounts' })).toBeVisible();
     await expect(page.getByText('Everyone in the grant program receives')).toBeVisible();
-    await expect(page.getByText('ada@w...')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ada' })).toHaveAttribute(
+      'href',
+      '/members/acc_ada',
+    );
+    await expect(page.getByText('Unnamed')).toBeVisible();
+    await expect(page.getByText('ada@w...')).toHaveCount(0);
+    await expect(page.getByText('ada@walletofsatoshi.com')).toHaveCount(0);
+    await expect(page.getByText('bob@example.com')).toHaveCount(0);
     await expect(page.getByText('Daily gift')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Edit comment' })).toHaveCount(0);
     await shotScreen(page, 'screen-grants-payments-amounts');
@@ -22293,9 +23343,11 @@ test.describe('daily payments', () => {
     await page.goto('/grants/payments/amounts');
     await page.getByRole('textbox', { name: 'USD', exact: true }).fill('0');
     await page.getByRole('button', { name: 'Add' }).click();
-    const invalidAlert = page.getByText('The address or the amount is not valid.');
+    const invalidAlert = page.getByText('The amount is not valid.');
     await expect(invalidAlert).toBeVisible();
-    await invalidAlert.scrollIntoViewIfNeeded();
+    await scrollAddFormIntoShot(page);
+    await expect(invalidAlert).toBeInViewport();
+    await expect(page.getByRole('textbox', { name: 'Person' })).toBeInViewport();
     await shotScreen(page, 'state-grants-payments-amounts-invalid');
   });
 
@@ -22323,6 +23375,13 @@ test.describe('daily payments', () => {
 
   test('state /grants/payments/amounts duplicate', async ({ page }) => {
     await stubRoster(page);
+    await page.route(/\/forum\/mentions/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accounts: [{ id: 'acc_cara', username: 'cara', name: 'Cara' }] }),
+      });
+    });
     await page.route(/\/funding\/daily-roster\/recipients$/, async (route) => {
       await route.fulfill({
         status: 400,
@@ -22331,12 +23390,15 @@ test.describe('daily payments', () => {
       });
     });
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('textbox', { name: 'Address' }).fill('cara@example.com');
+    await page.getByRole('textbox', { name: 'Person' }).fill('@');
+    await page.getByRole('option', { name: '@cara' }).click();
     await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
     await page.getByRole('button', { name: 'Add' }).click();
-    const duplicateAlert = page.getByText('That address is already listed.');
+    const duplicateAlert = page.getByText('That person is already listed.');
     await expect(duplicateAlert).toBeVisible();
-    await duplicateAlert.scrollIntoViewIfNeeded();
+    await scrollAddFormIntoShot(page);
+    await expect(duplicateAlert).toBeInViewport();
+    await expect(page.getByRole('option', { name: '@cara' })).toBeInViewport();
     await shotScreen(page, 'state-grants-payments-amounts-duplicate');
   });
 
@@ -22350,7 +23412,7 @@ test.describe('daily payments', () => {
       });
     });
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('button', { name: 'Edit ada@w...' }).click();
+    await page.getByRole('button', { name: 'Edit Ada' }).click();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText('That recipient is not on the list.')).toBeVisible();
     await shotScreen(page, 'state-grants-payments-amounts-unknown');
@@ -22362,10 +23424,10 @@ test.describe('daily payments', () => {
       await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
     });
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('button', { name: 'Edit ada@w...' }).click();
+    await page.getByRole('button', { name: 'Edit Ada' }).click();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
-    await expect(page.getByRole('textbox', { name: 'USD ada@w...' })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'USD Ada' })).toBeVisible();
     await shotScreen(page, 'state-grants-payments-amounts-save-error');
   });
 
@@ -22376,7 +23438,7 @@ test.describe('daily payments', () => {
       () => new Promise(() => undefined),
     );
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('button', { name: 'Edit ada@w...' }).click();
+    await page.getByRole('button', { name: 'Edit Ada' }).click();
     await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Add' })).toBeDisabled();
@@ -22386,11 +23448,1202 @@ test.describe('daily payments', () => {
   test('state /grants/payments/amounts editing', async ({ page }) => {
     await stubRoster(page);
     await page.goto('/grants/payments/amounts');
-    await page.getByRole('button', { name: 'Edit ada@w...' }).click();
-    await expect(page.getByRole('textbox', { name: 'USD ada@w...' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Edit Ada' }).click();
+    await expect(page.getByRole('textbox', { name: 'USD Ada' })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Cancel', exact: true })).toBeEnabled();
     await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveCount(0);
     await shotScreen(page, 'state-grants-payments-amounts-editing');
+  });
+
+  test('state /grants/payments/amounts suggest', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(/\/forum\/mentions/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accounts: [{ id: 'acc_cara', username: 'cara', name: 'Cara' }] }),
+      });
+    });
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('textbox', { name: 'Person' }).fill('@');
+    await expect(page.getByRole('option', { name: '@cara' })).toBeVisible();
+    await page.locator('#daily-person-add-list').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-payments-amounts-suggest');
+  });
+
+  test('state /grants/payments/amounts chosen', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(/\/forum\/mentions/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accounts: [{ id: 'acc_cara', username: 'cara', name: 'Cara' }] }),
+      });
+    });
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('textbox', { name: 'Person' }).fill('@');
+    await page.getByRole('option', { name: '@cara' }).click();
+    await expect(page.getByRole('option', { name: '@cara' })).toBeVisible();
+    await expect(page.getByRole('option', { name: '@cara' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(page.getByRole('textbox', { name: 'Person' })).toHaveValue('@cara');
+    await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveCount(0);
+    await page.getByRole('textbox', { name: 'Person' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-payments-amounts-chosen');
+  });
+
+  test('state /grants/payments/amounts pick-person', async ({ page }) => {
+    await stubRoster(page);
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
+    await page.getByRole('button', { name: 'Add' }).click();
+    const pickPersonAlert = page.getByText('Choose a person.');
+    await expect(pickPersonAlert).toBeVisible();
+    await scrollAddFormIntoShot(page);
+    await expect(pickPersonAlert).toBeInViewport();
+    await expect(page.getByRole('textbox', { name: 'Person' })).toBeInViewport();
+    await shotScreen(page, 'state-grants-payments-amounts-pick-person');
+  });
+
+  test('state /grants/payments/amounts invalid-person', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(/\/forum\/mentions/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accounts: [{ id: 'acc_cara', username: 'cara', name: 'Cara' }] }),
+      });
+    });
+    await page.route(/\/funding\/daily-roster\/recipients$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid person or amount' }),
+      });
+    });
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('textbox', { name: 'Person' }).fill('@');
+    await page.getByRole('option', { name: '@cara' }).click();
+    await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
+    await page.getByRole('button', { name: 'Add' }).click();
+    const invalidPersonAlert = page.getByText('Choose a person and a valid amount.');
+    await expect(invalidPersonAlert).toBeVisible();
+    await scrollAddFormIntoShot(page);
+    await expect(invalidPersonAlert).toBeInViewport();
+    await expect(page.getByRole('option', { name: '@cara' })).toBeInViewport();
+    await shotScreen(page, 'state-grants-payments-amounts-invalid-person');
+  });
+
+  test('state /grants/payments/amounts unknown-person', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(/\/forum\/mentions/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accounts: [{ id: 'acc_cara', username: 'cara', name: 'Cara' }] }),
+      });
+    });
+    await page.route(/\/funding\/daily-roster\/recipients$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unknown person' }),
+      });
+    });
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('textbox', { name: 'Person' }).fill('@');
+    await page.getByRole('option', { name: '@cara' }).click();
+    await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
+    await page.getByRole('button', { name: 'Add' }).click();
+    const unknownPersonAlert = page.getByText('That person was not found.');
+    await expect(unknownPersonAlert).toBeVisible();
+    await scrollAddFormIntoShot(page);
+    await expect(unknownPersonAlert).toBeInViewport();
+    await expect(page.getByRole('option', { name: '@cara' })).toBeInViewport();
+    await shotScreen(page, 'state-grants-payments-amounts-unknown-person');
+  });
+
+  test('state /grants/payments/amounts no-lightning', async ({ page }) => {
+    await stubRoster(page);
+    await page.route(/\/forum\/mentions/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ accounts: [{ id: 'acc_cara', username: 'cara', name: 'Cara' }] }),
+      });
+    });
+    await page.route(/\/funding\/daily-roster\/recipients$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Person has no Lightning address' }),
+      });
+    });
+    await page.goto('/grants/payments/amounts');
+    await page.getByRole('textbox', { name: 'Person' }).fill('@');
+    await page.getByRole('option', { name: '@cara' }).click();
+    await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
+    await page.getByRole('button', { name: 'Add' }).click();
+    const noLightningAlert = page.getByText('This person has no Wallet of Satoshi address.');
+    await expect(noLightningAlert).toBeVisible();
+    await scrollAddFormIntoShot(page);
+    await expect(noLightningAlert).toBeInViewport();
+    await expect(page.getByRole('option', { name: '@cara' })).toBeInViewport();
+    await shotScreen(page, 'state-grants-payments-amounts-no-lightning');
+  });
+});
+
+const HABIT_ROW = {
+  id: 'h-ada',
+  accountId: 'acc-ada',
+  ownerName: 'Ada',
+  role: 'initiator',
+  name: 'Walk',
+  description: 'Outside',
+  cadence: 'daily',
+  timeZone: 'Asia/Manila',
+  firstPeriod: '2026-10-01',
+  lastPeriod: null,
+  periods: [
+    {
+      period: '2026-10-04',
+      name: 'Walk',
+      description: 'Outside',
+      logged: false,
+      status: null,
+    },
+  ],
+  comments: [
+    {
+      id: 'c-bea',
+      habitId: 'h-ada',
+      accountId: 'acc-bea',
+      name: 'Bea',
+      text: 'hello',
+      week: '2026-09-28',
+      createdAt: 1,
+    },
+  ],
+};
+
+const HABIT_PUBLIC = {
+  reviewWeek: { start: '2026-09-28' },
+  habits: [HABIT_ROW],
+};
+
+async function stubHabitList(page: Page, body: unknown, status = 200): Promise<void> {
+  await page.route('**/habits', async (route) => {
+    await route.fulfill({
+      status,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+}
+
+async function shotRatedHabit(
+  page: Page,
+  status: 'achieved' | 'partial' | 'missed',
+  buttonName: string,
+): Promise<void> {
+  await seedHabitAda(page);
+  let rated = false;
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      rated = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        reviewWeek: HABIT_PUBLIC.reviewWeek,
+        habits: [
+          {
+            ...HABIT_ROW,
+            accountId: 'acc_e2e',
+            notes: 'secret',
+            periods: [
+              {
+                period: '2026-10-04',
+                name: 'Walk',
+                description: 'Outside',
+                logged: rated,
+                status: rated ? status : null,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  const pill = page.getByRole('button', { name: buttonName, exact: true });
+  await expect(pill).toHaveAttribute('aria-pressed', 'false');
+  await pill.click();
+  await expect(pill).toHaveAttribute('aria-pressed', 'true');
+  await pill.scrollIntoViewIfNeeded();
+}
+
+async function seedHabitAda(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        name: 'Ada',
+        location: null,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+}
+
+test.describe('habit tracker baselines', () => {
+  test('screen /habit-tracker default', async ({ page }) => {
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await expect(page.getByRole('heading', { name: 'Habit-Tracker' })).toBeVisible();
+    await expect(page.getByText('Outside')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Sign in to comment' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+    await shotScreen(page, 'screen-habit-tracker');
+  });
+
+  test('screen /habit-tracker empty', async ({ page }) => {
+    await stubHabitList(page, {
+      reviewWeek: { start: '2026-09-28' },
+      habits: [],
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('No habits yet.')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-empty');
+  });
+
+  test('screen /habit-tracker loading', async ({ page }) => {
+    await page.route('**/habits', () => new Promise(() => undefined));
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-loading');
+  });
+
+  test('screen /habit-tracker error', async ({ page }) => {
+    await stubHabitList(page, {}, 500);
+    await page.goto('/habit-tracker');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-error');
+  });
+
+  test('screen /habit-tracker signed-in', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Internal notes:')).toBeVisible();
+    await expect(page.getByText('secret')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-signed-in');
+  });
+
+  test('screen /habit-tracker menu-open', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Habit-Tracker' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-menu-open');
+  });
+
+  test('screen /habit-tracker add-weekly', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    const cadence = page.getByRole('group', { name: 'Cadence' });
+    await cadence.getByRole('button', { name: 'Weekly' }).click();
+    await expect(cadence.getByRole('button', { name: 'Weekly' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await shotScreen(page, 'state-habit-tracker-add-weekly');
+  });
+
+  test('screen /habit-tracker rated-achieved', async ({ page }) => {
+    await shotRatedHabit(page, 'achieved', 'Achieved');
+    await shotScreen(page, 'state-habit-tracker-rated-achieved');
+  });
+
+  test('screen /habit-tracker rated-partial', async ({ page }) => {
+    await shotRatedHabit(page, 'partial', 'Partially achieved');
+    await shotScreen(page, 'state-habit-tracker-rated-partial');
+  });
+
+  test('screen /habit-tracker rated-missed', async ({ page }) => {
+    await shotRatedHabit(page, 'missed', 'Not achieved');
+    await shotScreen(page, 'state-habit-tracker-rated-missed');
+  });
+
+  test('screen /habit-tracker donate', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByLabel('Amount')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await shotScreen(page, 'state-habit-tracker-donate');
+  });
+
+  test('screen /habit-tracker donate-rate-pending', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.unroute('**/gifts/stats**');
+    await page.route('**/gifts/stats**', () => new Promise(() => undefined));
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    const cont = page.getByRole('button', { name: 'Continue' });
+    await expect(cont).toBeDisabled();
+    await cont.scrollIntoViewIfNeeded();
+    await expect(cont).toBeInViewport();
+    await shotScreen(page, 'state-habit-tracker-donate-rate-pending');
+  });
+
+  test('screen /habit-tracker donate-fiat', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await page.route('**/me/amount-unit', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByLabel('Amount').fill('1000');
+    await expect(page.getByText('$1.00')).toBeVisible();
+    const saved = page.waitForResponse(
+      (response) => response.url().includes('/me/amount-unit') && response.ok(),
+    );
+    await page
+      .getByRole('group', { name: 'Bitcoin or fiat' })
+      .getByRole('button', { name: 'USD' })
+      .click();
+    await saved;
+    await expect(page.getByLabel('Amount')).toHaveValue('1.00');
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-donate-fiat');
+  });
+
+  test('screen /habit-tracker donate-invoice', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ pr: 'lnbc1', amountSats: 21 }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-donate-invoice');
+  });
+
+  test('screen /habit-tracker donate-habit-amount', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('0');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Expected a JSON body with an integer "amountSats"',
+      }),
+    ).toHaveText('Expected a JSON body with an integer "amountSats"');
+    await shotScreen(page, 'state-habit-tracker-donate-habit-amount');
+  });
+
+  test('screen /habit-tracker donate-request', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'nope' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    const requestAlert = page
+      .getByRole('alert')
+      .filter({ hasText: 'Could not start the Bitcoin payment' });
+    await expect(requestAlert).toHaveText('Could not start the Bitcoin payment');
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeInViewport();
+    await expect(requestAlert).toBeInViewport();
+    await shotScreen(page, 'state-habit-tracker-donate-request');
+  });
+
+  test('screen /habit-tracker donate-request-pending', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await new Promise(() => undefined);
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('21');
+    const cont = page.getByRole('button', { name: 'Continue' });
+    await cont.click();
+    await expect(cont).toBeDisabled();
+    await expect(cont.locator('.animate-spin')).toBeVisible();
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Could not start the Bitcoin payment' }),
+    ).toHaveCount(0);
+    await cont.scrollIntoViewIfNeeded();
+    await expect(cont).toBeInViewport();
+    await shotScreen(page, 'state-habit-tracker-donate-request-pending');
+  });
+
+  test('screen /habit-tracker donate-rate-limit', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 429,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Too many payments' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    const rateAlert = page.getByRole('alert').filter({
+      hasText: 'Too many payments. Please wait a moment and try again.',
+    });
+    await expect(rateAlert).toHaveText('Too many payments. Please wait a moment and try again.');
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeInViewport();
+    await expect(rateAlert).toBeInViewport();
+    await shotScreen(page, 'state-habit-tracker-donate-rate-limit');
+  });
+
+  test('screen /habit-tracker donate-author-wallet', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 409,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: "The author's wallet cannot receive this Bitcoin payment",
+          }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    const walletAlert = page.getByRole('alert').filter({
+      hasText: "The author's wallet cannot receive this Bitcoin payment",
+    });
+    await expect(walletAlert).toHaveText("The author's wallet cannot receive this Bitcoin payment");
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeInViewport();
+    await expect(walletAlert).toBeInViewport();
+    await shotScreen(page, 'state-habit-tracker-donate-author-wallet');
+  });
+
+  test('screen /habit-tracker sunday', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+    });
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
+    await expect(page.getByText('Zapping is paused on Sunday.').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Edit' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-sunday');
+  });
+
+  test('screen /habit-tracker editing', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+    await expect(page.getByText('Save', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-editing');
+  });
+
+  test('screen /habit-tracker archive-confirm', async ({ page }) => {
+    await seedHabitAda(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Archive' }).click();
+    await expect(page.getByText('Archive this habit? Its history stays visible.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel archive' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-archive-confirm');
+  });
+
+  test('screen /habit-tracker archived', async ({ page }) => {
+    await seedHabitAda(page);
+    let archived = false;
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        archived = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ok: true }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [
+            {
+              ...HABIT_ROW,
+              accountId: 'acc_e2e',
+              notes: 'secret',
+              lastPeriod: archived ? '2026-10-04' : null,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Archive' }).click();
+    await page.getByRole('button', { name: 'Confirm archive' }).click();
+    await expect(page.getByText('Archived', { exact: true })).toBeVisible();
+    await expect(page.getByText('2026-10-04')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Archive' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Achieved', exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-habit-tracker-archived');
+  });
+
+  test('screen /habit-tracker save-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Invalid name' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Achieved', exact: true }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Could not load or save the tracker. Please try again.',
+      }),
+    ).toHaveText('Could not load or save the tracker. Please try again.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-save-error');
+  });
+
+  test('screen /habit-tracker edit-save-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Invalid name' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Could not load or save the tracker. Please try again.',
+      }),
+    ).toHaveText('Could not load or save the tracker. Please try again.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
+    // Save scrolls the open form under the fold. The shot has to keep the alert.
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-edit-save-error');
+  });
+
+  test('screen /habit-tracker archive-confirm-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Invalid name' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [{ ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' }],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Archive' }).click();
+    await page.getByRole('button', { name: 'Confirm archive' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Could not load or save the tracker. Please try again.',
+      }),
+    ).toHaveText('Could not load or save the tracker. Please try again.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel archive' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await shotScreen(page, 'state-habit-tracker-archive-confirm-error');
+  });
+
+  test('screen /habit-tracker add-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Invalid name' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('No habits yet.')).toBeVisible();
+    const name = page.locator('#habit-add-name');
+    await name.fill('Stretch');
+    await page.getByRole('button', { name: 'Add habit' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Could not load or save the tracker. Please try again.',
+      }),
+    ).toHaveText('Could not load or save the tracker. Please try again.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(name).toHaveValue('Stretch');
+    await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-add-error');
+  });
+
+  test('screen /habit-tracker comment-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Invalid name' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [
+            {
+              ...HABIT_ROW,
+              accountId: 'acc_e2e',
+              description: '',
+              periods: [],
+              comments: [],
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    const draft = page.getByLabel('Write a comment');
+    await draft.fill('still here');
+    await page.getByRole('button', { name: 'Post' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Could not load or save the tracker. Please try again.',
+      }),
+    ).toHaveText('Could not load or save the tracker. Please try again.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(draft).toHaveValue('still here');
+    await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-comment-error');
+  });
+
+  test('screen /habit-tracker add-saved', async ({ page }) => {
+    await seedHabitAda(page);
+    let added = false;
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        added = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ok: true }),
+        });
+        return;
+      }
+      const owned = { ...HABIT_ROW, accountId: 'acc_e2e', notes: 'secret' };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: added
+            ? [
+                {
+                  ...HABIT_ROW,
+                  id: 'h-new',
+                  accountId: 'acc_e2e',
+                  name: 'Stretch',
+                  description: '',
+                  comments: [],
+                },
+                owned,
+              ]
+            : [owned],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    await page.locator('#habit-add-name').fill('Stretch');
+    await page.getByRole('button', { name: 'Add habit' }).click();
+    const created = page.getByRole('heading', { name: 'Stretch', exact: true });
+    await expect(created).toBeVisible();
+    await expect(page.locator('#habit-add-name')).toHaveValue('');
+    await created.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-habit-tracker-add-saved');
+  });
+
+  test('screen /habit-tracker edit-saved', async ({ page }) => {
+    await seedHabitAda(page);
+    let saved = false;
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        saved = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ok: true }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [
+            {
+              ...HABIT_ROW,
+              accountId: 'acc_e2e',
+              notes: 'secret',
+              name: saved ? 'Stretch' : 'Walk',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Walk', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Edit' }).click();
+    await page.locator('#habit-h-ada-name').fill('Stretch');
+    await page.getByRole('button', { name: 'Save' }).click();
+    const renamed = page.getByRole('heading', { name: 'Stretch', exact: true });
+    await expect(renamed).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await renamed.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-habit-tracker-edit-saved');
+  });
+
+  test('screen /habit-tracker comment-posted', async ({ page }) => {
+    await seedHabitAda(page);
+    let posted = false;
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        posted = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ok: true }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [
+            {
+              ...HABIT_ROW,
+              accountId: 'acc_e2e',
+              notes: 'secret',
+              comments: posted
+                ? [
+                    ...HABIT_ROW.comments,
+                    {
+                      id: 'c-new',
+                      habitId: 'h-ada',
+                      accountId: 'acc_e2e',
+                      name: 'Ada',
+                      text: 'kept this',
+                      week: '2026-09-28',
+                      createdAt: 2,
+                    },
+                  ]
+                : HABIT_ROW.comments,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('hello', { exact: true })).toBeVisible();
+    await page.getByLabel('Write a comment').fill('kept this');
+    await page.getByRole('button', { name: 'Post' }).click();
+    const postedText = page.getByText('kept this', { exact: true });
+    await expect(postedText).toBeVisible();
+    await expect(page.getByLabel('Write a comment')).toHaveValue('');
+    // A minimum scroll to the new comment shifts by a few pixels between runs.
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-comment-posted');
+  });
+
+  test('screen /habit-tracker comment-deleted', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'initiator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    let deleted = false;
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        deleted = true;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ok: true }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          reviewWeek: HABIT_PUBLIC.reviewWeek,
+          habits: [
+            {
+              ...HABIT_ROW,
+              comments: deleted ? [] : HABIT_ROW.comments,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Delete comment' }).click();
+    await page.getByRole('button', { name: 'Confirm deletion' }).click();
+    const empty = page.getByText('No comments yet.');
+    await expect(empty).toBeVisible();
+    await expect(page.getByText('hello', { exact: true })).toHaveCount(0);
+    await empty.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-habit-tracker-comment-deleted');
+  });
+
+  test('screen /habit-tracker delete-comment', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'initiator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    const trash = page.getByRole('button', { name: 'Delete comment' });
+    await expect(trash).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm deletion' })).toHaveCount(0);
+    await trash.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-habit-tracker-delete-comment');
+  });
+
+  test('screen /habit-tracker delete-comment-confirm', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'initiator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await stubHabitList(page, HABIT_PUBLIC);
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Delete comment' }).click();
+    await expect(page.getByText('Delete this comment from the Habit-Tracker?')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm deletion' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cancel deletion' })).toBeVisible();
+    await shotScreen(page, 'state-habit-tracker-delete-comment-confirm');
+  });
+
+  test('screen /habit-tracker delete-comment-error', async ({ page }) => {
+    await seedHabitAda(page);
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'initiator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route('**/habits', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Invalid name' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(HABIT_PUBLIC),
+      });
+    });
+    await page.goto('/habit-tracker');
+    await page.getByRole('button', { name: 'Delete comment' }).click();
+    await page.getByRole('button', { name: 'Confirm deletion' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Could not load or save the tracker. Please try again.',
+      }),
+    ).toHaveText('Could not load or save the tracker. Please try again.');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Delete comment' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Confirm deletion' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Confirm archive' })).toHaveCount(0);
+    await page.locator('main [data-scrollport]').evaluate((node) => {
+      node.scrollTop = 0;
+    });
+    await shotScreen(page, 'state-habit-tracker-delete-comment-error');
   });
 });

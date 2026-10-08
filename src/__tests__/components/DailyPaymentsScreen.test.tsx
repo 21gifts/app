@@ -8,6 +8,22 @@ import type { Account, DailyRoster } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchDailyRoster: vi.fn(),
   saveDailyRosterComment: vi.fn(),
@@ -15,6 +31,10 @@ vi.mock('@/lib/api', () => ({
   addDailyRosterRecipient: vi.fn(),
   updateDailyRosterRecipient: vi.fn(),
   deleteDailyRosterRecipient: vi.fn(),
+}));
+
+vi.mock('@/lib/mention-search', () => ({
+  searchMentionAccounts: vi.fn(),
 }));
 
 import {
@@ -25,6 +45,7 @@ import {
   saveDailyRosterPayments,
   updateDailyRosterRecipient,
 } from '@/lib/api';
+import { searchMentionAccounts } from '@/lib/mention-search';
 
 const fetchMock = vi.mocked(fetchDailyRoster);
 const commentMock = vi.mocked(saveDailyRosterComment);
@@ -32,6 +53,11 @@ const paymentsMock = vi.mocked(saveDailyRosterPayments);
 const addMock = vi.mocked(addDailyRosterRecipient);
 const updateMock = vi.mocked(updateDailyRosterRecipient);
 const deleteMock = vi.mocked(deleteDailyRosterRecipient);
+const searchMock = vi.mocked(searchMentionAccounts);
+
+type PersonHit = { id: string; username: string; name: string };
+
+const ADA_PERSON: PersonHit = { id: 'acc_ada', username: 'ada', name: 'Ada' };
 
 const account: Account = {
   id: 'acc_1',
@@ -62,9 +88,8 @@ const ROSTER: DailyRoster = {
   paymentsEnabled: true,
   defaultAmountUsd: 4,
   recipients: [
-    { address: 'Ada@WalletOfSatoshi.com', amountUsd: 1 },
-    { address: 'bob@example.com', amountUsd: 0.1 },
-    { address: 'nolocal', amountUsd: 0.2 },
+    { address: 'ada@walletofsatoshi.com', amountUsd: 1, accountId: 'acc_ada', name: 'Ada' },
+    { address: 'bob@example.com', amountUsd: 0.3, accountId: null, name: null },
   ],
 };
 
@@ -76,6 +101,7 @@ beforeEach(() => {
   addMock.mockResolvedValue(ROSTER);
   updateMock.mockResolvedValue(ROSTER);
   deleteMock.mockResolvedValue(ROSTER);
+  searchMock.mockResolvedValue([ADA_PERSON]);
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -88,16 +114,21 @@ async function renderComment(): Promise<void> {
 
 async function renderAmounts(): Promise<void> {
   renderWithLocale(<DailyPaymentAmountsScreen />);
-  expect(await screen.findByRole('button', { name: 'Edit Ada@w...' })).toBeTruthy();
+  expect(await screen.findByRole('button', { name: 'Edit Ada' })).toBeTruthy();
 }
 
 /** A save disables every control until the mocked request resolves. */
 async function settleAmounts(): Promise<void> {
   await waitFor(() => {
-    expect(screen.getByRole('button', { name: 'Edit Ada@w...' }).hasAttribute('disabled')).toBe(
-      false,
-    );
+    expect(screen.getByRole('button', { name: 'Edit Ada' }).hasAttribute('disabled')).toBe(false);
   });
+}
+
+async function pickPerson(query = '@ada', optionName = '@ada'): Promise<void> {
+  fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+    target: { value: query },
+  });
+  fireEvent.click(await screen.findByRole('option', { name: optionName }));
 }
 
 const pages = [
@@ -109,7 +140,7 @@ const pages = [
   {
     Screen: DailyPaymentAmountsScreen,
     heading: 'Daily payment amounts',
-    ready: 'Edit Ada@w...',
+    ready: 'Edit Ada',
   },
 ] as const;
 
@@ -202,7 +233,11 @@ describe('daily payment subpages', () => {
     expect(screen.queryByRole('textbox', { name: 'Comment' })).toBeNull();
     expect(screen.queryByText('Comment')).toBeNull();
     expect(screen.queryByText('Edit comment')).toBeNull();
-    expect(screen.queryByText('Ada@w...')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Ada' })).toBeNull();
+    expect(screen.queryByText('Unnamed')).toBeNull();
+    expect(screen.queryByText('ada@w...')).toBeNull();
+    expect(screen.queryByText('ada@walletofsatoshi.com')).toBeNull();
+    expect(screen.queryByText('bob@example.com')).toBeNull();
     expect(screen.queryByRole('button', { name: 'On' })).toBeNull();
     expect(screen.queryByText('Save')).toBeNull();
     expect(screen.getByRole('button', { name: 'Edit comment' })).toBeTruthy();
@@ -214,9 +249,11 @@ describe('daily payment subpages', () => {
     expect(screen.queryByText('Daily gift')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit comment' })).toBeNull();
     expect(screen.getByText('$1.00')).toBeTruthy();
-    expect(screen.getByText('Ada@w...')).toBeTruthy();
-    expect(screen.getByText('bob@example.com')).toBeTruthy();
-    expect(screen.getByText('nolocal')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ada' }).getAttribute('href')).toBe('/members/acc_ada');
+    expect(screen.getByText('Unnamed')).toBeTruthy();
+    expect(screen.queryByText('ada@w...')).toBeNull();
+    expect(screen.queryByText('ada@walletofsatoshi.com')).toBeNull();
+    expect(screen.queryByText('bob@example.com')).toBeNull();
     expect(screen.getByText('$1.30')).toBeTruthy();
     expect(
       screen.getByText(
@@ -227,27 +264,46 @@ describe('daily payment subpages', () => {
     expect(screen.queryByText('Save')).toBeNull();
     expect(screen.queryByText('Update')).toBeNull();
     expect(screen.queryByText('Delete')).toBeNull();
-    expect(screen.queryByText('Edit Ada@w...')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Edit Ada@w...' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Delete Ada@w...' })).toBeTruthy();
+    expect(screen.queryByText('Edit Ada')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit Ada' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete Ada' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Edit Unnamed' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete Unnamed' })).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: 'Person' })).toBeTruthy();
+    expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+    expect(searchMock).not.toHaveBeenCalled();
   });
 
-  it('renders lookalike Wallet of Satoshi domains in full', async () => {
+  it('does not render a Lightning address, including a non-Wallet of Satoshi address', async () => {
     fetchMock.mockResolvedValueOnce({
       comment: 'Daily gift',
       paymentsEnabled: true,
       defaultAmountUsd: 4,
       recipients: [
-        { address: 'ada@notwalletofsatoshi.com', amountUsd: 1 },
-        { address: 'ada@walletofsatoshi.com.evil', amountUsd: 2 },
+        {
+          address: 'ada@notwalletofsatoshi.com',
+          amountUsd: 1,
+          accountId: 'acc_ada',
+          name: 'Ada',
+        },
+        {
+          address: 'ada@walletofsatoshi.com.evil',
+          amountUsd: 2,
+          accountId: null,
+          name: null,
+        },
       ],
     });
     renderWithLocale(<DailyPaymentAmountsScreen />);
-    expect(await screen.findByText('ada@notwalletofsatoshi.com')).toBeTruthy();
-    expect(screen.getByText('ada@walletofsatoshi.com.evil')).toBeTruthy();
+    expect(await screen.findByRole('link', { name: 'Ada' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ada' }).getAttribute('href')).toBe('/members/acc_ada');
+    expect(screen.getByText('Unnamed')).toBeTruthy();
+    expect(screen.queryByText('ada@notwalletofsatoshi.com')).toBeNull();
+    expect(screen.queryByText('ada@walletofsatoshi.com.evil')).toBeNull();
     expect(screen.queryByText('ada@w...')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Edit ada@notwalletofsatoshi.com' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Edit ada@walletofsatoshi.com.evil' })).toBeTruthy();
+    expect(screen.queryByText('ada@walletofsatoshi.com')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit Ada' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Edit Unnamed' })).toBeTruthy();
   });
 
   it('saves the comment and shows a mapped, unknown, or non-error failure', async () => {
@@ -268,7 +324,7 @@ describe('daily payment subpages', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(await screen.findByRole('alert')).toHaveProperty(
       'textContent',
-      'That address is already listed.',
+      'That person is already listed.',
     );
 
     commentMock.mockRejectedValueOnce(new Error('boom'));
@@ -303,9 +359,7 @@ describe('daily payment subpages', () => {
     renderWithLocale(<DailyPaymentAmountsScreen />);
     expect(await screen.findByText('No recipients')).toBeTruthy();
     expect(screen.getByText('No recipients')).toBeTruthy();
-    fireEvent.change(screen.getByRole('textbox', { name: 'Address' }), {
-      target: { value: 'new@example.com' },
-    });
+    await pickPerson();
     const usd = screen.getByRole('textbox', { name: 'USD' });
     fireEvent.change(usd, { target: { value: 'abc' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
@@ -314,55 +368,67 @@ describe('daily payment subpages', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     fireEvent.change(usd, { target: { value: '0.0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
-    expect(screen.getByRole('alert').textContent).toBe('The address or the amount is not valid.');
+    expect(screen.getByRole('alert').textContent).toBe('The amount is not valid.');
     fireEvent.change(usd, { target: { value: ' 1.5 ' } });
     addMock.mockResolvedValueOnce({
       ...ROSTER,
-      recipients: [{ address: 'new@example.com', amountUsd: 1.5 }],
+      recipients: [
+        { address: 'ada@example.com', amountUsd: 1.5, accountId: 'acc_ada', name: 'Ada' },
+      ],
     });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
-    expect(addMock).toHaveBeenCalledWith('sess', 'new@example.com', 1.5);
-    expect(await screen.findByRole('textbox', { name: 'Address' })).toHaveProperty('value', '');
+    expect(addMock).toHaveBeenCalledWith('sess', 'acc_ada', 1.5);
+    expect(await screen.findByRole('textbox', { name: 'Person' })).toHaveProperty('value', '');
+  });
+
+  it('refuses add with a valid amount and no selected person', async () => {
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: 'USD' }), {
+      target: { value: '1.5' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(addMock).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toBe('Choose a person.');
   });
 
   it('keeps an open amount editor open when a recipient is added', async () => {
     await renderAmounts();
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
-    const amount = screen.getByRole('textbox', { name: 'USD Ada@w...' });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada' }));
+    const amount = screen.getByRole('textbox', { name: 'USD Ada' });
     fireEvent.change(amount, { target: { value: '4.25' } });
-    fireEvent.change(screen.getByRole('textbox', { name: 'Address' }), {
-      target: { value: 'new@example.com' },
-    });
+    await pickPerson();
     fireEvent.change(screen.getByRole('textbox', { name: /^USD$/ }), {
       target: { value: '1' },
     });
     addMock.mockResolvedValueOnce({
       ...ROSTER,
-      recipients: [...ROSTER.recipients, { address: 'new@example.com', amountUsd: 1 }],
+      recipients: [
+        ...ROSTER.recipients,
+        { address: 'ada@example.com', amountUsd: 1, accountId: 'acc_ada', name: 'Ada' },
+      ],
     });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
-    expect(addMock).toHaveBeenCalledWith('sess', 'new@example.com', 1);
-    expect(await screen.findByRole('textbox', { name: 'USD Ada@w...' })).toHaveProperty(
-      'value',
-      '4.25',
-    );
+    expect(addMock).toHaveBeenCalledWith('sess', 'acc_ada', 1);
+    expect(await screen.findByRole('textbox', { name: 'USD Ada' })).toHaveProperty('value', '4.25');
   });
 
   it('updates and deletes a recipient', async () => {
     await renderAmounts();
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada' }));
     expect(screen.queryByText('Save')).toBeNull();
     expect(screen.queryByText('Cancel')).toBeNull();
-    const amount = screen.getByRole('textbox', { name: 'USD Ada@w...' });
+    const amount = screen.getByRole('textbox', { name: 'USD Ada' });
     fireEvent.change(amount, { target: { value: '0' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(updateMock).not.toHaveBeenCalled();
-    expect(screen.getByRole('alert').textContent).toBe('The address or the amount is not valid.');
+    expect(screen.getByRole('alert').textContent).toBe('The amount is not valid.');
     fireEvent.change(amount, { target: { value: '2' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(updateMock).toHaveBeenCalledWith('sess', 'Ada@WalletOfSatoshi.com', 2);
+    expect(updateMock).toHaveBeenCalledWith('sess', 'ada@walletofsatoshi.com', 2);
     await settleAmounts();
-    fireEvent.click(screen.getByRole('button', { name: 'Delete bob@example.com' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Unnamed' }));
     expect(deleteMock).toHaveBeenCalledWith('sess', 'bob@example.com');
   });
 
@@ -399,7 +465,7 @@ describe('daily payment subpages', () => {
           resolveSave = resolve;
         }),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(screen.getByRole('button', { name: 'Add' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByRole('button', { name: 'Save' }).hasAttribute('disabled')).toBe(true);
@@ -414,15 +480,15 @@ describe('daily payment subpages', () => {
 
   it('cancels an amount edit without saving', async () => {
     await renderAmounts();
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada@w...' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'USD Ada@w...' }), {
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Ada' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'USD Ada' }), {
       target: { value: '9' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(updateMock).not.toHaveBeenCalled();
-    expect(screen.queryByRole('textbox', { name: 'USD Ada@w...' })).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'USD Ada' })).toBeNull();
     expect(screen.getByText('$1.00')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Edit Ada@w...' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Edit Ada' })).toBeTruthy();
   });
 
   it('cancels a comment edit without saving', async () => {
@@ -453,5 +519,357 @@ describe('daily payment subpages', () => {
       'Could not load daily payments. Please try again.',
     );
     expect(screen.queryByText('You cannot change daily payments.')).toBeNull();
+  });
+
+  it('does not search on focus of an empty person field or on invalid text', async () => {
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    const person = screen.getByRole('textbox', { name: 'Person' });
+    fireEvent.focus(person);
+    fireEvent.change(person, { target: { value: '   ' } });
+    fireEvent.change(person, { target: { value: 'ada' } });
+    fireEvent.change(person, { target: { value: 'ada@example.com' } });
+    fireEvent.change(person, { target: { value: 'ada bob' } });
+    fireEvent.change(person, { target: { value: '@ada bob' } });
+    fireEvent.change(person, { target: { value: '@ada!' } });
+    expect(searchMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole('option')).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+    fireEvent.change(person, { target: { value: '@' } });
+    expect(searchMock).toHaveBeenCalledWith('sess', '');
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+  });
+
+  it('searches a leading @ prefix and lists @username plus the muted name', async () => {
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@Ada' },
+    });
+    const option = await screen.findByRole('option', { name: '@ada' });
+    expect(searchMock).toHaveBeenCalledWith('sess', 'ada');
+    expect(option.querySelector('.font-medium')?.textContent).toBe('@ada');
+    expect(option.querySelector('.text-app-muted')?.textContent).toBe('Ada');
+    expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+  });
+
+  it('omits the display name when it matches the username', async () => {
+    searchMock.mockResolvedValue([{ id: 'acc_ada', username: 'ada', name: 'ada' }]);
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@ada' },
+    });
+    const option = await screen.findByRole('option', { name: '@ada' });
+    expect(option.querySelectorAll('span')).toHaveLength(1);
+    expect(option.querySelector('.text-app-muted')).toBeNull();
+  });
+
+  it('shows the whole page with no local cap of eight', async () => {
+    searchMock.mockResolvedValue(
+      Array.from({ length: 9 }, (_, index) => ({
+        id: `acc_${String(index)}`,
+        username: `u${String(index)}`,
+        name: `Name${String(index)}`,
+      })),
+    );
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@u' },
+    });
+    expect(await screen.findByRole('option', { name: '@u0' })).toBeTruthy();
+    expect(screen.getAllByRole('option')).toHaveLength(9);
+  });
+
+  it('keeps the list open on pick, fills @username, and adds by account id', async () => {
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    await pickPerson();
+    const person = screen.getByRole('textbox', { name: 'Person' });
+    expect(person).toHaveProperty('value', '@ada');
+    const option = screen.getByRole('option', { name: '@ada' });
+    expect(option.getAttribute('aria-selected')).toBe('true');
+    fireEvent.change(person, { target: { value: '@ada' } });
+    expect(screen.getByRole('option', { name: '@ada' }).getAttribute('aria-selected')).toBe('true');
+    fireEvent.change(screen.getByRole('textbox', { name: 'USD' }), {
+      target: { value: '1' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(addMock).toHaveBeenCalledWith('sess', 'acc_ada', 1);
+  });
+
+  it('chooses the person on mouse down', async () => {
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@' },
+    });
+    const option = await screen.findByRole('option', { name: '@ada' });
+    fireEvent.mouseDown(option);
+    expect(screen.getByRole('textbox', { name: 'Person' })).toHaveProperty('value', '@ada');
+    expect(screen.getByRole('option', { name: '@ada' }).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('clears the selection on another edit and searches again', async () => {
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    await pickPerson();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@ad' },
+    });
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    expect(searchMock).toHaveBeenCalledWith('sess', 'ad');
+    expect(screen.getByRole('option', { name: '@ada' }).getAttribute('aria-selected')).toBe(
+      'false',
+    );
+  });
+
+  it('shows no rows and no address field when search throws', async () => {
+    searchMock.mockRejectedValueOnce(new Error('offline'));
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@ada' },
+    });
+    await waitFor(() => {
+      expect(searchMock).toHaveBeenCalledWith('sess', 'ada');
+    });
+    expect(screen.queryByRole('option')).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+  });
+
+  it('sets no person rows when an empty @ search rejects', async () => {
+    searchMock.mockRejectedValueOnce(new Error('offline'));
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@' },
+    });
+    await waitFor(() => {
+      expect(searchMock).toHaveBeenCalledWith('sess', '');
+    });
+    expect(screen.queryByRole('option')).toBeNull();
+    expect(screen.queryByRole('textbox', { name: 'Address' })).toBeNull();
+  });
+
+  it('filters the first page while a prefix search is in flight', async () => {
+    let resolvePrefix: (value: PersonHit[]) => void = () => undefined;
+    searchMock.mockImplementation((_session, requested) => {
+      if (requested === '') {
+        return Promise.resolve([
+          { id: 'acc_ada', username: 'ada', name: 'Ada' },
+          { id: 'acc_bob', username: 'bob', name: 'Bob' },
+        ]);
+      }
+      return new Promise((resolve) => {
+        resolvePrefix = resolve;
+      });
+    });
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    const person = screen.getByRole('textbox', { name: 'Person' });
+    fireEvent.change(person, { target: { value: '@' } });
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: '@bob' })).toBeTruthy();
+    fireEvent.change(person, { target: { value: '@ad' } });
+    expect(screen.getByRole('option', { name: '@ada' })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: '@bob' })).toBeNull();
+    await waitFor(() => {
+      expect(searchMock).toHaveBeenCalledWith('sess', 'ad');
+    });
+    await act(async () => {
+      resolvePrefix([{ id: 'acc_ada2', username: 'ada2', name: 'Ada Two' }]);
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('option', { name: '@ada2' })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: '@ada' })).toBeNull();
+    expect(screen.getAllByRole('option')).toHaveLength(1);
+  });
+
+  it('ignores a slower person search after a newer query', async () => {
+    let resolveOlder: (value: PersonHit[]) => void = () => undefined;
+    let resolveNewer: (value: PersonHit[]) => void = () => undefined;
+    searchMock
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveOlder = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveNewer = resolve;
+          }),
+      );
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    const person = screen.getByRole('textbox', { name: 'Person' });
+    fireEvent.change(person, { target: { value: '@ad' } });
+    await waitFor(() => {
+      expect(searchMock).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.change(person, { target: { value: '@ada' } });
+    await waitFor(() => {
+      expect(searchMock).toHaveBeenCalledTimes(2);
+    });
+    await act(async () => {
+      resolveNewer([ADA_PERSON]);
+      await Promise.resolve();
+    });
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    await act(async () => {
+      resolveOlder([{ id: 'acc_other', username: 'other', name: 'Other' }]);
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('option', { name: '@ada' })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: '@other' })).toBeNull();
+  });
+
+  it('keeps newer person rows when an older search fails', async () => {
+    let rejectOlder: (reason: Error) => void = () => undefined;
+    let resolveNewer: (value: PersonHit[]) => void = () => undefined;
+    searchMock
+      .mockImplementationOnce(
+        () =>
+          new Promise((_, reject) => {
+            rejectOlder = reject;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveNewer = resolve;
+          }),
+      );
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    const person = screen.getByRole('textbox', { name: 'Person' });
+    fireEvent.change(person, { target: { value: '@ad' } });
+    await waitFor(() => {
+      expect(searchMock).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.change(person, { target: { value: '@ada' } });
+    await waitFor(() => {
+      expect(searchMock).toHaveBeenCalledTimes(2);
+    });
+    await act(async () => {
+      resolveNewer([ADA_PERSON]);
+      await Promise.resolve();
+    });
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    await act(async () => {
+      rejectOlder(new Error('late'));
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('option', { name: '@ada' })).toBeTruthy();
+  });
+
+  it('ignores a stale person search resolve after unmount', async () => {
+    let resolveSearch: (value: PersonHit[]) => void = () => undefined;
+    searchMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSearch = resolve;
+        }),
+    );
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    const view = renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@ada' },
+    });
+    await waitFor(() => {
+      expect(searchMock).toHaveBeenCalled();
+    });
+    view.unmount();
+    await act(async () => {
+      resolveSearch([ADA_PERSON]);
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole('option')).toBeNull();
+  });
+
+  it('ignores a stale person search reject after unmount', async () => {
+    let rejectSearch: (reason: Error) => void = () => undefined;
+    searchMock.mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectSearch = reject;
+        }),
+    );
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    const view = renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@ada' },
+    });
+    await waitFor(() => {
+      expect(searchMock).toHaveBeenCalled();
+    });
+    view.unmount();
+    await act(async () => {
+      rejectSearch(new Error('offline'));
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole('option')).toBeNull();
+  });
+
+  it('shows mapped add errors for a person', async () => {
+    fetchMock.mockResolvedValue({ ...ROSTER, recipients: [] });
+    renderWithLocale(<DailyPaymentAmountsScreen />);
+    expect(await screen.findByText('No recipients')).toBeTruthy();
+    await pickPerson();
+    fireEvent.change(screen.getByRole('textbox', { name: 'USD' }), {
+      target: { value: '1' },
+    });
+    addMock.mockRejectedValueOnce(new Error('funding.daily.noLightning'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'This person has no Wallet of Satoshi address.',
+    );
+    addMock.mockRejectedValueOnce(new Error('funding.daily.unknownPerson'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'That person was not found.',
+    );
+    addMock.mockRejectedValueOnce(new Error('funding.daily.invalidPerson'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Choose a person and a valid amount.',
+    );
+  });
+
+  it('hides the person suggestion list when it has no rows', async () => {
+    await renderAmounts();
+    const list = document.getElementById('daily-person-add-list');
+    expect(list).toBeTruthy();
+    expect(list?.className).toContain('hidden');
+    expect(list?.className).toBe('hidden');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Person' }), {
+      target: { value: '@' },
+    });
+    expect(await screen.findByRole('option', { name: '@ada' })).toBeTruthy();
+    expect(list?.className).not.toContain('hidden');
+    expect(list?.className).toBe(
+      'flex w-full flex-col rounded-xl border border-app-border bg-app-card p-2',
+    );
   });
 });

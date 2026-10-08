@@ -11,6 +11,7 @@ import {
   fiatDraftForSats,
   fiatToSats,
   latestRateDay,
+  latestRateDayFor,
   parseAmountDraft,
   paySatsFromDraft,
   replySatsFromDraft,
@@ -132,6 +133,23 @@ describe('latestRateDay', () => {
   });
 });
 
+describe('latestRateDayFor', () => {
+  const poisoned = { ...RATE_DAY, sats: 1000, usd: '10.00', chf: null, eur: null, php: null };
+
+  it('skips a newer day that cannot convert the currency', () => {
+    expect(latestRateDayFor([RATE_DAY, poisoned], 'PHP')).toEqual(RATE_DAY);
+    expect(latestRateDayFor([RATE_DAY, poisoned], 'USD')).toEqual(poisoned);
+  });
+
+  it('returns null when no day can convert that currency', () => {
+    expect(latestRateDayFor([poisoned], 'PHP')).toBeNull();
+    expect(latestRateDayFor([{ ...RATE_DAY, sats: 0, php: '1.00' }], 'PHP')).toBeNull();
+    expect(latestRateDayFor([{ ...RATE_DAY, php: '0.00' }], 'PHP')).toBeNull();
+    expect(latestRateDayFor([{ ...RATE_DAY, php: 'nope' }], 'PHP')).toBeNull();
+    expect(latestRateDayFor([], 'CHF')).toBeNull();
+  });
+});
+
 describe('shownFiatForSats', () => {
   it('copies the preview amounts for every currency', () => {
     expect(shownFiatForSats(21, RATE_DAY)).toEqual({
@@ -226,9 +244,25 @@ describe('parseAmountDraft', () => {
       sats: 1234,
     });
     expect(parseAmountDraft('fiat', '1.123456789', RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
-    expect(parseAmountDraft('fiat', '1.00', null, 'USD')).toEqual({ kind: 'invalid' });
+    expect(parseAmountDraft('fiat', '1.00', null, 'USD')).toEqual({ kind: 'no-rate' });
+    expect(parseAmountDraft('fiat', '0', null, 'USD')).toEqual({ kind: 'invalid' });
+    expect(parseAmountDraft('fiat', '1.00', { ...RATE_DAY, php: null }, 'PHP')).toEqual({
+      kind: 'no-rate',
+    });
     expect(parseAmountDraft('btc', '9'.repeat(40), RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
     expect(parseAmountDraft('fiat', '9'.repeat(400), RATE_DAY, 'USD')).toEqual({ kind: 'invalid' });
+    expect(parseAmountDraft('fiat', '90071992547410', RATE_DAY, 'USD')).toEqual({
+      kind: 'invalid',
+    });
+    expect(parseAmountDraft('fiat', '1.00', { ...RATE_DAY, sats: 0 }, 'USD')).toEqual({
+      kind: 'invalid',
+    });
+    expect(parseAmountDraft('fiat', '1.00', { ...RATE_DAY, php: '0.00' }, 'PHP')).toEqual({
+      kind: 'no-rate',
+    });
+    expect(parseAmountDraft('fiat', '1.00', { ...RATE_DAY, php: 'nope' }, 'PHP')).toEqual({
+      kind: 'no-rate',
+    });
   });
 });
 
@@ -237,11 +271,13 @@ describe('replySatsFromDraft and paySatsFromDraft', () => {
     expect(replySatsFromDraft('', 'btc', RATE_DAY, 'USD')).toBe('empty');
     expect(replySatsFromDraft('0', 'btc', RATE_DAY, 'USD')).toBe(1);
     expect(replySatsFromDraft('nope', 'fiat', RATE_DAY, 'USD')).toBe('invalid');
+    expect(replySatsFromDraft('1.00', 'fiat', null, 'USD')).toBe('invalid');
   });
 
   it('treats a blank pay field as 21 sats', () => {
     expect(paySatsFromDraft('  ', 'fiat', RATE_DAY, 'USD')).toBe(21);
     expect(paySatsFromDraft('0', 'btc', RATE_DAY, 'USD')).toBe('invalid');
     expect(paySatsFromDraft('1.00', 'fiat', RATE_DAY, 'USD')).toBe(1000);
+    expect(paySatsFromDraft('1.00', 'fiat', null, 'USD')).toBe('invalid');
   });
 });

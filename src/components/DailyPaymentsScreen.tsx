@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Loader2, Pencil, Trash2, X } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState, type FormEvent, type ReactElement, type ReactNode } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -14,6 +15,7 @@ import {
   updateDailyRosterRecipient,
 } from '@/lib/api';
 import type { DailyRoster } from '@/lib/api-types';
+import { searchMentionAccounts } from '@/lib/mention-search';
 import type { MessageKey } from '@/lib/messages';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import { canEditDailyPayoutRoster } from '@/lib/roles';
@@ -24,31 +26,19 @@ const SAVE_ERROR_KEYS = [
   'funding.daily.invalidComment',
   'funding.daily.invalidSwitch',
   'funding.daily.invalidRow',
+  'funding.daily.invalidPerson',
   'funding.daily.duplicate',
   'funding.daily.unknown',
+  'funding.daily.unknownPerson',
+  'funding.daily.noLightning',
   'funding.daily.saveError',
 ] as const satisfies readonly MessageKey[];
 
-type SaveErrorKey = (typeof SAVE_ERROR_KEYS)[number];
+type SaveErrorKey = (typeof SAVE_ERROR_KEYS)[number] | 'funding.daily.pickPerson';
 
-/**
- * Wallet of Satoshi addresses render as `local@w...`. Any other string is unchanged.
- *
- * @param address - Lightning address as stored.
- * @returns The label shown in the roster.
- */
-function displayAddress(address: string): string {
-  const at = address.lastIndexOf('@');
-  if (at < 0) {
-    return address;
-  }
-  const local = address.slice(0, at);
-  const domain = address.slice(at + 1);
-  if (domain.toLowerCase() === 'walletofsatoshi.com') {
-    return `${local}@w...`;
-  }
-  return address;
-}
+type DailyPerson = { id: string; username: string; name: string };
+
+const PERSON_QUERY = /^[a-z0-9][a-z0-9._-]{0,31}$/;
 
 /**
  * Parse a typed USD amount. Numeric strings are not accepted by the api, so
@@ -67,6 +57,29 @@ function parseUsd(raw: string): number | null {
     return null;
   }
   return value;
+}
+
+/**
+ * Username prefix after a leading `@`, or `null` when the field is not a mention.
+ *
+ * Empty string means the field is exactly `@` and the first suggestion page applies.
+ * Any space, including a trailing one, is not a username and closes the list.
+ *
+ * @param draft - Current person field text.
+ * @returns The lowercase prefix, `""`, or `null`.
+ */
+function mentionQuery(draft: string): string | null {
+  if (draft === '@') {
+    return '';
+  }
+  if (!draft.startsWith('@') || draft.includes(' ')) {
+    return null;
+  }
+  const query = draft.slice(1).toLowerCase();
+  if (!PERSON_QUERY.test(query)) {
+    return null;
+  }
+  return query;
 }
 
 /**
@@ -99,6 +112,9 @@ function saveErrorKey(err: unknown): SaveErrorKey {
   return 'funding.daily.saveError';
 }
 
+/** Page alerts sit above the roster. Add-form alerts sit on that form. */
+type SaveErrorPlace = 'page' | 'add';
+
 type RosterLoad = {
   session: string;
   editor: boolean;
@@ -108,10 +124,15 @@ type RosterLoad = {
   pending: boolean;
   savingEditor: boolean;
   saveError: SaveErrorKey | null;
-  setSaveError: (error: SaveErrorKey | null) => void;
+  saveErrorPlace: SaveErrorPlace;
+  setSaveError: (error: SaveErrorKey | null, place?: SaveErrorPlace) => void;
   attempt: number;
   retry: () => void;
-  runSave: (task: () => Promise<DailyRoster>, closeEditor?: boolean) => Promise<boolean>;
+  runSave: (
+    task: () => Promise<DailyRoster>,
+    closeEditor?: boolean,
+    place?: SaveErrorPlace,
+  ) => Promise<boolean>;
 };
 
 /**
@@ -130,7 +151,12 @@ function useDailyRoster(): RosterLoad | null {
   const [attempt, setAttempt] = useState(0);
   const [pending, setPending] = useState(false);
   const [savingEditor, setSavingEditor] = useState(false);
-  const [saveError, setSaveError] = useState<SaveErrorKey | null>(null);
+  const [saveError, setSaveErrorState] = useState<SaveErrorKey | null>(null);
+  const [saveErrorPlace, setSaveErrorPlace] = useState<SaveErrorPlace>('page');
+  const setSaveError = (error: SaveErrorKey | null, place: SaveErrorPlace = 'page'): void => {
+    setSaveErrorState(error);
+    setSaveErrorPlace(place);
+  };
 
   useEffect(() => {
     if (session === null || !editor) {
@@ -170,6 +196,7 @@ function useDailyRoster(): RosterLoad | null {
   const runSave = async (
     task: () => Promise<DailyRoster>,
     closeEditor = false,
+    place: SaveErrorPlace = 'page',
   ): Promise<boolean> => {
     setPending(true);
     if (closeEditor) {
@@ -182,7 +209,7 @@ function useDailyRoster(): RosterLoad | null {
       setRoster(next);
       saved = true;
     } catch (err) {
-      setSaveError(saveErrorKey(err));
+      setSaveError(saveErrorKey(err), place);
     } finally {
       setPending(false);
       setSavingEditor(false);
@@ -200,6 +227,7 @@ function useDailyRoster(): RosterLoad | null {
     pending,
     savingEditor,
     saveError,
+    saveErrorPlace,
     setSaveError,
     attempt,
     retry: () => {
@@ -414,24 +442,88 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
   const load = useDailyRoster();
   const [editingAddress, setEditingAddress] = useState<string | null>(null);
   const [amountDraft, setAmountDraft] = useState('');
-  const [addAddress, setAddAddress] = useState('');
+  const [addQuery, setAddQuery] = useState('');
+  const [addPerson, setAddPerson] = useState<DailyPerson | null>(null);
+  const [seed, setSeed] = useState<readonly DailyPerson[]>([]);
+  const [remote, setRemote] = useState<{
+    query: string;
+    rows: readonly DailyPerson[];
+  } | null>(null);
   const [addUsd, setAddUsd] = useState('');
   const attempt = load === null ? 0 : load.attempt;
+  const sessionToken = load === null ? null : load.session;
+  const query = sessionToken === null ? null : mentionQuery(addQuery);
 
   useEffect(() => {
     setEditingAddress(null);
   }, [attempt]);
 
+  useEffect(() => {
+    if (sessionToken === null || query === null) {
+      setSeed([]);
+      setRemote(null);
+      return;
+    }
+    const current = sessionToken;
+    const requested = query;
+    let cancelled = false;
+    if (requested !== '') {
+      setRemote(null);
+    }
+    void searchMentionAccounts(current, requested)
+      .then((rows) => {
+        if (cancelled) {
+          return;
+        }
+        if (requested === '') {
+          setSeed(rows);
+          return;
+        }
+        setRemote({ query: requested, rows });
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+        if (requested === '') {
+          setSeed([]);
+          return;
+        }
+        setRemote({ query: requested, rows: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [query, sessionToken]);
+
   if (load === null) {
     return null;
   }
 
-  const { session, editor, roster, loadError, forbidden, pending, savingEditor, saveError } = load;
+  const {
+    session,
+    editor,
+    roster,
+    loadError,
+    forbidden,
+    pending,
+    savingEditor,
+    saveError,
+    saveErrorPlace,
+  } = load;
   const saveIcon = savingEditor ? (
     <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
   ) : (
     <Check aria-hidden="true" className="h-4 w-4" />
   );
+  const shown =
+    query === null
+      ? []
+      : query === ''
+        ? seed
+        : remote !== null && remote.query === query
+          ? remote.rows
+          : seed.filter((row) => row.username.toLowerCase().startsWith(query));
 
   const onSaveAmount = (event: FormEvent<HTMLFormElement>, address: string): void => {
     event.preventDefault();
@@ -453,15 +545,25 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
     event.preventDefault();
     const amountUsd = parseUsd(addUsd);
     if (amountUsd === null) {
-      load.setSaveError('funding.daily.invalidRow');
+      load.setSaveError('funding.daily.invalidRow', 'add');
       return;
     }
-    void load.runSave(async () => {
-      const next = await addDailyRosterRecipient(session, addAddress, amountUsd);
-      setAddAddress('');
-      setAddUsd('');
-      return next;
-    });
+    if (addPerson === null) {
+      load.setSaveError('funding.daily.pickPerson', 'add');
+      return;
+    }
+    const accountId = addPerson.id;
+    void load.runSave(
+      async () => {
+        const next = await addDailyRosterRecipient(session, accountId, amountUsd);
+        setAddPerson(null);
+        setAddQuery('');
+        setAddUsd('');
+        return next;
+      },
+      false,
+      'add',
+    );
   };
 
   let editorBody: ReactNode = null;
@@ -473,7 +575,7 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
             amount: formatUsdDisplay(String(roster.defaultAmountUsd), numberFormat),
           })}
         </p>
-        {saveError === null ? null : (
+        {saveError === null || saveErrorPlace === 'add' ? null : (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t(saveError)}
           </p>
@@ -515,16 +617,23 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
         ) : (
           <ul aria-label={t('funding.daily.recipients')} className="flex w-full flex-col gap-3">
             {roster.recipients.map((row) => {
-              const display = displayAddress(row.address);
+              const label = row.name !== null && row.name !== '' ? row.name : t('moderate.unnamed');
               const rowEditing = editingAddress === row.address;
               return (
                 <li
                   key={row.address}
                   className="flex w-full flex-col gap-3 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3"
                 >
-                  <span className="truncate text-sm text-app-fg" title={row.address}>
-                    {display}
-                  </span>
+                  {row.accountId !== null ? (
+                    <Link
+                      href={`/members/${row.accountId}`}
+                      className="block truncate text-sm font-medium text-app-fg underline underline-offset-2"
+                    >
+                      {label}
+                    </Link>
+                  ) : (
+                    <span className="block truncate text-sm text-app-fg">{label}</span>
+                  )}
                   {rowEditing ? (
                     <form
                       className="flex w-full items-end gap-2"
@@ -539,7 +648,7 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
                         value={amountDraft}
                         inputMode="decimal"
                         disabled={pending}
-                        aria-label={`${t('funding.daily.usd')} ${display}`}
+                        aria-label={`${t('funding.daily.usd')} ${label}`}
                         onChange={(event) => {
                           setAmountDraft(event.target.value);
                         }}
@@ -576,7 +685,7 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
                         type="button"
                         variant="secondary"
                         size="md"
-                        aria-label={`${t('funding.daily.edit')} ${display}`}
+                        aria-label={`${t('funding.daily.edit')} ${label}`}
                         disabled={pending}
                         onClick={() => {
                           setAmountDraft(String(row.amountUsd));
@@ -590,7 +699,7 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
                         type="button"
                         variant="secondary"
                         size="md"
-                        aria-label={`${t('funding.daily.delete')} ${display}`}
+                        aria-label={`${t('funding.daily.delete')} ${label}`}
                         disabled={pending}
                         onClick={() => {
                           void load.runSave(() => deleteDailyRosterRecipient(session, row.address));
@@ -612,15 +721,70 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
           </ul>
         )}
         <form className="flex w-full flex-col gap-3" onSubmit={onAdd}>
+          {saveError === null || saveErrorPlace !== 'add' ? null : (
+            <p role="alert" className="text-center text-sm text-app-danger">
+              {t(saveError)}
+            </p>
+          )}
           <Field
-            label={t('funding.daily.address')}
-            value={addAddress}
+            label={t('funding.daily.person')}
+            id="daily-person-add"
+            value={addQuery}
             autoComplete="off"
             disabled={pending}
+            aria-autocomplete="list"
+            aria-controls="daily-person-add-list"
+            aria-expanded={shown.length > 0}
             onChange={(event) => {
-              setAddAddress(event.target.value);
+              const next = event.target.value;
+              setAddQuery(next);
+              if (
+                addPerson !== null &&
+                next.trim().toLowerCase() !== `@${addPerson.username.toLowerCase()}`
+              ) {
+                setAddPerson(null);
+              }
             }}
           />
+          <ul
+            id="daily-person-add-list"
+            role="listbox"
+            aria-label={t('forum.mentionSuggest')}
+            className={
+              shown.length === 0
+                ? 'hidden'
+                : 'flex w-full flex-col rounded-xl border border-app-border bg-app-card p-2'
+            }
+          >
+            {shown.map((account) => (
+              <li key={account.id} role="presentation">
+                <button
+                  type="button"
+                  role="option"
+                  aria-label={`@${account.username}`}
+                  aria-selected={
+                    addQuery.trim().toLowerCase() === `@${account.username.toLowerCase()}`
+                  }
+                  disabled={pending}
+                  className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-app-fg hover:bg-app-hover"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    setAddPerson(account);
+                    setAddQuery(`@${account.username}`);
+                  }}
+                  onClick={() => {
+                    setAddPerson(account);
+                    setAddQuery(`@${account.username}`);
+                  }}
+                >
+                  <span className="font-medium">@{account.username}</span>
+                  {account.name !== account.username ? (
+                    <span className="text-app-muted">{account.name}</span>
+                  ) : null}
+                </button>
+              </li>
+            ))}
+          </ul>
           <Field
             label={t('funding.daily.usd')}
             id="daily-usd-add"

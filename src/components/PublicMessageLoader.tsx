@@ -29,7 +29,12 @@ import {
 import type { ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
-import { formatBitcoin, latestRateDay, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
+import {
+  formatBitcoin,
+  latestRateDayFor,
+  type FiatCode,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -281,7 +286,8 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   const [replies, setReplies] = useState<ForumMessage[]>([]);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
+  const [rateSeries, setRateSeries] = useState<readonly FiatRateDay[] | null>(null);
+  const rateDay = rateSeries === null ? null : latestRateDayFor(rateSeries, fiat);
   const markedRootStampRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -376,12 +382,12 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
     void fetchGiftStats()
       .then((stats) => {
         if (!cancelled) {
-          setRateDay(latestRateDay(stats.spendOverTime));
+          setRateSeries(stats.spendOverTime);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setRateDay(null);
+          setRateSeries([]);
         }
       });
     return () => {

@@ -1155,6 +1155,7 @@ export async function fetchTrustChain(sessionToken: string, around?: string): Pr
  * @param path - Same-origin proxy path.
  * @param sessionToken - Bearer session.
  * @param accountId - Subject account id.
+ * @param extra - Optional Verify-only `{ confirmedName }`. Omitted, the body is `{ accountId }`.
  * @returns Parsed {@link TrustActionResult}.
  * @throws Error with visitor-facing copy on any failure.
  */
@@ -1162,6 +1163,7 @@ async function postTrustAction(
   path: string,
   sessionToken: string,
   accountId: string,
+  extra?: { confirmedName: string },
 ): Promise<TrustActionResult> {
   try {
     const response = await fetch(path, {
@@ -1171,7 +1173,7 @@ async function postTrustAction(
         'Content-Type': 'application/json',
         ...deviceTimeZoneHeader(),
       },
-      body: JSON.stringify({ accountId }),
+      body: JSON.stringify(extra === undefined ? { accountId } : { accountId, ...extra }),
     });
     if (!response.ok) {
       throw new Error(TRUST_ACTION_ERROR);
@@ -1187,14 +1189,16 @@ async function postTrustAction(
  *
  * @param sessionToken - Bearer session of a moderator.
  * @param accountId - Subject account id.
+ * @param confirmedName - Stored name that uniquely identifies the person.
  * @returns The updated account snapshot.
  * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
  */
 export async function postTrustVerify(
   sessionToken: string,
   accountId: string,
+  confirmedName: string,
 ): Promise<TrustActionResult> {
-  return postTrustAction('/trust/verify', sessionToken, accountId);
+  return postTrustAction('/trust/verify', sessionToken, accountId, { confirmedName });
 }
 
 /**
@@ -1297,16 +1301,22 @@ const DAILY_ROSTER_API_SAVE_ERRORS: Record<string, string> = {
   'Invalid comment': 'funding.daily.invalidComment',
   'Invalid payments switch': 'funding.daily.invalidSwitch',
   'Invalid address or amount': 'funding.daily.invalidRow',
+  'Invalid person or amount': 'funding.daily.invalidPerson',
   'Address already listed': 'funding.daily.duplicate',
   'Unknown address': 'funding.daily.unknown',
+  'Unknown person': 'funding.daily.unknownPerson',
+  'Person has no Lightning address': 'funding.daily.noLightning',
 };
 
 const DAILY_ROSTER_SAVE_KEYS = new Set([
   'funding.daily.invalidComment',
   'funding.daily.invalidSwitch',
   'funding.daily.invalidRow',
+  'funding.daily.invalidPerson',
   'funding.daily.duplicate',
   'funding.daily.unknown',
+  'funding.daily.unknownPerson',
+  'funding.daily.noLightning',
   FUNDING_DAILY_ROSTER_SAVE_ERROR,
 ]);
 
@@ -1614,21 +1624,22 @@ export async function saveDailyRosterPayments(
  * Adds a recipient to the daily payout roster.
  *
  * Hits same-origin `POST /funding/daily-roster/recipients` with
- * `{ address, amountUsd }`.
+ * `{ accountId, amountUsd }`.
  *
  * @param session - Bearer session.
- * @param address - Recipient address.
+ * @param accountId - Member account id.
  * @param amountUsd - Daily amount in USD.
  * @returns The updated {@link DailyRoster}.
  * @throws Error whose message is a `funding.daily.*` catalog key. Maps
- * `Invalid address or amount` and `Address already listed`.
+ * `Invalid person or amount`, `Unknown person`, `Person has no Lightning address`,
+ * and `Address already listed`.
  */
 export async function addDailyRosterRecipient(
   session: string,
-  address: string,
+  accountId: string,
   amountUsd: number,
 ): Promise<DailyRoster> {
-  return postDailyRoster('/funding/daily-roster/recipients', session, { address, amountUsd });
+  return postDailyRoster('/funding/daily-roster/recipients', session, { accountId, amountUsd });
 }
 
 /**

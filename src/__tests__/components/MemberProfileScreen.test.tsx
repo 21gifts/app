@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import {
@@ -9,7 +10,7 @@ import {
   fetchMember,
   fetchMemberPosts,
   fetchShopNoteEdits,
-  postTrustVerify,
+  postTrustAppoint,
   setMessageShopText,
   fetchMemberReplies,
   fetchMessagePhoto,
@@ -20,6 +21,7 @@ import {
   openConversation,
   postMessage,
   postMessageInvoice,
+  postRepaymentInvoice,
   setLightningAddress,
   setName,
 } from '@/lib/api';
@@ -48,11 +50,18 @@ vi.mock('next/navigation', () => ({
   useSearchParams: (): URLSearchParams => new URLSearchParams(),
 }));
 
+vi.mock('next/link', () => ({
+  default: ({ href, children }: { href: string; children: ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchMessages: vi.fn(),
   postMessage: vi.fn(),
   postMessageVideo: vi.fn(),
   postMessageInvoice: vi.fn(),
+  postRepaymentInvoice: vi.fn(),
   NoteDeletedError: class NoteDeletedError extends Error {
     constructor() {
       super('This note was deleted');
@@ -91,6 +100,7 @@ vi.mock('@/hooks/useHydrateSession', () => ({
 }));
 
 const photoMock = vi.mocked(fetchMessagePhoto);
+const repayMock = vi.mocked(postRepaymentInvoice);
 const NULL_TRUST = {
   verifiedBy: null,
   proposedBy: null,
@@ -141,6 +151,16 @@ const note = {
   role: 'verified' as const,
   replyCount: 0,
 };
+
+function fundedCredit(): ForumMessage {
+  return {
+    ...note,
+    sats: 21000,
+    goalSats: 21000,
+    goalRepayable: true,
+    goalTermDays: 30,
+  };
+}
 
 const profileWithNote: MemberProfile = {
   ...profile,
@@ -530,16 +550,16 @@ describe('MemberProfileScreen', () => {
     window.history.pushState(null, '', '/?lang=Kikamba');
     useAuthStore.setState({
       session: 'sess',
-      account: { ...account, role: 'moderator' },
+      account: { ...account, role: 'founder' },
     });
-    vi.mocked(postTrustVerify).mockResolvedValueOnce({
+    vi.mocked(postTrustAppoint).mockResolvedValueOnce({
       id: profile.id,
       name: 'Carol',
-      role: 'verified',
+      role: 'moderator',
     });
     vi.mocked(fetchMember).mockResolvedValueOnce({
       ...profile,
-      role: 'verified',
+      role: 'moderator',
       username: 'ada',
     });
     renderWithLocale(
@@ -549,8 +569,9 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
     fireEvent.click(screen.getByText('Moderator functions'));
-    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Appoint as moderator' }));
     await waitFor(() => {
+      expect(postTrustAppoint).toHaveBeenCalledWith('sess', profile.id);
       expect(screen.getByText('ada@21.gifts')).toBeTruthy();
     });
     expect(screen.queryByRole('dialog', { name: 'Shop sticker' })).toBeNull();
@@ -3599,12 +3620,12 @@ describe('MemberProfileScreen', () => {
     renderWithLocale(<MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} />);
     expect(screen.getByTestId('state-members-staff-verify')).toBeTruthy();
     fireEvent.click(screen.getByText('Moderator functions'));
-    expect(screen.getByRole('button', { name: 'Verify' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Verify' })).toBeTruthy();
   });
 
   it('does not show Verify for a basis viewer', () => {
     renderWithLocale(<MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} />);
-    expect(screen.queryByRole('button', { name: 'Verify' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Verify' })).toBeNull();
     expect(screen.queryByTestId('state-members-staff-verify')).toBeNull();
     expect(screen.queryByTestId('staff-functions')).toBeNull();
   });
@@ -4135,5 +4156,172 @@ describe('MemberProfileScreen', () => {
     expect(
       vi.mocked(URL.revokeObjectURL).mock.calls.filter((call) => call[0] === shopSrc),
     ).toHaveLength(1);
+  });
+
+  it("shows Pay today's repayment on the author's funded credit and disables it after the invoice", async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, id: profile.id },
+    });
+    repayMock.mockResolvedValue({ pr: 'lnbc21n1again', amountSats: 21 });
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
+    await openPostsShowingNote(fundedCredit());
+    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
+    await waitFor(() => {
+      expect(postRepaymentInvoice).toHaveBeenCalledWith('sess', note.id);
+      expect(
+        (screen.getByRole('button', { name: "Pay today's repayment" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+    });
+  });
+
+  it("does not show Pay today's repayment on another member's funded credit", async () => {
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
+    await openPostsShowingNote(fundedCredit());
+    expect(screen.queryByRole('button', { name: "Pay today's repayment" })).toBeNull();
+  });
+
+  it("does not show Pay today's repayment on the author's own profile facts", async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, id: profile.id },
+    });
+    renderWithLocale(
+      <MemberProfileScreen factsOnly profile={profileWithNote} received={[]} donated={[]} />,
+    );
+    await openPostsShowingNote(fundedCredit());
+    expect(screen.queryByRole('button', { name: "Pay today's repayment" })).toBeNull();
+  });
+
+  it('pays today repayment and opens requirements when the author is missing one', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, id: profile.id },
+    });
+    repayMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
+    await openPostsShowingNote(fundedCredit());
+    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
+    await waitFor(() => {
+      expect(repayMock).toHaveBeenCalledWith('sess', note.id);
+    });
+    expect(await screen.findByRole('button', { name: 'I agree to these rules' })).toBeTruthy();
+    vi.mocked(agreeToRules).mockResolvedValue({
+      ...account,
+      id: profile.id,
+      rulesAgreedAt: 2,
+      missing: [],
+      setup: 'name',
+    });
+    repayMock.mockResolvedValueOnce({ pr: 'lnbc21n1again', amountSats: 21 });
+    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
+    await waitFor(() => {
+      expect(repayMock).toHaveBeenCalledTimes(2);
+      expect(
+        (screen.getByRole('button', { name: "Pay today's repayment" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
+    });
+  });
+
+  it('shows a repayment error when the missing field is not an overlay', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, id: profile.id },
+    });
+    repayMock.mockRejectedValueOnce(new MissingRequirementsError([]));
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
+    await openPostsShowingNote(fundedCredit());
+    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Could not start the Bitcoin payment',
+    );
+  });
+
+  it('shows the rate limit, the author wallet, and a failed repayment', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, id: profile.id },
+    });
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
+    await openPostsShowingNote(fundedCredit());
+    repayMock.mockRejectedValueOnce(new Error('Too many payments'));
+    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Too many payments. Please wait a moment and try again.',
+    );
+    repayMock.mockRejectedValueOnce(
+      new Error("The author's wallet cannot receive this Bitcoin payment"),
+    );
+    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        "The author's wallet cannot receive this Bitcoin payment",
+      );
+    });
+    repayMock.mockRejectedValueOnce(new Error('Could not start the Bitcoin payment'));
+    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
+    });
+  });
+
+  it('does not start a repayment after the session is gone', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, id: profile.id },
+    });
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
+    await openPostsShowingNote(fundedCredit());
+    await screen.findByRole('button', { name: "Pay today's repayment" });
+    act(() => {
+      useAuthStore.setState({ session: null });
+    });
+    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
+    expect(repayMock).not.toHaveBeenCalled();
+  });
+
+  it('drops a repayment that finishes after the feed unmounts', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, id: profile.id },
+    });
+    let resolveOld: (value: { pr: string; amountSats: number }) => void = () => {};
+    repayMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveOld = resolve;
+        }),
+    );
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
+    await openPostsShowingNote(fundedCredit());
+    fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
+    await waitFor(() => {
+      expect(repayMock).toHaveBeenCalledTimes(1);
+    });
+    cleanup();
+    await act(async () => {
+      resolveOld({ pr: 'lnbc21n1old', amountSats: 99 });
+      await Promise.resolve();
+    });
+    let rejectOld: (err: Error) => void = () => {};
+    repayMock.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectOld = reject;
+        }),
+    );
+    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
+    await openPostsShowingNote(fundedCredit());
+    fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
+    await waitFor(() => {
+      expect(repayMock).toHaveBeenCalledTimes(2);
+    });
+    cleanup();
+    await act(async () => {
+      rejectOld(new Error('late'));
+      await Promise.resolve();
+    });
   });
 });

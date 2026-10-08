@@ -6,14 +6,8 @@ import { useState, type ReactElement } from 'react';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { StaffFunctions } from '@/components/StaffFunctions';
-import { Button } from '@/components/ui';
-import {
-  fetchMember,
-  postTrustAppoint,
-  postTrustConfirm,
-  postTrustPropose,
-  postTrustVerify,
-} from '@/lib/api';
+import { Button, ButtonLink } from '@/components/ui';
+import { fetchMember, postTrustAppoint, postTrustConfirm, postTrustPropose } from '@/lib/api';
 import type { MemberProfile } from '@/lib/api-types';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
@@ -60,8 +54,9 @@ async function runTrustAction(
  *
  * Hidden when signed out, when the viewer is below the moderator rank, or when
  * the subject is the viewer. Founders may appoint; moderators
- * verify, propose, or confirm. Subjects already at the moderator rank see a
- * link to the public chain instead of buttons.
+ * propose or confirm, and Verify is a link to the stored-name subpage.
+ * Subjects already at the moderator rank see a link to the public chain
+ * instead of write controls.
  *
  * @param props - Subject profile and optional update callback.
  * @returns The action card, or `null` when the viewer cannot act.
@@ -145,15 +140,9 @@ export function MemberTrustActions({
         ) : (
           <SundayWritingGate>
             {showVerify ? (
-              <Button
-                variant="secondary"
-                disabled={busy}
-                onClick={() => {
-                  run(() => postTrustVerify(session, profile.id), { role: 'verified' });
-                }}
-              >
+              <ButtonLink variant="secondary" href={`/members/${profile.id}/verify`}>
                 {t('trustChain.action.verify')}
-              </Button>
+              </ButtonLink>
             ) : null}
             {showPropose ? (
               <Button

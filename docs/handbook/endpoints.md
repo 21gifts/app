@@ -135,6 +135,20 @@
 - **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, `/members/[accountId]`, and the people-count chart on `/statistics` (every visitor, including signed-out, no goal).
 - **Auth:** Public.
 
+## Endpoint: GET /habits
+
+- **Purpose:** Same-origin proxy of api `GET /habits` (public habit list, review week, and comments). Forwards `Authorization` when the browser sent it, so the owner can receive internal notes.
+- **Errors:** The proxy forwards the upstream status, or 502 if the api is unreachable.
+- **Used by:** `fetchMemberHabits` on `/habit-tracker`.
+- **Auth:** Public. A bearer is optional and is forwarded, not added.
+
+## Endpoint: POST /habits
+
+- **Purpose:** Same-origin proxy of api `POST /habits` (add, edit, archive, log, comment, delete a comment, or request a Lightning invoice). Forwards `Authorization` and `Time-Zone`. Does not pay the invoice.
+- **Errors:** The proxy forwards the upstream status. Expected upstream errors include 401 without a bearer, 400 for a bad body, 403 `{ error: 'SUNDAY_REST' }` when a comment, a comment deletion, or an invoice request falls on the device's local Sunday, 409 when the period is closed or no wallet can be invoiced, or 502 if the api is unreachable. A missing, blank, or invalid time zone does not refuse a comment, a comment deletion, or an invoice request. Add, edit, log, and archive do not rest on Sunday.
+- **Used by:** `postMemberHabit` on `/habit-tracker`.
+- **Auth:** Bearer. The client sends `Authorization`; this proxy does not add it.
+
 ## Endpoint: GET /shops/activity
 
 - **Purpose:** Same-origin proxy of api `GET /shops/activity` (shop-use counts, 30 UTC days).
@@ -613,9 +627,9 @@
 
 ## Endpoint: GET /forum/mentions
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/mentions`. Optional `q` is the username prefix. An empty query is the first page of handles. Used so the forum composer can suggest people while `@` is being typed.
+- **Purpose:** Same-origin Bearer proxy of api GET `/mentions`. Optional `q` is the username prefix. An empty query is the first page of handles. The forum composer uses it while `@` is being typed. The Person field on `/grants/payments/amounts` uses the same search and opens that first page when the field is exactly `@`.
 - **Errors:** Upstream 401/400/409, or 502 if the api is unreachable.
-- **Used by:** `searchMentionAccounts` from `MentionTextarea` on the post, reply, ask-for-money, shop, inbox, and moderator-room composers, and from `ShopAccountControl`.
+- **Used by:** `searchMentionAccounts` from `MentionTextarea` on the post, reply, ask-for-money, shop, inbox, and moderator-room composers, from `ShopAccountControl`, and from `DailyPaymentAmountsScreen` for the Person field on `/grants/payments/amounts`.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /forum/notifications
@@ -669,9 +683,9 @@
 
 ## Endpoint: POST /trust/verify
 
-- **Purpose:** Same-origin Bearer proxy of api `POST /trust/verify` with `{ accountId }`.
+- **Purpose:** Same-origin Bearer proxy of api `POST /trust/verify` with `{ accountId, confirmedName }`. The proxy forwards the JSON body unchanged.
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
-- **Used by:** `postTrustVerify` in `MemberTrustActions`.
+- **Used by:** `postTrustVerify` in `MemberVerifyScreen`.
 - **Auth:** Bearer (moderator).
 
 ## Endpoint: POST /trust/propose-moderator
@@ -746,8 +760,8 @@
 
 ## Endpoint: POST /funding/daily-roster/recipients
 
-- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/recipients` with `{ address, amountUsd }`. Appends one daily recipient.
-- **Errors:** Upstream 400 `Invalid address or amount` or `Address already listed`, 401, 403, 503, or 502 if the api is unreachable.
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/recipients` with `{ accountId, amountUsd }`. Appends one daily recipient for that person.
+- **Errors:** Upstream 400 `Invalid person or amount`, `Unknown person`, `Person has no Lightning address`, or `Address already listed`, 401, 403, 503, or 502 if the api is unreachable.
 - **Used by:** `addDailyRosterRecipient` in `DailyPaymentAmountsScreen`.
 - **Auth:** Bearer session. The api allows an initiator or founder only.
 

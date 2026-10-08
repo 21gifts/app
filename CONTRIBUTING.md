@@ -498,12 +498,19 @@ runtime — no silent English fallback.
 
 New or changed visitor-facing copy goes through a catalog key in the **same
 PR**. Hard-coded UI strings are an undeclared deviation. Exceptions (do not
-catalogize): legal body copy (English), handbook markdown bodies and handbook
-chapter-navigation labels (English), product tokens such as
+catalogize): legal body copy (English), handbook markdown bodies for Functions
+and Endpoints, handbook chapter-navigation labels (English), product tokens such as
 `Wallet of Satoshi` / `GitHub`, language-switcher endonym labels (`English` /
 `Deutsch` / `Español` / `Filipino`), stats body copy (English), and
 document/social metadata (`title`, `description`, Open Graph alt text —
 English).
+
+Screen-card descriptions are not part of that exception. English stays in
+`docs/handbook/screens.md`. German, Spanish, and Filipino for those cards live
+in `src/lib/screen-variant-descriptions-locale.json`, keyed by catalog id.
+Route and variant labels stay identifiers. A missing translation throws; it
+does not fall back to English. When `screens.md` has no description for an id,
+every locale shows the catalog label.
 
 ### Icon controls (hard requirement)
 
@@ -736,11 +743,11 @@ CI will fail on the same conditions; catching them locally is faster.
 ### A38
 
 This repository requires A38 according to the canonical A38 standard in
-[DFXswiss/agent](https://github.com/DFXswiss/agent/blob/d165602daf7b4a0c73aaac3774da9c8a1ff7e852/docs/a38.md)
-at commit `d165602daf7b4a0c73aaac3774da9c8a1ff7e852`. Repo job selection:
+[DFXswiss/agent](https://github.com/DFXswiss/agent/blob/59e31ebd11ab587897dc8e5b2a6f21e489f35f3d/docs/a38.md)
+at commit `59e31ebd11ab587897dc8e5b2a6f21e489f35f3d`. Repo job selection:
 `.github/a38.json`. Target-branch applicability and fork workflow approval:
 `.github/pr-guard.json`. `dfx pr guard` is
-[wired in](https://github.com/DFXswiss/agent/blob/d165602daf7b4a0c73aaac3774da9c8a1ff7e852/docs/a38-guard.md#how-fork-github-actions-are-meant-to-work).
+[wired in](https://github.com/DFXswiss/agent/blob/59e31ebd11ab587897dc8e5b2a6f21e489f35f3d/docs/a38-guard.md#how-fork-github-actions-are-meant-to-work).
 
 This is a **public** repository. GitHub-hosted runners execute the heavy suite
 (typecheck, handbook completeness, e2e completeness, screenshot baselines,

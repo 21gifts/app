@@ -32,6 +32,7 @@ import {
   NoteDeletedError,
   postMessage,
   postMessageInvoice,
+  postRepaymentInvoice,
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
@@ -50,7 +51,7 @@ import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import {
-  latestRateDay,
+  latestRateDayFor,
   paySatsFromDraft,
   replySatsFromDraft,
   shownFiatForSats,
@@ -247,6 +248,10 @@ export function MemberProfileScreen({
   const [payDraft, setPayDraft] = useState('');
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
+  const [repayNotice, setRepayNotice] = useState<{
+    messageId: string;
+    error: Exclude<ForumPayError, null> | null;
+  } | null>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
@@ -269,6 +274,7 @@ export function MemberProfileScreen({
     'name' | 'username' | 'rules' | 'lightning-address' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
+  const startRepaymentRef = useRef<(messageId: string) => void>(() => undefined);
   const pendingComposeTextRef = useRef<string | null>(null);
   const [listedProfile, setListedProfile] = useState(profile);
   const [activity, setActivity] = useState<null | 'posts' | 'replies'>(null);
@@ -300,7 +306,8 @@ export function MemberProfileScreen({
     setStickerOpen(true);
   }, [qr, address]);
 
-  const [rateDay, setRateDay] = useState<FiatRateDay | null>(null);
+  const [rateSeries, setRateSeries] = useState<readonly FiatRateDay[] | null>(null);
+  const rateDay = rateSeries === null ? null : latestRateDayFor(rateSeries, fiat);
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
@@ -335,12 +342,12 @@ export function MemberProfileScreen({
     void fetchGiftStats()
       .then((stats) => {
         if (!cancelled) {
-          setRateDay(latestRateDay(stats.spendOverTime));
+          setRateSeries(stats.spendOverTime);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setRateDay(null);
+          setRateSeries([]);
         }
       });
     return () => {
@@ -413,11 +420,19 @@ export function MemberProfileScreen({
     };
   }, [photoEpoch, photoIdsKey, session]);
 
+  const bumpPayPollGeneration = (): number => {
+    payPollAbortRef.current?.abort();
+    payPollAbortRef.current = new AbortController();
+    payPollGeneration.current += 1;
+    return payPollGeneration.current;
+  };
+
   useEffect(() => {
     return () => {
       for (const url of Object.values(photoUrlsRef.current)) {
         URL.revokeObjectURL(url);
       }
+      bumpPayPollGeneration();
     };
   }, []);
 
@@ -453,13 +468,6 @@ export function MemberProfileScreen({
         setLoading(false);
       }
     }
-  };
-
-  const bumpPayPollGeneration = (): number => {
-    payPollAbortRef.current?.abort();
-    payPollAbortRef.current = new AbortController();
-    payPollGeneration.current += 1;
-    return payPollGeneration.current;
   };
 
   const handlePayCancel = (): void => {
@@ -692,6 +700,65 @@ export function MemberProfileScreen({
     }
     setOverlayRequirement(next);
     return true;
+  };
+
+  startRepaymentRef.current = (messageId: string): void => {
+    if (session === null) {
+      return;
+    }
+    const generation = bumpPayPollGeneration();
+    setPayMessageId(null);
+    setPayHost(null);
+    setPayDraft('');
+    setPayInvoice(null);
+    setPayWaiting(false);
+    setPayError(null);
+    setRepayNotice({ messageId, error: null });
+    setPayBusy(true);
+    void postRepaymentInvoice(session, messageId)
+      .then((invoice) => {
+        if (generation !== payPollGeneration.current) {
+          return;
+        }
+        setRepayNotice(null);
+        setPayHost('card');
+        setPayMessageId(messageId);
+        setPayInvoice({
+          messageId,
+          pr: invoice.pr,
+          amountSats: invoice.amountSats,
+        });
+      })
+      .catch((err: unknown) => {
+        if (generation !== payPollGeneration.current) {
+          return;
+        }
+        if (err instanceof MissingRequirementsError) {
+          if (openOverlayForMissing(err.missing)) {
+            pendingPostRef.current = () => {
+              startRepaymentRef.current(messageId);
+              return Promise.resolve();
+            };
+            return;
+          }
+          setRepayNotice({ messageId, error: 'request' });
+          return;
+        }
+        setRepayNotice({
+          messageId,
+          error: isRateLimitError(err)
+            ? 'rateLimit'
+            : isAuthorWalletError(err)
+              ? 'authorWallet'
+              : 'request',
+        });
+      })
+      .finally(() => {
+        if (generation !== payPollGeneration.current) {
+          return;
+        }
+        setPayBusy(false);
+      });
   };
 
   const runReplyPost = async (
@@ -1205,6 +1272,7 @@ export function MemberProfileScreen({
     payDraft,
     payBusy,
     payError,
+    repayNotice,
     payInvoice,
     payWaiting,
     onPayOpen: handlePayOpen,
@@ -1216,6 +1284,14 @@ export function MemberProfileScreen({
     onReplyUnitChange: setReplyShownUnit,
     onPaySubmit: handlePaySubmit,
     onPayCancel: handlePayCancel,
+    viewerAccountId: account?.id ?? null,
+    ...(factsOnly
+      ? {}
+      : {
+          onRepay: (messageId: string): void => {
+            startRepaymentRef.current(messageId);
+          },
+        }),
     expandedId,
     onToggleExpand: handleToggleExpand,
     replies: expandedId === null ? null : replies,

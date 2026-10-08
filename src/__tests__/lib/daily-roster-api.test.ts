@@ -13,7 +13,7 @@ const ROSTER = {
   comment: 'Daily gift',
   paymentsEnabled: true,
   defaultAmountUsd: 4,
-  recipients: [{ address: 'ada@example.com', amountUsd: 1 }],
+  recipients: [{ address: 'ada@example.com', amountUsd: 1, accountId: null, name: null }],
 };
 
 afterEach(() => {
@@ -72,7 +72,7 @@ describe('daily roster saves', () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: ROSTER });
     await expect(saveDailyRosterComment('sess', 'Hello')).resolves.toEqual(ROSTER);
     await expect(saveDailyRosterPayments('sess', false)).resolves.toEqual(ROSTER);
-    await expect(addDailyRosterRecipient('sess', 'ada@example.com', 1)).resolves.toEqual(ROSTER);
+    await expect(addDailyRosterRecipient('sess', 'acc_ada', 1)).resolves.toEqual(ROSTER);
     await expect(updateDailyRosterRecipient('sess', 'ada@example.com', 2)).resolves.toEqual(ROSTER);
     await expect(deleteDailyRosterRecipient('sess', 'ada@example.com')).resolves.toEqual(ROSTER);
     const bodies = fetchMock.mock.calls.map((call) => {
@@ -93,7 +93,7 @@ describe('daily roster saves', () => {
       },
       {
         path: '/funding/daily-roster/recipients',
-        body: JSON.stringify({ address: 'ada@example.com', amountUsd: 1 }),
+        body: JSON.stringify({ accountId: 'acc_ada', amountUsd: 1 }),
       },
       {
         path: '/funding/daily-roster/recipients/update',
@@ -110,8 +110,11 @@ describe('daily roster saves', () => {
     ['Invalid comment', 'funding.daily.invalidComment'],
     ['Invalid payments switch', 'funding.daily.invalidSwitch'],
     ['Invalid address or amount', 'funding.daily.invalidRow'],
+    ['Invalid person or amount', 'funding.daily.invalidPerson'],
     ['Address already listed', 'funding.daily.duplicate'],
     ['Unknown address', 'funding.daily.unknown'],
+    ['Unknown person', 'funding.daily.unknownPerson'],
+    ['Person has no Lightning address', 'funding.daily.noLightning'],
     ['Forbidden', 'funding.daily.saveError'],
     ['nope', 'funding.daily.saveError'],
   ] as const)('maps %s to %s', async (apiError, key) => {
@@ -133,7 +136,7 @@ describe('daily roster saves', () => {
 
   it('maps a success body that is not a roster to the generic save error', async () => {
     stubFetch({ ok: true, status: 200, body: { comment: 1 } });
-    await expect(addDailyRosterRecipient('sess', 'ada@example.com', 1)).rejects.toThrow(
+    await expect(addDailyRosterRecipient('sess', 'acc_ada', 1)).rejects.toThrow(
       'funding.daily.saveError',
     );
   });
