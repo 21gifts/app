@@ -9552,6 +9552,25 @@ it('removes a moderated open post, closes its pay/reply state, and prevents stal
   expect(screen.queryByText('Hello from Ada')).toBeNull();
 });
 
+it('reports a hidden shop on the shops feed so the country counts reload', async () => {
+  useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+  fetchMock.mockResolvedValue(
+    forumPage([
+      { ...SAMPLE, id: 'shop-gone', text: 'Old stall\n\n#21GiftsShop' },
+      { ...SAMPLE, id: 'shop-keep', text: 'Kept stall\n\n#21GiftsShop' },
+    ]),
+  );
+  vi.mocked(deleteMessage).mockResolvedValue(undefined);
+  const shopsChanged = vi.fn();
+  renderWithLocale(<ForumLoader feed="shops" onShopsChanged={shopsChanged} />);
+  const postCard = (await screen.findByText('Old stall')).closest('li')!;
+  fireEvent.click(postCard.querySelector<HTMLButtonElement>('[aria-label="Delete post"]')!);
+  fireEvent.click(postCard.querySelector<HTMLButtonElement>('[aria-label="Confirm deletion"]')!);
+  await waitFor(() => expect(screen.queryByText('Old stall')).toBeNull());
+  expect(screen.getByText('Kept stall')).toBeTruthy();
+  expect(shopsChanged).toHaveBeenCalledOnce();
+});
+
 it('does not treat a session-deleted id as unseen on silent refresh', async () => {
   useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
   fetchMock.mockResolvedValue(

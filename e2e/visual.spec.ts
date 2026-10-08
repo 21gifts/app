@@ -21323,7 +21323,7 @@ test.describe('shops screens', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          messages: country === 'PH' ? [ph] : country === 'KE' ? [ke] : [ph, ke],
+          messages: country === null ? [ph, ke] : ({ PH: [ph], KE: [ke] }[country] ?? []),
         }),
       });
     });
@@ -21370,6 +21370,24 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('table').getByText('Sari-sari Manila')).toBeVisible();
     await expect(page.getByRole('table').getByText('Duka Nairobi')).toHaveCount(0);
     await shotScreen(page, 'state-shops-country');
+  });
+
+  test('shops country without shops', async ({ page }) => {
+    await seedCountryShops(page);
+    await page.goto('/shops?country=CH#table');
+    await expect(page.getByRole('combobox', { name: 'Country' })).toHaveText('Switzerland (0)');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await shotScreen(page, 'state-shops-country-empty');
+  });
+
+  test('shops country before the counts load', async ({ page }) => {
+    await seedCountryShops(page);
+    // The pins never answer, so the select has no counts yet.
+    await page.route('**/forum/messages/places', () => undefined);
+    await page.goto('/shops?country=PH#table');
+    await expect(page.getByRole('table').getByText('Sari-sari Manila')).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Country' })).toHaveText('Philippines');
+    await shotScreen(page, 'state-shops-country-loading');
   });
 
   test('shops map', async ({ page }) => {

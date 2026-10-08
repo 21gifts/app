@@ -357,8 +357,8 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
  * @param props - Optional `feed`: `'living-room'` (default) or `'shops'`; optional
  * `country` (ISO 3166-1 alpha-2) on the shops feed loads only shops pinned in that
  * country. The parent remounts the loader when the country changes. Optional
- * `onShopsChanged` runs after a shop is created or a moderator saves a shop note or
- * its place, so the parent can reload what depends on the pins.
+ * `onShopsChanged` runs after a shop is created, or a moderator saves a shop note or
+ * its place or hides a shop, so the parent can reload what depends on the pins.
  * @returns The forum board, or `null` without a session.
  */
 export function ForumLoader({
@@ -2829,6 +2829,9 @@ export function ForumLoader({
                     }),
                   );
                   return;
+                }
+                if (feed === 'shops') {
+                  onShopsChanged?.();
                 }
                 setMessages((prev) => prev!.filter((row) => row.id !== messageId));
                 const wasExpanded = expandedIdRef.current === messageId;

@@ -4823,5 +4823,15 @@
     "de": "Philippinen (1) wurde in der Liste Land gewählt, während Tabelle ausgewählt war. Die Auswahl zeigt Philippinen (1) und die Adresse ist /shops?country=PH#table. Die Tabelle listet nur den Shop auf den Philippinen, Sari-sari Manila; der Shop in Kenia ist verschwunden.",
     "es": "Se eligió Filipinas (1) en la lista País mientras Tabla estaba seleccionada. El selector muestra Filipinas (1) y la dirección es /shops?country=PH#table. La tabla solo muestra la tienda de Filipinas, Sari-sari Manila; la tienda de Kenia ya no aparece.",
     "fil": "Pinili ang Pilipinas (1) mula sa listahan ng Bansa habang napili ang Talahanayan. Ipinapakita ng pagpipilian ang Pilipinas (1) at ang address ay /shops?country=PH#table. Ang shop lang sa Pilipinas, Sari-sari Manila, ang nasa talahanayan; wala na ang shop sa Kenya."
+  },
+  "/shops:country-empty": {
+    "de": "Ein geteilter Link hat ein Land ohne Shops gewählt (/shops?country=CH#table). Die Auswahl zeigt Schweiz (0), und ihre Liste bietet auch Kenia (1) und Philippinen (1). Tabelle zeigt den üblichen leeren Text Noch keine Shops — fügen Sie den ersten hinzu.",
+    "es": "Un enlace compartido eligió un país sin tiendas (/shops?country=CH#table). El selector muestra Suiza (0) y su lista también ofrece Kenia (1) y Filipinas (1). Tabla muestra el texto vacío habitual Aún no hay tiendas — añade la primera.",
+    "fil": "Pumili ang isang ibinahaging link ng bansang walang shop (/shops?country=CH#table). Ipinapakita ng pagpipilian ang Switzerland (0), at nag-aalok din ang listahan nito ng Kenya (1) at Pilipinas (1). Ipinapakita ng Talahanayan ang karaniwang walang-lamang teksto Wala pang mga shop — magdagdag ng una."
+  },
+  "/shops:country-loading": {
+    "de": "/shops?country=PH#table, während die Pins für die Zählung noch laden (oder nicht geladen werden konnten). Die Auswahl zeigt Philippinen ohne Anzahl; die Tabelle listet bereits nur Sari-sari Manila.",
+    "es": "/shops?country=PH#table mientras los pines para los recuentos aún se cargan (o no se pudieron cargar). El selector muestra Filipinas sin número; la tabla ya solo muestra Sari-sari Manila.",
+    "fil": "/shops?country=PH#table habang naglo-load pa ang mga pin para sa bilang (o hindi ma-load). Ipinapakita ng pagpipilian ang Pilipinas nang walang bilang; ang talahanayan ay Sari-sari Manila na lang ang nakalista."
   }
 }

@@ -12,28 +12,21 @@ export type ShopCountryOption = {
 };
 
 /**
- * Two-letter region codes that `Intl.DisplayNames` names but that are not a
- * country of ISO 3166-1 alpha-2: groupings (`EU`, `EZ`, `UN`, `QO`), test and
- * unknown codes (`XA`, `XB`, `ZZ`), and exceptionally reserved areas the api
- * never returns (`AC`, `CP`, `CQ`, `DG`, `EA`, `IC`, `TA`). `XK` (Kosovo) stays:
- * the api uses it.
+ * The codes the api gives a pin: the 249 assigned ISO 3166-1 alpha-2 codes
+ * plus `XK` (Kosovo). A shared link with any other code (a grouping such as
+ * `EU`, an alias such as `UK`, or a withdrawn code such as `YU`) shows all
+ * countries.
  */
-const NOT_A_COUNTRY: ReadonlySet<string> = new Set([
-  'AC',
-  'CP',
-  'CQ',
-  'DG',
-  'EA',
-  'EU',
-  'EZ',
-  'IC',
-  'QO',
-  'TA',
-  'UN',
-  'XA',
-  'XB',
-  'ZZ',
-]);
+const COUNTRY_CODES: ReadonlySet<string> = new Set(
+  `AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS
+   BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE
+   EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM
+   HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC
+   LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA
+   NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW
+   SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO
+   TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW XK`.split(/\s+/),
+);
 
 /**
  * Region names in the UI language. `fallback: 'none'` makes an unknown code
@@ -49,10 +42,10 @@ function regionNames(locale: Locale): Intl.DisplayNames {
 /**
  * Country code from the `country` query of `/shops`.
  *
- * Two letters in any case that name a country (a region `Intl.DisplayNames`
- * knows that is not a grouping such as `EU`). Anything else (missing, blank,
- * longer, digits, an unassigned code, or a grouping) is no country, so the page
- * shows all countries.
+ * Two letters in any case that are a code the api gives a pin (ISO 3166-1
+ * alpha-2 or `XK`). Anything else (missing, blank, longer, digits, an
+ * unassigned or withdrawn code, an alias, or a grouping) is no country, so
+ * the page shows all countries.
  *
  * @param raw - `URLSearchParams.get('country')`.
  * @returns The upper-case code, or null for All countries.
@@ -62,7 +55,7 @@ export function shopCountryFromQuery(raw: string | null): string | null {
     return null;
   }
   const code = raw.toUpperCase();
-  return NOT_A_COUNTRY.has(code) || regionNames('en').of(code) === undefined ? null : code;
+  return COUNTRY_CODES.has(code) ? code : null;
 }
 
 /**

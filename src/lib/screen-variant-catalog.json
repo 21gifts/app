@@ -5106,6 +5106,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:country-empty",
+    "label": "/shops country-empty",
+    "visual": "state-shops-country-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:country-loading",
+    "label": "/shops country-loading",
+    "visual": "state-shops-country-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:map",
     "label": "/shops map",
     "visual": "state-shops-map",

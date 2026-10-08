@@ -27,8 +27,8 @@ describe('shopCountryFromQuery', () => {
     expect(shopCountryFromQuery('AA')).toBeNull();
   });
 
-  it('treats a grouping, a test code, or the unknown region as All countries, but keeps Kosovo', () => {
-    for (const code of ['EU', 'eu', 'UN', 'QO', 'ZZ', 'XA', 'IC']) {
+  it('treats a grouping, an alias, a withdrawn or reserved code as All countries, but keeps Kosovo', () => {
+    for (const code of ['EU', 'eu', 'UN', 'QO', 'ZZ', 'XA', 'IC', 'UK', 'YU', 'SU', 'EA']) {
       expect(shopCountryFromQuery(code)).toBeNull();
     }
     expect(shopCountryFromQuery('XK')).toBe('XK');
