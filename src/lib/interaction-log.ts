@@ -96,8 +96,11 @@ const queue: InteractionEvent[] = [];
 /** Session the queued events belong to. */
 let queueSession: string | null = null;
 
-/** The flush that is sending, with its session (`done` is `false` when a batch failed), or `null`. */
-let flushRun: { session: string; done: Promise<boolean> } | null = null;
+/** The flush sending for each session; each resolves `false` when a batch failed. */
+const flushRuns = new Map<string, Promise<boolean>>();
+
+/** Bytes of the `{"events":[]}` wrapper around a batch. */
+const WRAPPER_BYTES = encoder.encode('{"events":[]}').length;
 
 /**
  * Props reduced to short flat values. A key that is not an identifier or that
@@ -240,7 +243,8 @@ export function logInteraction(
  */
 function nextBatch(): InteractionEvent[] {
   let count = 0;
-  let bytes = 0;
+  // The wrapper, each event, and one comma per event (one more than needed).
+  let bytes = WRAPPER_BYTES;
   for (const event of queue) {
     bytes += encoder.encode(JSON.stringify(event)).length + 1;
     if (count === INTERACTION_BATCH_SIZE || (count > 0 && bytes > MAX_BATCH_BYTES)) {
@@ -260,7 +264,8 @@ function nextBatch(): InteractionEvent[] {
  * {@link INTERACTION_REQUEST_TIMEOUT_MS} is aborted. A failed batch goes back
  * to the front of the queue and the next flush tries again. One flush per
  * session runs at a time; a flush of an earlier session does not hold a new
- * session's queue back. Never rejects.
+ * session's queue back, and once its member signed out it sends no further
+ * batch and drops what is left. Never rejects.
  *
  * @returns Resolves when the queue is empty, a batch failed, the session
  *   changed, or another flush of this session is running.
@@ -280,21 +285,26 @@ function flush(): Promise<boolean> {
     queue.length = 0;
     return Promise.resolve(true);
   }
-  if (flushRun !== null && flushRun.session === session) {
+  if (flushRuns.has(session)) {
     return Promise.resolve(true);
   }
   // A flush of an earlier session still waiting on its request does not hold
   // this session's queue back; that flush stops after its batch.
-  const run = {
-    session,
-    done: sendQueue(session).finally(() => {
-      if (flushRun === run) {
-        flushRun = null;
-      }
-    }),
-  };
-  flushRun = run;
-  return run.done;
+  const done = sendQueue(session).finally(() => {
+    flushRuns.delete(session);
+  });
+  flushRuns.set(session, done);
+  return done;
+}
+
+/**
+ * Whether the queue still belongs to `session` and `session` is still signed in.
+ *
+ * @param session - Session of a flush.
+ * @returns `true` while that flush may send.
+ */
+function sendsFor(session: string): boolean {
+  return queueSession === session && useAuthStore.getState().session === session;
 }
 
 /**
@@ -304,17 +314,21 @@ function flush(): Promise<boolean> {
  * @returns `false` when a batch failed, otherwise `true` (the queue is empty or the session changed).
  */
 async function sendQueue(session: string): Promise<boolean> {
-  while (queue.length > 0 && queueSession === session) {
+  while (queue.length > 0 && sendsFor(session)) {
     const batch = nextBatch();
     try {
       await postEvents(session, batch);
     } catch {
-      if (queueSession === session) {
+      if (sendsFor(session)) {
         queue.unshift(...batch);
         dropOldest();
       }
       return false;
     }
+  }
+  if (queueSession === session && useAuthStore.getState().session !== session) {
+    // The member signed out while this flush ran: what is left is never sent.
+    queue.length = 0;
   }
   return true;
 }
@@ -336,13 +350,13 @@ export async function logLogout(): Promise<void> {
   const session = useAuthStore.getState().session;
   logInteraction('logout');
   while (session !== null && useAuthStore.getState().session === session) {
-    const running = flushRun?.session === session ? flushRun.done : null;
+    const running = flushRuns.get(session);
     const sent = await (running ?? flush());
-    if (running !== null) {
-      continue;
+    if (sent && running === undefined) {
+      return;
     }
     if (sent) {
-      return;
+      continue;
     }
     await new Promise<void>((resolve) => {
       setTimeout(resolve, LOGOUT_RETRY_MS);

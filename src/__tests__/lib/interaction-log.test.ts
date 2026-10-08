@@ -288,6 +288,51 @@ describe('a request that does not answer', () => {
   });
 });
 
+describe('signing out while a flush runs', () => {
+  it('sends no further batch with the ended session and drops what is left', async () => {
+    let release: () => void = () => undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => {
+            resolve({ ok: true, status: 204 });
+          };
+        }),
+    );
+    for (let i = 0; i < 60; i += 1) {
+      mod.logInteraction('screen_view');
+    }
+    await Promise.resolve();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    useAuthStore.setState({ session: null });
+    release();
+    await vi.waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    useAuthStore.setState({ session: 'sess' });
+    await mod.flushInteractions();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs one flush per session even after another session flushed in between', async () => {
+    fetchMock.mockImplementationOnce(() => new Promise(() => undefined));
+    mod.logInteraction('screen_view');
+    void mod.flushInteractions();
+    await Promise.resolve();
+    useAuthStore.setState({ session: 'next' });
+    mod.logInteraction('login');
+    await mod.flushInteractions();
+    useAuthStore.setState({ session: 'sess' });
+    mod.logInteraction('screen_view');
+    await mod.flushInteractions();
+    expect(requests().map((request) => request.headers['Authorization'])).toEqual([
+      'Bearer sess',
+      'Bearer next',
+    ]);
+  });
+});
+
 describe('logInteraction with the session of the action', () => {
   it('keeps the event while that session is still current', async () => {
     mod.logInteraction('search', { query: 'ada', results: 1 }, 'sess');
@@ -431,7 +476,7 @@ describe('session binding and batch size', () => {
     expect(fetchMock.mock.calls.length).toBeGreaterThan(1);
     expect(posted()).toHaveLength(49);
     for (const request of requests()) {
-      expect(new TextEncoder().encode(request.body).length).toBeLessThanOrEqual(61_000);
+      expect(new TextEncoder().encode(request.body).length).toBeLessThanOrEqual(60_000);
     }
   });
 });

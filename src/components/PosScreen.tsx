@@ -132,9 +132,13 @@ function usePosTillState(): PosTillState {
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const rateDay = useSpotRate(session !== null);
-  const [state, setState] = useState<PosState | null>(null);
-  /** Session whose till read or create produced `state`. */
-  const loadedFor = useRef<string | null>(null);
+  // The till and the session whose read or create produced it, set together so
+  // an effect of one render never pairs one member's till with another's session.
+  const [till, setTill] = useState<{ state: PosState | null; session: string | null }>({
+    state: null,
+    session: null,
+  });
+  const state = till.state;
   const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [shownUnit, setShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
@@ -174,8 +178,7 @@ function usePosTillState(): PosTillState {
         }
         whenCurrent(generation, mine, () => {
           applyRead(reads, seq, () => {
-            loadedFor.current = session;
-            setState(next);
+            setTill({ state: next, session });
           });
         });
       } catch {
@@ -235,16 +238,15 @@ function usePosTillState(): PosTillState {
 
   const paidId = paid?.id ?? null;
   const paidSats = paid?.amountSats ?? 0;
+  const paidFor = till.session;
+  const paidSeen = useRef<string | null>(null);
   useEffect(() => {
-    if (paidId !== null) {
+    if (paidId !== null && paidSeen.current !== paidId) {
+      paidSeen.current = paidId;
       // Recorded for the member whose till showed it, never for a later session.
-      logInteraction(
-        'pos_charge_paid_seen',
-        { chargeId: paidId, amountSats: paidSats },
-        loadedFor.current,
-      );
+      logInteraction('pos_charge_paid_seen', { chargeId: paidId, amountSats: paidSats }, paidFor);
     }
-  }, [paidId, paidSats]);
+  }, [paidId, paidSats, paidFor]);
 
   useEffect(() => {
     // While a charge is open, and for a minute after it ran out, ask the api
@@ -266,8 +268,7 @@ function usePosTillState(): PosTillState {
           if (alive) {
             whenCurrent(generation, mine, () => {
               applyRead(reads, seq, () => {
-                loadedFor.current = session;
-                setState(next);
+                setTill({ state: next, session });
               });
             });
           }
@@ -300,8 +301,7 @@ function usePosTillState(): PosTillState {
       .then((next) => {
         whenCurrent(generation, mine, () => {
           applyRead(reads, seq, () => {
-            loadedFor.current = session;
-            setState(next);
+            setTill({ state: next, session });
           });
         });
       })
@@ -347,8 +347,7 @@ function usePosTillState(): PosTillState {
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- the form is only shown once state.history is an array */
           const history = state?.history ?? [];
-          loadedFor.current = session;
-          setState({ charge: created, history: [created, ...history] });
+          setTill({ state: { charge: created, history: [created, ...history] }, session });
           setAmount('');
         });
       } catch (err) {
@@ -396,8 +395,7 @@ function usePosTillState(): PosTillState {
         whenCurrent(generation, mine, () => {
           setWatchUntil(null);
           applyRead(reads, seq, () => {
-            loadedFor.current = session;
-            setState(next);
+            setTill({ state: next, session });
           });
         });
       } catch {
