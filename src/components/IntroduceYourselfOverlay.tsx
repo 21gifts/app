@@ -15,7 +15,8 @@ export interface IntroduceYourselfOverlayProps {
 /**
  * Modal that asks a signed-in member who has not posted yet to introduce
  * themselves in the forum. Mounted only on the forum home (`/welcome`). Close
- * dismisses this mount. The CTA dismisses and focuses the welcome composer.
+ * dismisses this mount. The CTA dismisses, opens the forum home writer and
+ * focuses its text field.
  *
  * @param props - See {@link IntroduceYourselfOverlayProps}.
  * @returns The overlay dialog.

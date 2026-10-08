@@ -1718,7 +1718,7 @@ First post free: while the signed-in member is below verified and has no missing
 
 ## Function: IntroduceYourselfOverlay
 
-- **Purpose:** Modal on the forum home (`/welcome`) that tells a signed-in member whose onboarding is complete (`setup === null`) and who has not posted (`hasPosted === false`) to introduce themselves in the forum. `SignedInChrome` mounts it on `/welcome` only, so it never covers `/wallet`, `/wallet/*`, the point of sale, the profile, messages, or the setup flow. Close (X) dismisses this mount only. Primary CTA **Write an introduction** is a `Button` that dismisses and focuses the welcome composer (`requestForumCompose` / `FORUM_COMPOSE_EVENT`); it does not navigate. No Skip-forever. Hidden when `hasPosted` is true or omitted (older api) and while `setup` is not null.
+- **Purpose:** Modal on the forum home (`/welcome`) that tells a signed-in member whose onboarding is complete (`setup === null`) and who has not posted (`hasPosted === false`) to introduce themselves in the forum. `SignedInChrome` mounts it on `/welcome` only, so it never covers `/wallet`, `/wallet/*`, the point of sale, the profile, messages, or the setup flow. Close (X) dismisses this mount only. Primary CTA **Write an introduction** is a `Button` that dismisses, opens the forum home writer and focuses its text field (`requestForumCompose` / `FORUM_COMPOSE_EVENT`); it does not navigate. No Skip-forever. Hidden when `hasPosted` is true or omitted (older api) and while `setup` is not null.
 - **Inputs:** `onDismiss`.
 - **Returns / side effects:** Dialog UI (`role="dialog"` `aria-modal="true"`, fixed inset card `z-50`). Title/`aria-label` from `introduce.title`; body `introduce.body`; CTA `introduce.cta` as catalog `Button` `type="button"` `size="lg"`; close `introduce.close`. Does not write `forumLawsDismissed` or any account field.
 - **Used by:** `SignedInChrome`.
@@ -2394,7 +2394,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: requestForumCompose
 
-- **Purpose:** Ask the welcome new-post composer to take focus and skip `IntroduceYourselfOverlay` on the next SignedInChrome mount (whatever screen that is). Used by **Write an introduction** on `/welcome`.
+- **Purpose:** Ask the welcome new-post composer to take focus (on the forum home its writer opens first) and skip `IntroduceYourselfOverlay` on the next SignedInChrome mount (whatever screen that is). Used by **Write an introduction** on `/welcome`.
 - **Inputs:** none.
 - **Returns / side effects:** Sets skip-introduce-once and pending-compose module flags that survive Next.js client navigations until consumed. When `window` exists, dispatches `FORUM_COMPOSE_EVENT` (`21gifts:forum-compose`).
 - **Used by:** `IntroduceYourselfOverlay`.
