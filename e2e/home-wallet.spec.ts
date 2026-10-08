@@ -107,8 +107,12 @@ test('Function: WalletFooterActions — Receive and Send stay fixed at the botto
   expect(before.receive.y).toBeGreaterThanOrEqual(port.y + port.height);
   await setPortScrollTop(page, 600);
   await expect.poll(() => portScrollTop(page)).toBeGreaterThan(0);
+  // Scrolled down they stay at the bottom, slim: 36 px tall, and the footer's bottom
+  // padding shrinks from 20 px to 12 px, so their bottom edge sits 8 px lower.
+  await expect.poll(async () => (await receive.boundingBox())!.height).toBe(36);
   const after = (await receive.boundingBox())!;
-  expect(after.y).toBe(before.receive.y);
+  expect(after.y + after.height).toBeCloseTo(before.receive.y + before.receive.height + 8, 0);
+  expect(after.y).toBeGreaterThanOrEqual(port.y + port.height);
   // The fade above the buttons does not take taps.
   const fade = page.locator('footer [aria-hidden="true"].bottom-full');
   await expect(fade).toHaveCSS('pointer-events', 'none');
