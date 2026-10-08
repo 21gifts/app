@@ -73,6 +73,7 @@ vi.mock('@/lib/api', () => ({
   fetchNotifications: vi.fn(),
   markNotificationRead: vi.fn(),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
+  markVisibleForumNoteRead: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
   agreeToRules: vi.fn(),
   setName: vi.fn(),
   setLightningAddress: vi.fn(),
@@ -112,6 +113,7 @@ import {
   NoteDeletedError,
   markNotificationRead,
   markNotificationsReadForMessage,
+  markVisibleForumNoteRead,
   fetchComposeTarget,
   postMessage,
   postMessageInvoice,
@@ -136,6 +138,7 @@ const publicRepliesMock = vi.mocked(fetchPublicReplies);
 const fetchNotificationsMock = vi.mocked(fetchNotifications);
 const markNotificationReadMock = vi.mocked(markNotificationRead);
 const markNotificationsReadForMessageMock = vi.mocked(markNotificationsReadForMessage);
+const markVisibleForumNoteReadMock = vi.mocked(markVisibleForumNoteRead);
 const closeLocalPushNotificationsMock = vi.mocked(closeLocalPushNotifications);
 const fetchGiftStatsMock = vi.mocked(fetchGiftStats);
 const publicFetchMock = vi.mocked(fetchPublicMessage);
@@ -304,7 +307,74 @@ const EMPTY_STATS: GiftStats = {
 };
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+const originalGetBoundingClientRect = Element.prototype.getBoundingClientRect;
 const originalUserAgent = navigator.userAgent;
+
+const SCROLLPORT_RECT = {
+  top: 0,
+  bottom: 800,
+  left: 0,
+  right: 400,
+  width: 400,
+  height: 800,
+};
+
+const CARD_INSIDE_RECT = {
+  top: 100,
+  bottom: 500,
+  left: 16,
+  right: 384,
+  width: 368,
+  height: 400,
+};
+
+function asDomRect(box: {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+  width: number;
+  height: number;
+}): DOMRect {
+  return {
+    ...box,
+    x: box.left,
+    y: box.top,
+    toJSON: () => box,
+  } as DOMRect;
+}
+
+function stubForumCardRects(
+  byMessageId: Record<
+    string,
+    { top: number; bottom: number; left: number; right: number; width: number; height: number }
+  >,
+): void {
+  Element.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+    if (this instanceof Element && this.hasAttribute('data-scrollport')) {
+      return asDomRect(SCROLLPORT_RECT);
+    }
+    if (this instanceof Element) {
+      const id = this.getAttribute('data-message-id');
+      if (id !== null && byMessageId[id] !== undefined) {
+        return asDomRect(byMessageId[id]);
+      }
+    }
+    return originalGetBoundingClientRect.call(this);
+  };
+}
+
+async function flushPaint(): Promise<void> {
+  await act(async () => {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          resolve();
+        });
+      });
+    });
+  });
+}
 
 function submitShopWizard(text: string, username?: string): void {
   fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
@@ -350,6 +420,7 @@ beforeEach(() => {
     readAt: '2026-08-28T13:00:00.000Z',
   });
   markNotificationsReadForMessageMock.mockResolvedValue({ ok: true, tags: [] });
+  markVisibleForumNoteReadMock.mockResolvedValue({ ok: true, tags: [] });
   isVideoMock.mockReturnValue(false);
   push.mockReset();
   replace.mockReset();
@@ -378,6 +449,7 @@ afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+  Element.prototype.getBoundingClientRect = originalGetBoundingClientRect;
   Object.defineProperty(navigator, 'userAgent', {
     configurable: true,
     value: originalUserAgent,
@@ -5710,6 +5782,79 @@ describe('ForumLoader', () => {
     markNotificationsReadForMessageMock.mockClear();
     fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
     expect(markNotificationsReadForMessageMock).not.toHaveBeenCalled();
+  });
+
+  it('marks a fully visible signed-in card and not a clipped one, then marks on scroll', async () => {
+    const second: ForumMessage = { ...SAMPLE, id: 'm2', text: 'Hello from Bob' };
+    const cardRects = {
+      m1: CARD_INSIDE_RECT,
+      m2: { top: 700, bottom: 980, left: 16, right: 384, width: 368, height: 280 },
+    };
+    stubForumCardRects(cardRects);
+    fetchMock.mockResolvedValue(forumPage([SAMPLE, second]));
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <ForumLoader />
+      </AppShell>,
+    );
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    await waitFor(() => {
+      expect(markVisibleForumNoteReadMock).toHaveBeenCalledWith('sess', 'm1');
+    });
+    expect(markVisibleForumNoteReadMock).not.toHaveBeenCalledWith('sess', 'm2');
+    expect(markNotificationsReadForMessageMock).not.toHaveBeenCalled();
+
+    cardRects.m2 = { top: 200, bottom: 480, left: 16, right: 384, width: 368, height: 280 };
+    markVisibleForumNoteReadMock.mockClear();
+    const scroller = container.querySelector('[data-scrollport]');
+    expect(scroller).toBeTruthy();
+    if (!(scroller instanceof HTMLElement)) {
+      throw new Error('expected AppShell scroller');
+    }
+    scroller.dispatchEvent(new Event('scroll'));
+    await waitFor(() => {
+      expect(markVisibleForumNoteReadMock).toHaveBeenCalledWith('sess', 'm2');
+    });
+    expect(markVisibleForumNoteReadMock).not.toHaveBeenCalledWith('sess', 'm1');
+  });
+
+  it('does not mark a card taller than the AppShell scroller', async () => {
+    stubForumCardRects({
+      m1: { top: 0, bottom: 900, left: 16, right: 384, width: 368, height: 900 },
+    });
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    renderWithLocale(
+      <AppShell mode="fill">
+        <ForumLoader />
+      </AppShell>,
+    );
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    await flushPaint();
+    expect(markVisibleForumNoteReadMock).not.toHaveBeenCalled();
+  });
+
+  it('does not mark a card whose bottom is 2px past the AppShell scroller', async () => {
+    stubForumCardRects({
+      m1: { top: 100, bottom: 802, left: 16, right: 384, width: 368, height: 702 },
+    });
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    renderWithLocale(
+      <AppShell mode="fill">
+        <ForumLoader />
+      </AppShell>,
+    );
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    await flushPaint();
+    expect(markVisibleForumNoteReadMock).not.toHaveBeenCalled();
   });
 
   it('loads replies via fetchReplies when a row is expanded', async () => {

@@ -23,6 +23,7 @@ import {
   replySatsFromDraft,
 } from '../src/lib/stats-money';
 import { fitBoxInFrame, pageFrameProblems } from '../src/lib/page-frame';
+import { isForumCardFullyVisible } from '../src/lib/forum-card-visible';
 
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
@@ -1158,6 +1159,65 @@ test('Function: proxyNotificationsReadByMessagePost — POST /forum/notification
   request,
 }) => {
   expect((await request.post('/forum/notifications/read-by-message')).status()).toBe(401);
+});
+
+test('Function: markVisibleForumNoteRead — POST /forum/notifications/read-visible without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/forum/notifications/read-visible')).status()).toBe(401);
+});
+
+test('Function: proxyNotificationsReadVisiblePost — POST /forum/notifications/read-visible without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/forum/notifications/read-visible')).status()).toBe(401);
+});
+
+test('Function: isForumCardFullyVisible — a clipped card is not fully shown', () => {
+  const root = {
+    top: 0,
+    bottom: 800,
+    left: 0,
+    right: 400,
+    width: 400,
+    height: 800,
+  };
+  expect(
+    isForumCardFullyVisible(
+      { top: 100, bottom: 500, left: 16, right: 384, width: 368, height: 400 },
+      root,
+    ),
+  ).toBe(true);
+  expect(
+    isForumCardFullyVisible(
+      { top: 100, bottom: 801, left: 16, right: 384, width: 368, height: 701 },
+      root,
+    ),
+  ).toBe(true);
+  expect(
+    isForumCardFullyVisible(
+      { top: 100, bottom: 802, left: 16, right: 384, width: 368, height: 702 },
+      root,
+    ),
+  ).toBe(false);
+  expect(
+    isForumCardFullyVisible(
+      { top: 0, bottom: 900, left: 16, right: 384, width: 368, height: 900 },
+      root,
+    ),
+  ).toBe(false);
+  expect(
+    isForumCardFullyVisible(
+      { top: 100, bottom: 100, left: 16, right: 384, width: 368, height: 0 },
+      root,
+    ),
+  ).toBe(false);
+  expect(
+    isForumCardFullyVisible(
+      { top: -20, bottom: 400, left: 16, right: 384, width: 368, height: 420 },
+      root,
+    ),
+  ).toBe(false);
 });
 
 test('Function: markNotificationsReadForMessage — opening a signed-in message page POSTs read-by-message', async ({
