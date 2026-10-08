@@ -237,6 +237,43 @@ describe('flushInteractions', () => {
   });
 });
 
+describe('logLogout', () => {
+  it('sends the queue with the logout event under the ending session', async () => {
+    mod.logInteraction('screen_view');
+    await mod.logLogout();
+    expect(posted().map((event) => event.name)).toEqual(['screen_view', 'logout']);
+    expect(requests().map((request) => request.headers['Authorization'])).toEqual(['Bearer sess']);
+  });
+
+  it('waits for a running flush and then sends what it left', async () => {
+    let release: () => void = () => undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => {
+            resolve({ ok: true, status: 204 });
+          };
+        }),
+    );
+    mod.logInteraction('login');
+    const first = mod.flushInteractions();
+    const logout = mod.logLogout();
+    await Promise.resolve();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    release();
+    await logout;
+    await first;
+    expect(posted().map((event) => event.name)).toEqual(['login', 'logout']);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('records and sends nothing without a session', async () => {
+    useAuthStore.setState({ session: null });
+    await mod.logLogout();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe('session binding and batch size', () => {
   it('drops events of another member before queuing a new one', async () => {
     mod.logInteraction('login');

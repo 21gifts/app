@@ -415,8 +415,8 @@
 ## Function: LogoutButton
 
 - **Purpose:** Matching icon+text log-out inside the signed-in Menu dropdown (not a free top-right action); clears the session and returns the visitor to `/login`.
-- **Inputs:** Active `session` or held-back `lockedSession`, `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`, and `disablePush`.
-- **Returns / side effects:** Full-width Menu-row icon+text button (same row chrome as Home / Profile / Contact). A signed-in session first switches push off (`disablePush`, unsubscribe, at most 5 s; a failure does not block log out), then clears auth plus the tab phrase and calls `router.replace('/login')`. A held-back session (no active session) is cleared and redirected at once, and push is switched off for its token in the background, so a new login on the card right after cannot be wiped. Also mounted under `WalletLoginCard` for a held-back session, where the Menu is not shown.
+- **Inputs:** Active `session` or held-back `lockedSession`, `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`, `disablePush`, and `logLogout`.
+- **Returns / side effects:** Full-width Menu-row icon+text button (same row chrome as Home / Profile / Contact). A signed-in session first switches push off (`disablePush`, unsubscribe) and, at the same time, records `logout` and sends the interaction log with that session (`logLogout`); each waits at most 5 s, and a failure does not block log out. Then it clears auth plus the tab phrase and calls `router.replace('/login')`. A held-back session (no active session) is cleared and redirected at once, and push is switched off for its token in the background, so a new login on the card right after cannot be wiped. Also mounted under `WalletLoginCard` for a held-back session, where the Menu is not shown.
 - **Used by:** `SignedInChrome` Menu dropdown, and `WalletLoginCard` for a held-back session.
 
 ## Function: NameSetup
@@ -4263,7 +4263,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: reportWallet
 
-- **Purpose:** Sends the wallet data report of the signed-in member's unlocked wallet to `POST /me/wallet/report`: the balance, the time it was read, and every payment the api has not acknowledged yet, with its current status. The first report in a tab sends the full history; a status change (pending to completed) is sent again.
+- **Purpose:** While the member is signed in (login opens the wallet), sends the wallet data report to `POST /me/wallet/report`: the balance, the time it was read, and every payment the api has not acknowledged yet, with its current status. The first report in a tab sends the full history; a status change (pending to completed) is sent again.
 - **Inputs:** None. Reads the session from `useAuthStore` and the status, balance, and identity key from `useWalletStore`.
 - **Returns / side effects:** A promise that never rejects. Without a session or a `ready` wallet nothing is sent. It lists every payment with `listWalletReportPayments` in pages of `WALLET_REPORT_PAGE_SIZE` (200) and posts them in requests of at most 200 with `postWalletReport`. The acknowledged ids and their statuses live in tab memory only (no storage of any kind), keyed to the wallet identity: another wallet starts over, and a new tab sends the history again (the api treats repeats as the same payment). A failed list or post stops the report; the next one sends the rest. A report with no unacknowledged payment and the same balance as the last one waits `WALLET_REPORT_QUIET_MS` (60 s) after it. A call while a report runs adds one report after it. After the first listing in a tab, a received payment that is newly completed is recorded once as `payment_received_seen` with its id and amount. The body holds only the fields of `WalletReportPayment`: never the recovery phrase, a key, PRF output, or a preimage.
 - **Used by:** `WalletSync`.
@@ -4277,17 +4277,24 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: logInteraction
 
-- **Purpose:** Queues one interaction of the signed-in member for `POST /me/events`: `screen_view`, `post_created`, `reply_created`, `gift_sent`, `payment_sent`, `payment_received_seen`, `pos_charge_created`, `pos_charge_paid_seen`, `wallet_unlocked`, `wallet_locked`, `search`, `shop_opened`, `profile_opened`, `login`, or `signup_completed`.
+- **Purpose:** Queues one interaction of the signed-in member for `POST /me/events`: `screen_view`, `post_created`, `reply_created`, `gift_sent`, `payment_sent`, `payment_received_seen`, `pos_charge_created`, `pos_charge_paid_seen`, `search`, `shop_opened`, `profile_opened`, `login`, `logout`, or `signup_completed`.
 - **Inputs:** The event name and optional flat `props` (ids, amounts, counts, flags; the only free text is a search term).
 - **Returns / side effects:** None. Without a session nothing is kept, so anonymous visits are never recorded. Events still queued under another session are dropped before the new one is queued. The event carries the time (ISO 8601), the current path without query or fragment (the access key of `/view/:viewKey` and `/view-key/:viewKey` is replaced by `[key]`), and the cleaned props: at most 12, keys that are short identifiers and do not name a secret (`mnemonic`, `phrase`, `seed`, `prf`, `preimage`, `secret`, `token`, `password`, `privkey`, `private`, `session`), values that are strings of at most 200 characters, finite numbers, booleans, or `null`, and never a string that looks like a recovery phrase (12 or more words), 64 or more hex digits, or a bearer token. At most 500 events wait; the oldest are dropped first. A full batch of 50 is sent at once.
-- **Used by:** `InteractionLog`, `WalletSync`, `reportWallet`, `payFromWallet`, `useWalletPay`, `usePasskeyLogin`, `postMessage`, `postMessageVideo`, `createPosCharge`, `PosTill`, `searchMentionAccounts`, `PlacesMapScreen`.
+- **Used by:** `InteractionLog`, `reportWallet`, `logLogout`, `payFromWallet`, `useWalletPay`, `usePasskeyLogin`, `postMessage`, `postMessageVideo`, `createPosCharge`, `PosTill`, `searchMentionAccounts`, `PlacesMapScreen`.
 
 ## Function: flushInteractions
 
 - **Purpose:** Sends the queued interactions with `POST /me/events` `{ events }` in batches of at most `INTERACTION_BATCH_SIZE` (50) events and 60 000 UTF-8 bytes of JSON, each request with `keepalive`, so a request in flight when the page closes is still delivered (the browser caps a keepalive body at 64 KiB).
 - **Inputs:** None. Reads the session from `useAuthStore`.
 - **Returns / side effects:** A promise that never rejects. Events go out only with the session they were recorded under: without a session, or with another one, the queue is dropped, and a flush stops after the batch in flight when another member signs in. A failed batch goes back to the front of the queue (still at most 500 events) and the next flush tries again; a failed batch of a member who is no longer signed in is dropped. One flush runs at a time; a second call while one runs returns at once.
-- **Used by:** `logInteraction` (full batch) and `startInteractionLog`.
+- **Used by:** `logInteraction` (full batch), `logLogout`, and `startInteractionLog`.
+
+## Function: logLogout
+
+- **Purpose:** Records `logout` and sends the interaction queue with the session that is ending, before the caller clears that session.
+- **Inputs:** None. Reads the session from `useAuthStore`.
+- **Returns / side effects:** A promise that never rejects. Queues `logout` like `logInteraction`, waits for a flush already running, then flushes what is left with `flushInteractions`. Without a session nothing is recorded or sent. A failed batch stays queued and is dropped once the session is cleared.
+- **Used by:** `LogoutButton`.
 
 ## Function: startInteractionLog
 

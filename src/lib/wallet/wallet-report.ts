@@ -157,7 +157,7 @@ async function reportOnce(): Promise<void> {
 }
 
 /**
- * Sends the wallet data report of the signed-in member's unlocked wallet:
+ * Sends the wallet data report while the member is signed in (login opens the wallet):
  * the balance and every payment the api has not acknowledged yet (the first
  * report of a tab sends the full history). The acknowledged cursor lives in
  * tab memory only, so a new tab sends the history again; the api ignores
