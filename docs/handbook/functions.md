@@ -4287,7 +4287,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Sends the queued interactions with `POST /me/events` `{ events }` in batches of at most `INTERACTION_BATCH_SIZE` (50) events and 60 000 UTF-8 bytes of request body, each request with `keepalive`, so a request in flight when the page closes is still delivered (the browser caps a keepalive body at 64 KiB).
 - **Inputs:** None. Reads the session from `useAuthStore`.
 - **Returns / side effects:** A promise that never rejects. Events go out only with the session they were recorded under: without a session, or with another one, the queue is dropped, and a flush stops after the batch in flight when another member signs in. A failed batch goes back to the front of the queue (still at most 500 events) and the next flush tries again; a failed batch of a member who is no longer signed in is dropped. A request that has not answered after `INTERACTION_REQUEST_TIMEOUT_MS` (10 s) is aborted and counts as failed. A batch the api refused for good (a 4xx status other than 429) is dropped instead of sent again. One flush per session runs at a time; a second call while it runs returns at once, and a flush of an earlier session still waiting on its request does not hold a new session's queue back. A flush whose member signed out meanwhile sends no further batch and drops what is left.
-- **Used by:** `logInteraction` (full batch) and `startInteractionLog`. `logLogout` starts the same flush through the module's internal `flush`.
+- **Used by:** `logInteraction` (full batch) and `startInteractionLog`.
 
 ## Function: logLogout
 
