@@ -1625,9 +1625,9 @@
     "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala."
   },
   "/grants/payments/amounts:duplicate": {
-    "de": "Der Gründer fügt eine Adresse hinzu, die Spend bereits auflistet. Hinweis Diese Adresse steht bereits auf der Liste. Nadel Diese Adresse steht bereits auf der Liste.",
-    "es": "El fundador añade una dirección que Spend ya enumera. Alerta Esa dirección ya está en la lista. Aguja Esa dirección ya está en la lista.",
-    "fil": "Nagdagdag ang tagapagtatag ng address na naka-lista na sa Spend. Alerto Naka-lista na ang address na iyon. Karayom Naka-lista na ang address na iyon."
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person bereits auf der Liste steht. Hinweis Diese Person steht bereits auf der Liste. Nadel Diese Person steht bereits auf der Liste.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que esa persona ya está en la lista. Alerta Esa persona ya está en la lista. Aguja Esa persona ya está en la lista.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na naka-lista na ang taong iyon. Alerto Naka-lista na ang taong iyon. Karayom Naka-lista na ang taong iyon."
   },
   "/wallet:reveal-open": {
     "de": "Konto, das bereits einen Satz anzeigen kann. Geöffnete Erweiterte Funktionen zeigt Wiederherstellungssatz anzeigen, das auf /wallet/phrase verweist.",
@@ -2880,9 +2880,9 @@
     "fil": "Sa Lahat: hilera ng forum na puro larawan mula kay Ada na may dalawang hindi gumagalaw na larawan (Larawan mula kay Ada nang dalawang beses, photoCount: 2) sa ForumPhotoGallery (pahalang na hilera na may snap, data-scroll-x, 88% na sulyap, chip na 1/2, mga tuldok) at nakikita ang kontrol sa paglakip sa kahon ng pagsulat."
   },
   "/grants/payments/amounts:editing": {
-    "de": "Der Gründer drückt den Zeilenstift Bearbeiten ada@w.... Das Betragsfeld USD ada@w... ist geöffnet und aktiviert. Das Häkchen (Speichern) ist aktiviert. Abbrechen ist aktiviert. Es gibt keinen Hinweis und keinen Ladekreis. Nadel state-grants-payments-amounts-editing.",
-    "es": "El fundador pulsa el lápiz de la fila Editar ada@w.... El campo de importe USD ada@w... está abierto y habilitado. La marca (Guardar) está habilitada. Cancelar está habilitado. No hay alerta ni indicador de carga. Aguja state-grants-payments-amounts-editing.",
-    "fil": "Pinindot ng tagapagtatag ang lapis ng hilera I-edit ada@w.... Bukas at pinagana ang patlang ng halaga USD ada@w.... Pinagana ang tsek (I-save). Pinagana ang Kanselahin. Walang alerto at walang pananda ng pag-ikot. Karayom state-grants-payments-amounts-editing."
+    "de": "Der Gründer drückt den Zeilenstift Bearbeiten Ada. Das Betragsfeld USD Ada ist geöffnet und aktiviert. Das Häkchen (Speichern) ist aktiviert. Abbrechen ist aktiviert. Es gibt keinen Hinweis und keinen Ladekreis. Nadel state-grants-payments-amounts-editing.",
+    "es": "El fundador pulsa el lápiz de la fila Editar Ada. El campo de importe USD Ada está abierto y habilitado. La marca (Guardar) está habilitada. Cancelar está habilitado. No hay alerta ni indicador de carga. Aguja state-grants-payments-amounts-editing.",
+    "fil": "Pinindot ng tagapagtatag ang lapis ng hilera I-edit Ada. Bukas at pinagana ang patlang ng halaga USD Ada. Pinagana ang tsek (I-save). Pinagana ang Kanselahin. Walang alerto at walang pananda ng pag-ikot. Karayom state-grants-payments-amounts-editing."
   },
   "/welcome:ask-credit-term-custom": {
     "de": "Kredit, Schritt 3 von 9, mit gedrücktem Benutzerdefiniert. Überschrift In welchem Zeitraum wird der Kredit zurückgezahlt? Ein Feld Anzahl der Tage zeigt 45, daher ist Weiter aktiviert. Weiter bleibt deaktiviert, solange dieses Feld leer ist oder keine ganze Zahl von 1 bis 3650 ist.",
@@ -3085,9 +3085,9 @@
     "fil": "Utang, hakbang 9 sa 9, pagkatapos ng isang hiling na 1000 dolyar ng US at ng parehong mensahe. Naka-pindot ang Utang. Ipinapakita ng preview ang isang etiketa ng Pautang, ang halaga sa dolyar, at ang araw-araw na plano sa dolyar ($33.33 sa loob ng 29 araw, pagkatapos $33.43 sa huling araw). Ang I-post ang tanging pagsusumite. Binabasa ng pamilang ang 9 sa 9."
   },
   "/grants/payments/amounts:invalid": {
-    "de": "Gründerin, Betrag 0 hinzufügen, Hinweis Die Adresse oder der Betrag ist ungültig. Der angezeigte Betrag, der Stift und der Papierkorb teilen sich eine Zeile. Der zugängliche Name des Stifts ist Bearbeiten plus die angezeigte Adresse. Der Papierkorb ist Entfernen plus diese Adresse. Nadel Die Adresse oder der Betrag ist ungültig.",
-    "es": "Fundadora, añadir importe 0, aviso La dirección o el importe no es válido. El importe mostrado, el lápiz y la papelera comparten una línea. El nombre accesible del lápiz es Editar más la dirección mostrada. La papelera es Eliminar más esa dirección. Aguja La dirección o el importe no es válido.",
-    "fil": "Tagapagtatag, magdagdag ng halagang 0, alerto Hindi wasto ang address o ang amount. Magkasama sa isang linya ang ipinapakitang halaga, lapis, at basurahan. Ang accessible na pangalan ng lapis ay I-edit dagdag ang ipinapakitang address. Ang basurahan ay Tanggalin dagdag ang address na iyon. Karayom Hindi wasto ang address o ang amount."
+    "de": "Gründerin, Betrag 0 hinzufügen, Hinweis Der Betrag ist ungültig. Der angezeigte Betrag, der Stift und der Papierkorb teilen sich eine Zeile. Der zugängliche Name des Stifts ist Bearbeiten plus der angezeigte Name. Der Papierkorb ist Entfernen plus dieser Name. Nadel Der Betrag ist ungültig.",
+    "es": "Fundador, añadir importe 0, aviso El importe no es válido. El importe mostrado, el lápiz y la papelera comparten una línea. El nombre accesible del lápiz es Editar más el nombre mostrado. La papelera es Eliminar más ese nombre. Aguja El importe no es válido.",
+    "fil": "Tagapagtatag, magdagdag ng halagang 0, alerto Hindi wasto ang amount. Magkasama sa isang linya ang ipinapakitang halaga, lapis, at basurahan. Ang accessible na pangalan ng lapis ay I-edit dagdag ang ipinapakitang pangalan. Ang basurahan ay Tanggalin dagdag ang pangalang iyon. Karayom Hindi wasto ang amount."
   },
   "/login:error": {
     "de": "Beginn oder Abschluss der Anmeldung ist fehlgeschlagen. Text Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut. (login.error) und Erneut versuchen. Handybilder zeigen auch die gedämpfte Zeile für installiertes iOS. Eine alte-iOS-Registrierung, die nicht abschliessen kann, ist die Variante ios-version, nicht dieses Bild. Dort wird kein Konto angelegt.",
@@ -3455,9 +3455,39 @@
     "fil": "Utang, hakbang 5 sa 9, bitcoin. Ulo Kunin ang pautang. Inuulit ng screen ang bawat kundisyon: Halagang utang: ₿21'000 · $21.00. Ang kahulugan ng Bitcoin at ang babala sa tumataas na presyo. Taning ng pagbabayad: 30 araw. Ang araw-araw na tuntunin na may halimbawa sa araw 11. Ibabalik bawat araw: ₿700 · $0.70 bawat araw sa loob ng 30 araw. Inuulit ang grapiko. Ang pindutan Gusto kong kunin ang pautang na ito. ang kumpirmasyon. Walang kahon ng tsek."
   },
   "/grants/payments/amounts:default": {
-    "de": "Gründer mit geladener Liste, die eine Wallet of Satoshi address enthält. Überschrift Beträge der täglichen Zahlungen. Die Notiz beginnt Wer am Förderprogramm teilnimmt, erhält standardmäßig $1.00. Diese Adresse erscheint als ada@w.... Der Betrag ist Text, mit Stift und Papierkorb. Zahlungen An ist gedrückt. Die Summe ist die USD-Summe, für diese Liste $1.30. Der Kommentar wird nicht gezeigt. Nadel Wer am Förderprogramm teilnimmt, erhält.",
-    "es": "Fundador con una lista cargada que incluye una Wallet of Satoshi address. Encabezado Importes de los pagos diarios. La nota empieza Quien participa en la beca recibe $1.00 por defecto. Esa dirección se muestra como ada@w.... Su importe es texto, con lápiz y papelera. Pagos Activado está pulsado. El total es la suma en USD, para esta lista $1.30. El comentario no se muestra. Aguja Quien participa en la beca recibe.",
-    "fil": "Tagapagtatag na may nakargang listahan na may Wallet of Satoshi address. Ulo Mga halaga ng araw-araw na bayad. Nagsisimula ang tala Ang bawat kalahok sa grant program ay tumatanggap ng $1.00 bilang default. Ang adres na iyon ay lumalabas bilang ada@w.... Ang halaga nito ay teksto, na may lapis at basurahan. Mga bayad Naka-on ay nakapindot. Ang kabuuan ay ang kabuuan sa USD, para sa listahang ito $1.30. Hindi ipinapakita ang komento. Karayom Ang bawat kalahok sa grant program ay tumatanggap."
+    "de": "Gründer mit geladener Liste. Überschrift Beträge der täglichen Zahlungen. Die Notiz beginnt Wer am Förderprogramm teilnimmt, erhält standardmäßig $1.00. Der Zeilenname Ada ist ein Link auf /members/acc_ada. Eine Zeile ohne Namen zeigt Unbenannt und ist kein Link. Die zugänglichen Namen der Stifte sind Bearbeiten Ada und Bearbeiten Unbenannt. Zahlungen An ist gedrückt. Die Summe ist die USD-Summe, für diese Liste $1.30. Der Kommentar wird nicht gezeigt. Nadel Wer am Förderprogramm teilnimmt, erhält.",
+    "es": "Fundador con una lista cargada. Encabezado Importes de los pagos diarios. La nota empieza Quien participa en la beca recibe $1.00 por defecto. El nombre de la fila Ada es un enlace a /members/acc_ada. Una fila sin nombre muestra Sin nombre y no es un enlace. Los nombres accesibles de los lápices son Editar Ada y Editar Sin nombre. Pagos Activado está pulsado. El total es la suma en USD, para esta lista $1.30. El comentario no se muestra. Aguja Quien participa en la beca recibe.",
+    "fil": "Tagapagtatag na may nakargang listahan. Ulo Mga halaga ng araw-araw na bayad. Nagsisimula ang tala Ang bawat kalahok sa grant program ay tumatanggap ng $1.00 bilang default. Ang pangalan ng hilera na Ada ay isang link sa /members/acc_ada. Ang hilerang walang pangalan ay nagpapakita ng Walang pangalan at hindi isang link. Ang mga accessible na pangalan ng lapis ay I-edit Ada at I-edit Walang pangalan. Mga bayad Naka-on ay nakapindot. Ang kabuuan ay ang kabuuan sa USD, para sa listahang ito $1.30. Hindi ipinapakita ang komento. Karayom Ang bawat kalahok sa grant program ay tumatanggap."
+  },
+  "/grants/payments/amounts:suggest": {
+    "de": "Der Gründer tippt @. Die Vorschlagsliste zeigt @cara und den Namen Cara und bleibt offen. Nadel @cara",
+    "es": "El fundador escribe @. La lista de sugerencias muestra @cara y el nombre Cara, y permanece abierta. Aguja @cara",
+    "fil": "Nag-type ang tagapagtatag ng @. Ipinapakita ng listahan ng mungkahi ang @cara at ang pangalang Cara, at nananatiling bukas. Karayom @cara"
+  },
+  "/grants/payments/amounts:chosen": {
+    "de": "Der Gründer tippt @ und drückt @cara. Das Feld Person zeigt @cara. Die Liste bleibt offen und diese Zeile ist gewählt. Es gibt keinen Hinweis. Nadel state-grants-payments-amounts-chosen.",
+    "es": "El fundador escribe @ y pulsa @cara. El campo Persona muestra @cara. La lista permanece abierta y esa fila está elegida. No hay alerta. Aguja state-grants-payments-amounts-chosen.",
+    "fil": "Nag-type ang tagapagtatag ng @ at pinindot ang @cara. Ipinapakita ng patlang na Tao ang @cara. Nanatiling bukas ang listahan at napili ang hilera na iyon. Walang alerto. Karayom state-grants-payments-amounts-chosen."
+  },
+  "/grants/payments/amounts:pick-person": {
+    "de": "Der Gründer tippt einen gültigen Betrag und drückt Hinzufügen, ohne eine Person zu wählen. Hinweis Wähle eine Person. Nadel Wähle eine Person.",
+    "es": "El fundador escribe un importe válido y pulsa Añadir sin elegir una persona. Alerta Elige una persona. Aguja Elige una persona.",
+    "fil": "Nag-type ang tagapagtatag ng wastong halaga at pinindot ang Idagdag nang hindi pumipili ng tao. Alerto Pumili ng tao. Karayom Pumili ng tao."
+  },
+  "/grants/payments/amounts:invalid-person": {
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person oder der Betrag ungültig ist. Hinweis Wähle eine Person und einen gültigen Betrag. Nadel Wähle eine Person und einen gültigen Betrag.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que la persona o el importe no es válido. Alerta Elige una persona y un importe válido. Aguja Elige una persona y un importe válido.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na hindi wasto ang tao o ang amount. Alerto Pumili ng tao at isang wastong amount. Karayom Pumili ng tao at isang wastong amount."
+  },
+  "/grants/payments/amounts:unknown-person": {
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person nicht gefunden wurde. Hinweis Diese Person wurde nicht gefunden. Nadel Diese Person wurde nicht gefunden.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que esa persona no se encontró. Alerta Esa persona no se encontró. Aguja Esa persona no se encontró.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na hindi nahanap ang taong iyon. Alerto Hindi nahanap ang taong iyon. Karayom Hindi nahanap ang taong iyon."
+  },
+  "/grants/payments/amounts:no-lightning": {
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person keine Lightning-Adresse hat. Hinweis Diese Person hat keine Wallet of Satoshi address. Nadel Diese Person hat keine Wallet of Satoshi address.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que esa persona no tiene dirección Lightning. Alerta Esta persona no tiene dirección de Wallet of Satoshi. Aguja Esta persona no tiene dirección de Wallet of Satoshi.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na walang Lightning address ang taong iyon. Alerto Walang Wallet of Satoshi address ang taong ito. Karayom Walang Wallet of Satoshi address ang taong ito."
   },
   "/welcome:pay-smartphone": {
     "de": "Dasselbe Zahlungsblatt, aufgenommen in der Computeransicht und am Mobilgerät. Bei einem Smartphone-User-Agent: dieselbe Rechnungskarte ohne eingebetteten QrCode; die Schaltfläche Zahlen mit dem Wallet of Satoshi-Symbol bleibt, mit Zahlung wird erwartet… darunter und einem Schließen-(X)-Steuerelement, nicht Zurück. Der Rechnungsschritt zeigt den Sat-Betrag und den Standard-Fiat zum neuesten Kurs des Geschenktags. In der Computeransicht zeigt dieses Szenario die QR-Rechnungskarte.",

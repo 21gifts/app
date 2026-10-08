@@ -1343,6 +1343,8 @@ export const dailyRosterSchema = z.object({
     z.object({
       address: z.string(),
       amountUsd: z.number(),
+      accountId: z.string().min(1).nullable(),
+      name: z.string().nullable(),
     }),
   ),
 });

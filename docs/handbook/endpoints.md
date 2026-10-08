@@ -627,9 +627,9 @@
 
 ## Endpoint: GET /forum/mentions
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/mentions`. Optional `q` is the username prefix. An empty query is the first page of handles. Used so the forum composer can suggest people while `@` is being typed.
+- **Purpose:** Same-origin Bearer proxy of api GET `/mentions`. Optional `q` is the username prefix. An empty query is the first page of handles. The forum composer uses it while `@` is being typed. The Person field on `/grants/payments/amounts` uses the same search and opens that first page when the field is exactly `@`.
 - **Errors:** Upstream 401/400/409, or 502 if the api is unreachable.
-- **Used by:** `searchMentionAccounts` from `MentionTextarea` on the post, reply, ask-for-money, shop, inbox, and moderator-room composers, and from `ShopAccountControl`.
+- **Used by:** `searchMentionAccounts` from `MentionTextarea` on the post, reply, ask-for-money, shop, inbox, and moderator-room composers, from `ShopAccountControl`, and from `DailyPaymentAmountsScreen` for the Person field on `/grants/payments/amounts`.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /forum/notifications
@@ -760,8 +760,8 @@
 
 ## Endpoint: POST /funding/daily-roster/recipients
 
-- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/recipients` with `{ address, amountUsd }`. Appends one daily recipient.
-- **Errors:** Upstream 400 `Invalid address or amount` or `Address already listed`, 401, 403, 503, or 502 if the api is unreachable.
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/recipients` with `{ accountId, amountUsd }`. Appends one daily recipient for that person.
+- **Errors:** Upstream 400 `Invalid person or amount`, `Unknown person`, `Person has no Lightning address`, or `Address already listed`, 401, 403, 503, or 502 if the api is unreachable.
 - **Used by:** `addDailyRosterRecipient` in `DailyPaymentAmountsScreen`.
 - **Auth:** Bearer session. The api allows an initiator or founder only.
 
