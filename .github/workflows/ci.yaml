@@ -12,7 +12,7 @@ concurrency:
 permissions:
   contents: read
 
-# Lint, check, and behavior are 10 minutes, and each visual job is 30 minutes.
+# Each job must finish within 10 minutes; do not raise the timeout.
 jobs:
   lint:
     name: Lint
@@ -101,7 +101,7 @@ jobs:
   visual:
     name: Visual (${{ matrix.project }})
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
