@@ -79,7 +79,8 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
  * confirmation. Too little balance shows an alert, how much is still missing
  * (amount plus the known fee minus the balance, with fiat), and the member's
  * own address and QR when their username gives one; once the balance covers
- * the payment, the slot prepares again and shows the fee and the pay button.
+ * the payment, the slot prepares again and shows the pay button (with the fee
+ * row only for a fee above ₿0).
  * While the one-time wallet setup is still due, the progress line shows until
  * it is done, and a setup that gave up shows the inline setup note with
  * **Try again**. Without a wallet the member can use here it says so, and a
