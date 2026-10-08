@@ -367,12 +367,50 @@ describe('logLogout', () => {
     ]);
   });
 
+  it('resolves only after every queued batch is sent', async () => {
+    let release: () => void = () => undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => {
+            resolve({ ok: true, status: 204 });
+          };
+        }),
+    );
+    for (let i = 0; i < 60; i += 1) {
+      mod.logInteraction('screen_view');
+    }
+    let done = false;
+    const logout = mod.logLogout().then(() => {
+      done = true;
+    });
+    await vi.waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    await Promise.resolve();
+    expect(done).toBe(false);
+    release();
+    await logout;
+    expect(batches().map((names) => names.length)).toEqual([50, 1, 10]);
+  });
+
   it('is not held back by a flush that does not answer', async () => {
-    fetchMock.mockImplementationOnce(() => new Promise(() => undefined));
+    vi.useFakeTimers();
+    fetchMock.mockImplementationOnce(
+      (_url: string, init: { signal: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            reject(new Error('aborted'));
+          });
+        }),
+    );
     mod.logInteraction('screen_view');
     void mod.flushInteractions();
-    await mod.logLogout();
+    const logout = mod.logLogout();
+    await vi.advanceTimersByTimeAsync(0);
     expect(batches()).toEqual([['screen_view'], ['logout']]);
+    await vi.advanceTimersByTimeAsync(mod.INTERACTION_REQUEST_TIMEOUT_MS);
+    await logout;
   });
 
   it('sends the logout event again until it is accepted', async () => {

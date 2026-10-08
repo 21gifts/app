@@ -2,7 +2,7 @@
 
 import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import type { ReactElement } from 'react';
+import { useRef, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { logLogout } from '@/lib/interaction-log';
@@ -24,11 +24,16 @@ export function LogoutButton(): ReactElement {
   const router = useRouter();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const passkey = usePasskeyLogin();
+  const ending = useRef(false);
 
   return (
     <button
       type="button"
       onClick={() => {
+        if (ending.current) {
+          // A second click while a log-out is still ending its session.
+          return;
+        }
         passkey.cancel();
         const { session, lockedSession } = useAuthStore.getState();
         const token = session ?? lockedSession;
@@ -50,6 +55,7 @@ export function LogoutButton(): ReactElement {
           void stopPush(lockedSession);
           return;
         }
+        ending.current = true;
         void (async () => {
           // The logout event goes out with the session it was recorded under,
           // before that session is cleared.
@@ -58,6 +64,7 @@ export function LogoutButton(): ReactElement {
             token === null ? Promise.resolve() : stopPush(token),
           ]);
           clearAuth();
+          ending.current = false;
           router.replace('/login');
         })();
       }}

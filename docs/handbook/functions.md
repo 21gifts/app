@@ -47,7 +47,7 @@
 
 - **Purpose:** Drop the module-level till write so a later test does not wait on a request the previous test left hanging.
 - **Inputs:** None.
-- **Returns / side effects:** Sets the in-flight write to null. Production clears that write when the request settles.
+- **Returns / side effects:** Sets the in-flight write to null and empties the set of paid charges already recorded as seen in the tab. Production clears that write when the request settles.
 - **Used by:** `PosScreen` tests.
 
 ## Function: fetchPosState
@@ -61,8 +61,8 @@
 
 - **Purpose:** `POST /pos/charge` with `{ amountSats }`.
 - **Inputs:** Bearer `sessionToken` and a whole sat amount.
-- **Returns / side effects:** The created charge. Throws `WalletRequiredError` or `CannotReceiveError` on a 400 whose `code` is `wallet_required` or `cannot_receive` (via `throwIfWalletAnswer`), recognised by the body's `code` only; otherwise throws with the API error string or a status fallback.
-- **Used by:** `PosAmount`. Records `pos_charge_created` with the charge id and amount.
+- **Returns / side effects:** The created charge. Throws `WalletRequiredError` or `CannotReceiveError` on a 400 whose `code` is `wallet_required` or `cannot_receive` (via `throwIfWalletAnswer`), recognised by the body's `code` only; otherwise throws with the API error string or a status fallback. Records `pos_charge_created` with the charge id and amount.
+- **Used by:** `PosAmount`.
 
 ## Function: cancelPosCharge
 
@@ -416,7 +416,7 @@
 
 - **Purpose:** Matching icon+text log-out inside the signed-in Menu dropdown (not a free top-right action); clears the session and returns the visitor to `/login`.
 - **Inputs:** Active `session` or held-back `lockedSession`, `useAuthStore.clearAuth`, `usePasskeyLogin.cancel`, `useRouter`, `disablePush`, and `logLogout`.
-- **Returns / side effects:** Full-width Menu-row icon+text button (same row chrome as Home / Profile / Contact). A signed-in session first switches push off (`disablePush`, unsubscribe) and, at the same time, records `logout` and sends the interaction log with that session (`logLogout`); each waits at most 5 s, and a failure does not block log out. Then it clears auth plus the tab phrase and calls `router.replace('/login')`. A held-back session (no active session) is cleared and redirected at once, and push is switched off for its token in the background, so a new login on the card right after cannot be wiped. Also mounted under `WalletLoginCard` for a held-back session, where the Menu is not shown.
+- **Returns / side effects:** Full-width Menu-row icon+text button (same row chrome as Home / Profile / Contact). A signed-in session first switches push off (`disablePush`, unsubscribe) and, at the same time, records `logout` and sends the interaction log with that session (`logLogout`); each waits at most 5 s, and a failure does not block log out; a second click while this runs does nothing. Then it clears auth plus the tab phrase and calls `router.replace('/login')`. A held-back session (no active session) is cleared and redirected at once, and push is switched off for its token in the background, so a new login on the card right after cannot be wiped. Also mounted under `WalletLoginCard` for a held-back session, where the Menu is not shown.
 - **Used by:** `SignedInChrome` Menu dropdown, and `WalletLoginCard` for a held-back session.
 
 ## Function: NameSetup
@@ -4293,7 +4293,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Records `logout` and sends it with the session that is ending, before the caller clears that session.
 - **Inputs:** None. Reads the session from `useAuthStore`.
-- **Returns / side effects:** A promise that never rejects. Builds `logout` like `logInteraction` and sends it at once with `POST /me/events` in a request of its own, so a flush already running does not hold it back; it also starts a flush of the queued events. A failed request is sent again every `LOGOUT_RETRY_MS` (500 ms) while the session is still the current one. `LogoutButton` bounds the wait at 5 s and then clears the session: queued events not sent by then are dropped, and a request already in flight still completes (every request is kept alive). Without a session nothing is recorded or sent.
+- **Returns / side effects:** A promise that never rejects. Builds `logout` like `logInteraction` and sends it at once with `POST /me/events` in a request of its own, so a flush already running does not hold it back. It also sends the queued events, after a flush already running, and resolves once the logout event and the queue are sent. A failed request is sent again every `LOGOUT_RETRY_MS` (500 ms) while the session is still the current one. `LogoutButton` bounds the wait at 5 s and then clears the session: queued events not sent by then are dropped, and a request already in flight still completes (every request is kept alive). Without a session nothing is recorded or sent.
 - **Used by:** `LogoutButton`.
 
 ## Function: startInteractionLog
@@ -4661,8 +4661,8 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Load username suggestions for an `@` token. Calls same-origin GET `/forum/mentions`, adding `q` only when the prefix is non-empty.
 - **Inputs:** Bearer session and a lowercase prefix (`""` for the first page).
-- **Returns / side effects:** `{ id, username, name }[]`. Throws when the response is not 200 or the body is not that list.
-- **Used by:** `MentionTextarea`, `ShopAccountControl`, and `DailyPaymentAmountsScreen`. A non-empty search is recorded as `search` with the term and the number of results.
+- **Returns / side effects:** `{ id, username, name }[]`. Throws when the response is not 200 or the body is not that list. A non-empty search is recorded as `search` with the term and the number of results.
+- **Used by:** `MentionTextarea`, `ShopAccountControl`, and `DailyPaymentAmountsScreen`.
 
 ## Function: proxyForumMentionsGet
 

@@ -356,15 +356,15 @@ export const LOGOUT_RETRY_MS = 500;
 /**
  * Records `logout` and sends it at once, in a request of its own with the
  * session that is ending, so the caller can clear the session afterwards; a
- * flush already running does not hold it back. It also starts a flush of the
- * queued events. A failed request is sent again every
+ * flush already running does not hold it back. It also sends the queued
+ * events, after any flush already running, and resolves once both are done. A failed request is sent again every
  * {@link LOGOUT_RETRY_MS} while the session is still the current one (the
  * caller bounds the wait and then clears it; queued events not sent by then
  * are dropped, and a request already in flight still completes, as every
  * request is kept alive). Without a session nothing is recorded or sent.
  * Never rejects.
  *
- * @returns Resolves when the api accepted the event or the session ended.
+ * @returns Resolves when the logout event and the queue are sent, or the session ended.
  */
 export async function logLogout(): Promise<void> {
   const session = useAuthStore.getState().session;
@@ -375,17 +375,24 @@ export async function logLogout(): Promise<void> {
   if (event === null) {
     return;
   }
-  void flush();
+  const queueSent = (async (): Promise<void> => {
+    const running = flushRuns.get(session);
+    if (running !== undefined) {
+      await running;
+    }
+    await flush();
+  })();
   while (useAuthStore.getState().session === session) {
     try {
       await postEvents(session, [event]);
-      return;
+      break;
     } catch {
       await new Promise<void>((resolve) => {
         setTimeout(resolve, LOGOUT_RETRY_MS);
       });
     }
   }
+  await queueSent;
 }
 
 /**
