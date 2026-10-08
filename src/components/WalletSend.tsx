@@ -96,7 +96,7 @@ function StepBox({
   const { t } = useTranslations();
   return (
     <div className="relative flex w-full flex-col items-stretch gap-3 rounded-xl border border-app-border bg-app-card p-3 pt-10">
-      <div className="absolute left-2 top-2">
+      <div className="absolute left-3 top-3">
         <IconButton
           type="button"
           size="sm"
@@ -331,7 +331,7 @@ export function WalletSend({
         ) : null}
         {manualEntry ? (
           <div className="absolute inset-x-0 bottom-0 rounded-t-2xl bg-app-card p-4 pt-12 text-app-fg shadow-lg">
-            <div className="absolute left-2 top-2">
+            <div className="absolute left-3 top-3">
               <IconButton
                 type="button"
                 size="sm"

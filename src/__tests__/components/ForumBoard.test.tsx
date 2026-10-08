@@ -855,7 +855,13 @@ describe('ForumBoard', () => {
         onDismissLaws={onDismissLaws}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    const dismiss = screen.getByRole('button', { name: 'Dismiss' });
+    expect(dismiss.className.split(' ')).not.toContain('absolute');
+    expect(dismiss.parentElement?.className).toBe('absolute right-3 top-3');
+    const card = dismiss.closest('[data-laws-card]');
+    expect(card?.className).toContain('px-12');
+    expect(card?.className).toContain('py-5');
+    fireEvent.click(dismiss);
     expect(onDismissLaws).toHaveBeenCalledTimes(1);
   });
 
@@ -2347,8 +2353,8 @@ describe('ForumBoard', () => {
     expect(screen.queryByText('Back')).toBeNull();
     const back = screen.getByRole('button', { name: 'Close' });
     expect(back.parentElement?.className).toContain('absolute');
-    expect(back.parentElement?.className).toContain('left-2');
-    expect(back.parentElement?.className).toContain('top-2');
+    expect(back.parentElement?.className).toContain('left-3');
+    expect(back.parentElement?.className).toContain('top-3');
     expect(back.closest('[data-pay-sheet]')).toBeTruthy();
     fireEvent.click(back);
     expect(onPayCancel).toHaveBeenCalledTimes(1);
