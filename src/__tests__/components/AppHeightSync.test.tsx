@@ -453,3 +453,333 @@ describe('useAppHeight', () => {
     scroller.remove();
   });
 });
+
+describe('useAppHeight and the writing composer', () => {
+  /** The forum home composer (`data-writing-composer`) with its text field, and a field outside. */
+  function mountComposer(): {
+    form: HTMLFormElement;
+    field: HTMLTextAreaElement;
+    other: HTMLInputElement;
+  } {
+    const form = document.createElement('form');
+    form.setAttribute('data-writing-composer', '');
+    const field = document.createElement('textarea');
+    form.appendChild(field);
+    document.body.appendChild(form);
+    const other = document.createElement('input');
+    document.body.appendChild(other);
+    return { form, field, other };
+  }
+
+  function focusIn(target: Element, relatedTarget: EventTarget | null = null): void {
+    target.dispatchEvent(new FocusEvent('focusin', { bubbles: true, relatedTarget }));
+  }
+
+  function focusOut(target: Element, relatedTarget: EventTarget | null = null): void {
+    target.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget }));
+  }
+
+  function viewportListener(
+    visualViewport: ReturnType<typeof stubVisualViewport>,
+    type: 'resize' | 'scroll',
+  ): () => void {
+    const call = visualViewport.addEventListener.mock.calls.find((entry) => entry[0] === type);
+    if (call === undefined || typeof call[1] !== 'function') {
+      throw new Error(`missing visualViewport ${type} listener`);
+    }
+    return call[1] as () => void;
+  }
+
+  function written(): { height: string; offset: string } {
+    const style = document.documentElement.style;
+    return {
+      height: style.getPropertyValue('--app-height'),
+      offset: style.getPropertyValue('--app-offset-top'),
+    };
+  }
+
+  /** Composer focused at full height, then the keyboard shortened the viewport. */
+  function openKeyboard(): {
+    visualViewport: ReturnType<typeof stubVisualViewport>;
+    form: HTMLFormElement;
+    field: HTMLTextAreaElement;
+    other: HTMLInputElement;
+    unmount: () => void;
+  } {
+    stubInnerHeight(852);
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 393 });
+    const visualViewport = stubVisualViewport(852, { offsetTop: 0 });
+    const { unmount } = renderHook(() => {
+      useAppHeight();
+    });
+    const nodes = mountComposer();
+    focusIn(nodes.field);
+    visualViewport.height = 511;
+    visualViewport.offsetTop = 200;
+    viewportListener(visualViewport, 'resize')();
+    expect(written()).toEqual({ height: '511px', offset: '200px' });
+    return { visualViewport, unmount, ...nodes };
+  }
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+    document.body.querySelectorAll('form').forEach((node) => {
+      node.remove();
+    });
+  });
+
+  it('writes the full height and offset 0 at once when the focus leaves the composer for no field, until the viewport catches up', () => {
+    const { visualViewport, field } = openKeyboard();
+    focusOut(field);
+    expect(written()).toEqual({ height: '852px', offset: '0px' });
+    // The keyboard is still sliding away: the short viewport does not shrink the frame again.
+    viewportListener(visualViewport, 'scroll')();
+    expect(written()).toEqual({ height: '852px', offset: '0px' });
+    // The late resize reports the full height: it matches, and the hold ends.
+    visualViewport.height = 852;
+    visualViewport.offsetTop = 0;
+    viewportListener(visualViewport, 'resize')();
+    expect(written()).toEqual({ height: '852px', offset: '0px' });
+    visualViewport.height = 600;
+    viewportListener(visualViewport, 'resize')();
+    expect(written().height).toBe('600px');
+  });
+
+  it('writes the real viewport again once a second has passed without it catching up', () => {
+    vi.useFakeTimers();
+    const { field } = openKeyboard();
+    focusOut(field);
+    expect(written().height).toBe('852px');
+    vi.advanceTimersByTime(999);
+    expect(written().height).toBe('852px');
+    vi.advanceTimersByTime(1);
+    expect(written()).toEqual({ height: '511px', offset: '200px' });
+  });
+
+  it('keeps a pressed composer button inside the composer: no hold', () => {
+    const { form, field } = openKeyboard();
+    const button = document.createElement('button');
+    form.appendChild(button);
+    focusOut(field, button);
+    expect(written()).toEqual({ height: '511px', offset: '200px' });
+  });
+
+  it('does not hold when another text field takes the focus', () => {
+    const { field, other } = openKeyboard();
+    focusOut(field, other);
+    expect(written()).toEqual({ height: '511px', offset: '200px' });
+    const editable = document.createElement('div');
+    Object.defineProperty(editable, 'isContentEditable', { value: true });
+    document.body.appendChild(editable);
+    focusOut(field, editable);
+    expect(written()).toEqual({ height: '511px', offset: '200px' });
+    editable.remove();
+  });
+
+  it('holds when the focus moves to a control that opens no keyboard, also once it is focused', () => {
+    const { field } = openKeyboard();
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    document.body.appendChild(box);
+    focusOut(field, box);
+    expect(written()).toEqual({ height: '852px', offset: '0px' });
+    focusIn(box, field);
+    expect(written()).toEqual({ height: '852px', offset: '0px' });
+  });
+
+  it('holds nothing after entering the composer from another text field', () => {
+    const { field, other } = openKeyboard();
+    focusOut(field, other);
+    focusIn(other, field);
+    expect(written().height).toBe('511px');
+    // Back into the composer straight from the other field: the keyboard is up, nothing is measured.
+    focusOut(other, field);
+    focusIn(field, other);
+    focusOut(field);
+    expect(written().height).toBe('511px');
+  });
+
+  it('measures nothing while the focus moves inside the composer, both ways', () => {
+    const { visualViewport, form, field, other } = openKeyboard();
+    const button = document.createElement('button');
+    form.appendChild(button);
+    // Field, then a composer button, then the field again while the keyboard is up: 852 stays.
+    focusOut(field, button);
+    focusIn(button, field);
+    focusOut(button, field);
+    focusIn(field, button);
+    focusOut(field);
+    expect(written().height).toBe('852px');
+    // Another field, then a composer button, then the field: nothing measured, nothing held.
+    visualViewport.height = 852;
+    viewportListener(visualViewport, 'resize')();
+    focusIn(other);
+    visualViewport.height = 511;
+    viewportListener(visualViewport, 'resize')();
+    focusOut(other, button);
+    focusIn(button, other);
+    focusOut(button, field);
+    focusIn(field, button);
+    focusOut(field);
+    expect(written().height).toBe('511px');
+  });
+
+  it('keeps the measured height when the focus moves inside the composer', () => {
+    const { form, field } = openKeyboard();
+    const button = document.createElement('button');
+    form.appendChild(button);
+    focusOut(field, button);
+    focusIn(button, field);
+    focusOut(button);
+    expect(written()).toEqual({ height: '852px', offset: '0px' });
+  });
+
+  it('ends the hold when a field takes the focus again, on orientation change, and on unmount', () => {
+    vi.useFakeTimers();
+    const clear = vi.spyOn(window, 'clearTimeout');
+    const { visualViewport, field, other, unmount } = openKeyboard();
+    focusOut(field);
+    expect(written().height).toBe('852px');
+    focusIn(other);
+    expect(written()).toEqual({ height: '511px', offset: '200px' });
+
+    /** The keyboard closed, then the composer takes the focus again from no field. */
+    const reenter = (): void => {
+      visualViewport.height = 852;
+      focusIn(field);
+      visualViewport.height = 511;
+    };
+    reenter();
+    focusOut(field);
+    expect(written().height).toBe('852px');
+    window.dispatchEvent(new Event('orientationchange'));
+    expect(written().height).toBe('511px');
+
+    reenter();
+    focusOut(field);
+    expect(written().height).toBe('852px');
+    const before = clear.mock.calls.length;
+    unmount();
+    expect(clear.mock.calls.length).toBeGreaterThan(before);
+  });
+
+  it('leaves every other field alone: leaving it writes the short viewport as before', () => {
+    stubInnerHeight(852);
+    const visualViewport = stubVisualViewport(852, { offsetTop: 0 });
+    renderHook(() => {
+      useAppHeight();
+    });
+    const reply = document.createElement('textarea');
+    document.body.appendChild(reply);
+    focusIn(reply);
+    visualViewport.height = 511;
+    visualViewport.offsetTop = 200;
+    viewportListener(visualViewport, 'resize')();
+    focusOut(reply);
+    expect(written()).toEqual({ height: '511px', offset: '200px' });
+  });
+
+  it('does not hold when the composer took the focus from another field (keyboard already up)', () => {
+    stubInnerHeight(852);
+    const visualViewport = stubVisualViewport(511, { offsetTop: 200 });
+    renderHook(() => {
+      useAppHeight();
+    });
+    const { field, other } = mountComposer();
+    focusIn(field, other);
+    focusOut(field);
+    expect(written()).toEqual({ height: '511px', offset: '200px' });
+    expect(visualViewport.height).toBe(511);
+  });
+
+  it('measures the full height again at each entry, keeping a held one only while it is held', () => {
+    const { visualViewport, field } = openKeyboard();
+    focusOut(field);
+    expect(written().height).toBe('852px');
+    // Back into the composer while the keyboard is still closing: the held 852 stays the full height.
+    focusIn(field);
+    focusOut(field);
+    expect(written().height).toBe('852px');
+    // The viewport catches up and then shrinks for good (a toolbar came back): the next entry measures 800.
+    visualViewport.height = 852;
+    visualViewport.offsetTop = 0;
+    viewportListener(visualViewport, 'resize')();
+    visualViewport.height = 800;
+    viewportListener(visualViewport, 'resize')();
+    focusIn(field);
+    visualViewport.height = 480;
+    viewportListener(visualViewport, 'resize')();
+    focusOut(field);
+    expect(written().height).toBe('800px');
+  });
+
+  it('holds nothing once the width changed, after the focus or during the hold', () => {
+    const { visualViewport, field } = openKeyboard();
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 852 });
+    focusOut(field);
+    expect(written().height).toBe('511px');
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 393 });
+    focusIn(field, document.body.querySelector('input'));
+    focusIn(field);
+    focusOut(field);
+    expect(written().height).toBe('511px');
+    // A fresh entry at 393 records 511; leaving holds it, and a width change ends the hold.
+    visualViewport.height = 300;
+    focusOut(field);
+    expect(written().height).toBe('511px');
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 852 });
+    viewportListener(visualViewport, 'resize')();
+    expect(written().height).toBe('300px');
+  });
+
+  it('measures a field focused before the composer was marked, once the focus is announced again', () => {
+    stubInnerHeight(852);
+    const visualViewport = stubVisualViewport(852, { offsetTop: 0 });
+    renderHook(() => {
+      useAppHeight();
+    });
+    const form = document.createElement('form');
+    const field = document.createElement('textarea');
+    form.appendChild(field);
+    document.body.appendChild(form);
+    // Focused at mount, before the marker: nothing is measured yet.
+    focusIn(field);
+    form.setAttribute('data-writing-composer', '');
+    focusIn(field);
+    visualViewport.height = 511;
+    viewportListener(visualViewport, 'resize')();
+    focusOut(field);
+    expect(written()).toEqual({ height: '852px', offset: '0px' });
+  });
+
+  it('forgets an earlier measurement when a later entry cannot measure', () => {
+    const { visualViewport, field } = openKeyboard();
+    // The keyboard closes and the viewport is full again; then a pinch-zoomed entry measures nothing.
+    focusOut(field);
+    visualViewport.height = 852;
+    visualViewport.offsetTop = 0;
+    viewportListener(visualViewport, 'resize')();
+    (visualViewport as { scale?: number }).scale = 2;
+    focusIn(field);
+    (visualViewport as { scale?: number }).scale = 1;
+    visualViewport.height = 511;
+    focusOut(field);
+    expect(written().height).toBe('511px');
+  });
+
+  it('measures nothing while pinch-zoomed', () => {
+    stubInnerHeight(852);
+    const visualViewport = stubVisualViewport(852, { scale: 2 });
+    renderHook(() => {
+      useAppHeight();
+    });
+    const { field } = mountComposer();
+    focusIn(field);
+    (visualViewport as { scale?: number }).scale = 1;
+    visualViewport.height = 511;
+    focusOut(field);
+    expect(written().height).toBe('511px');
+  });
+});

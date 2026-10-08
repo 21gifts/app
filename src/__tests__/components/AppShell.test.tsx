@@ -8,6 +8,7 @@ import {
   AppShellHeader,
   AppShellTopLeft,
   useAppShellScroller,
+  type AppShellWriting,
 } from '@/components/AppShell';
 import { Card } from '@/components/ui/Card';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -482,5 +483,92 @@ describe('AppShell', () => {
         Object.defineProperty(HTMLElement.prototype, 'clientWidth', widthDescriptor);
       }
     }
+  });
+});
+
+describe('AppShell writing mode', () => {
+  let setWriting: (writing: AppShellWriting) => void = () => undefined;
+
+  function WritingProbe(): null {
+    setWriting = useContext(AppShellContext)!.setWriting;
+    return null;
+  }
+
+  function shellParts(container: HTMLElement) {
+    const main = container.querySelector('main')!;
+    return {
+      main,
+      frame: main.querySelector('[data-app-frame]')!,
+      chrome: main.querySelector('[data-app-chrome]')!,
+      page: main.querySelector('[data-scroll-page]')!,
+      footer: main.querySelector('footer')!,
+    };
+  }
+
+  it('changes nothing while off, adds transitions when ready, and goes edge to edge when on', () => {
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <WritingProbe />
+      </AppShell>,
+    );
+    const off = shellParts(container);
+    const before = [off.main, off.frame, off.chrome, off.page, off.footer].map(
+      (node) => node.className,
+    );
+    expect(off.main.hasAttribute('data-writing')).toBe(false);
+    expect(off.main.className).not.toContain('group/shell');
+    expect(off.footer.className).toBe('flex-none px-5 pb-5 empty:hidden');
+
+    act(() => {
+      setWriting('ready');
+    });
+    expect(off.main.getAttribute('data-writing')).toBe('ready');
+    expect(off.main.className).toContain('group/shell');
+    expect(off.main.className).toContain('px-3 max-[359px]:px-2 py-2');
+    for (const node of [off.main, off.frame, off.chrome, off.page]) {
+      expect(node.className).toContain(
+        'transition-[padding,border-radius,border-width] duration-250 ease-fold',
+      );
+    }
+    expect(off.frame.className).toContain('rounded-3xl border');
+    expect(off.footer.className).toBe(
+      'flex flex-none flex-col justify-end px-5 pb-5 empty:hidden writing-fold',
+    );
+
+    act(() => {
+      setWriting('on');
+    });
+    expect(off.main.getAttribute('data-writing')).toBe('on');
+    expect(off.main.className).toContain('p-0');
+    expect(off.main.className).not.toContain('py-2');
+    expect(off.frame.className).toContain('rounded-none border-0');
+    expect(off.chrome.className).toContain('pt-2');
+    expect(off.page.className).toContain('pt-1 pb-4');
+    expect(off.footer.className).toBe(
+      'flex flex-none flex-col justify-end px-5 pb-0 empty:hidden writing-folded',
+    );
+
+    act(() => {
+      setWriting('off');
+    });
+    expect(
+      [off.main, off.frame, off.chrome, off.page, off.footer].map((node) => node.className),
+    ).toEqual(before);
+    expect(off.main.hasAttribute('data-writing')).toBe(false);
+  });
+
+  it('tightens the centered page top too', () => {
+    const { container } = renderWithLocale(
+      <AppShell mode="fill" align="center">
+        <WritingProbe />
+      </AppShell>,
+    );
+    const page = container.querySelector('[data-scroll-page]')!;
+    expect(page.className).toContain('px-5 py-4');
+    act(() => {
+      setWriting('on');
+    });
+    expect(page.className).toContain('shell-safe-center');
+    expect(page.className).toContain('pt-1 pb-4');
   });
 });
