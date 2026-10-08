@@ -31,7 +31,7 @@ function isTypingField(node: EventTarget | null): boolean {
   );
 }
 
-/** Whether the node is inside the forum home composer that has a writing mode. */
+/** Whether the node is inside the forum home writer (`data-writing-composer`). */
 function inWritingComposer(node: EventTarget | null): boolean {
   return node instanceof Element && node.closest('[data-writing-composer]') !== null;
 }
@@ -57,16 +57,16 @@ function revealFocusedField(): void {
  * viewport resize or scroll, and on focus via `requestAnimationFrame`, the
  * focused input, textarea, or select is revealed inside the active scrollport.
  *
- * One exception, for the forum home composer only (`[data-writing-composer]`,
- * touch devices): iOS reports the taller viewport only after the keyboard has
- * slid away. When the focus leaves that composer and no other text field
- * takes it, the height measured when the focus came into the composer from
- * no text field (kept while a hold is still on), and offset 0, are written
- * at once and held until the viewport reports that height, another text
- * field takes the focus, the width or orientation changes, or one second has
- * passed. Entering the composer from another text field measures nothing, so
- * leaving it afterwards holds nothing. Every other
- * field keeps the plain behaviour.
+ * One exception, for the forum home writer only (`[data-writing-composer]`,
+ * the layer that holds its composer): iOS reports the taller viewport only
+ * after the keyboard has slid away. When the focus leaves the writer and no
+ * other text field takes it (closing the writer blurs its field first), the
+ * height measured when the focus came into the writer from no text field
+ * (kept while a hold is still on), and offset 0, are written at once and
+ * held until the viewport reports that height, another text field takes the
+ * focus, the width or orientation changes, or one second has passed.
+ * Entering the writer from another text field measures nothing, so leaving
+ * it afterwards holds nothing. Every other field keeps the plain behaviour.
  *
  * @returns void. Writes both custom properties, then reveals the focused field.
  */

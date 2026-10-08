@@ -1,5 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import { AppShell } from '@/components/AppShell';
+import type { ForumWriter } from '@/components/ForumBoard';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { ChromeBackProvider } from '@/components/ViewHistoryRoot';
@@ -12,7 +14,7 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/hooks/useWallet', () => ({ useWallet: vi.fn() }));
 vi.mock('@/hooks/useWalletSend', () => ({ useWalletSend: vi.fn() }));
-const askStep = vi.hoisted(() => ({ on: false }));
+const askStep = vi.hoisted(() => ({ on: false, inWriter: false, back: vi.fn() }));
 vi.mock('@/components/ForumLoader', async () => {
   const { useChromeBack } = await import('@/components/ViewHistoryRoot');
   const { useLayoutEffect, useState } = await import('react');
@@ -26,8 +28,22 @@ vi.mock('@/components/ForumLoader', async () => {
     }, [onBack, setOverride]);
     return <p>Forum stub</p>;
   }
-  /** Re-renders on demand, so the ask step registers its Back again (a new callback). */
-  function Forum(): ReactNode {
+  /** Like an ask-wizard step inside the writer: mounts with it and registers its own Back. */
+  function WriterAskStep(): ReactNode {
+    const { setOverride } = useChromeBack();
+    useLayoutEffect(() => {
+      setOverride({ labelKey: 'forum.askBack', onClick: askStep.back });
+      return () => {
+        setOverride(null);
+      };
+    }, [setOverride]);
+    return <p>Writer ask step</p>;
+  }
+  /**
+   * Re-renders on demand, so the ask step registers its Back again (a new callback).
+   * Shows a stand-in writer while `writer.open`, with a field and a successful post.
+   */
+  function Forum({ writer }: { writer?: ForumWriter }): ReactNode {
     const [renders, setRenders] = useState(0);
     return (
       <>
@@ -40,6 +56,18 @@ vi.mock('@/components/ForumLoader', async () => {
           Forum re-render
         </button>
         <AskStep onBack={() => undefined} />
+        <button type="button" onClick={() => writer?.onOpen()}>
+          Stub compose request
+        </button>
+        {writer?.open === true ? (
+          <div data-testid="writer">
+            <textarea aria-label="Writer field" />
+            {askStep.inWriter ? <WriterAskStep /> : null}
+            <button type="button" onClick={writer.onClose}>
+              Stub posted
+            </button>
+          </div>
+        ) : null}
       </>
     );
   }
@@ -178,15 +206,101 @@ describe('WelcomeScreen', () => {
   });
 });
 
-describe('WelcomeScreen writing mode', () => {
-  it('wraps the icon and heading in a part that is no box until the shell is in writing mode', () => {
-    renderWithLocale(<WelcomeScreen />);
-    const part = screen.getByRole('heading', { name: 'Welcome, Ada' }).parentElement!;
-    expect(part.querySelector('svg')).toBeTruthy();
-    expect(part.className).toContain('contents');
-    expect(part.className).toContain('group-data-[writing=ready]/shell:writing-fold');
-    expect(part.className).toContain('group-data-[writing=on]/shell:writing-folded');
-    expect(part.className).toContain('group-data-[writing=on]/shell:-mt-6');
+describe('WelcomeScreen writer', () => {
+  afterEach(() => {
+    askStep.inWriter = false;
+    askStep.back.mockClear();
+  });
+
+  it('shows no + while signed out', () => {
+    useAuthStore.setState({ session: null, account: null });
+    renderWelcome();
+    expect(screen.queryByRole('button', { name: 'Write a post' })).toBeNull();
+  });
+
+  it('floats an icon-only + at the bottom right, above Receive / Send when they are there', () => {
+    renderWelcome();
+    const plus = screen.getByRole('button', { name: 'Write a post' });
+    expect(plus.textContent).toBe('');
+    expect(plus.className).toContain('h-14 w-14');
+    expect(plus.className).toContain('bg-app-btn text-app-btn-fg');
+    expect(plus.className).toContain('absolute right-[11px] bottom-6 z-30 shadow-lg');
+    expect(plus.className).toContain(
+      'group-has-[[data-footer-actions]]/body:bottom-[calc(4.75rem+23px-1.75rem*var(--footer-collapse,0))]',
+    );
+    expect(plus.className).toContain('group-data-[footer-snap]/body:ease-glide');
+    expect(plus.querySelector('svg')?.getAttribute('class')).toContain('lucide-plus');
+  });
+
+  it('opens the writer on +, hides the +, and the top-left Back closes it with the focus taken out', () => {
+    renderWelcome();
+    expect(screen.queryByTestId('writer')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Write a post' }));
+    expect(screen.getByTestId('writer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Write a post' })).toBeNull();
+    const field = screen.getByRole('textbox', { name: 'Writer field' });
+    field.focus();
+    expect(document.activeElement).toBe(field);
+    const blur = vi.fn();
+    field.addEventListener('blur', blur);
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(blur).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('writer')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Write a post' })).toBeTruthy();
+  });
+
+  it('closes after a successful post, on the forum home event, and opens on a compose request', () => {
+    renderWelcome();
+    fireEvent.click(screen.getByRole('button', { name: 'Stub compose request' }));
+    expect(screen.getByTestId('writer')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Stub posted' }));
+    expect(screen.queryByTestId('writer')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Write a post' }));
+    act(() => {
+      window.dispatchEvent(new Event(FORUM_HOME_EVENT));
+    });
+    expect(screen.queryByTestId('writer')).toBeNull();
+  });
+
+  it('steps back through an Ask step inside the writer before the arrow closes it', () => {
+    askStep.inWriter = true;
+    renderWelcome();
+    fireEvent.click(screen.getByRole('button', { name: 'Write a post' }));
+    expect(screen.getByText('Writer ask step')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(askStep.back).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('writer')).toBeTruthy();
+  });
+
+  it('hides the + while a wallet view is open', () => {
+    vi.mocked(useWallet).mockReturnValue(walletWith('ready'));
+    renderWelcome();
+    expect(screen.getByRole('button', { name: 'Write a post' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
+    expect(screen.queryByRole('button', { name: 'Write a post' })).toBeNull();
+  });
+
+  it('brings the feed back at the scroll position it had when the writer opened', () => {
+    const view = renderWithLocale(
+      <ChromeBackProvider>
+        <AppShell mode="fill" topLeft={<ProfileChromeLeft hideHistoryArrow />}>
+          <WelcomeScreen />
+        </AppShell>
+      </ChromeBackProvider>,
+    );
+    const port = view.container.querySelector('[data-scrollport]') as HTMLElement;
+    port.scrollTop = 240;
+    fireEvent.click(screen.getByRole('button', { name: 'Write a post' }));
+    port.scrollTop = 0;
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(port.scrollTop).toBe(240);
+    // Closing again without a new opening leaves the page where it is.
+    port.scrollTop = 30;
+    act(() => {
+      window.dispatchEvent(new Event(FORUM_HOME_EVENT));
+    });
+    expect(port.scrollTop).toBe(30);
   });
 });
 
