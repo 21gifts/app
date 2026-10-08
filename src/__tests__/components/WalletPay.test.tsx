@@ -94,16 +94,25 @@ describe('WalletPay', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('shows the fee with its fiat line before Send', () => {
+  it('shows no fee row for a fee of ₿0, only Send', () => {
     const hook = hookWith('confirm', 0);
     renderPay();
-    expect(screen.getByText(/Fee ₿0/)).toBeTruthy();
-    expect(screen.getByText(/\$0\.00/)).toBeTruthy();
+    expect(screen.queryByText(/Fee/)).toBeNull();
+    expect(screen.queryByText(/\$/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(hook.pay).toHaveBeenCalledTimes(1);
   });
 
-  it('says Pay and post with the amount and its fiat on the posting fee', () => {
+  it('shows a fee above ₿0 with its fiat line before Send', () => {
+    hookWith('confirm', 1_420);
+    renderPay();
+    expect(screen.getByText(/^Fee ₿1'420/, { selector: 'p' }).textContent).toBe(
+      "Fee ₿1'420 · $1.42",
+    );
+    expect(screen.getByRole('button', { name: 'Send' })).toBeTruthy();
+  });
+
+  it('says Pay and post with the amount and no fiat on the posting fee', () => {
     const hook = hookWith('confirm', 0);
     renderWithLocale(
       <WalletPay
@@ -115,7 +124,8 @@ describe('WalletPay', () => {
       />,
     );
     const button = screen.getByRole('button', { name: /^Pay ₿21 and post/ });
-    expect(button.textContent).toBe('Pay ₿21 and post · $0.02');
+    expect(button.textContent).toBe('Pay ₿21 and post');
+    expect(screen.queryByText(/Fee/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     fireEvent.click(button);
     expect(hook.pay).toHaveBeenCalledTimes(1);

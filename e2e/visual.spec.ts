@@ -19857,7 +19857,9 @@ test.describe('welcome forum variants', () => {
 
   test('welcome composer-wallet-pay-confirm', async ({ page }) => {
     await openComposerWalletPay(page, 'wallet-pay-confirm');
-    await expect(page.getByRole('button', { name: /^Pay ₿1 and post/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Pay ₿1 and post/ })).toHaveText(
+      'Pay ₿1 and post',
+    );
     await expect(page.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-composer-wallet-pay-confirm');
   });
@@ -20409,7 +20411,7 @@ test.describe('welcome forum variants', () => {
   test('welcome wallet-pay-confirm', async ({ page }) => {
     await openWalletPaySheet(page, 'wallet-pay-confirm');
     await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
-    await expect(page.locator('[data-pay-sheet]').getByText('$0.00')).toBeVisible();
+    await expect(page.locator('[data-pay-sheet]').getByText(/Fee ₿/)).toHaveCount(0);
     await shotScreen(page, 'state-welcome-wallet-pay-confirm');
   });
 
