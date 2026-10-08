@@ -6737,7 +6737,9 @@ test.describe('onboarding screens', () => {
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('Hearts are not available right now.')).toBeVisible();
-    await page.getByText('Hearts are not available right now.').scrollIntoViewIfNeeded();
+    await page.getByText('Hearts are not available right now.').evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
     await shotScreen(page, 'state-welcome-heart-unavailable');
   });
   test('state /welcome heart-pending', async ({ page }) => {
@@ -6789,7 +6791,9 @@ test.describe('onboarding screens', () => {
     ).toBeVisible();
     await page
       .getByText('Your last heart is still on its way. Try again in a moment.')
-      .scrollIntoViewIfNeeded();
+      .evaluate((node) => {
+        node.scrollIntoView({ block: 'center', inline: 'nearest' });
+      });
     await shotScreen(page, 'state-welcome-heart-pending');
   });
 
@@ -12760,7 +12764,9 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('Hearts are not available right now.')).toBeVisible();
-    await page.getByText('Hearts are not available right now.').scrollIntoViewIfNeeded();
+    await page.getByText('Hearts are not available right now.').evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
     await shotScreen(page, 'state-members-heart-unavailable');
   });
   test('state /members heart-pending', async ({ page }) => {
@@ -12854,24 +12860,9 @@ test.describe('onboarding screens', () => {
     ).toBeVisible();
     await page
       .getByText('Your last heart is still on its way. Try again in a moment.')
-      .scrollIntoViewIfNeeded();
-    const viewport = page.viewportSize();
-    if (viewport !== null && viewport.width < 500) {
-      await page.getByRole('button', { name: 'Send ₿1' }).evaluate((button) => {
-        const scroller = button.closest('[data-scrollport]');
-        if (!(scroller instanceof HTMLElement)) {
-          return;
-        }
-        scroller.scrollTop +=
-          button.getBoundingClientRect().top - (scroller.getBoundingClientRect().bottom - 96);
+      .evaluate((node) => {
+        node.scrollIntoView({ block: 'center', inline: 'nearest' });
       });
-    }
-    await expect(
-      page.getByText('Your last heart is still on its way. Try again in a moment.'),
-    ).toBeVisible();
-    await page
-      .getByText('Your last heart is still on its way. Try again in a moment.')
-      .scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-heart-pending');
   });
 
@@ -14730,7 +14721,9 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}`);
     await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('Hearts are not available right now.')).toBeVisible();
-    await page.getByText('Hearts are not available right now.').scrollIntoViewIfNeeded();
+    await page.getByText('Hearts are not available right now.').evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
     await shotScreen(page, 'state-messages-id-heart-unavailable');
   });
   test('state /messages/[id] heart-pending', async ({ page }) => {
@@ -14800,7 +14793,9 @@ test.describe('onboarding screens', () => {
     ).toBeVisible();
     await page
       .getByText('Your last heart is still on its way. Try again in a moment.')
-      .scrollIntoViewIfNeeded();
+      .evaluate((node) => {
+        node.scrollIntoView({ block: 'center', inline: 'nearest' });
+      });
     await shotScreen(page, 'state-messages-id-heart-pending');
   });
 
@@ -21784,7 +21779,9 @@ test.describe('shops screens', () => {
     await expect(page.getByText('Cafe Luna')).toBeVisible();
     await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('Hearts are not available right now.')).toBeVisible();
-    await page.getByText('Hearts are not available right now.').scrollIntoViewIfNeeded();
+    await page.getByText('Hearts are not available right now.').evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
     await shotScreen(page, 'state-shops-heart-unavailable');
   });
   test('state /shops heart-pending', async ({ page }) => {
@@ -21819,7 +21816,9 @@ test.describe('shops screens', () => {
     ).toBeVisible();
     await page
       .getByText('Your last heart is still on its way. Try again in a moment.')
-      .scrollIntoViewIfNeeded();
+      .evaluate((node) => {
+        node.scrollIntoView({ block: 'center', inline: 'nearest' });
+      });
     await shotScreen(page, 'state-shops-heart-pending');
   });
 
