@@ -374,8 +374,8 @@ export const LOGOUT_RETRY_MS = 500;
  * flush already running does not hold it back. It also sends the queued
  * events, after any flush already running.
  * A failed request is sent again every {@link LOGOUT_RETRY_MS} while the
- * session is still the current one; a request the api refused for good (a
- * 4xx status other than 429) is not. The caller bounds the wait and then
+ * session is still the current one; when the api refuses it for good (a 4xx
+ * status other than 429), it resolves at once without waiting for the queue. The caller bounds the wait and then
  * clears the session: queued events not sent by then are dropped, and a
  * request still in flight keeps running (it is kept alive) until it is
  * answered or aborted after {@link INTERACTION_REQUEST_TIMEOUT_MS}. Without a
@@ -401,8 +401,9 @@ export async function logLogout(): Promise<void> {
       break;
     } catch (err: unknown) {
       if (err instanceof EventsRefusedError) {
-        // The api refused it (for example, the session is no longer valid).
-        break;
+        // The api refused it (for example, the session is no longer valid),
+        // so it refuses the queue too: log out does not wait for it.
+        return;
       }
       await waitToRetry();
     }

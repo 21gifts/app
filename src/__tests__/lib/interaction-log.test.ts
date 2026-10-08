@@ -456,6 +456,15 @@ describe('logLogout', () => {
     expect(batches()).toEqual([['screen_view'], ['logout']]);
   });
 
+  it('does not wait for a hanging flush once the api refuses the logout event', async () => {
+    fetchMock.mockImplementationOnce(() => new Promise(() => undefined));
+    mod.logInteraction('screen_view');
+    void mod.flushInteractions();
+    answer(401);
+    await mod.logLogout();
+    expect(batches()).toEqual([['screen_view'], ['logout']]);
+  });
+
   it('is not held back by a flush that does not answer', async () => {
     vi.useFakeTimers();
     fetchMock.mockImplementationOnce(
