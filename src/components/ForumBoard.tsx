@@ -651,9 +651,11 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * centred title (`forum.composePost` or `forum.composeAsk`, per the switch),
  * the Post / Ask pill, then the composer as on every other board (or the Ask
  * wizard), the composer pay slot (`payHost` `composer`: the posting fee, or the
- * 1-sat fee of a text reaction), and the composer's errors. While the writer is
- * closed that pay slot shows on the page above the feed instead, so it never
- * disappears. Opening it focuses the text field in the same task, so a tap
+ * 1-sat fee of a text reaction), and the composer's errors. That pay slot stays
+ * where it opened: in the writer when it opened there (a posting fee; it waits
+ * there while the writer is closed), on the page above the feed when it opened
+ * with the writer closed (a text reaction's fee), so closing or opening the
+ * writer never moves or remounts it. Opening it focuses the text field in the same task, so a tap
  * brings up the keyboard. A compose request opens it first (or focuses its
  * field when it is already open). On a touch device its Post composer shows
  * the text field on top at full width and photo, place and send on one row
@@ -1932,6 +1934,13 @@ export function ForumBoard({
   const phoneShape =
     writer === undefined ? '' : ' pointer-coarse:order-first pointer-coarse:basis-full';
   const composerPay = payInvoice !== null && payHost === 'composer';
+  // The forum home keeps an open composer pay slot where it opened (in the writer for a posting
+  // fee, on the page for a text reaction's fee), so closing the writer never moves or remounts it.
+  const [payOpenedInWriter, setPayOpenedInWriter] = useState<boolean | null>(null);
+  if (composerPay ? payOpenedInWriter === null : payOpenedInWriter !== null) {
+    setPayOpenedInWriter(composerPay ? writerOpen : null);
+  }
+  const payInWriter = composerPay && (payOpenedInWriter ?? writerOpen);
   const loosePay =
     payInvoice !== null &&
     payHost !== 'composer' &&
@@ -2167,7 +2176,7 @@ export function ForumBoard({
         </SundayWritingGate>
       ) : null}
 
-      {composerPay || (writer === undefined && loosePay) ? paySheet : null}
+      {(writer === undefined ? composerPay || loosePay : payInWriter) ? paySheet : null}
 
       <div className="sunday-write-field">
         {!hideCompose && formError === 'empty' ? (
@@ -2329,7 +2338,7 @@ export function ForumBoard({
 
       {composeSection}
 
-      {writer !== undefined && (loosePay || (composerPay && !writerOpen)) ? paySheet : null}
+      {writer !== undefined && (loosePay || (composerPay && !payInWriter)) ? paySheet : null}
 
       {middle}
       {error && messages !== null ? errorBlock : null}
