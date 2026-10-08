@@ -284,12 +284,15 @@ test.describe('forum home writer on a phone', () => {
   test('Function: ForumLoader — a post from the writer closes it, and the post appears on the home', async ({
     page,
   }) => {
-    await openHome(page, 'verified');
+    await openHome(page, 'verified', 12);
+    await scrollPageTo(page, 300);
     await page.getByRole('button', { name: 'Write a post' }).tap();
     await page.getByLabel('Your message').fill('Hello from the writer');
     await page.getByRole('button', { name: 'Post', exact: true }).tap();
     await expect(writer(page)).toHaveCount(0);
-    await expect(page.getByText('Hello from the writer')).toBeVisible();
+    // The feed shows its top, where the new note is.
+    await expect.poll(async () => pagePort(page).evaluate((node) => node.scrollTop)).toBe(0);
+    await expect(page.getByText('Hello from the writer')).toBeInViewport();
     await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
     // The draft was cleared with the post.
     await page.getByRole('button', { name: 'Write a post' }).tap();
