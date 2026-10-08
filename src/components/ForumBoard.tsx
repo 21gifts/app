@@ -411,6 +411,11 @@ export interface ForumBoardProps {
   onHeartTip?: (messageId: string) => void;
   /** Per-message heart visuals from `useHeartTip`. Default none. */
   heartTipViews?: Readonly<Record<string, HeartTipView>>;
+  /**
+   * Runs once per shop-note save: after a complete save, or after a partly
+   * written one when its editor closes or unmounts.
+   */
+  onShopNoteSaved?: () => void;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -593,7 +598,9 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
  * never on posts; omitted when `deletedAt` is set), optional shop-note
  * pencil when `shopNoteEdit` and `onShopNoteUpdated` are set (top-level
- * notes; the control hides non-shop text), optional shops staff
+ * notes; the control hides non-shop text; `onShopNoteSaved` runs once per
+ * save: after a whole save, or after a partly written one when its editor closes
+ * or unmounts, at the latest once a running save settles), optional shops staff
  * place editor after copy and before staff Delete when `shopPlaceEdit` and
  * `onShopPlaceUpdated` are set, then the shops account editor when
  * `shopAccountEdit` and `onShopAccountUpdated` are set (top-level notes only),
@@ -715,6 +722,7 @@ export function ForumBoard({
   heartViewerId = null,
   onHeartTip,
   heartTipViews,
+  onShopNoteSaved,
 }: ForumBoardProps): ReactElement {
   const hideCompose = composerHidden || readOnly;
   const { t, locale } = useTranslations();
@@ -1421,6 +1429,7 @@ export function ForumBoard({
                     <ShopNoteEditControl
                       message={message}
                       onUpdated={onShopNoteUpdated}
+                      {...(onShopNoteSaved !== undefined ? { onSaved: onShopNoteSaved } : {})}
                       existingPhotos={editStillUrls(message.id, photoCount, photoUrls)}
                       {...(videoSrc !== undefined ? { existingVideoUrl: videoSrc } : {})}
                     />

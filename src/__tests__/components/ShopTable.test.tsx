@@ -106,6 +106,26 @@ describe('ShopTable', () => {
     expect(linkPush).toHaveBeenLastCalledWith('/members/acc-luna');
   });
 
+  it('loads only the shops of a country', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockResolvedValue({ messages: [SHOP], nextCursor: null });
+    renderWithLocale(<ShopTable country="PH" />);
+    expect(await screen.findByRole('link', { name: 'Happyland' })).toBeTruthy();
+    expect(fetchMessagesMock).toHaveBeenCalledWith('tok', {
+      mode: 'all',
+      limit: 20,
+      hashtag: '21GiftsShop',
+      country: 'PH',
+    });
+  });
+
+  it('shows the empty copy when a country has no shop left', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockResolvedValue({ messages: [], nextCursor: null });
+    renderWithLocale(<ShopTable country="KE" />);
+    expect(await screen.findByText('No shops yet — add the first one.')).toBeTruthy();
+  });
+
   it('returns nothing without a session', () => {
     const { container } = renderWithLocale(<ShopTable />);
     expect(container.textContent).toBe('');
@@ -261,7 +281,8 @@ describe('ShopTable', () => {
       ...SHOP,
       text: 'Cafe Sol\n\n#21GiftsShop',
     });
-    renderWithLocale(<ShopTable />);
+    const shopsChanged = vi.fn();
+    renderWithLocale(<ShopTable onShopsChanged={shopsChanged} />);
     const pencils = await screen.findAllByRole('button', { name: 'Edit shop note' });
     expect(pencils).toHaveLength(2);
     fireEvent.click(pencils[0]!);
@@ -275,5 +296,8 @@ describe('ShopTable', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(await screen.findByText('Cafe Sol')).toBeTruthy();
     expect(screen.getByText('Other stall')).toBeTruthy();
+    await waitFor(() => {
+      expect(shopsChanged).toHaveBeenCalled();
+    });
   });
 });

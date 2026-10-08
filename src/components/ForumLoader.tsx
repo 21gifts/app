@@ -349,13 +349,21 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
  * note's notifications read (`markNotificationsReadForMessage`); collapsing
  * does not. Renders nothing when there is no session.
  *
- * @param feed - Optional `'living-room'` (default) or `'shops'`.
+ * @param props - Optional `feed`: `'living-room'` (default) or `'shops'`; optional
+ * `country` (ISO 3166-1 alpha-2) on the shops feed loads only shops pinned in that
+ * country. The parent remounts the loader when the country changes. Optional
+ * `onShopsChanged` runs after a shop is created, or a moderator saves a shop note or
+ * its place or hides a shop, so the parent can reload what depends on the pins.
  * @returns The forum board, or `null` without a session.
  */
 export function ForumLoader({
   feed = 'living-room',
+  country = null,
+  onShopsChanged,
 }: {
   feed?: 'living-room' | 'shops';
+  country?: string | null;
+  onShopsChanged?: () => void;
 } = {}): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
@@ -594,6 +602,7 @@ export function ForumLoader({
           .join('\0');
 
   const feedHashtag = feed === 'shops' ? SHOP_HASHTAG : undefined;
+  const feedCountry = feed === 'shops' && country !== null ? country : undefined;
   const forumPageArgs = (
     mode: ForumFeedMode,
     extras: { cursor?: string } = {},
@@ -601,11 +610,13 @@ export function ForumLoader({
     mode: ForumFeedMode;
     limit: number;
     hashtag?: string;
+    country?: string;
     cursor?: string;
   } => ({
     mode,
     limit: FORUM_PAGE_LIMIT,
     ...(feedHashtag !== undefined ? { hashtag: feedHashtag } : {}),
+    ...(feedCountry !== undefined ? { country: feedCountry } : {}),
     ...(extras.cursor !== undefined ? { cursor: extras.cursor } : {}),
   });
 
@@ -1734,6 +1745,9 @@ export function ForumLoader({
     if (session === null) return;
     composeFeePaidRef.current = false;
     decideFirstPostFree(false);
+    if (feed === 'shops') {
+      onShopsChanged?.();
+    }
     optimisticMessages.current.set(created.id, created);
     setMessages((prev) => {
       if (prev === null) {
@@ -2593,6 +2607,7 @@ export function ForumLoader({
           ? {
               shopPlaceEdit: true as const,
               onShopPlaceUpdated: (messageId: string, place: ForumPlacePin | null) => {
+                onShopsChanged?.();
                 setMessages((prev) =>
                   prev!.map((row) => {
                     if (row.id !== messageId) {
@@ -2635,6 +2650,7 @@ export function ForumLoader({
         {...(account !== null && roleAtLeast(account.role, 'moderator')
           ? {
               shopNoteEdit: true as const,
+              ...(onShopsChanged !== undefined ? { onShopNoteSaved: onShopsChanged } : {}),
               onShopNoteUpdated: (updated: ForumMessage) => {
                 setPhotoUrls((prev) => {
                   const prefix = `${updated.id}:`;
@@ -2722,6 +2738,9 @@ export function ForumLoader({
                     }),
                   );
                   return;
+                }
+                if (feed === 'shops') {
+                  onShopsChanged?.();
                 }
                 setMessages((prev) => prev!.filter((row) => row.id !== messageId));
                 const wasExpanded = expandedIdRef.current === messageId;

@@ -27,8 +27,13 @@ import { useAuthStore } from '@/stores/auth-store';
 export interface ShopNoteEditControlProps {
   /** Top-level shop note to edit. */
   message: ForumMessage;
-  /** Apply the saved note to the listed row. */
+  /** Apply the saved note to the listed row. Runs after each saved part of the note. */
   onUpdated: (message: ForumMessage) => void;
+  /**
+   * Runs once after a complete save. When a save stops after some parts were
+   * written, it runs once when the editor closes or unmounts instead.
+   */
+  onSaved?: () => void;
   /** Still previews already loaded for this note, in order. */
   existingPhotos?: readonly string[];
   /** Video preview already loaded for this note. */
@@ -163,12 +168,14 @@ async function ownFeedStills(
  * and 21.gifts user. Absent on replies, hidden notes, non-shop text, and ranks
  * below moderator.
  *
- * @param props - Note, loaded media, and successful-save callback.
+ * @param props - Note, loaded media, the per-part update callback, and the optional
+ * whole-save callback.
  * @returns The pencil, or null when it must not edit.
  */
 export function ShopNoteEditControl({
   message,
   onUpdated,
+  onSaved,
   existingPhotos = [],
   existingVideoUrl,
   startOpen = false,
@@ -183,6 +190,47 @@ export function ShopNoteEditControl({
   const [kept, setKept] = useState<ShopKeptMedia[]>([]);
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const [saving, setSaving] = useState(false);
+  // Written parts not reported to `onSaved` yet. A complete save reports at once;
+  // a save that stopped part-way reports when the editor closes or unmounts (for
+  // example when the Shops view switches), and never while a save is in flight.
+  const unreportedSave = useRef(false);
+  const saveInFlight = useRef(false);
+  // Closed or unmounted while a save ran: report once that save settles.
+  const reportWhenSettled = useRef(false);
+  const onSavedRef = useRef(onSaved);
+  onSavedRef.current = onSaved;
+
+  /** Report written parts once, if any are waiting. */
+  function reportSave(): void {
+    if (unreportedSave.current) {
+      unreportedSave.current = false;
+      onSavedRef.current?.();
+    }
+  }
+
+  /** Report now, or once the running save settles. */
+  function reportNowOrWhenSettled(): void {
+    if (saveInFlight.current) {
+      reportWhenSettled.current = true;
+    } else {
+      reportSave();
+    }
+  }
+
+  /** Close the steps and report written parts. */
+  function closeEditor(): void {
+    setOpen(false);
+    reportNowOrWhenSettled();
+  }
+
+  const reportOnUnmount = useRef(reportNowOrWhenSettled);
+  reportOnUnmount.current = reportNowOrWhenSettled;
+  useEffect(
+    () => () => {
+      reportOnUnmount.current();
+    },
+    [],
+  );
   const [saveError, setSaveError] = useState(false);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
@@ -228,7 +276,8 @@ export function ShopNoteEditControl({
   const token = session;
 
   async function openEditor(): Promise<void> {
-    if (openingRef.current) {
+    // A save still running would close the reopened steps when it settles.
+    if (openingRef.current || saveInFlight.current) {
       return;
     }
     openingRef.current = true;
@@ -330,6 +379,7 @@ export function ShopNoteEditControl({
 
   async function save(): Promise<void> {
     setSaving(true);
+    saveInFlight.current = true;
     setSaveError(false);
     try {
       const keptPhotos = kept.filter((item) => item.kind === 'photo');
@@ -378,26 +428,37 @@ export function ShopNoteEditControl({
       if (textChanged) {
         latest = await setMessageShopText(token, message.id, draft);
         onUpdated(latest);
+        unreportedSave.current = true;
       }
       if (!placesEqual(place, message.place ?? null)) {
         latest = await setMessagePlace(token, message.id, place);
         onUpdated(latest);
+        unreportedSave.current = true;
       }
       const nextUser = usernameOf(username);
       const prevUser = message.shopAccount?.username ?? '';
       if (nextUser !== prevUser) {
         latest = await setMessageShopAccount(token, message.id, nextUser === '' ? null : nextUser);
         onUpdated(latest);
+        unreportedSave.current = true;
       }
       if (photosChanged) {
         latest = await setMessageShopPhotos(token, message.id, stills);
         onUpdated(latest);
+        unreportedSave.current = true;
       }
       onUpdated(latest);
+      unreportedSave.current = true;
       setOpen(false);
+      reportSave();
     } catch {
       setSaveError(true);
     } finally {
+      saveInFlight.current = false;
+      if (reportWhenSettled.current) {
+        reportWhenSettled.current = false;
+        reportSave();
+      }
       setSaving(false);
     }
   }
@@ -421,7 +482,7 @@ export function ShopNoteEditControl({
         aria-expanded={open}
         onClick={() => {
           if (open) {
-            setOpen(false);
+            closeEditor();
             return;
           }
           openEditor();
@@ -457,7 +518,7 @@ export function ShopNoteEditControl({
               }}
               onCancel={() => {
                 setSaveError(false);
-                setOpen(false);
+                closeEditor();
               }}
               resetToken={0}
               maxLength={FORUM_MESSAGE_MAX_LENGTH - '\n\n#21GiftsShop'.length}

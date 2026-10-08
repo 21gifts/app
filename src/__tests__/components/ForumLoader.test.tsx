@@ -1137,7 +1137,8 @@ describe('ForumLoader', () => {
       sats: 0,
       payable: false,
     });
-    renderWithLocale(<ForumLoader feed="shops" />);
+    const shopsChanged = vi.fn();
+    renderWithLocale(<ForumLoader feed="shops" onShopsChanged={shopsChanged} />);
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
@@ -1146,6 +1147,9 @@ describe('ForumLoader', () => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
     });
     expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
+    await waitFor(() => {
+      expect(shopsChanged).toHaveBeenCalled();
+    });
   });
 
   it('feed="shops" sends an optional shop username', async () => {
@@ -1350,6 +1354,25 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('feed="shops" with a country sends that country', async () => {
+    renderWithLocale(<ForumLoader feed="shops" country="PH" />);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('sess', {
+        mode: 'all',
+        limit: 20,
+        hashtag: '21GiftsShop',
+        country: 'PH',
+      });
+    });
+  });
+
+  it('living-room ignores a country', async () => {
+    renderWithLocale(<ForumLoader country="PH" />);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('sess', { mode: 'active', limit: 20 });
+    });
+  });
+
   it('living-room first fetch does not send hashtag', async () => {
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -1466,7 +1489,8 @@ describe('ForumLoader', () => {
       place: { lat: 1, lng: 2, label: 'Stall' },
       shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     });
-    renderWithLocale(<ForumLoader feed="shops" />);
+    const shopsChanged = vi.fn();
+    renderWithLocale(<ForumLoader feed="shops" onShopsChanged={shopsChanged} />);
     await waitFor(() => {
       expect(screen.getByText('Cafe Luna')).toBeTruthy();
     });
@@ -1510,6 +1534,9 @@ describe('ForumLoader', () => {
     expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
     await waitFor(() => {
       expect(photoMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
+    await waitFor(() => {
+      expect(shopsChanged).toHaveBeenCalled();
     });
   });
 
@@ -1574,7 +1601,8 @@ describe('ForumLoader', () => {
       vi.fn().mockResolvedValue({ json: () => Promise.resolve({ key: 'k' }) } as Response),
     );
     vi.stubGlobal('navigator', { ...navigator, geolocation: undefined });
-    renderWithLocale(<ForumLoader feed="shops" />);
+    const shopsChanged = vi.fn();
+    renderWithLocale(<ForumLoader feed="shops" onShopsChanged={shopsChanged} />);
     await waitFor(() => {
       expect(screen.getByText('Cafe Luna')).toBeTruthy();
     });
@@ -1593,6 +1621,9 @@ describe('ForumLoader', () => {
     });
     expect(screen.getByRole('link', { name: 'Keep me' })).toBeTruthy();
     delete (window as { google?: unknown }).google;
+    await waitFor(() => {
+      expect(shopsChanged).toHaveBeenCalled();
+    });
   });
 
   it('feed="shops" clears the listed pin when the save returns no place', async () => {
@@ -9215,6 +9246,25 @@ it('removes a moderated open post, closes its pay/reply state, and prevents stal
   fireEvent(window, event);
   await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThan(before));
   expect(screen.queryByText('Hello from Ada')).toBeNull();
+});
+
+it('reports a hidden shop on the shops feed so the country counts reload', async () => {
+  useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+  fetchMock.mockResolvedValue(
+    forumPage([
+      { ...SAMPLE, id: 'shop-gone', text: 'Old stall\n\n#21GiftsShop' },
+      { ...SAMPLE, id: 'shop-keep', text: 'Kept stall\n\n#21GiftsShop' },
+    ]),
+  );
+  vi.mocked(deleteMessage).mockResolvedValue(undefined);
+  const shopsChanged = vi.fn();
+  renderWithLocale(<ForumLoader feed="shops" onShopsChanged={shopsChanged} />);
+  const postCard = (await screen.findByText('Old stall')).closest('li')!;
+  fireEvent.click(postCard.querySelector<HTMLButtonElement>('[aria-label="Delete post"]')!);
+  fireEvent.click(postCard.querySelector<HTMLButtonElement>('[aria-label="Confirm deletion"]')!);
+  await waitFor(() => expect(screen.queryByText('Old stall')).toBeNull());
+  expect(screen.getByText('Kept stall')).toBeTruthy();
+  expect(shopsChanged).toHaveBeenCalledOnce();
 });
 
 it('does not treat a session-deleted id as unseen on silent refresh', async () => {
