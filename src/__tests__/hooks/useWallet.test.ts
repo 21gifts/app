@@ -75,7 +75,6 @@ const PINS = [
   ['balance-setup-failed', 'error', null],
   ['send-input', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['send-confirm', 'ready', WALLET_VISUAL_FIXTURE_SATS],
-  ['send-alert-not-ready', 'connecting', null],
   ['setup-pending', 'connecting', null],
 ] as const;
 
@@ -87,9 +86,6 @@ describe('useWallet visual pins', () => {
     expect(result.current.status).toBe(status);
     expect(result.current.balanceSats).toBe(balanceSats);
     expect(result.current.setupFailed).toBe(visual === 'balance-setup-failed');
-    expect(result.current.canReceive).toBe(
-      visual !== 'balance-setup-failed' && visual !== 'setup-pending',
-    );
   });
 
   it.each(PINS.map(([visual]) => visual))('ignores %s in a production build', (visual) => {
@@ -126,7 +122,6 @@ describe('useWallet live state', () => {
       status: 'disabled',
       balanceSats: null,
       setupFailed: false,
-      canReceive: true,
     });
     view.unmount();
     useAuthStore.setState({ account: { ...account, passkeyCredentialId: null } });
@@ -145,7 +140,7 @@ describe('useWallet live state', () => {
     expect(result.current.retry).toBe(retry);
   });
 
-  it('shows connecting and disables Receive while setup is due', () => {
+  it('shows connecting while setup is due', () => {
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
     setWallet('ready', 21_000);
     const { result } = renderHook(() => useWallet());
@@ -153,11 +148,10 @@ describe('useWallet live state', () => {
       status: 'connecting',
       balanceSats: null,
       setupFailed: false,
-      canReceive: false,
     });
   });
 
-  it('shows the setup error and disables Receive after setup failed', () => {
+  it('shows the setup error after setup failed', () => {
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
     useWalletStore.setState({ status: 'error', setupFailedSession: 'token' });
     const { result } = renderHook(() => useWallet());
@@ -165,7 +159,6 @@ describe('useWallet live state', () => {
       status: 'error',
       balanceSats: null,
       setupFailed: true,
-      canReceive: false,
     });
   });
 

@@ -32,11 +32,6 @@ export interface UseWalletResult {
    * up; the balance shows the inline setup note instead of the open error.
    */
   setupFailed: boolean;
-  /**
-   * False while the one-time wallet setup is due or gave up: the account's
-   * address is not registered yet, so **Receive** stays disabled.
-   */
-  canReceive: boolean;
 }
 
 /**
@@ -48,7 +43,6 @@ function visualStatus(): WalletViewStatus | null {
   const visual = visualPin();
   switch (visual) {
     case 'balance-connecting':
-    case 'send-alert-not-ready':
     case 'setup-pending':
       return 'connecting';
     case 'balance-ready':
@@ -70,10 +64,8 @@ function visualStatus(): WalletViewStatus | null {
  * there is no unlock here: a store that has not connected yet shows
  * `connecting`. While the one-time wallet setup is still due the balance
  * shows `connecting` until the wallet is verified, or `error` with
- * `setupFailed` once the setup gave up, and **Receive** stays disabled
- * (`canReceive`). Visual pins (`?visual=balance-…`, `?visual=history-…`,
- * `?visual=send-alert-not-ready` and `?visual=setup-pending` as connecting,
- * the latter with **Receive** disabled, and the other
+ * `setupFailed` once the setup gave up. Visual pins (`?visual=balance-…`,
+ * `?visual=history-…`, `?visual=setup-pending` as connecting, and the
  * `?visual=send-…` pins as ready) are honoured only in a Playwright build
  * (`getE2eNow()` set) and leave retry inert while pinned.
  *
@@ -103,17 +95,16 @@ export function useWallet(): UseWalletResult {
       balanceSats: pinnedStatus === 'ready' ? WALLET_VISUAL_FIXTURE_SATS : null,
       retry,
       setupFailed: pinnedStatus === 'error' && setup.failed,
-      canReceive: !setup.failed && !setup.due,
     };
   }
-  const base = { balanceSats: null, retry, setupFailed: false, canReceive: true };
+  const base = { balanceSats: null, retry, setupFailed: false };
   if (storeStatus === 'disabled' || !canUnlockWallet(account)) {
     return { ...base, status: 'disabled' };
   }
   if (setup.due) {
     return setup.failed
-      ? { ...base, status: 'error', setupFailed: true, canReceive: false }
-      : { ...base, status: 'connecting', canReceive: false };
+      ? { ...base, status: 'error', setupFailed: true }
+      : { ...base, status: 'connecting' };
   }
   return {
     ...base,

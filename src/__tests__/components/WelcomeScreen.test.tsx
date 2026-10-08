@@ -79,12 +79,14 @@ vi.mock('@/lib/api', () => ({
 }));
 
 function walletWith(status: UseWalletResult['status']): UseWalletResult {
-  return { status, balanceSats: null, retry: vi.fn(), setupFailed: false, canReceive: true };
+  return { status, balanceSats: null, retry: vi.fn(), setupFailed: false };
 }
 
 const SEND: UseWalletSendResult = {
   state: { step: 'input', error: null },
   busy: false,
+  walletWait: null,
+  retryWallet: vi.fn(),
   sending: false,
   text: '',
   setText: vi.fn(),
@@ -230,10 +232,16 @@ describe('WelcomeScreen wallet', () => {
     expect(screen.getByRole('button', { name: 'Send' })).toBeTruthy();
   });
 
-  it('disables Send while the wallet connects', () => {
+  it('keeps Send enabled and opens it while the wallet connects', () => {
     vi.mocked(useWallet).mockReturnValue(walletWith('connecting'));
     renderWelcome();
-    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    const send = screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement;
+    expect(send.disabled).toBe(false);
+    expect((screen.getByRole('button', { name: 'Receive' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
+    fireEvent.click(send);
+    expect(screen.getByText('Panel send')).toBeTruthy();
   });
 });
 

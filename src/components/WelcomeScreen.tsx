@@ -102,8 +102,9 @@ function PanelChromeBack({ onBack }: { onBack: () => void }): null {
  * A signed-in member with a configured wallet also gets the wallet's
  * **Receive** (left) and **Send** (right) in the shell footer
  * (`WalletFooterActions`, the same buttons as `/wallet`), outside the
- * scrollport, so they stay while the feed scrolls. Send is enabled while the
- * wallet is ready, and Receive once the account's address is registered. Either
+ * scrollport, so they stay while the feed scrolls. Both are enabled also while
+ * the wallet is still opening (only a step that needs the open wallet waits
+ * for it). Either
  * opens a full-screen view over `/welcome` (in-page state from
  * `useWalletPanel`, not a route): the column stays mounted but hidden, the
  * footer buttons hide, and the feed's scroll position comes back on close.
@@ -127,7 +128,6 @@ export function WelcomeScreen(): ReactElement {
   const hasWallet = signedIn && wallet.status !== 'disabled';
   const panel = useWalletPanel({
     send: hasWallet ? send : undefined,
-    wallet: hasWallet ? wallet : undefined,
     openPinnedSend: hasWallet,
   });
   const shown = hasWallet ? panel.shown : 'none';
@@ -155,7 +155,6 @@ export function WelcomeScreen(): ReactElement {
         <WalletPanelView
           panel={shown}
           send={send}
-          walletReady={wallet.status === 'ready'}
           manualEntry={panel.manualEntry}
           onManualEntry={panel.setManualEntry}
         />
@@ -165,8 +164,6 @@ export function WelcomeScreen(): ReactElement {
         <WalletFooterActions
           onReceive={panel.openReceive}
           onSend={panel.openSend}
-          sendDisabled={panel.sendDisabled}
-          receiveDisabled={panel.receiveDisabled}
           focus={panel.returnFocus}
         />
       ) : null}

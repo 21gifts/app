@@ -12,10 +12,6 @@ export interface WalletFooterActionsProps {
   onReceive: () => void;
   /** Opens the Send view. */
   onSend: () => void;
-  /** Whether Send is disabled. */
-  sendDisabled: boolean;
-  /** Whether Receive is disabled (the account's address is not registered yet). */
-  receiveDisabled?: boolean;
   /** The button to focus when the buttons come back after a view closed, or `null`. */
   focus?: 'receive' | 'send' | null;
 }
@@ -27,19 +23,16 @@ export interface WalletFooterActionsProps {
  * 18px fade with a light blur lets the page end softly instead of at a hard
  * edge. Below 360px the icons drop and the side padding shrinks so long
  * labels fit at 320px. When they come back after a view closed, the button
- * that opened it takes the focus again, or Receive when Send is disabled by
- * then. Receive is disabled while the account's address is not registered
- * yet (the one-time wallet setup is due or gave up). Used by `/wallet` and
- * `/welcome`.
+ * that opened it takes the focus again. Both stay enabled while the wallet
+ * opens: only a step inside a view that needs the open wallet waits for it.
+ * Used by `/wallet` and `/welcome`.
  *
- * @param props - Open handlers and whether Send or Receive is disabled.
+ * @param props - Open handlers and the button to focus.
  * @returns The footer registration.
  */
 export function WalletFooterActions({
   onReceive,
   onSend,
-  sendDisabled,
-  receiveDisabled = false,
   focus = null,
 }: WalletFooterActionsProps): ReactElement {
   const { t } = useTranslations();
@@ -49,11 +42,7 @@ export function WalletFooterActions({
     if (focus === null) {
       return;
     }
-    // A disabled Send cannot take the focus (the wallet stopped being ready
-    // while Send was open), so Receive takes it instead of the page losing it.
-    const send = sendRef.current;
-    const target = focus === 'send' && send !== null && !send.disabled ? send : receiveRef.current;
-    target?.focus({ preventScroll: true });
+    (focus === 'send' ? sendRef : receiveRef).current?.focus({ preventScroll: true });
   }, [focus]);
   const iconClass = 'h-5 w-5 max-[359px]:hidden';
   const buttonClass = 'min-h-14 text-base max-[359px]:px-2';
@@ -71,7 +60,6 @@ export function WalletFooterActions({
           size="lg"
           className={buttonClass}
           icon={<ArrowDownRight aria-hidden="true" className={iconClass} />}
-          disabled={receiveDisabled}
           onClick={onReceive}
         >
           {t('wallet.receive')}
@@ -81,7 +69,6 @@ export function WalletFooterActions({
           size="lg"
           className={buttonClass}
           icon={<ArrowUpRight aria-hidden="true" className={iconClass} />}
-          disabled={sendDisabled}
           onClick={onSend}
         >
           {t('wallet.sendButton')}

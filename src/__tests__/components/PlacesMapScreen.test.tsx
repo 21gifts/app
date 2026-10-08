@@ -112,7 +112,10 @@ describe('PlacesMapScreen', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
     renderWithLocale(<PlacesMapScreen />);
     expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
-    expect(vi.mocked(logInteraction).mock.calls).toEqual([['shop_opened', { placeId: 'm-pin' }]]);
+    // The record is a passive effect, which can run after the link is found.
+    await waitFor(() => {
+      expect(vi.mocked(logInteraction).mock.calls).toEqual([['shop_opened', { placeId: 'm-pin' }]]);
+    });
   });
 
   it('lists pins, coordinates, and the selected pin', async () => {

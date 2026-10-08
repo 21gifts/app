@@ -51,6 +51,8 @@ function sendWith(
   return {
     state,
     busy: false,
+    walletWait: null,
+    retryWallet: vi.fn(),
     sending: false,
     text: '',
     setText: vi.fn(),
@@ -69,27 +71,18 @@ function sendWith(
 /**
  * {@link WalletSend} with the manual-entry sheet state its page holds.
  *
- * @param props - Send flow, readiness, and whether the sheet starts open.
+ * @param props - Send flow, and whether the sheet starts open.
  * @returns The send view.
  */
 function SendHarness({
   send,
-  walletReady,
   manual = false,
 }: {
   send: UseWalletSendResult;
-  walletReady?: boolean;
   manual?: boolean;
 }): ReactElement {
   const [manualEntry, setManualEntry] = useState(manual);
-  return (
-    <WalletSend
-      send={send}
-      {...(walletReady === undefined ? {} : { walletReady })}
-      manualEntry={manualEntry}
-      onManualEntry={setManualEntry}
-    />
-  );
+  return <WalletSend send={send} manualEntry={manualEntry} onManualEntry={setManualEntry} />;
 }
 
 function renderSend(send: UseWalletSendResult, manual = false): void {
@@ -196,7 +189,7 @@ describe('WalletSend input', () => {
     ['notPayable', 'This address cannot receive a payment.'],
     ['notFound', 'This address was not found.'],
     ['relayUnreachable', "The receiver's server did not answer. Please try again later."],
-    ['notReady', 'Your wallet is not ready yet. Please try again in a moment.'],
+    ['unavailable', 'Your 21.gifts wallet is not available here, so this cannot be paid.'],
     ['unreadable', 'This could not be read. Please try again.'],
   ] as const)('shows the %s alert over the camera area with Try again', (error, text) => {
     const send = sendWith({ step: 'input', error });
@@ -215,16 +208,39 @@ describe('WalletSend input', () => {
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
   });
 
-  it('shows only the alert, without the camera, while the wallet is not ready', () => {
-    renderWithLocale(
-      <SendHarness send={sendWith({ step: 'input', error: 'notReady' })} walletReady={false} />,
+  it('keeps the camera area and shows Opening your wallet… under the spinner while a read waits for the wallet', () => {
+    const send = sendWith({ step: 'input', error: null }, { busy: true, walletWait: 'opening' });
+    renderSend(send);
+    expect(document.querySelector('[data-port-fill]')).not.toBeNull();
+    expect(screen.queryByText('Camera stub')).toBeNull();
+    expect(screen.getByRole('status').textContent).toBe('Opening your wallet…');
+    expect(document.querySelector('.animate-spin')).not.toBeNull();
+    expect((screen.getByRole('button', { name: 'Paste' }) as HTMLButtonElement).disabled).toBe(
+      true,
     );
-    expect(screen.getByRole('alert').textContent).toBe(
-      'Your wallet is not ready yet. Please try again in a moment.',
-    );
-    expect(document.querySelector('[data-port-fill]')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Paste' })).toBeNull();
-    expect(screen.getByText('Send Bitcoin')).toBeTruthy();
+    expect(
+      (screen.getByRole('button', { name: 'Enter manually' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('shows the wallet error with Try again, which opens the wallet again, while a read waits', () => {
+    const send = sendWith({ step: 'input', error: null }, { busy: true, walletWait: 'error' });
+    renderSend(send);
+    expect(document.querySelector('[data-port-fill]')).not.toBeNull();
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe('Your wallet could not be opened. Please try again.');
+    expect(alert.className).toContain('text-white');
+    expect(screen.queryByRole('status')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(send.retryWallet).toHaveBeenCalledTimes(1);
+    expect(send.setText).not.toHaveBeenCalled();
+  });
+
+  it('shows the plain spinner without the wallet line while a read runs', () => {
+    renderSend(sendWith({ step: 'input', error: null }, { busy: true }));
+    expect(document.querySelector('.animate-spin')).not.toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
   });
 });
 
@@ -713,6 +729,44 @@ describe('WalletSend confirm and sent', () => {
     fireEvent.click(cancel);
     expect(send.cancel).not.toHaveBeenCalled();
     expect(screen.getAllByRole('button')).toHaveLength(2);
+  });
+
+  it('shows the quote step with amount, recipient, and Opening your wallet… where the fee goes', () => {
+    const send = sendWith(
+      { step: 'quote', recipient: 'bob@pay.example', amountSats: 2_100 },
+      { busy: true, walletWait: 'opening' },
+    );
+    renderSend(send);
+    expect(screen.getByText("₿2'100").className).toContain('text-5xl');
+    expect(screen.getByText('$2.10')).toBeTruthy();
+    expect(screen.getByText('To bob@pay.example')).toBeTruthy();
+    expect(screen.getByRole('status').textContent).toBe('Opening your wallet…');
+    expect(screen.queryByText(/Fee/)).toBeNull();
+    const sendButton = screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement;
+    expect(sendButton.disabled).toBe(true);
+    expect(sendButton.querySelector('.animate-spin')).toBeNull();
+    const cancel = screen.getByRole('button', { name: 'Cancel' }) as HTMLButtonElement;
+    expect(cancel.disabled).toBe(false);
+    fireEvent.click(cancel);
+    expect(send.cancel).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Send Bitcoin')).toBeTruthy();
+  });
+
+  it('shows the wallet error with Try again on the quote step, and keeps Cancel', () => {
+    const send = sendWith(
+      { step: 'quote', recipient: 'bob@pay.example', amountSats: 2_100 },
+      { busy: true, walletWait: 'error' },
+    );
+    renderSend(send);
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Your wallet could not be opened. Please try again.',
+    );
+    expect(screen.queryByRole('status')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(send.retryWallet).toHaveBeenCalledTimes(1);
+    expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(send.cancel).toHaveBeenCalledTimes(1);
   });
 
   it('shows the check, the sent amount with fiat and recipient, and Done returns to input', () => {
