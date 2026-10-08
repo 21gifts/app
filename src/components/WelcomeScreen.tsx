@@ -140,8 +140,10 @@ function PanelChromeBack({ onBack, over }: { onBack: () => void; over: boolean }
  * successful post, the wordmark and the Menu's Home. Closing takes the focus
  * out of the writer first, so the keyboard closes as a focus change. The
  * arrow brings the feed back at the scroll position it had, a successful
- * post shows the top of the feed with the new note, and Home leaves the
- * scroll to the forum's own scroll-to-top. Drafts stay for the next opening.
+ * post from the open writer shows the top of the feed with the new note (a
+ * post whose fee completes after the writer closed changes neither the
+ * scroll nor the focus), and Home leaves the scroll to the forum's own
+ * scroll-to-top. Drafts stay for the next opening.
  * The **+** is hidden while a wallet view is open.
  *
  * In a Playwright build only, a `?visual=send-…` pin opens the Send view.
@@ -175,8 +177,14 @@ export function WelcomeScreen(): ReactElement {
     }
     setWriterOpen(false);
   }, []);
-  // After a successful post the new note is at the top of the feed.
+  const writerOpenRef = useRef(writerOpen);
+  writerOpenRef.current = writerOpen;
+  // After a successful post from the open writer the new note is at the top of the feed. A post
+  // whose fee was paid after the writer closed leaves the page, and its focus, as they are.
   const closeAfterPost = useCallback((): void => {
+    if (!writerOpenRef.current) {
+      return;
+    }
     if (feedScroll.current !== null) {
       feedScroll.current = 0;
     }
