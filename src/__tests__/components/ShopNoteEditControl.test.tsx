@@ -840,7 +840,7 @@ describe('ShopNoteEditControl', () => {
     });
     vi.mocked(setMessageShopAccount).mockRejectedValueOnce(new Error('no'));
     const onSaved = vi.fn();
-    renderWithLocale(
+    const view = renderWithLocale(
       <ShopNoteEditControl
         message={{
           ...shopMessage,
@@ -870,6 +870,43 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Edit shop note' }));
     await screen.findByText('1 / 5 · Photos');
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(onSaved).toHaveBeenCalledTimes(1);
+    view.unmount();
+    expect(onSaved).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a partly written save when the editor unmounts while open', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopMessage,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    vi.mocked(setMessageShopAccount).mockRejectedValueOnce(new Error('no'));
+    const onSaved = vi.fn();
+    const view = renderWithLocale(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          shopAccount: { id: 'old', username: 'old', name: 'Old' },
+        }}
+        onUpdated={vi.fn()}
+        onSaved={onSaved}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await screen.findByRole('alert');
+    expect(onSaved).not.toHaveBeenCalled();
+    view.unmount();
     expect(onSaved).toHaveBeenCalledTimes(1);
   });
 
