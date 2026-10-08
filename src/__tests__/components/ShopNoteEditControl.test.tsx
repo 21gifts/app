@@ -1001,6 +1001,45 @@ describe('ShopNoteEditControl', () => {
     expect(await run('succeed', true, true)).toBe(1);
   });
 
+  it('does not reopen while a closed save is still running', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    let finish: (note: ForumMessage) => void = () => undefined;
+    vi.mocked(setMessageShopText).mockReturnValueOnce(
+      new Promise<ForumMessage>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const onSaved = vi.fn();
+    renderWithLocale(
+      <ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} onSaved={onSaved} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessageShopText).toHaveBeenCalled();
+    });
+    const pencil = screen.getByRole('button', { name: 'Edit shop note' });
+    fireEvent.click(pencil);
+    expect(screen.queryByText('5 / 5 · Summary')).toBeNull();
+    // The pencil does nothing until the running save settles.
+    fireEvent.click(pencil);
+    expect(screen.queryByText('1 / 5 · Photos')).toBeNull();
+    finish({ ...shopMessage, text: 'Cafe Sol\n\n#21GiftsShop' });
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.click(pencil);
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+  });
+
   it('reads kept stills before a text save can drop their addresses', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);

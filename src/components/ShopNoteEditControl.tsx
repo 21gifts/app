@@ -276,7 +276,8 @@ export function ShopNoteEditControl({
   const token = session;
 
   async function openEditor(): Promise<void> {
-    if (openingRef.current) {
+    // A save still running would close the reopened steps when it settles.
+    if (openingRef.current || saveInFlight.current) {
       return;
     }
     openingRef.current = true;
