@@ -8063,19 +8063,47 @@ describe('ForumBoard writer', () => {
     expect(document.querySelector('[data-scroll-page]')!.contains(sentence)).toBe(true);
   });
 
-  it('shows the composer pay slot on the page while the writer is closed, and in it while open', () => {
+  it('keeps a composer pay slot opened with the writer closed on the page, also once the writer opens', () => {
     const view = renderHome({
       payMessageId: 'fee-note',
       payHost: 'composer',
       payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
       payWaiting: true,
     });
-    const onPage = screen.getByText(WALLET_UNAVAILABLE);
-    expect(writerLayer(view.container)).toBeNull();
-    expect(document.querySelector('[data-scroll-page]')!.contains(onPage)).toBe(true);
+    const page = document.querySelector('[data-scroll-page]')!;
+    const sheet = screen.getByText(WALLET_UNAVAILABLE);
+    expect(page.contains(sheet)).toBe(true);
     view.setOpen(true);
     expect(screen.getAllByText(WALLET_UNAVAILABLE)).toHaveLength(1);
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBe(sheet);
+    expect(page.contains(sheet)).toBe(true);
+  });
+
+  it('keeps a composer pay slot opened in the writer there, waiting while the writer is closed', () => {
+    const view = renderHome({}, true);
+    view.rerenderHome({
+      payMessageId: 'fee-note',
+      payHost: 'composer',
+      payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
+      payWaiting: true,
+    });
     expect(writerLayer(view.container)!.contains(screen.getByText(WALLET_UNAVAILABLE))).toBe(true);
+    view.setOpen(false);
+    expect(screen.queryByText(WALLET_UNAVAILABLE)).toBeNull();
+    view.setOpen(true);
+    expect(writerLayer(view.container)!.contains(screen.getByText(WALLET_UNAVAILABLE))).toBe(true);
+    // Once the slot is gone, the next one opens where the writer is at that moment.
+    view.rerenderHome({ payHost: null, payInvoice: null, payMessageId: null });
+    view.setOpen(false);
+    view.rerenderHome({
+      payMessageId: 'fee-note',
+      payHost: 'composer',
+      payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
+      payWaiting: true,
+    });
+    expect(
+      document.querySelector('[data-scroll-page]')!.contains(screen.getByText(WALLET_UNAVAILABLE)),
+    ).toBe(true);
   });
 
   it('takes a compose request on an open writer without a text field (Ask for money)', () => {
