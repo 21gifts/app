@@ -910,6 +910,16 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/notifications/read-visible') {
+    const token = bearer(req);
+    if (token === null || !byToken.get(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { ok: true, tags: [] });
+    return;
+  }
+
   const notificationReadMatch = pathName.match(/^\/notifications\/([^/]+)\/read$/);
   if (method === 'POST' && notificationReadMatch) {
     const token = bearer(req);

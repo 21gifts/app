@@ -304,14 +304,14 @@ describe('NotificationsLoader', () => {
       ...ROW,
       id: 'n-read',
       name: 'Carol',
-      text: 'Already seen',
+      text: 'Noted earlier',
       readAt: '2026-08-28T13:00:00.000Z',
     };
     listMock.mockResolvedValue({ notifications: [readRow, ROW], unreadCount: 1 });
     renderWithLocale(<NotificationsLoader />);
     expect(await screen.findByText('Bob replied')).toBeTruthy();
     expect(screen.getByText('Carol replied')).toBeTruthy();
-    expect(screen.getByText('Already seen')).toBeTruthy();
+    expect(screen.getByText('Noted earlier')).toBeTruthy();
   });
 
   it('opens a row even when markNotificationRead fails', async () => {
