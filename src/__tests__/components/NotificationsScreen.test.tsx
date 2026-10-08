@@ -211,7 +211,8 @@ describe('NotificationsScreen', () => {
         onOpen={onOpen}
       />,
     );
-    expect(screen.getByRole('list', { name: 'Notifications' })).toBeTruthy();
+    expect(screen.getByRole('list', { name: 'Unread notifications' })).toBeTruthy();
+    expect(screen.getByRole('list', { name: 'Already seen notifications' })).toBeTruthy();
     const unread = screen.getByRole('button', { name: /Bob replied/ });
     const read = screen.getByRole('button', { name: /Carol replied/ });
     expect(unread.textContent).toContain('Nice post');
@@ -221,6 +222,70 @@ describe('NotificationsScreen', () => {
     expect(read.querySelector('.font-semibold')).toBeNull();
     fireEvent.click(unread);
     expect(onOpen).toHaveBeenCalledWith(UNREAD);
+  });
+
+  it('renders unread rows above already-seen rows even when read rows come first', () => {
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[READ, UNREAD]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={() => undefined}
+      />,
+    );
+    const unreadHeading = screen.getByRole('heading', { name: 'Unread' });
+    const seenHeading = screen.getByRole('heading', { name: 'Already seen' });
+    expect(
+      unreadHeading.compareDocumentPosition(seenHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    const unreadButton = screen.getByRole('button', { name: /Bob replied/ });
+    const seenButton = screen.getByRole('button', { name: /Carol replied/ });
+    expect(
+      unreadButton.compareDocumentPosition(seenButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('omits the already-seen heading when every row is unread', () => {
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[UNREAD]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={() => undefined}
+      />,
+    );
+    expect(screen.queryByRole('heading', { name: 'Already seen' })).toBeNull();
+  });
+
+  it('omits the unread heading when every row is already seen', () => {
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[READ]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={() => undefined}
+      />,
+    );
+    expect(screen.queryByRole('heading', { name: 'Unread' })).toBeNull();
+  });
+
+  it('omits section headings when the list is empty', () => {
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={() => undefined}
+      />,
+    );
+    expect(screen.getByText('No notifications yet.')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Notifications' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Unread' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Already seen' })).toBeNull();
   });
 
   it('falls back to photo-only copy when a reply has empty text', () => {

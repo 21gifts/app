@@ -67,6 +67,7 @@ import {
   listHiddenMessages,
   markAllNotificationsRead,
   markNotificationsReadForMessage,
+  markVisibleForumNoteRead,
   markConversationRead,
   markNotificationRead,
   openConversation,
@@ -4264,6 +4265,84 @@ describe('markNotificationsReadForMessage', () => {
     try {
       stubFetch({ ok: false, status: 503, body: {} });
       await expect(markNotificationsReadForMessage('sess', 'm1')).rejects.toThrow(
+        'Could not mark notification as read',
+      );
+    } finally {
+      restoreNavigator();
+    }
+  });
+});
+
+describe('markVisibleForumNoteRead', () => {
+  it('posts the message id without an endpoint when service workers are unavailable', async () => {
+    const restoreNavigator = installNavigator({});
+    try {
+      const fetchMock = stubFetch({ ok: true, status: 200, body: { ok: true } });
+      await expect(markVisibleForumNoteRead('sess', 'm1')).resolves.toEqual({
+        ok: true,
+        tags: [],
+      });
+      expect(fetchMock).toHaveBeenCalledWith('/forum/notifications/read-visible', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sess',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messageId: 'm1' }),
+      });
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('posts the push endpoint and closes notifications for returned tags', async () => {
+    const matchingClose = vi.fn();
+    const otherClose = vi.fn();
+    const registration = {
+      pushManager: {
+        getSubscription: vi.fn().mockResolvedValue({ endpoint: 'https://push.example/sub' }),
+      },
+      getNotifications: vi.fn().mockResolvedValue([
+        { tag: 'forum_post:m1', close: matchingClose },
+        { tag: 'forum_post:m2', close: otherClose },
+      ]),
+    };
+    const restoreNavigator = installNavigator({
+      serviceWorker: {
+        ready: Promise.resolve(registration),
+        getRegistration: vi.fn().mockResolvedValue(registration),
+      },
+    });
+    try {
+      const fetchMock = stubFetch({
+        ok: true,
+        status: 200,
+        body: { ok: true, tags: ['forum_post:m1'] },
+      });
+      await expect(markVisibleForumNoteRead('sess', 'm1')).resolves.toEqual({
+        ok: true,
+        tags: ['forum_post:m1'],
+      });
+      expect(fetchMock).toHaveBeenCalledWith('/forum/notifications/read-visible', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer sess',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messageId: 'm1', endpoint: 'https://push.example/sub' }),
+      });
+      expect(matchingClose).toHaveBeenCalledTimes(1);
+      expect(otherClose).not.toHaveBeenCalled();
+    } finally {
+      restoreNavigator();
+    }
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    const restoreNavigator = installNavigator({});
+    try {
+      stubFetch({ ok: false, status: 503, body: {} });
+      await expect(markVisibleForumNoteRead('sess', 'm1')).rejects.toThrow(
         'Could not mark notification as read',
       );
     } finally {

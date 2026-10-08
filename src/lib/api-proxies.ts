@@ -1147,6 +1147,16 @@ export async function proxyNotificationsReadByMessagePost(request: Request): Pro
 }
 
 /**
+ * Proxies POST /notifications/read-visible to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyNotificationsReadVisiblePost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/notifications/read-visible');
+}
+
+/**
  * Proxies POST /notifications/:id/read to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).
