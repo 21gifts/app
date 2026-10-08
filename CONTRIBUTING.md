@@ -779,8 +779,8 @@ A screenshot pin (`?visual=…`, the `e2e-now` session value, or any other
 switch that makes a screen show fixture data or a forced state) is honoured
 **only in a Playwright build**: check `getE2eNow()` (`NEXT_PUBLIC_E2E_NOW`,
 unset in every deployed build) before reading the pin. `visualPin` does that
-for `useWallet`, `useWalletPay`, `useWalletSetup`, and the login card's
-wallet gate; `useWalletHistory`, `useWalletSend`, `useWalletPhrase`, and
+for `useWallet`, `useWalletPay`, `useWalletSetup`, the login card's
+wallet gate, `sendHeartTip`, and `useHeartTip`; `useWalletHistory`, `useWalletSend`, `useWalletPhrase`, and
 `PasskeyRenewNotice` check it themselves. Inline scripts that run before
 React check for the `e2e-now` meta tag, which only a Playwright build renders.
 Do not add a second mechanism. A production build must ignore every pin, and a
