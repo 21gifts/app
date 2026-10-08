@@ -20476,6 +20476,8 @@ test.describe('welcome forum variants', () => {
     await page.getByLabel('Place name').fill('Stall');
     await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(page.getByText('Stall', { exact: true })).toBeVisible();
+    // The preview sits above the writer: its Remove takes the tap.
+    await page.getByRole('button', { name: 'Remove place' }).click({ trial: true });
     await shotScreen(page, 'state-welcome-composer-place-set');
   });
 
