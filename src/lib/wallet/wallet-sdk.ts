@@ -299,8 +299,8 @@ export function toWalletPayment(payment: SdkPaymentLike): WalletPayment {
 
 /**
  * One wallet payment in the shape the wallet data report sends to the api.
- * It carries only data the SDK lists about a payment: never a preimage,
- * key, or anything of the recovery phrase.
+ * It carries only data the SDK lists about a payment: never a preimage, a
+ * private key, or anything of the recovery phrase.
  */
 export interface WalletReportPayment {
   /** SDK payment id. */

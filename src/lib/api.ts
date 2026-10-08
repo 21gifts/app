@@ -3677,7 +3677,7 @@ const walletReportResponseSchema = z.object({ acknowledgedIds: z.array(z.string(
 /**
  * Sends the wallet's balance and the payments the api has not acknowledged.
  * The body holds only the fields of {@link WalletReportBody}: never the
- * recovery phrase, a key, PRF output, or a preimage.
+ * recovery phrase, a private key, PRF output, or a preimage.
  *
  * @param sessionToken - Bearer session.
  * @param body - Balance, sync time, and at most {@link WALLET_REPORT_PAGE_SIZE} payments.

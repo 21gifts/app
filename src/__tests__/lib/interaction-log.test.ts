@@ -419,6 +419,22 @@ describe('logLogout', () => {
     expect(batches().flat()).toEqual(['logout', 'logout', 'screen_view']);
   });
 
+  it('waits before it sends again after a flush it joined failed', async () => {
+    vi.useFakeTimers();
+    answer(503);
+    mod.logInteraction('screen_view');
+    void mod.flushInteractions();
+    answer('ok');
+    const logout = mod.logLogout();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(batches()).toEqual([['screen_view'], ['logout']]);
+    await vi.advanceTimersByTimeAsync(mod.LOGOUT_RETRY_MS - 1);
+    expect(batches()).toHaveLength(2);
+    await vi.advanceTimersByTimeAsync(1);
+    await logout;
+    expect(batches()).toEqual([['screen_view'], ['logout'], ['screen_view']]);
+  });
+
   it('is not held back by a flush that does not answer', async () => {
     vi.useFakeTimers();
     fetchMock.mockImplementationOnce(
@@ -434,7 +450,7 @@ describe('logLogout', () => {
     const logout = mod.logLogout();
     await vi.advanceTimersByTimeAsync(0);
     expect(batches()).toEqual([['screen_view'], ['logout']]);
-    await vi.advanceTimersByTimeAsync(mod.INTERACTION_REQUEST_TIMEOUT_MS);
+    await vi.advanceTimersByTimeAsync(mod.INTERACTION_REQUEST_TIMEOUT_MS + mod.LOGOUT_RETRY_MS);
     await logout;
   });
 
