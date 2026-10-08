@@ -133,6 +133,8 @@ function usePosTillState(): PosTillState {
   const session = useAuthStore((state) => state.session);
   const rateDay = useSpotRate(session !== null);
   const [state, setState] = useState<PosState | null>(null);
+  /** Session whose till read or create produced `state`. */
+  const loadedFor = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [shownUnit, setShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
@@ -172,6 +174,7 @@ function usePosTillState(): PosTillState {
         }
         whenCurrent(generation, mine, () => {
           applyRead(reads, seq, () => {
+            loadedFor.current = session;
             setState(next);
           });
         });
@@ -234,7 +237,12 @@ function usePosTillState(): PosTillState {
   const paidSats = paid?.amountSats ?? 0;
   useEffect(() => {
     if (paidId !== null) {
-      logInteraction('pos_charge_paid_seen', { chargeId: paidId, amountSats: paidSats });
+      // Recorded for the member whose till showed it, never for a later session.
+      logInteraction(
+        'pos_charge_paid_seen',
+        { chargeId: paidId, amountSats: paidSats },
+        loadedFor.current,
+      );
     }
   }, [paidId, paidSats]);
 
@@ -258,6 +266,7 @@ function usePosTillState(): PosTillState {
           if (alive) {
             whenCurrent(generation, mine, () => {
               applyRead(reads, seq, () => {
+                loadedFor.current = session;
                 setState(next);
               });
             });
@@ -291,6 +300,7 @@ function usePosTillState(): PosTillState {
       .then((next) => {
         whenCurrent(generation, mine, () => {
           applyRead(reads, seq, () => {
+            loadedFor.current = session;
             setState(next);
           });
         });
@@ -337,6 +347,7 @@ function usePosTillState(): PosTillState {
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- the form is only shown once state.history is an array */
           const history = state?.history ?? [];
+          loadedFor.current = session;
           setState({ charge: created, history: [created, ...history] });
           setAmount('');
         });
@@ -385,6 +396,7 @@ function usePosTillState(): PosTillState {
         whenCurrent(generation, mine, () => {
           setWatchUntil(null);
           applyRead(reads, seq, () => {
+            loadedFor.current = session;
             setState(next);
           });
         });

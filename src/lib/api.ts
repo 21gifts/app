@@ -2438,7 +2438,7 @@ export async function postMessage(
   if (inReplyTo === undefined) {
     logInteraction(
       'post_created',
-      { messageId: created.id, photos: stills.length, ask: input.goalAmount !== undefined },
+      { messageId: created.id, photos: stills.length, ask: askGoal !== null },
       sessionToken,
     );
   } else {
@@ -2541,7 +2541,7 @@ export async function postMessageVideo(
   const created = forumMessageSchema.parse(await response.json());
   logInteraction(
     'post_created',
-    { messageId: created.id, video: true, ask: input.goalAmount !== undefined },
+    { messageId: created.id, video: true, ask: askGoal !== null },
     sessionToken,
   );
   return created;

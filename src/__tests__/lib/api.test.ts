@@ -2509,6 +2509,12 @@ describe('postMessage', () => {
     expect(JSON.parse((fetchMock.mock.calls[2]?.[1] as RequestInit).body as string)).toEqual({
       text: 'Hello from Ada',
     });
+    expect(
+      vi
+        .mocked(logInteraction)
+        .mock.calls.slice(-3)
+        .map(([, props]) => props?.['ask']),
+    ).toEqual([false, false, false]);
   });
 
   it('sends a capture time and drops a blank one', async () => {
@@ -2861,6 +2867,11 @@ describe('postMessageVideo', () => {
     expect(form.get('goalCurrency')).toBeNull();
     expect(form.get('goalAmount')).toBeNull();
     expect(form.get('goalSats')).toBeNull();
+    expect(vi.mocked(logInteraction).mock.calls.at(-1)?.[1]).toEqual({
+      messageId: created.id,
+      video: true,
+      ask: false,
+    });
   });
 
   it('throws the api error message on a 400', async () => {

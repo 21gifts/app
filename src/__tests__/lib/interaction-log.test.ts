@@ -93,6 +93,7 @@ describe('logInteraction', () => {
         ],
       }),
       keepalive: true,
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -234,6 +235,56 @@ describe('flushInteractions', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     release();
     await first;
+  });
+});
+
+describe('a request that does not answer', () => {
+  it('is aborted after the time limit and counts as failed', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockImplementationOnce(
+      (_url: string, init: { signal: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            reject(new Error('aborted'));
+          });
+        }),
+    );
+    mod.logInteraction('screen_view');
+    const first = mod.flushInteractions();
+    await vi.advanceTimersByTimeAsync(mod.INTERACTION_REQUEST_TIMEOUT_MS);
+    await first;
+    await mod.flushInteractions();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(posted().map((event) => event.name)).toEqual(['screen_view', 'screen_view']);
+  });
+
+  it('does not hold back the queue of the next session, and logout ends with its session', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockImplementationOnce(
+      (_url: string, init: { signal: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            reject(new Error('aborted'));
+          });
+        }),
+    );
+    mod.logInteraction('screen_view');
+    const logout = mod.logLogout();
+    await Promise.resolve();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    useAuthStore.setState({ session: 'next' });
+    mod.logInteraction('login');
+    await mod.flushInteractions();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(requests()[1]?.headers['Authorization']).toBe('Bearer next');
+    expect(
+      posted()
+        .slice(-1)
+        .map((event) => event.name),
+    ).toEqual(['login']);
+    await vi.advanceTimersByTimeAsync(mod.INTERACTION_REQUEST_TIMEOUT_MS + mod.LOGOUT_RETRY_MS);
+    await logout;
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
 

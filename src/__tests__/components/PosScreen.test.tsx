@@ -1325,10 +1325,11 @@ describe('PosScreen', () => {
       renderWithLocale(<PosScreen />);
       expect((await screen.findByRole('status')).textContent).toBe('Paid ✓');
       expect(logInteraction).toHaveBeenCalledTimes(1);
-      expect(logInteraction).toHaveBeenCalledWith('pos_charge_paid_seen', {
-        chargeId: 'c1',
-        amountSats: 21,
-      });
+      expect(logInteraction).toHaveBeenCalledWith(
+        'pos_charge_paid_seen',
+        { chargeId: 'c1', amountSats: 21 },
+        'tok',
+      );
       expect(screen.getAllByText('₿21')).toHaveLength(2);
       expect(await screen.findAllByText('$0.02')).toHaveLength(2);
       const history = screen.getByRole('region', { name: 'History' });
@@ -1340,6 +1341,42 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
       expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
       expect(screen.queryByText(/left$/)).toBeNull();
+    });
+
+    it('records a paid charge only for the session that read the till', async () => {
+      const answers: ((value: Response) => void)[] = [];
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(
+          () =>
+            new Promise<Response>((resolve) => {
+              answers.push(resolve);
+            }),
+        ),
+      );
+      vi.mocked(logInteraction).mockClear();
+      renderWithLocale(<PosScreen />);
+      await act(async () => undefined);
+      act(() => {
+        useAuthStore.setState({ session: 'other' });
+      });
+      await act(async () => {
+        answers[0]?.(jsonResponse({ charge: PAID, history: [PAID] }));
+        await Promise.resolve();
+      });
+      expect(logInteraction).not.toHaveBeenCalled();
+      await act(async () => {
+        answers[1]?.(jsonResponse({ charge: PAID, history: [PAID] }));
+        await Promise.resolve();
+      });
+      await waitFor(() => {
+        expect(logInteraction).toHaveBeenCalledWith(
+          'pos_charge_paid_seen',
+          { chargeId: 'c1', amountSats: 21 },
+          'other',
+        );
+      });
+      expect(logInteraction).toHaveBeenCalledTimes(1);
     });
 
     it('shows a paid charge without fiat when there is no spot rate', async () => {
