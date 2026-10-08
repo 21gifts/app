@@ -266,6 +266,36 @@ describe('reportWallet', () => {
     );
   });
 
+  it('keeps a payment that moved onto the next page once', async () => {
+    const page1 = Array.from({ length: 200 }, (_, i) => payment(`p${String(i)}`));
+    const page2 = [payment('p199'), payment('p200')];
+    mocks.listWalletReportPayments.mockImplementation(({ offset }: { offset: number }) =>
+      Promise.resolve(offset === 0 ? page1 : page2),
+    );
+    await mod.reportWallet();
+    const sent = mocks.postWalletReport.mock.calls.flatMap(
+      ([, body]) => (body as { payments: WalletReportPayment[] }).payments,
+    );
+    expect(sent.map((row) => row.id).filter((id) => id === 'p199')).toHaveLength(1);
+    expect(new Set(sent.map((row) => row.id)).size).toBe(201);
+  });
+
+  it('stops a report whose listing or post never answers, and reports again later', async () => {
+    vi.useFakeTimers();
+    listing([payment('a')]);
+    mocks.listWalletReportPayments.mockImplementationOnce(() => new Promise(() => undefined));
+    const stuckList = mod.reportWallet();
+    await vi.advanceTimersByTimeAsync(mod.WALLET_REPORT_STEP_TIMEOUT_MS);
+    await stuckList;
+    expect(mocks.postWalletReport).not.toHaveBeenCalled();
+    mocks.postWalletReport.mockImplementationOnce(() => new Promise(() => undefined));
+    const stuckPost = mod.reportWallet();
+    await vi.advanceTimersByTimeAsync(mod.WALLET_REPORT_STEP_TIMEOUT_MS);
+    await stuckPost;
+    await mod.reportWallet();
+    expect(mocks.postWalletReport).toHaveBeenCalledTimes(2);
+  });
+
   it('keeps its cursor in tab memory only and writes no browser storage', async () => {
     const setItem = vi.spyOn(window.localStorage, 'setItem');
     const setSession = vi.spyOn(Storage.prototype, 'setItem');
