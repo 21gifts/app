@@ -6315,7 +6315,7 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route('**/messages/*/invoice', async (route) => {
+    await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
@@ -11613,7 +11613,7 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route('**/messages/*/invoice', async (route) => {
+    await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
@@ -13212,7 +13212,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ messages: [] }),
       });
     });
-    await page.route('**/messages/*/invoice', async (route) => {
+    await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
@@ -20276,7 +20276,7 @@ test.describe('shops screens', () => {
         }),
       });
     });
-    await page.route('**/messages/*/invoice', async (route) => {
+    await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
