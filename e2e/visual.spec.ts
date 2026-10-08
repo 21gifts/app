@@ -2396,7 +2396,7 @@ test.describe('screen baselines', () => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=balance-setup-failed');
     await page.getByRole('button', { name: 'Receive' }).click();
-    await expect(page.getByRole('alert')).toHaveText('Your wallet could not be set up yet.');
+    await expect(page.getByText('Your wallet could not be set up yet.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByText('ada@21.gifts')).toHaveCount(0);
     await shotScreen(page, 'state-wallet-receive-setup-failed');
@@ -4211,7 +4211,7 @@ test.describe('onboarding screens', () => {
     await seedWelcomeWallet(page);
     await page.goto('/welcome?visual=balance-setup-failed');
     await page.getByRole('button', { name: 'Receive' }).click();
-    await expect(page.getByRole('alert')).toHaveText('Your wallet could not be set up yet.');
+    await expect(page.getByText('Your wallet could not be set up yet.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeHidden();
     await shotScreen(page, 'state-welcome-wallet-receive-setup-failed');

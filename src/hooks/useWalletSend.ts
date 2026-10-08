@@ -266,6 +266,8 @@ interface PreparedSend {
   request: WalletPayRequest;
   recipient: string;
   options: PrepareOptions;
+  /** The wallet opening it was prepared in (see `walletEpoch` in {@link useWalletSend}). */
+  epoch: number;
 }
 
 /**
@@ -586,6 +588,22 @@ export function useWalletSend(): UseWalletSendResult {
   const wallet = useWallet();
   const setup = useWalletSetup();
   const walletStatus = useRef<WalletViewStatus>(wallet.status);
+  /**
+   * Counts every time the wallet store leaves `ready`, also between two
+   * renders, so a read or prepare that ran on an earlier opening is told apart
+   * from one on the current connection.
+   */
+  const walletEpoch = useRef(0);
+
+  useEffect(
+    () =>
+      useWalletStore.subscribe((next, previous) => {
+        if (previous.status === 'ready' && next.status !== 'ready') {
+          walletEpoch.current += 1;
+        }
+      }),
+    [],
+  );
 
   useEffect(() => {
     walletStatus.current = wallet.status;
@@ -713,12 +731,14 @@ export function useWalletSend(): UseWalletSendResult {
         return;
       }
       setBusy(true);
+      const epoch = walletEpoch.current;
       void payFromWallet(request)
         .then((result) => {
           if (run !== generation.current) {
             return;
           }
-          if (!walletCanSend()) {
+          // The wallet closed meanwhile, so this answer is from a closed connection.
+          if (epoch !== walletEpoch.current || !walletCanSend()) {
             again();
             return;
           }
@@ -728,7 +748,7 @@ export function useWalletSend(): UseWalletSendResult {
           ) {
             setBusy(false);
             sendRef.current = result.send;
-            preparedRef.current = { request, recipient, options };
+            preparedRef.current = { request, recipient, options, epoch };
             const fees = result.onchain;
             if (fees === undefined) {
               setState({
@@ -975,12 +995,14 @@ export function useWalletSend(): UseWalletSendResult {
       if (holdForWallet(run, again) !== 'ready') {
         return;
       }
+      const epoch = walletEpoch.current;
       void parseWalletInput(text)
         .then((parsed) => {
           if (run !== generation.current) {
             return;
           }
-          if (!walletCanSend()) {
+          // The wallet closed meanwhile, so this answer is from a closed connection.
+          if (epoch !== walletEpoch.current || !walletCanSend()) {
             again();
             return;
           }
@@ -1099,6 +1121,13 @@ export function useWalletSend(): UseWalletSendResult {
       return;
     }
     sendRef.current = null;
+    const prepared = preparedRef.current;
+    if (prepared !== null && prepared.epoch !== walletEpoch.current) {
+      // Prepared on a connection that has closed since: quote it again instead of sending.
+      generation.current += 1;
+      prepare(prepared.request, prepared.recipient, state.amountSats, prepared.options);
+      return;
+    }
     const { amountSats, recipient } = state;
     const speed = state.onchain?.speed;
     const run = generation.current;
