@@ -66,8 +66,9 @@ async function listAll(): Promise<WalletReportPayment[]> {
  * payment. The first listing in a tab only sets the baseline.
  *
  * @param payments - The current listing.
+ * @param session - Session the report runs under.
  */
-function noticeReceived(payments: WalletReportPayment[]): void {
+function noticeReceived(payments: WalletReportPayment[], session: string): void {
   const before = listed;
   listed = new Map(payments.map((payment) => [payment.id, payment.status]));
   if (before === null) {
@@ -79,10 +80,11 @@ function noticeReceived(payments: WalletReportPayment[]): void {
       payment.status === 'completed' &&
       before.get(payment.id) !== 'completed'
     ) {
-      logInteraction('payment_received_seen', {
-        paymentId: payment.id,
-        amountSats: payment.amountSats,
-      });
+      logInteraction(
+        'payment_received_seen',
+        { paymentId: payment.id, amountSats: payment.amountSats },
+        session,
+      );
     }
   }
 }
@@ -122,7 +124,7 @@ async function reportOnce(): Promise<void> {
   if (useWalletStore.getState().identityPubkey !== owner) {
     return;
   }
-  noticeReceived(payments);
+  noticeReceived(payments, session);
   const unsent = payments.filter((payment) => acknowledged.get(payment.id) !== payment.status);
   if (
     unsent.length === 0 &&

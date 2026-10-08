@@ -12,6 +12,7 @@ import {
   type WalletSdk,
   type WalletTarget,
 } from '@/lib/wallet/wallet-sdk';
+import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
 
 /**
@@ -585,6 +586,7 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
       }
     }
     sent = true;
+    const session = useAuthStore.getState().session;
     let result: WalletSendResult;
     try {
       const done = await withTimeout(
@@ -593,11 +595,15 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
       );
       result = done === null ? { kind: 'failed' } : { kind: 'paid' };
       if (done !== null) {
-        logInteraction('payment_sent', {
-          amountSats,
-          feeSats: quote === undefined ? feeSats : quote.fees[speed],
-          onchain: quote !== undefined,
-        });
+        logInteraction(
+          'payment_sent',
+          {
+            amountSats,
+            feeSats: quote === undefined ? feeSats : quote.fees[speed],
+            onchain: quote !== undefined,
+          },
+          session,
+        );
       }
     } catch (err: unknown) {
       if (quote !== undefined && isQuoteExpired(err)) {

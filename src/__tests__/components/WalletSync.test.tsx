@@ -73,6 +73,7 @@ describe('WalletSync', () => {
   });
 
   it('reads the synced balance on the interval only while the wallet is open', () => {
+    expect(WALLET_REPORT_INTERVAL_MS).toBe(300_000);
     vi.useFakeTimers();
     const { unmount } = render(<WalletSync />);
     act(() => {

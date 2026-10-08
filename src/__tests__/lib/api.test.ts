@@ -2328,9 +2328,9 @@ describe('postMessage', () => {
     await postMessage('tok', { text: 'Ask', goalCurrency: 'CHF', goalAmount: '10' });
     await postMessage('tok', { text: 'Reply', inReplyTo: 'parent-1' });
     expect(vi.mocked(logInteraction).mock.calls).toEqual([
-      ['post_created', { messageId: forumMessage.id, photos: 0, ask: false }],
-      ['post_created', { messageId: forumMessage.id, photos: 0, ask: true }],
-      ['reply_created', { messageId: forumMessage.id, parentId: 'parent-1' }],
+      ['post_created', { messageId: forumMessage.id, photos: 0, ask: false }, 'tok'],
+      ['post_created', { messageId: forumMessage.id, photos: 0, ask: true }, 'tok'],
+      ['reply_created', { messageId: forumMessage.id, parentId: 'parent-1' }, 'tok'],
     ]);
     expect(JSON.stringify(vi.mocked(logInteraction).mock.calls)).not.toContain('Secret words');
   });
@@ -2686,8 +2686,8 @@ describe('postMessageVideo', () => {
       goalAmount: '5',
     });
     expect(vi.mocked(logInteraction).mock.calls).toEqual([
-      ['post_created', { messageId: forumMessage.id, video: true, ask: false }],
-      ['post_created', { messageId: forumMessage.id, video: true, ask: true }],
+      ['post_created', { messageId: forumMessage.id, video: true, ask: false }, 'tok'],
+      ['post_created', { messageId: forumMessage.id, video: true, ask: true }, 'tok'],
     ]);
   });
 

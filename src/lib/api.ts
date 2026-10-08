@@ -2436,13 +2436,13 @@ export async function postMessage(
   }
   const created = forumMessageSchema.parse(await response.json());
   if (inReplyTo === undefined) {
-    logInteraction('post_created', {
-      messageId: created.id,
-      photos: stills.length,
-      ask: input.goalAmount !== undefined,
-    });
+    logInteraction(
+      'post_created',
+      { messageId: created.id, photos: stills.length, ask: input.goalAmount !== undefined },
+      sessionToken,
+    );
   } else {
-    logInteraction('reply_created', { messageId: created.id, parentId: inReplyTo });
+    logInteraction('reply_created', { messageId: created.id, parentId: inReplyTo }, sessionToken);
   }
   return created;
 }
@@ -2539,11 +2539,11 @@ export async function postMessageVideo(
     throw new Error('Could not post your message');
   }
   const created = forumMessageSchema.parse(await response.json());
-  logInteraction('post_created', {
-    messageId: created.id,
-    video: true,
-    ask: input.goalAmount !== undefined,
-  });
+  logInteraction(
+    'post_created',
+    { messageId: created.id, video: true, ask: input.goalAmount !== undefined },
+    sessionToken,
+  );
   return created;
 }
 

@@ -46,10 +46,11 @@ describe('pos client', () => {
     const read = { ...CHARGE, paidAt: null };
     await expect(fetchPosState('tok')).resolves.toEqual({ charge: read, history: [read] });
     await expect(createPosCharge('tok', 21)).resolves.toEqual(read);
-    expect(logInteraction).toHaveBeenCalledWith('pos_charge_created', {
-      chargeId: 'c1',
-      amountSats: 21,
-    });
+    expect(logInteraction).toHaveBeenCalledWith(
+      'pos_charge_created',
+      { chargeId: 'c1', amountSats: 21 },
+      'tok',
+    );
     await expect(cancelPosCharge('tok')).resolves.toBeUndefined();
   });
 

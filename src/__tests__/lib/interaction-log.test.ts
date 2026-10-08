@@ -237,6 +237,22 @@ describe('flushInteractions', () => {
   });
 });
 
+describe('logInteraction with the session of the action', () => {
+  it('keeps the event while that session is still current', async () => {
+    mod.logInteraction('search', { query: 'ada', results: 1 }, 'sess');
+    await mod.flushInteractions();
+    expect(posted().map((event) => event.name)).toEqual(['search']);
+  });
+
+  it('drops the event when another session or none is current', async () => {
+    useAuthStore.setState({ session: 'other' });
+    mod.logInteraction('gift_sent', { amountSats: 21 }, 'sess');
+    mod.logInteraction('payment_sent', { amountSats: 21 }, null);
+    await mod.flushInteractions();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
 describe('logLogout', () => {
   it('sends the queue with the logout event under the ending session', async () => {
     mod.logInteraction('screen_view');
@@ -271,6 +287,35 @@ describe('logLogout', () => {
     useAuthStore.setState({ session: null });
     await mod.logLogout();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('sends a failed batch again until it is accepted', async () => {
+    vi.useFakeTimers();
+    answer(503);
+    mod.logInteraction('screen_view');
+    const logout = mod.logLogout();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    answer('ok');
+    await vi.advanceTimersByTimeAsync(mod.LOGOUT_RETRY_MS);
+    await logout;
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(
+      (JSON.parse(requests()[1]?.body ?? '{}') as { events: SentEvent[] }).events.map(
+        (event) => event.name,
+      ),
+    ).toEqual(['screen_view', 'logout']);
+  });
+
+  it('stops sending again once the session ended', async () => {
+    vi.useFakeTimers();
+    answer(503);
+    const logout = mod.logLogout();
+    await vi.advanceTimersByTimeAsync(0);
+    useAuthStore.setState({ session: null });
+    await vi.advanceTimersByTimeAsync(mod.LOGOUT_RETRY_MS);
+    await logout;
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
 

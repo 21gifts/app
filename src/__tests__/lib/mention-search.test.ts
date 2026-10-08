@@ -45,7 +45,7 @@ describe('searchMentionAccounts', () => {
       body: { accounts: [] },
     });
     await expect(searchMentionAccounts('sess', 'a b')).resolves.toEqual([]);
-    expect(logInteraction).toHaveBeenCalledWith('search', { query: 'a b', results: 0 });
+    expect(logInteraction).toHaveBeenCalledWith('search', { query: 'a b', results: 0 }, 'sess');
     expect(prefix).toHaveBeenCalledWith('/forum/mentions?q=a%20b', {
       headers: { Authorization: 'Bearer sess' },
     });

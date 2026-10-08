@@ -198,11 +198,12 @@ export function useWalletPay(
   const sendPrepared = useCallback(
     (send: () => Promise<WalletSendResult>, run: number, sats: number): void => {
       const balanceBefore = useWalletStore.getState().balanceSats;
+      const session = useAuthStore.getState().session;
       setPhase('paying');
       void send().then((result) => {
         if (result.kind === 'paid') {
           // Recorded even when the sheet closed meanwhile: the gift went out.
-          logInteraction('gift_sent', { amountSats: sats });
+          logInteraction('gift_sent', { amountSats: sats }, session);
         }
         if (run !== generation.current) {
           return;

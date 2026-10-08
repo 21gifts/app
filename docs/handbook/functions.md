@@ -2899,7 +2899,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Zustand auth store for active `session` + `account`, a valid but held-back `lockedSession`, and `wrongAccount`. Hydration is explicit (no module-init storage read).
 - **Inputs:** Hook. Methods `setAuth`, `setAccount`, `setLockedSession`, `lockSession`, `clearAuth`, `setWrongAccount`, and `clearWrongAccount`.
 - **Returns / side effects:** Auth state object. `setAuth` persists the token, activates the account, clears `lockedSession`, and resets `wrongAccount`. `setLockedSession` keeps the token in storage but makes active `session` and `account` null. `lockSession` moves the current token to `lockedSession` without removing it from storage. `clearAuth` clears the tab phrase and persisted token, bumps and clears the unread app badge, and drops active and held-back auth; it does not reset `wrongAccount`. `setLockedSession` and `lockSession` also bump the home-screen badge epoch and clear the badge, as for a signed-out visitor.
-- **Used by:** `LoginCard`, `WalletLoginCard`, `OnboardingGate`, `NameSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `useWalletOpen`, `useActiveSession`, `NameForm`, `useWallet`, `rememberPhraseFromPrf`, `unlockWalletPhrase`, `useWalletPay`, `useWalletSend`, `WalletPay`, and `WalletSend`.
+- **Used by:** `LoginCard`, `WalletLoginCard`, `OnboardingGate`, `NameSetup`, `RulesSetup`, `WelcomeScreen`, `LogoutButton`, `useHydrateSession`, `usePasskeyLogin`, `useWalletOpen`, `useActiveSession`, `NameForm`, `useWallet`, `rememberPhraseFromPrf`, `unlockWalletPhrase`, `useWalletPay`, `useWalletSend`, `WalletPay`, `WalletSend`, `InteractionLog`, `reportWallet`, the interaction log (`logInteraction`, `flushInteractions`, `logLogout`), and `payFromWallet`'s `send` (the session of a wallet send).
 
 ## Function: useTranslations
 
@@ -3788,7 +3788,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Zustand store for the in-app wallet: `status` (`disabled`, `locked`, `connecting`, `ready`, `error`), `balanceSats`, `identityPubkey`, `syncCount` (advanced by every `setReady`, that is after connect and after each SDK sync; the payment list reloads when it changes), and `setupFailedSession` (the session whose background setup exhausted its retries, or `null`).
 - **Inputs:** Hook. Actions `setConnecting`, `setReady`, `setError`, `reset`, and `setSetupFailedSession(session)`.
 - **Returns / side effects:** Wallet state object. Resting status is `disabled` without a key, else `locked`. `setSetupFailedSession` records or clears the session independently of the wallet connection fields so money screens can show the setup note until an explicit retry.
-- **Used by:** The wallet service, background wallet setup, `useWallet`, `useWalletSetup`, `useWalletHistory`, `useWalletPay`, and `useWalletSend`.
+- **Used by:** The wallet service, background wallet setup, `useWallet`, `useWalletSetup`, `useWalletHistory`, `useWalletPay`, `useWalletSend`, `WalletSync`, and `reportWallet`.
 
 ## Function: loadWalletSdk
 
@@ -3809,7 +3809,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads `getInfo` (with `ensureSynced` when asked, so a payment that arrived without a wallet event is counted) and stores balance and identity key. The balance is never derived from payment events. When reads overlap only the latest one counts (this one or the synced read inside the wallet payment primitive, which shares the read counter): it alone writes the store, and only a failed refresh that is still the latest closes the connection and sets `error`. The failure of a stale read is ignored.
 - **Inputs:** Optional `{ ensureSynced?: boolean; ignoreFailure?: boolean }`; without them, a plain read whose failure while current closes the connection and sets `error`. With `ignoreFailure`, a failed read changes nothing and the wallet stays as it is.
 - **Returns / side effects:** void. Updates `useWalletStore`.
-- **Used by:** The `synced` listener that `connectWallet` registers, the `send` that the wallet payment primitive returns, and `useWalletPay` (synced reads every 4 s while `insufficient` shows).
+- **Used by:** The `synced` listener that `connectWallet` registers, the `send` that the wallet payment primitive returns, `useWalletPay` (synced reads every 4 s while `insufficient` shows), and `WalletSync` (a synced read every five minutes while the wallet is ready).
 
 ## Function: disconnectWallet
 
@@ -4278,7 +4278,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: logInteraction
 
 - **Purpose:** Queues one interaction of the signed-in member for `POST /me/events`: `screen_view`, `post_created`, `reply_created`, `gift_sent`, `payment_sent`, `payment_received_seen`, `pos_charge_created`, `pos_charge_paid_seen`, `search`, `shop_opened`, `profile_opened`, `login`, `logout`, or `signup_completed`.
-- **Inputs:** The event name and optional flat `props` (ids, amounts, counts, flags; the only free text is a search term).
+- **Inputs:** The event name, optional flat `props` (ids, amounts, counts, flags; the only free text is a search term), and optionally the session the recorded action ran under. Callers that record after an await pass it (`postMessage`, `postMessageVideo`, `createPosCharge`, `searchMentionAccounts` their `sessionToken`; `payFromWallet`'s `send`, `useWalletPay` and `reportWallet` the session at the start of the send or report); when it is no longer the current session, the event is dropped, so it is never queued for another member.
 - **Returns / side effects:** None. Without a session nothing is kept, so anonymous visits are never recorded. Events still queued under another session are dropped before the new one is queued. The event carries the time (ISO 8601), the current path without query or fragment (the access key of `/view/:viewKey` and `/view-key/:viewKey` is replaced by `[key]`), and the cleaned props: at most 12, keys that are short identifiers and do not name a secret (`mnemonic`, `phrase`, `seed`, `prf`, `preimage`, `secret`, `token`, `password`, `privkey`, `private`, `session`), values that are strings of at most 200 characters, finite numbers, booleans, or `null`, and never a string that looks like a recovery phrase (12 or more words), 64 or more hex digits, or a bearer token. At most 500 events wait; the oldest are dropped first. A full batch of 50 is sent at once.
 - **Used by:** `InteractionLog`, `reportWallet`, `logLogout`, `payFromWallet`, `useWalletPay`, `usePasskeyLogin`, `postMessage`, `postMessageVideo`, `createPosCharge`, `PosTill`, `searchMentionAccounts`, `PlacesMapScreen`.
 
@@ -4293,7 +4293,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Records `logout` and sends the interaction queue with the session that is ending, before the caller clears that session.
 - **Inputs:** None. Reads the session from `useAuthStore`.
-- **Returns / side effects:** A promise that never rejects. Queues `logout` like `logInteraction`, waits for a flush already running, then flushes what is left with `flushInteractions`. Without a session nothing is recorded or sent. A failed batch stays queued and is dropped once the session is cleared.
+- **Returns / side effects:** A promise that never rejects. Queues `logout` like `logInteraction`, waits for a flush already running, then flushes what is left. A failed batch is sent again every `LOGOUT_RETRY_MS` (500 ms) until the api accepts it or the session is no longer the current one; `LogoutButton` bounds the wait at 5 s and then clears the session, and whatever is still queued is dropped. Without a session nothing is recorded or sent.
 - **Used by:** `LogoutButton`.
 
 ## Function: startInteractionLog

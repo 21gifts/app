@@ -93,8 +93,8 @@ const queue: InteractionEvent[] = [];
 /** Session the queued events belong to. */
 let queueSession: string | null = null;
 
-/** The flush that is sending, or `null`. */
-let flushRun: Promise<void> | null = null;
+/** The flush that is sending (resolving `false` when a batch failed), or `null`. */
+let flushRun: Promise<boolean> | null = null;
 
 /**
  * Props reduced to short flat values. A key that is not an identifier or that
@@ -185,10 +185,18 @@ function dropOldest(): void {
  *
  * @param name - What happened.
  * @param props - Ids, amounts, counts, or a search term; never a secret.
+ * @param actionSession - Session the recorded action ran under, for an event
+ *   recorded after an await. When given and no longer the current session
+ *   (`null` included), the event is dropped, so it is never queued for
+ *   another member. Omitted, the current session is used.
  */
-export function logInteraction(name: InteractionName, props: InteractionProps = {}): void {
+export function logInteraction(
+  name: InteractionName,
+  props: InteractionProps = {},
+  actionSession?: string | null,
+): void {
   const session = useAuthStore.getState().session;
-  if (session === null) {
+  if (session === null || (actionSession !== undefined && actionSession !== session)) {
     return;
   }
   if (session !== queueSession) {
@@ -241,14 +249,23 @@ function nextBatch(): InteractionEvent[] {
  * @returns Resolves when the queue is empty, a batch failed, the session
  *   changed, or another flush is running.
  */
-export function flushInteractions(): Promise<void> {
+export async function flushInteractions(): Promise<void> {
+  await flush();
+}
+
+/**
+ * Starts one flush unless one is running (see {@link flushInteractions}).
+ *
+ * @returns `false` when a batch of this flush failed, otherwise `true`.
+ */
+function flush(): Promise<boolean> {
   if (flushRun !== null) {
-    return Promise.resolve();
+    return Promise.resolve(true);
   }
   const session = useAuthStore.getState().session;
   if (session === null || session !== queueSession) {
     queue.length = 0;
-    return Promise.resolve();
+    return Promise.resolve(true);
   }
   flushRun = sendQueue(session).finally(() => {
     flushRun = null;
@@ -260,9 +277,9 @@ export function flushInteractions(): Promise<void> {
  * Sends the queue in batches while it still belongs to `session`.
  *
  * @param session - Session the queued events were recorded under.
- * @returns Resolves when the queue is empty, a batch failed, or the session changed.
+ * @returns `false` when a batch failed, otherwise `true` (the queue is empty or the session changed).
  */
-async function sendQueue(session: string): Promise<void> {
+async function sendQueue(session: string): Promise<boolean> {
   while (queue.length > 0 && queueSession === session) {
     const batch = nextBatch();
     try {
@@ -272,25 +289,41 @@ async function sendQueue(session: string): Promise<void> {
         queue.unshift(...batch);
         dropOldest();
       }
-      return;
+      return false;
     }
   }
+  return true;
 }
+
+/** How long {@link logLogout} waits before it sends a failed batch again. */
+export const LOGOUT_RETRY_MS = 500;
 
 /**
  * Records `logout` and sends the queue with the session that is ending, so
  * the caller can clear the session afterwards. Waits for a flush already
- * running, then sends what it left. Without a session nothing is recorded or
- * sent. Never rejects.
+ * running, then sends what it left; a failed batch is sent again every
+ * {@link LOGOUT_RETRY_MS} until it is accepted or the session is no longer
+ * the current one (the caller bounds the wait and then clears it). Without a
+ * session nothing is recorded or sent. Never rejects.
  *
- * @returns Resolves when the queue is sent or a batch failed.
+ * @returns Resolves when the queue is sent or the session ended.
  */
 export async function logLogout(): Promise<void> {
+  const session = useAuthStore.getState().session;
   logInteraction('logout');
-  if (flushRun !== null) {
-    await flushRun;
+  while (session !== null && useAuthStore.getState().session === session) {
+    const running = flushRun;
+    const sent = await (running ?? flush());
+    if (running !== null) {
+      continue;
+    }
+    if (sent) {
+      return;
+    }
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, LOGOUT_RETRY_MS);
+    });
   }
-  await flushInteractions();
 }
 
 /**

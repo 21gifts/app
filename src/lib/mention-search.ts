@@ -35,7 +35,7 @@ export async function searchMentionAccounts(
   }
   const accounts = mentionSearchSchema.parse(await response.json()).accounts;
   if (query !== '') {
-    logInteraction('search', { query, results: accounts.length });
+    logInteraction('search', { query, results: accounts.length }, sessionToken);
   }
   return accounts;
 }

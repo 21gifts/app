@@ -80,10 +80,11 @@ export async function createPosCharge(
     throw new Error(message);
   }
   const parsed = z.object({ charge: posChargeSchema }).parse(body);
-  logInteraction('pos_charge_created', {
-    chargeId: parsed.charge.id,
-    amountSats: parsed.charge.amountSats,
-  });
+  logInteraction(
+    'pos_charge_created',
+    { chargeId: parsed.charge.id, amountSats: parsed.charge.amountSats },
+    sessionToken,
+  );
   return parsed.charge;
 }
 
