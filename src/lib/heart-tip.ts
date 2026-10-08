@@ -244,6 +244,11 @@ async function settleUnsettledHeart(messageId: string): Promise<'clear' | 'paid'
   } catch {
     return 'pending';
   }
+  // `sentLate` may have reported the send while the list was being read.
+  if (held.sent) {
+    unsettledHearts.delete(messageId);
+    return 'paid';
+  }
   const match = payments.find(
     (payment) => payment.direction === 'sent' && payment.info.invoice === held.invoice,
   );
