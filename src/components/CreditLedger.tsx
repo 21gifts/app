@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactElement } from 'react';
+import Link from 'next/link';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -21,22 +22,37 @@ import {
 /**
  * Who gave what on a credit, and who is paid back how much, when, and by one bitcoin payment.
  *
- * Renders nothing until the public ledger loads. A failed read stays blank.
+ * Renders nothing until the public ledger for this note loads. A failed read
+ * stays blank. Changing `messageId` drops the previous note immediately, so a
+ * slow read never keeps the last person's rows on screen.
+ * `list="summary"` (default) shows givers, the explanation, the chart, and a
+ * link to the repayment list. `list="page"` also shows the day-group rows and
+ * omits that link.
  *
- * @param props - Credit note id.
+ * @param props - Credit note id and which list to render.
  * @returns The two lists, or null.
  */
-export function CreditLedger({ messageId }: { messageId: string }): ReactElement | null {
+export function CreditLedger({
+  messageId,
+  list = 'summary',
+}: {
+  messageId: string;
+  list?: 'summary' | 'page';
+}): ReactElement | null {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat: visitorFiat } = useFiatPreference();
   const rateDay = useLatestRateDay();
-  const [ledger, setLedger] = useState<RepaymentLedger | null>(null);
+  const [loaded, setLoaded] = useState<{
+    messageId: string;
+    ledger: RepaymentLedger;
+  } | null>(null);
+  const ledger = loaded !== null && loaded.messageId === messageId ? loaded.ledger : null;
   useEffect(() => {
     let cancel = false;
     void getRepayment(messageId).then((row) => {
-      if (!cancel) {
-        setLedger(row);
+      if (!cancel && row !== null) {
+        setLoaded({ messageId, ledger: row });
       }
     });
     return () => {
@@ -51,7 +67,7 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
     const timer = setInterval(() => {
       void getRepayment(messageId).then((row) => {
         if (!cancel && row !== null) {
-          setLedger(row);
+          setLoaded({ messageId, ledger: row });
         }
       });
     }, 4000);
@@ -120,39 +136,51 @@ export function CreditLedger({ messageId }: { messageId: string }): ReactElement
           rateDay={rateDay}
           visitorFiat={visitorFiat}
         />
-        <div className="mt-1 flex flex-col gap-2">
-          {groupsOf(ledger.repayments).map((group) => (
-            <div key={group.dayIndex}>
-              <p className="text-xs font-medium text-app-fg">
-                {ledger.fundedAt === null || group.dueOn === null
-                  ? t('forum.creditDay', { day: String(group.dayIndex + 1) })
-                  : formatUtcDay(group.dueOn, locale)}
-              </p>
-              <ul>
-                {group.rows.map((row) => (
-                  <li
-                    key={`${row.dayIndex}:${row.accountId}`}
-                    className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5 first:border-t-0"
-                  >
-                    <span className="min-w-0 truncate text-sm text-app-fg">
-                      {giverLabel(row.name, row.username, row.accountId)}
-                    </span>
-                    <span className="flex shrink-0 flex-col items-end gap-0.5 sm:grid sm:grid-cols-[auto_5.5rem] sm:items-baseline sm:gap-x-2 sm:gap-y-0">
-                      <span className="text-right text-sm tabular-nums text-app-fg">
-                        {rowAmount(row, fiat, visitorFiat, rateDay, numberFormat)}
+        {list === 'page' ? (
+          <div className="mt-1 flex flex-col gap-2">
+            {groupsOf(ledger.repayments).map((group) => (
+              <div key={group.dayIndex}>
+                <p className="text-xs font-medium text-app-fg">
+                  {ledger.fundedAt === null || group.dueOn === null
+                    ? t('forum.creditDay', { day: String(group.dayIndex + 1) })
+                    : formatUtcDay(group.dueOn, locale)}
+                </p>
+                <ul>
+                  {group.rows.map((row) => (
+                    <li
+                      key={`${row.dayIndex}:${row.accountId}`}
+                      className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5 first:border-t-0"
+                    >
+                      <span className="min-w-0 truncate text-sm text-app-fg">
+                        {giverLabel(row.name, row.username, row.accountId)}
                       </span>
-                      <span
-                        className={`whitespace-nowrap text-right text-xs font-medium ${statusClass(row.status)}`}
-                      >
-                        {t(statusKey(row.status))}
+                      <span className="flex shrink-0 flex-col items-end gap-0.5 sm:grid sm:grid-cols-[auto_5.5rem] sm:items-baseline sm:gap-x-2 sm:gap-y-0">
+                        <span className="text-right text-sm tabular-nums text-app-fg">
+                          {rowAmount(row, fiat, visitorFiat, rateDay, numberFormat)}
+                        </span>
+                        <span
+                          className={`whitespace-nowrap text-right text-xs font-medium ${statusClass(row.status)}`}
+                        >
+                          {t(statusKey(row.status))}
+                        </span>
                       </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Link
+            href={`/messages/${encodeURIComponent(messageId)}/repayment-list`}
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+            className="text-xs font-medium text-app-fg underline decoration-app-border underline-offset-2"
+          >
+            {t('forum.creditList')}
+          </Link>
+        )}
       </section>
     </div>
   );

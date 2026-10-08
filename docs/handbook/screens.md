@@ -705,15 +705,9 @@ On **All**: a top-level English note defined as **₱200.00**, with frozen **₿
 
 ### Variant: goal-credit
 
-On **All**: top-level Ada note with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50**. A **Loan** tag beside the name explains the credit when pressed. Under the ask: **To repay per day: ₿700 · $0.70 per day for 30 days.** Progress bar at **50%**. The list of givers stays behind **Who gave and who is paid back**. Composer **Send a post** / **Ask for money** pill visible.
+On **All**: top-level Ada note with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50**. A **Loan** tag beside the name explains the credit when pressed. Under the ask: **To repay per day: ₿700 · $0.70 per day for 30 days.** Progress bar at **50%**. The day list is not on this card. **Repayment list** opens /messages/<id>/repayment-list. Composer **Send a post** / **Ask for money** pill visible.
 
 ![21.gifts welcome goal credit](images/welcome-goal-credit.png)
-
-### Variant: goal-credit-open
-
-Same note as **goal-credit**, after **Who gave and who is paid back** is pressed. **Given** lists Bea @bea at ₿20. **Paid back** shows a chart from 27 Sep 2026 to 28 Sep 2026: a bar for each day's amount and a line for the debt, then each share is one bitcoin payment, 27 Sep 2026 with Bea's ₿10 **Due**, and 28 Sep 2026 with Bea's ₿10 **Scheduled**.
-
-![21.gifts welcome goal credit open](images/welcome-goal-credit-open.png)
 
 ### Variant: loan-tag-open
 
@@ -729,7 +723,7 @@ On **All**: a top-level Ada note with `sats: 10500` and `goalSats: 21000`, after
 
 ### Variant: repay-today
 
-On **All**: Ada's own filled credit (`accountId` matches the signed-in account, `sats` equals `goalSats`). **Pay today's repayment** is visible. The plan stays closed.
+On **All**: Ada's own filled credit (`accountId` matches the signed-in account, `sats` equals `goalSats`). **Pay today's repayment** is visible. **Repayment list** is a link. The day list is not on this card.
 
 ![21.gifts welcome repay today](images/welcome-repay-today.png)
 
@@ -2533,7 +2527,7 @@ Identity card; posts pressed; the listed English post is defined as **$1.50** wi
 
 ### Variant: posts-open-goal-credit
 
-Identity card; posts pressed; the listed post has `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, a **Loan** tag and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. The post offers **Who gave and who is paid back**.
+Identity card; posts pressed; the listed post has `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, a **Loan** tag and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. The post offers **Repayment list**, a link to /messages/<id>/repayment-list. The day list is not on this card.
 
 ![21.gifts member posts open with credit goal](images/members-posts-open-goal-credit.png)
 
@@ -2549,15 +2543,9 @@ Same post as **posts-open-goal-110**, after **Donation** is pressed. A line unde
 
 ![21.gifts member posts donation tag open](images/members-posts-open-donation-tag-open.png)
 
-### Variant: posts-open-goal-credit-open
-
-Same member, after **Who gave and who is paid back** is pressed on a filled credit. **Given** lists Bea. **Paid back** shows the chart and Bea's share **Due**.
-
-![21.gifts member posts credit ledger open](images/members-posts-open-goal-credit-open.png)
-
 ### Variant: posts-open-repay-today
 
-Identity card of the signed-in member; posts pressed; the listed post is her own filled credit (`accountId` matches the signed-in account, `sats` equals `goalSats`). **Pay today's repayment** is visible. The plan stays closed.
+Identity card of the signed-in member; posts pressed; the listed post is her own filled credit (`accountId` matches the signed-in account, `sats` equals `goalSats`). **Pay today's repayment** is visible. **Repayment list** is a link. The day list is not on this card.
 
 ![21.gifts member posts repay today](images/members-posts-open-repay-today.png)
 
@@ -4600,7 +4588,7 @@ Same unsigned note as **goal-110**, after **Donation** is pressed. A line under 
 
 ### Variant: credit-ledger
 
-Unsigned permalink of a filled credit. Under the ask, **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows a chart from 27 Sep 2026 to 28 Sep 2026, bars for each day's amount and a line from the whole debt down to zero, then each share is one bitcoin payment, 27 Sep 2026 UTC with Bea's ₿10 **Due**, and 28 Sep 2026 UTC with Bea's ₿10 and Cara's ₿1 **Scheduled**.
+Unsigned permalink of a filled credit. Under the ask, **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows a chart from 27 Sep 2026 to 28 Sep 2026, bars for each day's amount and a line from the whole debt down to zero, and **Each share is one bitcoin payment to that person.** The day rows are not on this page. **Repayment list** links to /messages/<id>/repayment-list.
 
 ![21.gifts public message credit ledger](images/messages-id-credit-ledger.png)
 
@@ -4753,6 +4741,38 @@ Same thread opened on the reply UUID. Parent + gift; permalink target ring (`dat
 Unsigned permalink of Cyrill's reply **You got it right.** The parent **Hello from Ada** shows **₿21'000 · $18.14**. The reply shows **sent ₿21'000 · $18.14** and **received ₿100 · $0.09** on two lines under a left rule. Nothing on the page is **₿21'100**.
 
 ![21.gifts public message reply received](images/messages-id-reply-received.png)
+
+## Screen: /messages/[id]/repayment-list
+
+- **Purpose:** The repayment list for one credit note: who gave, the chart, and every day's shares. The day rows render only here. The note, the forum, and a profile show a link instead of those rows. Nothing renders until the public ledger loads. A failed read stays blank. Chrome is PublicMessageChrome. There is no second back control.
+- **Inputs:** Dynamic route `id`. Loads `GET /messages/:id/repayment` through `getRepayment`. No session is required to view. Chrome follows the hydrated session.
+- **Actions:** The top-left arrow is the existing ProfileChromeLeft control (previous in-app view, or `/welcome` when this tab has none). No other control. Names are text.
+- **Used by:** Route `/messages/[id]/repayment-list` (`RepaymentListPage`). The **Repayment list** link on a collapsed `ForumGoalBar` and on `CreditLedger` summary.
+- **Auth:** None required to view. Chrome depends on the hydrated session. No OnboardingGate.
+
+### Variant: default
+
+Unsigned. **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows the chart from 27 Sep 2026 to 28 Sep 2026, then **Each share is one bitcoin payment to that person.**, then 27 Sep 2026 with Bea's ₿10 **Due**, and 28 Sep 2026 with Bea's ₿10 and Cara's ₿1 **Scheduled**. This page has no **Repayment list** link.
+
+![21.gifts repayment list](images/messages-id-repayment-list.png)
+
+### Variant: signed-in
+
+Same loaded list as the default, with the **Menu** control. **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows the chart from 27 Sep 2026 to 28 Sep 2026, then **Each share is one bitcoin payment to that person.**, then 27 Sep 2026 with Bea's ₿10 **Due**, and 28 Sep 2026 with Bea's ₿10 and Cara's ₿1 **Scheduled**. This page has no **Repayment list** link.
+
+![21.gifts repayment list signed in](images/messages-id-repayment-list-signed-in.png)
+
+### Variant: loading
+
+Unsigned chrome only. The repayment request has not returned, so **Given**, the chart, and the day rows are absent. A failed read is this same blank screen: nothing is added and the layout does not change, so it is not a separate variant.
+
+![21.gifts repayment list loading](images/messages-id-repayment-list-loading.png)
+
+### Variant: empty
+
+Unsigned. The ledger loaded with no givers and no repayment rows. **Given** shows **No one has given yet.** **Paid back** shows **Each share is one bitcoin payment to that person.** and **The days are fixed once the credit is fully given. Until then this is the plan for what has been given.** No chart and no day rows.
+
+![21.gifts repayment list empty](images/messages-id-repayment-list-empty.png)
 
 ## Screen: /messages/[id]/author
 

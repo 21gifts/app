@@ -4,6 +4,22 @@ import { CreditLedger } from '@/components/CreditLedger';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -100,7 +116,7 @@ const btc = {
 describe('CreditLedger', () => {
   it('lists givers and each bitcoin repayment', async () => {
     ledger(btc);
-    renderWithLocale(<CreditLedger messageId="m1" />);
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
     expect((await screen.findAllByText('Bea @bea')).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Ada').length).toBeGreaterThan(0);
     expect(screen.getAllByText('@cara').length).toBeGreaterThan(0);
@@ -120,10 +136,22 @@ describe('CreditLedger', () => {
     expect(screen.getByText('Still owed')).toBeTruthy();
   });
 
+  it('shows a repayment list link and hides the day rows', async () => {
+    ledger(btc);
+    renderWithLocale(<CreditLedger messageId="m1" />);
+    const link = await screen.findByRole('link', { name: 'Repayment list' });
+    expect(link.getAttribute('href')).toBe('/messages/m1/repayment-list');
+    expect(screen.queryByText('Due')).toBeNull();
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    const stop = vi.spyOn(click, 'stopPropagation');
+    fireEvent(link, click);
+    expect(stop).toHaveBeenCalled();
+  });
+
   it('reloads a due share and ignores a failed refresh', async () => {
     vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     ledger(btc);
-    renderWithLocale(<CreditLedger messageId="m1" />);
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
     expect((await screen.findAllByText('Bea @bea')).length).toBeGreaterThan(0);
     vi.stubGlobal(
       'fetch',
@@ -178,7 +206,7 @@ describe('CreditLedger', () => {
         };
       };
       ledger(btc);
-      const view = renderWithLocale(<CreditLedger messageId="m1" />);
+      const view = renderWithLocale(<CreditLedger messageId="m1" list="page" />);
       expect((await screen.findAllByText('Bea @bea')).length).toBeGreaterThan(0);
       let resolveApplied: (value: Response) => void = () => {};
       const appliedPending = new Promise<Response>((done) => {
@@ -205,6 +233,10 @@ describe('CreditLedger', () => {
       const stalePending = new Promise<Response>((done) => {
         resolveStale = done;
       });
+      let resolveNext: (value: Response) => void = () => {};
+      const nextPending = new Promise<Response>((done) => {
+        resolveNext = done;
+      });
       vi.stubGlobal(
         'fetch',
         vi.fn(async (input: RequestInfo) => {
@@ -213,7 +245,7 @@ describe('CreditLedger', () => {
             return new Response(JSON.stringify({ spendOverTime: [] }), { status: 200 });
           }
           if (url.includes('/messages/m2/')) {
-            return new Response(JSON.stringify(named('Milo', 'milo')), { status: 200 });
+            return nextPending;
           }
           return stalePending;
         }),
@@ -221,12 +253,18 @@ describe('CreditLedger', () => {
       await act(async () => {
         await vi.advanceTimersByTimeAsync(4000);
       });
-      view.rerender(<CreditLedger messageId="m2" />);
+      view.rerender(<CreditLedger messageId="m2" list="page" />);
+      expect(screen.queryByText('Nia @nia')).toBeNull();
+      expect(screen.queryByText('Due')).toBeNull();
       await act(async () => {
         resolveStale(new Response(JSON.stringify(named('Quinn', 'quinn')), { status: 200 }));
       });
-      expect((await screen.findAllByText('Milo @milo')).length).toBeGreaterThan(0);
       expect(screen.queryByText('Quinn @quinn')).toBeNull();
+      expect(screen.queryByText('Nia @nia')).toBeNull();
+      await act(async () => {
+        resolveNext(new Response(JSON.stringify(named('Milo', 'milo')), { status: 200 }));
+      });
+      expect((await screen.findAllByText('Milo @milo')).length).toBeGreaterThan(0);
     } finally {
       vi.useRealTimers();
     }
@@ -290,7 +328,7 @@ describe('CreditLedger', () => {
         },
       ],
     });
-    renderWithLocale(<CreditLedger messageId="m1" />);
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
     expect((await screen.findAllByText(/Day 1/)).length).toBeGreaterThan(0);
     expect(screen.getByText(/The days are fixed/)).toBeTruthy();
     expect(screen.getByText(/rate on the day/)).toBeTruthy();
@@ -319,7 +357,7 @@ describe('CreditLedger', () => {
       ],
       next: null,
     });
-    renderWithLocale(<CreditLedger messageId="m1" />, 'en', 'ch', 'EUR');
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />, 'en', 'ch', 'EUR');
     expect((await screen.findAllByText(/Day 1/)).length).toBeGreaterThan(0);
     cleanup();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 404 })));
@@ -467,12 +505,15 @@ describe('CreditLedger', () => {
     renderWithLocale(
       <ForumGoalBar sats={21} goalSats={21} goalRepayable messageId="m1" ledgerCollapsed />,
     );
-    const toggle = await screen.findByRole('button', { name: 'Who gave and who is paid back' });
+    const link = await screen.findByRole('link', { name: 'Repayment list' });
+    expect(link.getAttribute('href')).toBe('/messages/m1/repayment-list');
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    const stop = vi.spyOn(click, 'stopPropagation');
+    fireEvent(link, click);
+    expect(stop).toHaveBeenCalled();
     expect(screen.queryByText('Given')).toBeNull();
-    fireEvent.click(toggle);
-    expect(await screen.findByText('Given')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Hide givers and repayment' }));
-    expect(screen.queryByText('Given')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Who gave and who is paid back' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Hide givers and repayment' })).toBeNull();
   });
 
   it('says when nobody has given', async () => {
@@ -510,7 +551,7 @@ describe('CreditLedger', () => {
         },
       ],
     });
-    renderWithLocale(<CreditLedger messageId="m1" />);
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
     const chart = await screen.findByRole('img', { name: /Day 3/ });
     expect(chart.getAttribute('aria-label')).toContain('Day 5');
     expect(chart.getAttribute('aria-label')).not.toMatch(/Sep/);
