@@ -208,11 +208,28 @@ describe('PlacesMapScreen', () => {
 
   it('keeps only the pins of the chosen country and fits the map to them', async () => {
     useAuthStore.setState({ session: 'tok' });
-    const manila = { ...ROW, id: 'm-ph-1', countryCode: 'PH' };
-    const cebu = { ...ROW, id: 'm-ph-2', label: 'Cebu', lat: 10.3, lng: 123.9, countryCode: 'PH' };
-    const kenya = { ...SECOND_ROW, countryCode: 'KE' };
+    const manila = { ...ROW, id: 'm-ph-1', shop: true, countryCode: 'PH' };
+    const cebu = {
+      ...ROW,
+      id: 'm-ph-2',
+      label: 'Cebu',
+      lat: 10.3,
+      lng: 123.9,
+      shop: true,
+      countryCode: 'PH',
+    };
+    const kenya = { ...SECOND_ROW, shop: true, countryCode: 'KE' };
     const sea = { ...ROW, id: 'm-sea', label: 'Boat', lat: 30, lng: -40, countryCode: null };
-    fetchPlacesMock.mockResolvedValue([manila, cebu, kenya, sea]);
+    // A forum note pinned in Manila that is not a shop is not one of the country's shops.
+    const note = {
+      ...ROW,
+      id: 'm-note',
+      label: 'Plaza',
+      lat: 14.59,
+      lng: 120.97,
+      countryCode: 'PH',
+    };
+    fetchPlacesMock.mockResolvedValue([manila, cebu, kenya, sea, note]);
     const maps = installGoogleMaps(4);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
     const view = renderWithLocale(<PlacesMapScreen embedded country="PH" />);
@@ -220,6 +237,7 @@ describe('PlacesMapScreen', () => {
     expect(screen.getByRole('link', { name: 'Ada · Cebu' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Ada · Machakos' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Ada · Boat' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Ada · Plaza' })).toBeNull();
     await waitFor(() => {
       expect(maps.map.fitBounds).toHaveBeenCalledWith(maps.bounds, 32);
     });
@@ -240,13 +258,14 @@ describe('PlacesMapScreen', () => {
     expect(await screen.findByText('No places yet.')).toBeTruthy();
     view.rerender(<PlacesMapScreen embedded />);
     expect(await screen.findByRole('link', { name: 'Ada · Boat' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ada · Plaza' })).toBeTruthy();
   });
 
   it('loads the Maps script once and keeps the newer map when the country changes before it loads', async () => {
     useAuthStore.setState({ session: 'tok' });
     fetchPlacesMock.mockResolvedValue([
-      { ...ROW, countryCode: 'PH' },
-      { ...SECOND_ROW, countryCode: 'KE' },
+      { ...ROW, shop: true, countryCode: 'PH' },
+      { ...SECOND_ROW, shop: true, countryCode: 'KE' },
     ]);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
     const view = renderWithLocale(<PlacesMapScreen embedded country="PH" />);
@@ -572,6 +591,49 @@ describe('PlacesMapScreen', () => {
     renderWithLocale(<PlacesMapScreen embedded />);
     expect(await screen.findByText('No places yet.')).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Map' })).toBeNull();
+  });
+
+  it('opens the pin editor without a change callback', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc',
+        linkingKey: '02',
+        role: 'moderator',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      } as Account,
+    });
+    fetchPlacesMock.mockResolvedValue([{ ...ROW, shop: true }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(fetchForumMessage).mockResolvedValueOnce({
+      id: 'm-pin',
+      name: 'Ada',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 5,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    renderWithLocale(<PlacesMapScreen />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
   });
 
   it('edits a shop pin and refuses a missing, plain, or failed note', async () => {

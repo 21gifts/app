@@ -784,6 +784,53 @@ describe('ShopNoteEditControl', () => {
     expect(setMessageShopPhotos).not.toHaveBeenCalled();
   });
 
+  it('reports a whole save once, and not when a later part of the save fails', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopMessage,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    vi.mocked(setMessageShopAccount).mockRejectedValueOnce(new Error('no'));
+    const onUpdated = vi.fn();
+    const onSaved = vi.fn();
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          shopAccount: { id: 'old', username: 'old', name: 'Old' },
+        }}
+        onUpdated={onUpdated}
+        onSaved={onSaved}
+      />,
+    );
+    const save = async (): Promise<void> => {
+      fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+        target: { value: 'Cafe Sol' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    };
+    await save();
+    // The text is saved, the user is not: the row takes the text, the whole save is not reported.
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
+    expect(onUpdated).toHaveBeenCalledTimes(1);
+    expect(onSaved).not.toHaveBeenCalled();
+    vi.mocked(setMessageShopAccount).mockResolvedValue({ ...shopMessage });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+  });
+
   it('reads kept stills before a text save can drop their addresses', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
