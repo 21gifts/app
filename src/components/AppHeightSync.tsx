@@ -104,7 +104,7 @@ export function useAppHeight(): void {
 
     const handleFocusIn = (event: FocusEvent): void => {
       // Back into the composer while the keyboard is still closing: the held height stays the full one.
-      const held = heldHeight;
+      const held = window.innerWidth === restingWidth ? heldHeight : null;
       releaseHold();
       if (inWritingComposer(event.target) && !isTypingField(event.relatedTarget)) {
         const height = resolveAppHeight(window.innerHeight, viewport);
