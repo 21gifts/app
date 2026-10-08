@@ -970,15 +970,16 @@ Using the platform is consent to the collection described in the Terms of Use
 only for a signed-in member and both through same-origin proxies:
 
 - **Wallet data report** (`reportWallet`, `POST /me/wallet/report`): after
-  every successful wallet read of an unlocked wallet (unlock, each sync, after
-  a payment) and every five minutes while the app is open, the balance and
+  every successful wallet read while signed in (login, each sync, after a
+  payment) and every five minutes while the app is open, the balance and
   every payment the api has not acknowledged yet, in requests of at most 200
   payments. The acknowledged cursor lives in tab memory only.
 - **Interaction log** (`logInteraction`, `POST /me/events`): named events
   (`screen_view`, `post_created`, `gift_sent`, `payment_sent`, `search`, …)
   with the path without query and a small flat `props` object, sent in
-  batches of at most 50 every ten seconds and when the page is hidden.
-  Visitors without a session are not recorded.
+  batches of at most 50 every ten seconds, when the page is hidden, and on
+  log out (`logout`, sent with the session it was recorded under before the
+  session is cleared). Visitors without a session are not recorded.
 
 **Hard requirement:** neither report, nor any other request, log, or error
 report, ever carries the recovery phrase, the seed, PRF output, a preimage, or

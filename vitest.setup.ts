@@ -20,6 +20,7 @@ vi.mock('@/lib/interaction-log', () => ({
   INTERACTION_BATCH_SIZE: 50,
   logInteraction: vi.fn(),
   flushInteractions: vi.fn(() => Promise.resolve()),
+  logLogout: vi.fn(() => Promise.resolve()),
   startInteractionLog: vi.fn(() => () => undefined),
 }));
 

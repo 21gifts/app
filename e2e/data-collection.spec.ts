@@ -269,4 +269,25 @@ test.describe('POST /me/events', () => {
       expect(body).not.toContain(token);
     }
   });
+
+  test('Function: logLogout — log out sends the logout event with the session it ends', async ({
+    page,
+    request,
+  }) => {
+    const token = await newMember(request);
+    await signIn(page, token);
+    await page.goto('/rules');
+    await expect
+      .poll(async () => {
+        await hidePage(page);
+        return (await receivedEvents(request, token)).map((event) => event.name);
+      })
+      .toContain('screen_view');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await page.getByRole('button', { name: 'Log out' }).click();
+    await expect(page).toHaveURL(/\/login/);
+    const names = (await receivedEvents(request, token)).map((event) => event.name);
+    expect(names).toContain('logout');
+    expect(names.indexOf('logout')).toBe(names.lastIndexOf('logout'));
+  });
 });

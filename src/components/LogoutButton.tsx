@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
+import { logLogout } from '@/lib/interaction-log';
 import { disablePush } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -13,7 +14,8 @@ import { useAuthStore } from '@/stores/auth-store';
  * free top-right action, and under the in-place login card
  * (`WalletLoginCard`) while a session is held back. A held-back session ends
  * at once and push is switched off for it in the background; a signed-in
- * session first switches push off (at most 5 s), then ends.
+ * session first switches push off and sends the interaction log with its
+ * `logout` event (together at most 5 s), then ends.
  *
  * @returns Full-width Menu-row icon+text log-out control.
  */
@@ -30,13 +32,15 @@ export function LogoutButton(): ReactElement {
         passkey.cancel();
         const { session, lockedSession } = useAuthStore.getState();
         const token = session ?? lockedSession;
-        const stopPush = (pushToken: string): Promise<void> =>
+        const within5s = (work: Promise<void>): Promise<void> =>
           Promise.race([
-            disablePush(pushToken).catch(() => undefined),
+            work,
             new Promise<void>((resolve) => {
               window.setTimeout(resolve, 5000);
             }),
           ]);
+        const stopPush = (pushToken: string): Promise<void> =>
+          within5s(disablePush(pushToken).catch(() => undefined));
         if (session === null && lockedSession !== null) {
           // A held-back session has nothing signed in to keep: end it at
           // once, so a new login on the card cannot be wiped by a late
@@ -47,9 +51,12 @@ export function LogoutButton(): ReactElement {
           return;
         }
         void (async () => {
-          if (token !== null) {
-            await stopPush(token);
-          }
+          // The logout event goes out with the session it was recorded under,
+          // before that session is cleared.
+          await Promise.all([
+            within5s(logLogout()),
+            token === null ? Promise.resolve() : stopPush(token),
+          ]);
           clearAuth();
           router.replace('/login');
         })();

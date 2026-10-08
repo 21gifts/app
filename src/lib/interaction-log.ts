@@ -10,12 +10,11 @@ export type InteractionName =
   | 'payment_received_seen'
   | 'pos_charge_created'
   | 'pos_charge_paid_seen'
-  | 'wallet_unlocked'
-  | 'wallet_locked'
   | 'search'
   | 'shop_opened'
   | 'profile_opened'
   | 'login'
+  | 'logout'
   | 'signup_completed';
 
 /** Values an interaction may carry: ids, amounts, counts, and search terms. */
@@ -94,8 +93,8 @@ const queue: InteractionEvent[] = [];
 /** Session the queued events belong to. */
 let queueSession: string | null = null;
 
-/** True while a flush is sending. */
-let flushing = false;
+/** The flush that is sending, or `null`. */
+let flushRun: Promise<void> | null = null;
 
 /**
  * Props reduced to short flat values. A key that is not an identifier or that
@@ -242,32 +241,56 @@ function nextBatch(): InteractionEvent[] {
  * @returns Resolves when the queue is empty, a batch failed, the session
  *   changed, or another flush is running.
  */
-export async function flushInteractions(): Promise<void> {
-  if (flushing) {
-    return;
+export function flushInteractions(): Promise<void> {
+  if (flushRun !== null) {
+    return Promise.resolve();
   }
   const session = useAuthStore.getState().session;
   if (session === null || session !== queueSession) {
     queue.length = 0;
-    return;
+    return Promise.resolve();
   }
-  flushing = true;
-  try {
-    while (queue.length > 0 && queueSession === session) {
-      const batch = nextBatch();
-      try {
-        await postEvents(session, batch);
-      } catch {
-        if (queueSession === session) {
-          queue.unshift(...batch);
-          dropOldest();
-        }
-        return;
+  flushRun = sendQueue(session).finally(() => {
+    flushRun = null;
+  });
+  return flushRun;
+}
+
+/**
+ * Sends the queue in batches while it still belongs to `session`.
+ *
+ * @param session - Session the queued events were recorded under.
+ * @returns Resolves when the queue is empty, a batch failed, or the session changed.
+ */
+async function sendQueue(session: string): Promise<void> {
+  while (queue.length > 0 && queueSession === session) {
+    const batch = nextBatch();
+    try {
+      await postEvents(session, batch);
+    } catch {
+      if (queueSession === session) {
+        queue.unshift(...batch);
+        dropOldest();
       }
+      return;
     }
-  } finally {
-    flushing = false;
   }
+}
+
+/**
+ * Records `logout` and sends the queue with the session that is ending, so
+ * the caller can clear the session afterwards. Waits for a flush already
+ * running, then sends what it left. Without a session nothing is recorded or
+ * sent. Never rejects.
+ *
+ * @returns Resolves when the queue is sent or a batch failed.
+ */
+export async function logLogout(): Promise<void> {
+  logInteraction('logout');
+  if (flushRun !== null) {
+    await flushRun;
+  }
+  await flushInteractions();
 }
 
 /**
