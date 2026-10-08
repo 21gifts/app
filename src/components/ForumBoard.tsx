@@ -35,6 +35,7 @@ import {
 } from '@/components/ForumPaySheet';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useAppShellScroller } from '@/components/AppShell';
+import { useComposerWriting } from '@/hooks/useComposerWriting';
 import {
   ForumAskWizard,
   type ForumAskCadence,
@@ -356,6 +357,11 @@ export interface ForumBoardProps {
   replyFormError: ForumReplyFormError;
   /** When true, hide the new-note composer (profile note card). */
   composerHidden?: boolean;
+  /**
+   * Forum home only: on a touch device the Post composer has its phone shape
+   * and a writing mode (`useComposerWriting`). Default false: no change.
+   */
+  writingMode?: boolean;
   /** Signed-out living room: no composer, reaction form, pay, or delete. Mode stays. */
   readOnly?: boolean;
   /** Remove a moderated post or nested reply after a successful server deletion. */
@@ -618,6 +624,13 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * to the empty-feed line when no row is loaded, so a page whose notes were all
  * dropped still leads on to the next page.
  * Shop notes show `#Shop` linking to `/shops` and hide `#21GiftsShop`; optional `emptyKey`.
+ * With `writingMode` (the forum home) on a touch device, the Post composer
+ * shows its text field on top at full width and photo, place and send on one
+ * row below it. While that field has the focus (`useComposerWriting`), the
+ * laws hint, the mode filter, the Post / Ask pill and the divider fold away,
+ * the feed hides at once (and fades back in afterwards), and the field grows;
+ * a press on the composer's own buttons keeps the field focused. The form is
+ * marked `data-writing-composer` for {@link useAppHeight}.
  *
  * @param props - Messages payload plus loading/error/composer (including
  * `askDraft` / compose intent / Ask wizard) /pay/mode/photo/video/laws/thread/permalink/truncate state.
@@ -707,6 +720,7 @@ export function ForumBoard({
   replyPosting,
   replyFormError,
   composerHidden = false,
+  writingMode = false,
   readOnly = false,
   onDeleted,
   permalinkTargetId = null,
@@ -733,6 +747,8 @@ export function ForumBoard({
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const composerFormRef = useRef<HTMLFormElement>(null);
+  const writing = useComposerWriting(writingMode, !posting, composerFormRef);
   const replyComposerRef = useRef<HTMLTextAreaElement>(null);
   const scrollerRef = useRef<HTMLElement | null>(scroller);
   scrollerRef.current = scroller;
@@ -1853,11 +1869,39 @@ export function ForumBoard({
   }
 
   const showRefreshStatus = refreshing === true || pullArmed;
+  // Writing mode (forum home, touch): parts above the composer fold away. Off the
+  // forum home there is no wrapper; on a fine pointer the wrapper is no box.
+  const foldPart = (part: ReactElement): ReactElement =>
+    writingMode ? (
+      <div
+        className={
+          !writing.touch ? 'contents' : writing.writing ? 'writing-folded -mt-4' : 'writing-fold'
+        }
+      >
+        {part}
+      </div>
+    ) : (
+      part
+    );
+  const rootEdge = !writing.touch
+    ? 'border-app-border pt-6'
+    : writing.writing
+      ? 'border-transparent pt-0 transition-[padding,border-color] duration-250 ease-fold'
+      : 'border-app-border pt-6 transition-[padding,border-color] duration-250 ease-fold';
+  const feedClass = !writing.touch
+    ? 'contents'
+    : writing.writing
+      ? 'invisible flex max-h-0 min-w-0 flex-col gap-4 overflow-clip opacity-0'
+      : 'flex min-w-0 flex-col gap-4 transition-opacity duration-250 ease-fold';
+  const phoneShape = writingMode ? ' pointer-coarse:order-first pointer-coarse:basis-full' : '';
+  const composerTextClass = writing.writing
+    ? 'min-h-26 transition-[color,background-color,border-color,min-height] duration-250 ease-fold'
+    : 'min-h-11 transition';
 
   return (
     <div
       ref={rootRef}
-      className="flex w-full min-w-0 flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6"
+      className={`flex w-full min-w-0 flex-col gap-4 overscroll-y-contain border-t ${rootEdge}`}
     >
       {moderatorAppointedAvailable ? (
         <div className="pointer-events-none sticky top-2 z-30 mx-auto w-fit">
@@ -1901,72 +1945,78 @@ export function ForumBoard({
           className="sr-only"
         />
       ) : null}
-      {lawsVisible ? (
-        <div
-          data-laws-card=""
-          className="relative rounded-2xl border border-app-border bg-app-card-muted px-12 py-5"
-        >
-          <div className="absolute right-3 top-3">
-            <IconButton
-              type="button"
-              size="sm"
-              variant="ghost"
-              aria-label={t('forum.lawsDismiss')}
-              onClick={onDismissLaws}
+      {lawsVisible
+        ? foldPart(
+            <div
+              data-laws-card=""
+              className="relative rounded-2xl border border-app-border bg-app-card-muted px-12 py-5"
             >
-              <X aria-hidden="true" className="h-4 w-4" />
-            </IconButton>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-center text-sm text-app-fg">{t('forum.laws1')}</p>
-            <p className="text-center text-sm text-app-fg">{t('forum.laws2')}</p>
-            <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium">
-              <Link href="/rules" className="text-app-fg underline underline-offset-2">
-                {t('forum.rulesLink')}
-              </Link>
-              <Link href="/contact" className="text-app-fg underline underline-offset-2">
-                {t('forum.contactLink')}
-              </Link>
-            </nav>
-          </div>
-        </div>
-      ) : null}
+              <div className="absolute right-3 top-3">
+                <IconButton
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-label={t('forum.lawsDismiss')}
+                  onClick={onDismissLaws}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-center text-sm text-app-fg">{t('forum.laws1')}</p>
+                <p className="text-center text-sm text-app-fg">{t('forum.laws2')}</p>
+                <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium">
+                  <Link href="/rules" className="text-app-fg underline underline-offset-2">
+                    {t('forum.rulesLink')}
+                  </Link>
+                  <Link href="/contact" className="text-app-fg underline underline-offset-2">
+                    {t('forum.contactLink')}
+                  </Link>
+                </nav>
+              </div>
+            </div>,
+          )
+        : null}
 
-      {modeSelector && !composerHidden ? (
-        <ForumModeSelect
-          value={mode}
-          options={FORUM_FEED_MODES.map((next) => {
-            const label = t(MODE_LABEL_KEY[next]);
-            if (next !== 'unpaid' || mode === 'unpaid' || unpaidNewCount <= 0) {
-              return { value: next, label };
-            }
-            return {
-              value: next,
-              label,
-              badge: unpaidNewCount,
-              badgeAriaLabel: t('forum.modeUnpaidNew', { count: unpaidNewCount }),
-            };
-          })}
-          onChange={onModeChange}
-          ariaLabel={t('forum.modeLabel')}
-        />
-      ) : null}
+      {modeSelector && !composerHidden
+        ? foldPart(
+            <ForumModeSelect
+              value={mode}
+              options={FORUM_FEED_MODES.map((next) => {
+                const label = t(MODE_LABEL_KEY[next]);
+                if (next !== 'unpaid' || mode === 'unpaid' || unpaidNewCount <= 0) {
+                  return { value: next, label };
+                }
+                return {
+                  value: next,
+                  label,
+                  badge: unpaidNewCount,
+                  badgeAriaLabel: t('forum.modeUnpaidNew', { count: unpaidNewCount }),
+                };
+              })}
+              onChange={onModeChange}
+              ariaLabel={t('forum.modeLabel')}
+            />,
+          )
+        : null}
 
-      {!hideCompose && allowAsk ? (
-        <SegmentedControl
-          value={composeIntent}
-          options={[
-            { value: 'post', label: t('forum.composePost') },
-            { value: 'ask', label: t('forum.composeAsk') },
-          ]}
-          onChange={(next) => {
-            onComposeIntentChange?.(next);
-          }}
-          ariaLabel={t('forum.composeIntentLabel')}
-          tone="neutral"
-          className="!grid grid-cols-2 !rounded-2xl"
-        />
-      ) : null}
+      {!hideCompose && allowAsk
+        ? foldPart(
+            <SegmentedControl
+              value={composeIntent}
+              options={[
+                { value: 'post', label: t('forum.composePost') },
+                { value: 'ask', label: t('forum.composeAsk') },
+              ]}
+              onChange={(next) => {
+                onComposeIntentChange?.(next);
+              }}
+              ariaLabel={t('forum.composeIntentLabel')}
+              tone="neutral"
+              className="!grid grid-cols-2 !rounded-2xl"
+            />,
+          )
+        : null}
 
       {!hideCompose && allowAsk && composeIntent === 'ask' ? (
         <SundayWritingGate>
@@ -2023,8 +2073,22 @@ export function ForumBoard({
       ) : null}
       {!hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer ? (
         <SundayWritingGate>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
+          <form
+            ref={composerFormRef}
+            onSubmit={handleSubmit}
+            onFocus={writing.onComposerFocus}
+            onBlur={writing.onComposerBlur}
+            onPointerDown={writing.onComposerPointerDown}
+            {...(writing.touch ? { 'data-writing-composer': '' } : {})}
+            className="flex flex-col gap-2"
+          >
+            <div
+              className={
+                writingMode
+                  ? 'flex items-center gap-2 pointer-coarse:flex-wrap'
+                  : 'flex items-center gap-2'
+              }
+            >
               <IconButton
                 type="button"
                 size="lg"
@@ -2058,8 +2122,8 @@ export function ForumBoard({
                 maxLength={composerMaxLength}
                 rows={2}
                 disabled={posting}
-                wrapperClassName="relative min-w-0 flex-1"
-                className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
+                wrapperClassName={`relative min-w-0 flex-1${phoneShape}`}
+                className={`${composerTextClass} min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg disabled:opacity-50${phoneShape}`}
               />
               <IconButton
                 type="submit"
@@ -2067,6 +2131,7 @@ export function ForumBoard({
                 variant="primary"
                 disabled={posting}
                 aria-label={t('forum.post')}
+                {...(writingMode ? { className: 'pointer-coarse:ml-auto' } : {})}
               >
                 {posting ? (
                   <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
@@ -2219,8 +2284,17 @@ export function ForumBoard({
         ) : null}
       </div>
 
-      {middle}
-      {error && messages !== null ? errorBlock : null}
+      {writingMode ? (
+        <div className={feedClass}>
+          {middle}
+          {error && messages !== null ? errorBlock : null}
+        </div>
+      ) : (
+        <>
+          {middle}
+          {error && messages !== null ? errorBlock : null}
+        </>
+      )}
     </div>
   );
 }

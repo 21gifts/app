@@ -2682,7 +2682,7 @@ export function ForumLoader({
         {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
         {...(feed === 'shops' ? { modeSelector: false as const } : {})}
         {...(feed === 'shops' ? { allowAsk: false as const } : {})}
-        {...(feed === 'shops' ? { composerMaxLength } : {})}
+        {...(feed === 'shops' ? { composerMaxLength } : { writingMode: true as const })}
         {...(feed === 'shops'
           ? {
               shopComposer: true as const,

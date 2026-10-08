@@ -2217,6 +2217,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'composer-touch',
+    image: 'welcome-composer-touch.png',
+    visual: 'state-welcome-composer-touch',
+    needle: "shotScreen(page, 'state-welcome-composer-touch')",
+  },
+  {
+    route: '/welcome',
+    id: 'writing',
+    image: 'welcome-writing.png',
+    visual: 'state-welcome-writing',
+    needle: "shotScreen(page, 'state-welcome-writing')",
+  },
+  {
+    route: '/welcome',
     id: 'composer-photo',
     image: 'welcome-composer-photo.png',
     visual: 'state-welcome-composer-photo',

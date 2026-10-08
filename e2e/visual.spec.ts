@@ -4155,6 +4155,37 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-wallet-buttons');
   });
 
+  test.describe('welcome on a touch device', () => {
+    test.use({ hasTouch: true });
+
+    test('welcome composer-touch', async ({ page }) => {
+      await seedWelcomeWallet(page);
+      await page.goto('/welcome?visual=balance-ready');
+      await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+      await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
+      const field = (await page.getByLabel('Your message').boundingBox())!;
+      const post = (await page.getByRole('button', { name: 'Post', exact: true }).boundingBox())!;
+      expect(post.y).toBeGreaterThanOrEqual(field.y + field.height);
+      await expect(page.locator('main')).toHaveAttribute('data-writing', 'ready');
+      await shotScreen(page, 'state-welcome-composer-touch');
+    });
+
+    test('welcome writing', async ({ page }) => {
+      await seedWelcomeWallet(page);
+      await page.goto('/welcome?visual=balance-ready');
+      await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+      await page.getByLabel('Your message').tap();
+      await expect(page.getByLabel('Your message')).toBeFocused();
+      await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
+      await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeHidden();
+      await expect(page.getByText('Thank you both — that helps.')).toBeHidden();
+      await expect(page.getByRole('button', { name: 'Receive' })).toBeHidden();
+      await expect(page.locator('[data-app-frame]')).toHaveCSS('border-top-left-radius', '0px');
+      await shotScreen(page, 'state-welcome-writing');
+    });
+  });
+
   test('welcome wallet-buttons-disabled', async ({ page }) => {
     await seedWelcomeWallet(page);
     await page.goto('/welcome?visual=balance-connecting');

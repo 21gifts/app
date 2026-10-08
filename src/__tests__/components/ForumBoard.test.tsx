@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import type { ReactElement, ReactNode } from 'react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
 import { LocaleProvider } from '@/components/LocaleProvider';
@@ -7900,5 +7900,192 @@ describe('ForumBoard in-app wallet pay', () => {
     expect(() => {
       fireEvent.click(screen.getByRole('button', { name: 'Send ₿1' }));
     }).not.toThrow();
+  });
+});
+
+describe('ForumBoard writing mode', () => {
+  /** `matchMedia` answering a coarse (touch) or fine primary pointer. */
+  function stubPointer(coarse: boolean): void {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({
+        matches: query.includes('pointer: coarse') && coarse,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      })),
+    );
+  }
+
+  function renderHome(props: Partial<ForumBoardProps> = {}): ReturnType<typeof renderWithLocale> & {
+    rerenderHome: (next: Partial<ForumBoardProps>) => void;
+  } {
+    let setProps: (next: Partial<ForumBoardProps>) => void = () => undefined;
+    function Home(): ReactElement {
+      const [current, setCurrent] = useState(props);
+      setProps = setCurrent;
+      return (
+        <AppShell mode="fill">
+          <ForumBoard
+            messages={[SAMPLE]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            allowAsk
+            composeIntent="post"
+            {...idleProps}
+            {...modeProps('all')}
+            {...current}
+          />
+        </AppShell>
+      );
+    }
+    const view = renderWithLocale(<Home />);
+    return {
+      ...view,
+      rerenderHome: (next) => {
+        act(() => {
+          setProps(next);
+        });
+      },
+    };
+  }
+
+  function parts(container: HTMLElement) {
+    const field = screen.getByRole('textbox', { name: 'Your message' });
+    const form = field.closest('form')!;
+    const root = form.closest('[class*="border-t"]') as HTMLElement;
+    return {
+      main: container.querySelector('main')!,
+      footer: container.querySelector('footer')!,
+      field,
+      form,
+      row: form.firstElementChild as HTMLElement,
+      root,
+      laws: screen.getByText(getCatalog('en')['forum.laws1']).closest('.rounded-2xl')!,
+      mode: screen.getByRole('combobox', { name: 'Forum view' }).parentElement!,
+      intent: screen.getByRole('group', { name: 'Compose' }),
+      feed: screen.getByText(SAMPLE.text).closest('ul')!,
+      send: screen.getByRole('button', { name: 'Post' }),
+    };
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('leaves every other ForumBoard as it was, even on a touch device', () => {
+    stubPointer(true);
+    const { container } = renderHome();
+    const p = parts(container);
+    expect(p.laws.parentElement).toBe(p.root);
+    expect(p.mode.parentElement).toBe(p.root);
+    expect(p.intent.parentElement).toBe(p.root);
+    expect(p.feed.parentElement).toBe(p.root);
+    expect(p.root.className).toBe(
+      'flex w-full min-w-0 flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6',
+    );
+    expect(p.row.className).toBe('flex items-center gap-2');
+    expect(p.field.className).not.toContain('pointer-coarse');
+    expect(p.send.className).not.toContain('pointer-coarse');
+    expect(p.form.hasAttribute('data-writing-composer')).toBe(false);
+    fireEvent.focus(p.field);
+    expect(p.main.hasAttribute('data-writing')).toBe(false);
+    expect(p.field.className).toContain('min-h-11');
+    expect(p.footer.className).toBe('flex-none px-5 pb-5 empty:hidden');
+  });
+
+  it('on a fine pointer gives the forum home composer no box and no writing mode', () => {
+    stubPointer(false);
+    const { container } = renderHome({ writingMode: true });
+    const p = parts(container);
+    expect((p.laws.parentElement as HTMLElement).className).toBe('contents');
+    expect((p.mode.parentElement as HTMLElement).className).toBe('contents');
+    expect((p.intent.parentElement as HTMLElement).className).toBe('contents');
+    expect((p.feed.parentElement as HTMLElement).className).toBe('contents');
+    // The phone shape is a touch-only media variant: no effect on a fine pointer.
+    expect(p.row.className).toBe('flex items-center gap-2 pointer-coarse:flex-wrap');
+    expect(p.field.className).toContain('pointer-coarse:order-first pointer-coarse:basis-full');
+    expect(p.send.className).toContain('pointer-coarse:ml-auto');
+    fireEvent.focus(p.field);
+    expect(p.main.hasAttribute('data-writing')).toBe(false);
+    expect(p.form.hasAttribute('data-writing-composer')).toBe(false);
+    expect(p.field.className).toContain('min-h-11');
+  });
+
+  it('on a touch device folds the parts above, hides the feed, grows the field, and comes back on blur', () => {
+    stubPointer(true);
+    const { container } = renderHome({ writingMode: true, error: true });
+    const p = parts(container);
+    expect(p.main.getAttribute('data-writing')).toBe('ready');
+    expect(p.form.hasAttribute('data-writing-composer')).toBe(true);
+    for (const part of [p.laws, p.mode, p.intent]) {
+      expect((part.parentElement as HTMLElement).className).toBe('writing-fold');
+    }
+    const feed = p.feed.parentElement as HTMLElement;
+    expect(feed.className).toContain('transition-opacity duration-250');
+    expect(within(feed).getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(p.root.className).toContain('border-app-border pt-6 transition-[padding,border-color]');
+    expect(p.footer.className).toContain('writing-fold');
+
+    fireEvent.focus(p.field);
+    expect(p.main.getAttribute('data-writing')).toBe('on');
+    for (const part of [p.laws, p.mode, p.intent]) {
+      expect((part.parentElement as HTMLElement).className).toBe('writing-folded -mt-4');
+    }
+    expect(feed.className).toContain('invisible');
+    expect(feed.className).toContain('max-h-0');
+    expect(feed.className).not.toContain('transition');
+    expect(p.root.className).toContain('border-transparent pt-0');
+    expect(p.field.className).toContain('min-h-26');
+    expect(p.footer.className).toContain('writing-folded');
+
+    fireEvent.blur(p.field);
+    expect(p.main.getAttribute('data-writing')).toBe('ready');
+    expect((p.laws.parentElement as HTMLElement).className).toBe('writing-fold');
+    expect(feed.className).not.toContain('invisible');
+    expect(p.field.className).toContain('min-h-11');
+  });
+
+  it('keeps the field focused on a press of send while writing', () => {
+    stubPointer(true);
+    const { container } = renderHome({ writingMode: true });
+    const p = parts(container);
+    expect(fireEvent.pointerDown(p.send)).toBe(true);
+    fireEvent.focus(p.field);
+    expect(fireEvent.pointerDown(p.send)).toBe(false);
+    expect(
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'Add a photo or video' })),
+    ).toBe(false);
+  });
+
+  it('ends writing mode while a post is sending', () => {
+    stubPointer(true);
+    const view = renderHome({ writingMode: true });
+    const p = parts(view.container);
+    fireEvent.focus(p.field);
+    expect(p.main.getAttribute('data-writing')).toBe('on');
+    view.rerenderHome({ writingMode: true, posting: true });
+    expect(p.main.getAttribute('data-writing')).toBe('ready');
+  });
+
+  it('a reply field on the forum home starts no writing mode', () => {
+    stubPointer(true);
+    const { container } = renderHome({
+      writingMode: true,
+      expandedId: SAMPLE.id,
+      replies: [],
+    });
+    const reply = screen
+      .getAllByRole('textbox')
+      .find((node) => node.getAttribute('aria-label') !== 'Your message')!;
+    expect(reply).toBeTruthy();
+    fireEvent.focus(reply);
+    expect(container.querySelector('main')!.getAttribute('data-writing')).toBe('ready');
+    expect(reply.closest('[data-writing-composer]')).toBeNull();
   });
 });

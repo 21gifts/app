@@ -1084,7 +1084,7 @@ Fill `AppShell` `align="start"` with `topRight={<SignedInChrome />}` and a fallb
 - No Forum heading. **Do not reintroduce** one.
 - Laws `Banner`.
 - `ForumModeSelect`: one closed full-width combobox showing the selected label and ChevronDown; open listbox with a check on the selected row; unpaid count chip on the closed trigger when the count is positive and unpaid is not selected; omitted at 0 and when unpaid is selected. Not a pill grid.
-- Composer.
+- Composer. On a touch device (`pointer-coarse:`) the Post composer always has its phone shape: the textarea on top at full width (`order-first basis-full`), then one row with attach and place on the left and send on the right (`ml-auto`). Writing mode (that textarea focused, touch only, `useComposerWriting`): the page glyph and `h1`, the laws banner, the mode select, the Post / Ask pill, the divider above the composer and the wallet footer fold away (`writing-fold` → `writing-folded`, one 250 ms `ease-fold`, visibility switched after the fade); the feed hides at once and fades back in; the frame drops its padding and `rounded-3xl` border, the chrome row tightens to `pt-2`, the textarea grows to `min-h-26`; after the fold the scrollport settles with the composer 8 px under the chrome. Reply, inbox and every other composer keep their layout.
 - Note cards / empty / loading / error (`middle`): amount `formatBitcoin` plus optional `·` `formatFiatDisplay` of the amount stored when the payment was made (string as-is, a null or missing stored field uses the spot rate). Top-level notes tagged `#21GiftsShop` show a `#Shop` pill (`forum.shopTag` → `/shops`) and hide the raw token. Posts show React (`forum.react`) and do not show Gift / Send Bitcoin. Nested replies show Gift pay (`forum.pay` = “Send Bitcoin”) when `payable`. Load error is `role="alert"` `text-app-danger` + labeled **Try again**. Footer `gap-5`. A moderator sees **Edit shop note** after copy on a top-level shop note, then icon-only Trash2 + inline confirm.
 - `IntroduceYourselfOverlay` (scrim `bg-app-overlay`, Card panel, IconButton close, labeled `Button` CTA) when setup is complete and the member has not posted. No other screen shows it.
 - `RequirementsOverlay` (same overlay chrome, no Skip) when a post is missing a name, username, or rules agreement, or explains the missing wallet.
@@ -1092,7 +1092,7 @@ Fill `AppShell` `align="start"` with `topRight={<SignedInChrome />}` and a fallb
 
 Author names with `accountId` open `/members/[accountId]`.
 
-Handbook states: place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords, shop-edit, shop-edit-open, shop-edit-place, shop-edit-text, shop-edit-user, shop-edit-summary.
+Handbook states: composer-touch, writing, place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords, shop-edit, shop-edit-open, shop-edit-place, shop-edit-text, shop-edit-user, shop-edit-summary.
 
 ### `/wallet`
 
