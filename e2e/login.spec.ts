@@ -441,7 +441,7 @@ test('signed-in session hydrates, saves a name, agrees to the rules, and reaches
 
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-  await expect(page.getByLabel('Your message')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Send a gift' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Edit' })).toHaveCount(0);

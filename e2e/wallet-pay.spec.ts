@@ -1,6 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fulfillSpot, spotRatesFromStats } from './fx-spot';
 
+/** Opens the forum home writer from the floating + (the composer is not on the page). */
+async function openHomeWriter(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Write a post' }).click();
+  await expect(page.locator('[data-writing-composer]')).toBeVisible();
+}
+
 /**
  * In-app wallet pay slot of the gift pay sheet. The in-app wallet is the only
  * way to pay: there is no invoice QR and no link to another wallet app.
@@ -358,6 +364,7 @@ test('Function: WalletPay — the posting fee confirm says Pay ₿1 and post wit
   });
   await page.goto('/welcome?visual=wallet-pay-confirm');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await openHomeWriter(page);
   await page.getByLabel('Your message').fill('Paid and posted');
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   const sheet = page.locator('[data-pay-sheet]');
@@ -488,6 +495,7 @@ test('Function: ForumLoader — paying the posting fee from the wallet shows the
   });
   await page.goto('/welcome?visual=wallet-pay-paying');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await openHomeWriter(page);
   await page.getByLabel('Your message').fill(text);
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   const sheet = page.locator('[data-pay-sheet]');

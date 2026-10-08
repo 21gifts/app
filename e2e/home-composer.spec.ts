@@ -1,11 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
-import { stubCamera } from './camera';
 
 /** First living-room law, shown in the laws hint above the composer. */
 const LAWS_1 = '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.';
 
 /** Signs in Ada (laws hint not dismissed) with an account that can hold the wallet. */
-async function signInAda(page: Page): Promise<void> {
+async function signInAda(page: Page, role = 'basis'): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -16,7 +15,7 @@ async function signInAda(page: Page): Promise<void> {
       body: JSON.stringify({
         id: 'acc_e2e',
         linkingKey: `02${'a'.repeat(62)}`,
-        role: 'basis',
+        role,
         name: 'Ada',
         username: 'ada',
         location: null,
@@ -39,13 +38,13 @@ async function signInAda(page: Page): Promise<void> {
   });
 }
 
-/** A short paid feed with no replies yet. */
-async function feed(page: Page): Promise<void> {
-  const messages = Array.from({ length: 3 }, (_, index) => ({
+/** A paid feed with no replies yet; a top-level post comes back as the newest note. */
+async function feed(page: Page, length = 3): Promise<void> {
+  const messages = Array.from({ length }, (_, index) => ({
     id: `m${index + 1}`,
     name: 'Carol',
     text: `Note number ${index + 1} on the forum home.`,
-    createdAt: `2026-08-28T1${index}:00:00.000Z`,
+    createdAt: `2026-08-28T1${index % 10}:00:00.000Z`,
     sats: 21,
     payable: true,
     hasPhoto: false,
@@ -56,6 +55,25 @@ async function feed(page: Page): Promise<void> {
     // The inbox page itself (`/messages?c=…`) is a document, not the feed.
     if (route.request().resourceType() === 'document') {
       await route.fallback();
+      return;
+    }
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON() as { text: string };
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'm-new',
+          name: 'Ada',
+          text: body.text,
+          createdAt: '2026-08-28T20:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'verified',
+          replyCount: 0,
+        }),
+      });
       return;
     }
     await route.fulfill({
@@ -124,250 +142,236 @@ async function appHeight(page: Page): Promise<string> {
   );
 }
 
-/** What the forum home shows around the composer, for before/after comparisons. */
-async function frame(page: Page): Promise<{ radius: string; pad: string; writing: string | null }> {
+/** The page scrollport (not the writer's). */
+function pagePort(page: Page) {
+  return page.locator('[data-scrollport]:has(> [data-scroll-page])');
+}
+
+/** The open writer: the layer over the frame body, holding the composer. */
+function writer(page: Page) {
+  return page.locator('[data-app-body] [data-scrollport]:has([data-writing-composer])');
+}
+
+/** The --footer-collapse progress on the frame body (0 when unset). */
+async function collapse(page: Page): Promise<number> {
   return page.evaluate(() => {
-    const main = document.querySelector('main')!;
-    const shell = document.querySelector('[data-app-frame]')!;
-    return {
-      radius: getComputedStyle(shell).borderTopLeftRadius,
-      pad: getComputedStyle(main).paddingTop,
-      writing: main.getAttribute('data-writing'),
-    };
+    const body = document.querySelector('[data-app-body]') as HTMLElement;
+    const value = body.style.getPropertyValue('--footer-collapse');
+    return value === '' ? 0 : Number(value);
   });
 }
 
-/** Waits until the settle scroll after the fold has put the composer just under the header row. */
-async function settled(page: Page): Promise<void> {
-  let last = Number.NaN;
-  await expect
-    .poll(async () => {
-      const top = await page.evaluate(() => {
-        const port = document.querySelector('[data-scrollport][data-scroll-active]')!;
-        const form = document.querySelector('[data-writing-composer]')!;
-        return form.getBoundingClientRect().top - port.getBoundingClientRect().top;
-      });
-      const still = top === last;
-      last = top;
-      return still && top <= 8;
-    })
-    .toBe(true);
+/** Sets the page scroll position and announces it. */
+async function scrollPageTo(page: Page, top: number): Promise<void> {
+  await pagePort(page).evaluate((node, next) => {
+    node.scrollTop = next;
+  }, top);
+  await expect.poll(async () => pagePort(page).evaluate((node) => node.scrollTop)).toBe(top);
 }
 
-async function openHome(page: Page): Promise<void> {
-  await signInAda(page);
-  await feed(page);
+async function openHome(page: Page, role = 'basis', length = 3): Promise<void> {
+  await signInAda(page, role);
+  await feed(page, length);
   await page.goto('/welcome?visual=balance-ready');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
   await expect(page.getByText('Note number 1 on the forum home.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
 }
 
-test.describe('forum home composer on a touch device', () => {
+test.describe('forum home writer on a phone', () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 375, height: 812 } });
 
-  test('Function: useComposerWriting — the text field sits on top, photo and place left and send right below it, at rest and while writing', async ({
+  test('Function: AppShellOverlay — the home has a + instead of a composer; the writer opens under the header row with the field focused', async ({
     page,
   }) => {
     await openHome(page);
-    const field = page.getByLabel('Your message');
-    const boxes = async () => ({
-      field: (await field.boundingBox())!,
-      photo: (await page.getByRole('button', { name: 'Add a photo or video' }).boundingBox())!,
-      place: (await page.getByRole('button', { name: 'Add a place' }).boundingBox())!,
-      post: (await page.getByRole('button', { name: 'Post', exact: true }).boundingBox())!,
-    });
-    for (const writing of [false, true]) {
-      if (writing) {
-        await field.tap();
-        await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
-        await settled(page);
-      }
-      const box = await boxes();
-      expect(box.photo.y).toBeGreaterThanOrEqual(box.field.y + box.field.height);
-      expect(Math.abs(box.photo.y - box.post.y)).toBeLessThan(1);
-      expect(Math.abs(box.place.y - box.post.y)).toBeLessThan(1);
-      expect(box.photo.x).toBeLessThan(box.place.x);
-      expect(box.place.x + box.place.width).toBeLessThan(box.post.x);
-      // Send ends where the full-width field ends.
-      expect(Math.abs(box.post.x + box.post.width - (box.field.x + box.field.width))).toBeLessThan(
-        1,
-      );
-      expect(Math.abs(box.photo.x - box.field.x)).toBeLessThan(1);
-    }
-  });
-
-  test('Function: useComposerWriting — focus folds the parts above, hides the feed and the footer; send keeps the focus; blur brings everything back', async ({
-    page,
-  }) => {
-    await openHome(page);
-    const atRest = await frame(page);
-    expect(atRest).toEqual({ radius: '24px', pad: '8px', writing: 'ready' });
-    const field = page.getByLabel('Your message');
-    const restHeight = (await field.boundingBox())!.height;
-
-    await field.tap();
-    await expect(field).toBeFocused();
-    await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
-    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeHidden();
-    await expect(page.getByText(LAWS_1)).toBeHidden();
-    await expect(page.getByRole('combobox', { name: 'Forum view' })).toBeHidden();
-    await expect(page.getByRole('group', { name: 'Compose' })).toBeHidden();
-    await expect(page.getByText('Note number 1 on the forum home.')).toBeHidden();
-    await expect(page.getByRole('button', { name: 'Receive' })).toBeHidden();
-    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeHidden();
-    await expect(page.locator('[data-app-frame]')).toHaveCSS('border-top-left-radius', '0px');
-    await expect(page.locator('main')).toHaveCSS('padding-top', '0px');
-    await expect.poll(async () => (await field.boundingBox())!.height).toBeGreaterThan(100);
-    expect(restHeight).toBeLessThan(100);
-    // After the fold the composer sits just under the header row.
-    await settled(page);
-
-    // A tap on send (empty text) keeps the field focused: nothing moves under the finger.
-    const post = page.getByRole('button', { name: 'Post', exact: true });
-    const before = (await post.boundingBox())!;
-    await post.tap();
-    await expect(page.getByText('Enter a message or add a photo or video')).toBeVisible();
-    await expect(field).toBeFocused();
-    await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
-    expect((await post.boundingBox())!.y).toBeCloseTo(before.y, 0);
-
-    await field.blur();
-    await expect(page.locator('main')).toHaveAttribute('data-writing', 'ready');
-    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    // No composer, no Post / Ask pill on the page; the laws hint and the view filter stay.
+    await expect(page.getByLabel('Your message')).toHaveCount(0);
+    await expect(page.getByRole('group', { name: 'Compose' })).toHaveCount(0);
     await expect(page.getByText(LAWS_1)).toBeVisible();
     await expect(page.getByRole('combobox', { name: 'Forum view' })).toBeVisible();
-    await expect(page.getByText('Note number 1 on the forum home.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
-    await expect(page.locator('[data-app-frame]')).toHaveCSS('border-top-left-radius', '24px');
-    await expect.poll(() => frame(page)).toEqual(atRest);
+
+    const plus = page.getByRole('button', { name: 'Write a post' });
+    const plusBox = (await plus.boundingBox())!;
+    const receive = (await page.getByRole('button', { name: 'Receive' }).boundingBox())!;
+    expect(plusBox.width).toBe(56);
+    expect(plusBox.height).toBe(56);
+    expect(375 - (plusBox.x + plusBox.width)).toBeCloseTo(24, 0);
+    expect(receive.y - (plusBox.y + plusBox.height)).toBeCloseTo(23, 0);
+
+    await plus.tap();
+    const layer = writer(page);
+    await expect(layer).toBeVisible();
+    await expect(page.getByLabel('Your message')).toBeFocused();
+    await expect(layer.getByRole('heading', { name: 'Send a post' })).toBeVisible();
+    await expect(layer.getByRole('group', { name: 'Compose' })).toBeVisible();
+    await expect(plus).toHaveCount(0);
+
+    // From the header row's bottom edge to the frame's, with the frame background.
+    const chrome = (await page.locator('[data-app-chrome]').boundingBox())!;
+    const body = (await page.locator('[data-app-body]').boundingBox())!;
+    const box = (await layer.boundingBox())!;
+    expect(box.y).toBeCloseTo(chrome.y + chrome.height, 0);
+    expect(box.y + box.height).toBeCloseTo(body.y + body.height, 0);
+    expect(box.width).toBeCloseTo(body.width, 0);
+    await expect(layer).toHaveCSS('border-bottom-left-radius', '24px');
+    await expect(layer).toHaveCSS('position', 'absolute');
+
+    // It covers the feed and Receive / Send.
+    const covered = await page.evaluate(() => {
+      const button = [...document.querySelectorAll('footer button')].find(
+        (node) => node.textContent === 'Receive',
+      )!;
+      const rect = button.getBoundingClientRect();
+      const top = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+      const layer = document.querySelector('[data-writing-composer]')!.parentElement!;
+      return top !== null && layer.contains(top);
+    });
+    expect(covered).toBe(true);
   });
 
-  test('Function: useComposerWriting — a reply field and the inbox composer change nothing', async ({
+  test('Function: WelcomeScreen — the top-left arrow closes the writer; the feed comes back where it was and the draft stays', async ({
+    page,
+  }) => {
+    await openHome(page, 'basis', 12);
+    await scrollPageTo(page, 300);
+    await page.getByRole('button', { name: 'Write a post' }).tap();
+    await expect(writer(page)).toBeVisible();
+    await page.getByLabel('Your message').fill('A draft for later');
+    // One back control: the top-left arrow, no close or cancel button in the writer.
+    await expect(page.getByRole('button', { name: 'Back' })).toHaveCount(1);
+    await expect(writer(page).getByRole('button', { name: /Close|Cancel/ })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Back' }).tap();
+    await expect(writer(page)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Back' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
+    expect(await pagePort(page).evaluate((node) => node.scrollTop)).toBe(300);
+
+    await page.getByRole('button', { name: 'Write a post' }).tap();
+    await expect(page.getByLabel('Your message')).toHaveValue('A draft for later');
+  });
+
+  test('Function: SignedInChrome — the Menu opened over the writer shows its sheet; the writer comes back when it closes', async ({
     page,
   }) => {
     await openHome(page);
-    const atRest = await frame(page);
-    await page.getByRole('button', { name: 'React' }).first().tap();
-    const reply = page.getByPlaceholder('Write a reaction');
-    await reply.tap();
-    await expect(reply).toBeFocused();
-    await page.waitForTimeout(400);
-    expect(await frame(page)).toEqual(atRest);
-    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await expect(page.getByText(LAWS_1)).toBeVisible();
-    await expect(page.getByText('Note number 2 on the forum home.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
-
-    await page.route(/\/conversations$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          conversations: [
-            {
-              id: 'conv-21',
-              kind: 'member_platform',
-              name: '21.gifts',
-              lastText: 'Hello team',
-              lastAt: '2026-08-28T12:00:00.000Z',
-              lastFromMe: false,
-              lastSats: 0,
-            },
-          ],
-        }),
-      });
-    });
-    await page.route(/\/conversations\/conv-21(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          messages: [
-            {
-              id: 'i1',
-              name: '21.gifts',
-              text: 'Hello team',
-              createdAt: '2026-08-28T12:00:00.000Z',
-              fromMe: false,
-              sats: 0,
-            },
-          ],
-        }),
-      });
-    });
-    await page.goto('/messages?c=conv-21');
-    await expect(page.getByText('Hello team').last()).toBeVisible();
-    const inboxRest = await frame(page);
-    expect(inboxRest).toEqual({ radius: '24px', pad: '8px', writing: null });
-    const inboxField = page.locator('form textarea').last();
-    await inboxField.tap();
-    await expect(inboxField).toBeFocused();
-    await page.waitForTimeout(400);
-    expect(await frame(page)).toEqual(inboxRest);
-    await expect(page.locator('[data-writing-composer]')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Write a post' }).tap();
+    await page.getByLabel('Your message').fill('Kept while the Menu is open');
+    await page.getByRole('button', { name: 'Menu' }).tap();
+    await expect(page.getByRole('link', { name: 'Balance', exact: true })).toBeVisible();
+    await expect(writer(page)).toBeHidden();
+    await page.getByRole('button', { name: 'Menu' }).tap();
+    await expect(writer(page)).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveValue('Kept while the Menu is open');
   });
 
-  test('Function: useComposerWriting — the Ask-for-money wizard, wallet Send manual entry and the shop wizard change nothing', async ({
+  test('Function: ForumBoard — the writer keeps the phone shape: the field on top, photo and place left and send right below it', async ({
     page,
   }) => {
-    await stubCamera(page, { kind: 'blank' });
     await openHome(page);
-    const atRest = await frame(page);
-
-    // Ask for money: its amount field is not the Post composer.
-    await page.getByRole('button', { name: 'Ask for money' }).tap();
-    const ask = page.getByLabel('Ask', { exact: true });
-    await ask.tap();
-    await expect(ask).toBeFocused();
-    await page.waitForTimeout(400);
-    // Without the Post composer on the page the shell has no writing mode at all.
-    expect(await frame(page)).toEqual({ ...atRest, writing: null });
-    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await expect(page.getByText(LAWS_1)).toBeVisible();
-
-    // Wallet Send, manual entry, over the same forum home.
-    await page.goto('/welcome?visual=send-input');
-    const region = page.getByRole('region', { name: 'Send Bitcoin' });
-    await expect(region.locator('video')).toBeVisible();
-    const sendRest = await frame(page);
-    await region.getByRole('button', { name: 'Enter manually' }).tap();
-    const manual = region.getByLabel('Payment request or address');
-    await expect(manual).toBeFocused();
-    await page.waitForTimeout(400);
-    expect(await frame(page)).toEqual(sendRest);
-    expect(sendRest.writing).not.toBe('on');
-
-    // The shop wizard on /shops.
-    await page.goto('/shops');
-    await page.getByRole('button', { name: 'Add a shop' }).tap();
-    await page.getByRole('button', { name: 'Next' }).tap();
-    await page.getByRole('button', { name: 'Next' }).tap();
-    const shopText = page.getByLabel('Shop text');
-    await shopText.tap();
-    await expect(shopText).toBeFocused();
-    await page.waitForTimeout(400);
-    expect(await frame(page)).toEqual({ radius: '24px', pad: '8px', writing: null });
-    await expect(page.locator('[data-writing-composer]')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Write a post' }).tap();
+    const field = (await page.getByLabel('Your message').boundingBox())!;
+    const photo = (await page.getByRole('button', { name: 'Add a photo or video' }).boundingBox())!;
+    const place = (await page.getByRole('button', { name: 'Add a place' }).boundingBox())!;
+    const post = (await page.getByRole('button', { name: 'Post', exact: true }).boundingBox())!;
+    expect(photo.y).toBeGreaterThanOrEqual(field.y + field.height);
+    expect(Math.abs(photo.y - post.y)).toBeLessThan(1);
+    expect(Math.abs(place.y - post.y)).toBeLessThan(1);
+    expect(photo.x).toBeLessThan(place.x);
+    expect(Math.abs(post.x + post.width - (field.x + field.width))).toBeLessThan(1);
   });
 
-  test('Function: useAppHeight — leaving the composer takes the full height at once; leaving a reply waits for the viewport', async ({
+  test('Function: ForumLoader — a post from the writer closes it, and the post appears on the home', async ({
+    page,
+  }) => {
+    await openHome(page, 'verified');
+    await page.getByRole('button', { name: 'Write a post' }).tap();
+    await page.getByLabel('Your message').fill('Hello from the writer');
+    await page.getByRole('button', { name: 'Post', exact: true }).tap();
+    await expect(writer(page)).toHaveCount(0);
+    await expect(page.getByText('Hello from the writer')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
+    // The draft was cleared with the post.
+    await page.getByRole('button', { name: 'Write a post' }).tap();
+    await expect(page.getByLabel('Your message')).toHaveValue('');
+  });
+
+  test('Function: ForumAskWizard — Ask for money in the writer: its own title, and the arrow steps back through the Ask before it closes the writer', async ({
+    page,
+  }) => {
+    await openHome(page);
+    await page.getByRole('button', { name: 'Write a post' }).tap();
+    await writer(page).getByRole('button', { name: 'Ask for money' }).tap();
+    await expect(writer(page).getByRole('heading', { name: 'Ask for money' })).toBeVisible();
+    await expect(writer(page).getByText('How much?')).toBeVisible();
+    await page.getByLabel('Ask', { exact: true }).fill('5000');
+    await page.getByRole('button', { name: 'Continue' }).tap();
+    await expect(writer(page).getByText('2 of 4')).toBeVisible();
+    await page.getByRole('button', { name: 'Back' }).tap();
+    await expect(writer(page).getByText('1 of 4')).toBeVisible();
+    await page.getByRole('button', { name: 'Back' }).tap();
+    await expect(writer(page)).toHaveCount(0);
+    // Reopening keeps the Ask and its amount.
+    await page.getByRole('button', { name: 'Write a post' }).tap();
+    await expect(writer(page).getByRole('heading', { name: 'Ask for money' })).toBeVisible();
+    await expect(page.getByLabel('Ask', { exact: true })).toHaveValue('5000');
+  });
+
+  test('Function: WalletFooterActions — Receive and Send slim down while scrolling down and grow back while scrolling up; the + follows', async ({
+    page,
+  }) => {
+    await openHome(page, 'basis', 12);
+    const receive = page.getByRole('button', { name: 'Receive' });
+    const plus = page.getByRole('button', { name: 'Write a post' });
+    expect((await receive.boundingBox())!.height).toBe(56);
+    await expect(receive).toHaveCSS('font-size', '16px');
+
+    await scrollPageTo(page, 200);
+    await expect.poll(() => collapse(page)).toBe(1);
+    await expect.poll(async () => (await receive.boundingBox())!.height).toBe(36);
+    await expect(receive).toHaveCSS('font-size', '14px');
+    await expect(receive.locator('svg')).toHaveCSS('width', '16px');
+    await expect(page.locator('footer')).toHaveCSS('padding-bottom', '12px');
+    await expect(page.locator('[data-footer-actions]')).toHaveCSS('padding-top', '4px');
+    const slimPlus = (await plus.boundingBox())!;
+    const slimReceive = (await receive.boundingBox())!;
+    expect(slimReceive.y - (slimPlus.y + slimPlus.height)).toBeCloseTo(23, 0);
+
+    // Up by the full range: full again, though the page is not at the top.
+    await scrollPageTo(page, 110);
+    await expect.poll(() => collapse(page)).toBe(0);
+    await expect.poll(async () => (await receive.boundingBox())!.height).toBe(56);
+
+    // Stopping half way glides to the nearer end.
+    await scrollPageTo(page, 160);
+    await expect.poll(() => collapse(page)).toBe(1);
+    await scrollPageTo(page, 120);
+    await expect.poll(() => collapse(page)).toBe(1);
+    await expect(page.locator('[data-app-body]')).toHaveAttribute('data-footer-snap', '');
+
+    // Near the top it is always full.
+    await scrollPageTo(page, 10);
+    await expect.poll(() => collapse(page)).toBe(0);
+    await expect(page.locator('footer')).toHaveCSS('padding-bottom', '20px');
+  });
+
+  test('Function: useAppHeight — closing the writer takes the full height at once; leaving a reply waits for the viewport', async ({
     page,
   }) => {
     await drivenViewport(page);
     await openHome(page);
     expect(await appHeight(page)).toBe('812px');
 
-    const field = page.getByLabel('Your message');
-    await field.tap();
+    await page.getByRole('button', { name: 'Write a post' }).tap();
+    await expect(page.getByLabel('Your message')).toBeFocused();
     await keyboard(page, 480);
     expect(await appHeight(page)).toBe('480px');
-    await field.blur();
+    // The writer moves with the frame: it still ends at the frame's bottom edge.
+    const body = (await page.locator('[data-app-body]').boundingBox())!;
+    const box = (await writer(page).boundingBox())!;
+    expect(box.y + box.height).toBeCloseTo(body.y + body.height, 0);
+    await page.getByRole('button', { name: 'Back' }).tap();
     // The keyboard is still sliding away (the viewport still says 480): the frame is already full.
-    expect(await appHeight(page)).toBe('812px');
-    await page.evaluate(() => {
-      (window as unknown as { __vvFire: (type: string) => void }).__vvFire('scroll');
-    });
     expect(await appHeight(page)).toBe('812px');
     await keyboard(page, null);
     expect(await appHeight(page)).toBe('812px');
@@ -383,40 +387,54 @@ test.describe('forum home composer on a touch device', () => {
     expect(await appHeight(page)).toBe('812px');
   });
 
-  test('Function: useComposerWriting — with reduced motion the same end states come without animation', async ({
+  test('Function: WalletFooterActions — with reduced motion the buttons settle at once, without the glide', async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await openHome(page);
-    await page.getByLabel('Your message').tap();
-    await expect(page.locator('main')).toHaveAttribute('data-writing', 'on');
-    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeHidden();
-    await expect(page.getByRole('button', { name: 'Receive' })).toBeHidden();
-    const timing = await page.evaluate(() => {
-      const part = document.querySelector('h1')!.parentElement!;
-      const style = getComputedStyle(part);
-      return { duration: style.transitionDuration, delay: style.transitionDelay };
-    });
-    expect(timing.duration.split(', ').every((value) => parseFloat(value) < 0.001)).toBe(true);
-    expect(timing.delay.split(', ').every((value) => value === '0s')).toBe(true);
+    await openHome(page, 'basis', 12);
+    await scrollPageTo(page, 60);
+    await expect.poll(() => collapse(page)).toBe(1);
+    await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-snap');
   });
 });
 
-test('Function: useComposerWriting — a desktop pointer keeps the forum home as it was', async ({
+test('Function: WalletFooterActions — /wallet follows the scroll too and has no +; other pages keep their own composers', async ({
+  page,
+}) => {
+  await signInAda(page);
+  await feed(page);
+  await page.goto('/wallet?visual=history-rows');
+  await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Write a post' })).toHaveCount(0);
+  const port = pagePort(page);
+  const room = await port.evaluate((node) => node.scrollHeight - node.clientHeight);
+  expect(room).toBeGreaterThan(100);
+  await scrollPageTo(page, 100);
+  await expect.poll(() => collapse(page)).toBe(1);
+  await expect
+    .poll(async () => (await page.getByRole('button', { name: 'Receive' }).boundingBox())!.height)
+    .toBe(36);
+
+  await page.goto('/shops');
+  await expect(page.getByRole('button', { name: 'Add a shop' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Write a post' })).toHaveCount(0);
+
+  await page.goto('/contact');
+  await expect(page.getByRole('button', { name: 'Write a post' })).toHaveCount(0);
+  await expect(page.locator('form textarea').first()).toBeVisible();
+});
+
+test('Function: AppShellOverlay — on a desktop pointer the + opens the same writer', async ({
   page,
 }) => {
   await openHome(page);
-  const atRest = await frame(page);
-  expect(atRest).toEqual({ radius: '24px', pad: '8px', writing: null });
-  const field = page.getByLabel('Your message');
-  const fieldBox = (await field.boundingBox())!;
+  await page.getByRole('button', { name: 'Write a post' }).click();
+  await expect(writer(page)).toBeVisible();
+  await expect(page.getByLabel('Your message')).toBeFocused();
+  const field = (await page.getByLabel('Your message').boundingBox())!;
   const post = (await page.getByRole('button', { name: 'Post', exact: true }).boundingBox())!;
-  // One row: photo, place, text field, send.
-  expect(Math.abs(fieldBox.y + fieldBox.height / 2 - (post.y + post.height / 2))).toBeLessThan(2);
-  await field.focus();
-  await page.waitForTimeout(400);
-  expect(await frame(page)).toEqual(atRest);
-  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-  await expect(page.getByText('Note number 1 on the forum home.')).toBeVisible();
-  await expect(page.locator('[data-writing-composer]')).toHaveCount(0);
+  // One row on a fine pointer: photo, place, text field, send.
+  expect(Math.abs(field.y + field.height / 2 - (post.y + post.height / 2))).toBeLessThan(2);
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(writer(page)).toHaveCount(0);
 });

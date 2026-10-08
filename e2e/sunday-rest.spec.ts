@@ -1,4 +1,10 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+/** Opens the forum home writer from the floating + (the composer is not on the page). */
+async function openHomeWriter(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Write a post' }).click();
+  await expect(page.locator('[data-writing-composer]')).toBeVisible();
+}
 
 const ACCOUNT = {
   id: 'acc_e2e',
@@ -49,6 +55,7 @@ test('Function: useLocalSunday — Sunday replaces the forum composer', async ({
   });
   await mockForum(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.getByText('Writing is paused on Sunday.').first()).toBeVisible();
 });
 
@@ -59,6 +66,7 @@ test('Function: SundayWritingGate — the message field is not shown on Sunday',
   });
   await mockForum(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.getByRole('textbox', { name: 'Your message' })).toHaveCount(0);
 });
 
@@ -69,6 +77,7 @@ test('Function: deviceTimeZoneHeader — a weekday still shows the composer', as
   });
   await mockForum(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.getByRole('textbox', { name: 'Your message' })).toBeVisible();
   await expect(page.getByText('Writing is paused on Sunday.')).toHaveCount(0);
 });
