@@ -173,8 +173,8 @@ export function ShopTable({
                       {shopDisplayName(row)}
                       <ShopNoteEditControl
                         message={row}
+                        {...(onShopsChanged !== undefined ? { onSaved: onShopsChanged } : {})}
                         onUpdated={(updated) => {
-                          onShopsChanged?.();
                           setRows((current) => {
                             /* v8 ignore next 3 -- the table is on screen before a row editor can save */
                             if (current === null) {

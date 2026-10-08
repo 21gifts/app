@@ -40,9 +40,11 @@ type GoogleMapsNamespace = {
 function ShopPinEdit({
   placeId,
   onUpdated,
+  onSaved,
 }: {
   placeId: string;
   onUpdated: (message: ForumMessage) => void;
+  onSaved?: (() => void) | undefined;
 }): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
@@ -58,6 +60,7 @@ function ShopPinEdit({
         <ShopNoteEditControl
           message={message}
           startOpen
+          {...(onSaved !== undefined ? { onSaved } : {})}
           onUpdated={(updated) => {
             setMessage(updated);
             onUpdated(updated);
@@ -150,12 +153,13 @@ function loadGoogleMaps(key: string): Promise<void> {
  *
  * Without a Google key the places stay a list of links. A key draws the
  * same places as markers and does not replace the list. With a country, the
- * list and the markers keep only the pins in that country (`countryCode`) and
- * the map fits those pins; none left is the empty copy.
+ * list and the markers keep only the shop pins in that country (`shop` and
+ * `countryCode`, the same pins the country filter counts) and the map fits
+ * those pins; none left is the empty copy.
  *
  * @param props - `embedded` omits the Map heading and card so `/shops` can reuse the body;
- * `country` (ISO 3166-1 alpha-2, or null for every pin) narrows the pins; `onShopsChanged`
- * runs after a moderator saves a shop pin.
+ * `country` (ISO 3166-1 alpha-2, or null for every pin) narrows the pins to that country's
+ * shops; `onShopsChanged` runs once after a moderator saves a shop in full.
  * @returns The map card, or only the body when `embedded` is true.
  */
 export function PlacesMapScreen({
@@ -174,7 +178,7 @@ export function PlacesMapScreen({
     () =>
       loadedPlaces === null || country === null
         ? loadedPlaces
-        : loadedPlaces.filter((row) => row.countryCode === country),
+        : loadedPlaces.filter((row) => row.shop === true && row.countryCode === country),
     [loadedPlaces, country],
   );
   const [mapsKey, setMapsKey] = useState<string | null>(null);
@@ -391,8 +395,8 @@ export function PlacesMapScreen({
                 {place.shop === true ? (
                   <ShopPinEdit
                     placeId={place.id}
+                    onSaved={onShopsChanged}
                     onUpdated={(updated) => {
-                      onShopsChanged?.();
                       const pin = updated.place;
                       setPlaces((current) => {
                         /* v8 ignore next 3 -- the list is on screen before a pin editor can save */

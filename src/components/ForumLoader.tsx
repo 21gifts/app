@@ -2741,8 +2741,8 @@ export function ForumLoader({
         {...(account !== null && roleAtLeast(account.role, 'moderator')
           ? {
               shopNoteEdit: true as const,
+              ...(onShopsChanged !== undefined ? { onShopNoteSaved: onShopsChanged } : {}),
               onShopNoteUpdated: (updated: ForumMessage) => {
-                onShopsChanged?.();
                 setPhotoUrls((prev) => {
                   const prefix = `${updated.id}:`;
                   let changed = false;

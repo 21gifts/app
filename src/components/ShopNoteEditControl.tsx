@@ -27,8 +27,10 @@ import { useAuthStore } from '@/stores/auth-store';
 export interface ShopNoteEditControlProps {
   /** Top-level shop note to edit. */
   message: ForumMessage;
-  /** Apply the saved note to the listed row. */
+  /** Apply the saved note to the listed row. Runs after each saved part of the note. */
   onUpdated: (message: ForumMessage) => void;
+  /** Runs once after every changed part of the note is saved. */
+  onSaved?: () => void;
   /** Still previews already loaded for this note, in order. */
   existingPhotos?: readonly string[];
   /** Video preview already loaded for this note. */
@@ -163,12 +165,14 @@ async function ownFeedStills(
  * and 21.gifts user. Absent on replies, hidden notes, non-shop text, and ranks
  * below moderator.
  *
- * @param props - Note, loaded media, and successful-save callback.
+ * @param props - Note, loaded media, the per-part update callback, and the optional
+ * whole-save callback.
  * @returns The pencil, or null when it must not edit.
  */
 export function ShopNoteEditControl({
   message,
   onUpdated,
+  onSaved,
   existingPhotos = [],
   existingVideoUrl,
   startOpen = false,
@@ -395,6 +399,7 @@ export function ShopNoteEditControl({
       }
       onUpdated(latest);
       setOpen(false);
+      onSaved?.();
     } catch {
       setSaveError(true);
     } finally {
