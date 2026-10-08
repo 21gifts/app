@@ -5094,6 +5094,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:country-open",
+    "label": "/shops country-open",
+    "visual": "state-shops-country-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:country",
+    "label": "/shops country",
+    "visual": "state-shops-country",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:map",
     "label": "/shops map",
     "visual": "state-shops-map",

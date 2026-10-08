@@ -1422,6 +1422,25 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('feed="shops" with a country sends that country', async () => {
+    renderWithLocale(<ForumLoader feed="shops" country="PH" />);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('sess', {
+        mode: 'all',
+        limit: 20,
+        hashtag: '21GiftsShop',
+        country: 'PH',
+      });
+    });
+  });
+
+  it('living-room ignores a country', async () => {
+    renderWithLocale(<ForumLoader country="PH" />);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith('sess', { mode: 'active', limit: 20 });
+    });
+  });
+
   it('living-room first fetch does not send hashtag', async () => {
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {

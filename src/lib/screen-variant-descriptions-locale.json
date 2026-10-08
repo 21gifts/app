@@ -4813,5 +4813,15 @@
     "de": "Angemeldete Ada in CHF mit einem aktuellen Kurs. Zahlung anlegen mit 9999999999999 CHF: Das sind mehr Sats, als eine ganze Zahl fassen kann, daher lässt sich der Betrag nicht umrechnen. Hinweis Dieser Betrag lässt sich nicht in Bitcoin umrechnen. Gib ihn in ₿ ein. Es wird keine Belastung gesendet. Die Tastatur bleibt. Kein QR.",
     "es": "Ada con sesión iniciada en CHF con un tipo de cambio actual. Crear pago con 9999999999999 CHF: son más sats de los que cabe en un número entero, así que el importe no se puede convertir. Alerta Este importe no se puede convertir a bitcoin. Escríbelo en ₿. No se envía ningún cargo. El teclado permanece. Sin QR.",
     "fil": "Naka-sign-in si Ada sa CHF na may kasalukuyang rate. Gumawa ng bayad na 9999999999999 CHF: mas maraming sats iyon kaysa kayang hawakan ng buong bilang, kaya hindi ma-convert ang halaga. Alerto Hindi ma-convert sa bitcoin ang halagang ito. Ilagay ito sa ₿. Walang singil na ipinapadala. Nanatili ang keypad. Walang QR."
+  },
+  "/shops:country-open": {
+    "de": "Die geschlossene Auswahl Land wurde gedrückt und ihre Liste ist über dem Schalter Post / Karte / Tabelle geöffnet: Alle Länder mit einem Häkchen, dann Kenia (1) und Philippinen (1), nach Namen sortiert, jeweils mit der Anzahl der Shops. Post bleibt ausgewählt.",
+    "es": "Se pulsó el selector cerrado País y su lista está abierta sobre el selector Publicación / Mapa / Tabla: Todos los países con una marca, luego Kenia (1) y Filipinas (1), ordenados por nombre, cada uno con su número de tiendas. Publicación sigue seleccionada.",
+    "fil": "Pinindot ang nakasarang pagpipilian na Bansa at bukas ang listahan nito sa ibabaw ng Post / Mapa / Talahanayan: Lahat ng bansa na may tsek, saka Kenya (1) at Pilipinas (1), nakaayos ayon sa pangalan, bawat isa may bilang ng shop. Nananatiling napili ang Post."
+  },
+  "/shops:country": {
+    "de": "Philippinen (1) wurde in der Liste Land gewählt, während Tabelle ausgewählt war. Die Auswahl zeigt Philippinen (1) und die Adresse ist /shops?country=PH#table. Die Tabelle listet nur den Shop auf den Philippinen, Sari-sari Manila; der Shop in Kenia ist verschwunden.",
+    "es": "Se eligió Filipinas (1) en la lista País mientras Tabla estaba seleccionada. El selector muestra Filipinas (1) y la dirección es /shops?country=PH#table. La tabla solo muestra la tienda de Filipinas, Sari-sari Manila; la tienda de Kenia ya no aparece.",
+    "fil": "Pinili ang Pilipinas (1) mula sa listahan ng Bansa habang napili ang Talahanayan. Ipinapakita ng pagpipilian ang Pilipinas (1) at ang address ay /shops?country=PH#table. Ang shop lang sa Pilipinas, Sari-sari Manila, ang nasa talahanayan; wala na ang shop sa Kenya."
   }
 }

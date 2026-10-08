@@ -276,6 +276,7 @@ app/
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/Ask-wizard/requirements-overlay state for /welcome and /shops
 │   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading, Post/Map/Table pill, Card surface false)
 │   │   ├── ShopsViewSwitch.tsx  # Post / Map / Table pill on /shops
+│   │   ├── ShopsCountryFilter.tsx # Country select above that pill (All countries + countries with shops)
 │   │   ├── ShopTable.tsx        # Shop name, place, and operator table
 │   │   ├── PlaceField.tsx       # Optional place pin on the top-level forum composer
 │   │   ├── PlacesMapScreen.tsx  # Place list embedded on the shops map tab
@@ -361,6 +362,7 @@ app/
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter and unpaid new-count
 │   │   ├── forum-goal.ts        # parseForumAskAmount and forumGoalPercent for top-level Asks
 │   │   ├── forum-shop.ts        # #21GiftsShop token helpers (isShopNote, stripShopHashtag, ensureShopHashtag)
+│   │   ├── shop-country.ts      # /shops ?country= read and the country list with shop counts
 │   │   ├── forum-unpaid-seen.ts # Last No gifts yet visit stamp in localStorage
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
 │   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos

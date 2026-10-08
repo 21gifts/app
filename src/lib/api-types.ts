@@ -627,6 +627,10 @@ export const forumPlacesResponseSchema = z.object({
       createdAt: z.string().min(1),
       accountId: z.string().min(1).optional(),
       shop: z.boolean().optional(),
+      countryCode: z
+        .string()
+        .regex(/^[A-Z]{2}$/)
+        .nullish(),
     }),
   ),
 });
@@ -641,6 +645,11 @@ export type ForumPlaceRow = ForumPlacePin & {
   accountId?: string | undefined;
   /** True when the note is a shop. Omitted by an older api. */
   shop?: boolean | undefined;
+  /**
+   * ISO 3166-1 alpha-2 code of the country that contains the pin, read by the
+   * api from the coordinates. Null in the open sea; omitted by an older api.
+   */
+  countryCode?: string | null | undefined;
 };
 
 /**

@@ -354,13 +354,17 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
  * `markVisibleForumNoteRead` and does not mark replies that are not that card.
  * Renders nothing when there is no session.
  *
- * @param feed - Optional `'living-room'` (default) or `'shops'`.
+ * @param props - Optional `feed`: `'living-room'` (default) or `'shops'`; optional
+ * `country` (ISO 3166-1 alpha-2) on the shops feed loads only shops pinned in that
+ * country. The parent remounts the loader when the country changes.
  * @returns The forum board, or `null` without a session.
  */
 export function ForumLoader({
   feed = 'living-room',
+  country = null,
 }: {
   feed?: 'living-room' | 'shops';
+  country?: string | null;
 } = {}): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
@@ -605,6 +609,7 @@ export function ForumLoader({
           .join('\0');
 
   const feedHashtag = feed === 'shops' ? SHOP_HASHTAG : undefined;
+  const feedCountry = feed === 'shops' && country !== null ? country : undefined;
   const forumPageArgs = (
     mode: ForumFeedMode,
     extras: { cursor?: string } = {},
@@ -612,11 +617,13 @@ export function ForumLoader({
     mode: ForumFeedMode;
     limit: number;
     hashtag?: string;
+    country?: string;
     cursor?: string;
   } => ({
     mode,
     limit: FORUM_PAGE_LIMIT,
     ...(feedHashtag !== undefined ? { hashtag: feedHashtag } : {}),
+    ...(feedCountry !== undefined ? { country: feedCountry } : {}),
     ...(extras.cursor !== undefined ? { cursor: extras.cursor } : {}),
   });
 

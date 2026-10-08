@@ -778,7 +778,7 @@ Gift options: `min-h-11 min-w-11 px-2 py-1`. Each option: `type="button"` `aria-
 
 ### ForumModeSelect
 
-Closed full-width combobox for the living-room forum view (Active / No gifts yet / All / Most popular). Not a pill grid. Shops does not mount it. Post/Ask stays a SegmentedControl.
+Closed full-width combobox for the living-room forum view (Active / No gifts yet / All / Most popular). Not a pill grid. The shops feed has no view filter; `/shops` mounts this control once, above the Post / Map / Table pill, as the country filter (`ShopsCountryFilter`: **All countries** plus each country that has a shop, labeled with its name and shop count, no chip). Post/Ask stays a SegmentedControl.
 
 ```tsx
 export function ForumModeSelect<T extends string>(props: {

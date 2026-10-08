@@ -1828,12 +1828,13 @@ export type ForumFeedPage = { messages: ForumMessage[]; nextCursor: string | nul
  * Fetches one page of public top-level forum messages (newest first).
  *
  * Sends `GET /forum/messages` with an optional mode, optional hashtag (the
- * name without a leading `#`), and cursor and an always present limit (20 by
- * default).
+ * name without a leading `#`), optional country (ISO 3166-1 alpha-2; only
+ * notes pinned in that country), and cursor and an always present limit (20
+ * by default).
  *
  * @param sessionToken - A bearer token from a completed challenge.
- * @param args - Optional feed mode, hashtag name without `#`, page size, and
- * non-empty page cursor.
+ * @param args - Optional feed mode, hashtag name without `#`, country code,
+ * page size, and non-empty page cursor.
  * @returns The validated page; rows that fail the note schema are dropped and
  * `nextCursor` is kept (`null` when the response omits it).
  * @throws Error with visitor-facing copy when the api is unavailable or the
@@ -1846,6 +1847,7 @@ export async function fetchMessages(
     limit?: number;
     cursor?: string | null;
     hashtag?: string;
+    country?: string;
   } = {},
 ): Promise<ForumFeedPage> {
   try {
@@ -1855,6 +1857,9 @@ export async function fetchMessages(
     }
     if (args.hashtag !== undefined && args.hashtag !== '') {
       query.set('hashtag', args.hashtag);
+    }
+    if (args.country !== undefined && args.country !== '') {
+      query.set('country', args.country);
     }
     query.set('limit', String(args.limit ?? 20));
     if (args.cursor !== undefined && args.cursor !== null && args.cursor !== '') {

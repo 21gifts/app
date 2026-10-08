@@ -21301,6 +21301,77 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-sunday');
   });
 
+  /** Shops in the Philippines and Kenya; the list answers `country` like the api. */
+  async function seedCountryShops(page: Page): Promise<void> {
+    await seedAda(page);
+    const shop = (id: string, text: string, createdAt: string, label: string) => ({
+      id,
+      name: 'Ada',
+      text: `${text}\n\n#21GiftsShop`,
+      createdAt,
+      sats: 5,
+      payable: true,
+      hasPhoto: false,
+      role: 'basis',
+      place: { lat: id === 'm-ph' ? 14.6 : -1.29, lng: id === 'm-ph' ? 120.98 : 36.82, label },
+    });
+    const ph = shop('m-ph', 'Sari-sari Manila', '2026-08-28T12:00:00.000Z', 'Manila');
+    const ke = shop('m-ke', 'Duka Nairobi', '2026-08-28T11:30:00.000Z', 'Nairobi');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      const country = new URL(route.request().url()).searchParams.get('country');
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: country === 'PH' ? [ph] : country === 'KE' ? [ke] : [ph, ke],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          places: [ph, ke].map((row) => ({
+            id: row.id,
+            name: 'Ada',
+            createdAt: row.createdAt,
+            lat: row.place.lat,
+            lng: row.place.lng,
+            label: row.place.label,
+            shop: true,
+            countryCode: row.id === 'm-ph' ? 'PH' : 'KE',
+          })),
+        }),
+      });
+    });
+  }
+
+  test('shops country list open', async ({ page }) => {
+    await seedCountryShops(page);
+    await page.goto('/shops');
+    await expect(page.getByText('Duka Nairobi')).toBeVisible();
+    await page.getByRole('combobox', { name: 'Country' }).click();
+    await expect(page.getByRole('option')).toHaveText([
+      'All countries',
+      'Kenya (1)',
+      'Philippines (1)',
+    ]);
+    await shotScreen(page, 'state-shops-country-open');
+  });
+
+  test('shops filtered by country', async ({ page }) => {
+    await seedCountryShops(page);
+    await page.goto('/shops#table');
+    await expect(page.getByRole('table').getByText('Duka Nairobi')).toBeVisible();
+    await page.getByRole('combobox', { name: 'Country' }).click();
+    await page.getByRole('option', { name: 'Philippines (1)' }).click();
+    await expect(page).toHaveURL(/\/shops\?country=PH#table$/);
+    await expect(page.getByRole('table').getByText('Sari-sari Manila')).toBeVisible();
+    await expect(page.getByRole('table').getByText('Duka Nairobi')).toHaveCount(0);
+    await shotScreen(page, 'state-shops-country');
+  });
+
   test('shops map', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {

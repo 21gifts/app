@@ -1725,6 +1725,19 @@ describe('fetchMessages', () => {
     );
   });
 
+  it('sends country after hashtag and before limit, and omits an empty one', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [] } });
+    await fetchMessages('sess', { mode: 'all', hashtag: '21GiftsShop', country: 'PH' });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/forum/messages?mode=all&hashtag=21GiftsShop&country=PH&limit=20',
+      { headers: { Authorization: 'Bearer sess' } },
+    );
+    await fetchMessages('sess', { mode: 'all', country: '' });
+    expect(fetchMock).toHaveBeenLastCalledWith('/forum/messages?mode=all&limit=20', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
   it('omits an empty hashtag', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [] } });
     await fetchMessages('sess', { mode: 'active', hashtag: '' });
