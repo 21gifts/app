@@ -73,11 +73,12 @@ describe('useAuthStore', () => {
   });
 
   it('holds a stored session back without touching storage', () => {
-    useAuthStore.getState().setLockedSession('stored');
+    useAuthStore.getState().setLockedSession('stored', account);
     expect(useAuthStore.getState()).toMatchObject({
       session: null,
       account: null,
       lockedSession: 'stored',
+      lockedName: null,
     });
     expect(saveSession).not.toHaveBeenCalled();
     expect(clearSession).not.toHaveBeenCalled();
@@ -94,20 +95,35 @@ describe('useAuthStore', () => {
       session: null,
       account: null,
       lockedSession: 'tok',
+      lockedName: null,
     });
     expect(bumpUnreadAppBadgeEpoch).toHaveBeenCalled();
     expect(setUnreadAppBadge).toHaveBeenCalledWith(0);
   });
 
   it('leaves state unchanged when there is no active session to lock', () => {
-    useAuthStore.getState().setLockedSession('stored');
+    useAuthStore.getState().setLockedSession('stored', account);
     const before = useAuthStore.getState();
     useAuthStore.getState().lockSession();
     expect(useAuthStore.getState()).toBe(before);
   });
 
+  it('keeps the name, else the username, else nothing as the held display name', () => {
+    useAuthStore
+      .getState()
+      .setLockedSession('stored', { ...account, name: 'Ada', username: 'ada' });
+    expect(useAuthStore.getState().lockedName).toBe('Ada');
+    useAuthStore.getState().setLockedSession('stored', { ...account, name: null, username: 'ada' });
+    expect(useAuthStore.getState().lockedName).toBe('ada');
+    useAuthStore.getState().setLockedSession('stored', { ...account, name: null, username: null });
+    expect(useAuthStore.getState().lockedName).toBeNull();
+    useAuthStore.setState({ session: 'tok', account: null });
+    useAuthStore.getState().lockSession();
+    expect(useAuthStore.getState()).toMatchObject({ lockedSession: 'tok', lockedName: null });
+  });
+
   it('setAuth clears a held-back session', () => {
-    useAuthStore.getState().setLockedSession('stored');
+    useAuthStore.getState().setLockedSession('stored', account);
     useAuthStore.getState().setAuth('tok', account);
     expect(useAuthStore.getState().lockedSession).toBeNull();
   });
@@ -115,7 +131,7 @@ describe('useAuthStore', () => {
   it('clearAuth wipes state and clears storage', () => {
     rememberSessionPhrase('one two three');
     useAuthStore.getState().setAuth('tok', account);
-    useAuthStore.getState().setLockedSession('tok');
+    useAuthStore.getState().setLockedSession('tok', account);
     useAuthStore.getState().clearAuth();
 
     const state = useAuthStore.getState();

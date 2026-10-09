@@ -5,6 +5,16 @@ import { clearSession, saveSession } from '@/lib/session-storage';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
 
 /**
+ * Display name the login card greets a held-back session with.
+ *
+ * @param account - The account behind the held-back session, or `null`.
+ * @returns Its name, else its username, else `null`.
+ */
+function lockedNameOf(account: Account | null): string | null {
+  return account?.name ?? account?.username ?? null;
+}
+
+/**
  * Shape of the authentication store.
  */
 interface AuthState {
@@ -20,6 +30,12 @@ interface AuthState {
    * wallet. The token stays in storage.
    */
   lockedSession: string | null;
+  /**
+   * Display name of the account behind {@link AuthState.lockedSession} (its
+   * name, else its username), so the login card can greet that member;
+   * `null` when it has neither or no session is held back.
+   */
+  lockedName: string | null;
   /**
    * True after a wrong-account 403 until the visitor retries login.
    * Survives {@link AuthState.clearAuth} so `/login` can show the hint.
@@ -48,12 +64,14 @@ interface AuthState {
    * the home-screen badge, as for a signed-out visitor.
    *
    * @param session - The stored session token.
+   * @param account - The account the token belongs to (its display name is kept).
    */
-  setLockedSession(session: string): void;
+  setLockedSession(session: string, account: Account): void;
   /**
    * Moves the current session to {@link AuthState.lockedSession}: a login
-   * whose wallet could not be opened does not count as signed in. Clears the
-   * home-screen badge; does nothing without a current session.
+   * whose wallet could not be opened does not count as signed in. Keeps the
+   * account's display name for the login card and clears the home-screen
+   * badge; does nothing without a current session.
    */
   lockSession(): void;
   /** Clears the session from state and from storage, and the home-screen badge. */
@@ -80,34 +98,45 @@ export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   account: null,
   lockedSession: null,
+  lockedName: null,
   wrongAccount: false,
   setAuth: (session, account) => {
     saveSession(session);
-    set({ session, account, lockedSession: null, wrongAccount: false });
+    set({ session, account, lockedSession: null, lockedName: null, wrongAccount: false });
   },
   setAccount: (account) => {
     set({ account });
   },
-  setLockedSession: (session) => {
+  setLockedSession: (session, account) => {
     bumpUnreadAppBadgeEpoch();
     setUnreadAppBadge(0);
-    set({ session: null, account: null, lockedSession: session });
+    set({
+      session: null,
+      account: null,
+      lockedSession: session,
+      lockedName: lockedNameOf(account),
+    });
   },
   lockSession: () => {
-    const { session } = useAuthStore.getState();
+    const { session, account } = useAuthStore.getState();
     if (session === null) {
       return;
     }
     bumpUnreadAppBadgeEpoch();
     setUnreadAppBadge(0);
-    set({ session: null, account: null, lockedSession: session });
+    set({
+      session: null,
+      account: null,
+      lockedSession: session,
+      lockedName: lockedNameOf(account),
+    });
   },
   clearAuth: () => {
     clearSessionPhrase();
     clearSession();
     bumpUnreadAppBadgeEpoch();
     setUnreadAppBadge(0);
-    set({ session: null, account: null, lockedSession: null });
+    set({ session: null, account: null, lockedSession: null, lockedName: null });
   },
   setWrongAccount: (value) => {
     set({ wrongAccount: value });

@@ -92,6 +92,24 @@ describe('hydratesLocked', () => {
     vi.mocked(getBreezApiKey).mockReturnValue(null);
     expect(hydratesLocked(account)).toBe(false);
   });
+
+  it('holds back a stored session under the held-session pin, while a login stays open', () => {
+    vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
+    vi.mocked(visualPin).mockReturnValue('held-session');
+    expect(hydratesLocked(account)).toBe(true);
+    expect(isWalletOpen(account, false)).toBe(true);
+    vi.mocked(peekSessionPhrase).mockReturnValue('one two three');
+    expect(hydratesLocked(account)).toBe(false);
+  });
+
+  it('ignores the held-session pin in a production build', async () => {
+    const actual = await vi.importActual<typeof import('@/lib/visual-pin')>('@/lib/visual-pin');
+    vi.mocked(visualPin).mockImplementation(actual.visualPin);
+    vi.mocked(getBreezApiKey).mockReturnValue(null);
+    window.history.replaceState({}, '', '/welcome?visual=held-session');
+    expect(hydratesLocked(account)).toBe(false);
+    window.history.replaceState({}, '', '/');
+  });
 });
 
 describe('finishWalletOpen', () => {

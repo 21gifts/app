@@ -301,15 +301,15 @@ describe('OnboardingGate', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('renders the guest welcome view when a stored session is held back', () => {
+  it('shows the wallet login, not the guest welcome view, when a stored session is held back', () => {
     useAuthStore.setState({ lockedSession: 'stored' });
     renderWithLocale(
       <OnboardingGate screen="welcome" allowGuest>
         <p>welcome-ui</p>
       </OnboardingGate>,
     );
-    expect(screen.getByText('welcome-ui')).toBeTruthy();
-    expect(screen.queryByText('wallet-login-card')).toBeNull();
+    expect(screen.getByText('wallet-login-card')).toBeTruthy();
+    expect(screen.queryByText('welcome-ui')).toBeNull();
     expect(replace).not.toHaveBeenCalled();
   });
 
