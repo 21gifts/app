@@ -611,6 +611,52 @@ export async function proxyFundingDailyRosterRecipientsDeletePost(
 }
 
 /**
+ * Proxies POST /funding/daily-roster/moderators to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ accountId, amountUsd }`).
+ * @returns The upstream response.
+ */
+export async function proxyFundingDailyRosterModeratorsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/funding/daily-roster/moderators');
+}
+
+/**
+ * Proxies POST /funding/daily-roster/moderators/update to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ address, amountUsd }`).
+ * @returns The upstream response.
+ */
+export async function proxyFundingDailyRosterModeratorsUpdatePost(
+  request: Request,
+): Promise<Response> {
+  return proxyApiRequest(request, '/funding/daily-roster/moderators/update');
+}
+
+/**
+ * Proxies POST /funding/daily-roster/moderators/delete to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ address }`).
+ * @returns The upstream response.
+ */
+export async function proxyFundingDailyRosterModeratorsDeletePost(
+  request: Request,
+): Promise<Response> {
+  return proxyApiRequest(request, '/funding/daily-roster/moderators/delete');
+}
+
+/**
+ * Proxies POST /funding/daily-roster/moderators/payments to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ enabled }`).
+ * @returns The upstream response.
+ */
+export async function proxyFundingDailyRosterModeratorsPaymentsPost(
+  request: Request,
+): Promise<Response> {
+  return proxyApiRequest(request, '/funding/daily-roster/moderators/payments');
+}
+
+/**
  * Proxies GET /funding/payout-days to the 21.gifts api (staff Bearer).
  *
  * @param request - Incoming App Router request (Bearer session).

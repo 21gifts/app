@@ -94,6 +94,7 @@ describe('GrantsScreen', () => {
     expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Daily payment text' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Daily payment amounts' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Moderator payments' })).toBeNull();
     expect(screen.queryByText('No open applications.')).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(listMock).not.toHaveBeenCalled();
@@ -105,6 +106,7 @@ describe('GrantsScreen', () => {
     expect(screen.getByRole('link', { name: 'Goals' }).getAttribute('href')).toBe('/grants/goals');
     expect(screen.queryByRole('link', { name: 'Daily payment text' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Daily payment amounts' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Moderator payments' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Open applications' })).toBeNull();
     expect(screen.queryByText('No open applications.')).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
@@ -138,9 +140,13 @@ describe('GrantsScreen', () => {
         expect(
           screen.getByRole('link', { name: 'Daily payment amounts' }).getAttribute('href'),
         ).toBe('/grants/payments/amounts');
+        expect(screen.getByRole('link', { name: 'Moderator payments' }).getAttribute('href')).toBe(
+          '/grants/payments/moderators',
+        );
       } else {
         expect(screen.queryByRole('link', { name: 'Daily payment text' })).toBeNull();
         expect(screen.queryByRole('link', { name: 'Daily payment amounts' })).toBeNull();
+        expect(screen.queryByRole('link', { name: 'Moderator payments' })).toBeNull();
       }
     },
   );
@@ -155,6 +161,9 @@ describe('GrantsScreen', () => {
     expect(screen.getByRole('link', { name: 'Daily payment amounts' }).getAttribute('href')).toBe(
       '/grants/payments/amounts',
     );
+    expect(screen.getByRole('link', { name: 'Moderator payments' }).getAttribute('href')).toBe(
+      '/grants/payments/moderators',
+    );
     expect(await screen.findByText('No open applications.')).toBeTruthy();
     expect(listMock).toHaveBeenCalledWith('sess');
   });
@@ -167,6 +176,7 @@ describe('GrantsScreen', () => {
     expect(screen.queryByRole('link', { name: /Open applications/ })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Daily payment text' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Daily payment amounts' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Moderator payments' })).toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
   });
 

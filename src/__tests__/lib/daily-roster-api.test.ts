@@ -1,11 +1,15 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
+  addDailyRosterModerator,
   addDailyRosterRecipient,
+  deleteDailyRosterModerator,
   deleteDailyRosterRecipient,
   fetchDailyRoster,
   saveDailyRosterComment,
+  saveDailyRosterModeratorPayments,
   saveDailyRosterPayments,
+  updateDailyRosterModerator,
   updateDailyRosterRecipient,
 } from '@/lib/api';
 
@@ -14,6 +18,8 @@ const ROSTER = {
   paymentsEnabled: true,
   defaultAmountUsd: 4,
   recipients: [{ address: 'ada@example.com', amountUsd: 1, accountId: null, name: null }],
+  moderatorPaymentsEnabled: true,
+  moderators: [{ address: 'mod@example.com', amountUsd: 5, accountId: null, name: null }],
 };
 
 afterEach(() => {
@@ -75,6 +81,10 @@ describe('daily roster saves', () => {
     await expect(addDailyRosterRecipient('sess', 'acc_ada', 1)).resolves.toEqual(ROSTER);
     await expect(updateDailyRosterRecipient('sess', 'ada@example.com', 2)).resolves.toEqual(ROSTER);
     await expect(deleteDailyRosterRecipient('sess', 'ada@example.com')).resolves.toEqual(ROSTER);
+    await expect(saveDailyRosterModeratorPayments('sess', false)).resolves.toEqual(ROSTER);
+    await expect(addDailyRosterModerator('sess', 'acc_mod', 5)).resolves.toEqual(ROSTER);
+    await expect(updateDailyRosterModerator('sess', 'mod@example.com', 7)).resolves.toEqual(ROSTER);
+    await expect(deleteDailyRosterModerator('sess', 'mod@example.com')).resolves.toEqual(ROSTER);
     const bodies = fetchMock.mock.calls.map((call) => {
       const init = call[1] as RequestInit;
       return {
@@ -102,6 +112,22 @@ describe('daily roster saves', () => {
       {
         path: '/funding/daily-roster/recipients/delete',
         body: JSON.stringify({ address: 'ada@example.com' }),
+      },
+      {
+        path: '/funding/daily-roster/moderators/payments',
+        body: JSON.stringify({ enabled: false }),
+      },
+      {
+        path: '/funding/daily-roster/moderators',
+        body: JSON.stringify({ accountId: 'acc_mod', amountUsd: 5 }),
+      },
+      {
+        path: '/funding/daily-roster/moderators/update',
+        body: JSON.stringify({ address: 'mod@example.com', amountUsd: 7 }),
+      },
+      {
+        path: '/funding/daily-roster/moderators/delete',
+        body: JSON.stringify({ address: 'mod@example.com' }),
       },
     ]);
   });
