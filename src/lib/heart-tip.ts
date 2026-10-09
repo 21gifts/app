@@ -31,13 +31,16 @@ export const HEART_TIP_UNSETTLED_MS = 10 * 60_000;
 const HEART_TIP_LOOKUP_LIMIT = 50;
 
 /**
- * Why a heart was not sent. Only `no_balance` known before the tap is shown
- * to the member (the balance-required line); every other reason is reported
- * to error reporting, together with the message id, and shows nothing.
+ * Why a heart was not sent. Only `no_balance`, known from the wallet snapshot
+ * before the tap, is shown to the member (the balance-required line) and is
+ * not reported; every other reason is reported to error reporting, together
+ * with the message id, and shows nothing. `insufficient_balance` is a balance
+ * the wallet found too low only after the tap already showed the +1.
  */
 export type HeartTipFailure =
   | 'sunday'
   | 'no_balance'
+  | 'insufficient_balance'
   | 'wallet_setup_due'
   | 'author_cannot_receive'
   | 'rate_limited'
@@ -193,7 +196,7 @@ function reportHeartFailure(messageId: string, reason: HeartTipFailure): void {
 /**
  * True when the live wallet is ready with a confirmed zero balance.
  *
- * @returns Whether a heart must stop with `no_balance`.
+ * @returns Whether a heart must stop with `insufficient_balance`.
  */
 function liveReadyBalanceIsZero(): boolean {
   const { status, balanceSats } = useWalletStore.getState();
@@ -204,7 +207,7 @@ function liveReadyBalanceIsZero(): boolean {
  * Pays a prepared heart invoice. `confirm` sends at once, but only when the
  * prepared payment is exactly 1 sat with a fee of ₿0; anything else is
  * `heart_unavailable` and nothing is sent. `insufficient` or a ready zero
- * balance is `no_balance`. A sent heart is recorded as `heart_sent` under the session
+ * balance is `insufficient_balance`. A sent heart is recorded as `heart_sent` under the session
  * of the click, also when the SDK finishes a send the app stopped waiting for.
  * A send that timed out (`sentLate`) is remembered for this note until its
  * outcome is known, so a retap waits instead of paying again: `sentLate`
@@ -221,7 +224,7 @@ async function finishPreparedPay(
   invoice: string,
 ): Promise<HeartTipOutcome> {
   if (result.kind === 'insufficient' || liveReadyBalanceIsZero()) {
-    return { kind: 'failed', reason: 'no_balance' };
+    return { kind: 'failed', reason: 'insufficient_balance' };
   }
   if (result.kind === 'confirm') {
     if (result.amountSats !== 1 || result.feeSats > 0) {
@@ -240,7 +243,7 @@ async function finishPreparedPay(
       return { kind: 'paid' };
     }
     if (sent.kind === 'insufficient') {
-      return { kind: 'failed', reason: 'no_balance' };
+      return { kind: 'failed', reason: 'insufficient_balance' };
     }
     if (sent.kind === 'failed' && sent.sentLate !== undefined) {
       const held: UnsettledHeart = { invoice, sinceMs: Date.now(), sent: false };
