@@ -42,9 +42,17 @@ type LedgerNext = {
 
 type Ledger = {
   daysPaid: number;
+  termDays: number;
   next: LedgerNext;
-  givers: { username: string | null; givenSats: number }[];
+  givers: { username: string | null; givenSats: number; givenAmount: string | null }[];
+  repayments: { username: string | null; status: string; sats: number | null }[];
 };
+
+const GIVER_PAIRS = [
+  { php: '5.50', sats: 550 },
+  { php: '2.20', sats: 220 },
+  { php: '1.10', sats: 110 },
+];
 
 function readUi(): LoanUi {
   const dir = process.env['LOAN_E2E_DIR'] ?? '';
@@ -52,7 +60,22 @@ function readUi(): LoanUi {
     throw new Error('LOAN_E2E_DIR is required');
   }
   const parsed = JSON.parse(fs.readFileSync(path.join(dir, 'ui.json'), 'utf8')) as LoanUi;
-  if (parsed.goalAmount !== '8.68' || parsed.termDays !== 110 || parsed.givers.length !== 3) {
+  const names = new Set(parsed.givers.map((giver) => giver.username));
+  const pairs = parsed.givers
+    .map((giver) => `${giver.php}/${giver.sats}`)
+    .sort()
+    .join(',');
+  const expected = GIVER_PAIRS.map((giver) => `${giver.php}/${giver.sats}`)
+    .sort()
+    .join(',');
+  if (
+    parsed.goalAmount !== '8.68' ||
+    parsed.termDays !== 110 ||
+    parsed.givers.length !== 3 ||
+    names.size !== 3 ||
+    names.has(parsed.borrower.username) ||
+    pairs !== expected
+  ) {
     throw new Error('loan ui file has the wrong shape');
   }
   return parsed;
@@ -178,9 +201,12 @@ async function createCredit(page: Page, ui: LoanUi): Promise<string> {
   expect(sent.goalAmount).toBe('8.68');
   expect(sent.goalRepayable).toBe(true);
   expect(sent.goalTermDays).toBe(110);
-  const created = (await response.json()) as { id?: string };
+  const created = (await response.json()) as { id?: string; goalSats?: number };
   if (typeof created.id !== 'string' || !/^[0-9a-f-]{36}$/i.test(created.id)) {
     throw new Error('credit response has no id');
+  }
+  if (created.goalSats !== 868) {
+    throw new Error('credit goal is not 868 sats');
   }
   return created.id;
 }
@@ -333,9 +359,22 @@ test('a borrower takes a credit, three people give, and every share is paid back
   await home.getByRole('button', { name: 'Who gave and who is paid back' }).click();
   const paidBack = home.getByRole('region', { name: 'Paid back' });
   await expect(paidBack.getByText('Paid', { exact: true })).toHaveCount(330);
+  const ledger = await readLedger(home, messageId);
+  expect(ledger.daysPaid).toBe(110);
+  expect(ledger.termDays).toBe(110);
   const given = home.getByRole('region', { name: 'Given' });
   for (const giver of ui.givers) {
     await expect(given.getByText(`@${giver.username}`)).toBeVisible();
+    const row = ledger.givers.find((item) => item.username === giver.username);
+    expect(row?.givenSats).toBe(giver.sats);
+    expect(row?.givenAmount).toBe(giver.php);
+    const paid = ledger.repayments.filter(
+      (line) =>
+        line.username === giver.username &&
+        line.status === 'paid' &&
+        line.sats === giver.sats / 110,
+    );
+    expect(paid).toHaveLength(110);
   }
   await expect(home.getByRole('button', { name: "Pay today's repayment" })).toBeVisible();
 });
