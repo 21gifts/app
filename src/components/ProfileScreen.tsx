@@ -329,6 +329,12 @@ function ProfileImages({
   );
 }
 
+function profileWithoutStaffTag(profile: MemberProfile): MemberProfile {
+  const copy = { ...profile };
+  delete copy.staffTag;
+  return copy;
+}
+
 /**
  * Signed-in profile card with compact activity chart, About me, name, location,
  * the same public gifts facts as the member card (`MemberProfileScreen`
@@ -484,7 +490,12 @@ export function ProfileScreen(): ReactElement {
       <NameForm variant="profile" />
       <LocationForm />
       {memberStatus === 'ready' && member !== null ? (
-        <MemberProfileScreen factsOnly profile={member} received={[]} donated={[]} />
+        <MemberProfileScreen
+          factsOnly
+          profile={profileWithoutStaffTag(member)}
+          received={[]}
+          donated={[]}
+        />
       ) : memberStatus === 'error' ? (
         <div className="flex flex-col items-center gap-4">
           <p role="alert" className="text-center text-sm text-app-danger">

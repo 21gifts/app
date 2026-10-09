@@ -437,6 +437,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'software-developer',
+    image: 'welcome-software-developer.png',
+    visual: 'state-welcome-software-developer',
+    needle: 'Software Developer',
+  },
+  {
+    route: '/welcome',
     id: 'daily-payout-stopped',
     image: 'welcome-daily-payout-stopped.png',
     visual: 'state-welcome-daily-payout-stopped',
@@ -2058,6 +2065,13 @@ export const SCREEN_VARIANTS = [
     image: 'members.png',
     visual: 'screen-members-accountId',
     needle: "getByRole('heading', { name: 'Profile' })",
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'software-developer',
+    image: 'members-software-developer.png',
+    visual: 'state-members-accountId-software-developer',
+    needle: 'Software Developer',
   },
   {
     route: '/members/[accountId]',

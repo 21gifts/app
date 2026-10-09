@@ -2895,6 +2895,115 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status').textContent).toBe('This person was named an initiator.');
   });
 
+  it('shows a Software Developer label on a basis top-level note as text, not a button', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, staffTag: 'software_developer' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Software Developer' })).toBeNull();
+  });
+
+  it('omits the Software Developer label when staffTag is absent', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByText('Software Developer')).toBeNull();
+  });
+
+  it('shows a Software Developer label on a reply', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, replyCount: 1 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r-staff',
+            name: 'Bob',
+            role: 'basis',
+            replyCount: 0,
+            staffTag: 'software_developer',
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+  });
+
+  it('keeps the Verified button and Software Developer label together', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, role: 'verified', staffTag: 'software_developer' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+  });
+
+  it('keeps the External button and Software Developer label together', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, via: 'nostr', payable: false, staffTag: 'software_developer' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'External' })).toBeTruthy();
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+  });
+
   it('shows Founder, Moderator, and Verified tags on replies', () => {
     renderWithLocale(
       <ForumBoard

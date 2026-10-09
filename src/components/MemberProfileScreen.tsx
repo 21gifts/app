@@ -1497,7 +1497,9 @@ export function MemberProfileScreen({
     return (
       <>
         {requirementOverlay}
-        {roleKeys !== null || showFundingReviewed ? (
+        {roleKeys !== null ||
+        showFundingReviewed ||
+        listedProfile.staffTag === 'software_developer' ? (
           <div className="flex w-full flex-wrap items-center justify-center gap-2">
             {roleKeys !== null ? (
               <button
@@ -1510,6 +1512,11 @@ export function MemberProfileScreen({
               >
                 {t(roleKeys.label)}
               </button>
+            ) : null}
+            {listedProfile.staffTag === 'software_developer' ? (
+              <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                {t('forum.staff.softwareDeveloper')}
+              </span>
             ) : null}
             {typeof fundingReviewedAt === 'number' ? (
               <FundingProgramMark
@@ -1610,6 +1617,11 @@ export function MemberProfileScreen({
                 >
                   {t(roleKeys.label)}
                 </button>
+              ) : null}
+              {listedProfile.staffTag === 'software_developer' ? (
+                <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                  {t('forum.staff.softwareDeveloper')}
+                </span>
               ) : null}
               {typeof fundingReviewedAt === 'number' ? (
                 <FundingProgramMark

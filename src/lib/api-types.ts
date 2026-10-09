@@ -123,6 +123,8 @@ export const accountSchema = z.object({
    * Missing or `undefined` is the same as `null` (no funding object).
    */
   funding: ownerFundingSchema.nullable().optional(),
+  /** Optional staff label; only `software_developer` is accepted. */
+  staffTag: z.literal('software_developer').optional(),
 });
 
 /**
@@ -176,6 +178,7 @@ export const accountSchema = z.object({
  * not be synchronized, while `null` means the account preference is unset.
  * `funding` is the owner grant object, `null` for `basis`, and omitted on
  * older api builds (treat missing like `null`).
+ * `staffTag` is an optional staff label; only `software_developer` is accepted.
  */
 export type Account = z.infer<typeof accountSchema>;
 
@@ -644,6 +647,7 @@ export type ForumPlaceRow = ForumPlacePin & {
  * payloads omit them.
  * `place` is optional and is not a body.
  * `shopAccount` is optional on a shop note (`id`, `username`, `name`); omitted when cleared.
+ * `staffTag` is an optional staff label; only `software_developer` is accepted.
  */
 export const forumMessageSchema = z
   .object({
@@ -711,6 +715,8 @@ export const forumMessageSchema = z
         }),
       )
       .optional(),
+    /** Optional staff label; only `software_developer` is accepted. */
+    staffTag: z.literal('software_developer').optional(),
   })
   .refine(
     (message) => message.text !== '' || message.hasPhoto || message.hasVideo || message.sats > 0,
@@ -1098,6 +1104,7 @@ export type AccountTrust = z.infer<typeof accountTrustSchema>;
  * and posts-feed source, not a pinned ForumBoard card).
  * `postCount` / `replyCount` are uncapped totals; activity feeds are capped at 200.
  * `trust` defaults to all-null when an older api omits the field.
+ * `staffTag` is an optional staff label; only `software_developer` is accepted.
  */
 export const memberProfileSchema = z.object({
   id: z.string(),
@@ -1126,6 +1133,8 @@ export const memberProfileSchema = z.object({
    * payload still parses; `null` when unnamed.
    */
   fundingReviewedByName: z.string().nullable().optional(),
+  /** Optional staff label; only `software_developer` is accepted. */
+  staffTag: z.literal('software_developer').optional(),
 });
 
 /**

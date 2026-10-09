@@ -240,6 +240,79 @@ describe('memberProfileSchema', () => {
       }),
     ).toThrow();
   });
+
+  it('accepts staffTag software_developer and keeps the value', () => {
+    const profile = {
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Carol',
+      location: null,
+      role: 'basis' as const,
+      lightningAddress: null,
+      createdAt: '2026-01-15T12:00:00.000Z',
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
+      staffTag: 'software_developer' as const,
+    };
+    expect(memberProfileSchema.parse(profile).staffTag).toBe('software_developer');
+  });
+
+  it('leaves omitted staffTag undefined on a member profile', () => {
+    const profile = {
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Carol',
+      location: null,
+      role: 'basis' as const,
+      lightningAddress: null,
+      createdAt: '2026-01-15T12:00:00.000Z',
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
+    };
+    expect(memberProfileSchema.parse(profile).staffTag).toBeUndefined();
+  });
+
+  it('rejects an unknown staffTag on a member profile', () => {
+    expect(() =>
+      memberProfileSchema.parse({
+        id: '22222222-2222-4222-8222-222222222222',
+        name: 'Carol',
+        location: null,
+        role: 'basis',
+        lightningAddress: null,
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
+        staffTag: 'nope',
+      }),
+    ).toThrow();
+  });
+
+  it('rejects null staffTag on a member profile', () => {
+    expect(() =>
+      memberProfileSchema.parse({
+        id: '22222222-2222-4222-8222-222222222222',
+        name: 'Carol',
+        location: null,
+        role: 'basis',
+        lightningAddress: null,
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
+        staffTag: null,
+      }),
+    ).toThrow();
+  });
 });
 
 describe('trustChainSchema', () => {
@@ -1247,6 +1320,24 @@ describe('forumMessageSchema place', () => {
       }),
     ).toThrow();
   });
+
+  it('accepts staffTag software_developer and keeps the value', () => {
+    expect(forumMessageSchema.parse({ ...base, staffTag: 'software_developer' }).staffTag).toBe(
+      'software_developer',
+    );
+  });
+
+  it('leaves omitted staffTag undefined on a forum message', () => {
+    expect(forumMessageSchema.parse(base).staffTag).toBeUndefined();
+  });
+
+  it('rejects an unknown staffTag on a forum message', () => {
+    expect(() => forumMessageSchema.parse({ ...base, staffTag: 'nope' })).toThrow();
+  });
+
+  it('rejects null staffTag on a forum message', () => {
+    expect(() => forumMessageSchema.parse({ ...base, staffTag: null })).toThrow();
+  });
 });
 
 describe('accountSchema', () => {
@@ -1422,6 +1513,24 @@ describe('accountSchema', () => {
         funding: { status: 'open', trialUtcDate: null, admittedAt: null, reviewedByName: null },
       }),
     ).toThrow();
+  });
+
+  it('accepts staffTag software_developer and keeps the value', () => {
+    expect(accountSchema.parse({ ...account, staffTag: 'software_developer' }).staffTag).toBe(
+      'software_developer',
+    );
+  });
+
+  it('leaves omitted staffTag undefined on an account', () => {
+    expect(accountSchema.parse(account).staffTag).toBeUndefined();
+  });
+
+  it('rejects an unknown staffTag on an account', () => {
+    expect(() => accountSchema.parse({ ...account, staffTag: 'nope' })).toThrow();
+  });
+
+  it('rejects null staffTag on an account', () => {
+    expect(() => accountSchema.parse({ ...account, staffTag: null })).toThrow();
   });
 });
 

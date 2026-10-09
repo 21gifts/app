@@ -1028,6 +1028,53 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText('Founder')).toBeNull();
   });
 
+  it('shows Verified and Software Developer on a quoted note with the staff tag', async () => {
+    const tagged: ForumMessage = {
+      ...quotedNote,
+      role: 'verified',
+      staffTag: 'software_developer',
+      hasPhoto: false,
+      photoCount: 0,
+    };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[tagged]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Verified')).toBeTruthy();
+    });
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+  });
+
+  it('shows External and Software Developer on a quoted nostr note with the staff tag', async () => {
+    const tagged: ForumMessage = {
+      ...quotedNote,
+      role: 'basis',
+      via: 'nostr',
+      staffTag: 'software_developer',
+      hasPhoto: false,
+      photoCount: 0,
+    };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[tagged]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('External')).toBeTruthy();
+    });
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+  });
+
   it('shows an external quoted author as a View profile link without a member link', async () => {
     const onActivate = vi.fn();
     const viaQuoted: ForumMessage = {
