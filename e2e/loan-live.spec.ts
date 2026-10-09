@@ -1,17 +1,23 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test';
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type APIResponse,
+  type Browser,
+  type Page,
+} from '@playwright/test';
 
 /**
  * Live credit on the staging screens. The default Playwright run ignores this
  * file. The harness pays each Spark invoice the screen mints; the pay slot
  * itself only sends from an in-app wallet, which these accounts do not use.
+ * The term and invoice pacing come from the harness's ui.json.
  */
 
 const CONTROL = 'http://127.0.0.1:3997';
 const APP = 'http://127.0.0.1:3010';
-const GAP_MS = 11_000;
-const INVOICE_BATCH = 18;
 const CLOCK = '2026-01-07T12:00:00.000Z';
 
 type Member = {
@@ -30,6 +36,8 @@ type LoanUi = {
   goalAmount: string;
   termDays: number;
   text: string;
+  invoiceGapMs: number;
+  restartEvery: number | null;
   borrower: Member;
   givers: Giver[];
 };
@@ -70,11 +78,19 @@ function readUi(): LoanUi {
     .join(',');
   if (
     parsed.goalAmount !== '8.68' ||
-    parsed.termDays !== 110 ||
+    !Number.isInteger(parsed.termDays) ||
+    parsed.termDays <= 0 ||
     parsed.givers.length !== 3 ||
     names.size !== 3 ||
     names.has(parsed.borrower.username) ||
-    pairs !== expected
+    pairs !== expected ||
+    !parsed.givers.every((giver) => giver.sats % parsed.termDays === 0) ||
+    !Number.isInteger(parsed.invoiceGapMs) ||
+    parsed.invoiceGapMs < 0 ||
+    parsed.invoiceGapMs > 60_000 ||
+    (parsed.restartEvery !== null &&
+      (!Number.isInteger(parsed.restartEvery) || parsed.restartEvery <= 0)) ||
+    parsed.text !== `Loan of 8.68 PHP over ${parsed.termDays} days`
   ) {
     throw new Error('loan ui file has the wrong shape');
   }
@@ -83,6 +99,19 @@ function readUi(): LoanUi {
 
 function bearer(ui: LoanUi): { authorization: string } {
   return { authorization: `Bearer ${ui.controlToken}` };
+}
+
+async function readControlCause(response: APIResponse): Promise<string> {
+  const raw = await response.text();
+  try {
+    const parsed = JSON.parse(raw) as { error?: unknown };
+    if (typeof parsed === 'object' && parsed !== null && typeof parsed.error === 'string') {
+      return parsed.error.slice(0, 2000);
+    }
+  } catch {
+    // Use the raw body when it is not JSON with an error string.
+  }
+  return raw.slice(0, 2000);
 }
 
 async function control(
@@ -103,7 +132,10 @@ async function control(
           : 30_000,
   });
   if (response.status() !== 204 && !(pathname === '/health' && response.status() === 200)) {
-    throw new Error(`${pathname} returned ${response.status()}`);
+    const status = response.status();
+    const cause = await readControlCause(response);
+    process.stderr.write(`control ${pathname} failed ${status}: ${cause}\n`);
+    throw new Error(`${pathname} returned ${status}: ${cause}`);
   }
 }
 
@@ -153,8 +185,8 @@ async function readLedger(page: Page, messageId: string): Promise<Ledger> {
   return (await response.json()) as Ledger;
 }
 
-async function waitGap(since: number): Promise<void> {
-  const wait = GAP_MS - (Date.now() - since);
+async function waitGap(since: number, gapMs: number): Promise<void> {
+  const wait = gapMs - (Date.now() - since);
   if (wait > 0) {
     await new Promise((resolve) => {
       setTimeout(resolve, wait);
@@ -200,7 +232,7 @@ async function createCredit(page: Page, ui: LoanUi): Promise<string> {
   expect(sent.goalCurrency).toBe('PHP');
   expect(sent.goalAmount).toBe('8.68');
   expect(sent.goalRepayable).toBe(true);
-  expect(sent.goalTermDays).toBe(110);
+  expect(sent.goalTermDays).toBe(ui.termDays);
   const created = (await response.json()) as { id?: string; goalSats?: number };
   if (typeof created.id !== 'string' || !/^[0-9a-f-]{36}$/i.test(created.id)) {
     throw new Error('credit response has no id');
@@ -266,21 +298,21 @@ async function repayAll(page: Page, messageId: string, ui: LoanUi): Promise<void
   let stalled = 0;
   for (;;) {
     const ledger = await readLedger(page, messageId);
-    if (ledger.next === null && ledger.daysPaid === 110) {
+    if (ledger.next === null && ledger.daysPaid === ui.termDays) {
       return;
     }
     if (ledger.next === null) {
       stalled += 1;
       if (stalled > 5) {
-        throw new Error(`repayment stopped at ${ledger.daysPaid} of 110 days`);
+        throw new Error(`repayment stopped at ${ledger.daysPaid} of ${ui.termDays} days`);
       }
       await page.waitForTimeout(2_000);
       continue;
     }
     stalled = 0;
     const key = `${ledger.next.dayIndex}:${ledger.next.recipientAccountId}`;
-    await waitGap(since);
-    if (posts >= INVOICE_BATCH) {
+    await waitGap(since, ui.invoiceGapMs);
+    if (ui.restartEvery !== null && posts >= ui.restartEvery) {
       await control(page.request, ui, '/restart');
       posts = 0;
       await page.reload();
@@ -358,10 +390,12 @@ test('a borrower takes a credit, three people give, and every share is paid back
   await repayAll(home, messageId, ui);
   await home.getByRole('button', { name: 'Who gave and who is paid back' }).click();
   const paidBack = home.getByRole('region', { name: 'Paid back' });
-  await expect(paidBack.getByText('Paid', { exact: true })).toHaveCount(330);
+  await expect(paidBack.getByText('Paid', { exact: true })).toHaveCount(
+    ui.givers.length * ui.termDays,
+  );
   const ledger = await readLedger(home, messageId);
-  expect(ledger.daysPaid).toBe(110);
-  expect(ledger.termDays).toBe(110);
+  expect(ledger.daysPaid).toBe(ui.termDays);
+  expect(ledger.termDays).toBe(ui.termDays);
   const given = home.getByRole('region', { name: 'Given' });
   for (const giver of ui.givers) {
     await expect(given.getByText(`@${giver.username}`)).toBeVisible();
@@ -372,9 +406,9 @@ test('a borrower takes a credit, three people give, and every share is paid back
       (line) =>
         line.username === giver.username &&
         line.status === 'paid' &&
-        line.sats === giver.sats / 110,
+        line.sats === giver.sats / ui.termDays,
     );
-    expect(paid).toHaveLength(110);
+    expect(paid).toHaveLength(ui.termDays);
   }
   await expect(home.getByRole('button', { name: "Pay today's repayment" })).toBeVisible();
 });

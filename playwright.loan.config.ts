@@ -1,12 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Live loan screens. Not part of `npm run e2e`.
+ * Live loan screens. Not part of `npm run e2e`. Requires Node 22.
  *
- * The loan harness starts this config against the local api. The screens are
- * the ones on staging: the welcome composer, a gift on the note, pay-today on
- * the welcome list, and the ledger on that note. The separate repayment-list
- * page is not on staging, so this test does not open it.
+ * The loan harness starts this config against the local api and writes ui.json
+ * with termDays, invoiceGapMs, and restartEvery. The screens are the ones on
+ * staging: the welcome composer, a gift on the note, pay-today on the welcome
+ * list, and the ledger on that note. The separate repayment-list page is not
+ * on staging, so this test does not open it.
  */
 const desktopChrome = devices['Desktop Chrome'];
 
