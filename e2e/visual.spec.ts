@@ -27670,7 +27670,9 @@ test.describe('daily payments', () => {
     await page.getByRole('option', { name: '@cara' }).click();
     await page.getByRole('textbox', { name: 'USD', exact: true }).fill('2');
     await page.getByRole('button', { name: 'Add' }).click();
-    const noLightningAlert = page.getByText('This person has no Wallet of Satoshi address.');
+    const noLightningAlert = page.getByText(
+      "This person's wallet cannot receive Bitcoin payments yet.",
+    );
     await expect(noLightningAlert).toBeVisible();
     await scrollAddFormIntoShot(page);
     await expect(noLightningAlert).toBeInViewport();

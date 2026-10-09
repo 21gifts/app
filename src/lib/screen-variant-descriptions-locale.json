@@ -3560,9 +3560,9 @@
     "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na hindi nahanap ang taong iyon. Alerto Hindi nahanap ang taong iyon. Karayom Hindi nahanap ang taong iyon."
   },
   "/grants/payments/amounts:no-lightning": {
-    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person keine Lightning-Adresse hat. Hinweis Diese Person hat keine Wallet of Satoshi address. Nadel Diese Person hat keine Wallet of Satoshi address.",
-    "es": "El fundador escribe @, elige @cara, y Spend responde que esa persona no tiene dirección Lightning. Alerta Esta persona no tiene dirección de Wallet of Satoshi. Aguja Esta persona no tiene dirección de Wallet of Satoshi.",
-    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na walang Lightning address ang taong iyon. Alerto Walang Wallet of Satoshi address ang taong ito. Karayom Walang Wallet of Satoshi address ang taong ito."
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person keine Lightning-Adresse hat. Hinweis Die Wallet dieser Person kann noch keine Bitcoin-Zahlungen empfangen. Nadel Die Wallet dieser Person kann noch keine Bitcoin-Zahlungen empfangen.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que esa persona no tiene dirección Lightning. Alerta La wallet de esta persona aún no puede recibir pagos en Bitcoin. Aguja La wallet de esta persona aún no puede recibir pagos en Bitcoin.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na walang Lightning address ang taong iyon. Alerto Hindi pa makatanggap ng Bitcoin na bayad ang wallet ng taong ito. Karayom Hindi pa makatanggap ng Bitcoin na bayad ang wallet ng taong ito."
   },
   "/welcome:ask-credit-preview": {
     "de": "Kredit, Schritt 9 von 9, bitcoin, nach der Nachricht Need help with a train ticket. Überschrift Vorschau. Einmalig und Kredit sind gedrückt. Die Karte zeigt die Autorin, die Nachricht und die Zielleiste bei 0 %: Anfragen ₿21'000 · $21.00, ein Darlehen-Etikett und Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 Tage. Senden ist die einzige Übermittlung. Sie sendet goalRepayable: true und goalTermDays: 30 mit dem Anfragebetrag. Der Zähler zeigt 9 von 9.",

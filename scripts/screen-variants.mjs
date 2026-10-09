@@ -4300,7 +4300,7 @@ export const SCREEN_VARIANTS = [
     id: 'no-lightning',
     image: 'grants-payments-amounts-no-lightning.png',
     visual: 'state-grants-payments-amounts-no-lightning',
-    needle: 'This person has no Wallet of Satoshi address.',
+    needle: "This person's wallet cannot receive Bitcoin payments yet.",
   },
   {
     route: '/profile/apply',
