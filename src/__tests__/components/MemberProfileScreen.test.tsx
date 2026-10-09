@@ -3092,6 +3092,44 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('posts a basis reply to the own profile note without an amount field or invoice', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, id: profile.id } });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    expect(document.getElementById('forum-reply-amount')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(fetchComposeTarget).not.toHaveBeenCalled();
+  });
+
+  it('asks for text instead of paying when an own profile-note reply is empty', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, id: profile.id } });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    });
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
   it('lets a founder reply without paying', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     renderWithLocale(

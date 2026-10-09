@@ -49,7 +49,7 @@ import { useHeartTip } from '@/lib/heart-tip';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shopStickerLangFromLocation } from '@/lib/shop-sticker';
 import { shortResourceUrl } from '@/lib/short-link';
-import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
@@ -1199,9 +1199,18 @@ export function MemberProfileScreen({
     const parentId = expandedId;
     const parentRow = posts?.find((message) => message.id === parentId);
     const parentAccountId = parentRow?.accountId;
+    const own = isOwnNote(account?.id, parentAccountId);
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
     const continueReply = (isRetry: boolean): Promise<void> => {
+      // Your own note shows no amount field: the reply is posted without a payment.
+      if (own) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return runReplyPost(token, trimmed, parentId, isRetry);
+      }
       if (parsed === 'invalid') {
         setReplyFormError('amount');
         return Promise.resolve();

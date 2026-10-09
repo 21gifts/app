@@ -17198,6 +17198,60 @@ test.describe('welcome forum variants', () => {
     });
   }
 
+  test('welcome reply-own-note', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              accountId: E2E_ACCOUNT.id,
+              name: 'Ada',
+              text: 'Does anyone have spare sats this week?',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 1,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m1/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r1',
+              accountId: 'acc_pat',
+              name: 'Pat',
+              text: 'A reply',
+              createdAt: '2026-08-28T10:30:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'No gifts yet');
+    await page.getByRole('button', { name: 'Show reactions', exact: true }).click();
+    await expect(page.getByPlaceholder('Write a reaction')).toBeVisible();
+    await expect(page.getByText('A reply', { exact: true })).toBeVisible();
+    await expect(page.locator('#forum-reply-amount')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-reply-own-note');
+  });
+
   test('welcome all', async ({ page }) => {
     await seedAda(page);
     await fulfillMixedSatsMessages(page);

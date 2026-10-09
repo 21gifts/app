@@ -7190,6 +7190,57 @@ describe('ForumLoader', () => {
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
+  it('posts a basis reply to the own note directly, with no amount field and no invoice', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'r-own',
+      text: 'My own reply',
+      sats: 0,
+      payable: false,
+      role: 'basis',
+    });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    expect(document.getElementById('forum-reply-amount')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'My own reply' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'My own reply', inReplyTo: 'm1' });
+    });
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('asks for text instead of paying when an own-note reply is empty', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    });
+    expect(postMock).not.toHaveBeenCalled();
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
   it('maps a deleted unpaid reply onto the deleted-note error', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     fetchMock.mockResolvedValue(forumPage([FOREIGN]));
