@@ -35,7 +35,9 @@ export function StatsLoader(): ReactElement {
         if (!cancelled) {
           setStats(null);
           setError(
-            cause instanceof Error ? cause.message : 'Could not load gift stats. Please try again.',
+            cause instanceof Error
+              ? cause.message
+              : 'Could not load donation stats. Please try again.',
           );
         }
       } finally {

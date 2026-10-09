@@ -62,6 +62,15 @@ test('Function: marketingMetadata — homepage has its own search and social tit
   expect(html).toContain('<title>Help people with Bitcoin | 21.gifts</title>');
   expect(html).toContain('<meta property="og:title" content="Help people with Bitcoin | 21.gifts"');
   expect(html).toContain('<link rel="canonical" href="https://21.gifts/en"');
+
+  const german = await request.get('/de');
+  expect(german.ok()).toBe(true);
+  const germanHtml = await german.text();
+  expect(germanHtml).toContain('<title>Help people with Bitcoin | 21.gifts</title>');
+  expect(germanHtml).toContain('/og.png');
+  expect(germanHtml).toContain('21.gifts: Help people. With Bitcoin. Your wallet to their wallet.');
+  expect(germanHtml).toContain('rel="canonical" href="https://21.gifts/de"');
+  expect(germanHtml).not.toContain('/og-de.png');
 });
 
 test('Function: readJpegTakenAt — a jpeg with Exif sends its capture time', async ({
@@ -3381,7 +3390,7 @@ test('Function: shouldOfferIosInstall — iPhone Safari shows the install contro
 
 test('Function: MarketingFooter — landing shows the footer wordmark', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('footer').getByText('21.gifts')).toBeVisible();
+  await expect(page.locator('footer').getByText('21.gifts', { exact: true })).toBeVisible();
 });
 
 test('Function: LegalPage — legal heading is visible', async ({ page }) => {
@@ -4721,7 +4730,7 @@ async function expectWrongAccountHint(page: Page): Promise<void> {
   await page.goto('/login');
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'You signed in with the wrong account. Please try again with the correct account.',
+      hasText: 'You signed in with a different account. Try again with the right one.',
     }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
@@ -5468,7 +5477,7 @@ test('Function: GiftDayTable — day page lists alice', async ({ page }) => {
 
 test('Function: DayLoader — empty day copy is visible', async ({ page }) => {
   await page.goto('/stats/2026-06-02');
-  await expect(page.getByText('No gifts recorded on this day.')).toBeVisible();
+  await expect(page.getByText('No donations recorded on this day.')).toBeVisible();
 });
 
 test('Function: GiftDayPage — invalid day is 404', async ({ page }) => {
@@ -5513,24 +5522,24 @@ test('Function: fetchPostStats — stats page shows notes and replies as posts',
 test('Function: fetchGiftStats — stats page shows the empty copy', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
-  await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
+  await expect(page.getByText('No donations recorded yet.')).toBeVisible();
 });
 
 test('Function: StatsPage — stats heading is visible', async ({ page }) => {
   await page.goto('/stats');
-  await expect(page.getByRole('heading', { name: 'Gifts' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Donations' })).toBeVisible();
 });
 
 test('Function: StatsLoader — stats page shows the empty copy', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
-  await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
+  await expect(page.getByText('No donations recorded yet.')).toBeVisible();
 });
 
 test('Function: StatsDashboard — empty stats hide the spend chart heading', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
-  await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
+  await expect(page.getByText('No donations recorded yet.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Total spend over time' })).toHaveCount(0);
 });
 

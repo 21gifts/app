@@ -7,7 +7,8 @@ import {
 } from '@/lib/locale';
 
 /**
- * Cookie `locale` if it is a supported locale; otherwise Accept-Language.
+ * Header `x-21gifts-public-locale` (set by middleware for language URLs),
+ * then cookie `locale`, then Accept-Language.
  * Never writes a cookie.
  *
  * Lives in its own module so client components can import {@link LOCALES}

@@ -7,7 +7,13 @@ export type Locale = (typeof LOCALES)[number];
 /** Fallback when Accept-Language is empty or unmatched. */
 export const DEFAULT_LOCALE: Locale = 'en';
 
-/** Cookie name written only when the visitor picks a language in the switcher. */
+/**
+ * Cookie name for the visitor's language.
+ *
+ * Written by the language switcher, the profile, account sync, and middleware
+ * when the browser opens a language URL as a page. Prefetches and in-app
+ * navigations do not set it.
+ */
 export const LOCALE_COOKIE = 'locale';
 
 /**

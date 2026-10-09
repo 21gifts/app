@@ -22,20 +22,19 @@ import { getRequestLocale } from '@/lib/request-locale';
 import { localizedPublicPath } from '@/lib/public-locale-path';
 import { translate } from '@/lib/translate';
 
-/** Localized search and social preview for the marketing home. */
+/** English search preview for the marketing home. Canonical follows the language URL. */
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
-  const messages = getCatalog(locale);
   return marketingMetadata(
     '/',
-    messages['home.metaTitle'],
-    messages['home.metaDescription'],
+    'Help people with Bitcoin | 21.gifts',
+    "Read what people share, react to a post and donate Bitcoin directly to the person's wallet. 21.gifts does not hold your donation and keeps no share.",
     locale,
   );
 }
 
 /**
- * Direct Bitcoin giving journey, project context, and complete Happyland story.
+ * Direct Bitcoin giving journey, project context, and the Happyland place portrait.
  * @returns The localized marketing home.
  */
 export default async function Home(): Promise<ReactElement> {
@@ -273,7 +272,9 @@ export default async function Home(): Promise<ReactElement> {
                 <span className="text-xs font-semibold tracking-[0.2em] text-accent uppercase">
                   {messages['happyland.kicker']}
                 </span>
-                <span className="mt-3 text-4xl font-semibold tracking-tight">Happyland</span>
+                <span className="mt-3 text-4xl font-semibold tracking-tight">
+                  {t('nav.happyland')}
+                </span>
               </div>
               <div className="p-6">
                 <span className="text-xs font-semibold tracking-[0.15em] text-ink/55 uppercase">

@@ -18,7 +18,9 @@ afterEach(cleanup);
 describe('MarketingFooter', () => {
   it('links About to /en/about', async () => {
     render(await MarketingFooter());
-    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/en/about');
+    expect(screen.getByRole('link', { name: 'About 21.gifts' }).getAttribute('href')).toBe(
+      '/en/about',
+    );
   });
 
   it('does not link Trust Chain', async () => {
@@ -50,6 +52,12 @@ describe('MarketingFooter', () => {
     expect(screen.getByRole('link', { name: 'GitHub' }).getAttribute('href')).toBe(
       'https://github.com/21gifts',
     );
+  });
+
+  it('renders the wordmark as text, not a link', async () => {
+    render(await MarketingFooter());
+    expect(screen.queryByRole('link', { name: '21.gifts' })).toBeNull();
+    expect(screen.getByText('21.gifts').tagName).toBe('SPAN');
   });
 
   it('quotes Matthew 10:8', async () => {

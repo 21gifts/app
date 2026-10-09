@@ -233,7 +233,9 @@ describe('LoginCard', () => {
     mockPasskey('error', WRONG_ACCOUNT_ERROR);
     renderWithLocale(<LoginCard />);
     const alert = screen.getByRole('alert');
-    expect(alert.textContent).toBe(WRONG_ACCOUNT_ERROR);
+    expect(alert.textContent).toBe(
+      'You signed in with a different account. Try again with the right one.',
+    );
     expect(screen.queryByText('Something went wrong. Please try again.')).toBeNull();
     expect(alert.className).toContain('text-app-danger');
     fireEvent.click(screen.getByRole('button', { name: /try again/i }));
@@ -246,7 +248,9 @@ describe('LoginCard', () => {
     useAuthStore.setState({ wrongAccount: true });
     renderWithLocale(<LoginCard />);
     const alert = screen.getByRole('alert');
-    expect(alert.textContent).toBe(WRONG_ACCOUNT_ERROR);
+    expect(alert.textContent).toBe(
+      'You signed in with a different account. Try again with the right one.',
+    );
     expect(screen.queryByRole('button', { name: /^log in$/i })).toBeNull();
     expect(screen.queryByText('Something went wrong. Please try again.')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /try again/i }));
@@ -363,7 +367,7 @@ describe('LoginCard', () => {
     renderWithLocale(<LoginCard />);
     await waitFor(() => {
       expect(
-        screen.getByText('On iPhone, tap the compass or Safari icon at the top right.'),
+        screen.getByText("On iPhone, you'll find the compass or Safari icon at the top right."),
       ).toBeTruthy();
     });
   });

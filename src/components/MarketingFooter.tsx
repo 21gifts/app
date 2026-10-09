@@ -19,7 +19,7 @@ export async function MarketingFooter(): Promise<ReactElement> {
   return (
     <footer className="border-t border-paper/10 px-5 py-10">
       <div className="mx-auto flex max-w-[1100px] flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <Wordmark tone="dark" size="footer" href={home} />
+        <Wordmark tone="dark" size="footer" />
         <nav
           aria-label={translate(messages, 'aria.footer')}
           className="flex flex-wrap gap-4 text-sm text-paper/70"

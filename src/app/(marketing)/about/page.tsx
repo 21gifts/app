@@ -6,14 +6,13 @@ import { marketingMetadata } from '@/lib/marketing-metadata';
 import { getRequestLocale } from '@/lib/request-locale';
 import { translate } from '@/lib/translate';
 
-/** Localized search and social preview for `/about`. */
+/** English search preview for `/about`. Canonical follows the language URL. */
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
-  const messages = getCatalog(locale);
   return marketingMetadata(
     '/about',
-    `${messages['about.heading']} | 21.gifts`,
-    messages['about.lead'],
+    'What 21.gifts stands for | 21.gifts',
+    'In the forum, people can ask for help and donate Bitcoin to one another. Three convictions stand behind 21.gifts.',
     locale,
   );
 }

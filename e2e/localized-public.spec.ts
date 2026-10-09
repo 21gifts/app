@@ -11,6 +11,29 @@ test('Function: middleware — URL language overrides a conflicting cookie', asy
   await page.goto('/de/about');
   await expect(page.locator('html')).toHaveAttribute('lang', 'de');
   await expect(page.getByRole('heading', { name: 'Wofür 21.gifts steht' })).toBeVisible();
+  const localeCookies = (await context.cookies()).filter((cookie) => cookie.name === 'locale');
+  expect(localeCookies.map((cookie) => cookie.value)).toEqual(['de']);
+});
+
+test('Function: middleware — a link prefetch does not set the locale cookie', async ({
+  page,
+  context,
+}) => {
+  expect((await context.cookies()).some((cookie) => cookie.name === 'locale')).toBe(false);
+  const prefetched = page.waitForResponse((response) => {
+    const pathname = new URL(response.url()).pathname;
+    const languagePath = pathname === '/en' || pathname.startsWith('/en/');
+    return languagePath && response.request().resourceType() !== 'document';
+  });
+  await page.goto('/');
+  const donate = page.locator('a[href="/en/donate"]');
+  await donate.scrollIntoViewIfNeeded();
+  await donate.hover();
+  await prefetched;
+  expect((await context.cookies()).some((cookie) => cookie.name === 'locale')).toBe(false);
+  await page.goto('/de');
+  const localeCookies = (await context.cookies()).filter((cookie) => cookie.name === 'locale');
+  expect(localeCookies.map((cookie) => cookie.value)).toEqual(['de']);
 });
 
 test('Function: localizedPublicPath — giving links keep the page language', async ({ page }) => {
@@ -110,6 +133,42 @@ test('all localized public pages serve reciprocal canonical and language links',
       }
     }
   }
+});
+
+test('a German URL keeps English document metadata and a German canonical', async ({ request }) => {
+  const response = await request.get('/de');
+  expect(response.status()).toBe(200);
+  const html = await response.text();
+  expect(html).toContain('<title>Help people with Bitcoin | 21.gifts</title>');
+  expect(html).toContain('/og.png');
+  expect(html).toContain('21.gifts: Help people. With Bitcoin. Your wallet to their wallet.');
+  expect(html).toContain('rel="canonical" href="https://21.gifts/de"');
+  expect(html).not.toContain('/og-de.png');
+});
+
+test.describe('language URL keeps the language for the next page', () => {
+  test.use({ locale: 'en-US' });
+
+  test('Function: middleware — German home stays German on login', async ({ page, context }) => {
+    expect((await context.cookies()).some((cookie) => cookie.name === 'locale')).toBe(false);
+    await page.goto('/de');
+    await page.getByRole('link', { name: 'Selbst um Hilfe bitten' }).first().click();
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+    await expect(
+      page.getByRole('heading', { name: 'Melde dich mit deinem Gerät an' }),
+    ).toBeVisible();
+  });
+
+  test('Function: middleware — a Spanish URL replaces a Filipino cookie', async ({
+    page,
+    context,
+  }) => {
+    await context.addCookies([{ name: 'locale', value: 'fil', url: 'http://localhost:3000' }]);
+    await page.goto('/es/about');
+    await page.goto('/login');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  });
 });
 
 test('sitemap lists the sixteen localized public pages', async ({ request }) => {

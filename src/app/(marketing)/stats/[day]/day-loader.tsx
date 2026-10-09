@@ -75,7 +75,9 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
         if (!cancelled) {
           setPayload(null);
           setError(
-            cause instanceof Error ? cause.message : 'Could not load gift stats. Please try again.',
+            cause instanceof Error
+              ? cause.message
+              : 'Could not load donation stats. Please try again.',
           );
         }
       } finally {
@@ -129,9 +131,10 @@ export function DayLoader({ day }: DayLoaderProps): ReactElement {
             <FiatPicker value={fiat} onChange={setFiat} ariaLabel="Fiat currency" />
           ) : null}
           <p className="text-paper/60">
-            {formatGroupedNumber(payload.giftCount, numberFormat, 0)} gift
-            {payload.giftCount === 1 ? '' : 's'} · {formatBitcoin(payload.totalSats, numberFormat)}{' '}
-            · {formatFiatDisplay(dayTotal(payload, fiat), fiat, numberFormat)}
+            {formatGroupedNumber(payload.giftCount, numberFormat, 0)}{' '}
+            {payload.giftCount === 1 ? 'donation' : 'donations'} ·{' '}
+            {formatBitcoin(payload.totalSats, numberFormat)} ·{' '}
+            {formatFiatDisplay(dayTotal(payload, fiat), fiat, numberFormat)}
           </p>
           <GiftDayTable day={payload} fiat={fiat} numberFormat={numberFormat} />
         </div>

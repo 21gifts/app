@@ -144,7 +144,7 @@ describe('FundingStatusCard', () => {
     expect(
       screen.getByRole('link', { name: 'https://21.gifts/statistics' }).getAttribute('href'),
     ).toBe('https://21.gifts/statistics');
-    expect(screen.queryByRole('link', { name: 'About' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'About 21.gifts' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeNull();
   });
@@ -166,7 +166,7 @@ describe('FundingStatusCard', () => {
         'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
       ),
     ).toBeNull();
-    expect(screen.queryByRole('link', { name: 'About' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'About 21.gifts' })).toBeNull();
   });
 
   it('shows paused copy for rejected status', () => {
@@ -196,7 +196,7 @@ describe('FundingStatusCard', () => {
       screen.getByRole('link', { name: 'https://21.gifts/statistics' }).getAttribute('href'),
     ).toBe('https://21.gifts/statistics');
     expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'About' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'About 21.gifts' })).toBeNull();
   });
 
   it('shows pending copy and no apply button', () => {
@@ -306,7 +306,9 @@ describe('FundingStatusCard', () => {
         'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
       ),
     ).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
+    expect(screen.getByRole('link', { name: 'About 21.gifts' }).getAttribute('href')).toBe(
+      '/about',
+    );
     expect(
       screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
     ).toBe('/grants/apply');

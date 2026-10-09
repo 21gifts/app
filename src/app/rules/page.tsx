@@ -7,14 +7,13 @@ import { getRequestLocale } from '@/lib/request-locale';
 import { marketingMetadata } from '@/lib/marketing-metadata';
 import { translate } from '@/lib/translate';
 
-/** Search preview for the public living room rules. */
+/** English search preview for `/rules`. Canonical follows the language URL. */
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
-  const messages = getCatalog(locale);
   return marketingMetadata(
     '/rules',
-    `${messages['rules.heading']} | 21.gifts`,
-    messages['rules.lead'],
+    'Living room rules | 21.gifts',
+    'You are a guest in a living room with the windows open. Everything you write here is public, and anyone walking past can read along.',
     locale,
   );
 }
