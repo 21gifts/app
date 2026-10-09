@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import AboutPage, { generateMetadata } from '@/app/(marketing)/about/page';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { OG_IMAGE_ALT } from '@/lib/marketing-metadata';
+import { getRequestLocale } from '@/lib/request-locale';
 
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -17,13 +19,41 @@ vi.mock('@/lib/request-locale', () => ({
 afterEach(cleanup);
 
 describe('AboutPage', () => {
-  it('publishes a German canonical and reciprocal language URLs', async () => {
-    const { getRequestLocale } = await import('@/lib/request-locale');
+  it('publishes the same English preview on every language URL', async () => {
+    const title = 'What 21.gifts stands for | 21.gifts';
+    const description =
+      'In the forum, people can ask for help and donate Bitcoin to one another. Three convictions stand behind 21.gifts.';
+    const preview = {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: [{ url: '/og.png', alt: OG_IMAGE_ALT }],
+      },
+      twitter: {
+        title,
+        description,
+        images: [{ url: '/og.png', alt: OG_IMAGE_ALT }],
+      },
+    };
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('en');
+    expect(await generateMetadata()).toMatchObject({
+      ...preview,
+      alternates: { canonical: '/en/about', languages: { es: '/es/about' } },
+      openGraph: { ...preview.openGraph, url: '/en/about' },
+    });
     vi.mocked(getRequestLocale).mockResolvedValueOnce('de');
     expect(await generateMetadata()).toMatchObject({
-      title: 'Wofür 21.gifts steht | 21.gifts',
+      ...preview,
       alternates: { canonical: '/de/about', languages: { es: '/es/about' } },
-      openGraph: { url: '/de/about', images: [{ url: '/og-de.png' }] },
+      openGraph: { ...preview.openGraph, url: '/de/about' },
+    });
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('fil');
+    expect(await generateMetadata()).toMatchObject({
+      ...preview,
+      alternates: { canonical: '/fil/about' },
+      openGraph: { ...preview.openGraph, url: '/fil/about' },
     });
   });
 

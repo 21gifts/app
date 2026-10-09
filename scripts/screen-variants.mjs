@@ -146,7 +146,7 @@ export const SCREEN_VARIANTS = [
     id: 'wrong-account',
     image: 'login-wrong-account.png',
     visual: 'state-login-wrong-account',
-    needle: 'You signed in with the wrong account. Please try again with the correct account.',
+    needle: 'You signed in with a different account. Try again with the right one.',
   },
   {
     route: '/login',
@@ -3298,7 +3298,7 @@ export const SCREEN_VARIANTS = [
     id: 'empty',
     image: 'stats-empty.png',
     visual: 'state-stats-empty',
-    needle: 'No gifts recorded yet.',
+    needle: 'No donations recorded yet.',
   },
   {
     route: '/stats',
@@ -3368,7 +3368,7 @@ export const SCREEN_VARIANTS = [
     id: 'empty',
     image: 'stats-day-empty.png',
     visual: 'state-stats-day-empty',
-    needle: 'No gifts recorded on this day.',
+    needle: 'No donations recorded on this day.',
   },
   {
     route: '/stats/[day]',

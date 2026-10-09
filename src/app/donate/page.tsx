@@ -11,14 +11,13 @@ import { marketingMetadata } from '@/lib/marketing-metadata';
 import { translate } from '@/lib/translate';
 import { localizedPublicPath } from '@/lib/public-locale-path';
 
-/** The public gift entry page also has its own canonical search preview. */
+/** English search preview for `/donate`. Canonical follows the language URL. */
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
-  const messages = getCatalog(locale);
   return marketingMetadata(
     '/donate',
-    messages['donate.metaTitle'],
-    messages['donate.lead'],
+    'Donate Bitcoin and help someone | 21.gifts',
+    'Sign in and open a post in the forum. Write a reaction under it, add an amount and pay from your wallet. The Bitcoin goes to the person who wrote the post.',
     locale,
   );
 }

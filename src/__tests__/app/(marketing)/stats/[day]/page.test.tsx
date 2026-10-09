@@ -22,7 +22,7 @@ afterEach(() => {
 describe('GiftDayPage', () => {
   it('renders the heading for a valid day', async () => {
     render(await GiftDayPage({ params: Promise.resolve({ day: '2026-06-01' }) }));
-    const heading = screen.getByRole('heading', { name: 'Gifts on 2026-06-01' });
+    const heading = screen.getByRole('heading', { name: 'Donations on 2026-06-01' });
     expect(heading.className).toContain('sm:text-6xl');
     expect(heading.className).toContain('leading-tight');
     expect(screen.getByText('loader-2026-06-01')).toBeTruthy();

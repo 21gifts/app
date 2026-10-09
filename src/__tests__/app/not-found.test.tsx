@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import NotFound from '@/app/not-found';
@@ -38,8 +38,10 @@ describe('NotFound', () => {
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',
     );
-    const wordmarks = screen.getAllByRole('link', { name: '21.gifts' });
-    expect(wordmarks.map((link) => link.getAttribute('href'))).toEqual(['/en', '/en']);
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/en');
+    const footer = screen.getByRole('contentinfo');
+    expect(within(footer).queryByRole('link', { name: '21.gifts' })).toBeNull();
+    expect(within(footer).getByText('21.gifts').tagName).toBe('SPAN');
     expect(screen.queryByLabelText('Number format')).toBeNull();
   });
 

@@ -132,7 +132,7 @@ describe('InAppBrowserView', () => {
     });
     renderWithLocale(<InAppBrowserView />);
     expect(
-      screen.getByText('On iPhone, tap the compass or Safari icon at the top right.'),
+      screen.getByText("On iPhone, you'll find the compass or Safari icon at the top right."),
     ).toBeTruthy();
   });
 

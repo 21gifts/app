@@ -213,9 +213,9 @@ function utcDay(iso: string | null): string {
  */
 function fiatFootnote(fiat: FiatCode): string {
   if (fiat === 'USD') {
-    return "USD is the BTC-USD daily close (UTC) on each gift's day.";
+    return "USD is the BTC-USD daily close (UTC) on each donation's day.";
   }
-  return `${fiat} is USD at each gift's UTC-day close, converted with that day's ECB rate.`;
+  return `${fiat} is USD at each donation's UTC-day close, converted with that day's ECB rate.`;
 }
 
 /**
@@ -694,7 +694,7 @@ export function StatsDashboard({
           </dd>
         </div>
         <div className="rounded-2xl border border-paper/10 p-5">
-          <dt className="text-sm text-paper/60">Gifts</dt>
+          <dt className="text-sm text-paper/60">Donations</dt>
           <dd className="mt-2 text-2xl font-semibold tabular-nums lining-nums">
             {formatCount(stats.giftCount, numberFormat)}
           </dd>
@@ -714,7 +714,7 @@ export function StatsDashboard({
       </dl>
 
       {empty ? (
-        <p className="text-paper/60">No gifts recorded yet.</p>
+        <p className="text-paper/60">No donations recorded yet.</p>
       ) : (
         <StatsCharts stats={stats} fiat={fiat} numberFormat={numberFormat} />
       )}

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Home, { generateMetadata } from '@/app/(marketing)/page';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { OG_IMAGE_ALT } from '@/lib/marketing-metadata';
 import { getRequestLocale } from '@/lib/request-locale';
 
 vi.mock('next/link', () => ({
@@ -45,17 +46,40 @@ describe('Home', () => {
     expect(screen.queryByRole('button', { name: /pay with/i })).toBeNull();
   });
 
-  it('publishes an accurate, localized search preview with one canonical', async () => {
+  it('publishes the same English preview on every language URL', async () => {
+    const title = 'Help people with Bitcoin | 21.gifts';
+    const description =
+      "Read what people share, react to a post and donate Bitcoin directly to the person's wallet. 21.gifts does not hold your donation and keeps no share.";
+    const preview = {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: [{ url: '/og.png', alt: OG_IMAGE_ALT }],
+      },
+      twitter: {
+        title,
+        description,
+        images: [{ url: '/og.png', alt: OG_IMAGE_ALT }],
+      },
+    };
     expect(await generateMetadata()).toMatchObject({
-      title: 'Help people with Bitcoin | 21.gifts',
+      ...preview,
       alternates: { canonical: '/en' },
-      openGraph: { url: '/en', title: 'Help people with Bitcoin | 21.gifts' },
+      openGraph: { ...preview.openGraph, url: '/en' },
     });
     vi.mocked(getRequestLocale).mockResolvedValueOnce('de');
     expect(await generateMetadata()).toMatchObject({
-      title: 'Hilf Menschen mit Bitcoin | 21.gifts',
+      ...preview,
       alternates: { canonical: '/de' },
-      openGraph: { title: 'Hilf Menschen mit Bitcoin | 21.gifts' },
+      openGraph: { ...preview.openGraph, url: '/de' },
+    });
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('es');
+    expect(await generateMetadata()).toMatchObject({
+      ...preview,
+      alternates: { canonical: '/es' },
+      openGraph: { ...preview.openGraph, url: '/es' },
     });
   });
 

@@ -68,12 +68,6 @@ describe('getCatalog', () => {
     }
   });
 
-  it('prefixes home.step2BodyAfter with a period in every locale', () => {
-    for (const locale of LOCALES) {
-      expect(getCatalog(locale)['home.step2BodyAfter']).toMatch(/^\./);
-    }
-  });
-
   it('contains no visitor-facing sats unit except Wallet of Satoshi and home.faq8A', () => {
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);

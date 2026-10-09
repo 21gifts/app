@@ -48,7 +48,7 @@ describe('StatsLoader', () => {
     fetchMock.mockResolvedValue(EMPTY);
     renderWithLocale(<StatsLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No gifts recorded yet.')).toBeTruthy();
+      expect(screen.getByText('No donations recorded yet.')).toBeTruthy();
     });
   });
 
@@ -57,13 +57,13 @@ describe('StatsLoader', () => {
     fetchPostsMock.mockRejectedValueOnce(new Error('Could not load post stats. Please try again.'));
     renderWithLocale(<StatsLoader />);
     await waitFor(() => {
-      expect(screen.getByText('No gifts recorded yet.')).toBeTruthy();
+      expect(screen.getByText('No donations recorded yet.')).toBeTruthy();
     });
     expect(screen.queryByRole('region', { name: 'Posts' })).toBeNull();
   });
 
   it('shows a fetch error and retries', async () => {
-    fetchMock.mockRejectedValueOnce(new Error('Could not load gift stats. Please try again.'));
+    fetchMock.mockRejectedValueOnce(new Error('Could not load donation stats. Please try again.'));
     fetchMock.mockResolvedValueOnce(EMPTY);
     renderWithLocale(<StatsLoader />);
     await waitFor(() => {
@@ -71,7 +71,7 @@ describe('StatsLoader', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
-      expect(screen.getByText('No gifts recorded yet.')).toBeTruthy();
+      expect(screen.getByText('No donations recorded yet.')).toBeTruthy();
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
@@ -80,7 +80,7 @@ describe('StatsLoader', () => {
     fetchMock.mockRejectedValueOnce('nope');
     renderWithLocale(<StatsLoader />);
     await waitFor(() => {
-      expect(screen.getByText('Could not load gift stats. Please try again.')).toBeTruthy();
+      expect(screen.getByText('Could not load donation stats. Please try again.')).toBeTruthy();
     });
   });
 

@@ -8,7 +8,7 @@ describe('manifest', () => {
     expect(value.name).toBe('21.gifts');
     expect(value.short_name).toBe('21.gifts');
     expect(value.description).toBe(
-      'Direct human-to-human giving in Bitcoin. People helping people — no middleman.',
+      "Read what people share, react to a post and donate Bitcoin directly to the person's wallet. 21.gifts does not hold your donation and keeps no share.",
     );
     expect(value.start_url).toBe('/welcome');
     expect(value.scope).toBe('/');

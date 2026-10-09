@@ -64,7 +64,7 @@ describe('LocationForm', () => {
     expect(screen.getByText('Not set')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Edit location' })).toBeTruthy();
     expect(screen.queryByText('Edit location')).toBeNull();
-    expect(screen.queryByPlaceholderText('City, country, or anywhere')).toBeNull();
+    expect(screen.queryByPlaceholderText('City or country')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Clear location' })).toBeNull();
   });
 
@@ -83,7 +83,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    const input = screen.getByPlaceholderText('City, country, or anywhere') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('City or country') as HTMLInputElement;
     expect(input.className).toContain('text-base');
     expect(input.className).not.toContain('text-sm');
     expect(input.value).toBe('');
@@ -99,7 +99,7 @@ describe('LocationForm', () => {
     expect(await screen.findByText('Zug')).toBeTruthy();
     expect(setLocation).toHaveBeenCalledWith('sess', 'Zug');
     expect(useAuthStore.getState().account?.location).toBe('Zug');
-    expect(screen.queryByPlaceholderText('City, country, or anywhere')).toBeNull();
+    expect(screen.queryByPlaceholderText('City or country')).toBeNull();
   });
 
   it('trims the location before posting', async () => {
@@ -107,7 +107,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: '  Zug  ' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -122,7 +122,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: '   ' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -151,14 +151,14 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: 'Zug' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toBe('Could not save your location');
-    expect(screen.getByPlaceholderText('City, country, or anywhere')).toBeTruthy();
+    expect(screen.getByPlaceholderText('City or country')).toBeTruthy();
   });
 
   it('cancels an edit and returns to the display view', () => {
@@ -166,12 +166,12 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    expect(screen.getByPlaceholderText('City, country, or anywhere')).toBeTruthy();
+    expect(screen.getByPlaceholderText('City or country')).toBeTruthy();
 
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
     expect(screen.queryByText('Cancel')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.queryByPlaceholderText('City, country, or anywhere')).toBeNull();
+    expect(screen.queryByPlaceholderText('City or country')).toBeNull();
     expect(screen.getByText('Zug')).toBeTruthy();
     expect(setLocation).not.toHaveBeenCalled();
   });
@@ -185,16 +185,16 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: 'Zug' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     const button = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
     expect(button.disabled).toBe(true);
-    expect(
-      (screen.getByPlaceholderText('City, country, or anywhere') as HTMLInputElement).disabled,
-    ).toBe(true);
+    expect((screen.getByPlaceholderText('City or country') as HTMLInputElement).disabled).toBe(
+      true,
+    );
     expect(button.querySelector('.animate-spin')).toBeTruthy();
 
     await act(async () => {
@@ -213,7 +213,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: 'Zug' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -245,7 +245,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: 'Zug' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -271,7 +271,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    fireEvent.change(screen.getByPlaceholderText('City, country, or anywhere'), {
+    fireEvent.change(screen.getByPlaceholderText('City or country'), {
       target: { value: 'Zug' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -294,7 +294,7 @@ describe('LocationForm', () => {
     renderWithLocale(<LocationForm />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit location' }));
-    const input = screen.getByPlaceholderText('City, country, or anywhere') as HTMLInputElement;
+    const input = screen.getByPlaceholderText('City or country') as HTMLInputElement;
     expect(input.value).toBe('Zug');
 
     fireEvent.change(input, { target: { value: 'Bern' } });

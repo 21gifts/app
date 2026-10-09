@@ -1095,7 +1095,7 @@ describe('fetchGiftDay', () => {
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 503, body: { error: 'Gift stats are unavailable' } });
     await expect(fetchGiftDay('2026-06-01')).rejects.toThrow(
-      'Could not load gift stats. Please try again.',
+      'Could not load donation stats. Please try again.',
     );
   });
 });
@@ -1199,17 +1199,23 @@ describe('fetchGiftStats', () => {
 
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 503, body: { error: 'Gift stats are unavailable' } });
-    await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
+    await expect(fetchGiftStats()).rejects.toThrow(
+      'Could not load donation stats. Please try again.',
+    );
   });
 
   it('throws visitor copy when fetch itself fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
-    await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
+    await expect(fetchGiftStats()).rejects.toThrow(
+      'Could not load donation stats. Please try again.',
+    );
   });
 
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { giftCount: 1 } });
-    await expect(fetchGiftStats()).rejects.toThrow('Could not load gift stats. Please try again.');
+    await expect(fetchGiftStats()).rejects.toThrow(
+      'Could not load donation stats. Please try again.',
+    );
   });
 });
 
