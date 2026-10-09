@@ -12,9 +12,10 @@ const VIEW_KEY_RE = /^[0-9a-f]{64}$/;
 
 /**
  * Client loader for `/view/[viewKey]`: validates the key, fetches the public
- * profile, then given/received activity for the chart (even when the Lightning
- * Address is blank). An activity fetch failure keeps the card and sets
- * `activityFailed`. Does not use `useAuthStore`.
+ * profile, then given/received and loan activity for the charts (even when the
+ * Lightning Address is blank). An activity fetch failure keeps the card and
+ * sets `activityFailed`. Missing loan fields become empty series. Does not use
+ * `useAuthStore`.
  *
  * @param props - Dynamic route `viewKey`.
  * @returns Loading, missing, error, or the read-only profile card with activate/claim control.
@@ -27,6 +28,8 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
   const [profile, setProfile] = useState<ViewProfile | null>(null);
   const [received, setReceived] = useState<AccountActivity['receivedOverTime']>([]);
   const [donated, setDonated] = useState<AccountActivity['donatedOverTime']>([]);
+  const [owed, setOwed] = useState<NonNullable<AccountActivity['owedOverTime']>>([]);
+  const [credit, setCredit] = useState<NonNullable<AccountActivity['creditOverTime']>>([]);
   const [activityFailed, setActivityFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
@@ -36,6 +39,8 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
       setProfile(null);
       setReceived([]);
       setDonated([]);
+      setOwed([]);
+      setCredit([]);
       setActivityFailed(false);
       return;
     }
@@ -45,6 +50,8 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
     setProfile(null);
     setReceived([]);
     setDonated([]);
+    setOwed([]);
+    setCredit([]);
     setActivityFailed(false);
 
     void (async () => {
@@ -61,6 +68,8 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
         setStatus('ready');
         setReceived([]);
         setDonated([]);
+        setOwed([]);
+        setCredit([]);
         setActivityFailed(false);
 
         try {
@@ -70,6 +79,8 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
           }
           setReceived(activity.receivedOverTime);
           setDonated(activity.donatedOverTime);
+          setOwed(activity.owedOverTime ?? []);
+          setCredit(activity.creditOverTime ?? []);
           setActivityFailed(false);
         } catch {
           if (cancelled) {
@@ -77,6 +88,8 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
           }
           setReceived([]);
           setDonated([]);
+          setOwed([]);
+          setCredit([]);
           setActivityFailed(true);
         }
       } catch {
@@ -126,6 +139,8 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
         viewKey={viewKey}
         received={received}
         donated={donated}
+        owed={owed}
+        credit={credit}
         activityFailed={activityFailed}
       />
       <ViewProfileClaim viewKey={viewKey} hasPasskey={readyProfile.hasPasskey} />

@@ -142,6 +142,7 @@ describe('ViewProfileLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Could not load gifts.')).toBeTruthy();
     });
+    expect(screen.getByText('Could not load loans.')).toBeTruthy();
     expect(screen.queryByText('No gifts yet.')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
   });
@@ -248,5 +249,65 @@ describe('ViewProfileLoader', () => {
     fetchProfile.mockImplementation(() => new Promise(() => undefined));
     renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
     expect(screen.getByText('Loading…')).toBeTruthy();
+  });
+
+  it('shows loan empty copy when activity omits loan fields', async () => {
+    fetchProfile.mockResolvedValue(profile);
+    fetchActivity.mockResolvedValue(EMPTY_ACTIVITY);
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Ada')).toBeTruthy();
+    });
+    expect(screen.getByText('No loans yet.')).toBeTruthy();
+  });
+
+  it('renders debt and credit legend when loan series are present', async () => {
+    fetchProfile.mockResolvedValue(profile);
+    fetchActivity.mockResolvedValue({
+      ...EMPTY_ACTIVITY,
+      owedSats: 100,
+      creditSats: 50,
+      owedOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 100,
+          cumulativeSats: 100,
+          btc: '0.00000100',
+          cumulativeBtc: '0.00000100',
+          usd: '0.10',
+          cumulativeUsd: '0.10',
+          chf: '0.08',
+          eur: '0.09',
+          php: '5.60',
+          cumulativeChf: '0.08',
+          cumulativeEur: '0.09',
+          cumulativePhp: '5.60',
+        },
+      ],
+      creditOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 50,
+          cumulativeSats: 50,
+          btc: '0.00000050',
+          cumulativeBtc: '0.00000050',
+          usd: '0.05',
+          cumulativeUsd: '0.05',
+          chf: '0.04',
+          eur: '0.05',
+          php: '2.80',
+          cumulativeChf: '0.04',
+          cumulativeEur: '0.05',
+          cumulativePhp: '2.80',
+        },
+      ],
+    });
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Ada')).toBeTruthy();
+    });
+    expect(screen.getByText('Debt')).toBeTruthy();
+    expect(screen.getByText('Credit')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Debt and credit in ₿' })).toBeTruthy();
   });
 });
