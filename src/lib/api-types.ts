@@ -1356,9 +1356,19 @@ export const dailyRosterSchema = z.object({
       name: z.string().nullable(),
     }),
   ),
+  moderatorPaymentsEnabled: z.boolean(),
+  moderators: z.array(
+    z.object({
+      address: z.string(),
+      amountUsd: z.number(),
+      accountId: z.string().min(1).nullable(),
+      name: z.string().nullable(),
+    }),
+  ),
 });
 
 /**
- * Daily payout comment, payments switch, unlisted grant default, and recipient list.
+ * Daily payout comment, payments switch, unlisted grant default, recipient list,
+ * moderator payments switch, and moderator stipend list.
  */
 export type DailyRoster = z.infer<typeof dailyRosterSchema>;

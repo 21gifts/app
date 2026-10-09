@@ -1815,10 +1815,10 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: fetchDailyRoster
 
-- **Purpose:** GET `/funding/daily-roster` (same-origin Bearer proxy of api `GET /funding/daily-roster`) and parse `dailyRosterSchema`. Next.js forbids a `route.ts` beside `/grants/payments/comment` and `/grants/payments/amounts`, so the proxy lives at this path. The body is `{ comment, paymentsEnabled, defaultAmountUsd, recipients }` with `{ address, amountUsd, accountId, name }` rows. `address` stays in the JSON and is not rendered. `defaultAmountUsd` is a finite number.
+- **Purpose:** GET `/funding/daily-roster` (same-origin Bearer proxy of api `GET /funding/daily-roster`) and parse `dailyRosterSchema`. Next.js forbids a `route.ts` beside `/grants/payments/comment`, `/grants/payments/amounts`, and `/grants/payments/moderators`, so the proxy lives at this path. The body is `{ comment, paymentsEnabled, defaultAmountUsd, recipients, moderatorPaymentsEnabled, moderators }` with `{ address, amountUsd, accountId, name }` rows on both lists. `address` stays in the JSON and is not rendered. `defaultAmountUsd` is a finite number. Moderator rows stay out of `recipients`.
 - **Inputs:** Bearer `session`.
 - **Returns / side effects:** Parsed roster. Throws `funding.daily.forbidden` on api `Forbidden`. Throws visitor copy `Could not load daily payments. Please try again.` on 401, other 403, 503, other non-2xx, network failure, or a body that fails the schema.
-- **Used by:** `DailyPaymentCommentScreen`, `DailyPaymentAmountsScreen`.
+- **Used by:** `DailyPaymentCommentScreen`, `DailyPaymentAmountsScreen`, `DailyPaymentModeratorsScreen`.
 
 ## Function: saveDailyRosterComment
 
@@ -1854,6 +1854,34 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Inputs:** Bearer `session`, stored address.
 - **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Unknown address`. Any other failure is `funding.daily.saveError`.
 - **Used by:** `DailyPaymentAmountsScreen`.
+
+## Function: addDailyRosterModerator
+
+- **Purpose:** POST `/funding/daily-roster/moderators` with `{ accountId, amountUsd }` and parse the returned roster. `amountUsd` is a real number, not a numeric string.
+- **Inputs:** Bearer `session`, account id, USD amount.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Invalid person or amount`, `Unknown person`, `Person has no Lightning address`, and `Address already listed`. Any other failure is `funding.daily.saveError`.
+- **Used by:** `DailyPaymentModeratorsScreen`.
+
+## Function: updateDailyRosterModerator
+
+- **Purpose:** POST `/funding/daily-roster/moderators/update` with `{ address, amountUsd }` and parse the returned roster.
+- **Inputs:** Bearer `session`, stored address, new USD amount.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Invalid address or amount` and `Unknown address`. Any other failure is `funding.daily.saveError`.
+- **Used by:** `DailyPaymentModeratorsScreen`.
+
+## Function: deleteDailyRosterModerator
+
+- **Purpose:** POST `/funding/daily-roster/moderators/delete` with `{ address }` and parse the returned roster.
+- **Inputs:** Bearer `session`, stored address.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps `Unknown address`. Any other failure is `funding.daily.saveError`.
+- **Used by:** `DailyPaymentModeratorsScreen`.
+
+## Function: saveDailyRosterModeratorPayments
+
+- **Purpose:** POST `/funding/daily-roster/moderators/payments` with `{ enabled }` and parse the returned roster. `enabled` is a boolean.
+- **Inputs:** Bearer `session`, `enabled`.
+- **Returns / side effects:** Updated roster. Throws a `funding.daily.*` catalog key. Maps api `Invalid payments switch` to `funding.daily.invalidSwitch`. Any other failure is `funding.daily.saveError`.
+- **Used by:** `DailyPaymentModeratorsScreen`.
 
 ## Function: postFundingAdmit
 
@@ -2998,6 +3026,34 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` (Bearer session and JSON body).
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route POST `/funding/daily-roster/recipients/delete`.
+
+## Function: proxyFundingDailyRosterModeratorsPost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /funding/daily-roster/moderators` with JSON `{ accountId, amountUsd }`.
+- **Inputs:** Incoming `Request` (Bearer session and JSON body).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/funding/daily-roster/moderators`.
+
+## Function: proxyFundingDailyRosterModeratorsUpdatePost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /funding/daily-roster/moderators/update` with JSON `{ address, amountUsd }`.
+- **Inputs:** Incoming `Request` (Bearer session and JSON body).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/funding/daily-roster/moderators/update`.
+
+## Function: proxyFundingDailyRosterModeratorsDeletePost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /funding/daily-roster/moderators/delete` with JSON `{ address }`.
+- **Inputs:** Incoming `Request` (Bearer session and JSON body).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/funding/daily-roster/moderators/delete`.
+
+## Function: proxyFundingDailyRosterModeratorsPaymentsPost
+
+- **Purpose:** Same-origin Bearer proxy helper for api `POST /funding/daily-roster/moderators/payments` with JSON `{ enabled }`.
+- **Inputs:** Incoming `Request` (Bearer session and JSON body).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route POST `/funding/daily-roster/moderators/payments`.
 
 ## Function: proxyFundingApplicationGet
 
@@ -4289,7 +4345,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: GrantsScreen
 
-- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When `canEditDailyPayoutRoster` is true (initiator or founder only), two secondary large `ButtonLink`s, **Daily payment text** to `/grants/payments/comment` and **Daily payment amounts** to `/grants/payments/amounts`, do not fetch the roster. A moderator does not see those links. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
+- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When `canEditDailyPayoutRoster` is true (initiator or founder only), three secondary large `ButtonLink`s, **Daily payment text** to `/grants/payments/comment`, **Daily payment amounts** to `/grants/payments/amounts`, and **Moderator payments** to `/grants/payments/moderators`, do not fetch the roster. A moderator does not see those links. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only when `roleAtLeast(role, 'moderator')`, which includes an initiator and a founder. Roles below moderator do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the applications link. The Goals link does not fetch; `/grants/goals` loads `GET /funding/goal`.
 - **Used by:** `GrantsPage`.
@@ -4335,6 +4391,20 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; grouping via `useNumberFormat`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/daily-roster` only when `canEditDailyPayoutRoster` is true. Saves go to the payments, add, update, and delete daily-roster POSTs. A save failure shows a `funding.daily.*` catalog sentence.
 - **Used by:** `DailyPaymentAmountsPage`.
+
+## Function: DailyPaymentModeratorsPage
+
+- **Purpose:** Next.js page for `/grants/payments/moderators`. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `DailyPaymentModeratorsScreen`. The comment and recipient amounts are separate pages. Roster HTTP lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside this page.
+- **Inputs:** None.
+- **Returns / side effects:** The moderator payments screen inside fill AppShell.
+- **Used by:** Route `/grants/payments/moderators`.
+
+## Function: DailyPaymentModeratorsScreen
+
+- **Purpose:** Client editor for moderator stipend amounts only. An initiator or founder fetches `fetchDailyRoster` and may turn moderator payments on or off and add, update, or delete a moderator. There is no `funding.daily.defaultNote`. A row shows the display name, or Unnamed when the name is null or blank. When accountId is set the name is a link to `/members/{accountId}`. On a moderator row the formatted USD amount, the pencil (`funding.daily.edit` plus that label), and the trash share one line. The pencil opens a `Field`; the check saves and the X cancels. Amounts are the stored USD figure (`Field`, not `AmountEntry`). The total sums `moderators` only, via `formatUsdDisplay` and the visitor grouping style. The list label is `funding.daily.moderators`. An empty list shows `funding.daily.moderatorsEmpty`. The add field is Person. Typing `@` opens the first page of people from the same search as a forum mention. Further letters keep only usernames that start that way. Choosing one fills `@username`, keeps that person selected while the field equals that token, and leaves the list open. Add posts accountId. No address is rendered. The comment, the recipient list, and the daily payments switch are not on this screen. Everyone else who is signed in sees the heading plus `funding.daily.forbidden` and does not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. A failed load shows `funding.daily.error` and **Try again**.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; grouping via `useNumberFormat`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/daily-roster` only when `canEditDailyPayoutRoster` is true. Saves go to the moderator payments, add, update, and delete POSTs. A save failure shows a `funding.daily.*` catalog sentence.
+- **Used by:** `DailyPaymentModeratorsPage`.
 
 ## Function: FundingStatusCard
 

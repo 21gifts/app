@@ -2532,6 +2532,120 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/grants/payments/moderators:default",
+    "label": "/grants/payments/moderators default",
+    "visual": "screen-grants-payments-moderators",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:empty",
+    "label": "/grants/payments/moderators empty",
+    "visual": "state-grants-payments-moderators-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:loading",
+    "label": "/grants/payments/moderators loading",
+    "visual": "state-grants-payments-moderators-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:error",
+    "label": "/grants/payments/moderators error",
+    "visual": "state-grants-payments-moderators-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:forbidden",
+    "label": "/grants/payments/moderators forbidden",
+    "visual": "state-grants-payments-moderators-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:invalid",
+    "label": "/grants/payments/moderators invalid",
+    "visual": "state-grants-payments-moderators-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:off",
+    "label": "/grants/payments/moderators off",
+    "visual": "state-grants-payments-moderators-off",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:invalid-switch",
+    "label": "/grants/payments/moderators invalid-switch",
+    "visual": "state-grants-payments-moderators-invalid-switch",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:duplicate",
+    "label": "/grants/payments/moderators duplicate",
+    "visual": "state-grants-payments-moderators-duplicate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:unknown",
+    "label": "/grants/payments/moderators unknown",
+    "visual": "state-grants-payments-moderators-unknown",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:save-error",
+    "label": "/grants/payments/moderators save-error",
+    "visual": "state-grants-payments-moderators-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:pending",
+    "label": "/grants/payments/moderators pending",
+    "visual": "state-grants-payments-moderators-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:editing",
+    "label": "/grants/payments/moderators editing",
+    "visual": "state-grants-payments-moderators-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:suggest",
+    "label": "/grants/payments/moderators suggest",
+    "visual": "state-grants-payments-moderators-suggest",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:chosen",
+    "label": "/grants/payments/moderators chosen",
+    "visual": "state-grants-payments-moderators-chosen",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:pick-person",
+    "label": "/grants/payments/moderators pick-person",
+    "visual": "state-grants-payments-moderators-pick-person",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:invalid-person",
+    "label": "/grants/payments/moderators invalid-person",
+    "visual": "state-grants-payments-moderators-invalid-person",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:unknown-person",
+    "label": "/grants/payments/moderators unknown-person",
+    "visual": "state-grants-payments-moderators-unknown-person",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:no-lightning",
+    "label": "/grants/payments/moderators no-lightning",
+    "visual": "state-grants-payments-moderators-no-lightning",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile/apply:redirect",
     "label": "/profile/apply redirect",
     "visual": "screen-profile-apply",

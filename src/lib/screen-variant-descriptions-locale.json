@@ -2355,9 +2355,9 @@
     "fil": "Tagapamagitan sa /grants kapag walang bukas na aplikasyon sa gawad. Ang pangungusap na Walang bukas na aplikasyon. ay payak na teksto, hindi pindutan o kawing. Needle state-grants-no-applications."
   },
   "/grants:daily-payments": {
-    "de": "Der Gründer auf /grants sieht einen sekundären Ziele-Verweis, sekundäre Verweise Text der täglichen Zahlungen und Beträge der täglichen Zahlungen sowie Offene Bewerbungen (2). Needle Text der täglichen Zahlungen.",
-    "es": "El fundador en /grants ve un enlace secundario Objetivos, enlaces secundarios Texto de los pagos diarios e Importes de los pagos diarios, además de Solicitudes abiertas (2). Needle Texto de los pagos diarios.",
-    "fil": "Nakikita ng tagapagtatag sa /grants ang pangalawang kawing na Mga layunin, pangalawang kawing na Teksto ng araw-araw na bayad at Mga halaga ng araw-araw na bayad, at Mga bukas na aplikasyon (2). Needle Teksto ng araw-araw na bayad."
+    "de": "Der Gründer auf /grants sieht einen sekundären Ziele-Verweis, sekundäre Verweise Text der täglichen Zahlungen, Beträge der täglichen Zahlungen und Moderatorenzahlungen sowie Offene Bewerbungen (2). Needle Text der täglichen Zahlungen.",
+    "es": "El fundador en /grants ve un enlace secundario Objetivos, enlaces secundarios Texto de los pagos diarios, Importes de los pagos diarios y Pagos a moderadores, además de Solicitudes abiertas (2). Needle Texto de los pagos diarios.",
+    "fil": "Nakikita ng tagapagtatag sa /grants ang pangalawang kawing na Mga layunin, pangalawang kawing na Teksto ng araw-araw na bayad, Mga halaga ng araw-araw na bayad, at Mga bayad sa moderator, at Mga bukas na aplikasyon (2). Needle Teksto ng araw-araw na bayad."
   },
   "/shops:edit-save-error": {
     "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar.",
@@ -3893,5 +3893,100 @@
     "de": "Verifizieren-POST unterwegs. Ja deaktiviert mit einem Drehsymbol; Nein deaktiviert. Der Name Ada und die Frage bleiben.",
     "es": "POST de Verificar en curso. Sí desactivado con un indicador giratorio; No desactivado. El nombre Ada y la pregunta siguen.",
     "fil": "POST ng I-verify na isinasagawa. Naka-disable ang Oo na may umiikot na pananda; naka-disable ang Hindi. Nananatili ang pangalan na Ada at ang tanong."
+  },
+  "/grants/payments/moderators:default": {
+    "de": "Gründer mit geladener Liste. Überschrift Moderatorenzahlungen. Die Listenbezeichnung ist Moderatoren. Es gibt keinen Satz zum Standardbetrag. Der Zeilenname Ada ist ein Link auf /members/acc_ada. Eine Zeile ohne Namen zeigt Unbenannt und ist kein Link. Die zugänglichen Namen der Stifte sind Bearbeiten Ada und Bearbeiten Unbenannt. Zahlungen An ist gedrückt. Die Summe ist die USD-Summe, für diese Liste $1.30. Der Kommentar wird nicht gezeigt. Nadel Moderatoren.",
+    "es": "Fundador con una lista cargada. Encabezado Pagos a moderadores. La etiqueta de la lista es Moderadores. No hay frase de importe por defecto. El nombre de la fila Ada es un enlace a /members/acc_ada. Una fila sin nombre muestra Sin nombre y no es un enlace. Los nombres accesibles de los lápices son Editar Ada y Editar Sin nombre. Pagos Activado está pulsado. El total es la suma en USD, para esta lista $1.30. El comentario no se muestra. Aguja Moderadores.",
+    "fil": "Tagapagtatag na may nakargang listahan. Ulo Mga bayad sa moderator. Ang tatak ng listahan ay Mga moderator. Walang pangungusap ng default na halaga. Ang pangalan ng hilera na Ada ay isang link sa /members/acc_ada. Ang hilerang walang pangalan ay nagpapakita ng Walang pangalan at hindi isang link. Ang mga accessible na pangalan ng lapis ay I-edit Ada at I-edit Walang pangalan. Mga bayad Naka-on ay nakapindot. Ang kabuuan ay ang kabuuan sa USD, para sa listahang ito $1.30. Hindi ipinapakita ang komento. Karayom Mga moderator."
+  },
+  "/grants/payments/moderators:empty": {
+    "de": "Gründerin mit leerer Moderatorenliste. Es gibt keinen Satz zum Standardbetrag. Satz Keine Moderatoren. Das Hinzufügen-Formular bleibt. Nadel Keine Moderatoren.",
+    "es": "Fundadora con una lista de moderadores vacía. No hay frase de importe por defecto. Frase Ningún moderador. El formulario de añadir permanece. Aguja Ningún moderador.",
+    "fil": "Tagapagtatag na walang laman ang listahan ng moderator. Walang pangungusap ng default na halaga. Pangungusap Walang moderator. Nanatili ang porma ng pagdagdag. Karayom Walang moderator."
+  },
+  "/grants/payments/moderators:loading": {
+    "de": "Gründer wartet auf GET /funding/daily-roster. Überschrift Moderatorenzahlungen. Text Wird geladen…. Nadel state-grants-payments-moderators-loading.",
+    "es": "El fundador espera GET /funding/daily-roster. Encabezado Pagos a moderadores. Texto Cargando…. Aguja state-grants-payments-moderators-loading.",
+    "fil": "Naghihintay ang tagapagtatag sa GET /funding/daily-roster. Ulo Mga bayad sa moderator. Teksto Naglo-load…. Karayom state-grants-payments-moderators-loading."
+  },
+  "/grants/payments/moderators:error": {
+    "de": "Gründer, wenn das Laden der Liste fehlschlägt. Text Die täglichen Zahlungen konnten nicht geladen werden. Bitte erneut versuchen. und Schaltfläche Erneut versuchen. Nadel Die täglichen Zahlungen konnten nicht geladen werden. Bitte erneut versuchen.",
+    "es": "Fundador cuando falla la carga de la lista. Texto No se pudieron cargar los pagos diarios. Inténtalo de nuevo. y botón Intentar de nuevo. Aguja No se pudieron cargar los pagos diarios. Inténtalo de nuevo.",
+    "fil": "Tagapagtatag kapag nabigo ang pagkarga ng talaan. Teksto Hindi ma-load ang araw-araw na bayad. Pakisubukan muli. at pindutan Subukan ulit. Karayom Hindi ma-load ang araw-araw na bayad. Pakisubukan muli."
+  },
+  "/grants/payments/moderators:forbidden": {
+    "de": "Moderator auf der direkten URL. Überschrift Moderatorenzahlungen und Du kannst die täglichen Zahlungen nicht ändern. Keine Roster-Anfrage. Nadel Du kannst die täglichen Zahlungen nicht ändern.",
+    "es": "Moderador en la URL directa. Encabezado Pagos a moderadores y No puedes cambiar los pagos diarios. Sin solicitud de lista. Aguja No puedes cambiar los pagos diarios.",
+    "fil": "Moderator sa direktang URL. Ulo Mga bayad sa moderator at Hindi mo mababago ang araw-araw na bayad. Walang kahilingan sa talaan. Karayom Hindi mo mababago ang araw-araw na bayad."
+  },
+  "/grants/payments/moderators:invalid": {
+    "de": "Gründerin, Betrag 0 hinzufügen, Hinweis Der Betrag ist ungültig. Der angezeigte Betrag, der Stift und der Papierkorb teilen sich eine Zeile. Der zugängliche Name des Stifts ist Bearbeiten plus der angezeigte Name. Der Papierkorb ist Entfernen plus dieser Name. Nadel Der Betrag ist ungültig.",
+    "es": "Fundador, añadir importe 0, aviso El importe no es válido. El importe mostrado, el lápiz y la papelera comparten una línea. El nombre accesible del lápiz es Editar más el nombre mostrado. La papelera es Eliminar más ese nombre. Aguja El importe no es válido.",
+    "fil": "Tagapagtatag, magdagdag ng halagang 0, alerto Hindi wasto ang amount. Magkasama sa isang linya ang ipinapakitang halaga, lapis, at basurahan. Ang accessible na pangalan ng lapis ay I-edit dagdag ang ipinapakitang pangalan. Ang basurahan ay Tanggalin dagdag ang pangalang iyon. Karayom Hindi wasto ang amount."
+  },
+  "/grants/payments/moderators:off": {
+    "de": "Gründerin oder Gründer mit ausgeschalteten Zahlungen. Aus ist gedrückt und An nicht. Nadel state-grants-payments-moderators-off.",
+    "es": "Persona fundadora con los pagos desactivados. Desactivado está pulsado y Activado no. Aguja state-grants-payments-moderators-off.",
+    "fil": "Tagapagtatag na naka-patay ang mga bayad. Ang Naka-off ay pinindot at ang Naka-on ay hindi. Karayom state-grants-payments-moderators-off."
+  },
+  "/grants/payments/moderators:invalid-switch": {
+    "de": "Der Gründer schaltet die Zahlungen aus und Spend lehnt den Schalter ab. Hinweis Der Schalter für die Zahlungen ist ungültig. An bleibt gedrückt. Nadel Der Schalter für die Zahlungen ist ungültig.",
+    "es": "El fundador apaga los pagos y Spend rechaza el interruptor. Alerta El interruptor de pagos no es válido. Activado sigue pulsado. Aguja El interruptor de pagos no es válido.",
+    "fil": "Binababa ng tagapagtatag ang mga bayad at tinatanggihan ng Spend ang switch. Alerto Hindi wasto ang switch ng mga bayad. Naka-pindot pa ang Naka-on. Karayom Hindi wasto ang switch ng mga bayad."
+  },
+  "/grants/payments/moderators:duplicate": {
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person bereits auf der Liste steht. Hinweis Diese Person steht bereits auf der Liste. Nadel Diese Person steht bereits auf der Liste.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que esa persona ya está en la lista. Alerta Esa persona ya está en la lista. Aguja Esa persona ya está en la lista.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na naka-lista na ang taong iyon. Alerto Naka-lista na ang taong iyon. Karayom Naka-lista na ang taong iyon."
+  },
+  "/grants/payments/moderators:unknown": {
+    "de": "Die Gründerin oder der Gründer öffnet eine Zeile mit dem Stift und drückt das Häkchen. Spend führt diese Adresse nicht auf. Das Feld bleibt offen. Hinweis Diese Person steht nicht auf der Liste. Nadel Diese Person steht nicht auf der Liste.",
+    "es": "El fundador abre una fila con el lápiz y pulsa la marca. Spend no lista esa dirección. El campo permanece abierto. Alerta Esa persona no está en la lista. Aguja Esa persona no está en la lista.",
+    "fil": "Binubuksan ng tagapagtatag ang isang hilera gamit ang lapis at pinindot ang tsek. Hindi naka-lista ang address na iyon sa Spend. Bukas pa ang patlang. Alerto Wala sa listahan ang tatanggap na iyon. Karayom Wala sa listahan ang tatanggap na iyon."
+  },
+  "/grants/payments/moderators:save-error": {
+    "de": "Der Gründer öffnet eine Zeile und drückt das Häkchen. Die Betragsaktualisierung schlägt aus jedem anderen Grund fehl, einschließlich Forbidden. Das Feld bleibt offen. Hinweis Konnte nicht gespeichert werden. Bitte versuchen Sie es erneut. Nadel Konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    "es": "El fundador abre una fila y pulsa la marca. La actualización del importe falla por cualquier otro motivo, incluido Forbidden. El campo permanece abierto. Alerta No se pudo guardar. Inténtalo de nuevo. Aguja No se pudo guardar. Inténtalo de nuevo.",
+    "fil": "Binubuksan ng tagapagtatag ang isang hilera at pinipindot ang tsek. Ang pag-update ng halaga ay nabibigo sa anumang ibang dahilan, kasama ang Forbidden. Bukas pa rin ang hanay. Alerto Hindi ma-save. Subukan ulit. Karayom Hindi ma-save. Subukan ulit."
+  },
+  "/grants/payments/moderators:pending": {
+    "de": "Der Gründer hat eine Zeile mit dem Bleistift geöffnet und das Häkchen gedrückt. Die Betragsaktualisierung ist noch nicht zurückgekommen. Das Häkchen (barrierefreier Name Speichern) zeigt einen Ladekreis und ist deaktiviert, ebenso Abbrechen, An, Aus, Hinzufügen und die übrigen Schaltflächen der Zeile. Es gibt keine Warnmeldung. Nadel state-grants-payments-moderators-pending.",
+    "es": "El fundador abrió una fila con el lápiz y pulsó la marca de verificación. La actualización del importe aún no ha vuelto. La marca de verificación (nombre accesible Guardar) muestra un indicador de carga y está deshabilitada, igual que Cancelar, Activado, Desactivado, Añadir y los demás botones de la fila. No hay alerta. Aguja state-grants-payments-moderators-pending.",
+    "fil": "Binuksan ng tagapagtatag ang isang hilera gamit ang lapis at pinindot ang tsek. Hindi pa bumabalik ang pagsasapanahon ng halaga. Ang tsek (naa-access na pangalan I-save) ay nagpapakita ng umiikot na tagapagpahiwatig at hindi pinagana, gayundin ang Kanselahin, Naka-on, Naka-off, Magdagdag, at ang iba pang pindutan ng hilera. Walang alerto. Karayom state-grants-payments-moderators-pending."
+  },
+  "/grants/payments/moderators:editing": {
+    "de": "Der Gründer drückt den Zeilenstift Bearbeiten Ada. Das Betragsfeld USD Ada ist geöffnet und aktiviert. Das Häkchen (Speichern) ist aktiviert. Abbrechen ist aktiviert. Es gibt keinen Hinweis und keinen Ladekreis. Nadel state-grants-payments-moderators-editing.",
+    "es": "El fundador pulsa el lápiz de la fila Editar Ada. El campo de importe USD Ada está abierto y habilitado. La marca (Guardar) está habilitada. Cancelar está habilitado. No hay alerta ni indicador de carga. Aguja state-grants-payments-moderators-editing.",
+    "fil": "Pinindot ng tagapagtatag ang lapis ng hilera I-edit Ada. Bukas at pinagana ang patlang ng halaga USD Ada. Pinagana ang tsek (I-save). Pinagana ang Kanselahin. Walang alerto at walang pananda ng pag-ikot. Karayom state-grants-payments-moderators-editing."
+  },
+  "/grants/payments/moderators:suggest": {
+    "de": "Der Gründer tippt @. Die Vorschlagsliste zeigt @cara und den Namen Cara und bleibt offen. Nadel @cara",
+    "es": "El fundador escribe @. La lista de sugerencias muestra @cara y el nombre Cara, y permanece abierta. Aguja @cara",
+    "fil": "Nag-type ang tagapagtatag ng @. Ipinapakita ng listahan ng mungkahi ang @cara at ang pangalang Cara, at nananatiling bukas. Karayom @cara"
+  },
+  "/grants/payments/moderators:chosen": {
+    "de": "Der Gründer tippt @ und drückt @cara. Das Feld Person zeigt @cara. Die Liste bleibt offen und diese Zeile ist gewählt. Es gibt keinen Hinweis. Nadel state-grants-payments-moderators-chosen.",
+    "es": "El fundador escribe @ y pulsa @cara. El campo Persona muestra @cara. La lista permanece abierta y esa fila está elegida. No hay alerta. Aguja state-grants-payments-moderators-chosen.",
+    "fil": "Nag-type ang tagapagtatag ng @ at pinindot ang @cara. Ipinapakita ng patlang na Tao ang @cara. Nanatiling bukas ang listahan at napili ang hilera na iyon. Walang alerto. Karayom state-grants-payments-moderators-chosen."
+  },
+  "/grants/payments/moderators:pick-person": {
+    "de": "Der Gründer tippt einen gültigen Betrag und drückt Hinzufügen, ohne eine Person zu wählen. Hinweis Wähle eine Person. Nadel Wähle eine Person.",
+    "es": "El fundador escribe un importe válido y pulsa Añadir sin elegir una persona. Alerta Elige una persona. Aguja Elige una persona.",
+    "fil": "Nag-type ang tagapagtatag ng wastong halaga at pinindot ang Idagdag nang hindi pumipili ng tao. Alerto Pumili ng tao. Karayom Pumili ng tao."
+  },
+  "/grants/payments/moderators:invalid-person": {
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person oder der Betrag ungültig ist. Hinweis Wähle eine Person und einen gültigen Betrag. Nadel Wähle eine Person und einen gültigen Betrag.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que la persona o el importe no es válido. Alerta Elige una persona y un importe válido. Aguja Elige una persona y un importe válido.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na hindi wasto ang tao o ang amount. Alerto Pumili ng tao at isang wastong amount. Karayom Pumili ng tao at isang wastong amount."
+  },
+  "/grants/payments/moderators:unknown-person": {
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person nicht gefunden wurde. Hinweis Diese Person wurde nicht gefunden. Nadel Diese Person wurde nicht gefunden.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que esa persona no se encontró. Alerta Esa persona no se encontró. Aguja Esa persona no se encontró.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na hindi nahanap ang taong iyon. Alerto Hindi nahanap ang taong iyon. Karayom Hindi nahanap ang taong iyon."
+  },
+  "/grants/payments/moderators:no-lightning": {
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person keine Lightning-Adresse hat. Hinweis Diese Person hat keine Wallet of Satoshi address. Nadel Diese Person hat keine Wallet of Satoshi address.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que esa persona no tiene dirección Lightning. Alerta Esta persona no tiene dirección de Wallet of Satoshi. Aguja Esta persona no tiene dirección de Wallet of Satoshi.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na walang Lightning address ang taong iyon. Alerto Walang Wallet of Satoshi address ang taong ito. Karayom Walang Wallet of Satoshi address ang taong ito."
   }
 }

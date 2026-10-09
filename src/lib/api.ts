@@ -1555,8 +1555,8 @@ export async function postFundingReject(
  * Fetches the daily payout roster for founder and initiator editors.
  *
  * Hits same-origin `GET /funding/daily-roster` (Bearer). Next.js forbids a
- * `route.ts` beside `/grants/payments/comment` and `/grants/payments/amounts`,
- * so the proxy lives at this path.
+ * `route.ts` beside `/grants/payments/comment`, `/grants/payments/amounts`,
+ * and `/grants/payments/moderators`, so the proxy lives at this path.
  *
  * @param session - A bearer token from a completed challenge.
  * @returns The parsed {@link DailyRoster}.
@@ -1683,6 +1683,90 @@ export async function deleteDailyRosterRecipient(
   address: string,
 ): Promise<DailyRoster> {
   return postDailyRoster('/funding/daily-roster/recipients/delete', session, { address });
+}
+
+/**
+ * Adds a moderator to the stipend list.
+ *
+ * Hits same-origin `POST /funding/daily-roster/moderators` with
+ * `{ accountId, amountUsd }`.
+ *
+ * @param session - Bearer session.
+ * @param accountId - Member account id.
+ * @param amountUsd - Daily stipend in USD.
+ * @returns The updated {@link DailyRoster}.
+ * @throws Error whose message is a `funding.daily.*` catalog key. Maps
+ * `Invalid person or amount`, `Unknown person`, `Person has no Lightning address`,
+ * and `Address already listed`.
+ */
+export async function addDailyRosterModerator(
+  session: string,
+  accountId: string,
+  amountUsd: number,
+): Promise<DailyRoster> {
+  return postDailyRoster('/funding/daily-roster/moderators', session, { accountId, amountUsd });
+}
+
+/**
+ * Updates one moderator stipend amount.
+ *
+ * Hits same-origin `POST /funding/daily-roster/moderators/update` with
+ * `{ address, amountUsd }`.
+ *
+ * @param session - Bearer session.
+ * @param address - Moderator address already on the list.
+ * @param amountUsd - New daily stipend in USD.
+ * @returns The updated {@link DailyRoster}.
+ * @throws Error whose message is a `funding.daily.*` catalog key. Maps
+ * `Invalid address or amount` and `Unknown address`.
+ */
+export async function updateDailyRosterModerator(
+  session: string,
+  address: string,
+  amountUsd: number,
+): Promise<DailyRoster> {
+  return postDailyRoster('/funding/daily-roster/moderators/update', session, {
+    address,
+    amountUsd,
+  });
+}
+
+/**
+ * Removes a moderator from the stipend list.
+ *
+ * Hits same-origin `POST /funding/daily-roster/moderators/delete` with
+ * `{ address }`.
+ *
+ * @param session - Bearer session.
+ * @param address - Moderator address to remove.
+ * @returns The updated {@link DailyRoster}.
+ * @throws Error whose message is a `funding.daily.*` catalog key. Maps
+ * `Unknown address`.
+ */
+export async function deleteDailyRosterModerator(
+  session: string,
+  address: string,
+): Promise<DailyRoster> {
+  return postDailyRoster('/funding/daily-roster/moderators/delete', session, { address });
+}
+
+/**
+ * Sets whether moderator stipend payments are on.
+ *
+ * Hits same-origin `POST /funding/daily-roster/moderators/payments` with
+ * `{ enabled }`.
+ *
+ * @param session - Bearer session.
+ * @param enabled - `true` to turn moderator payments on, `false` to turn them off.
+ * @returns The updated {@link DailyRoster}.
+ * @throws Error whose message is a `funding.daily.*` catalog key. Maps
+ * `Invalid payments switch` to `funding.daily.invalidSwitch`.
+ */
+export async function saveDailyRosterModeratorPayments(
+  session: string,
+  enabled: boolean,
+): Promise<DailyRoster> {
+  return postDailyRoster('/funding/daily-roster/moderators/payments', session, { enabled });
 }
 
 /**

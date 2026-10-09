@@ -3257,9 +3257,9 @@ Notifications section with `role="alert"` after clicking On on the This device p
 
 ## Screen: /grants
 
-- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. An initiator or founder also sees two secondary large links, **Daily payment text** to `/grants/payments/comment` and **Daily payment amounts** to `/grants/payments/amounts`. Those links do not load the roster. A moderator does not see them. An account at least moderator (`roleAtLeast(role, 'moderator')`), including an initiator and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. An initiator or founder also sees three secondary large links, **Daily payment text** to `/grants/payments/comment`, **Daily payment amounts** to `/grants/payments/amounts`, and **Moderator payments** to `/grants/payments/moderators`. Those links do not load the roster. A moderator does not see them. An account at least moderator (`roleAtLeast(role, 'moderator')`), including an initiator and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification or grant status. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy, for every username. A verified account with status none or rejected named `joey-rosima`, `vincent`, or `jewel-bacolbas` opens Apply. Every other verified account with status none or rejected reads the paused sentence and the statistics link. Signed-in accounts open **Goals** (`/grants/goals`). An initiator or founder opens **Daily payment text** or **Daily payment amounts**. An account at least moderator, including an initiator and a founder, opens **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
+- **Actions:** Read verification or grant status. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy, for every username. A verified account with status none or rejected named `joey-rosima`, `vincent`, or `jewel-bacolbas` opens Apply. Every other verified account with status none or rejected reads the paused sentence and the statistics link. Signed-in accounts open **Goals** (`/grants/goals`). An initiator or founder opens **Daily payment text**, **Daily payment amounts**, or **Moderator payments**. An account at least moderator, including an initiator and a founder, opens **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
@@ -3329,7 +3329,7 @@ Moderator on `/grants` when the open-application load fails. Copy **Could not lo
 
 ### Variant: daily-payments
 
-Founder on `/grants` sees a secondary **Goals** link, secondary **Daily payment text** and **Daily payment amounts** links, plus **Open applications (2)**. Needle `Daily payment text`.
+Founder on `/grants` sees a secondary **Goals** link, secondary **Daily payment text**, **Daily payment amounts**, and **Moderator payments** links, plus **Open applications (2)**. Needle `Daily payment text`.
 
 ![21.gifts grants daily payments](images/grants-daily-payments.png)
 
@@ -3539,6 +3539,127 @@ Founder types `@`, picks **@cara**, and spend answers that the person was not fo
 Founder types `@`, picks **@cara**, and spend answers that the person has no Lightning address. Alert **This person has no Wallet of Satoshi address.** Needle `This person has no Wallet of Satoshi address.`
 
 ![21.gifts daily payment amounts no lightning](images/grants-payments-amounts-no-lightning.png)
+
+## Screen: /grants/payments/moderators
+
+- **Purpose:** Signed-in editor for moderator stipend amounts only. An initiator or founder loads `GET /funding/daily-roster`. Everyone else who is signed in sees the heading plus **You cannot change daily payments.** and this page does not fetch. There is no default-amount sentence. Moderator amounts are the USD figure the roster stores (`amountUsd`), typed in `Field`, not `AmountEntry`. The total is that USD sum via `formatUsdDisplay` (visitor grouping, two decimals). The comment, the recipient list, and the daily payments switch are not on this page. There is no `route.ts` beside this page; JSON lives under `/funding/daily-roster`.
+- **Inputs:** Session account via `OnboardingGate screen="welcome"` / `useAuthStore`. Roster from `GET /funding/daily-roster` for an initiator or founder.
+- **Actions:** Turn moderator payments **On** or **Off**. **Add** a moderator. A moderator row shows the formatted amount, a pencil (**Edit** plus the shown name), and a trash (**Delete** plus the shown name) on one line. The shown name is the display name, or Unnamed when the name is null or blank. The add form's first field is Person. Typing `@` opens the first page of people. Further letters keep only usernames that start that way. Choosing one fills `@username` and leaves the list open. No address is typed or shown. The pencil opens the amount field; the check saves and the X cancels. **Try again** repeats a failed load. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Used by:** Route `/grants/payments/moderators` (`DailyPaymentModeratorsPage`). The **Moderator payments** link on `/grants` is shown only to an initiator or founder.
+
+### Variant: default
+
+Founder with a loaded roster. Heading **Moderator payments**. The list label is **Moderators**. There is no default-amount sentence. The row name Ada is a link to `/members/acc_ada`. A row without a name shows Unnamed and is not a link. Pencil accessible names are **Edit Ada** and **Edit Unnamed**. Payments **On** is pressed. The total is the USD sum, for this roster `$1.30`. The comment is not shown. Needle `Moderators`.
+
+![21.gifts moderator payments](images/grants-payments-moderators.png)
+
+### Variant: empty
+
+Founder with an empty moderator list. There is no default-amount sentence. Sentence **No moderators**. The add form stays. Needle `No moderators`.
+
+![21.gifts moderator payments empty](images/grants-payments-moderators-empty.png)
+
+### Variant: loading
+
+Founder waiting on `GET /funding/daily-roster`. Heading **Moderator payments**. Copy **Loading…**. Needle `state-grants-payments-moderators-loading`.
+
+![21.gifts moderator payments loading](images/grants-payments-moderators-loading.png)
+
+### Variant: error
+
+Founder when the roster load fails. Copy **Could not load daily payments. Please try again.** and button **Try again**. Needle `Could not load daily payments. Please try again.`
+
+![21.gifts moderator payments error](images/grants-payments-moderators-error.png)
+
+### Variant: forbidden
+
+Moderator on the direct URL. Heading **Moderator payments** and **You cannot change daily payments.** No roster request. Needle `You cannot change daily payments.`
+
+![21.gifts moderator payments forbidden](images/grants-payments-moderators-forbidden.png)
+
+### Variant: invalid
+
+Founder, add amount 0, alert **The amount is not valid.** The shown amount, pencil, and trash share one line. The pencil's accessible name is **Edit** plus the shown name. The trash is **Delete** plus that shown name. Needle `The amount is not valid.`
+
+![21.gifts moderator payments invalid](images/grants-payments-moderators-invalid.png)
+
+### Variant: off
+
+Founder with payments switched off. **Off** is pressed and **On** is not. Needle `state-grants-payments-moderators-off`.
+
+![21.gifts moderator payments off](images/grants-payments-moderators-off.png)
+
+### Variant: invalid-switch
+
+Founder turns payments off and spend rejects the switch. Alert **The payments switch is not valid.** **On** stays pressed. Needle `The payments switch is not valid.`
+
+![21.gifts moderator payments invalid switch](images/grants-payments-moderators-invalid-switch.png)
+
+### Variant: duplicate
+
+Founder types `@`, picks **@cara**, and spend answers that the person is already listed. Alert **That person is already listed.** Needle `That person is already listed.`
+
+![21.gifts moderator payments duplicate](images/grants-payments-moderators-duplicate.png)
+
+### Variant: unknown
+
+Founder opens a row with the pencil and presses the check. Spend does not list that address. The field stays open. Alert **That recipient is not on the list.** Needle `That recipient is not on the list.`
+
+![21.gifts moderator payments unknown](images/grants-payments-moderators-unknown.png)
+
+### Variant: save-error
+
+Founder opens a row and presses the check. The amount update fails for any other reason, including `Forbidden`. The field stays open. Alert **Could not save. Please try again.** Needle `Could not save. Please try again.`
+
+![21.gifts moderator payments save error](images/grants-payments-moderators-save-error.png)
+
+### Variant: pending
+
+Founder opened a row with the pencil and pressed the check. The amount update has not returned. The check (accessible name **Save**) shows a spinner and is disabled, as are **Cancel**, **On**, **Off**, **Add**, and the other row buttons. There is no alert. Needle `state-grants-payments-moderators-pending`.
+
+![21.gifts moderator payments pending](images/grants-payments-moderators-pending.png)
+
+### Variant: editing
+
+Founder presses the row pencil **Edit Ada**. The amount field **USD Ada** is open and enabled. The check (**Save**) is enabled. **Cancel** is enabled. There is no alert and no spinner. Needle `state-grants-payments-moderators-editing`.
+
+![21.gifts moderator payments editing](images/grants-payments-moderators-editing.png)
+
+### Variant: suggest
+
+Founder types `@`. The suggestion list shows **@cara** and the name Cara, and stays open. Needle `@cara`
+
+![21.gifts moderator payments suggest](images/grants-payments-moderators-suggest.png)
+
+### Variant: chosen
+
+Founder types `@` and presses **@cara**. The Person field shows `@cara`. The list stays open and that row is selected. There is no alert. Needle `state-grants-payments-moderators-chosen`.
+
+![21.gifts moderator payments chosen](images/grants-payments-moderators-chosen.png)
+
+### Variant: pick-person
+
+Founder types a valid amount and presses Add without choosing a person. Alert **Choose a person.** Needle `Choose a person.`
+
+![21.gifts moderator payments pick person](images/grants-payments-moderators-pick-person.png)
+
+### Variant: invalid-person
+
+Founder types `@`, picks **@cara**, and spend answers that the person or amount is not valid. Alert **Choose a person and a valid amount.** Needle `Choose a person and a valid amount.`
+
+![21.gifts moderator payments invalid person](images/grants-payments-moderators-invalid-person.png)
+
+### Variant: unknown-person
+
+Founder types `@`, picks **@cara**, and spend answers that the person was not found. Alert **That person was not found.** Needle `That person was not found.`
+
+![21.gifts moderator payments unknown person](images/grants-payments-moderators-unknown-person.png)
+
+### Variant: no-lightning
+
+Founder types `@`, picks **@cara**, and spend answers that the person has no Lightning address. Alert **This person has no Wallet of Satoshi address.** Needle `This person has no Wallet of Satoshi address.`
+
+![21.gifts moderator payments no lightning](images/grants-payments-moderators-no-lightning.png)
 
 ## Screen: /profile/apply
 

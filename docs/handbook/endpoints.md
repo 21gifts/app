@@ -746,9 +746,9 @@
 
 ## Endpoint: GET /funding/daily-roster
 
-- **Purpose:** Same-origin Bearer proxy of api `GET /funding/daily-roster` (daily payout comment, payments switch, `defaultAmountUsd`, and recipient rows). Lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside the HTML pages at `/grants/payments/comment` and `/grants/payments/amounts`.
+- **Purpose:** Same-origin Bearer proxy of api `GET /funding/daily-roster` (daily payout comment, payments switch, `defaultAmountUsd`, recipient rows, moderator payments switch, and moderator rows). Lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside the HTML pages at `/grants/payments/comment`, `/grants/payments/amounts`, and `/grants/payments/moderators`.
 - **Errors:** Upstream 401 without a Bearer session, 403 when the account is not an initiator or founder, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
-- **Used by:** `fetchDailyRoster` via `DailyPaymentCommentScreen` on `/grants/payments/comment` and `DailyPaymentAmountsScreen` on `/grants/payments/amounts`.
+- **Used by:** `fetchDailyRoster` via `DailyPaymentCommentScreen` on `/grants/payments/comment`, `DailyPaymentAmountsScreen` on `/grants/payments/amounts`, and `DailyPaymentModeratorsScreen` on `/grants/payments/moderators`.
 - **Auth:** Bearer session. The api allows an initiator or founder only. The app does not fetch this roster for other signed-in roles (forbidden copy, no request).
 
 ## Endpoint: POST /funding/daily-roster/comment
@@ -784,6 +784,34 @@
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/recipients/delete` with `{ address }`. Removes one daily recipient.
 - **Errors:** Upstream 400 `Unknown address`, 401, 403, 503, or 502 if the api is unreachable.
 - **Used by:** `deleteDailyRosterRecipient` in `DailyPaymentAmountsScreen`.
+- **Auth:** Bearer session. The api allows an initiator or founder only.
+
+## Endpoint: POST /funding/daily-roster/moderators
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/moderators` with `{ accountId, amountUsd }`. Appends one moderator stipend for that person.
+- **Errors:** Upstream 400 `Invalid person or amount`, `Unknown person`, `Person has no Lightning address`, or `Address already listed`, 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `addDailyRosterModerator` in `DailyPaymentModeratorsScreen`.
+- **Auth:** Bearer session. The api allows an initiator or founder only.
+
+## Endpoint: POST /funding/daily-roster/moderators/update
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/moderators/update` with `{ address, amountUsd }`. Changes one moderator stipend.
+- **Errors:** Upstream 400 `Unknown address` or `Invalid address or amount`, 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `updateDailyRosterModerator` in `DailyPaymentModeratorsScreen`.
+- **Auth:** Bearer session. The api allows an initiator or founder only.
+
+## Endpoint: POST /funding/daily-roster/moderators/delete
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/moderators/delete` with `{ address }`. Removes one moderator.
+- **Errors:** Upstream 400 `Unknown address`, 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `deleteDailyRosterModerator` in `DailyPaymentModeratorsScreen`.
+- **Auth:** Bearer session. The api allows an initiator or founder only.
+
+## Endpoint: POST /funding/daily-roster/moderators/payments
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/moderators/payments` with `{ enabled }` (boolean). Sets the moderator payments switch only.
+- **Errors:** Upstream 400 `Invalid payments switch`, 401, 403, 503, or 502 if the api is unreachable.
+- **Used by:** `saveDailyRosterModeratorPayments` in `DailyPaymentModeratorsScreen`.
 - **Auth:** Bearer session. The api allows an initiator or founder only.
 
 ## Endpoint: GET /funding/applications/[accountId]
