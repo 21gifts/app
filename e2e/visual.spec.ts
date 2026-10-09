@@ -4221,9 +4221,14 @@ test.describe('onboarding screens', () => {
     await page.goto('/welcome?visual=balance-ready');
     await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
-    await page.getByRole('button', { name: 'React' }).first().click();
+    // Carol's note, not Ada's own: its form has the amount entry.
+    await page
+      .locator('li', { hasText: 'I can send a small gift tomorrow.' })
+      .getByRole('button', { name: 'React' })
+      .click();
     const field = page.getByPlaceholder('Write a reaction');
     await expect(field).toBeEnabled();
+    await expect(page.getByLabel('Amount')).toBeVisible();
     await field.focus();
     // The + and Receive / Send have moved aside for the form.
     await expect(page.getByRole('button', { name: 'Write a post' })).toBeHidden();
