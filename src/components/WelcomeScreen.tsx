@@ -74,6 +74,38 @@ function WelcomeColumn({ writer }: { writer: ForumWriter }): ReactElement {
   );
 }
 
+/** Input types that take no typed text, so their focus does not move the controls aside. */
+const NOT_TEXT_INPUTS = new Set([
+  'button',
+  'checkbox',
+  'color',
+  'file',
+  'hidden',
+  'image',
+  'radio',
+  'range',
+  'reset',
+  'submit',
+]);
+
+/**
+ * Whether `node` is a text field inside the page scrollport: a textarea (reaction, reply, or a
+ * mention box) or a text-like input (an amount entry).
+ *
+ * @param port - The page scrollport.
+ * @param node - The focused node, or the one the focus moves to.
+ * @returns True for a text field in the page.
+ */
+function isPageTextField(port: HTMLElement, node: unknown): boolean {
+  if (!(node instanceof HTMLElement) || !port.contains(node)) {
+    return false;
+  }
+  return (
+    node instanceof HTMLTextAreaElement ||
+    (node instanceof HTMLInputElement && !NOT_TEXT_INPUTS.has(node.type))
+  );
+}
+
 /**
  * Registers the top-left Back of an open wallet view or of the writer as the
  * chrome back override (the slot an ask-wizard step uses). A wallet view marks
@@ -144,7 +176,20 @@ function PanelChromeBack({ onBack, over }: { onBack: () => void; over: boolean }
  * post whose fee completes after the writer closed changes neither the
  * scroll nor the focus), and Home leaves the scroll to the forum's own
  * scroll-to-top. Drafts stay for the next opening.
- * The **+** is hidden while a wallet view is open.
+ * The **+** is hidden while a wallet view is open. An 80 px clearance
+ * (`data-plus-clearance`) ends the signed-in page, so at the end of the feed
+ * the last note's controls scroll clear of the **+** and of the space above
+ * Receive / Send.
+ *
+ * While a form in the feed is open (an expanded post's reaction form, a gift
+ * sheet, or a text reaction's pay slot on the page, as `ForumBoard` tells the
+ * writer's `onFeedForm`), or while a text field in the page has the focus (a
+ * reaction or reply text, an amount, a mention box), the **+** fades out
+ * (250 ms; at once with reduced motion) and cannot be pressed, and Receive /
+ * Send fold away (`WalletFooterActions` `folded`), so the form has the whole
+ * height above the keyboard and the **+** never lies over its controls. Both
+ * come back once the focus has left the field and no such form is open; a
+ * focused field that disappears with its form counts as left.
  *
  * In a Playwright build only, a `?visual=send-…` pin opens the Send view.
  *
@@ -162,6 +207,34 @@ export function WelcomeScreen(): ReactElement {
   });
   const shown = hasWallet ? panel.shown : 'none';
   const scroller = useAppShellScroller();
+  /** True while a form in the feed is open (a reaction form, a gift sheet, a reaction's pay slot). */
+  const [feedForm, setFeedForm] = useState(false);
+  /** True while a text field in the page has the focus. */
+  const [fieldFocused, setFieldFocused] = useState(false);
+  useEffect(() => {
+    if (scroller === null) {
+      return;
+    }
+    const onFocusIn = (event: FocusEvent): void => {
+      setFieldFocused(isPageTextField(scroller, event.target));
+    };
+    const onFocusOut = (event: FocusEvent): void => {
+      setFieldFocused(isPageTextField(scroller, event.relatedTarget));
+    };
+    scroller.addEventListener('focusin', onFocusIn);
+    scroller.addEventListener('focusout', onFocusOut);
+    return () => {
+      scroller.removeEventListener('focusin', onFocusIn);
+      scroller.removeEventListener('focusout', onFocusOut);
+    };
+  }, [scroller]);
+  // A focused field removed with its form or a wallet view leaves without a focusout: ask again.
+  useEffect(() => {
+    if (scroller !== null) {
+      setFieldFocused(isPageTextField(scroller, document.activeElement));
+    }
+  }, [scroller, feedForm, shown]);
+  const aside = feedForm || fieldFocused;
   const [writerOpen, setWriterOpen] = useState(false);
   /** Feed scroll position to show once the writer has closed, or null to leave the page as it is. */
   const feedScroll = useRef<number | null>(null);
@@ -199,7 +272,12 @@ export function WelcomeScreen(): ReactElement {
     scroller.scrollTop = top;
   }, [writerOpen, scroller]);
   const writer = useMemo<ForumWriter>(
-    () => ({ open: writerOpen, onOpen: openWriter, onClose: closeAfterPost }),
+    () => ({
+      open: writerOpen,
+      onOpen: openWriter,
+      onClose: closeAfterPost,
+      onFeedForm: setFeedForm,
+    }),
     [writerOpen, openWriter, closeAfterPost],
   );
   // One element per writer state, so opening or closing a wallet view does not re-render the forum.
@@ -236,12 +314,19 @@ export function WelcomeScreen(): ReactElement {
           onManualEntry={panel.setManualEntry}
         />
       )}
-      <div className={shown === 'none' ? 'contents' : 'hidden'}>{column}</div>
+      <div className={shown === 'none' ? 'contents' : 'hidden'}>
+        {column}
+        {/* Room under the last note, so the feed scrolls every control out from under the +. */}
+        {signedIn ? (
+          <div aria-hidden="true" data-plus-clearance="" className="h-20 w-full shrink-0" />
+        ) : null}
+      </div>
       {hasWallet && shown === 'none' ? (
         <WalletFooterActions
           onReceive={panel.openReceive}
           onSend={panel.openSend}
           focus={panel.returnFocus}
+          folded={aside}
         />
       ) : null}
       {signedIn && shown === 'none' && !writerOpen ? (
@@ -254,7 +339,7 @@ export function WelcomeScreen(): ReactElement {
               // Synchronously, so the writer's field takes the focus inside this tap.
               flushSync(openWriter);
             }}
-            className="absolute right-[11px] bottom-6 z-30 shadow-lg group-has-[[data-footer-actions]]/body:bottom-[calc(4.75rem+23px-1.75rem*var(--footer-collapse,0))] group-data-[footer-snap]/body:transition-[bottom] group-data-[footer-snap]/body:duration-320 group-data-[footer-snap]/body:ease-glide"
+            className={`absolute right-[11px] bottom-6 z-30 shadow-lg transition-[opacity,visibility] duration-250 ease-glide motion-reduce:transition-none group-has-[[data-footer-actions]]/body:bottom-[calc(4.75rem+23px-1.75rem*var(--footer-collapse,0))] group-data-[footer-snap]/body:transition-[bottom,opacity,visibility] group-data-[footer-snap]/body:duration-320${aside ? ' pointer-events-none invisible opacity-0' : ''}`}
           >
             <Plus aria-hidden="true" className="h-6 w-6" />
           </IconButton>
