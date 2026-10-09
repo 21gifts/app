@@ -1815,7 +1815,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: fetchDailyRoster
 
-- **Purpose:** GET `/funding/daily-roster` (same-origin Bearer proxy of api `GET /funding/daily-roster`) and parse `dailyRosterSchema`. Next.js forbids a `route.ts` beside `/grants/payments/comment` and `/grants/payments/amounts`, so the proxy lives at this path. The body is `{ comment, paymentsEnabled, defaultAmountUsd, recipients, moderatorPaymentsEnabled, moderators }` with `{ address, amountUsd, accountId, name }` rows on both lists. `address` stays in the JSON and is not rendered. `defaultAmountUsd` is a finite number. Moderator rows stay out of `recipients`.
+- **Purpose:** GET `/funding/daily-roster` (same-origin Bearer proxy of api `GET /funding/daily-roster`) and parse `dailyRosterSchema`. Next.js forbids a `route.ts` beside `/grants/payments/comment`, `/grants/payments/amounts`, and `/grants/payments/moderators`, so the proxy lives at this path. The body is `{ comment, paymentsEnabled, defaultAmountUsd, recipients, moderatorPaymentsEnabled, moderators }` with `{ address, amountUsd, accountId, name }` rows on both lists. `address` stays in the JSON and is not rendered. `defaultAmountUsd` is a finite number. Moderator rows stay out of `recipients`.
 - **Inputs:** Bearer `session`.
 - **Returns / side effects:** Parsed roster. Throws `funding.daily.forbidden` on api `Forbidden`. Throws visitor copy `Could not load daily payments. Please try again.` on 401, other 403, 503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `DailyPaymentCommentScreen`, `DailyPaymentAmountsScreen`, `DailyPaymentModeratorsScreen`.
