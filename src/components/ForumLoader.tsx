@@ -989,7 +989,7 @@ export function ForumLoader({
       loadingMoreRef.current = false;
       observer.disconnect();
     };
-    /* router.replace is used on 401; next/navigation's identity is not stable */
+    /* returnToView(…, router) is used on 401; next/navigation's identity is not stable */
   }, [feed, feedHashtag, feedMode, nearEndElement, nextCursor, session]);
 
   const onRefresh = useCallback((): void => {
@@ -1073,7 +1073,7 @@ export function ForumLoader({
       paginationGeneration.current += 1;
       loadingMoreRef.current = false;
     };
-    /* router.replace is used on 409; next/navigation's identity is not stable */
+    /* returnToView(…, router) is used on 409; next/navigation's identity is not stable */
   }, [attempt, feed, feedMode, session]);
 
   useEffect(() => {

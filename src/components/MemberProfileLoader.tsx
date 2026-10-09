@@ -106,7 +106,7 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
     return () => {
       cancelled = true;
     };
-    /* router.replace is used on 409; next/navigation's identity is not stable */
+    /* returnToView(…, router) is used on 409; next/navigation's identity is not stable */
   }, [accountId, attempt, session]);
 
   if (session === null) {

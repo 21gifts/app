@@ -10,6 +10,7 @@ import { fetchMessages } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
 import { isShopNote, SHOP_HASHTAG, stripShopHashtag } from '@/lib/forum-shop';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Page size, same as the shops post list. */
@@ -63,8 +64,9 @@ export function ShopTable({
 }: { country?: string | null; onShopsChanged?: () => void } = {}): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const router = useRouter();
-  const replaceRef = useRef(router.replace);
-  replaceRef.current = router.replace;
+  // next/navigation's identity is not stable, so the load effect reads it here.
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const { t } = useTranslations();
   const [rows, setRows] = useState<ForumMessage[] | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -101,7 +103,7 @@ export function ShopTable({
           return;
         }
         if (error instanceof MissingRequirementsError) {
-          replaceRef.current('/setup/rules');
+          returnToView('/setup/rules', routerRef.current);
           return;
         }
         setFailed(true);
