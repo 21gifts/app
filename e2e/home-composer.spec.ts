@@ -455,6 +455,15 @@ test.describe('forum home while reacting on a phone', () => {
     await expect(page.locator('[data-app-body]')).toHaveAttribute('data-footer-fold', '');
     await expect.poll(() => footerHeight(page)).toBe(0);
     await expect(page.locator('footer')).toHaveCSS('padding-bottom', '0px');
+    // The folded buttons stay inside the window.
+    const outside = await page.evaluate(
+      () =>
+        [...document.querySelectorAll('footer *')].filter((node) => {
+          const rect = node.getBoundingClientRect();
+          return rect.bottom > window.innerHeight + 1 || rect.top < -1;
+        }).length,
+    );
+    expect(outside).toBe(0);
     // The page reaches down to the frame's bottom edge.
     const port = (await pagePort(page).boundingBox())!;
     const body = (await page.locator('[data-app-body]').boundingBox())!;

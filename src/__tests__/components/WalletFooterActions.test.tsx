@@ -299,7 +299,7 @@ describe('WalletFooterActions folded', () => {
     );
     const clip = row.firstElementChild as HTMLElement;
     expect(clip.className).toBe(
-      'min-h-0 group-data-[footer-fold]/body:overflow-hidden group-data-[footer-folding]/body:overflow-hidden',
+      'flex min-h-0 flex-col justify-end group-data-[footer-fold]/body:overflow-hidden group-data-[footer-folding]/body:overflow-hidden',
     );
     const fade = footer.querySelector('[aria-hidden="true"].bottom-full') as HTMLElement;
     expect(fade.className).toContain('group-data-[footer-fold]/body:opacity-0');
