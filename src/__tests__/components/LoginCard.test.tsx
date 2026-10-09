@@ -131,6 +131,23 @@ describe('LoginCard', () => {
       },
     );
 
+    it('shows a refused account on the held view and clears it on the next Log in', () => {
+      const view = renderWithLocale(<LoginCard />);
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      mockPasskey('error', WRONG_ACCOUNT_ERROR);
+      view.rerender(<LoginCard />);
+      expect(screen.getByRole('alert').textContent).toBe(
+        'You signed in with the wrong account. Please try again with the correct account.',
+      );
+      expect(screen.getByText('Welcome back, Ada')).toBeTruthy();
+      act(() => {
+        useAuthStore.setState({ wrongAccount: true });
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      expect(useAuthStore.getState().wrongAccount).toBe(false);
+      expect(authenticateSpy).toHaveBeenCalledTimes(2);
+    });
+
     it('shows the failed wallet open as the retry message', () => {
       renderWithLocale(<LoginCard heldProblem="failed" />);
       expect(screen.getByRole('alert').textContent).toBe('Something went wrong. Please try again.');

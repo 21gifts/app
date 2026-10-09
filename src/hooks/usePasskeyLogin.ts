@@ -884,7 +884,11 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         return;
       }
       if (isWrongAccountError(error)) {
-        clearAuth();
+        // The refusal is about the passkey that just answered, not about a
+        // held-back session: that one stays, so its login card stays too.
+        if (useAuthStore.getState().lockedSession === null) {
+          clearAuth();
+        }
         setWrongAccount(true);
         setLastError(WRONG_ACCOUNT_ERROR);
         setStatus('error');
