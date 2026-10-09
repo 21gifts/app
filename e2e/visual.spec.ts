@@ -4209,6 +4209,30 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-wallet-buttons-slim');
   });
 
+  test('welcome reaction-open', async ({ page }) => {
+    await seedWelcomeWallet(page);
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome?visual=balance-ready');
+    await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
+    await page.getByRole('button', { name: 'React' }).first().click();
+    const field = page.getByPlaceholder('Write a reaction');
+    await expect(field).toBeEnabled();
+    await field.focus();
+    // The + and Receive / Send have moved aside for the form.
+    await expect(page.getByRole('button', { name: 'Write a post' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeHidden();
+    await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-folding');
+    expect(await insideShell(field)).toBe(true);
+    await shotScreen(page, 'state-welcome-reaction-open');
+  });
+
   test.describe('welcome writer on a touch device', () => {
     test.use({ hasTouch: true });
 
