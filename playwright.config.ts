@@ -77,7 +77,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: '**/visual.spec.ts',
+      testIgnore: ['**/visual.spec.ts', '**/loan-live.spec.ts'],
       use: { ...desktopChrome },
     },
     visualProject('desktop-light', 'light', 'desktop'),
