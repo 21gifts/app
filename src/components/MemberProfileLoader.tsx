@@ -8,6 +8,7 @@ import { Button } from '@/components/ui';
 import { fetchMember, fetchMemberActivity } from '@/lib/api';
 import type { AccountActivity, MemberProfile } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 const ACCOUNT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -83,7 +84,7 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
             return;
           }
           if (activityErr instanceof MissingRequirementsError) {
-            router.replace('/setup/rules');
+            returnToView('/setup/rules', router);
             return;
           }
           setReceived([]);
@@ -95,7 +96,7 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
           return;
         }
         if (err instanceof MissingRequirementsError) {
-          router.replace('/setup/rules');
+          returnToView('/setup/rules', router);
           return;
         }
         setStatus('error');

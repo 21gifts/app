@@ -8,6 +8,7 @@ import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { useWalletOpen } from '@/hooks/useWalletOpen';
 import { nextOnboardingPath } from '@/lib/onboarding';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Which post-login screen this gate is wrapping. */
@@ -86,7 +87,7 @@ export function OnboardingGate({
     if (screen === 'login') {
       if (account !== null && walletOpen) {
         cancel();
-        router.replace(nextOnboardingPath(account));
+        returnToView(nextOnboardingPath(account), router);
       }
       return;
     }
@@ -94,26 +95,26 @@ export function OnboardingGate({
       if (screen === 'welcome' && allowGuest) {
         return;
       }
-      router.replace('/login');
+      returnToView('/login', router);
       return;
     }
     if (screen === 'profile') {
       const next = nextOnboardingPath(account);
       if (next !== '/welcome') {
-        router.replace(next);
+        returnToView(next, router);
       }
       return;
     }
     if (screen === 'wallet') {
       const next = nextOnboardingPath(account);
       if (next !== '/welcome' && account.setup !== 'wallet') {
-        router.replace(next);
+        returnToView(next, router);
       }
       return;
     }
     const target = nextOnboardingPath(account);
     if (target !== PATH[screen]) {
-      router.replace(target);
+      returnToView(target, router);
     }
   }, [account, allowGuest, cancel, locked, ready, router, screen, walletOpen]);
 

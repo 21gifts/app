@@ -54,6 +54,7 @@ import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
@@ -434,7 +435,7 @@ export function MemberProfileScreen({
       }
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
-        router.replace('/setup/rules');
+        returnToView('/setup/rules', router);
         return;
       }
       if (loadGen.current === gen) {

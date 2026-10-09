@@ -7,6 +7,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { logLogout } from '@/lib/interaction-log';
 import { disablePush } from '@/lib/push';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -54,7 +55,7 @@ export function LogoutButton(): ReactElement {
           ]);
           clearAuth();
           ending.current = false;
-          router.replace('/login');
+          returnToView('/login', router);
         })();
       }}
       className="inline-flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-app-muted transition hover:bg-app-hover hover:text-app-fg"
