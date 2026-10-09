@@ -396,7 +396,7 @@ export function ProfileScreen(): ReactElement {
     return () => {
       cancelled = true;
     };
-    /* router.replace is used on 409; next/navigation's identity is not stable */
+    /* returnToView(…, router) is used on 409; next/navigation's identity is not stable */
   }, [session, accountId, memberAttempt]);
 
   return (
