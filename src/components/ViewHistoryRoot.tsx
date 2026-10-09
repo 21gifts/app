@@ -82,7 +82,7 @@ export function useChromeBack(): {
  * except that the latest one marked `over` beats every page step.
  *
  * @param props - Tree that may register an override, and the optional
- * client-side back step the top-left arrow takes when `canStepBackTo` allows it.
+ * client-side back step the top-left arrow takes when `takeStepBack` claims it.
  * @returns The provider.
  */
 export function ChromeBackProvider({

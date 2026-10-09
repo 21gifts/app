@@ -79,11 +79,34 @@ function installHistoryTap(): void {
       const parsed = new URL(String(url), window.location.href);
       requested = `${parsed.pathname}${parsed.search}`;
     }
-    rawReplace(data, unused, url);
+    rawReplace(requested === before ? keepStamp(data) : data, unused, url);
     if (requested !== before) {
       navKind = 'replace';
     }
   };
+}
+
+/**
+ * Carry the current entry's `giftsView` and `giftsBelow` into a same-URL state
+ * write that does not set them. Next's refresh rewrites the entry's state
+ * without them, and nothing records again when the path stays.
+ *
+ * @param data - State the caller writes.
+ * @returns `data`, with the current stamps when it is an object without its own.
+ */
+function keepStamp(data: unknown): unknown {
+  const current = window.history.state as { giftsView?: unknown; giftsBelow?: unknown } | null;
+  if (typeof current?.giftsView !== 'number') {
+    return data;
+  }
+  if (data !== null && (typeof data !== 'object' || 'giftsView' in data)) {
+    return data;
+  }
+  const kept: Record<string, unknown> = { ...(data ?? {}), giftsView: current.giftsView };
+  if (current.giftsBelow !== undefined) {
+    kept['giftsBelow'] = current.giftsBelow;
+  }
+  return kept;
 }
 
 /**
@@ -567,23 +590,29 @@ export function markBackNavigation(path: string): void {
 }
 
 /**
- * Whether the current history entry was pushed in this document on top of
- * `path`, the view before it in this tab. Then a browser back step opens
- * `path` client-side, the same step as the browser's own back.
+ * Claim a browser back step to `path` when the current history entry was
+ * pushed in this document on top of it, the view before it in this tab. Then
+ * `router.back()` opens `path` client-side, the same step as the browser's
+ * own back. The claim holds until the browser arrives, so a second call
+ * before that returns false and cannot step back twice.
  *
  * @param path - In-app path the caller wants to open.
- * @returns True when `router.back()` opens `path` without leaving the site.
+ * @returns True when the caller should now call `router.back()`.
  */
-export function canStepBackTo(path: string): boolean {
+export function takeStepBack(path: string): boolean {
   const slot = hydrateSlot();
-  return slot !== null && slot.pushed && previousViewPath() === path;
+  if (slot === null || !slot.pushed || previousViewPath() !== path) {
+    return false;
+  }
+  slot.pushed = false;
+  return true;
 }
 
 /**
  * Return to the previous in-app view, or open the forum when this tab has none.
  *
  * When the current entry was pushed in this document on top of that view
- * ({@link canStepBackTo}), steps back with `router.back()`, so the arrow and
+ * ({@link takeStepBack}), steps back with `router.back()`, so the arrow and
  * the browser's back agree. Otherwise opens that path with the client-side
  * router `push` and leaves the stack for the record that arrives there, which
  * steps the cursor back; it does not step back in the browser history then,
@@ -600,7 +629,7 @@ export function goToPreviousView(router: { push: (href: string) => void; back: (
   }
   const prev = previousViewPath();
   const target = prev ?? '/welcome';
-  if (canStepBackTo(target)) {
+  if (takeStepBack(target)) {
     router.back();
     return;
   }
@@ -627,9 +656,7 @@ export function returnToView(
   path: string,
   router: { back: () => void; replace: (href: string) => void },
 ): void {
-  const slot = hydrateSlot();
-  if (slot !== null && canStepBackTo(path)) {
-    slot.pushed = false;
+  if (takeStepBack(path)) {
     router.back();
     return;
   }

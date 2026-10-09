@@ -4319,7 +4319,7 @@ test('Function: goToPreviousView opens the shops view from notifications', async
   expect(new URL(page.url()).origin).toBe(origin);
 });
 
-test('Function: canStepBackTo — after the arrow, the browser back continues to the view before', async ({
+test('Function: takeStepBack — after the arrow, the browser back continues to the view before', async ({
   page,
 }) => {
   await seedAdaSession(page);

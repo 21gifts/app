@@ -163,7 +163,8 @@ describe('RulesSetup', () => {
     recordCurrentView('/setup/rules');
     renderWithLocale(<RulesSetup chapters={oneChapter} />);
     expect(screen.queryByRole('button', { name: 'Back to the forum' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }), { detail: 1 });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }), { detail: 2 });
     expect(routerBack).toHaveBeenCalledTimes(1);
     expect(routerPush).not.toHaveBeenCalled();
   });

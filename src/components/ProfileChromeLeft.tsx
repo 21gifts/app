@@ -6,7 +6,7 @@ import { useLayoutEffect, useState, type ReactElement, type ReactNode } from 're
 import { useChromeBack } from '@/components/ViewHistoryRoot';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Wordmark } from '@/components/ui';
-import { canStepBackTo, markBackNavigation, previousViewPath } from '@/lib/view-history';
+import { takeStepBack, markBackNavigation, previousViewPath } from '@/lib/view-history';
 
 const BACK_CLASS = 'inline-flex h-11 w-11 items-center justify-center rounded-full transition';
 
@@ -40,7 +40,7 @@ export interface ProfileChromeLeftProps {
  *
  * Back is a link to the previous in-app view, or `/welcome` when this tab has
  * none. When this document pushed the current entry on top of that view
- * ({@link canStepBackTo}), a plain click takes the root's `stepBack` (`router.back()`), the
+ * ({@link takeStepBack}), a plain click takes the root's `stepBack` (`router.back()`), the
  * same step as the browser's own back. Otherwise it marks that path with
  * {@link markBackNavigation} and the link opens it client-side. Either way the
  * document and the open wallet in tab memory stay. The first client render matches SSR (`/welcome`, `profile.back`). An
@@ -113,7 +113,12 @@ export function ProfileChromeLeft({
               event.preventDefault();
               return;
             }
-            if (stepBack !== null && canStepBackTo(target.href)) {
+            if (event.detail > 1) {
+              // A double click: the first click already left or stepped back.
+              event.preventDefault();
+              return;
+            }
+            if (stepBack !== null && takeStepBack(target.href)) {
               event.preventDefault();
               stepBack();
               return;
