@@ -12,8 +12,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * A valid token logs the visitor in unless a newer in-page session already
  * won. When the account's wallet is not open in this tab (the phrase lives in
  * tab memory only, so after a reload, in a new tab, or in a reopened app), the
- * token is held as `lockedSession` instead: the visitor counts as logged out
- * until a login opens the wallet. A rejected token calls `clearAuth` when the in-memory session is
+ * token is held as `lockedSession` instead (with the account's display name as
+ * `lockedName`): the visitor counts as logged out until a login opens the
+ * wallet. A rejected token calls `clearAuth` when the in-memory session is
  * absent or still that token. `WrongAccountError` also sets `wrongAccount`
  * so `/login` can show the retry hint. Unmount invalidates in-flight hydration.
  *
@@ -56,7 +57,7 @@ export function useHydrateSession(): { ready: boolean } {
           return;
         }
         if (hydratesLocked(maybeAccount)) {
-          setLockedSession(token);
+          setLockedSession(token, maybeAccount);
           return;
         }
         setAuth(token, maybeAccount);

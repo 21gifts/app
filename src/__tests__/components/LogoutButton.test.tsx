@@ -150,20 +150,7 @@ describe('LogoutButton', () => {
     expect(replace).toHaveBeenCalledWith('/login');
   });
 
-  it('ends a held-back session at once and switches its push off in the background', () => {
-    vi.mocked(disablePush).mockReturnValue(new Promise(() => undefined));
-    useAuthStore.setState({ session: null, account: null, lockedSession: 'stored' });
-    renderWithLocale(<LogoutButton />);
-    fireEvent.click(screen.getByRole('button', { name: /log out/i }));
-    // Synchronous: a login started right after cannot be wiped by a late clear.
-    expect(clearSession).toHaveBeenCalled();
-    expect(useAuthStore.getState().lockedSession).toBeNull();
-    expect(replace).toHaveBeenCalledWith('/login');
-    expect(disablePush).toHaveBeenCalledWith('stored');
-    expect(logLogout).not.toHaveBeenCalled();
-  });
-
-  it('clears immediately when there is no active or held-back token', async () => {
+  it('clears immediately when there is no active token', async () => {
     useAuthStore.setState({ session: null, account: null, lockedSession: null });
     renderWithLocale(<LogoutButton />);
     fireEvent.click(screen.getByRole('button', { name: /log out/i }));

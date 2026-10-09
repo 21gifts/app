@@ -22,7 +22,7 @@ vi.mock('@/components/SignedInChrome', () => ({
 afterEach(() => {
   cleanup();
   resetViewHistory();
-  useAuthStore.setState({ session: null, account: null });
+  useAuthStore.setState({ session: null, account: null, lockedSession: null });
 });
 
 describe('WelcomePage', () => {
@@ -42,6 +42,13 @@ describe('WelcomePage', () => {
     expect(screen.getByTestId('welcome-screen')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
+  });
+
+  it('shows no Log in link for a held-back session (the login card is in the page)', () => {
+    useAuthStore.setState({ session: null, account: null, lockedSession: 'held' });
+    renderWithLocale(<WelcomePage />);
+    expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
+    expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
   });
 
   it('shows the one chrome back button while an ask step is open', () => {

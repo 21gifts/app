@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { act, cleanup, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletLoginCard } from '@/components/WalletLoginCard';
@@ -8,14 +7,19 @@ import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/components/LoginCard', () => ({
-  LoginCard: ({ footer }: { footer?: ReactNode }) => (
+  LoginCard: ({ heldProblem }: { heldProblem?: 'noPrf' | 'failed' | null }) => (
     <>
       <p>login card</p>
-      {footer}
+      {heldProblem === undefined || heldProblem === null ? null : (
+        <p role="alert">
+          {heldProblem === 'noPrf'
+            ? 'This phone or browser cannot hold a 21.gifts wallet.'
+            : 'Something went wrong. Please try again.'}
+        </p>
+      )}
     </>
   ),
 }));
-vi.mock('@/components/LogoutButton', () => ({ LogoutButton: () => <button>Log out</button> }));
 vi.mock('@/lib/wallet/wallet-open', () => ({ finishWalletOpen: vi.fn() }));
 
 const account = { id: 'account' } as Account;
@@ -53,19 +57,11 @@ describe('WalletLoginCard', () => {
     expect(finishWalletOpen).not.toHaveBeenCalled();
   });
 
-  it('offers Log out only while a session is held back, not while a login is opening', () => {
+  it('adds no Log out under the card of a held-back session', () => {
     useAuthStore.setState({ session: null, account: null, lockedSession: 'stored' });
-    const { unmount } = renderWithLocale(<WalletLoginCard />);
-    expect(screen.getByRole('button', { name: 'Log out' })).toBeTruthy();
-    unmount();
-    useAuthStore.setState({ session: null, account: null, lockedSession: null });
-    const second = renderWithLocale(<WalletLoginCard />);
-    expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
-    second.unmount();
-    vi.mocked(finishWalletOpen).mockReturnValue(new Promise(() => undefined));
-    useAuthStore.setState({ session: 'token', account, lockedSession: null });
     renderWithLocale(<WalletLoginCard />);
-    expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
+    expect(screen.getByText('login card')).toBeTruthy();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('keeps an opened session active', async () => {
@@ -93,12 +89,14 @@ describe('WalletLoginCard', () => {
     });
   });
 
-  it('locks a cancelled session without showing an alert', async () => {
+  it('locks a cancelled session with the retry message', async () => {
     vi.mocked(finishWalletOpen).mockResolvedValue('cancelled');
     useAuthStore.setState({ session: 'token', account });
     renderWithLocale(<WalletLoginCard />);
     await waitFor(() => expect(useAuthStore.getState().lockedSession).toBe('token'));
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Something went wrong. Please try again.',
+    );
   });
 
   it('shows the alert on a card that mounts after the open failed for that session', async () => {

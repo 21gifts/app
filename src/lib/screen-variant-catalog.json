@@ -120,6 +120,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/login:held-session",
+    "label": "/login held-session",
+    "visual": "state-login-held-session",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/donate:default",
     "label": "/donate default",
     "visual": "screen-donate",
@@ -825,6 +831,12 @@
     "id": "/welcome:software-developer",
     "label": "/welcome software-developer",
     "visual": "state-welcome-software-developer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:held-session",
+    "label": "/welcome held-session",
+    "visual": "state-welcome-held-session",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

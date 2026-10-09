@@ -309,7 +309,7 @@ describe('useHydrateSession', () => {
 
   it('holds back a valid persisted token when its wallet is closed', async () => {
     vi.mocked(loadSession).mockReturnValue('tok');
-    vi.mocked(fetchMe).mockResolvedValue(account);
+    vi.mocked(fetchMe).mockResolvedValue({ ...account, name: 'Ada' });
     vi.mocked(hydratesLocked).mockReturnValue(true);
 
     renderWithLocale(<Probe />);
@@ -317,6 +317,7 @@ describe('useHydrateSession', () => {
     await waitFor(() => {
       expect(useAuthStore.getState().lockedSession).toBe('tok');
     });
+    expect(useAuthStore.getState().lockedName).toBe('Ada');
     expect(useAuthStore.getState().session).toBeNull();
     expect(useAuthStore.getState().account).toBeNull();
   });
