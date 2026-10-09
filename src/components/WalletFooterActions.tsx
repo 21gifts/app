@@ -59,8 +59,9 @@ export interface WalletFooterActionsProps {
  * With `folded` (the forum home while a form in its feed is open) the buttons
  * fold away: the footer, its padding included, closes to no height while the
  * buttons and their fade go transparent, and nothing in it can be pressed or
- * focused. The page above only grows downwards, so nothing under the finger
- * moves. Turning `folded` off brings them back the same way. `data-footer-fold`
+ * focused. The buttons are held at the bottom of the folding row, so while
+ * folded their boxes stay inside the frame. The page above only grows
+ * downwards, so nothing under the finger moves. Turning `folded` off brings them back the same way. `data-footer-fold`
  * on the frame body marks the folded state; for 280 ms after a change
  * `data-footer-folding` makes the fold glide (same easing as the glide), and
  * with reduced motion it is not set, so the fold happens at once. The buttons
@@ -184,11 +185,14 @@ export function WalletFooterActions({
           className={`pointer-events-none absolute -inset-x-5 bottom-full h-[18px] bg-gradient-to-t from-app-card to-transparent backdrop-blur-[1.5px] [mask-image:linear-gradient(to_top,black,transparent)] group-data-[footer-fold]/body:opacity-0 group-data-[footer-folding]/body:transition-opacity ${fold}`}
         />
       </div>
-      {/* One grid row that folds from the buttons' height to none; it clips only while folded or folding. */}
+      {/*
+        One grid row that folds from the buttons' height to none; it clips only while folded or
+        folding. The buttons sit at its bottom, so folded they stay inside the frame, not below it.
+      */}
       <div
         className={`grid grid-rows-[1fr] group-data-[footer-fold]/body:pointer-events-none group-data-[footer-fold]/body:invisible group-data-[footer-fold]/body:grid-rows-[0fr] group-data-[footer-fold]/body:opacity-0 group-data-[footer-folding]/body:transition-[grid-template-rows,opacity,visibility] ${fold}`}
       >
-        <div className="min-h-0 group-data-[footer-fold]/body:overflow-hidden group-data-[footer-folding]/body:overflow-hidden">
+        <div className="flex min-h-0 flex-col justify-end group-data-[footer-fold]/body:overflow-hidden group-data-[footer-folding]/body:overflow-hidden">
           <div
             data-footer-actions=""
             className={`mx-auto grid w-full max-w-sm grid-cols-2 gap-3 pt-[calc(0.5rem-0.25rem*var(--footer-collapse,0))] group-data-[footer-snap]/body:transition-[padding] ${glide}`}
