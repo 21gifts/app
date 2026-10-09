@@ -24,7 +24,7 @@ import {
 import { FORUM_MESSAGE_MAX_LENGTH, type AmountUnit, type ForumMessage } from '@/lib/api-types';
 import { useHeartTip } from '@/lib/heart-tip';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
-import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
@@ -526,6 +526,7 @@ export function PublicMessageThread(props: {
     trimmed: string,
     parentId: string,
     isRetry: boolean,
+    ownNote = false,
   ): Promise<void> => {
     setReplyPosting(true);
     setReplyFormError(null);
@@ -564,7 +565,7 @@ export function PublicMessageThread(props: {
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
-          pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
+          pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true, ownNote);
           return;
         }
         if (expandedIdRef.current === parentId) {
@@ -573,6 +574,11 @@ export function PublicMessageThread(props: {
         return;
       }
       if (isReplyPaymentError(err)) {
+        // A reply on your own note is never paid; the api owes it unpaid.
+        if (ownNote) {
+          setReplyFormError('request');
+          return;
+        }
         await runComposePay(token, trimmed, parentId, 1, isRetry);
         return;
       }
@@ -965,9 +971,18 @@ export function PublicMessageThread(props: {
     replyRateRef.current = rateDay;
     const token = session;
     const parentId = expandedId;
+    const own = isOwnNote(account?.id, note.accountId);
     const exempt = isReplyPaymentExempt(account, note.accountId);
     const authorUnknown = note.accountId === undefined;
     const continueReply = (isRetry: boolean): Promise<void> => {
+      // Your own note shows no amount field: the reply is posted without a payment.
+      if (own) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return runReplyPost(token, trimmed, parentId, isRetry, true);
+      }
       if (parsed === 'invalid') {
         setReplyFormError('amount');
         return Promise.resolve();
@@ -1120,6 +1135,7 @@ export function PublicMessageThread(props: {
         payInvoice={payInvoice}
         payWaiting={payWaiting}
         onPayOpen={handlePayOpen}
+        viewerAccountId={account?.id ?? null}
         heartViewerId={account?.id ?? null}
         onHeartTip={onHeartTip}
         heartTipViews={heartTipViews}

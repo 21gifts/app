@@ -725,8 +725,10 @@ describe('PublicMessageThread', () => {
 
   it('invoices 1 sat when an unpaid reply is rejected', async () => {
     vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
-    signIn({ id: 'acc_carol' });
-    renderThread();
+    const { accountId: _author, ...anonymous } = root;
+    void _author;
+    signIn({ role: 'basis', id: 'acc_dave' });
+    renderThread({ root: anonymous });
     await screen.findByPlaceholderText('Write a reaction');
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
@@ -740,6 +742,46 @@ describe('PublicMessageThread', () => {
         NO_RATE_SHOWN,
       );
     });
+  });
+
+  it('posts a basis reply to the own note without an amount field or invoice', async () => {
+    signIn({ role: 'basis', id: 'acc_carol' });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    expect(document.getElementById('forum-reply-amount')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'thanks', inReplyTo: MESSAGE_ID });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(fetchComposeTarget).not.toHaveBeenCalled();
+  });
+
+  it('shows the request error instead of a fee when the api refuses an own-note reply', async () => {
+    vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    signIn({ role: 'basis', id: 'acc_carol' });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
+    expect(fetchComposeTarget).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('asks for text instead of paying when an own-note reply is empty', async () => {
+    signIn({ role: 'basis', id: 'acc_carol' });
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    });
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
   it('lets a verified member reply without paying', async () => {
@@ -2252,9 +2294,11 @@ describe('PublicMessageThread in-app wallet pay', () => {
 
   it('pays the posting fee for an unpaid reply from the wallet', async () => {
     vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
-    signIn({ id: 'acc_carol' });
+    const { accountId: _author, ...anonymous } = root;
+    void _author;
+    signIn({ id: 'acc_dave' });
     walletReady(1);
-    renderThread();
+    renderThread({ root: anonymous });
     await screen.findByPlaceholderText('Write a reaction');
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));

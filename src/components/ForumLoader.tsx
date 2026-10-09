@@ -72,7 +72,7 @@ import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/l
 import { useHeartTip } from '@/lib/heart-tip';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { closeLocalPushNotifications, pushTagForNotification } from '@/lib/push';
-import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** How many times to poll `GET /messages` for payable status. */
@@ -2318,6 +2318,7 @@ export function ForumLoader({
     parentId: string,
     parentBaseline: number,
     isRetry: boolean,
+    ownNote = false,
   ): Promise<void> => {
     /* v8 ignore next -- reactions are not posted without a session */
     if (session === null) return;
@@ -2335,13 +2336,19 @@ export function ForumLoader({
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
-          pendingPostRef.current = () => runReplyPost(trimmed, parentId, parentBaseline, true);
+          pendingPostRef.current = () =>
+            runReplyPost(trimmed, parentId, parentBaseline, true, ownNote);
           return;
         }
         setReplyFormError('request');
         return;
       }
       if (isReplyPaymentError(err)) {
+        // A reply on your own note is never paid; the api owes it unpaid.
+        if (ownNote) {
+          setReplyFormError('request');
+          return;
+        }
         await runComposePay(trimmed, parentId, 1, isRetry);
         return;
       }
@@ -2538,6 +2545,7 @@ export function ForumLoader({
     const parentBaseline = parentRow === undefined ? 0 : parentRow.replyCount;
     const parentSats = parentRow === undefined ? 0 : parentRow.sats;
     const parentAccountId = parentRow?.accountId;
+    const own = isOwnNote(account?.id, parentAccountId);
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
     const composeOverhead = `inReplyTo:${parentId}\n`.length;
@@ -2546,6 +2554,14 @@ export function ForumLoader({
       return;
     }
     const continueReply = (isRetry: boolean): Promise<void> => {
+      // Your own note shows no amount field: the reply is posted without a payment.
+      if (own) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return runReplyPost(trimmed, parentId, parentBaseline, isRetry, true);
+      }
       if (parsed === 'invalid') {
         setReplyFormError('amount');
         return Promise.resolve();
