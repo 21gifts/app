@@ -226,12 +226,12 @@ describe('sendHeartTip', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
-  it('needs a balance when prepare reports insufficient', async () => {
+  it('stops with insufficient_balance when prepare reports insufficient', async () => {
     vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
       kind: 'failed',
-      reason: 'no_balance',
+      reason: 'insufficient_balance',
     });
   });
 
@@ -314,7 +314,7 @@ describe('sendHeartTip', () => {
     });
   });
 
-  it('needs a balance when send reports insufficient', async () => {
+  it('stops with insufficient_balance when send reports insufficient', async () => {
     const send = vi.fn(async () => ({ kind: 'insufficient' as const }));
     vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({
@@ -325,7 +325,7 @@ describe('sendHeartTip', () => {
     });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
       kind: 'failed',
-      reason: 'no_balance',
+      reason: 'insufficient_balance',
     });
   });
 
@@ -372,7 +372,7 @@ describe('sendHeartTip', () => {
     expect(unlockWalletPhrase).not.toHaveBeenCalled();
   });
 
-  it('needs a balance when the live ready wallet is empty', async () => {
+  it('stops with insufficient_balance when the live ready wallet is empty', async () => {
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
     useWalletStore.setState({ status: 'ready', balanceSats: 0, identityPubkey: null });
     vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
@@ -384,7 +384,7 @@ describe('sendHeartTip', () => {
     });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
       kind: 'failed',
-      reason: 'no_balance',
+      reason: 'insufficient_balance',
     });
     expect(send).not.toHaveBeenCalled();
   });
@@ -395,7 +395,7 @@ describe('sendHeartTip', () => {
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
       kind: 'failed',
-      reason: 'no_balance',
+      reason: 'insufficient_balance',
     });
     expect(postMessageInvoice).toHaveBeenCalledTimes(1);
   });
@@ -480,7 +480,7 @@ describe('sendHeartTip error report', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
-  it('does not report a paid heart, a silent tap, or a missing balance', async () => {
+  it('does not report a paid heart, a silent tap, or a balance known missing before the tap', async () => {
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
     vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({
@@ -495,9 +495,22 @@ describe('sendHeartTip error report', () => {
       kind: 'failed',
       reason: 'no_balance',
     });
-    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient' });
-    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'failed', reason: 'no_balance' });
     expect(captureMessage).not.toHaveBeenCalled();
+  });
+
+  it('reports a balance the wallet finds too low only after the tap', async () => {
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient' });
+    await expect(sendHeartTip({ ...BASE, messageId: 'r-insufficient' })).resolves.toEqual({
+      kind: 'failed',
+      reason: 'insufficient_balance',
+    });
+    expect(captureMessage).toHaveBeenCalledWith('Heart not sent', {
+      level: 'error',
+      fingerprint: ['heart-not-sent', 'insufficient_balance'],
+      tags: { heart_reason: 'insufficient_balance' },
+      extra: { messageId: 'r-insufficient' },
+    });
   });
 });
 
