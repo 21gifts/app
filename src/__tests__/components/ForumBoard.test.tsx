@@ -8062,6 +8062,7 @@ describe('ForumBoard writer', () => {
   function renderHome(
     props: Partial<ForumBoardProps> = {},
     startOpen = false,
+    onFeedForm?: (open: boolean) => void,
   ): ReturnType<typeof renderWithLocale> & {
     rerenderHome: (next: Partial<ForumBoardProps>) => void;
     onOpen: ReturnType<typeof vi.fn>;
@@ -8100,6 +8101,7 @@ describe('ForumBoard writer', () => {
               onClose: () => {
                 setOpen(false);
               },
+              ...(onFeedForm === undefined ? {} : { onFeedForm }),
             }}
             {...current}
           />
@@ -8246,6 +8248,54 @@ describe('ForumBoard writer', () => {
     const sentence = screen.getByText(WALLET_UNAVAILABLE);
     expect(writerLayer(loose.container)!.contains(sentence)).toBe(false);
     expect(document.querySelector('[data-scroll-page]')!.contains(sentence)).toBe(true);
+  });
+
+  it('tells the forum home whether a form in the feed is open', () => {
+    const onFeedForm = vi.fn();
+    const view = renderHome({}, false, onFeedForm);
+    expect(onFeedForm).toHaveBeenLastCalledWith(false);
+    // An expanded post shows its reaction form.
+    view.rerenderHome({ expandedId: 'm1', replies: [] });
+    expect(onFeedForm).toHaveBeenLastCalledWith(true);
+    // Not on a deleted post, and not signed out: neither has the form.
+    view.rerenderHome({
+      expandedId: 'm1',
+      replies: [],
+      messages: [{ ...SAMPLE, deletedAt: '2026-08-28T13:00:00.000Z' }],
+    });
+    expect(onFeedForm).toHaveBeenLastCalledWith(false);
+    view.rerenderHome({ expandedId: 'm1', replies: [], messages: [SAMPLE], readOnly: true });
+    expect(onFeedForm).toHaveBeenLastCalledWith(false);
+    view.rerenderHome({ expandedId: 'gone', replies: [], readOnly: false });
+    expect(onFeedForm).toHaveBeenLastCalledWith(false);
+    // A gift sheet on a card.
+    view.rerenderHome({ expandedId: null, replies: null, payMessageId: 'm1', payHost: 'card' });
+    expect(onFeedForm).toHaveBeenLastCalledWith(true);
+    view.rerenderHome({ payMessageId: null, payHost: null });
+    expect(onFeedForm).toHaveBeenLastCalledWith(false);
+    // A reaction's fee on the page, not a posting fee in the writer.
+    view.rerenderHome({
+      payMessageId: 'fee-note',
+      payHost: 'composer',
+      payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
+      payWaiting: true,
+    });
+    expect(onFeedForm).toHaveBeenLastCalledWith(true);
+    view.unmount();
+    expect(onFeedForm).toHaveBeenLastCalledWith(false);
+    onFeedForm.mockClear();
+    renderHome(
+      {
+        payMessageId: 'fee-note',
+        payHost: 'composer',
+        payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
+        payWaiting: true,
+      },
+      true,
+      onFeedForm,
+    );
+    expect(onFeedForm).toHaveBeenLastCalledWith(false);
+    expect(onFeedForm).not.toHaveBeenCalledWith(true);
   });
 
   it('keeps a composer pay slot opened with the writer closed on the page, also once the writer opens', () => {
