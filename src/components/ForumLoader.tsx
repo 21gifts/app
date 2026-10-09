@@ -2318,6 +2318,7 @@ export function ForumLoader({
     parentId: string,
     parentBaseline: number,
     isRetry: boolean,
+    ownNote = false,
   ): Promise<void> => {
     /* v8 ignore next -- reactions are not posted without a session */
     if (session === null) return;
@@ -2335,13 +2336,19 @@ export function ForumLoader({
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
-          pendingPostRef.current = () => runReplyPost(trimmed, parentId, parentBaseline, true);
+          pendingPostRef.current = () =>
+            runReplyPost(trimmed, parentId, parentBaseline, true, ownNote);
           return;
         }
         setReplyFormError('request');
         return;
       }
       if (isReplyPaymentError(err)) {
+        // A reply on your own note is never paid; the api owes it unpaid.
+        if (ownNote) {
+          setReplyFormError('request');
+          return;
+        }
         await runComposePay(trimmed, parentId, 1, isRetry);
         return;
       }
@@ -2553,7 +2560,7 @@ export function ForumLoader({
           setReplyFormError('empty');
           return Promise.resolve();
         }
-        return runReplyPost(trimmed, parentId, parentBaseline, isRetry);
+        return runReplyPost(trimmed, parentId, parentBaseline, isRetry, true);
       }
       if (parsed === 'invalid') {
         setReplyFormError('amount');

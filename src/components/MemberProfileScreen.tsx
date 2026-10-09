@@ -740,6 +740,7 @@ export function MemberProfileScreen({
     trimmed: string,
     parentId: string,
     isRetry: boolean,
+    ownNote = false,
   ): Promise<void> => {
     setReplyPosting(true);
     setReplyFormError(null);
@@ -784,7 +785,7 @@ export function MemberProfileScreen({
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
-          pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
+          pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true, ownNote);
           return;
         }
         if (expandedIdRef.current === parentId) {
@@ -793,6 +794,11 @@ export function MemberProfileScreen({
         return;
       }
       if (isReplyPaymentError(err)) {
+        // A reply on your own note is never paid; the api owes it unpaid.
+        if (ownNote) {
+          setReplyFormError('request');
+          return;
+        }
         await runComposePay(token, trimmed, parentId, 1, isRetry);
         return;
       }
@@ -1209,7 +1215,7 @@ export function MemberProfileScreen({
           setReplyFormError('empty');
           return Promise.resolve();
         }
-        return runReplyPost(token, trimmed, parentId, isRetry);
+        return runReplyPost(token, trimmed, parentId, isRetry, true);
       }
       if (parsed === 'invalid') {
         setReplyFormError('amount');

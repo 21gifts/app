@@ -3112,6 +3112,26 @@ describe('MemberProfileScreen', () => {
     expect(fetchComposeTarget).not.toHaveBeenCalled();
   });
 
+  it('shows the request error instead of a fee when the api refuses an own profile-note reply', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, id: profile.id } });
+    vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
+    expect(fetchComposeTarget).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
   it('asks for text instead of paying when an own profile-note reply is empty', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, id: profile.id } });
     renderWithLocale(
