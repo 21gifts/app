@@ -1565,6 +1565,46 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-balance-locked');
   });
 
+  /** Opens `path` after a reload with Ada's session held back (`?visual=held-session`). */
+  async function openHeldSession(page: Page, path: '/welcome' | '/login'): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await page.goto(`${path}?visual=held-session`);
+    await expect(page.getByText('Welcome back, Ada')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log out' })).toHaveCount(0);
+  }
+
+  test('welcome held-session', async ({ page }) => {
+    await openHeldSession(page, '/welcome');
+    await shotScreen(page, 'state-welcome-held-session');
+  });
+
+  test('login held-session', async ({ page }) => {
+    await openHeldSession(page, '/login');
+    await shotScreen(page, 'state-login-held-session');
+  });
+
   test('wallet balance-locked-prf-unsupported', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

@@ -212,6 +212,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('option', { name: 'Deutsch' })",
   },
   {
+    route: '/login',
+    id: 'held-session',
+    image: 'login-held-session.png',
+    visual: 'state-login-held-session',
+    needle: 'held-back session: /login is the ordinary login with a greeting and no Log out',
+  },
+  {
     route: '/donate',
     id: 'default',
     image: 'donate.png',
@@ -1017,6 +1024,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome.png',
     visual: 'screen-welcome',
     needle: 'Welcome, Ada',
+  },
+  {
+    route: '/welcome',
+    id: 'held-session',
+    image: 'welcome-held-session.png',
+    visual: 'state-welcome-held-session',
+    needle: 'held-back session: a reload on /welcome shows the login card, not the guest feed',
   },
   {
     route: '/welcome',

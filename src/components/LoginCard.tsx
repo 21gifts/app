@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle, Fingerprint, Loader2 } from 'lucide-react';
-import { useEffect, useState, type FormEvent, type ReactElement, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, Field } from '@/components/ui';
@@ -26,17 +26,32 @@ type VersionBlock = {
  * The `/login` card: Log in, account choice, unknown passkey, name,
  * preparing, error, or in-app browser escape.
  *
+ * While a stored session is held back (`lockedSession`), the start view is
+ * the same, with **Welcome back, {name}** above the heading when the account
+ * has a name or username. **Log in** is then one passkey prompt
+ * (authenticate only): whichever passkey answers decides the account, so a
+ * different account replaces the held session. A dismissed prompt, an
+ * unknown passkey, or any other failure of that prompt stays on this start
+ * view with **Something went wrong. Please try again.** (`login.error`)
+ * above **Log in**; a refused account (the wrong-account 403) shows
+ * `login.wrongAccount` there instead and keeps the held session. **Open a new account** stays: it is registration, and a
+ * new account replaces the held session as well.
+ *
  * After a successful login, {@link OnboardingGate} sends the visitor to
  * `/setup/name`, `/setup/username`, `/setup/rules`,
  * or `/welcome`.
  *
- * @param props - `footer`: shown under the card only while no login or
- *   sign-up is running and nobody is signed in (`WalletLoginCard` puts
- *   **Log out** there, so it cannot race a login in flight).
- * @returns The card, followed by `footer` when one is given and shown.
+ * @param props - `heldProblem`: why the last wallet open of the held-back
+ *   session failed (`noPrf` shows `wallet.prfUnsupported`, `failed` shows
+ *   `login.error`), shown on the held start view until its next **Log in**.
+ * @returns The card.
  */
-export function LoginCard({ footer }: { footer?: ReactNode } = {}): ReactElement {
+export function LoginCard({
+  heldProblem = null,
+}: { heldProblem?: 'noPrf' | 'failed' | null } = {}): ReactElement {
   const account = useAuthStore((state) => state.account);
+  const lockedSession = useAuthStore((state) => state.lockedSession);
+  const lockedName = useAuthStore((state) => state.lockedName);
   const wrongAccount = useAuthStore((state) => state.wrongAccount);
   const clearWrongAccount = useAuthStore((state) => state.clearWrongAccount);
   const passkey = usePasskeyLogin();
@@ -44,6 +59,8 @@ export function LoginCard({ footer }: { footer?: ReactNode } = {}): ReactElement
   const [versionBlock, setVersionBlock] = useState<VersionBlock | null>(null);
   const [nameDraft, setNameDraft] = useState('');
   const [nameInvalid, setNameInvalid] = useState(false);
+  // The held start view's Log in ended without a session (dismissed or failed).
+  const [heldTried, setHeldTried] = useState(false);
 
   useEffect(() => {
     setInApp(isInAppBrowser());
@@ -63,6 +80,7 @@ export function LoginCard({ footer }: { footer?: ReactNode } = {}): ReactElement
   useEffect(() => {
     if (account !== null) {
       passkey.cancel();
+      setHeldTried(false);
     }
   }, [account, passkey.cancel]);
 
@@ -80,6 +98,35 @@ export function LoginCard({ footer }: { footer?: ReactNode } = {}): ReactElement
     body = <InAppBrowserView />;
   } else if (passkey.status === 'starting') {
     body = <StartingView />;
+  } else if (
+    lockedSession !== null &&
+    passkey.status !== 'name' &&
+    (heldTried || passkey.status === 'idle')
+  ) {
+    body = (
+      <StartView
+        greeting={lockedName}
+        alert={
+          wrongAccountHint
+            ? 'login.wrongAccount'
+            : heldTried || heldProblem === 'failed'
+              ? 'login.error'
+              : heldProblem === 'noPrf'
+                ? 'wallet.prfUnsupported'
+                : null
+        }
+        onLogin={() => {
+          clearWrongAccount();
+          setHeldTried(true);
+          passkey.authenticate();
+        }}
+        onRegister={() => {
+          setHeldTried(false);
+          passkey.register();
+        }}
+        versionBlock={versionBlock}
+      />
+    );
   } else if (wrongAccountHint || passkey.status === 'error') {
     body = (
       <ErrorView
@@ -142,16 +189,7 @@ export function LoginCard({ footer }: { footer?: ReactNode } = {}): ReactElement
     );
   }
 
-  const card = <Card surface={false}>{body}</Card>;
-  if (footer === undefined || account !== null || passkey.status === 'starting') {
-    return card;
-  }
-  return (
-    <>
-      {card}
-      {footer}
-    </>
-  );
+  return <Card surface={false}>{body}</Card>;
 }
 
 /**
@@ -180,21 +218,42 @@ interface StartViewProps {
   onRegister: () => void;
   /** Old OS notice, or null. */
   versionBlock: VersionBlock | null;
+  /** Held-back member to greet (**Welcome back, {name}**), or null. */
+  greeting?: string | null;
+  /** Alert above **Log in**, or null. */
+  alert?: 'login.error' | 'login.wrongAccount' | 'wallet.prfUnsupported' | null;
 }
 
 /**
  * The initial logged-out state: **Log in**, then **Open a new account** under a short line.
+ * For a held-back session, a greeting above the heading and an alert above **Log in**.
  *
  * @param props - See {@link StartViewProps}.
  * @returns The start view.
  */
-function StartView({ onLogin, onRegister, versionBlock }: StartViewProps): ReactElement {
+function StartView({
+  onLogin,
+  onRegister,
+  versionBlock,
+  greeting = null,
+  alert = null,
+}: StartViewProps): ReactElement {
   const { t } = useTranslations();
   return (
     <>
       <Fingerprint aria-hidden="true" className="h-8 w-8 text-app-subtle" />
+      {greeting === null ? null : (
+        <p className="text-center text-sm text-app-muted">
+          {t('login.heldGreeting', { name: greeting })}
+        </p>
+      )}
       <h1 className="text-center text-lg font-medium text-app-fg">{t('login.heading')}</h1>
       <VersionNote block={versionBlock} />
+      {alert === null ? null : (
+        <p role="alert" className="max-w-sm text-center text-sm text-app-danger">
+          {t(alert)}
+        </p>
+      )}
       <Button
         type="button"
         onClick={onLogin}

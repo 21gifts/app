@@ -42,13 +42,17 @@ export function isWalletOpen(account: Account, hasPhrase: boolean): boolean {
 /**
  * Whether a stored session found at hydration (reload, new tab, reopened app)
  * is held back: it counts as signed in only once a login opens the wallet,
- * because the phrase is not in this tab.
+ * because the phrase is not in this tab. In a Playwright build the
+ * `?visual=held-session` pin also holds it back, while a login in this tab
+ * then counts as open (that build has no wallet to open), so the whole
+ * reload-and-log-in path can run there.
  *
  * @param account - Account the stored token belongs to.
  * @returns Whether the session is held back.
  */
 export function hydratesLocked(account: Account): boolean {
-  return walletGateApplies(account) && peekSessionPhrase() === null;
+  const held = walletGateApplies(account) || visualPin() === 'held-session';
+  return held && peekSessionPhrase() === null;
 }
 
 /** How {@link finishWalletOpen} ended. */

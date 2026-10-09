@@ -537,7 +537,7 @@ test('Function: isWalletOpen — an unpinned Playwright wallet opens without a t
   await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toBeVisible();
 });
 
-test('Function: hydratesLocked — a held session gates wallet but leaves welcome as the guest forum', async ({
+test('Function: hydratesLocked — a held session gates wallet and welcome alike', async ({
   page,
 }) => {
   await signInWalletEligible(page);
@@ -545,9 +545,9 @@ test('Function: hydratesLocked — a held session gates wallet but leaves welcom
   await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
 
   await page.goto('/welcome?visual=balance-locked');
-  await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Log in', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Log in', exact: true })).toHaveCount(0);
 });
 
 /**
@@ -729,15 +729,12 @@ test('balance-locked pin shows the login card in place of the wallet', async ({ 
   await expect(page).toHaveURL(/\/wallet\?visual=balance-locked$/);
 });
 
-test('Function: LogoutButton — logs a held-back session out from the login card', async ({
-  page,
-}) => {
+test('the login card of a held-back session has no Log out', async ({ page }) => {
   await signInWalletEligible(page);
   await page.goto('/wallet?visual=balance-locked');
   await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Log out' }).click();
-  await expect(page).toHaveURL(/\/login$/);
-  expect(await page.evaluate(() => localStorage.getItem('21gifts.session'))).toBeNull();
+  await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log out' })).toHaveCount(0);
 });
 
 test('the login card on /setup/rules keeps the one top-left back arrow', async ({ page }) => {
