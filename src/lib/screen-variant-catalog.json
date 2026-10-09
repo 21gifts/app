@@ -312,6 +312,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:software-developer",
+    "label": "/welcome software-developer",
+    "visual": "state-welcome-software-developer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:daily-payout-stopped",
     "label": "/welcome daily-payout-stopped",
     "visual": "state-welcome-daily-payout-stopped",
@@ -501,12 +507,6 @@
     "id": "/welcome:goal-credit",
     "label": "/welcome goal-credit",
     "visual": "state-welcome-goal-credit",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/welcome:goal-credit-open",
-    "label": "/welcome goal-credit-open",
-    "visual": "state-welcome-goal-credit-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1710,6 +1710,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:software-developer",
+    "label": "/members/[accountId] software-developer",
+    "visual": "state-members-accountId-software-developer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-open",
     "label": "/members/[accountId] posts-open",
     "visual": "state-members-posts-open",
@@ -1749,12 +1755,6 @@
     "id": "/members/[accountId]:posts-open-goal-credit",
     "label": "/members/[accountId] posts-open-goal-credit",
     "visual": "state-members-posts-open-goal-credit",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/members/[accountId]:posts-open-goal-credit-open",
-    "label": "/members/[accountId] posts-open-goal-credit-open",
-    "visual": "state-members-posts-open-goal-credit-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4491,6 +4491,30 @@
     "id": "/messages/[id]:reply-received",
     "label": "/messages/[id] reply-received",
     "visual": "state-messages-id-reply-received",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:default",
+    "label": "/messages/[id]/repayment-list default",
+    "visual": "screen-messages-id-repayment-list",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:signed-in",
+    "label": "/messages/[id]/repayment-list signed-in",
+    "visual": "state-messages-id-repayment-list-signed-in",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:loading",
+    "label": "/messages/[id]/repayment-list loading",
+    "visual": "state-messages-id-repayment-list-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:empty",
+    "label": "/messages/[id]/repayment-list empty",
+    "visual": "state-messages-id-repayment-list-empty",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

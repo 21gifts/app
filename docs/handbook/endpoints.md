@@ -653,6 +653,13 @@
 - **Used by:** `markNotificationsReadForMessage` from `ForumLoader` (note becomes expanded), `NoteTranslate` (Translate requested with a session), `PublicMessageLoader` (signed-in message page ready), `MemberProfileScreen` (profile note becomes expanded), and `PublicMessageThread` (thread note becomes expanded).
 - **Auth:** Bearer.
 
+## Endpoint: POST /forum/notifications/read-visible
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/notifications/read-visible`, which stamps only `forum_post`, `forum_reply`, and `forum_mention` whose reply id is that message. JSON `{ messageId, endpoint? }`; endpoint only when the current push endpoint is a non-empty string.
+- **Errors:** Upstream 401/503, or 502 if the api is unreachable.
+- **Used by:** `markVisibleForumNoteRead` from `ForumLoader` when the note card is fully inside the scrollport.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /forum/notifications/[id]/read
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/notifications/:id/read` (mark one notification read). Optional JSON `{ endpoint }` when this browser has a push subscription; endpoint only when the current push endpoint is a non-empty string.

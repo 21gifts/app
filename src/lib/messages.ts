@@ -387,8 +387,7 @@ const en = {
   'forum.creditStatusScheduled': 'Scheduled',
   'forum.creditDay': 'Day {day}',
   'forum.creditFiatHow': 'The bitcoin amount is the rate on the day it is paid.',
-  'forum.creditOpen': 'Who gave and who is paid back',
-  'forum.creditClose': 'Hide givers and repayment',
+  'forum.creditList': 'Repayment list',
   'forum.payAmountLabel': 'Amount',
   'forum.payAmountPlaceholder': '21',
   'forum.payContinue': 'Continue',
@@ -696,6 +695,7 @@ const en = {
   'forum.role.initiatorHint': 'This person was named an initiator.',
   'forum.role.verifiedHint':
     'A moderator has met this person in real life and confirmed they are real.',
+  'forum.staff.softwareDeveloper': 'Software Developer',
   'forum.shopTag': '#Shop',
   'forum.via.nostr': 'External',
   'forum.via.nostrHint':
@@ -884,6 +884,10 @@ const en = {
 
   'notifications.heading': 'Notifications',
   'notifications.listLabel': 'Notifications',
+  'notifications.unreadHeading': 'Unread',
+  'notifications.seenHeading': 'Already seen',
+  'notifications.unreadListLabel': 'Unread notifications',
+  'notifications.seenListLabel': 'Already seen notifications',
   'notifications.empty': 'No notifications yet.',
   'notifications.loading': 'Loading…',
   'notifications.error': 'Could not load notifications. Please try again.',
@@ -1481,8 +1485,7 @@ const de = {
   'forum.creditStatusScheduled': 'Geplant',
   'forum.creditDay': 'Tag {day}',
   'forum.creditFiatHow': 'Der Bitcoin-Betrag ist der Kurs am Zahltag.',
-  'forum.creditOpen': 'Wer gegeben hat und wer zurückbekommt',
-  'forum.creditClose': 'Geber und Rückzahlung ausblenden',
+  'forum.creditList': 'Rückzahlungsliste',
   'forum.payAmountLabel': 'Betrag',
   'forum.payAmountPlaceholder': '21',
   'forum.payContinue': 'Weiter',
@@ -1797,6 +1800,7 @@ const de = {
   'forum.role.initiatorHint': 'Diese Person wurde als Initiator benannt.',
   'forum.role.verifiedHint':
     'Ein Moderator hat diese Person persönlich getroffen und bestätigt, dass sie echt ist.',
+  'forum.staff.softwareDeveloper': 'Software-Entwickler',
   'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Extern',
   'forum.via.nostrHint':
@@ -1989,6 +1993,10 @@ const de = {
 
   'notifications.heading': 'Benachrichtigungen',
   'notifications.listLabel': 'Benachrichtigungen',
+  'notifications.unreadHeading': 'Ungelesen',
+  'notifications.seenHeading': 'Schon gesehen',
+  'notifications.unreadListLabel': 'Ungelesene Benachrichtigungen',
+  'notifications.seenListLabel': 'Schon gesehene Benachrichtigungen',
   'notifications.empty': 'Noch keine Benachrichtigungen.',
   'notifications.loading': 'Wird geladen…',
   'notifications.error':
@@ -2596,8 +2604,7 @@ const es = {
   'forum.creditStatusScheduled': 'Previsto',
   'forum.creditDay': 'Día {day}',
   'forum.creditFiatHow': 'El monto en bitcoin es el tipo de cambio del día del pago.',
-  'forum.creditOpen': 'Quién aportó y a quién se devuelve',
-  'forum.creditClose': 'Ocultar aportes y devolución',
+  'forum.creditList': 'Lista de devolución',
   'forum.payAmountLabel': 'Importe',
   'forum.payAmountPlaceholder': '21',
   'forum.payContinue': 'Continuar',
@@ -2910,6 +2917,7 @@ const es = {
   'forum.role.initiatorHint': 'Esta persona fue nombrada iniciadora.',
   'forum.role.verifiedHint':
     'Un moderador ha conocido a esta persona en la vida real y ha confirmado que es real.',
+  'forum.staff.softwareDeveloper': 'Desarrollador de software',
   'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Externo',
   'forum.via.nostrHint':
@@ -3097,6 +3105,10 @@ const es = {
 
   'notifications.heading': 'Notificaciones',
   'notifications.listLabel': 'Notificaciones',
+  'notifications.unreadHeading': 'No leídas',
+  'notifications.seenHeading': 'Ya vistas',
+  'notifications.unreadListLabel': 'Notificaciones no leídas',
+  'notifications.seenListLabel': 'Notificaciones ya vistas',
   'notifications.empty': 'Aún no hay notificaciones.',
   'notifications.loading': 'Cargando…',
   'notifications.error': 'No se pudieron cargar las notificaciones. Inténtalo de nuevo.',
@@ -3696,8 +3708,7 @@ const fil = {
   'forum.creditStatusScheduled': 'Nakatakda',
   'forum.creditDay': 'Araw {day}',
   'forum.creditFiatHow': 'Ang bitcoin ay ang palitan sa araw ng bayad.',
-  'forum.creditOpen': 'Sino ang nagbigay at sino ang ibabalik',
-  'forum.creditClose': 'Itago ang nagbigay at ang ibabalik',
+  'forum.creditList': 'Listahan ng ibabalik',
   'forum.payAmountLabel': 'Halaga',
   'forum.payAmountPlaceholder': '21',
   'forum.payContinue': 'Magpatuloy',
@@ -4010,6 +4021,7 @@ const fil = {
   'forum.role.initiatorHint': 'Ang taong ito ay pinangalanang Initiator.',
   'forum.role.verifiedHint':
     'Personal na nakilala ng isang moderator ang taong ito at kinumpirmang totoo siya.',
+  'forum.staff.softwareDeveloper': 'Developer ng software',
   'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Panlabas',
   'forum.via.nostrHint':
@@ -4203,6 +4215,10 @@ const fil = {
 
   'notifications.heading': 'Mga abiso',
   'notifications.listLabel': 'Mga abiso',
+  'notifications.unreadHeading': 'Hindi pa nababasa',
+  'notifications.seenHeading': 'Nabasa na',
+  'notifications.unreadListLabel': 'Mga abisong hindi pa nababasa',
+  'notifications.seenListLabel': 'Mga abisong nabasa na',
   'notifications.empty': 'Wala pang mga abiso.',
   'notifications.loading': 'Naglo-load…',
   'notifications.error': 'Hindi ma-load ang mga abiso. Subukan ulit.',

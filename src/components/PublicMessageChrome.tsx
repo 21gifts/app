@@ -9,13 +9,14 @@ import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Public chrome for `/messages/[id]` and `/messages/[id]/author`: signed-in shell
- * when a session is hydrated, else the same top-left arrow (wordmark href `/`)
- * plus the language switcher.
+ * Public chrome for `/messages/[id]`, `/messages/[id]/author`, and
+ * `/messages/[id]/repayment-list`: signed-in shell when a session is hydrated,
+ * else the same top-left arrow (wordmark href `/`) plus the language switcher.
  *
  * @param children - Page body: {@link PublicMessageLoader} from
- * {@link PublicMessagePage}, or {@link ExternalAuthorProfile} from
- * {@link ExternalAuthorPage}.
+ * {@link PublicMessagePage}, {@link ExternalAuthorProfile} from
+ * {@link ExternalAuthorPage}, or {@link CreditLedger} from
+ * {@link RepaymentListPage}.
  * @returns Fill `AppShell` (`align="center"`) with the matching top-left / top-right slots around `children`.
  */
 export function PublicMessageChrome({ children }: { children: ReactNode }): ReactElement {

@@ -37,17 +37,17 @@ describe('screenVariantDescription', () => {
     );
   });
 
-  it('returns German copy for goal-credit-open', () => {
+  it('returns German copy for /messages/[id]/repayment-list:default', () => {
     const screensPath = path.join(process.cwd(), 'docs', 'handbook', 'screens.md');
     const markdown = fs.readFileSync(screensPath, 'utf8');
     const descriptions = parseScreenVariantDescriptions(markdown);
-    const english = descriptions.get('/welcome:goal-credit-open');
+    const english = descriptions.get('/messages/[id]/repayment-list:default');
     if (english === undefined) {
-      throw new Error('missing English description for /welcome:goal-credit-open');
+      throw new Error('missing English description for /messages/[id]/repayment-list:default');
     }
-    expect(screenVariantDescription('de', '/welcome:goal-credit-open', english, 'label')).toContain(
-      'Wer gegeben hat und wer zurückbekommt',
-    );
+    expect(
+      screenVariantDescription('de', '/messages/[id]/repayment-list:default', english, 'label'),
+    ).toContain('Rückzahlungsliste');
   });
 
   it('returns the English handbook paragraph unchanged', () => {

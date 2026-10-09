@@ -1160,6 +1160,132 @@ test('Function: proxyNotificationsReadByMessagePost — POST /forum/notification
   expect((await request.post('/forum/notifications/read-by-message')).status()).toBe(401);
 });
 
+test('Function: markVisibleForumNoteRead — POST /forum/notifications/read-visible without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/forum/notifications/read-visible')).status()).toBe(401);
+});
+
+test('Function: proxyNotificationsReadVisiblePost — POST /forum/notifications/read-visible without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/forum/notifications/read-visible')).status()).toBe(401);
+});
+
+test('Function: isForumCardFullyVisible — a fully shown welcome note is marked read and a taller note is not', async ({
+  page,
+}) => {
+  const shownId = '11111111-1111-4111-8111-111111111111';
+  const tallId = '22222222-2222-4222-8222-222222222222';
+  const posted: string[] = [];
+  let inFlight = 0;
+  await page.addInitScript((id: string) => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+    const original = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      if (this instanceof Element && this.getAttribute('data-message-id') === id) {
+        const root = this.closest('[data-scrollport]');
+        const rootRect = root instanceof Element ? original.call(root) : original.call(this);
+        return new DOMRect(rootRect.left, rootRect.top - 1, rootRect.width, rootRect.height + 2);
+      }
+      return original.call(this);
+    };
+  }, tallId);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: shownId,
+            name: 'Ada',
+            text: 'Short note on screen',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 21,
+            payable: false,
+            hasPhoto: false,
+          },
+          {
+            id: tallId,
+            name: 'Ada',
+            text: 'Tall note',
+            createdAt: '2026-08-28T11:00:00.000Z',
+            sats: 21,
+            payable: false,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/forum/notifications/read-visible', async (route) => {
+    inFlight += 1;
+    const raw = route.request().postData() ?? '';
+    try {
+      const body = JSON.parse(raw) as { messageId?: unknown };
+      if (typeof body.messageId === 'string') {
+        posted.push(body.messageId);
+      }
+    } catch {
+      posted.push('unparsed');
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, tags: [] }),
+    });
+    inFlight -= 1;
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Short note on screen')).toBeVisible();
+  await expect(page.locator(`[data-message-id="${tallId}"]`)).toBeAttached();
+  await expect.poll(() => posted.includes(shownId) && inFlight === 0).toBe(true);
+  const geometry = await page.locator(`[data-message-id="${tallId}"]`).evaluate((el) => {
+    const card = el.getBoundingClientRect();
+    const rootEl = el.closest('[data-scrollport]');
+    if (!(rootEl instanceof HTMLElement)) {
+      throw new Error('expected scrollport');
+    }
+    const root = rootEl.getBoundingClientRect();
+    return {
+      heightGap: card.height - root.height,
+      topSlack: root.top - card.top,
+      bottomSlack: card.bottom - root.bottom,
+      leftSlack: root.left - card.left,
+      rightSlack: card.right - root.right,
+    };
+  });
+  expect(geometry.heightGap).toBeGreaterThan(1);
+  expect(geometry.topSlack).toBeLessThanOrEqual(1);
+  expect(geometry.bottomSlack).toBeLessThanOrEqual(1);
+  expect(geometry.leftSlack).toBeLessThanOrEqual(1);
+  expect(geometry.rightSlack).toBeLessThanOrEqual(1);
+  expect(posted).not.toContain(tallId);
+});
+
 test('Function: markNotificationsReadForMessage — opening a signed-in message page POSTs read-by-message', async ({
   page,
 }) => {
@@ -12524,6 +12650,69 @@ test('Function: CreditLedger — a credit note lists who gave and who is paid ba
   await expect(page.getByLabel('Paid back')).toBeVisible();
   await expect(page.getByText(/Each share is one bitcoin payment/)).toBeVisible();
   await expect(page.getByRole('img', { name: /Sep 27/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Repayment list' })).toBeVisible();
+  await expect(page.getByText('Due', { exact: true })).toHaveCount(0);
+  await page.goto(`/messages/${id}/repayment-list`);
+  await expect(page.getByText('Due', { exact: true })).toBeVisible();
+});
+
+test('Function: RepaymentListPage — day rows render on the repayment list', async ({ page }) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalSats: 0,
+        totalBtc: '0',
+        totalUsd: '0.00',
+        totalChf: '0.00',
+        totalEur: '0.00',
+        totalPhp: '0.00',
+        spendOverTime: [{ day: '2026-09-01', sats: 100000000, usd: '100000.00' }],
+      }),
+    });
+  });
+  await page.route(`**/messages/${id}/repayment`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        currency: 'BTC',
+        fundedAt: '2026-09-26T12:00:00.000Z',
+        termDays: 1,
+        daysDue: 1,
+        daysPaid: 0,
+        unassignedSats: 0,
+        givers: [
+          {
+            accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            name: 'Bea',
+            username: 'bea',
+            givenSats: 21,
+            givenAmount: null,
+          },
+        ],
+        repayments: [
+          {
+            dayIndex: 0,
+            dueOn: '2026-09-27',
+            accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            name: 'Bea',
+            username: 'bea',
+            amount: null,
+            sats: 21,
+            status: 'due',
+            via: 'lightning',
+          },
+        ],
+        next: null,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}/repayment-list`);
+  await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
+  await expect(page.getByText('Due', { exact: true })).toBeVisible();
 });
 
 test('Function: RepaymentPlanChart — dates run from the first day to the last', async ({

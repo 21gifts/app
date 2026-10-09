@@ -3199,6 +3199,48 @@ export async function markNotificationsReadForMessage(
 }
 
 /**
+ * Marks the notification for one fully visible forum note as read.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @param messageId - Forum message id (thread root or reply).
+ * @returns `{ ok: true, tags }` from the api (`tags` defaults to `[]`).
+ * @throws Error with visitor-facing copy when the api is unavailable — same
+ * family as {@link markNotificationRead}.
+ */
+export async function markVisibleForumNoteRead(
+  sessionToken: string,
+  messageId: string,
+): Promise<{ ok: true; tags: string[] }> {
+  try {
+    const endpoint = await currentPushEndpoint();
+    const payload: { messageId: string; endpoint?: string } = { messageId };
+    if (typeof endpoint === 'string' && endpoint !== '') {
+      payload.endpoint = endpoint;
+    }
+    const response = await fetch('/forum/notifications/read-visible', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${sessionToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      throw new Error('Could not mark notification as read');
+    }
+    const body: unknown = await response.json();
+    const tags =
+      body !== null && typeof body === 'object' && 'tags' in body && Array.isArray(body.tags)
+        ? body.tags.filter((tag): tag is string => typeof tag === 'string')
+        : [];
+    await closeLocalPushNotifications(tags);
+    return { ok: true, tags };
+  } catch {
+    throw new Error('Could not mark notification as read');
+  }
+}
+
+/**
  * Fetches the JPEG/PNG/WebP bytes for one indexed forum message photo.
  *
  * Auth is a Bearer token in JS memory, so callers must use the returned blob

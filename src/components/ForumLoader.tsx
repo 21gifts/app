@@ -37,6 +37,7 @@ import {
   PublicForumUnauthorizedError,
   markNotificationRead,
   markNotificationsReadForMessage,
+  markVisibleForumNoteRead,
   NoteDeletedError,
   postMessage,
   fetchComposeTarget,
@@ -51,6 +52,8 @@ import {
   type ForumMessage,
   type ForumPlacePin,
 } from '@/lib/api-types';
+import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
+import { isForumCardFullyVisible } from '@/lib/forum-card-visible';
 import {
   DEFAULT_FORUM_FEED_MODE,
   FORUM_HOME_EVENT,
@@ -345,7 +348,9 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
  * auto-scroll. Silent refresh keeps an existing list on screen (no loading
  * copy) and does not auto-scroll the newest note. Expanding a note marks that
  * note's notifications read (`markNotificationsReadForMessage`); collapsing
- * does not. Renders nothing when there is no session.
+ * does not. A signed-in card fully inside the shell scrollport marks via
+ * `markVisibleForumNoteRead` and does not mark replies that are not that card.
+ * Renders nothing when there is no session.
  *
  * @param feed - Optional `'living-room'` (default) or `'shops'`.
  * @returns The forum board, or `null` without a session.
@@ -366,6 +371,12 @@ export function ForumLoader({
   const setAccount = useAuthStore((state) => state.setAccount);
   /** Session-local hidden message ids (posts and replies) so stale GETs cannot resurrect either. */
   const deletedIds = useRef(new Set<string>());
+  /** Note ids already marked (or attempted) while they stay fully visible. */
+  const visibleReadAttemptedIds = useRef(new Set<string>());
+  /** Note ids with an in-flight `markVisibleForumNoteRead`. */
+  const visibleReadInFlightIds = useRef(new Set<string>());
+  const visibleReadSessionRef = useRef(session);
+  const visibleReadScrollerRef = useRef(scroller);
   /** Session-deleted nested reply counts keyed by parent id. */
   const hiddenReplyCounts = useRef(new Map<string, number>());
   /** Last merged server replyCount per parent, for shrinking hidden on catch-up. */
@@ -1106,6 +1117,86 @@ export function ForumLoader({
       window.removeEventListener('scroll', onScroll);
     };
   }, [newPostsAvailable, session, showNewPosts, scroller]);
+
+  const renderedMessageIdsKey =
+    messages === null
+      ? ''
+      : visibleForumMessages(filterListed(messages), feedMode)
+          .map((message) => message.id)
+          .join('\n');
+
+  useEffect(() => {
+    if (visibleReadSessionRef.current !== session || visibleReadScrollerRef.current !== scroller) {
+      visibleReadAttemptedIds.current.clear();
+      visibleReadInFlightIds.current.clear();
+      visibleReadSessionRef.current = session;
+      visibleReadScrollerRef.current = scroller;
+    }
+    if (session === null || scroller === null) {
+      return;
+    }
+    let frame = 0;
+    const measure = (): void => {
+      const rootRect = scroller.getBoundingClientRect();
+      const nextVisible = new Set<string>();
+      for (const card of scroller.querySelectorAll('li[data-message-id]')) {
+        const id = card.getAttribute('data-message-id');
+        if (id === null || id === '') {
+          continue;
+        }
+        if (!isForumCardFullyVisible(card.getBoundingClientRect(), rootRect)) {
+          continue;
+        }
+        nextVisible.add(id);
+        if (visibleReadAttemptedIds.current.has(id)) {
+          continue;
+        }
+        visibleReadAttemptedIds.current.add(id);
+        visibleReadInFlightIds.current.add(id);
+        void markVisibleForumNoteRead(session, id)
+          .then(() => {
+            visibleReadInFlightIds.current.delete(id);
+            bumpUnreadAppBadgeEpoch();
+            return refreshUnreadAppBadge(session);
+          })
+          .catch(() => {
+            visibleReadInFlightIds.current.delete(id);
+            return undefined;
+          });
+      }
+      for (const id of [...visibleReadAttemptedIds.current]) {
+        if (!nextVisible.has(id)) {
+          visibleReadAttemptedIds.current.delete(id);
+          visibleReadInFlightIds.current.delete(id);
+        }
+      }
+    };
+    const schedule = (): void => {
+      if (frame !== 0) {
+        return;
+      }
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        measure();
+      });
+    };
+    schedule();
+    scroller.addEventListener('scroll', schedule, { passive: true });
+    let observer: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(() => {
+        schedule();
+      });
+      observer.observe(scroller);
+    }
+    return () => {
+      scroller.removeEventListener('scroll', schedule);
+      observer?.disconnect();
+      if (frame !== 0) {
+        cancelAnimationFrame(frame);
+      }
+    };
+  }, [feedMode, renderedMessageIdsKey, scroller, session]);
 
   useEffect(() => {
     if (photoIdsKey === '' || (session === null && feed === 'shops')) {
