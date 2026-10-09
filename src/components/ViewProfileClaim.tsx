@@ -118,7 +118,7 @@ export function ViewProfileClaim({
 
   if (claimedLoginRef.current) {
     // While this login is still running, only its spinner shows: a held-back
-    // session's card (with its own login and Log out) would race it.
+    // session's card (with its own login) would race it.
     if (account === null && passkey.status === 'starting') {
       return (
         <div className="flex flex-col items-center gap-2">
