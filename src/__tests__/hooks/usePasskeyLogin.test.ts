@@ -1393,6 +1393,29 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('keeps a held-back session when the passkey that answered is refused', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new WrongAccountError());
+    useAuthStore.setState({ lockedSession: 'held', lockedName: 'Ada' });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe(WRONG_ACCOUNT_ERROR);
+    expect(useAuthStore.getState()).toMatchObject({
+      lockedSession: 'held',
+      lockedName: 'Ada',
+      wrongAccount: true,
+    });
+    useAuthStore.setState({ lockedSession: null, lockedName: null });
+    vi.unstubAllGlobals();
+  });
+
   it('finish Unknown credential sets unknown and signals the offered id', async () => {
     const cred = { id: 'cred', type: 'public-key' };
     const signal = stubSignalUnknownCredential();

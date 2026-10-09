@@ -33,7 +33,8 @@ type VersionBlock = {
  * different account replaces the held session. A dismissed prompt, an
  * unknown passkey, or any other failure of that prompt stays on this start
  * view with **Something went wrong. Please try again.** (`login.error`)
- * above **Log in**. **Open a new account** stays: it is registration, and a
+ * above **Log in**; a refused account (the wrong-account 403) shows
+ * `login.wrongAccount` there instead and keeps the held session. **Open a new account** stays: it is registration, and a
  * new account replaces the held session as well.
  *
  * After a successful login, {@link OnboardingGate} sends the visitor to
@@ -106,13 +107,16 @@ export function LoginCard({
       <StartView
         greeting={lockedName}
         alert={
-          heldTried || heldProblem === 'failed'
-            ? 'login.error'
-            : heldProblem === 'noPrf'
-              ? 'wallet.prfUnsupported'
-              : null
+          wrongAccountHint
+            ? 'login.wrongAccount'
+            : heldTried || heldProblem === 'failed'
+              ? 'login.error'
+              : heldProblem === 'noPrf'
+                ? 'wallet.prfUnsupported'
+                : null
         }
         onLogin={() => {
+          clearWrongAccount();
           setHeldTried(true);
           passkey.authenticate();
         }}
@@ -217,7 +221,7 @@ interface StartViewProps {
   /** Held-back member to greet (**Welcome back, {name}**), or null. */
   greeting?: string | null;
   /** Alert above **Log in**, or null. */
-  alert?: 'login.error' | 'wallet.prfUnsupported' | null;
+  alert?: 'login.error' | 'login.wrongAccount' | 'wallet.prfUnsupported' | null;
 }
 
 /**
