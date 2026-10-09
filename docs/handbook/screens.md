@@ -2255,27 +2255,15 @@ Same German note after POST /translate fails. Alert **Could not translate this n
 
 ### Variant: heart-needs-balance
 
-Same signed-in German note after stubbing POST /messages/*/invoice to 400 `wallet_required` and clicking Send ₿1. Copy **A Bitcoin balance is required for this.**
+Same signed-in German note after opening `?visual=heart-needs-balance` (a ready wallet below 1 sat) and clicking Send ₿1. No press and no **+1**; nothing is sent. Copy **A Bitcoin balance is required for this.**
 
 ![21.gifts welcome heart needs balance](images/welcome-heart-needs-balance.png)
 
 ### Variant: heart-paid
 
-Same signed-in German note after opening `?visual=heart-paid` and clicking Send ₿1. The paid mark **+1** is visible.
+Same signed-in German note after opening `?visual=heart-paid` and clicking Send ₿1. The filled heart and **+1** that every tap shows are held for the shot.
 
 ![21.gifts welcome heart paid](images/welcome-heart-paid.png)
-
-### Variant: heart-unavailable
-
-Same signed-in German note after stubbing POST /messages/*/invoice to 503 `HEART_UNAVAILABLE` and clicking Send ₿1. Nothing is sent; the heart stays empty. Copy **Hearts are not available right now.**
-
-![21.gifts welcome heart unavailable](images/welcome-heart-unavailable.png)
-
-### Variant: heart-pending
-
-Same signed-in German note after opening `?visual=heart-pending` and clicking Send ₿1: the send timed out and its outcome is not known yet. The heart stays filled, no **+1**, and another tap on this note does not pay. Copy **Your last heart is still on its way. Try again in a moment.**
-
-![21.gifts welcome heart pending](images/welcome-heart-pending.png)
 
 ### Variant: note-truncated
 
@@ -2823,27 +2811,15 @@ Heading **Shops**, lead, the closed **Country** select on **All countries**, the
 
 ### Variant: heart-needs-balance
 
-Shop post feed with **Cafe Luna** after stubbing POST /messages/*/invoice to 400 `wallet_required` and clicking Send ₿1. Copy **A Bitcoin balance is required for this.**
+Shop post feed with **Cafe Luna** after opening `?visual=heart-needs-balance` (a ready wallet below 1 sat) and clicking Send ₿1. No press and no **+1**; nothing is sent. Copy **A Bitcoin balance is required for this.**
 
 ![21.gifts shops heart needs balance](images/shops-heart-needs-balance.png)
 
 ### Variant: heart-paid
 
-Same Cafe Luna post after opening `?visual=heart-paid` and clicking Send ₿1. The paid mark **+1** is visible.
+Same Cafe Luna post after opening `?visual=heart-paid` and clicking Send ₿1. The filled heart and **+1** that every tap shows are held for the shot.
 
 ![21.gifts shops heart paid](images/shops-heart-paid.png)
-
-### Variant: heart-unavailable
-
-Same Cafe Luna post after stubbing POST /messages/*/invoice to 503 `HEART_UNAVAILABLE` and clicking Send ₿1. Nothing is sent; the heart stays empty. Copy **Hearts are not available right now.**
-
-![21.gifts shops heart unavailable](images/shops-heart-unavailable.png)
-
-### Variant: heart-pending
-
-Same Cafe Luna post after opening `?visual=heart-pending` and clicking Send ₿1: the send timed out and its outcome is not known yet. The heart stays filled, no **+1**, and another tap on this note does not pay. Copy **Your last heart is still on its way. Try again in a moment.**
-
-![21.gifts shops heart pending](images/shops-heart-pending.png)
 
 ### Variant: mention-suggest
 
@@ -3815,27 +3791,15 @@ Same German post after POST /translate fails. Alert **Could not translate this n
 
 ### Variant: heart-needs-balance
 
-Same German post in the posts feed after stubbing POST /messages/*/invoice to 400 `wallet_required` and clicking Send ₿1. Copy **A Bitcoin balance is required for this.**
+Same German post in the posts feed after opening `?visual=heart-needs-balance` (a ready wallet below 1 sat) and clicking Send ₿1. No press and no **+1**; nothing is sent. Copy **A Bitcoin balance is required for this.**
 
 ![21.gifts member heart needs balance](images/members-heart-needs-balance.png)
 
 ### Variant: heart-paid
 
-Same German post after opening `?visual=heart-paid` and clicking Send ₿1. The paid mark **+1** is visible.
+Same German post after opening `?visual=heart-paid` and clicking Send ₿1. The filled heart and **+1** that every tap shows are held for the shot.
 
 ![21.gifts member heart paid](images/members-heart-paid.png)
-
-### Variant: heart-unavailable
-
-Same German post after stubbing POST /messages/*/invoice to 503 `HEART_UNAVAILABLE` and clicking Send ₿1. Nothing is sent; the heart stays empty. Copy **Hearts are not available right now.**
-
-![21.gifts member heart unavailable](images/members-heart-unavailable.png)
-
-### Variant: heart-pending
-
-Same German post after opening `?visual=heart-pending` and clicking Send ₿1: the send timed out and its outcome is not known yet. The heart stays filled, no **+1**, and another tap on this note does not pay. Copy **Your last heart is still on its way. Try again in a moment.**
-
-![21.gifts member heart pending](images/members-heart-pending.png)
 
 ### Variant: about-translate
 
@@ -5864,27 +5828,15 @@ After POST /translate 502: **Could not translate this note. Please try again.**
 
 ### Variant: heart-needs-balance
 
-Same signed-in public thread after stubbing POST /messages/*/invoice to 400 `wallet_required` and clicking Send ₿1. Copy **A Bitcoin balance is required for this.**
+Same signed-in public thread after opening `?visual=heart-needs-balance` (a ready wallet below 1 sat) and clicking Send ₿1. No press and no **+1**; nothing is sent. Copy **A Bitcoin balance is required for this.**
 
 ![21.gifts public message heart needs balance](images/messages-id-heart-needs-balance.png)
 
 ### Variant: heart-paid
 
-Same signed-in public thread after opening `?visual=heart-paid` and clicking Send ₿1. The paid mark **+1** is visible.
+Same signed-in public thread after opening `?visual=heart-paid` and clicking Send ₿1. The filled heart and **+1** that every tap shows are held for the shot.
 
 ![21.gifts public message heart paid](images/messages-id-heart-paid.png)
-
-### Variant: heart-unavailable
-
-Same signed-in public thread after stubbing POST /messages/*/invoice to 503 `HEART_UNAVAILABLE` and clicking Send ₿1. Nothing is sent; the heart stays empty. Copy **Hearts are not available right now.**
-
-![21.gifts public message heart unavailable](images/messages-id-heart-unavailable.png)
-
-### Variant: heart-pending
-
-Same signed-in public thread after opening `?visual=heart-pending` and clicking Send ₿1: the send timed out and its outcome is not known yet. The heart stays filled, no **+1**, and another tap on this note does not pay. Copy **Your last heart is still on its way. Try again in a moment.**
-
-![21.gifts public message heart pending](images/messages-id-heart-pending.png)
 
 ### Variant: thread
 
