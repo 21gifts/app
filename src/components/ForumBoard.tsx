@@ -34,7 +34,7 @@ import {
   type ForumPayError,
   type ForumPayInvoice,
 } from '@/components/ForumPaySheet';
-import { SundayWritingGate } from '@/components/SundayWritingGate';
+import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGate';
 import { AppShellOverlay, useAppShellScroller } from '@/components/AppShell';
 import {
   ForumAskWizard,
@@ -162,6 +162,11 @@ export interface ForumWriter {
   onOpen: () => void;
   /** Closes the writer; drafts stay. `ForumLoader` calls it after a successful post. */
   onClose: () => void;
+  /**
+   * Told whether a form in the feed is open: a post's reaction form, a gift
+   * sheet, or a reaction's pay slot on the page. `false` again once none is.
+   */
+  onFeedForm?: (open: boolean) => void;
 }
 
 /** Props for {@link ForumBoard}. */
@@ -655,6 +660,11 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * {@link useAppHeight}, and pull-to-refresh is off while it is open. While the
  * Menu is open as a sheet (`html[data-menu-sheet='1']`) the writer steps aside,
  * so the sheet in the page scrollport shows; it comes back when the Menu closes.
+ * The writer's `onFeedForm` hears whether a form in the feed is open: an
+ * expanded post's reaction form (signed in, post not deleted), a gift sheet,
+ * or a text reaction's pay slot on the page; it hears `false` once none is,
+ * on the device's local Sunday (`useLocalSunday`: those forms are hidden
+ * then), and when the board unmounts.
  *
  * @param props - Messages payload plus loading/error/composer (including
  * `askDraft` / compose intent / Ask wizard) /pay/mode/photo/video/laws/thread/permalink/truncate state.
@@ -1943,6 +1953,26 @@ export function ForumBoard({
     payMessageId !== null &&
     !(visible !== null && visible.some((row) => row.id === payMessageId)) &&
     !(replies !== null && replies.some((row) => row.id === payMessageId));
+  // The forum home moves its own controls aside while a form in the feed is open. On the local
+  // Sunday every one of these forms is hidden behind SundayWritingGate, so none is open.
+  const sunday = useLocalSunday();
+  const feedFormOpen =
+    !sunday &&
+    ((!readOnly &&
+      visible !== null &&
+      visible.some((row) => row.id === expandedId && row.deletedAt === undefined)) ||
+      (payMessageId !== null && payHost !== 'composer') ||
+      (composerPay && !payInWriter));
+  const onFeedForm = writer === undefined ? undefined : writer.onFeedForm;
+  useEffect(() => {
+    if (onFeedForm === undefined) {
+      return;
+    }
+    onFeedForm(feedFormOpen);
+    return () => {
+      onFeedForm(false);
+    };
+  }, [onFeedForm, feedFormOpen]);
   const paySheet =
     payInvoice === null ? null : (
       <SundayWritingGate notice="zap">

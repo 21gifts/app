@@ -82,7 +82,9 @@ export { AppShellContext };
  * row's bottom edge and ends at the frame's, and it follows the frame when the
  * visible viewport changes. The footer's bottom padding follows
  * `--footer-collapse` on that body (unset: `1.25rem`, as `pb-5`), and glides
- * while the body carries `data-footer-snap` (`WalletFooterActions`).
+ * while the body carries `data-footer-snap` (`WalletFooterActions`). While the
+ * body carries `data-footer-fold` that padding is 0, and it glides there and
+ * back (280 ms) while the body carries `data-footer-folding`.
  *
  * @param props - See {@link AppShellProps}.
  * @returns The page shell element.
@@ -215,7 +217,7 @@ export function AppShell({
             </Scrollport>
             <footer
               ref={setFooterEl}
-              className="flex-none px-5 pb-[calc(1.25rem-0.5rem*var(--footer-collapse,0))] empty:hidden group-data-[footer-snap]/body:transition-[padding] group-data-[footer-snap]/body:duration-320 group-data-[footer-snap]/body:ease-glide"
+              className="flex-none px-5 pb-[calc(1.25rem-0.5rem*var(--footer-collapse,0))] empty:hidden group-data-[footer-snap]/body:transition-[padding] group-data-[footer-snap]/body:duration-320 group-data-[footer-snap]/body:ease-glide group-data-[footer-fold]/body:pb-0 group-data-[footer-folding]/body:transition-[padding] group-data-[footer-folding]/body:duration-280 group-data-[footer-folding]/body:ease-glide"
             />
             <div ref={setOverlayEl} className="contents" />
           </div>

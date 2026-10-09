@@ -243,3 +243,148 @@ describe('WalletFooterActions', () => {
     expect(collapse(body)).toBe('');
   });
 });
+
+/** The footer buttons in a shell with a fold switch, as the forum home renders them. */
+function renderFoldable(folded: boolean): {
+  port: HTMLElement;
+  body: HTMLElement;
+  footer: HTMLElement;
+  rerender: (next: boolean) => void;
+  unmount: () => void;
+} {
+  const tree = (next: boolean): React.JSX.Element => (
+    <AppShell mode="fill">
+      <p>Feed</p>
+      <WalletFooterActions onReceive={vi.fn()} onSend={vi.fn()} folded={next} />
+    </AppShell>
+  );
+  const view = renderWithLocale(tree(folded));
+  const port = view.container.querySelector('[data-scrollport]') as HTMLElement;
+  Object.defineProperty(port, 'scrollHeight', { configurable: true, value: 1600 });
+  Object.defineProperty(port, 'clientHeight', { configurable: true, value: 600 });
+  return {
+    port,
+    body: view.container.querySelector('[data-app-body]') as HTMLElement,
+    footer: view.container.querySelector('footer') as HTMLElement,
+    rerender: (next) => {
+      view.rerender(tree(next));
+    },
+    unmount: view.unmount,
+  };
+}
+
+describe('WalletFooterActions folded', () => {
+  it('stays open by default and on /wallet: no fold marker, nothing clipped', () => {
+    stubMotion(false);
+    const { body } = renderInShell();
+    expect(body.hasAttribute('data-footer-fold')).toBe(false);
+    expect(body.hasAttribute('data-footer-folding')).toBe(false);
+  });
+
+  it('folds the row, its fade and the footer padding to nothing, and nothing in it can be pressed', () => {
+    stubMotion(false);
+    const { body, footer } = renderFoldable(true);
+    expect(body.dataset['footerFold']).toBe('');
+    // Folded from the first render: no glide.
+    expect(body.hasAttribute('data-footer-folding')).toBe(false);
+    const row = screen.getByRole('button', { name: 'Receive' }).closest('[data-footer-actions]')!
+      .parentElement!.parentElement!;
+    expect(row.className).toContain('grid grid-rows-[1fr]');
+    expect(row.className).toContain('group-data-[footer-fold]/body:grid-rows-[0fr]');
+    expect(row.className).toContain('group-data-[footer-fold]/body:opacity-0');
+    expect(row.className).toContain('group-data-[footer-fold]/body:invisible');
+    expect(row.className).toContain('group-data-[footer-fold]/body:pointer-events-none');
+    expect(row.className).toContain(
+      'group-data-[footer-folding]/body:transition-[grid-template-rows,opacity,visibility] group-data-[footer-folding]/body:duration-280 group-data-[footer-folding]/body:ease-glide',
+    );
+    const clip = row.firstElementChild as HTMLElement;
+    expect(clip.className).toBe(
+      'flex min-h-0 flex-col justify-end group-data-[footer-fold]/body:overflow-hidden group-data-[footer-folding]/body:overflow-hidden',
+    );
+    const fade = footer.querySelector('[aria-hidden="true"].bottom-full') as HTMLElement;
+    expect(fade.className).toContain('group-data-[footer-fold]/body:opacity-0');
+    expect(fade.className).toContain('group-data-[footer-folding]/body:transition-opacity');
+    expect(footer.className).toContain('group-data-[footer-fold]/body:pb-0');
+    expect(footer.className).toContain(
+      'group-data-[footer-folding]/body:transition-[padding] group-data-[footer-folding]/body:duration-280 group-data-[footer-folding]/body:ease-glide',
+    );
+  });
+
+  it('glides for 280 ms each way when the fold changes', () => {
+    vi.useFakeTimers();
+    stubMotion(false);
+    const { body, rerender } = renderFoldable(false);
+    expect(body.hasAttribute('data-footer-fold')).toBe(false);
+    rerender(true);
+    expect(body.dataset['footerFold']).toBe('');
+    expect(body.dataset['footerFolding']).toBe('');
+    act(() => {
+      vi.advanceTimersByTime(279);
+    });
+    expect(body.dataset['footerFolding']).toBe('');
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(body.hasAttribute('data-footer-folding')).toBe(false);
+    rerender(false);
+    expect(body.hasAttribute('data-footer-fold')).toBe(false);
+    expect(body.dataset['footerFolding']).toBe('');
+    // Folding again half way restarts the glide from where it is.
+    act(() => {
+      vi.advanceTimersByTime(140);
+    });
+    rerender(true);
+    expect(body.dataset['footerFolding']).toBe('');
+    act(() => {
+      vi.advanceTimersByTime(140);
+    });
+    expect(body.dataset['footerFolding']).toBe('');
+    act(() => {
+      vi.advanceTimersByTime(140);
+    });
+    expect(body.hasAttribute('data-footer-folding')).toBe(false);
+  });
+
+  it('folds and unfolds at once under reduced motion', () => {
+    stubMotion(true);
+    const { body, rerender } = renderFoldable(false);
+    rerender(true);
+    expect(body.dataset['footerFold']).toBe('');
+    expect(body.hasAttribute('data-footer-folding')).toBe(false);
+    rerender(false);
+    expect(body.hasAttribute('data-footer-fold')).toBe(false);
+    expect(body.hasAttribute('data-footer-folding')).toBe(false);
+  });
+
+  it('keeps following the scroll while folded and after it comes back', () => {
+    stubMotion(false);
+    const { port, body, rerender } = renderFoldable(false);
+    scrollTo(port, 200);
+    expect(collapse(body)).toBe('1');
+    rerender(true);
+    scrollTo(port, 120);
+    expect(collapse(body)).toBe('0');
+    rerender(false);
+    scrollTo(port, 220);
+    expect(collapse(body)).toBe('1');
+  });
+
+  it('leaves no fold marker and no pending glide behind when it unmounts', () => {
+    vi.useFakeTimers();
+    stubMotion(false);
+    const { body, rerender, unmount } = renderFoldable(false);
+    rerender(true);
+    unmount();
+    expect(body.hasAttribute('data-footer-fold')).toBe(false);
+    expect(body.hasAttribute('data-footer-folding')).toBe(false);
+    act(() => {
+      vi.advanceTimersByTime(280);
+    });
+    expect(body.hasAttribute('data-footer-folding')).toBe(false);
+  });
+
+  it('only renders the switch outside a shell', () => {
+    renderWithLocale(<WalletFooterActions onReceive={vi.fn()} onSend={vi.fn()} folded />);
+    expect(screen.getByRole('button', { name: 'Receive' })).toBeTruthy();
+  });
+});
