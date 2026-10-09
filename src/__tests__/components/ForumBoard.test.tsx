@@ -1818,6 +1818,107 @@ describe('ForumBoard', () => {
     expect(onToggleExpand).not.toHaveBeenCalled();
   });
 
+  it("hides the reply amount field on the viewer's own note and keeps it on another note", () => {
+    const own: ForumMessage = { ...SAMPLE, accountId: 'acc-ada' };
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[own]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        viewerAccountId="acc-ada"
+        {...modeProps('all')}
+      />,
+    );
+    const replyForm = screen.getByLabelText('Your reaction').closest('form')!;
+    expect(within(replyForm).getByRole('button', { name: 'Post' })).toBeTruthy();
+    expect(document.getElementById('forum-reply-amount')).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+    rerender(
+      <ForumBoard
+        messages={[{ ...own, accountId: 'acc-bob' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[]}
+        viewerAccountId="acc-ada"
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.getElementById('forum-reply-amount')).not.toBeNull();
+  });
+
+  it("hides Send Bitcoin on the viewer's own payable reply, nested or listed", () => {
+    const ownReply: ForumMessage = {
+      ...SAMPLE,
+      id: 'r-own',
+      accountId: 'acc-ada',
+      text: 'My own reply',
+      parentId: 'p1',
+    };
+    const foreignReply: ForumMessage = {
+      ...ownReply,
+      id: 'r-bob',
+      accountId: 'acc-bob',
+      text: 'Bob reply',
+    };
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-bob' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[ownReply, foreignReply]}
+        viewerAccountId="acc-ada"
+        {...modeProps('all')}
+      />,
+    );
+    const ownCard = document.querySelector('[data-reply-id="r-own"]') as HTMLElement;
+    const bobCard = document.querySelector('[data-reply-id="r-bob"]') as HTMLElement;
+    expect(within(ownCard).queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(within(bobCard).getByRole('button', { name: 'Send Bitcoin' })).toBeTruthy();
+    rerender(
+      <ForumBoard
+        messages={[ownReply]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        viewerAccountId="acc-ada"
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('My own reply')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+  });
+
   it('shows a photo draft preview and removes it by index', () => {
     const onRemovePhoto = vi.fn();
     renderWithLocale(

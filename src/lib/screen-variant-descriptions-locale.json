@@ -2204,6 +2204,11 @@
     "es": "Un moderador que expande una nota ve un control Eliminar reacción solo con icono en cada respuesta anidada. Los miembros ordinarios no. El padre sigue teniendo Eliminar publicación.",
     "fil": "Ang moderator na nagbubukas ng tala ay nakakakita ng kontrol na Burahin ang reaksyon na icon lamang sa bawat nakapailalim na sagot. Hindi ito nakikita ng karaniwang miyembro. Mayroon pa ring Tanggalin ang post ang magulang."
   },
+  "/welcome:reply-own-note": {
+    "de": "Ein Basis-Mitglied klappt die eigene Notiz auf. Das Reaktionsformular hat nur das Textfeld und Senden: kein Betragsfeld, weil man sich selbst nichts schenken kann. Senden veröffentlicht die Reaktion ohne Zahlung, ohne Zahlungskarte.",
+    "es": "Un miembro Basis expande su propia nota. El formulario de reacción solo tiene el campo de texto y enviar: sin campo de importe, porque nadie puede regalarse a sí mismo. Enviar publica la reacción sin pago, sin tarjeta de pago.",
+    "fil": "Binuksan ng isang Basis na miyembro ang sarili niyang tala. Ang form ng reaksyon ay may patlang ng teksto at padala lamang: walang patlang ng halaga, dahil hindi mo mareregaluhan ang sarili mo. Ipino-post ng padala ang reaksyon nang walang bayad at walang pay card."
+  },
   "/welcome:reaction-rate-limit": {
     "de": "Die Zahlungsanfrage wurde durch eine Ratenbegrenzung blockiert. Der Hinweis lautet Zu viele Nachrichten. Bitte warten Sie einen Moment und versuchen Sie es erneut. Der eingegebene Satz steht noch im Feld.",
     "es": "La solicitud de pago fue limitada por frecuencia. La alerta dice Demasiados mensajes. Espera un momento e inténtalo de nuevo. La frase escrita sigue en el campo.",

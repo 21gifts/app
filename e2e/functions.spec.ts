@@ -10861,6 +10861,133 @@ test('Function: isReplyPaymentExempt — a founder posts a reaction without an i
   expect(invoiceRequests).toBe(0);
 });
 
+async function routeOwnReplyForum(
+  page: import('@playwright/test').Page,
+  note: { id: string } & Record<string, unknown>,
+): Promise<{ replyBodies: unknown[]; invoiceUrls: string[]; invoiceBodies: unknown[] }> {
+  const seen = {
+    replyBodies: [] as unknown[],
+    invoiceUrls: [] as string[],
+    invoiceBodies: [] as unknown[],
+  };
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON() as { text: string };
+      seen.replyBodies.push(body);
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          message: {
+            ...note,
+            id: 'r-own',
+            name: 'Ada',
+            text: body.text,
+            sats: 0,
+            payable: false,
+            role: 'basis',
+          },
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [note] }),
+    });
+  });
+  await page.route(`**/forum/messages/${note.id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route('**/messages/compose-target', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messageId: 'compose-fee', sats: 0, firstPostFree: false }),
+    });
+  });
+  await page.route(/\/messages\/[^/]+\/invoice$/, async (route) => {
+    seen.invoiceUrls.push(new URL(route.request().url()).pathname);
+    seen.invoiceBodies.push(route.request().postDataJSON());
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: 'lnbc10n1pexample', amountSats: 1 }),
+    });
+  });
+  return seen;
+}
+
+test('Function: isOwnNote — a Basis member replies to their own post without paying', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'basis');
+  const note = {
+    id: 'm-own',
+    accountId: 'acc_e2e',
+    name: 'Ada',
+    text: 'Hello from Ada',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+  };
+  const seen = await routeOwnReplyForum(page, note);
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const composer = page.getByPlaceholder('Write a reaction');
+  await expect(composer).toBeVisible();
+  await expect(page.locator('#forum-reply-amount')).toHaveCount(0);
+  await composer.fill('A note to my own post');
+  await composer.locator('xpath=ancestor::form').getByRole('button', { name: 'Post' }).click();
+  await expect
+    .poll(() => seen.replyBodies)
+    .toEqual([{ text: 'A note to my own post', inReplyTo: 'm-own' }]);
+  await expect(page.getByText('A note to my own post')).toBeVisible();
+  await expect(page.getByRole('button', { name: /and post/ })).toHaveCount(0);
+  expect(seen.invoiceUrls).toEqual([]);
+});
+
+test('Function: isOwnNote — a Basis reply to someone else still pays 1 sat', async ({ page }) => {
+  await seedAdaSession(page, 'basis');
+  const note = {
+    id: 'm-bob',
+    accountId: 'acc_bob',
+    name: 'Bob',
+    text: 'Hello from Bob',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+  };
+  const seen = await routeOwnReplyForum(page, note);
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const composer = page.getByPlaceholder('Write a reaction');
+  await expect(composer).toBeVisible();
+  await expect(page.locator('#forum-reply-amount')).toBeVisible();
+  await composer.fill('Hi Bob');
+  await composer.locator('xpath=ancestor::form').getByRole('button', { name: 'Post' }).click();
+  await expect.poll(() => seen.invoiceUrls).toEqual(['/messages/compose-fee/invoice']);
+  expect(seen.invoiceBodies[0]).toMatchObject({ sats: 1, text: 'inReplyTo:m-bob\nHi Bob' });
+  expect(seen.replyBodies).toEqual([]);
+});
+
 test('Function: ViewProfilePage — public view heading is visible', async ({ page }) => {
   const key = 'a'.repeat(64);
   await page.route(new RegExp(`/view-key/${key}$`), async (route) => {

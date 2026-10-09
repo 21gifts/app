@@ -1284,6 +1284,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:reply-own-note",
+    "label": "/welcome reply-own-note",
+    "visual": "state-welcome-reply-own-note",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:reply-delete-confirm",
     "label": "/welcome reply-delete-confirm",
     "visual": "state-welcome-reply-delete-confirm",

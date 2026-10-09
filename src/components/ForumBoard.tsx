@@ -78,6 +78,7 @@ import {
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
 import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
+import { isOwnNote } from '@/lib/roles';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
@@ -286,7 +287,10 @@ export interface ForumBoardProps {
   payWaiting: boolean;
   /** Opens the pay sheet for a payable message. */
   onPayOpen: (messageId: string) => void;
-  /** Signed-in account id, used to show repayment only on the author's credit. */
+  /**
+   * Signed-in account id. Shows repayment only on the author's credit, and on
+   * the viewer's own notes hides the reply amount field and the gift button.
+   */
   viewerAccountId?: string | null;
   /** Requests today's repayment invoice for the author's own funded credit. */
   onRepay?: (messageId: string) => void;
@@ -1470,7 +1474,8 @@ export function ForumBoard({
                   {message.parentId !== undefined &&
                   message.payable &&
                   message.deletedAt === undefined &&
-                  !readOnly ? (
+                  !readOnly &&
+                  !isOwnNote(viewerAccountId, message.accountId) ? (
                     <SundayWritingGate notice="zap">
                       <IconButton
                         type="button"
@@ -1737,7 +1742,10 @@ export function ForumBoard({
                                 }
                                 onHeartTip={onHeartTip}
                               />
-                              {reply.deletedAt === undefined && reply.payable && !readOnly ? (
+                              {reply.deletedAt === undefined &&
+                              reply.payable &&
+                              !readOnly &&
+                              !isOwnNote(viewerAccountId, reply.accountId) ? (
                                 <SundayWritingGate notice="zap">
                                   <IconButton
                                     type="button"
@@ -1819,25 +1827,28 @@ export function ForumBoard({
                     ) : (
                       <SundayWritingGate>
                         <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
-                          <AmountEntry
-                            id="forum-reply-amount"
-                            layout="inline"
-                            label={t('forum.replyAmountLabel')}
-                            placeholder={t('forum.payAmountPlaceholder')}
-                            value={replyAmountDraft}
-                            disabled={
-                              replyPayLocked ||
-                              replyPosting ||
-                              repliesLoading ||
-                              repliesError ||
-                              replies === null
-                            }
-                            rateDay={rateDay}
-                            onValueChange={(next) => onReplyAmountDraftChange?.(next)}
-                            {...(onReplyUnitChange === undefined
-                              ? {}
-                              : { onUnitChange: onReplyUnitChange })}
-                          />
+                          {/* On your own note the reply is free: no amount to gift yourself. */}
+                          {isOwnNote(viewerAccountId, message.accountId) ? null : (
+                            <AmountEntry
+                              id="forum-reply-amount"
+                              layout="inline"
+                              label={t('forum.replyAmountLabel')}
+                              placeholder={t('forum.payAmountPlaceholder')}
+                              value={replyAmountDraft}
+                              disabled={
+                                replyPayLocked ||
+                                replyPosting ||
+                                repliesLoading ||
+                                repliesError ||
+                                replies === null
+                              }
+                              rateDay={rateDay}
+                              onValueChange={(next) => onReplyAmountDraftChange?.(next)}
+                              {...(onReplyUnitChange === undefined
+                                ? {}
+                                : { onUnitChange: onReplyUnitChange })}
+                            />
+                          )}
                           <div className="flex items-center gap-2">
                             <MentionTextarea
                               textareaRef={replyComposerRef}

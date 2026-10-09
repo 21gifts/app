@@ -1573,6 +1573,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'reply-own-note',
+    image: 'welcome-reply-own-note.png',
+    visual: 'state-welcome-reply-own-note',
+    needle: 'welcome reply-own-note',
+  },
+  {
+    route: '/welcome',
     id: 'reply-delete-confirm',
     image: 'welcome-reply-delete-confirm.png',
     visual: 'state-welcome-reply-delete-confirm',

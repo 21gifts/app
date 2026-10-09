@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ROLE_ORDER,
   canEditDailyPayoutRoster,
+  isOwnNote,
   isReplyPaymentExempt,
   roleAtLeast,
   roleRank,
@@ -70,6 +71,17 @@ describe('canEditDailyPayoutRoster', () => {
   });
 });
 
+describe('isOwnNote', () => {
+  it('is true only when both ids are present and equal', () => {
+    expect(isOwnNote('acc_1', 'acc_1')).toBe(true);
+    expect(isOwnNote('acc_1', 'acc_2')).toBe(false);
+    expect(isOwnNote('acc_1', undefined)).toBe(false);
+    expect(isOwnNote(null, 'acc_1')).toBe(false);
+    expect(isOwnNote(undefined, undefined)).toBe(false);
+    expect(isOwnNote('', '')).toBe(false);
+  });
+});
+
 describe('isReplyPaymentExempt', () => {
   function account(role: Role): { id: string; role: Role } {
     return { id: 'acc_1', role };
@@ -89,8 +101,8 @@ describe('isReplyPaymentExempt', () => {
     },
   );
 
-  it('is false for a basis parent author', () => {
-    expect(isReplyPaymentExempt(account('basis'), 'acc_1')).toBe(false);
+  it('is true for a basis parent author', () => {
+    expect(isReplyPaymentExempt(account('basis'), 'acc_1')).toBe(true);
   });
 
   it('is false for a basis account that is not the parent author', () => {
