@@ -15,6 +15,9 @@ const FULL_NEAR_TOP = 24;
 /** Quiet time after the last scroll before an in-between size settles, in ms. */
 const SETTLE_MS = 140;
 
+/** Length of the fold away and back, in ms (`duration-280` below and in the shell footer). */
+const FOLD_MS = 280;
+
 /** Props for {@link WalletFooterActions}. */
 export interface WalletFooterActionsProps {
   /** Opens the Receive view. */
@@ -23,6 +26,8 @@ export interface WalletFooterActionsProps {
   onSend: () => void;
   /** The button to focus when the buttons come back after a view closed, or `null`. */
   focus?: 'receive' | 'send' | null;
+  /** True while the buttons fold away for a form on the page (the forum home). Default false. */
+  folded?: boolean;
 }
 
 /**
@@ -51,13 +56,25 @@ export interface WalletFooterActionsProps {
  * footer padding and a layer above the buttons (the forum home's **+**)
  * follow it too; `data-footer-snap` on that body marks the glide.
  *
- * @param props - Open handlers and the button to focus.
+ * With `folded` (the forum home while a form in its feed is open) the buttons
+ * fold away: the footer, its padding included, closes to no height while the
+ * buttons and their fade go transparent, and nothing in it can be pressed or
+ * focused. The page above only grows downwards, so nothing under the finger
+ * moves. Turning `folded` off brings them back the same way. `data-footer-fold`
+ * on the frame body marks the folded state; for 280 ms after a change
+ * `data-footer-folding` makes the fold glide (same easing as the glide), and
+ * with reduced motion it is not set, so the fold happens at once. The buttons
+ * stay mounted and keep following the scroll, so they come back at the size
+ * the scroll position asks for.
+ *
+ * @param props - Open handlers, the button to focus, and whether the buttons are folded away.
  * @returns The footer registration.
  */
 export function WalletFooterActions({
   onReceive,
   onSend,
   focus = null,
+  folded = false,
 }: WalletFooterActionsProps): ReactElement {
   const { t } = useTranslations();
   const receiveRef = useRef<HTMLButtonElement>(null);
@@ -123,6 +140,37 @@ export function WalletFooterActions({
       delete body.dataset['footerSnap'];
     };
   }, [body, scroller]);
+  /** The folded state the body last showed, or `null` before the first one: that one does not glide. */
+  const foldShown = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (body === null) {
+      return;
+    }
+    if (folded) {
+      body.dataset['footerFold'] = '';
+    }
+    const glide =
+      foldShown.current !== null &&
+      foldShown.current !== folded &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    foldShown.current = folded;
+    let done: number | null = null;
+    if (glide) {
+      body.dataset['footerFolding'] = '';
+      done = window.setTimeout(() => {
+        delete body.dataset['footerFolding'];
+      }, FOLD_MS);
+    }
+    return () => {
+      if (done !== null) {
+        window.clearTimeout(done);
+      }
+      delete body.dataset['footerFold'];
+      delete body.dataset['footerFolding'];
+    };
+  }, [body, folded]);
+  const fold =
+    'group-data-[footer-folding]/body:duration-280 group-data-[footer-folding]/body:ease-glide';
   // At rest (no progress set) every value equals the full size: min-h-14, py-3, text-base, h-5.
   const glide =
     'group-data-[footer-snap]/body:duration-320 group-data-[footer-snap]/body:ease-glide';
@@ -133,31 +181,38 @@ export function WalletFooterActions({
       <div className="relative">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -inset-x-5 bottom-full h-[18px] bg-gradient-to-t from-app-card to-transparent backdrop-blur-[1.5px] [mask-image:linear-gradient(to_top,black,transparent)]"
+          className={`pointer-events-none absolute -inset-x-5 bottom-full h-[18px] bg-gradient-to-t from-app-card to-transparent backdrop-blur-[1.5px] [mask-image:linear-gradient(to_top,black,transparent)] group-data-[footer-fold]/body:opacity-0 group-data-[footer-folding]/body:transition-opacity ${fold}`}
         />
       </div>
+      {/* One grid row that folds from the buttons' height to none; it clips only while folded or folding. */}
       <div
-        data-footer-actions=""
-        className={`mx-auto grid w-full max-w-sm grid-cols-2 gap-3 pt-[calc(0.5rem-0.25rem*var(--footer-collapse,0))] group-data-[footer-snap]/body:transition-[padding] ${glide}`}
+        className={`grid grid-rows-[1fr] group-data-[footer-fold]/body:pointer-events-none group-data-[footer-fold]/body:invisible group-data-[footer-fold]/body:grid-rows-[0fr] group-data-[footer-fold]/body:opacity-0 group-data-[footer-folding]/body:transition-[grid-template-rows,opacity,visibility] ${fold}`}
       >
-        <Button
-          ref={receiveRef}
-          size="lg"
-          className={buttonClass}
-          icon={<ArrowDownRight aria-hidden="true" className={iconClass} />}
-          onClick={onReceive}
-        >
-          {t('wallet.receive')}
-        </Button>
-        <Button
-          ref={sendRef}
-          size="lg"
-          className={buttonClass}
-          icon={<ArrowUpRight aria-hidden="true" className={iconClass} />}
-          onClick={onSend}
-        >
-          {t('wallet.sendButton')}
-        </Button>
+        <div className="min-h-0 group-data-[footer-fold]/body:overflow-hidden group-data-[footer-folding]/body:overflow-hidden">
+          <div
+            data-footer-actions=""
+            className={`mx-auto grid w-full max-w-sm grid-cols-2 gap-3 pt-[calc(0.5rem-0.25rem*var(--footer-collapse,0))] group-data-[footer-snap]/body:transition-[padding] ${glide}`}
+          >
+            <Button
+              ref={receiveRef}
+              size="lg"
+              className={buttonClass}
+              icon={<ArrowDownRight aria-hidden="true" className={iconClass} />}
+              onClick={onReceive}
+            >
+              {t('wallet.receive')}
+            </Button>
+            <Button
+              ref={sendRef}
+              size="lg"
+              className={buttonClass}
+              icon={<ArrowUpRight aria-hidden="true" className={iconClass} />}
+              onClick={onSend}
+            >
+              {t('wallet.sendButton')}
+            </Button>
+          </div>
+        </div>
       </div>
     </AppShellFooter>
   );
