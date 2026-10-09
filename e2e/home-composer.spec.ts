@@ -401,6 +401,159 @@ test.describe('forum home writer on a phone', () => {
   });
 });
 
+test.describe('forum home while reacting on a phone', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 375, height: 812 } });
+
+  /** The shell footer's height, in px. */
+  async function footerHeight(page: Page): Promise<number> {
+    return (await page.locator('footer').boundingBox())!.height;
+  }
+
+  /** The reaction form of the expanded post. */
+  function reactionForm(page: Page) {
+    return page.getByPlaceholder('Write a reaction').locator('xpath=ancestor::form');
+  }
+
+  /** True when no button, link, field or toggle other than the + lies under the + box. */
+  async function plusCoversNothing(page: Page): Promise<boolean> {
+    return page.evaluate(() => {
+      const plus = [...document.querySelectorAll('button')].find(
+        (node) => node.getAttribute('aria-label') === 'Write a post',
+      )!;
+      const box = plus.getBoundingClientRect();
+      const controls = document.querySelectorAll(
+        '[data-scroll-page] :is(button, a, input, textarea, select, [role="button"])',
+      );
+      return [...controls].every((node) => {
+        const rect = node.getBoundingClientRect();
+        return (
+          rect.width === 0 ||
+          rect.right <= box.left ||
+          rect.left >= box.right ||
+          rect.bottom <= box.top ||
+          rect.top >= box.bottom
+        );
+      });
+    });
+  }
+
+  test('Function: WelcomeScreen — a reaction form moves the + and Receive / Send aside; they come back once it closes and the focus left', async ({
+    page,
+  }) => {
+    await drivenViewport(page);
+    await openHome(page, 'basis', 12);
+    const plus = page.getByRole('button', { name: 'Write a post' });
+    const receive = page.getByRole('button', { name: 'Receive' });
+    expect(await footerHeight(page)).toBeGreaterThan(70);
+
+    await page.getByRole('button', { name: 'React' }).first().tap();
+    const reply = page.getByPlaceholder('Write a reaction');
+    await expect(reply).toBeVisible();
+    await expect(plus).toBeHidden();
+    await expect(receive).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeHidden();
+    await expect(page.locator('[data-app-body]')).toHaveAttribute('data-footer-fold', '');
+    await expect.poll(() => footerHeight(page)).toBe(0);
+    await expect(page.locator('footer')).toHaveCSS('padding-bottom', '0px');
+    // The page reaches down to the frame's bottom edge.
+    const port = (await pagePort(page).boundingBox())!;
+    const body = (await page.locator('[data-app-body]').boundingBox())!;
+    expect(port.y + port.height).toBeCloseTo(body.y + body.height, 0);
+
+    // Typing with the keyboard up: still aside, so the form has the whole height above it.
+    await reply.tap();
+    await keyboard(page, 480);
+    await reply.fill('Thank you');
+    await page.getByLabel('Amount').tap();
+    await expect(plus).toBeHidden();
+    await expect(receive).toBeHidden();
+    await page.getByLabel('Amount').blur();
+    await keyboard(page, null);
+    // The form is still open: still aside.
+    await expect(plus).toBeHidden();
+    await expect(receive).toBeHidden();
+
+    // Closing the post brings both back, and the buttons follow the scroll again.
+    await page.getByRole('button', { name: 'Hide reactions' }).first().tap();
+    await expect(reply).toHaveCount(0);
+    await expect(plus).toBeVisible();
+    await expect(receive).toBeVisible();
+    await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-fold');
+    await scrollPageTo(page, 0);
+    await expect.poll(async () => (await receive.boundingBox())!.height).toBe(56);
+    await expect(page.locator('footer')).toHaveCSS('padding-bottom', '20px');
+    await scrollPageTo(page, 200);
+    await expect.poll(() => collapse(page)).toBe(1);
+    await expect.poll(async () => (await receive.boundingBox())!.height).toBe(36);
+    const slimPlus = (await plus.boundingBox())!;
+    const slimReceive = (await receive.boundingBox())!;
+    expect(slimReceive.y - (slimPlus.y + slimPlus.height)).toBeCloseTo(23, 0);
+  });
+
+  test('Function: ForumBoard — the reaction send is never under the +, and it posts', async ({
+    page,
+  }) => {
+    await openHome(page, 'basis', 12);
+    // At the end of the feed the last note's controls lie clear of the +.
+    const toEnd = (): Promise<void> =>
+      pagePort(page).evaluate((node) => {
+        node.scrollTop = node.scrollHeight;
+      });
+    await toEnd();
+    await expect.poll(() => collapse(page)).toBe(1);
+    // Slim buttons make the page port taller: go to its new end.
+    await toEnd();
+    await expect
+      .poll(() =>
+        pagePort(page).evaluate((node) => node.scrollHeight - node.clientHeight - node.scrollTop),
+      )
+      .toBeLessThan(1);
+    expect(await plusCoversNothing(page)).toBe(true);
+    await scrollPageTo(page, 0);
+    await page.getByRole('button', { name: 'React' }).first().tap();
+    await expect(page.getByRole('button', { name: 'Write a post' })).toBeHidden();
+    const send = reactionForm(page).getByRole('button', { name: 'Post' });
+    // At the bottom right of the page, where the + floats while no form is open.
+    await send.evaluate((node) => {
+      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    });
+    const onTop = await send.evaluate((node) => {
+      const rect = node.getBoundingClientRect();
+      const top = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+      return top !== null && node.contains(top);
+    });
+    expect(onTop).toBe(true);
+    await page.getByPlaceholder('Write a reaction').fill('A reaction under the thumb');
+    const posted = page.waitForRequest(
+      (request) =>
+        request.method() === 'POST' &&
+        /\/messages(?:\?|$)/.test(request.url()) &&
+        (request.postData() ?? '').includes('A reaction under the thumb'),
+    );
+    await send.tap();
+    await posted;
+    await expect(page.getByPlaceholder('Write a reaction')).toHaveValue('');
+  });
+
+  test('Function: WalletFooterActions — with reduced motion the fold and the + switch at once', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await openHome(page);
+    const plus = page.getByRole('button', { name: 'Write a post' });
+    await expect(plus).toHaveCSS('transition-property', 'none');
+    await page.getByRole('button', { name: 'React' }).first().tap();
+    await expect(page.locator('[data-app-body]')).toHaveAttribute('data-footer-fold', '');
+    await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-folding');
+    await expect(plus).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeHidden();
+    await page.getByRole('button', { name: 'Hide reactions' }).first().tap();
+    await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-folding');
+    await expect(plus).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
+  });
+});
+
 test('Function: WalletFooterActions — /wallet follows the scroll too and has no +; other pages keep their own composers', async ({
   page,
 }) => {
@@ -409,6 +562,9 @@ test('Function: WalletFooterActions — /wallet follows the scroll too and has n
   await page.goto('/wallet?visual=history-rows');
   await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Write a post' })).toHaveCount(0);
+  // Never folded on /wallet.
+  await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-fold');
+  await expect(page.locator('footer')).toHaveCSS('padding-bottom', '20px');
   const port = pagePort(page);
   const room = await port.evaluate((node) => node.scrollHeight - node.clientHeight);
   expect(room).toBeGreaterThan(100);
