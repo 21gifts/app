@@ -7524,6 +7524,28 @@ describe('ForumLoader', () => {
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
+  it('shows the request error instead of a fee when the api refuses an own-note reply', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+    repliesMock.mockResolvedValue([]);
+    postMock.mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Mine' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
   it('asks for text instead of paying when an own-note reply is empty', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
     fetchMock.mockResolvedValue(forumPage([SAMPLE]));
@@ -8009,8 +8031,10 @@ describe('ForumLoader', () => {
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
-  it('starts a 1-sat invoice when an unpaid reply is 403', async () => {
-    fetchMock.mockResolvedValue(forumPage([SAMPLE]));
+  it('starts a 1-sat invoice when an unpaid reply to a note without author is 403', async () => {
+    const { accountId: _author, ...anonymous } = SAMPLE;
+    void _author;
+    fetchMock.mockResolvedValue(forumPage([anonymous]));
     repliesMock.mockResolvedValue([]);
     postMock.mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
     invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
