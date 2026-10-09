@@ -3893,9 +3893,9 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: hydratesLocked
 
-- **Purpose:** Detects a valid stored session that must be held back after reload, a new tab, or reopening the app because this tab has no recovery phrase.
-- **Inputs:** Hydrated `account`; reads the current tab phrase through `peekSessionPhrase` and delegates account eligibility to `walletGateApplies`.
-- **Returns / side effects:** Boolean. True makes hydration store the token as `lockedSession` instead of active auth. No direct side effects.
+- **Purpose:** Detects a valid stored session that must be held back after reload, a new tab, or reopening the app because this tab has no recovery phrase. In a Playwright build the `?visual=held-session` pin also holds it back, while a login in that tab then counts as open (that build has no wallet to open), so the reload, login card, and one-prompt login run end to end; a production build ignores the pin.
+- **Inputs:** Hydrated `account`; reads the current tab phrase through `peekSessionPhrase`, delegates account eligibility to `walletGateApplies`, and reads the pin through `visualPin`.
+- **Returns / side effects:** Boolean: true when the wallet gate applies or the `held-session` pin is set, and the tab has no phrase. True makes hydration store the token as `lockedSession` instead of active auth. No direct side effects.
 - **Used by:** `useHydrateSession`.
 
 ## Function: finishWalletOpen
@@ -4248,7 +4248,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** The one reader of the `?visual=` screenshot pin. Honoured only in a Playwright build (`getE2eNow()` set); every deployed build gets `null`.
 - **Inputs:** None. Reads `window.location.search`.
 - **Returns / side effects:** The pin name, or `null` (also during server rendering). No network.
-- **Used by:** `useWallet`, `useWalletPay`, `useWalletSend`, `useWalletPanel`, `useWalletPayment`, `useWalletSetup` (`walletSetupPin`), `WalletLoginCard`, `walletGateApplies`, `paymentHref`, `sendHeartTip`, `useHeartTip`.
+- **Used by:** `useWallet`, `useWalletPay`, `useWalletSend`, `useWalletPanel`, `useWalletPayment`, `useWalletSetup` (`walletSetupPin`), `WalletLoginCard`, `walletGateApplies`, `hydratesLocked` (`held-session`), `paymentHref`, `sendHeartTip`, `useHeartTip`.
 
 ## Function: paymentTitle
 
