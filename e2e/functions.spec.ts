@@ -10475,6 +10475,198 @@ test('Function: AccountActivityChart — profile shows Given legend and ₿ char
   await expect(page.getByRole('heading', { name: 'Given and received' })).toHaveCount(0);
 });
 
+test('Function: LoanBalanceChart — profile shows Debt and credit empty copy', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubAccountActivity(page, EMPTY_ACTIVITY);
+  await page.goto('/profile');
+  await expect(page.getByText('No loans yet.')).toBeVisible();
+  await expect(page.getByLabel('Debt and credit in ₿')).toHaveCount(0);
+});
+
+test('Function: alignLoanSeries — a repayment drops the debt line on the profile chart', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubAccountActivity(page, {
+    ...EMPTY_ACTIVITY,
+    owedOverTime: [
+      {
+        day: '2026-06-01',
+        giftCount: 1,
+        officialCount: 0,
+        sats: 100,
+        cumulativeSats: 100,
+        btc: '0.00000100',
+        cumulativeBtc: '0.00000100',
+        usd: '0.10',
+        cumulativeUsd: '0.10',
+        chf: null,
+        eur: null,
+        php: null,
+        cumulativeChf: null,
+        cumulativeEur: null,
+        cumulativePhp: null,
+      },
+      {
+        day: '2026-06-02',
+        giftCount: 1,
+        officialCount: 0,
+        sats: -40,
+        cumulativeSats: 60,
+        btc: '-0.00000040',
+        cumulativeBtc: '0.00000060',
+        usd: '-0.04',
+        cumulativeUsd: '0.06',
+        chf: null,
+        eur: null,
+        php: null,
+        cumulativeChf: null,
+        cumulativeEur: null,
+        cumulativePhp: null,
+      },
+    ],
+    creditOverTime: [
+      {
+        day: '2026-06-01',
+        giftCount: 1,
+        officialCount: 0,
+        sats: 100,
+        cumulativeSats: 100,
+        btc: '0.00000100',
+        cumulativeBtc: '0.00000100',
+        usd: '0.10',
+        cumulativeUsd: '0.10',
+        chf: null,
+        eur: null,
+        php: null,
+        cumulativeChf: null,
+        cumulativeEur: null,
+        cumulativePhp: null,
+      },
+    ],
+  });
+  await page.goto('/profile');
+  await expect(page.getByText('2026-06-01')).toBeVisible();
+  await expect(page.getByText('2026-06-02')).toBeVisible();
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
+  const points = await page
+    .getByLabel('Debt and credit in ₿')
+    .locator('polyline')
+    .first()
+    .getAttribute('points');
+  const ys = (points ?? '')
+    .trim()
+    .split(/\s+/)
+    .map((pair) => Number(pair.split(',')[1]));
+  const y0 = ys[0];
+  const y1 = ys[1];
+  if (y0 === undefined || y1 === undefined) {
+    throw new Error('debt polyline has fewer than two points');
+  }
+  expect(y1).toBeGreaterThan(y0);
+});
+
+test('Function: loanValue — USD toggle shows the debt and credit chart in USD', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubAccountActivity(page, {
+    ...EMPTY_ACTIVITY,
+    owedOverTime: [
+      {
+        day: '2026-06-01',
+        giftCount: 1,
+        officialCount: 0,
+        sats: 100,
+        cumulativeSats: 100,
+        btc: '0.00000100',
+        cumulativeBtc: '0.00000100',
+        usd: '0.10',
+        cumulativeUsd: '0.10',
+        chf: null,
+        eur: null,
+        php: null,
+        cumulativeChf: null,
+        cumulativeEur: null,
+        cumulativePhp: null,
+      },
+      {
+        day: '2026-06-02',
+        giftCount: 1,
+        officialCount: 0,
+        sats: -40,
+        cumulativeSats: 60,
+        btc: '-0.00000040',
+        cumulativeBtc: '0.00000060',
+        usd: '-0.04',
+        cumulativeUsd: '0.06',
+        chf: null,
+        eur: null,
+        php: null,
+        cumulativeChf: null,
+        cumulativeEur: null,
+        cumulativePhp: null,
+      },
+    ],
+    creditOverTime: [
+      {
+        day: '2026-06-01',
+        giftCount: 1,
+        officialCount: 0,
+        sats: 100,
+        cumulativeSats: 100,
+        btc: '0.00000100',
+        cumulativeBtc: '0.00000100',
+        usd: '0.10',
+        cumulativeUsd: '0.10',
+        chf: null,
+        eur: null,
+        php: null,
+        cumulativeChf: null,
+        cumulativeEur: null,
+        cumulativePhp: null,
+      },
+    ],
+  });
+  await page.goto('/profile');
+  await page
+    .getByRole('group', { name: 'Debt and credit' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+  await expect(page.getByLabel('Debt and credit in USD')).toBeVisible();
+});
+
+test('Function: loanAxis — negative debt tick keeps the minus on the profile chart', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubAccountActivity(page, {
+    ...EMPTY_ACTIVITY,
+    owedOverTime: [
+      {
+        day: '2026-06-01',
+        giftCount: 1,
+        officialCount: 0,
+        sats: -60,
+        cumulativeSats: -60,
+        btc: '-0.00000060',
+        cumulativeBtc: '-0.00000060',
+        usd: '-0.06',
+        cumulativeUsd: '-0.06',
+        chf: null,
+        eur: null,
+        php: null,
+        cumulativeChf: null,
+        cumulativeEur: null,
+        cumulativePhp: null,
+      },
+    ],
+    creditOverTime: [],
+  });
+  await page.goto('/profile');
+  await expect(page.getByLabel('Debt and credit in ₿').getByText('₿-60')).toBeVisible();
+});
+
 test('Function: alignActivitySeries — receive series days appear on the profile chart', async ({
   page,
 }) => {
