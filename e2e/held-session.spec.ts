@@ -183,7 +183,10 @@ test('held-back session: a dismissed prompt stays on the card with the retry mes
   await page.goto('/welcome?visual=held-session');
   const login = page.getByRole('button', { name: 'Log in', exact: true });
   await login.click();
-  await expect(page.getByRole('alert')).toHaveText('Something went wrong. Please try again.');
+  // The Next route announcer is an empty alert too.
+  await expect(page.getByRole('alert').filter({ hasText: /\S/ })).toHaveText(
+    'Something went wrong. Please try again.',
+  );
   await expect(page.getByText('Welcome back, Ada')).toBeVisible();
   await expect(login).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Do you already have an account?' })).toHaveCount(
