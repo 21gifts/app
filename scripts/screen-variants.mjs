@@ -248,20 +248,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pl',
-    id: 'rate-loading',
-    image: 'pl-rate-loading.png',
-    visual: 'state-pl-rate-loading',
-    needle: 'The PHP exchange rate is still loading.',
-  },
-  {
-    route: '/pl',
-    id: 'no-rate',
-    image: 'pl-no-rate.png',
-    visual: 'state-pl-no-rate',
-    needle: 'No PHP exchange rate yet.',
-  },
-  {
-    route: '/pl',
     id: 'invalid',
     image: 'pl-invalid.png',
     visual: 'state-pl-invalid',
@@ -3145,20 +3131,6 @@ export const SCREEN_VARIANTS = [
     image: 'pos-bad-amount.png',
     visual: 'state-pos-bad-amount',
     needle: 'Enter a whole number.',
-  },
-  {
-    route: '/pos/amount',
-    id: 'rate-loading',
-    image: 'pos-rate-loading.png',
-    visual: 'state-pos-rate-loading',
-    needle: 'The PHP exchange rate is still loading.',
-  },
-  {
-    route: '/pos/amount',
-    id: 'no-rate',
-    image: 'pos-no-rate.png',
-    visual: 'state-pos-no-rate',
-    needle: 'No PHP exchange rate yet.',
   },
   {
     route: '/pos/amount',

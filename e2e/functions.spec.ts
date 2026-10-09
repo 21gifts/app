@@ -6191,51 +6191,11 @@ test('Function: spotRateDay — pay sheet shows a live USD equivalent for 21 sat
   await expect(page.getByText('$0.02').first()).toBeVisible();
 });
 
-test('Function: latestRateDayFor — peso till uses the last day that has PHP', async ({ page }) => {
-  await seedAdaSession(page);
-  await page.context().addCookies([{ name: 'fiat', value: 'PHP', url: 'http://localhost:3000' }]);
-  await stubGiftStats(page, {
-    ...EMPTY_STATS,
-    totalSats: 100_001_000,
-    totalBtc: '1.00001000',
-    totalUsd: '100010.00',
-    totalPhp: '5600000.00',
-    giftCount: 2,
-    firstPaidAt: '2026-10-07T00:00:00.000Z',
-    lastPaidAt: '2026-10-08T00:08:00.000Z',
-    spendOverTime: [
-      {
-        day: '2026-10-07',
-        sats: 100_000_000,
-        cumulativeSats: 100_000_000,
-        btc: '1.00000000',
-        cumulativeBtc: '1.00000000',
-        usd: '100000.00',
-        cumulativeUsd: '100000.00',
-        chf: '80000.00',
-        cumulativeChf: '80000.00',
-        eur: '90000.00',
-        cumulativeEur: '90000.00',
-        php: '5600000.00',
-        cumulativePhp: '5600000.00',
-      },
-      {
-        day: '2026-10-08',
-        sats: 1000,
-        cumulativeSats: 100_001_000,
-        btc: '0.00001000',
-        cumulativeBtc: '1.00001000',
-        usd: '10.00',
-        cumulativeUsd: '100010.00',
-        chf: null,
-        cumulativeChf: null,
-        eur: null,
-        cumulativeEur: null,
-        php: null,
-        cumulativePhp: null,
-      },
-    ],
-  });
+test('Function: spotRateDay — the peso till prices PHP while the other codes have no price', async ({
+  page,
+}) => {
+  await fulfillSpot(page, { PHP: '5600000.00' });
+  const till = await seedChfTill(page);
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -6247,7 +6207,7 @@ test('Function: latestRateDayFor — peso till uses the last day that has PHP', 
         name: 'Ada',
         username: 'alice',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -6256,51 +6216,25 @@ test('Function: latestRateDayFor — peso till uses the last day that has PHP', 
         aboutMe: null,
         setup: null,
         missing: [],
-      }),
-    });
-  });
-  await page.route(/\/me\/amount-unit$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        username: 'alice',
-        location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: 1_700_000_001,
-        viewKey: 'a'.repeat(64),
-        aboutMe: null,
-        setup: null,
-        missing: [],
+        sparkWalletVerified: true,
+        fiat: 'PHP',
         amountUnit: 'fiat',
       }),
     });
   });
-  await page.route(/\/pos\/charge$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ charge: null, history: [] }),
-    });
-  });
+  await page.context().addCookies([{ name: 'fiat', value: 'PHP', url: 'http://localhost:3000' }]);
   await page.goto('/pos/amount');
   const php = page
     .getByRole('group', { name: 'Bitcoin or fiat' })
     .getByRole('button', { name: 'PHP' });
-  await php.click();
   await expect(php).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '1', exact: true }).click();
   await page.getByRole('button', { name: '0', exact: true }).click();
   await page.getByRole('button', { name: '0', exact: true }).click();
   await expect(page.getByText("\u20BF1'786")).toBeVisible();
-  await expect(page.getByText('Enter a whole number.')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page).toHaveURL(/\/pos$/);
+  expect(till.created).toEqual([1786]);
 });
 
 test('Function: formatFiatTick — populated stats draw the USD chart', async ({ page }) => {

@@ -150,18 +150,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/pl:rate-loading",
-    "label": "/pl rate-loading",
-    "visual": "state-pl-rate-loading",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/pl:no-rate",
-    "label": "/pl no-rate",
-    "visual": "state-pl-no-rate",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/pl:invalid",
     "label": "/pl invalid",
     "visual": "state-pl-invalid",
@@ -2631,18 +2619,6 @@
     "id": "/pos/amount:bad-amount",
     "label": "/pos/amount bad-amount",
     "visual": "state-pos-bad-amount",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/pos/amount:rate-loading",
-    "label": "/pos/amount rate-loading",
-    "visual": "state-pos-rate-loading",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/pos/amount:no-rate",
-    "label": "/pos/amount no-rate",
-    "visual": "state-pos-no-rate",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

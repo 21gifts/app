@@ -330,9 +330,9 @@ export function fiatDraftForSats(
 /**
  * A trimmed amount draft, as whole sats or a reason it is not.
  *
- * `no-rate` means a positive fiat amount whose gift-day total for that
- * currency is missing, not finite, or zero. A well-formed amount on a usable
- * total that does not become a safe sat count is `invalid`, not `no-rate`.
+ * `no-rate` means a positive fiat amount whose rate for that currency is
+ * missing, not finite, or zero. A well-formed amount on a usable rate that
+ * does not become a safe sat count is `invalid`, not `no-rate`.
  */
 export type AmountDraft =
   { kind: 'empty' } | { kind: 'invalid' } | { kind: 'no-rate' } | { kind: 'sats'; sats: number };
@@ -381,9 +381,9 @@ export function fiatToSats(amount: number, day: FiatRateDay | null, code: FiatCo
  * @param day - Rate used for fiat conversion (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns `empty` when blank, `invalid` when the text is not an amount
- *   or a well-formed amount on a usable total that does not become a safe
- *   sat count, `no-rate` when a positive fiat amount's gift-day total for
- *   that currency is missing, not finite, or zero, or `sats` (including 0;
+ *   or a well-formed amount on a usable rate that does not become a safe
+ *   sat count, `no-rate` when a positive fiat amount's rate for that
+ *   currency is missing, not finite, or zero, or `sats` (including 0;
  *   callers still clamp).
  */
 export function parseAmountDraft(

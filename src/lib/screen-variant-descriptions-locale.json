@@ -1039,16 +1039,6 @@
     "es": "Continuar con un importe vacío o no entero muestra Introduce un número entero. El formulario permanece. Sin Pagar.",
     "fil": "Magpatuloy na may walang laman o hindi buong halaga ay nagpapakita ng Maglagay ng buong bilang. Nanatili ang pormularyo. Walang Magbayad."
   },
-  "/pl:rate-loading": {
-    "de": "PHP ist gedrückt und der Betrag ist 100. Weiter, während die Anfrage zum Kurs des Geschenktags noch nicht zurück ist. Hinweis Der Wechselkurs für PHP wird noch geladen. Das Formular bleibt. Kein Bezahlen.",
-    "es": "PHP está pulsado y el importe es 100. Continuar mientras la solicitud del tipo del día del regalo no ha vuelto. Alerta El tipo de cambio de PHP todavía se está cargando. El formulario permanece. Sin Pagar.",
-    "fil": "Pinindot ang PHP at ang halaga ay 100. Magpatuloy habang hindi pa bumabalik ang hiling para sa rate ng araw ng regalo. Alerto Naglo-load pa ang palitan para sa PHP. Nanatili ang pormularyo. Walang Magbayad."
-  },
-  "/pl:no-rate": {
-    "de": "PHP ist gedrückt und der Betrag ist 100. Die Anfrage zum Kurs des Geschenktags ist abgeschlossen und kein Tag kann PHP bepreisen. Weiter zeigt Für PHP gibt es noch keinen Wechselkurs. Das Formular bleibt. Kein Bezahlen.",
-    "es": "PHP está pulsado y el importe es 100. La solicitud del tipo del día del regalo ya terminó y ningún día puede valorar PHP. Continuar muestra Aún no hay tipo de cambio para PHP. El formulario permanece. Sin Pagar.",
-    "fil": "Pinindot ang PHP at ang halaga ay 100. Tapos na ang hiling para sa rate ng araw ng regalo at walang araw na makakapresyo ng PHP. Ipinapakita ng Magpatuloy ang Wala pang palitan para sa PHP. Nanatili ang pormularyo. Walang Magbayad."
-  },
   "/welcome:ask-preparing": {
     "de": "Schritt 2 von 4 von Um Geld bitten, während das Foto noch vorbereitet wird. Noch kein Vorschaubild. Weiter bleibt deaktiviert.",
     "es": "Paso 2 de 4 de Pedir dinero, mientras la foto aún se está preparando. Todavía no hay miniatura. Continuar sigue desactivado.",
@@ -1713,16 +1703,6 @@
     "de": "Zahlung anlegen, während der Betrag noch leer ist. Hinweis Gib eine ganze Zahl ein. Die Tastatur bleibt und hat keine Dezimal-Taste. Kein QR.",
     "es": "Crear pago mientras el importe sigue vacío. Alerta Escribe un número entero. El teclado permanece y no tiene tecla decimal. Sin QR.",
     "fil": "Gumawa ng bayad habang walang laman pa ang halaga. Alerto Maglagay ng buong bilang. Nanatili ang keypad at walang decimal na key. Walang QR."
-  },
-  "/pos/amount:rate-loading": {
-    "de": "PHP ist gedrückt und der Betrag ist 100. Zahlung anlegen, während die Anfrage zum Kurs des Geschenktags noch nicht zurück ist. Hinweis Der Wechselkurs für PHP wird noch geladen. Die Tastatur bleibt. Kein QR.",
-    "es": "PHP está pulsado y el importe es 100. Crear pago mientras la solicitud del tipo del día del regalo no ha vuelto. Alerta El tipo de cambio de PHP todavía se está cargando. El teclado permanece. Sin QR.",
-    "fil": "Pinindot ang PHP at ang halaga ay 100. Gumawa ng bayad habang hindi pa bumabalik ang hiling para sa rate ng araw ng regalo. Alerto Naglo-load pa ang palitan para sa PHP. Nanatili ang keypad. Walang QR."
-  },
-  "/pos/amount:no-rate": {
-    "de": "PHP ist gedrückt und der Betrag ist 100. Die Anfrage zum Kurs des Geschenktags ist abgeschlossen und kein Tag kann PHP bepreisen. Zahlung anlegen zeigt Für PHP gibt es noch keinen Wechselkurs. Die Tastatur bleibt. Kein QR.",
-    "es": "PHP está pulsado y el importe es 100. La solicitud del tipo del día del regalo ya terminó y ningún día puede valorar PHP. Crear pago muestra Aún no hay tipo de cambio para PHP. El teclado permanece. Sin QR.",
-    "fil": "Pinindot ang PHP at ang halaga ay 100. Tapos na ang hiling para sa rate ng araw ng regalo at walang araw na makakapresyo ng PHP. Ipinapakita ng Gumawa ng bayad ang Wala pang palitan para sa PHP. Nanatili ang keypad. Walang QR."
   },
   "/shops:table-error": {
     "de": "Tabelle ist ausgewählt und die erste Seite ist fehlgeschlagen. Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen. Der Verfasser ist weg.",
