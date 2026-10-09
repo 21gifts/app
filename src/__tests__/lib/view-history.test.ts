@@ -780,7 +780,7 @@ describe('returnToView', () => {
     return { back: vi.fn(), replace: vi.fn() };
   }
 
-  it('steps back when the step was pushed on top of that view, then replaces', () => {
+  it('steps back once when the step was pushed on top of that view, and waits while that step is under way', () => {
     pushView('/welcome');
     pushView('/pos');
     pushView('/pos/amount');
@@ -790,8 +790,34 @@ describe('returnToView', () => {
     expect(nav.back).toHaveBeenCalledTimes(1);
     expect(nav.replace).not.toHaveBeenCalled();
     returnToView('/pos', nav);
+    recordCurrentView('/pos/amount');
+    returnToView('/pos', nav);
+    expect(nav.back).toHaveBeenCalledTimes(1);
+    expect(nav.replace).not.toHaveBeenCalled();
+  });
+
+  it('replaces again once the browser arrived somewhere else', () => {
+    pushView('/welcome');
+    pushView('/pos');
+    pushView('/pos/amount');
+    const nav = router();
+    returnToView('/pos', nav);
+    pushView('/wallet');
+    pushView('/pos/amount');
+    loadDocument('/pos/amount');
+    returnToView('/pos', nav);
     expect(nav.back).toHaveBeenCalledTimes(1);
     expect(nav.replace).toHaveBeenCalledWith('/pos');
+  });
+
+  it('does not wait for another target while a step is under way', () => {
+    pushView('/welcome');
+    pushView('/pos');
+    pushView('/pos/amount');
+    const nav = router();
+    returnToView('/pos', nav);
+    returnToView('/login', nav);
+    expect(nav.replace).toHaveBeenCalledWith('/login');
   });
 
   it('replaces when the view before the step is another path', () => {
@@ -874,6 +900,23 @@ describe('takeStepBack', () => {
     goToPreviousView({ push, back });
     expect(back).toHaveBeenCalledTimes(1);
     expect(push).toHaveBeenCalledWith('/notifications');
+  });
+
+  it('is false on an entry the router pushed for a hash link without a record', () => {
+    pushView('/welcome');
+    pushView('/shops');
+    window.history.pushState({ __NA: true }, '', '/shops#map');
+    expect(previousViewPath()).toBe('/welcome');
+    expect(takeStepBack('/welcome')).toBe(false);
+  });
+
+  it('is false when the entry was stamped for this document but not pushed over the view below', () => {
+    pushView('/welcome');
+    pushView('/shops');
+    const state = { ...(window.history.state as Record<string, unknown>) };
+    delete state['giftsBelow'];
+    window.history.replaceState(state, '');
+    expect(takeStepBack('/welcome')).toBe(false);
   });
 
   it('is false for another path', () => {

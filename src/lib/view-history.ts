@@ -55,6 +55,9 @@ let rawReplaceState: History['replaceState'] | null = null;
 /** Target of the arrow's client-side navigation until a record arrives elsewhere. */
 let pendingBack: string | null = null;
 
+/** A step back `returnToView` started: the view it leaves and the one it opens. */
+let stepping: { from: string; to: string } | null = null;
+
 /**
  * Remember the last router `pushState` or URL-changing `replaceState`.
  * A state-only `replaceState` (the giftsView stamp) is not a navigation.
@@ -455,6 +458,7 @@ export function resetViewHistory(): void {
   const g = globalThis as ViewHistoryGlobal;
   delete g[SLOT];
   pendingBack = null;
+  stepping = null;
   takeBackTarget();
   writeStoredMemory(null);
 }
@@ -502,6 +506,9 @@ export function recordCurrentView(path: string, stampHistory = true): void {
   }
   const length = window.history.length;
   installHistoryTap();
+  if (stepping !== null && stepping.from !== path) {
+    stepping = null;
+  }
   const kind = takeNavKind();
   if (arriveFromBack(slot, path)) {
     slot.pushed = false;
@@ -604,6 +611,11 @@ export function takeStepBack(path: string): boolean {
   if (slot === null || !slot.pushed || previousViewPath() !== path) {
     return false;
   }
+  // The entry itself must say so: an entry the router pushed without a record
+  // (a hash link) has no stamp, and the entry below it is the same view.
+  if (stampedIndex() !== slot.cursor + slot.base || !stampedBelow()) {
+    return false;
+  }
   slot.pushed = false;
   return true;
 }
@@ -646,7 +658,9 @@ export function goToPreviousView(router: { push: (href: string) => void; back: (
  * browser back both continue from the view before `path`. Otherwise (a deep
  * link, a document load, or an arrival by the arrow) it replaces the step with
  * `path`; the record of that replace steps back when the view before it is
- * already `path`.
+ * already `path`. A second call for the same view before the browser has left
+ * this one (an effect that runs again) does nothing, so it neither steps back
+ * twice nor replaces under the step.
  *
  * @param path - In-app path the step was opened from, such as `/pos`.
  * @param router - Client-side router, usually `useRouter()`.
@@ -656,7 +670,14 @@ export function returnToView(
   path: string,
   router: { back: () => void; replace: (href: string) => void },
 ): void {
-  if (takeStepBack(path)) {
+  const slot = hydrateSlot();
+  const here = slot === null ? undefined : slot.stack[slot.cursor];
+  if (stepping !== null && stepping.to === path && stepping.from === here) {
+    // An effect that runs again before the browser left this view: the step is under way.
+    return;
+  }
+  if (here !== undefined && takeStepBack(path)) {
+    stepping = { from: here, to: path };
     router.back();
     return;
   }
