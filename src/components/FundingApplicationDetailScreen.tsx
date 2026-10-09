@@ -12,6 +12,7 @@ import { fetchFundingApplication, postFundingAdmit, postFundingReject } from '@/
 import type { FundingApplicationDetail } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { roleAtLeast } from '@/lib/roles';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -111,7 +112,7 @@ export function FundingApplicationDetailScreen({
     void (async () => {
       try {
         await run(session, accountId);
-        router.push('/grants/applications');
+        returnToView('/grants/applications', router);
       } catch {
         setDecideFailed(true);
         setDeciding(false);

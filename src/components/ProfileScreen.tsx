@@ -29,6 +29,7 @@ import {
 } from '@/lib/api';
 import type { MemberProfile } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -392,7 +393,7 @@ export function ProfileScreen(): ReactElement {
           return;
         }
         if (err instanceof MissingRequirementsError) {
-          router.replace('/setup/rules');
+          returnToView('/setup/rules', router);
           return;
         }
         setMemberStatus('error');
@@ -476,7 +477,7 @@ export function ProfileScreen(): ReactElement {
               }
               if (err instanceof MissingRequirementsError) {
                 if (err.missing.includes('rules')) {
-                  router.replace('/setup/rules');
+                  returnToView('/setup/rules', router);
                   return;
                 }
                 throw err;

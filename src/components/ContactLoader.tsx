@@ -7,6 +7,7 @@ import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { fetchConversations, postContact } from '@/lib/api';
 import { CONTACT_MESSAGE_MAX_LENGTH } from '@/lib/api-types';
 import { MissingRequirementsError, nextContactRequirement } from '@/lib/missing-requirements';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -59,7 +60,7 @@ export function ContactLoader(): ReactElement | null {
     } catch {
       // Inbox list is the fallback when the thread cannot be resolved.
     }
-    router.push(href);
+    returnToView(href, router);
   };
 
   const runContactPost = async (trimmed: string, isRetry: boolean): Promise<void> => {

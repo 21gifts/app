@@ -12,6 +12,7 @@ import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { useWalletOpen } from '@/hooks/useWalletOpen';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { nextOnboardingPath } from '@/lib/onboarding';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** `usePasskeyLogin` error when the new passkey returned no PRF output. */
@@ -65,7 +66,7 @@ export function ViewProfileClaim({
 
   useEffect(() => {
     if (claimAttemptedRef.current && account !== null) {
-      router.replace(nextOnboardingPath(account));
+      returnToView(nextOnboardingPath(account), router);
     }
   }, [account, router]);
 

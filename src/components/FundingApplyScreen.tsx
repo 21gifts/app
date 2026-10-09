@@ -17,6 +17,7 @@ import type { Account, ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { roleAtLeast } from '@/lib/roles';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 type FillStep = 'about' | 'photo' | 'location';
@@ -261,7 +262,7 @@ function OpenGrantApply(): ReactElement | null {
         return false;
       }
       if (err instanceof MissingRequirementsError && err.missing.includes('rules')) {
-        router.replace('/setup/rules');
+        returnToView('/setup/rules', router);
         return;
       }
       throw err;
@@ -329,7 +330,7 @@ function OpenGrantApply(): ReactElement | null {
           return;
         }
         setAccount({ ...current.account, funding: next });
-        router.push('/grants');
+        returnToView('/grants', router);
       } catch {
         /* v8 ignore next 3 — session gone during apply */
         if (useAuthStore.getState().session !== session) {

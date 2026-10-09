@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContactLoader } from '@/components/ContactLoader';
 import { CONTACT_MESSAGE_MAX_LENGTH, type Account, type ContactMessage } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
+import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -13,10 +14,12 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+// Leaving Contact replaces it, or steps back onto the thread it was opened from.
 const push = vi.fn();
+const back = vi.fn();
 
 vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof push; replace: () => void } => ({ push, replace: vi.fn() }),
+  useRouter: (): { replace: typeof push; back: typeof back } => ({ replace: push, back }),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -53,6 +56,8 @@ const account: Account = {
 beforeEach(() => {
   vi.clearAllMocks();
   push.mockReset();
+  back.mockReset();
+  resetViewHistory();
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -97,6 +102,37 @@ describe('ContactLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByRole('alert').textContent).toBe('Keep it to 8000 characters');
     expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('steps back onto the official thread when Contact was opened from it', async () => {
+    postMock.mockResolvedValue({
+      id: 'c1',
+      name: 'Ada',
+      text: 'Hello',
+      createdAt: '2026-08-28T14:00:00.000Z',
+    });
+    conversationsMock.mockResolvedValue([
+      {
+        id: 'conv-21',
+        kind: 'member_platform',
+        name: '21.gifts',
+        lastText: 'Hello',
+        lastAt: '2026-08-28T14:00:00.000Z',
+        lastFromMe: true,
+        lastSats: 0,
+        unreadMessageCount: 0,
+        unread: false,
+      },
+    ]);
+    recordCurrentView('/messages?c=conv-21');
+    recordCurrentView('/contact');
+    renderWithLocale(<ContactLoader />);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(back).toHaveBeenCalledTimes(1);
+    });
+    expect(push).not.toHaveBeenCalled();
   });
 
   it('posts a trimmed message and opens the official thread', async () => {

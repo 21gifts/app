@@ -372,6 +372,57 @@ test('login with an existing passkey skips the account choice', async ({ page })
   );
 });
 
+test('login opened from the forum home steps back to it instead of adding a second forum entry', async ({
+  page,
+}) => {
+  const ready = {
+    ...E2E_ACCOUNT,
+    name: 'Ada',
+    username: 'ada',
+    rulesAgreedAt: 1_700_000_001,
+    setup: null,
+    missing: [],
+  };
+  await page.route(/\/auth\/passkey\/authenticate\/finish$/, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ token: 'sess-e2e', account: ready }),
+    });
+  });
+  await page.route(/\/me$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(ready),
+    });
+  });
+  await installFakeWebAuthn(page, true);
+  await page.goto('/welcome');
+  // Mark the forum entry, so the test can tell a step back from a second forum entry.
+  await page.evaluate(() => {
+    window.history.replaceState({ ...window.history.state, e2eForumEntry: true }, '');
+  });
+  await page.getByRole('link', { name: 'Log in' }).first().click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page).toHaveURL(/\/welcome$/, { timeout: 10_000 });
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => (window.history.state as { e2eForumEntry?: boolean } | null)?.e2eForumEntry,
+    ),
+  ).toBe(true);
+});
+
 test('signed-in session hydrates, saves a name, agrees to the rules, and reaches welcome', async ({
   page,
 }) => {
