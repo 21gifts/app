@@ -1069,6 +1069,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'reaction-open',
+    image: 'welcome-reaction-open.png',
+    visual: 'state-welcome-reaction-open',
+    needle: "shotScreen(page, 'state-welcome-reaction-open')",
+  },
+  {
+    route: '/welcome',
     id: 'wallet-setup-pending',
     image: 'welcome-wallet-setup-pending.png',
     visual: 'state-welcome-wallet-setup-pending',

@@ -852,6 +852,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:reaction-open",
+    "label": "/welcome reaction-open",
+    "visual": "state-welcome-reaction-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:wallet-setup-pending",
     "label": "/welcome wallet-setup-pending",
     "visual": "state-welcome-wallet-setup-pending",
