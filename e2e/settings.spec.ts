@@ -82,7 +82,8 @@ test('the signed-in Menu lists Home and Balance first and opens /settings from S
   await signIn(page, 'cred-seed');
   await page.goto('/wallet');
   await page.getByRole('button', { name: 'Menu' }).click();
-  const rows = page.locator('#signed-in-menu a');
+  // The account header's profile and balance links come before the rows.
+  const rows = page.locator('#signed-in-menu > a');
   const names = (await rows.allInnerTexts()).map((name) => name.trim());
   expect(names.slice(0, 2)).toEqual(['Home', 'Balance']);
   const grants = names.indexOf('Grants');
