@@ -144,7 +144,10 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
               variant="ghost"
               size="md"
               aria-label={chapter0Label}
-              onClick={() => {
+              onClick={(event) => {
+                if (event.detail > 1) {
+                  return;
+                }
                 goToPreviousView(router);
               }}
             >

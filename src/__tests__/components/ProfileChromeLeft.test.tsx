@@ -118,6 +118,22 @@ describe('ProfileChromeLeft', () => {
     expect(peekSessionPhrase()).toBe('abandon ability able');
   });
 
+  it('ignores the second click of a double click, so the arrow steps back once', () => {
+    recordCurrentView('/wallet');
+    recordCurrentView('/shops');
+    const stepBack = vi.fn();
+    renderWithLocale(
+      <ChromeBackProvider stepBack={stepBack}>
+        <ProfileChromeLeft />
+      </ChromeBackProvider>,
+    );
+    const back = screen.getByRole('link', { name: 'Back' });
+    fireEvent.click(back, { detail: 1 });
+    fireEvent.click(back, { detail: 2 });
+    expect(stepBack).toHaveBeenCalledTimes(1);
+    expect(routerPush).not.toHaveBeenCalled();
+  });
+
   it('follows the link when no root provides a back step', () => {
     recordCurrentView('/wallet');
     recordCurrentView('/shops');

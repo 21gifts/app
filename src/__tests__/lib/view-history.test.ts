@@ -6,6 +6,7 @@ import {
   recordCurrentView,
   resetViewHistory,
   returnToView,
+  takeStepBack,
 } from '@/lib/view-history';
 
 const HISTORY_KEY = '21gifts.viewHistory';
@@ -857,6 +858,59 @@ describe('returnToView', () => {
     returnToView('/pos', nav);
     expect(nav.back).not.toHaveBeenCalled();
     expect(nav.replace).toHaveBeenCalledWith('/pos');
+  });
+});
+
+describe('takeStepBack', () => {
+  it('claims the step once, so a second call before the browser arrives does not step back again', () => {
+    pushView('/shops');
+    pushView('/notifications');
+    expect(takeStepBack('/shops')).toBe(true);
+    expect(takeStepBack('/shops')).toBe(false);
+    const push = vi.fn();
+    const back = vi.fn();
+    pushView('/map');
+    goToPreviousView({ push, back });
+    goToPreviousView({ push, back });
+    expect(back).toHaveBeenCalledTimes(1);
+    expect(push).toHaveBeenCalledWith('/notifications');
+  });
+
+  it('is false for another path', () => {
+    pushView('/shops');
+    pushView('/notifications');
+    expect(takeStepBack('/welcome')).toBe(false);
+  });
+});
+
+describe('same-URL state writes', () => {
+  it("keep the entry's stamps when a refresh rewrites its state without them", () => {
+    pushView('/welcome');
+    pushView('/shops');
+    const before = window.history.state as { giftsView?: number; giftsBelow?: string };
+    expect(before.giftsView).toBe(1);
+    expect(typeof before.giftsBelow).toBe('string');
+    window.history.replaceState({ __NA: true }, '');
+    const after = window.history.state as Record<string, unknown>;
+    expect(after).toEqual({ __NA: true, giftsView: 1, giftsBelow: before.giftsBelow });
+    pushView('/notifications');
+    window.history.replaceState(after, '', '/shops');
+    recordCurrentView('/shops');
+    expect(previousViewPath()).toBe('/welcome');
+    expect(takeStepBack('/welcome')).toBe(true);
+  });
+
+  it('keep the stamp without giftsBelow, and leave a null write, an own stamp, and a primitive alone where they decide', () => {
+    recordCurrentView('/shops');
+    expect(window.history.state).toEqual({ giftsView: 0 });
+    window.history.replaceState(null, '');
+    expect(window.history.state).toEqual({ giftsView: 0 });
+    window.history.replaceState({ giftsView: 7 }, '');
+    expect(window.history.state).toEqual({ giftsView: 7 });
+    window.history.replaceState('plain', '');
+    expect(window.history.state).toBe('plain');
+    window.history.replaceState({ other: 1 }, '');
+    expect(window.history.state).toEqual({ other: 1 });
   });
 });
 
