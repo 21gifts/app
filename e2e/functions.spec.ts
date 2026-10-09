@@ -11540,7 +11540,40 @@ async function routeHeartNote(page: Page, payable: boolean): Promise<void> {
   });
 }
 
-test('Function: sendHeartTip — a 503 HEART_UNAVAILABLE shows the unavailable sentence', async ({
+test('Function: useHeartTip — the +1 shows on the tap while the payment is still running', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeHeartNote(page, true);
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let answered = false;
+  await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+    await held;
+    answered = true;
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'HEART_UNAVAILABLE' }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Hello from the heart list.')).toBeVisible();
+  const invoiced = page.waitForRequest(/\/messages\/[^/]+\/invoice/);
+  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  await expect(page.getByText('+1', { exact: true })).toBeVisible({ timeout: 100 });
+  await invoiced;
+  expect(answered).toBe(false);
+  release();
+  await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+  await expect(
+    page.locator('li', { hasText: 'Hello from the heart list.' }).getByRole('alert'),
+  ).toHaveCount(0);
+});
+
+test('Function: sendHeartTip — a 503 HEART_UNAVAILABLE shows no sentence under the heart', async ({
   page,
 }) => {
   await seedAdaSession(page);
@@ -11554,11 +11587,14 @@ test('Function: sendHeartTip — a 503 HEART_UNAVAILABLE shows the unavailable s
   });
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
+  const answered = page.waitForResponse(/\/messages\/[^/]+\/invoice/);
   await page.getByRole('button', { name: 'Send ₿1' }).click();
-  await expect(
-    page.getByRole('alert').filter({ hasText: 'Hearts are not available right now.' }),
-  ).toBeVisible();
+  await expect(page.getByText('+1', { exact: true })).toBeVisible();
+  await answered;
   await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+  await expect(
+    page.locator('li', { hasText: 'Hello from the heart list.' }).getByRole('alert'),
+  ).toHaveCount(0);
 });
 
 test('Function: sendHeartTip — an invoice without a Spark invoice is not paid', async ({
@@ -11576,10 +11612,14 @@ test('Function: sendHeartTip — an invoice without a Spark invoice is not paid'
     });
   });
   await page.goto('/welcome');
+  const answered = page.waitForResponse(/\/messages\/[^/]+\/invoice/);
   await page.getByRole('button', { name: 'Send ₿1' }).click();
-  await expect(page.getByText('Hearts are not available right now.')).toBeVisible();
+  await answered;
   expect(heartBody).toEqual({ sats: 1, heart: true });
   await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+  await expect(
+    page.locator('li', { hasText: 'Hello from the heart list.' }).getByRole('alert'),
+  ).toHaveCount(0);
 });
 
 test('Function: ForumBoard — no heart on a note whose author cannot receive', async ({ page }) => {

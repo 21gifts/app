@@ -7853,7 +7853,7 @@ describe('ForumBoard in-app wallet pay', () => {
         viewerAccountId="acc-viewer"
         onHeartTip={() => undefined}
         heartTipViews={{
-          m1: { pressed: false, plusOne: false, alert: 'needsBalance' },
+          m1: { pressed: false, plusOne: false, needsBalance: true },
         }}
         {...modeProps('all')}
       />,
@@ -7878,12 +7878,16 @@ describe('ForumBoard in-app wallet pay', () => {
         viewerAccountId="acc-viewer"
         onHeartTip={() => undefined}
         heartTipViews={{
-          m1: { pressed: true, plusOne: true, alert: null },
+          m1: { pressed: true, plusOne: true, needsBalance: false },
         }}
         {...modeProps('all')}
       />,
     );
     expect(screen.getByText('+1')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Send ₿1' }).querySelector('svg')?.getAttribute('fill'),
+    ).toBe('currentColor');
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('calls onHeartTip with the message id when Send ₿1 is clicked', () => {
@@ -7929,35 +7933,6 @@ describe('ForumBoard in-app wallet pay', () => {
     );
     expect(screen.getByText(SAMPLE.text)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
-  });
-
-  it.each([
-    ['unavailable', 'Hearts are not available right now.', false],
-    ['pending', 'Your last heart is still on its way. Try again in a moment.', true],
-  ] as const)('shows the %s heart sentence', (alert, sentence, filled) => {
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        heartViewerId="acc-viewer"
-        onHeartTip={() => undefined}
-        heartTipViews={{ m1: { pressed: filled, plusOne: false, alert } }}
-        {...modeProps('all')}
-      />,
-    );
-    expect(screen.getByRole('alert').textContent).toBe(sentence);
-    expect(
-      screen.getByRole('button', { name: 'Send ₿1' }).querySelector('svg')?.getAttribute('fill'),
-    ).toBe(filled ? 'currentColor' : 'none');
-    expect(screen.queryByText('+1')).toBeNull();
   });
 });
 

@@ -3526,20 +3526,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
-    id: 'heart-unavailable',
-    image: 'members-heart-unavailable.png',
-    visual: 'state-members-heart-unavailable',
-    needle: 'Hearts are not available right now.',
-  },
-  {
-    route: '/members/[accountId]',
-    id: 'heart-pending',
-    image: 'members-heart-pending.png',
-    visual: 'state-members-heart-pending',
-    needle: 'Your last heart is still on its way. Try again in a moment.',
-  },
-  {
-    route: '/members/[accountId]',
     id: 'about-translate',
     image: 'members-about-translate.png',
     visual: 'state-members-about-translate',
@@ -5852,20 +5838,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'heart-unavailable',
-    image: 'welcome-heart-unavailable.png',
-    visual: 'state-welcome-heart-unavailable',
-    needle: 'Hearts are not available right now.',
-  },
-  {
-    route: '/welcome',
-    id: 'heart-pending',
-    image: 'welcome-heart-pending.png',
-    visual: 'state-welcome-heart-pending',
-    needle: 'Your last heart is still on its way. Try again in a moment.',
-  },
-  {
-    route: '/welcome',
     id: 'note-truncated',
     image: 'welcome-note-truncated.png',
     visual: 'state-welcome-note-truncated',
@@ -5989,20 +5961,6 @@ export const SCREEN_VARIANTS = [
     image: 'shops-heart-paid.png',
     visual: 'state-shops-heart-paid',
     needle: '+1',
-  },
-  {
-    route: '/shops',
-    id: 'heart-unavailable',
-    image: 'shops-heart-unavailable.png',
-    visual: 'state-shops-heart-unavailable',
-    needle: 'Hearts are not available right now.',
-  },
-  {
-    route: '/shops',
-    id: 'heart-pending',
-    image: 'shops-heart-pending.png',
-    visual: 'state-shops-heart-pending',
-    needle: 'Your last heart is still on its way. Try again in a moment.',
   },
   {
     route: '/shops',
@@ -6633,20 +6591,6 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-heart-paid.png',
     visual: 'state-messages-id-heart-paid',
     needle: '+1',
-  },
-  {
-    route: '/messages/[id]',
-    id: 'heart-unavailable',
-    image: 'messages-id-heart-unavailable.png',
-    visual: 'state-messages-id-heart-unavailable',
-    needle: 'Hearts are not available right now.',
-  },
-  {
-    route: '/messages/[id]',
-    id: 'heart-pending',
-    image: 'messages-id-heart-pending.png',
-    visual: 'state-messages-id-heart-pending',
-    needle: 'Your last heart is still on its way. Try again in a moment.',
   },
   {
     route: '/messages/[id]',
