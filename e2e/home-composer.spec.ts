@@ -544,6 +544,21 @@ test.describe('forum home while reacting on a phone', () => {
     await expect(page.getByPlaceholder('Write a reaction')).toHaveValue('');
   });
 
+  test('Function: useLocalSunday — on the local Sunday an expanded post has no form, so the + and Receive / Send stay', async ({
+    page,
+  }) => {
+    await openHome(page);
+    await page.evaluate(() => {
+      document.documentElement.dataset['localSunday'] = '1';
+    });
+    await page.getByRole('button', { name: 'Show reactions' }).first().tap();
+    await expect(page.getByRole('button', { name: 'Hide reactions' })).toBeVisible();
+    await expect(page.getByPlaceholder('Write a reaction')).toBeHidden();
+    await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-fold');
+    await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
+  });
+
   test('Function: WalletFooterActions — with reduced motion the fold and the + switch at once', async ({
     page,
   }) => {

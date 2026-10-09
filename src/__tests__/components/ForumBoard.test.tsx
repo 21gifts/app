@@ -8141,7 +8141,7 @@ describe('ForumBoard writer', () => {
     expect(document.querySelector('[data-scroll-page]')!.contains(sentence)).toBe(true);
   });
 
-  it('tells the forum home whether a form in the feed is open', () => {
+  it('tells the forum home whether a form in the feed is open', async () => {
     const onFeedForm = vi.fn();
     const view = renderHome({}, false, onFeedForm);
     expect(onFeedForm).toHaveBeenLastCalledWith(false);
@@ -8158,6 +8158,18 @@ describe('ForumBoard writer', () => {
     view.rerenderHome({ expandedId: 'm1', replies: [], messages: [SAMPLE], readOnly: true });
     expect(onFeedForm).toHaveBeenLastCalledWith(false);
     view.rerenderHome({ expandedId: 'gone', replies: [], readOnly: false });
+    expect(onFeedForm).toHaveBeenLastCalledWith(false);
+    // On the local Sunday the form is hidden behind the writing pause.
+    document.documentElement.dataset['localSunday'] = '1';
+    view.rerenderHome({ expandedId: 'm1', replies: [] });
+    expect(onFeedForm).toHaveBeenLastCalledWith(false);
+    act(() => {
+      delete document.documentElement.dataset['localSunday'];
+    });
+    await waitFor(() => {
+      expect(onFeedForm).toHaveBeenLastCalledWith(true);
+    });
+    view.rerenderHome({ expandedId: null, replies: null });
     expect(onFeedForm).toHaveBeenLastCalledWith(false);
     // A gift sheet on a card.
     view.rerenderHome({ expandedId: null, replies: null, payMessageId: 'm1', payHost: 'card' });
