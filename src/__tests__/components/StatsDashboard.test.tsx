@@ -209,7 +209,7 @@ describe('StatsDashboard', () => {
     renderWithLocale(
       <StatsDashboard
         stats={null}
-        error="Could not load gift stats. Please try again."
+        error="Could not load donation stats. Please try again."
         loading={false}
         onRetry={onRetry}
       />,
@@ -222,7 +222,7 @@ describe('StatsDashboard', () => {
     renderWithLocale(
       <StatsDashboard stats={EMPTY} error={null} loading={false} onRetry={() => undefined} />,
     );
-    expect(screen.getByText('No gifts recorded yet.')).toBeTruthy();
+    expect(screen.getByText('No donations recorded yet.')).toBeTruthy();
     expect(screen.getByText('₿0')).toBeTruthy();
     expect(screen.getByText('$0.00')).toBeTruthy();
     expect(screen.getByText('— – —')).toBeTruthy();
@@ -321,7 +321,7 @@ describe('StatsDashboard', () => {
     expect(screen.getAllByText("₿1'500'000")).toHaveLength(3);
     expect(screen.getAllByText("$1'425.00")).toHaveLength(2);
     expect(
-      screen.getByText("USD is the BTC-USD daily close (UTC) on each gift's day."),
+      screen.getByText("USD is the BTC-USD daily close (UTC) on each donation's day."),
     ).toBeTruthy();
     expect(screen.getByText('Total spend over time')).toBeTruthy();
     expect(screen.getByLabelText('Spend over time in ₿')).toBeTruthy();
@@ -841,7 +841,7 @@ describe('StatsDashboard', () => {
     expect(within(spent as HTMLElement).getByText("CHF 1'200.00")).toBeTruthy();
     expect(
       screen.getByText(
-        "CHF is USD at each gift's UTC-day close, converted with that day's ECB rate.",
+        "CHF is USD at each donation's UTC-day close, converted with that day's ECB rate.",
       ),
     ).toBeTruthy();
     expect(

@@ -17,6 +17,7 @@ import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
 import { getRequestFiat } from '@/lib/request-fiat';
 import { getRequestLocale } from '@/lib/request-locale';
 import { getRequestNumberFormat } from '@/lib/request-number-format';
+import { OG_IMAGE_ALT } from '@/lib/marketing-metadata';
 import { getCatalog } from '@/lib/messages';
 import { getE2eNow } from '@/lib/config';
 import { SUNDAY_BOOTSTRAP_SCRIPT } from '@/lib/sunday-rest';
@@ -31,8 +32,8 @@ const outfit = Outfit({
 });
 
 const description =
-  'Direct human-to-human giving in Bitcoin. People helping people — no middleman.';
-const title = '21.gifts — peer-to-peer Bitcoin gifts';
+  "Read what people share, react to a post and donate Bitcoin directly to the person's wallet. 21.gifts does not hold your donation and keeps no share.";
+const title = 'Help people with Bitcoin | 21.gifts';
 
 /**
  * Document-level metadata the App Router applies to every route's `<head>`,
@@ -66,7 +67,7 @@ export const metadata: Metadata = {
         url: '/og.png',
         width: 1200,
         height: 630,
-        alt: '21.gifts — peer-to-peer Bitcoin gifts',
+        alt: OG_IMAGE_ALT,
       },
     ],
   },
@@ -77,7 +78,7 @@ export const metadata: Metadata = {
     images: [
       {
         url: '/og.png',
-        alt: '21.gifts — peer-to-peer Bitcoin gifts',
+        alt: OG_IMAGE_ALT,
       },
     ],
   },

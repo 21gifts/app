@@ -4,6 +4,7 @@ import { Wordmark } from '@/components/ui';
 import { getCatalog } from '@/lib/messages';
 import { getRequestLocale } from '@/lib/request-locale';
 import { translate } from '@/lib/translate';
+import { localizedPublicPath } from '@/lib/public-locale-path';
 
 /**
  * Marketing footer: wordmark, section links including About, legal, GitHub, and a quiet verse.
@@ -13,6 +14,7 @@ import { translate } from '@/lib/translate';
 export async function MarketingFooter(): Promise<ReactElement> {
   const locale = await getRequestLocale();
   const messages = getCatalog(locale);
+  const home = localizedPublicPath(locale, '/');
 
   return (
     <footer className="border-t border-paper/10 px-5 py-10">
@@ -22,13 +24,17 @@ export async function MarketingFooter(): Promise<ReactElement> {
           aria-label={translate(messages, 'aria.footer')}
           className="flex flex-wrap gap-4 text-sm text-paper/70"
         >
-          <Link href="/#how">{translate(messages, 'nav.how')}</Link>
-          <Link href="/#why">{translate(messages, 'nav.why')}</Link>
-          <Link href="/#faq">{translate(messages, 'nav.faq')}</Link>
-          <Link href="/about">{translate(messages, 'nav.about')}</Link>
+          <Link href={`${home}#how`}>{translate(messages, 'nav.how')}</Link>
+          <Link href={`${home}#why`}>{translate(messages, 'nav.why')}</Link>
+          <Link href={`${home}#faq`}>{translate(messages, 'nav.faq')}</Link>
+          <Link href={localizedPublicPath(locale, '/about')}>
+            {translate(messages, 'nav.about')}
+          </Link>
           <Link href="/handbook">{translate(messages, 'nav.handbook')}</Link>
           <Link href="/legal">{translate(messages, 'nav.legal')}</Link>
-          <Link href="/rules">{translate(messages, 'nav.rules')}</Link>
+          <Link href={localizedPublicPath(locale, '/rules')}>
+            {translate(messages, 'nav.rules')}
+          </Link>
         </nav>
         <a
           href="https://github.com/21gifts"

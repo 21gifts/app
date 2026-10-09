@@ -58,12 +58,12 @@ function giftFiat(gift: GiftDayGift, fiat: FiatCode): string | null {
  */
 export function GiftDayTable({ day, fiat, numberFormat }: GiftDayTableProps): ReactElement {
   if (day.gifts.length === 0) {
-    return <p className="text-paper/60">No gifts recorded on this day.</p>;
+    return <p className="text-paper/60">No donations recorded on this day.</p>;
   }
 
   return (
     <table className="w-full border-collapse text-left text-sm">
-      <caption className="sr-only">{`Gifts on ${day.day}`}</caption>
+      <caption className="sr-only">{`Donations on ${day.day}`}</caption>
       <thead>
         <tr className="border-b border-paper/15 text-paper/50">
           <th className="py-2 pr-4 font-medium">Time</th>

@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import { forumMessageSchema, type ForumMessage } from '@/lib/api-types';
 import { getApiUrl } from '@/lib/config';
+import { OG_IMAGE_ALT } from '@/lib/marketing-metadata';
 import { shortResourceUrl } from '@/lib/short-link';
 
 /** Same regex as PublicMessageLoader. Not exported (keep Function count down). */
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const DEFAULT_OG_ALT = '21.gifts — peer-to-peer Bitcoin gifts';
 const EXTERNAL_OG_TITLE = 'External author on 21.gifts';
 const EXTERNAL_OG_DESCRIPTION = 'A reply from someone outside 21.gifts who sent bitcoin to a post.';
 const DESCRIPTION_MAX = 300;
@@ -83,13 +83,13 @@ export function publicMessageOgMetadata(id: string, note: ForumMessage | null): 
         siteName: '21.gifts',
         title,
         description,
-        images: [{ url: '/og.png', width: 1200, height: 630, alt: DEFAULT_OG_ALT }],
+        images: [{ url: '/og.png', width: 1200, height: 630, alt: OG_IMAGE_ALT }],
       },
       twitter: {
         card: 'summary_large_image',
         title,
         description,
-        images: [{ url: '/og.png', alt: DEFAULT_OG_ALT }],
+        images: [{ url: '/og.png', alt: OG_IMAGE_ALT }],
       },
     };
   }
@@ -108,13 +108,13 @@ export function publicMessageOgMetadata(id: string, note: ForumMessage | null): 
       description,
       images: note.hasPhoto
         ? [photoImage]
-        : [{ url: '/og.png', width: 1200, height: 630, alt: DEFAULT_OG_ALT }],
+        : [{ url: '/og.png', width: 1200, height: 630, alt: OG_IMAGE_ALT }],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: note.hasPhoto ? [photoImage] : [{ url: '/og.png', alt: DEFAULT_OG_ALT }],
+      images: note.hasPhoto ? [photoImage] : [{ url: '/og.png', alt: OG_IMAGE_ALT }],
     },
   };
 }

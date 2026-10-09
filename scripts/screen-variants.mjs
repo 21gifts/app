@@ -76,7 +76,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'root.png',
     visual: 'screen-root',
-    needle: 'Direct human-to-human gifts',
+    needle: 'Help people',
   },
   {
     route: '/',
@@ -104,7 +104,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'about.png',
     visual: 'screen-about',
-    needle: 'Three convictions',
+    needle: 'What 21.gifts stands for',
   },
   {
     route: '/login',
@@ -146,7 +146,7 @@ export const SCREEN_VARIANTS = [
     id: 'wrong-account',
     image: 'login-wrong-account.png',
     visual: 'state-login-wrong-account',
-    needle: 'You signed in with the wrong account. Please try again with the correct account.',
+    needle: 'You signed in with a different account. Try again with the right one.',
   },
   {
     route: '/login',
@@ -3298,7 +3298,7 @@ export const SCREEN_VARIANTS = [
     id: 'empty',
     image: 'stats-empty.png',
     visual: 'state-stats-empty',
-    needle: 'No gifts recorded yet.',
+    needle: 'No donations recorded yet.',
   },
   {
     route: '/stats',
@@ -3368,7 +3368,7 @@ export const SCREEN_VARIANTS = [
     id: 'empty',
     image: 'stats-day-empty.png',
     visual: 'state-stats-day-empty',
-    needle: 'No gifts recorded on this day.',
+    needle: 'No donations recorded on this day.',
   },
   {
     route: '/stats/[day]',

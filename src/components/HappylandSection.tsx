@@ -1,83 +1,119 @@
+import Image from 'next/image';
 import type { ReactElement } from 'react';
 import type { Locale } from '@/lib/locale';
 import { getCatalog } from '@/lib/messages';
-import { happylandPhotos } from '@/lib/happyland';
-import { HappylandPhoto } from './HappylandPhoto';
 
 /**
- * Present Father Severin's Happyland photo essay in the visitor's language.
+ * Present the sourced Happyland account with photographs from the original site.
  * @param props - The locale selected for the marketing page.
- * @returns The accessible Happyland section with eight captioned photographs.
+ * @returns A place portrait, four photographs and three observations.
  */
 export function HappylandSection({ locale }: { locale: Locale }): ReactElement {
   const messages = getCatalog(locale);
+  const notes = [
+    { number: '01', title: messages['happyland.dailyTitle'], body: messages['happyland.daily'] },
+    {
+      number: '02',
+      title: messages['happyland.povertyTitle'],
+      body: messages['happyland.poverty'],
+    },
+    { number: '03', title: messages['happyland.lanesTitle'], body: messages['happyland.lanes'] },
+  ];
+  const peoplePhotos = [
+    {
+      src: '/happyland/main-street.webp',
+      alt: messages['happyland.streetAlt'],
+      caption: messages['happyland.streetCaption'],
+      position: 'object-center',
+    },
+    {
+      src: '/happyland/home.webp',
+      alt: messages['happyland.homeAlt'],
+      caption: messages['happyland.homeCaption'],
+      position: 'object-top',
+    },
+    {
+      src: '/happyland/household.webp',
+      alt: messages['happyland.householdAlt'],
+      caption: messages['happyland.householdCaption'],
+      position: 'object-top',
+    },
+  ] as const;
+
   return (
     <section
       id="happyland"
       aria-labelledby="happyland-title"
-      className="scroll-mt-24 border-y border-paper/10 bg-paper/[0.035] px-5 py-20 sm:py-28"
+      className="scroll-mt-20 border-y border-paper/10 bg-[#151316] px-5 py-20 sm:py-24"
     >
       <div className="mx-auto max-w-[1100px]">
-        <p className="text-sm font-medium tracking-widest text-accent uppercase">
-          {messages['happyland.kicker']}
-        </p>
-        <div className="mt-4 grid gap-6 md:grid-cols-[1.3fr_1fr] md:items-end md:gap-16">
-          <h2
-            id="happyland-title"
-            className="text-3xl leading-tight font-semibold tracking-tight sm:text-5xl"
-          >
-            {messages['happyland.title']}
-          </h2>
-          <p className="text-lg leading-relaxed text-paper/75">{messages['happyland.intro']}</p>
-        </div>
-        <HappylandPhoto
-          photo={happylandPhotos[0]}
-          messages={messages}
-          className="mx-auto mt-12 max-w-[900px]"
-        />
-        <article className="mt-20 grid items-center gap-8 md:grid-cols-[1.15fr_1fr] md:gap-16">
-          <HappylandPhoto photo={happylandPhotos[1]} messages={messages} />
+        <div className="grid items-center gap-10 lg:grid-cols-[1fr_0.9fr] lg:gap-20">
           <div>
-            <p className="text-sm tracking-widest text-accent">01</p>
-            <h3 className="mt-3 text-2xl font-semibold sm:text-3xl">
-              {messages['happyland.dailyTitle']}
-            </h3>
-            <p className="mt-5 leading-relaxed text-paper/75">{messages['happyland.daily']}</p>
-            <p className="mt-5 leading-relaxed text-paper/75">
-              {messages['happyland.observation']}
+            <p className="text-xs font-bold tracking-[0.2em] text-accent uppercase">
+              {messages['happyland.kicker']}
+            </p>
+            <h2
+              id="happyland-title"
+              className="mt-5 max-w-2xl text-4xl leading-[1.08] font-semibold tracking-tight sm:text-6xl"
+            >
+              {messages['happyland.title']}
+            </h2>
+            <p className="mt-7 max-w-xl text-base leading-relaxed text-paper/75 sm:text-lg">
+              {messages['happyland.intro']}
             </p>
           </div>
-        </article>
-        <div className="mt-12 grid items-start gap-8 md:grid-cols-[0.85fr_1.15fr]">
-          <HappylandPhoto photo={happylandPhotos[2]} messages={messages} className="md:pt-16" />
-          <div className="space-y-8">
-            <HappylandPhoto photo={happylandPhotos[3]} messages={messages} />
-            <HappylandPhoto photo={happylandPhotos[4]} messages={messages} />
-          </div>
-        </div>
-        <article className="mt-20">
-          <div className="grid gap-6 md:grid-cols-[0.7fr_1.3fr] md:gap-16">
-            <div>
-              <p className="text-sm tracking-widest text-accent">02</p>
-              <h3 className="mt-3 text-2xl font-semibold sm:text-3xl">
-                {messages['happyland.povertyTitle']}
-              </h3>
-            </div>
-            <div className="space-y-4 leading-relaxed text-paper/75">
-              <p>{messages['happyland.poverty']}</p>
-              <p>{messages['happyland.lanes']}</p>
-            </div>
-          </div>
-          <div className="mt-10 grid items-start gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            <HappylandPhoto photo={happylandPhotos[5]} messages={messages} />
-            <HappylandPhoto photo={happylandPhotos[6]} messages={messages} className="lg:pt-12" />
-            <HappylandPhoto
-              photo={happylandPhotos[7]}
-              messages={messages}
-              className="sm:col-span-2 sm:mx-auto sm:w-1/2 lg:col-span-1 lg:w-full"
+          <figure className="overflow-hidden rounded-[1.75rem] border border-paper/15 bg-[#241d19]">
+            <Image
+              src="/happyland/food-stall.webp"
+              alt={messages['happyland.photoAlt']}
+              loading="eager"
+              width={1024}
+              height={768}
+              sizes="(min-width: 1024px) 500px, 100vw"
+              className="block aspect-[4/3] w-full object-cover"
             />
-          </div>
-        </article>
+            <figcaption className="px-5 py-4 text-sm leading-relaxed text-paper/75 sm:px-7">
+              {messages['happyland.photoCaption']}
+            </figcaption>
+          </figure>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {peoplePhotos.map((photo) => (
+            <figure
+              key={photo.src}
+              className="overflow-hidden rounded-2xl border border-paper/12 bg-paper/5"
+            >
+              <Image
+                src={photo.src}
+                alt={photo.alt}
+                loading="eager"
+                width={1024}
+                height={768}
+                sizes="(min-width: 768px) 33vw, 100vw"
+                className={`block aspect-[4/3] w-full object-cover ${photo.position}`}
+              />
+              <figcaption className="px-5 py-4 text-sm leading-relaxed text-paper/70">
+                {photo.caption}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {notes.map((note) => (
+            <article
+              key={note.number}
+              className="rounded-2xl border border-paper/12 bg-paper/5 p-6 sm:p-7"
+            >
+              <span className="text-xs font-semibold tracking-[0.15em] text-accent">
+                {note.number}
+              </span>
+              <h3 className="mt-5 text-xl font-semibold tracking-tight">{note.title}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-paper/70 sm:text-base">{note.body}</p>
+            </article>
+          ))}
+        </div>
+        <p className="mt-7 text-sm text-paper/50">{messages['happyland.source']}</p>
       </div>
     </section>
   );

@@ -1023,7 +1023,7 @@ async function fulfillConversationTranslatePost(
 test.describe('screen baselines', () => {
   test('screen /', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
     await shotScreen(page, 'screen-root');
   });
 
@@ -1035,9 +1035,7 @@ test.describe('screen baselines', () => {
         page.getByLabel('Primary').getByRole('link', { name: 'Handbook' }),
       ).toBeVisible();
     } else {
-      await expect(
-        page.getByRole('heading', { name: /Direct human-to-human gifts/i }),
-      ).toBeVisible();
+      await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
     }
     await shotScreen(page, 'state-root-mobile-nav');
   });
@@ -1057,7 +1055,7 @@ test.describe('screen baselines', () => {
 
   test('screen /about', async ({ page }) => {
     await page.goto('/about');
-    await expect(page.getByRole('heading', { name: 'Three convictions' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'What 21.gifts stands for' })).toBeVisible();
     await shotScreen(page, 'screen-about');
   });
 
@@ -1069,7 +1067,7 @@ test.describe('screen baselines', () => {
 
   test('screen /donate', async ({ page }) => {
     await page.goto('/donate');
-    await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Help someone' })).toBeVisible();
     await shotScreen(page, 'screen-donate');
   });
 
@@ -1756,7 +1754,7 @@ test.describe('login variant baselines', () => {
     await page.goto('/login');
     await expect(
       page.getByRole('alert').filter({
-        hasText: 'You signed in with the wrong account. Please try again with the correct account.',
+        hasText: 'You signed in with a different account. Try again with the right one.',
       }),
     ).toBeVisible();
     await shotScreen(page, 'state-login-wrong-account');
@@ -13948,7 +13946,7 @@ test.describe('profile apply screens', () => {
     await expect(
       page.getByText('Do your profile posts match the core principles of 21.gifts?'),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'About' })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'About 21.gifts' })).toHaveAttribute(
       'href',
       'https://21.gifts/about',
     );
@@ -13968,7 +13966,7 @@ test.describe('profile apply screens', () => {
     await expect(
       page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'About' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'About 21.gifts' })).toHaveCount(0);
     await shotScreen(page, 'state-grants-apply-truth');
   });
 
@@ -22215,7 +22213,7 @@ test.describe('moderate applications screens', () => {
     await expect(
       page.getByText('Do their profile posts match the core principles of 21.gifts?'),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'About' })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: 'About 21.gifts' })).toHaveAttribute(
       'href',
       'https://21.gifts/about',
     );
@@ -22256,7 +22254,7 @@ test.describe('moderate applications screens', () => {
     await expect(
       page.getByText('Do these posts, to your knowledge, correspond to the truth?'),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'About' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'About 21.gifts' })).toHaveCount(0);
     await shotScreen(page, 'state-grants-applications-accountId-truth');
   });
 
@@ -23219,7 +23217,7 @@ test.describe('stats variant baselines', () => {
       });
     });
     await page.goto('/stats');
-    await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
+    await expect(page.getByText('No donations recorded yet.')).toBeVisible();
     await shotScreen(page, 'state-stats-empty');
   });
 
@@ -23241,7 +23239,7 @@ test.describe('stats variant baselines', () => {
 
   test('stats day empty', async ({ page }) => {
     await page.goto('/stats/2026-06-02');
-    await expect(page.getByText('No gifts recorded on this day.')).toBeVisible();
+    await expect(page.getByText('No donations recorded on this day.')).toBeVisible();
     await shotScreen(page, 'state-stats-day-empty');
   });
 

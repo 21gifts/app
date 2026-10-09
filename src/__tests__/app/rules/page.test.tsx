@@ -1,7 +1,9 @@
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import RulesPage from '@/app/rules/page';
+import RulesPage, { generateMetadata } from '@/app/rules/page';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { OG_IMAGE_ALT } from '@/lib/marketing-metadata';
+import { getRequestLocale } from '@/lib/request-locale';
 
 vi.mock('@/components/LanguageSwitcher', () => ({
   LanguageSwitcher: () => <div data-testid="language-switcher" />,
@@ -14,6 +16,43 @@ vi.mock('@/lib/request-locale', () => ({
 afterEach(cleanup);
 
 describe('RulesPage', () => {
+  it('publishes the same English preview on every language URL', async () => {
+    const title = 'Living room rules | 21.gifts';
+    const description =
+      'You are a guest in a living room with the windows open. Everything you write here is public, and anyone walking past can read along.';
+    const preview = {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: [{ url: '/og.png', alt: OG_IMAGE_ALT }],
+      },
+      twitter: {
+        title,
+        description,
+        images: [{ url: '/og.png', alt: OG_IMAGE_ALT }],
+      },
+    };
+    expect(await generateMetadata()).toMatchObject({
+      ...preview,
+      alternates: { canonical: '/en/rules', languages: { de: '/de/rules' } },
+      openGraph: { ...preview.openGraph, url: '/en/rules' },
+    });
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('de');
+    expect(await generateMetadata()).toMatchObject({
+      ...preview,
+      alternates: { canonical: '/de/rules' },
+      openGraph: { ...preview.openGraph, url: '/de/rules' },
+    });
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('es');
+    expect(await generateMetadata()).toMatchObject({
+      ...preview,
+      alternates: { canonical: '/es/rules' },
+      openGraph: { ...preview.openGraph, url: '/es/rules' },
+    });
+  });
+
   it('renders the page heading and the rules document', async () => {
     renderWithLocale(await RulesPage());
     expect(screen.getByRole('heading', { name: 'Living room rules', level: 1 })).toBeTruthy();

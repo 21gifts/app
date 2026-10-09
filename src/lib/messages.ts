@@ -1,50 +1,26 @@
 import type { Locale } from '@/lib/locale';
 
 const en = {
-  'happyland.title': 'Happyland – a glimpse of life in Manila',
+  'happyland.title': 'Happyland in Tondo',
   'happyland.intro':
-    'Happyland is in Tondo, Manila. Families live here under difficult, often extremely difficult, conditions. We want to look more closely and portray the people and their surroundings with respect.',
+    'Happyland is in Tondo, Manila. Father Severin tells of narrow paths, little room to live, and people who earn money from things that have been thrown away.',
   'happyland.daily':
-    'For some families, collecting and sorting recyclable materials provides an income. Waste around their homes also makes daily life harder. At times, the smell can be overwhelming.',
-  'happyland.observation':
-    'One extreme example is the collection of discarded chicken bones with varying amounts of meat still attached. These are cooked again and sold as “pagpag”. I, Father Severin, a moderator, have witnessed this several times myself.',
+    'What others throw away is a source of income for some families. They collect and sort what can still be used.',
   'happyland.poverty':
-    'The informal settlements of Tondo are among the poorest areas of Manila. The small rooms people live in often serve as a kitchen, bedroom and living space all at once. People often wash in the street, scooping water from a bucket and pouring it over themselves.',
-  'happyland.lanes': 'The paths are often in very poor condition and very dirty.',
+    'Cooking, sleeping, sitting together: all of this often has to fit into a single small room.',
+  'happyland.lanes':
+    'Narrow, uneven paths run between the houses. Father Severin describes what everyday life looks like there.',
   'happyland.kicker': 'Tondo · Manila',
-  'happyland.dailyTitle': 'Daily life, waste and recycling',
-  'happyland.povertyTitle': 'Living with poverty',
-  'happyland.photo0.alt': 'People walking along a street lined with homes and small shops.',
-  'happyland.photo0.caption':
-    'Happyland’s main street, lined with homes and small shops. Photograph by Father Severin.',
-  'happyland.photo1.alt': 'Overhead view of densely packed roofs and narrow lanes.',
-  'happyland.photo1.caption': 'A view from above of closely packed buildings and narrow lanes.',
-  'happyland.photo2.alt': 'People standing in a lane beside two-storey homes.',
-  'happyland.photo2.caption': 'Waste sorting is visible in the background.',
-  'happyland.photo3.alt': 'A woman cooking beside a food stall with several people nearby.',
-  'happyland.photo3.caption': 'Pagpag',
-  'happyland.photo4.alt':
-    'A person sitting on wooden planks beside an area filled with discarded materials.',
-  'happyland.photo4.caption':
-    'Discarded materials have accumulated beside and beneath the buildings.',
-  'happyland.photo5.alt': 'Two adults and three children inside a small home.',
-  'happyland.photo5.caption': "A family's living space.",
-  'happyland.photo6.alt': 'A woman beside pans, buckets and household supplies in a compact space.',
-  'happyland.photo6.caption':
-    'Cooking utensils, water containers and household supplies share a small space.',
-  'happyland.photo7.alt': 'A narrow lane with uneven ground, containers and scattered rubbish.',
-  'happyland.photo7.caption':
-    'A narrow passage between homes, with uneven ground and scattered waste.',
-
+  'happyland.dailyTitle': 'What others throw away',
+  'happyland.povertyTitle': 'Living in a cramped space',
   'language.label': 'Language',
   'amount.unit': 'Bitcoin or fiat',
   'amount.noRate': 'No exchange rate yet',
-
   'nav.how': 'How it works',
   'nav.happyland': 'Happyland',
   'nav.why': 'Why',
   'nav.faq': 'FAQ',
-  'nav.about': 'About',
+  'nav.about': 'About 21.gifts',
   'nav.stats': 'Stats',
   'nav.trustChain': 'Trust Chain',
   'nav.handbook': 'Handbook',
@@ -99,15 +75,13 @@ const en = {
   'nav.grants': 'Grants',
   'nav.contact': 'Contact',
   'nav.back': 'Back',
-
   'pwa.install': 'Install app',
   'pwa.iosTitle': 'Add 21.gifts to your Home Screen',
-  'pwa.iosLead': 'On iPhone this takes three taps in the Share menu.',
+  'pwa.iosLead': 'On iPhone, it takes three steps:',
   'pwa.iosShare': 'Tap Share (square with the arrow).',
-  'pwa.iosAdd': 'Tap Add to Home Screen.',
-  'pwa.iosOpen': 'If you see Open as Web App, leave it on, then tap Add.',
+  'pwa.iosAdd': 'Choose Add to Home Screen.',
+  'pwa.iosOpen': 'If Open as Web App appears, leave it on and tap Add.',
   'pwa.close': 'Close',
-
   'aria.primary': 'Primary',
   'aria.menu': 'Menu',
   'aria.menuDismiss': 'Close menu',
@@ -122,103 +96,95 @@ const en = {
   'aria.numberFormat': 'Number format',
   'aria.language': 'Language',
   'aria.trustChain': 'Trust Chain diagram',
-
   'theme.label': 'Theme',
   'numberFormat.label': 'Number format',
   'theme.system': 'System',
   'theme.light': 'Light',
   'theme.dark': 'Dark',
-
-  'home.headline1': 'Direct human-to-human gifts',
-  'home.headline2': 'in Bitcoin',
+  'home.headline1': 'Help people',
+  'home.headline2': 'with Bitcoin',
   'home.lead':
-    '21.gifts is where you ask for help or send help, with no organization in the middle. Funds flow directly from donor to receiver — the platform never holds the Bitcoin.',
+    "In the forum, people share what they're going through. Sign in and read their posts. If you want to support someone, simply react to a post and enter the amount you want to donate. The satoshis are then sent directly from you to the person and arrive within seconds.",
   'home.ctaAsk': 'Ask for help',
   'home.ctaSend': 'Send help',
-  'home.howKicker': 'How it works',
-  'home.howTitle': 'Three steps, and no account in the traditional sense',
+  'home.howKicker': 'Donate Bitcoin',
+  'home.howTitle': 'How to donate Bitcoin to someone',
   'home.howLead':
-    'You log in right here on this site. There are no passwords and no email sign-ups.',
-  'home.step1Title': 'Log in',
-  'home.step1Body':
-    'One tap in your browser. It uses a secure login stored on your device, or creates one. That is your account — there is nothing else to remember.',
-  'home.step2Title': 'Add a Wallet of Satoshi address',
-  'home.step2BodyBefore': 'Tell us where gifts should land, for example',
-  'home.step2BodyAfter': '. From then on, anyone can send you Bitcoin from Wallet of Satoshi.',
-  'home.step3Title': 'Post and receive help',
-  'home.step3Body':
-    'Once you are logged in, write a post in the forum. Others can send Bitcoin to a payable reaction — it lands in the author’s Wallet of Satoshi, not ours. The platform never touches the money.',
-  'home.whyKicker': 'Why this exists',
-  'home.whyTitle': 'The shortest possible path from one person to another',
-  'home.why1Title': 'Truly peer-to-peer',
+    'On your first visit, you set up your account. After that, you will find posts and replies in the forum.',
+  'home.whyKicker': 'Where your donation goes',
+  'home.whyTitle': 'The person chooses their receiving address',
+  'home.why1Title': 'You decide who to help',
   'home.why1Body':
-    "Funds move from the donor's Wallet of Satoshi straight to the receiver's Wallet of Satoshi address. 21.gifts never holds, routes, or escrows the money — there is nothing for us to freeze.",
-  'home.why2Title': 'Your login stays on your device',
+    'Read what the person writes first. 21.gifts never passes your donation on to anyone else.',
+  'home.why2Title': 'The person provides their address',
   'home.why2Body':
-    '21.gifts never sees a password — only a signed login assertion. There is no password database that could leak.',
-  'home.why3Title': 'Your Bitcoin, not ours',
+    'Before they can receive donations, they specify the wallet address where Bitcoin should reach them.',
+  'home.why3Title': 'You pay from your wallet',
   'home.why3Body':
-    'Gifts are Bitcoin payments to a Wallet of Satoshi address. If 21.gifts disappeared tomorrow, those addresses would keep working.',
-  'home.projectKicker': 'The project',
-  'home.projectTitle': 'Donate to this project',
+    'You set the amount and confirm the payment yourself. On a computer, you can scan the QR code.',
+  'home.why4Title': '21.gifts takes no share',
+  'home.why4Body':
+    'There is a separate address for running the site. Fees from your wallet may still apply.',
+  'home.projectKicker': 'Support 21.gifts',
+  'home.projectTitle': '21.gifts also needs support',
   'home.projectLead':
-    'Gifts in the forum go to the person who wrote the reaction. To help run 21.gifts itself, send Bitcoin to this Wallet of Satoshi address.',
-  'home.faqKicker': 'FAQ',
-  'home.faqTitle': 'Common questions, answered briefly',
-  'home.faq1Q': 'Who can use this?',
+    'If you want to support the website itself, you can send to this address. It is separate from the donations in the forum.',
+  'home.faqKicker': 'Good to know',
+  'home.faqTitle': 'Frequently asked questions',
+  'home.faq1Q': 'Do I need an account to see the forum?',
   'home.faq1A':
-    'Anyone with a Wallet of Satoshi address. There is no application and no review process.',
-  'home.faq3Q': 'What happens to my keys?',
+    'Yes. You sign in for the forum. If you want to receive Bitcoin donations yourself, also add a Wallet of Satoshi address.',
+  'home.faq2Q': 'Does 21.gifts keep any of my donation?',
+  'home.faq2A':
+    '21.gifts keeps no share. Your wallet or the payment network may charge its own fees.',
+  'home.faq3Q': 'Does 21.gifts store my password?',
   'home.faq3A':
-    'Your login credentials stay on your device (and in any platform sync you use). 21.gifts only sees a signed login assertion and, if you choose to publish it, your Wallet of Satoshi address. No password and no seed phrase is ever stored on our servers.',
-  'home.faq4Q': 'Can I lose access to my account?',
+    'You do not create a password for 21.gifts. Your access stays on your device or in its sync. Never share recovery words with anyone.',
+  'home.faq4Q': 'What if I lose my device?',
   'home.faq4A':
-    'Yes. If you lose your login and any platform sync, the account cannot be recovered at this stage. Keep a backup of the device you log in with.',
-  'home.faq5Q': 'How do I send a gift?',
+    'If you lose access on your device and in any sync, we cannot recover your account yet. Check how your device backs up your sign-in.',
+  'home.faq5Q': 'Who receives the Bitcoin?',
   'home.faq5A':
-    'Open Send help, pick a message in the forum, open Show reactions, then choose Send Bitcoin on a reaction. Enter an amount in ₿ and pay with Wallet of Satoshi — the Bitcoin goes straight to the author.',
-  'home.faq6Q': 'Why only Bitcoin?',
+    "The person who wrote the post. Write a reaction under it and add an amount. The Bitcoin goes to that person's wallet address.",
+  'home.faq6Q': 'Why Bitcoin?',
   'home.faq6A':
-    'Bitcoin is fast and censorship-resistant. Wallet of Satoshi makes sending and receiving as simple as an email address. That removes the need for any custodial layer and lets anyone in the world give or receive without asking permission.',
+    'So you can send even small amounts directly to the chosen wallet address. 21.gifts does not hold the donation. Your wallet provider may charge fees.',
   'home.faq7Q': 'Is this regulated, and how do taxes work?',
   'home.faq7A':
-    '21.gifts is a non-profit communication and discovery layer. It is not a payment service provider and does not move funds. Donors and receivers are responsible for their own tax treatment in their jurisdiction.',
-  'home.faq8Q': 'What does ₿1 mean?',
-  'home.faq8A': '₿1 is the smallest unit of Bitcoin, also known as one sat.',
-
-  'about.kicker': 'About',
-  'about.heading': 'Three convictions',
+    '21.gifts does not hold the donation. Which rules and taxes apply depends on where you live and your situation. Check the requirements that apply to you.',
+  'home.faq8Q': 'What does ₿1 mean here?',
+  'home.faq8A':
+    'On 21.gifts, ₿1 means one sat, the smallest Bitcoin unit. One Bitcoin has 100 million sats.',
+  'about.kicker': 'The idea',
+  'about.heading': 'What 21.gifts stands for',
   'about.lead':
-    '21.gifts is a place to ask for help or send help, with no organization in the middle. It stands on three convictions.',
+    'In the forum, people can ask for help and donate Bitcoin to one another. Three convictions stand behind 21.gifts.',
   'about.verse': 'Freely you have received; freely give.',
   'about.verseRef': 'Matthew 10:8',
   'about.conv1Num': '1',
-  'about.conv1Title': 'Giving is a duty',
+  'about.conv1Title': 'Giving is part of faith',
   'about.conv1Body':
-    'We believe giving is a duty of every Christian. Scripture does not say if you give, it says when: “When you give to the needy” (Matthew 6:2). Whoever has material possessions, sees a brother or sister in need and has no pity on them does not have the love of God in them (1 John 3:17); faith by itself, if it is not accompanied by action, is dead (James 2:17). How much you give is between you and God (2 Corinthians 9:7).',
+    'For us, giving is part of the Christian faith. In Matthew 6:2, Jesus speaks of giving as something we naturally do. First John 3:17 and James 2:17 also remind us not to leave people in need alone. How much we give is something we decide for ourselves before God (2 Corinthians 9:7).',
   'about.conv1Body2':
-    'Giving is not only money. A smile, an hour, a coat, a visit all count; Matthew 25 names the hungry, the thirsty, the stranger, the naked, the sick, and the prisoner. 21.gifts is for the money gift, from one person to another.',
+    'Help does not always mean giving money. Sometimes a conversation, a visit or a warm coat is what counts. Matthew 25 reminds us of people who are hungry, sick, strangers or in prison. 21.gifts makes one form of help possible: a money donation directly from one person to another.',
   'about.conv1Verse':
     'Dear children, let us not love with words or speech but with actions and in truth.',
   'about.conv1VerseRef': '1 John 3:18',
   'about.conv2Num': '2',
-  'about.conv2Title': 'Direct, with no middleman',
+  'about.conv2Title': 'Directly from person to person',
   'about.conv2Body':
-    'We believe the best and most beautiful gift goes straight from the giver to the receiver, with no organization in between. Nobody delays it or turns it into a program. Giver and receiver stay people to each other, not a case file, and both keep their dignity. It is the shortest path there is. The receiving address is yours, not ours; if 21.gifts disappeared tomorrow, it would keep working.',
+    'You choose whom you donate to. The person has added their wallet address so your Bitcoin donation reaches them. 21.gifts takes no share. They can keep using their address without our website.',
   'about.conv3Num': '3',
-  'about.conv3Title': 'Bitcoin is the most effective money',
+  'about.conv3Title': 'Why Bitcoin?',
   'about.conv3Body':
-    'We believe Bitcoin is the most effective money available today. It is censorship-resistant and permissionless: no bank, no ID, no opening hours. It reaches the whole world around the clock, and for a gift across a border it is the simplest way to send money — as simple as an email address. Nobody can print more of it or stop it at a border, and it lands with the receiver, not with us. That matters most to people who already have little.',
-  'about.ctaForum': 'Open the living room',
-
-  'donate.pageTitle': 'Send help',
+    'With Bitcoin you can send even small amounts to people in other countries. The person needs a wallet address for this. You pay with your wallet; 21.gifts does not hold the donation.',
+  'about.ctaForum': 'Go to the forum',
+  'donate.pageTitle': 'Help someone',
   'donate.lead':
-    'Open the forum, pick a message, open Show reactions, then send Bitcoin on a reaction.',
+    'Sign in and open a post in the forum. Write a reaction under it, add an amount and pay from your wallet. The Bitcoin goes to the person who wrote the post.',
   'donate.continue': 'Open the forum',
-
   'notFound.body': 'This page does not exist.',
   'notFound.back': 'Back home',
-
   'handbook.title': 'Handbook',
   'handbook.introBefore':
     'This is the 21.gifts app handbook: screens, functions, and HTTP endpoints. The api handbook lives in',
@@ -244,7 +210,6 @@ const en = {
   'handbook.contents': 'Contents',
   'handbook.previousImage': 'Previous screen',
   'handbook.nextImage': 'Next screen',
-
   'login.pageTitle': 'Log in to 21.gifts',
   'login.heading': 'Log in with your device',
   'login.submit': 'Log in',
@@ -253,8 +218,7 @@ const en = {
   'login.iosVersion': 'iOS {version} is installed. Sign-in needs at least iOS {required}.',
   'login.androidVersion':
     'Android {version} is installed. Sign-in needs at least Android {required}.',
-  'login.wrongAccount':
-    'You signed in with the wrong account. Please try again with the correct account.',
+  'login.wrongAccount': 'You signed in with a different account. Try again with the right one.',
   'login.retry': 'Try again',
   'login.choiceHeading': 'Do you already have an account?',
   'login.existing': 'Log in with existing account',
@@ -272,7 +236,7 @@ const en = {
   'login.inAppHeading': 'Open this page in your browser',
   'login.inAppBody':
     'Passkeys do not work inside Telegram or other in-app browsers. Open this page in Safari or Chrome to log in.',
-  'login.inAppIosHint': 'On iPhone, tap the compass or Safari icon at the top right.',
+  'login.inAppIosHint': "On iPhone, you'll find the compass or Safari icon at the top right.",
   'login.openInBrowser': 'Open in browser',
   'login.copyLink': 'Copy link',
   'login.linkCopied': 'Copied',
@@ -283,9 +247,9 @@ const en = {
   'setup.nameTitle': 'Your name',
   'setup.usernameTitle': 'Your 21.gifts name',
   'setup.usernameHint':
-    'This is the address people send Bitcoin to: you@21.gifts. Wallet of Satoshi still receives it.',
+    'Your address will then look like this: you@21.gifts. Bitcoin still arrives in your Wallet of Satoshi.',
   'setup.usernameEmpty': 'Enter a username',
-  'setup.usernameInvalid': 'Use English letters, numbers, hyphen, underscore, or dot',
+  'setup.usernameInvalid': 'Allowed: a–z, 0–9, hyphen, underscore and dot',
   'setup.usernameTaken': 'That username is already taken',
   'setup.usernameRequest': 'Could not save your username',
   'setup.addressTitle': 'Your Wallet of Satoshi address',
@@ -294,12 +258,11 @@ const en = {
   'setup.rulesTitle': 'Living room rules',
   'setup.rulesPrompt': 'Please read this chapter.',
   'setup.rulesPromptLast':
-    'Please read this chapter. You can continue once you agree to the rules.',
+    'Please read this chapter. After that, you can agree to the rules and continue.',
   'setup.rulesProgress': '{current} of {total}',
   'setup.rulesBack': 'Back',
   'setup.agree': 'I agree to these rules',
   'setup.rulesErrorRequest': 'Could not save your agreement',
-
   'name.heading': 'Name',
   'name.prompt': 'Add your name so people know who you are.',
   'name.placeholder': 'Your name',
@@ -310,9 +273,8 @@ const en = {
   'name.edit': 'Edit',
   'name.errorEmpty': 'Enter your name',
   'name.errorRequest': 'Could not save your name',
-
   'location.heading': 'Location',
-  'location.placeholder': 'City, country, or anywhere',
+  'location.placeholder': 'City or country',
   'location.aria': 'Location',
   'location.save': 'Save',
   'location.cancel': 'Cancel',
@@ -320,7 +282,6 @@ const en = {
   'location.clear': 'Clear location',
   'location.unset': 'Not set',
   'location.errorRequest': 'Could not save your location',
-
   'la.heading': 'Wallet of Satoshi address',
   'la.prompt': 'Add your Wallet of Satoshi address so gifts can reach you.',
   'la.save': 'Save',
@@ -333,7 +294,6 @@ const en = {
   'la.errorNotFound': 'That Wallet of Satoshi address could not be found',
   'la.errorRequest': 'Could not update your Wallet of Satoshi address',
   'la.errorNotZap': 'This Wallet of Satoshi address cannot receive these Bitcoin payments',
-
   'forum.heading': 'Forum',
   'forum.modeLabel': 'Forum view',
   'forum.modeActive': 'Active',
@@ -533,24 +493,20 @@ const en = {
   'forum.translateShowTranslation': 'Show translation',
   'forum.translateError': 'Could not translate this note. Please try again.',
   'forum.showMore': 'Show more',
-
   'link.externalTitle': 'Open external link?',
   'link.externalBody': 'This address is not 21.gifts. Open it only if you trust it.',
   'link.externalContinue': 'Open link',
   'link.externalClose': 'Close',
-
   'requirements.nameTitle': 'Add your name',
   'requirements.usernameTitle': 'Add your 21.gifts name',
   'requirements.rulesTitle': 'Agree to the living room rules',
   'requirements.addressTitle': 'Add your Wallet of Satoshi address',
   'requirements.close': 'Close',
-
   'introduce.title': 'Introduce yourself',
   'introduce.body':
     'Write a short post in the forum so people know who you are. Gifts are only sent to members who have introduced themselves.',
   'introduce.cta': 'Write an introduction',
   'introduce.close': 'Close',
-
   'wallet.title': 'Wallet',
   'wallet.addPhrase': 'Add recovery phrase',
   'wallet.addPhraseHint':
@@ -581,7 +537,6 @@ const en = {
     'The recovery phrase could not be created or opened. Check this device and try again.',
   'wallet.errorHint':
     'If this keeps happening, try another browser or the device you already used to sign in.',
-
   'profile.title': 'Profile',
   'profile.given': 'Given {amount}',
   'profile.received': 'Received {amount}',
@@ -668,7 +623,6 @@ const en = {
   'pos.rateLoading': 'The {code} exchange rate is still loading.',
   'pos.keypadDelete': 'Delete',
   'profile.message': 'Message',
-
   'view.unnamed': 'Unnamed',
   'view.noAddress': 'No Wallet of Satoshi address',
   'view.noGiftsAddress': 'No 21.gifts address',
@@ -680,7 +634,6 @@ const en = {
   'view.activate': 'Activate',
   'view.alreadyClaimed': 'This profile already has a passkey. Log in instead.',
   'view.claimError': 'Could not set up a passkey. Please try again.',
-
   'forum.laws1': '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
   'forum.laws2': 'Donors are rare — no begging, no drama, no pressure.',
   'forum.rulesLink': 'Living room rules',
@@ -732,7 +685,7 @@ const en = {
   'rules.wanted1': 'A thank-you: short, specific, and without the next request attached.',
   'rules.wanted2': 'A calm, honest note that makes giving feel easy rather than heavy.',
   'rules.wanted3': 'A quiet tone — no escalation, no countdown, no audience.',
-  'rules.wanted4': 'Questions about how gifting works here, and patient answers to them.',
+  'rules.wanted4': 'Questions about how donating works here, and patient answers to them.',
   'rules.wanted5': 'Humor and warmth that put no one under pressure.',
   'rules.wanted6':
     'Honoring a note that meant something to you — freely, and without the author asking for it.',
@@ -788,7 +741,7 @@ const en = {
     'Illegal content, sexual content involving minors, gore, pornography, shock material.',
   'rules.forbiddenOther3': 'Doxxing, threats, stalking, hate against a person or a group.',
   'rules.forbiddenOther4':
-    'Spam, advertising, recruiting, extra accounts created to collect more gifts.',
+    'Spam, advertising, recruiting, extra accounts to collect more donations.',
   'rules.forbiddenOther5':
     'Posing as the 21.gifts team. Support will never write to you in the forum.',
   'rules.houseHeading': 'Our house',
@@ -798,7 +751,6 @@ const en = {
     'These rules are not terms of service and not the law. They simply say what 21.gifts is: a donation platform. Turning it into a shop, a job board, or a stage for begging is not the wrong tone. It is the wrong house.',
   'rules.contactCta': 'Contact 21.gifts',
   'rules.forumCta': 'Back to the forum',
-
   'contact.pageTitle': 'Contact',
   'contact.heading': 'Contact',
   'contact.lead':
@@ -811,7 +763,6 @@ const en = {
   'contact.errorTooLong': 'Keep it to 8000 characters',
   'contact.errorRequest': 'Could not send your message',
   'contact.rulesLink': 'Living room rules',
-
   'shops.heading': 'Shops',
   'shops.lead':
     'Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.',
@@ -844,7 +795,6 @@ const en = {
   'shops.columnOperator': 'Operator',
   'shops.showMore': 'Show more',
   'shops.missing': '—',
-
   'inbox.heading': 'Messages',
   'inbox.listLabel': 'Conversations',
   'inbox.filterLabel': 'Conversation type',
@@ -881,7 +831,6 @@ const en = {
   'inbox.sentPreview': 'You: {text}',
   'inbox.authorProfile': 'View profile',
   'inbox.giftForLabel': 'Paid by {name}: {amount}',
-
   'notifications.heading': 'Notifications',
   'notifications.listLabel': 'Notifications',
   'notifications.unreadHeading': 'Unread',
@@ -900,7 +849,6 @@ const en = {
   'notifications.moderatorAppointed': 'You are a moderator',
   'notifications.moderatorProposal': '{name} proposed a moderator',
   'notifications.mention': '{name} marked you',
-
   'moderate.heading': 'Moderation',
   'statistics.heading': 'Statistics',
   'statistics.shops.widgetLabel': 'Active shops',
@@ -955,7 +903,6 @@ const en = {
   'moderate.payouts.cell.paid': '{name}, {date}, payout received',
   'moderate.payouts.cell.welcome': '{name}, {date}, welcome gift',
   'moderate.payouts.cell.both': '{name}, {date}, daily grant and welcome gift',
-
   'moderate.handbook.heading': 'Handbook',
   'moderate.handbook.tocLabel': 'Chapters',
   'moderate.handbook.login.title': '21.gifts login',
@@ -1067,7 +1014,6 @@ const en = {
   'funding.review.unmet': 'Requirement not met',
   'funding.review.yes': 'Yes',
   'funding.review.no': 'No',
-
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
     'Who met whom in real life, and who appointed the moderators. Click a person to load everyone linked to them. Drag a person to move them.',
@@ -1097,6 +1043,49 @@ const en = {
   'trustChain.actionFailed': 'Could not update this member. Please try again.',
   'trustChain.waitingConfirm': 'Waiting for another moderator to confirm.',
   'trustChain.alreadyOnChain': 'Already on the Trust Chain.',
+  'happyland.lanesTitle': 'Paths through the neighborhood',
+  'happyland.source': 'Based on the accounts of Father Severin.',
+  'happyland.photoAlt': 'Several people together at a food stall in Happyland',
+  'happyland.photoCaption': 'At a food stall in Happyland',
+  'happyland.streetAlt': 'People on a street with homes and small shops',
+  'happyland.streetCaption': 'A street in Happyland. Photograph by Father Severin',
+  'happyland.homeAlt': 'Two adults and three children in a small living space',
+  'happyland.homeCaption': 'A family at home',
+  'happyland.householdAlt': 'A woman beside cooking utensils and water containers',
+  'happyland.householdCaption': 'Household supplies in a compact room',
+  'home.heroKicker': 'Directly from person to person',
+  'home.heroProof': 'The person receives your donation. 21.gifts keeps no share.',
+  'home.previewLabel': 'How it works',
+  'home.previewKicker': 'After you sign in',
+  'home.previewTitle': 'How your donation arrives',
+  'home.previewStep1': 'Read a post in the forum',
+  'home.previewStep2': 'React and donate',
+  'home.previewStep3': 'Send from your wallet',
+  'home.previewWalletTitle': 'Where the Bitcoin goes',
+  'home.previewWalletBody': 'The receiving person has added their own wallet address.',
+  'home.previewFrom': 'Your wallet',
+  'home.previewTo': 'Their wallet',
+  'home.give1Title': 'Sign in and look around',
+  'home.give1Body': 'Sign in, open a post in the forum and read what the person shares.',
+  'home.give2Title': 'React',
+  'home.give2Body':
+    'Tap the arrow under the post, write a few words and enter an amount. The donation is for the person who wrote the post.',
+  'home.give3Title': 'Pay',
+  'home.give3Body': 'Open Wallet of Satoshi, or on a computer scan the QR code with your wallet.',
+  'home.receiveTitle': 'Want to ask for help yourself?',
+  'home.receiveBody': 'Sign in, add your wallet address and tell the forum what you need.',
+  'home.discoverTitle': "What's behind 21.gifts",
+  'home.discoverStoryKicker': 'Happyland in Manila',
+  'home.discoverStoryTitle': 'Happyland · Tondo',
+  'home.discoverStoryBody':
+    'Father Severin tells of families in Happyland and how they manage everyday life.',
+  'home.discoverBitcoinKicker': 'The payment',
+  'home.discoverBitcoinTitle': 'Why Bitcoin?',
+  'home.discoverBitcoinBody': "Even small amounts can be sent to the person's wallet address.",
+  'home.discoverTrustKicker': 'The path of the money',
+  'home.discoverTrustTitle': 'Who receives it?',
+  'home.discoverTrustBody':
+    "To the person who wrote the post you reacted to. Here's how the payment works.",
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -1106,45 +1095,18 @@ export type MessageKey = keyof typeof en;
 export type Messages = Record<MessageKey, string>;
 
 const de = {
-  'happyland.title': 'Happyland – ein Einblick in das Leben in Manila',
+  'happyland.title': 'Happyland in Tondo',
   'happyland.intro':
-    'Happyland liegt in Tondo, Manila. Familien leben hier unter schwierigen, oft sehr schwierigen Bedingungen. Wir möchten genauer hinschauen und die Menschen und ihr Umfeld mit Respekt darstellen.',
+    'Happyland liegt in Tondo, Manila. Pater Severin erzählt von schmalen Wegen, wenig Platz zum Wohnen und Menschen, die mit weggeworfenen Dingen Geld verdienen.',
   'happyland.daily':
-    'Für manche Familien ist das Sammeln und Sortieren wiederverwertbarer Materialien eine Einnahmequelle. Abfälle rund um ihre Häuser erschweren zugleich den Alltag. Manchmal ist der Geruch überwältigend.',
-  'happyland.observation':
-    'Ein extremes Beispiel ist das Sammeln weggeworfener Hühnerknochen, an denen noch unterschiedlich viel Fleisch hängt. Diese werden erneut gekocht und als „Pagpag“ verkauft. Ich, Pater Severin, ein Moderator, habe dies selbst schon mehrmals gesehen.',
+    'Was andere wegwerfen, ist für manche Familien eine Einnahmequelle. Sie sammeln und sortieren, was sich noch gebrauchen lässt.',
   'happyland.poverty':
-    'Die informellen Siedlungen von Tondo gehören zu den ärmsten Gebieten Manilas. Die kleinen Räume, in denen die Menschen leben, dienen oft gleichzeitig als Küche, Schlafzimmer und Wohnraum. Häufig waschen sich die Menschen auf der Straße, indem sie Wasser aus einem Eimer schöpfen und über sich gießen.',
-  'happyland.lanes': 'Die Wege sind oft in sehr schlechtem Zustand und sehr schmutzig.',
+    'Kochen, schlafen, zusammensitzen: All das muss oft in einen einzigen kleinen Raum passen.',
+  'happyland.lanes':
+    'Zwischen den Häusern führen schmale, unebene Wege hindurch. Pater Severin beschreibt, wie der Alltag dort aussieht.',
   'happyland.kicker': 'Tondo · Manila',
-  'happyland.dailyTitle': 'Alltag, Abfall und Recycling',
-  'happyland.povertyTitle': 'Leben in Armut',
-  'happyland.photo0.alt':
-    'Menschen gehen durch eine Straße mit Wohnhäusern und kleinen Geschäften.',
-  'happyland.photo0.caption':
-    'Happylands Hauptstraße mit Wohnhäusern und kleinen Geschäften. Foto von Pater Severin.',
-  'happyland.photo1.alt': 'Blick von oben auf dicht beieinanderliegende Dächer und schmale Gassen.',
-  'happyland.photo1.caption':
-    'Blick von oben auf dicht beieinanderstehende Gebäude und schmale Gassen.',
-  'happyland.photo2.alt': 'Menschen stehen in einer Gasse neben zweistöckigen Wohnhäusern.',
-  'happyland.photo2.caption': 'Im Hintergrund sieht man die „Mülltrennungsarbeit“.',
-  'happyland.photo3.alt':
-    'Eine Frau kocht an einem Essensstand; mehrere Menschen stehen in der Nähe.',
-  'happyland.photo3.caption': 'Pagpag',
-  'happyland.photo4.alt':
-    'Eine Person sitzt auf Holzplanken neben einem Bereich voller weggeworfener Materialien.',
-  'happyland.photo4.caption':
-    'Neben und unter den Gebäuden haben sich weggeworfene Materialien angesammelt.',
-  'happyland.photo5.alt': 'Zwei Erwachsene und drei Kinder in einem kleinen Wohnraum.',
-  'happyland.photo5.caption': 'Lebensraum einer Familie.',
-  'happyland.photo6.alt':
-    'Eine Frau neben Pfannen, Eimern und Haushaltsgegenständen auf engem Raum.',
-  'happyland.photo6.caption':
-    'Kochutensilien, Wasserbehälter und Haushaltsgegenstände teilen sich einen kleinen Raum.',
-  'happyland.photo7.alt': 'Eine schmale Gasse mit unebenem Boden, Behältern und verstreutem Müll.',
-  'happyland.photo7.caption':
-    'Ein schmaler Durchgang zwischen Häusern mit unebenem Boden und verstreutem Abfall.',
-
+  'happyland.dailyTitle': 'Was andere wegwerfen',
+  'happyland.povertyTitle': 'Leben auf engem Raum',
   'language.label': 'Sprache',
   'amount.unit': 'Bitcoin oder Fiat',
   'amount.noRate': 'Noch kein Wechselkurs',
@@ -1152,7 +1114,7 @@ const de = {
   'nav.happyland': 'Happyland',
   'nav.why': 'Warum',
   'nav.faq': 'FAQ',
-  'nav.about': 'Über uns',
+  'nav.about': 'Über 21.gifts',
   'nav.stats': 'Statistik',
   'nav.trustChain': 'Trust-Kette',
   'nav.handbook': 'Handbuch',
@@ -1210,10 +1172,11 @@ const de = {
   'nav.back': 'Zurück',
   'pwa.install': 'App installieren',
   'pwa.iosTitle': '21.gifts auf den Home-Bildschirm',
-  'pwa.iosLead': 'Auf dem iPhone sind das drei Taps im Teilen-Menü.',
-  'pwa.iosShare': 'Tippen Sie auf Teilen (Quadrat mit Pfeil).',
-  'pwa.iosAdd': 'Tippen Sie auf Zum Home-Bildschirm.',
-  'pwa.iosOpen': 'Wenn Sie „Als Web-App öffnen“ sehen, lassen Sie es an, dann Hinzufügen.',
+  'pwa.iosLead': 'Auf dem iPhone geht das in drei Schritten:',
+  'pwa.iosShare': 'Tippe auf „Teilen“ (das Quadrat mit dem Pfeil).',
+  'pwa.iosAdd': 'Wähle „Zum Home-Bildschirm“.',
+  'pwa.iosOpen':
+    'Falls „Als Web-App öffnen“ erscheint, lass es aktiviert und tippe auf „Hinzufügen“.',
   'pwa.close': 'Schließen',
   'aria.primary': 'Primär',
   'aria.menu': 'Menü',
@@ -1234,89 +1197,88 @@ const de = {
   'theme.system': 'System',
   'theme.light': 'Hell',
   'theme.dark': 'Dunkel',
-  'home.headline1': 'Direkte Geschenke von Mensch zu Mensch',
-  'home.headline2': 'in Bitcoin',
+  'home.headline1': 'Hilf Menschen',
+  'home.headline2': 'mit Bitcoin',
   'home.lead':
-    '21.gifts ist der Ort, an dem Sie um Hilfe bitten oder Hilfe senden — ohne Organisation dazwischen. Das Geld fliesst direkt von der gebenden zur empfangenden Person; durch die Hände der Plattform geht es nie.',
-  'home.ctaAsk': 'Hilfe erbitten',
-  'home.ctaSend': 'Hilfe senden',
-  'home.howKicker': "So funktioniert's",
-  'home.howTitle': 'Drei Schritte, kein Konto im herkömmlichen Sinn',
+    'Im Wohnzimmer erzählen Menschen, was sie beschäftigt. Melde dich an und lies ihre Beiträge. Wenn du jemanden unterstützen möchtest, kannst du einfach auf einen Beitrag reagieren und die Summe angeben, die du spenden möchtest. Die Satoshis werden dann direkt von dir an die Person gesendet und sind innerhalb von Sekunden vor Ort.',
+  'home.ctaAsk': 'Selbst um Hilfe bitten',
+  'home.ctaSend': 'Sende Hilfe',
+  'home.howKicker': 'Bitcoin spenden',
+  'home.howTitle': 'So spendest du jemandem Bitcoin',
   'home.howLead':
-    'Sie melden sich direkt hier an. Keine Passwörter, keine Registrierung per E-Mail.',
-  'home.step1Title': 'Anmelden',
-  'home.step1Body':
-    'Ein Tipp im Browser. Es wird ein sicheres, auf Ihrem Gerät gespeichertes Login verwendet oder neu angelegt. Das ist Ihr Konto — mehr müssen Sie sich nicht merken.',
-  'home.step2Title': 'Wallet of Satoshi address hinterlegen',
-  'home.step2BodyBefore': 'Geben Sie an, wo Geschenke ankommen sollen, zum Beispiel',
-  'home.step2BodyAfter': '. Von da an kann Ihnen jede Person aus Wallet of Satoshi Bitcoin senden.',
-  'home.step3Title': 'Schreiben und Hilfe empfangen',
-  'home.step3Body':
-    'Nach der Anmeldung schreiben Sie einen Beitrag im Forum. Andere können Bitcoin an eine zahlbare Reaktion senden — es landet in der Wallet of Satoshi der Autorin oder des Autors, nicht bei uns. Die Plattform berührt das Geld nie.',
-  'home.whyKicker': 'Warum es das gibt',
-  'home.whyTitle': 'Der kürzeste Weg von einer Person zur anderen',
-  'home.why1Title': 'Wirklich von Mensch zu Mensch',
+    'Beim ersten Besuch richtest du dein Konto ein. Danach findest du im Wohnzimmer Beiträge und Antworten.',
+  'home.whyKicker': 'Wohin deine Spende geht',
+  'home.whyTitle': 'Die Person bestimmt ihre Empfangsadresse',
+  'home.why1Title': 'Du entscheidest, wem du hilfst',
   'home.why1Body':
-    'Das Geld geht von der Wallet of Satoshi der gebenden Person direkt an die Wallet of Satoshi address der empfangenden Person. 21.gifts verwahrt nichts, leitet nichts weiter und hält nichts treuhänderisch — es gibt nichts, was wir einfrieren könnten.',
-  'home.why2Title': 'Ihr Login bleibt auf Ihrem Gerät',
+    'Lies zuerst, was die Person schreibt. 21.gifts gibt deine Spende nie an jemand anderen weiter.',
+  'home.why2Title': 'Die Person hinterlegt ihre Adresse',
   'home.why2Body':
-    '21.gifts sieht nie ein Passwort — nur eine signierte Anmeldebestätigung. Es gibt keine Passwort-Datenbank, die geleakt werden könnte.',
-  'home.why3Title': 'Ihr Bitcoin, nicht unserer',
+    'Bevor sie Spenden empfangen kann, gibt sie an, unter welcher Wallet-Adresse Bitcoin bei ihr ankommen soll.',
+  'home.why3Title': 'Du bezahlst in deiner Wallet',
   'home.why3Body':
-    'Geschenke sind Bitcoin-Zahlungen an eine Wallet of Satoshi address. Würde 21.gifts morgen verschwinden, funktionierten diese Adressen weiter.',
-  'home.projectKicker': 'Das Projekt',
-  'home.projectTitle': 'An dieses Projekt spenden',
+    'Du legst den Betrag fest und bestätigst die Zahlung selbst. Am Computer kannst du den QR-Code scannen.',
+  'home.why4Title': '21.gifts behält keinen Anteil',
+  'home.why4Body':
+    'Für den Betrieb der Seite gibt es eine getrennte Adresse. Gebühren deiner Wallet können trotzdem anfallen.',
+  'home.projectKicker': '21.gifts unterstützen',
+  'home.projectTitle': 'Auch 21.gifts braucht Unterstützung',
   'home.projectLead':
-    'Geschenke im Forum gehen an die Person, die die Reaktion geschrieben hat. Wer 21.gifts selbst tragen will, sendet Bitcoin an diese Wallet of Satoshi address.',
-  'home.faqKicker': 'FAQ',
-  'home.faqTitle': 'Häufige Fragen, kurz beantwortet',
-  'home.faq1Q': 'Wer kann das nutzen?',
-  'home.faq1A': 'Jede Person mit einer Wallet of Satoshi address. Kein Antrag, keine Prüfung.',
-  'home.faq3Q': 'Was passiert mit meinen Schlüsseln?',
+    'Wenn du die Seite selbst unterstützen möchtest, kannst du an diese Adresse senden. Sie ist getrennt von den Spenden im Wohnzimmer.',
+  'home.faqKicker': 'Gut zu wissen',
+  'home.faqTitle': 'Häufige Fragen',
+  'home.faq1Q': 'Brauche ich ein Konto, um das Wohnzimmer zu sehen?',
+  'home.faq1A':
+    'Ja. Für das Wohnzimmer meldest du dich an. Wenn du selbst Bitcoin-Spenden empfangen möchtest, hinterlegst du zusätzlich eine Adresse aus Wallet of Satoshi.',
+  'home.faq2Q': 'Behält 21.gifts etwas von meiner Spende?',
+  'home.faq2A':
+    '21.gifts behält keinen Anteil ein. Für deine Wallet oder das Zahlungsnetzwerk können eigene Gebühren anfallen.',
+  'home.faq3Q': 'Speichert 21.gifts mein Passwort?',
   'home.faq3A':
-    'Ihre Anmeldedaten bleiben auf Ihrem Gerät (und in einer Plattform-Synchronisation, falls Sie eine nutzen). 21.gifts sieht nur eine signierte Anmeldebestätigung und, wenn Sie sie veröffentlichen, Ihre Wallet of Satoshi address. Auf unseren Servern liegt weder ein Passwort noch eine Seed-Phrase.',
-  'home.faq4Q': 'Kann ich den Zugang zu meinem Konto verlieren?',
+    'Du legst kein Passwort für 21.gifts an. Dein Zugang bleibt auf deinem Gerät oder in dessen Synchronisierung. Gib Wiederherstellungswörter nie weiter.',
+  'home.faq4Q': 'Was passiert, wenn ich mein Gerät verliere?',
   'home.faq4A':
-    'Ja. Wenn Sie Ihr Login und jede Plattform-Synchronisation verlieren, lässt sich das Konto derzeit nicht wiederherstellen. Sichern Sie das Gerät, mit dem Sie sich anmelden.',
-  'home.faq5Q': 'Wie sende ich ein Geschenk?',
+    'Wenn dein Zugang auf dem Gerät und in jeder Synchronisierung verloren ist, können wir dein Konto derzeit nicht wiederherstellen. Prüfe deshalb, wie dein Gerät den Zugang sichert.',
+  'home.faq5Q': 'Wer bekommt den Bitcoin?',
   'home.faq5A':
-    'Öffnen Sie «Hilfe senden», wählen Sie eine Nachricht im Forum, öffnen Sie «Reaktionen anzeigen» und tippen Sie bei einer Reaktion auf «Bitcoin senden». Geben Sie einen Betrag in ₿ ein und zahlen Sie mit Wallet of Satoshi — das Geld geht direkt an die Person, die die Reaktion geschrieben hat.',
-  'home.faq6Q': 'Warum nur Bitcoin?',
+    'Die Person, die den Beitrag geschrieben hat. Schreib eine Reaktion darunter und gib einen Betrag an. Dein Bitcoin geht an ihre Wallet-Adresse.',
+  'home.faq6Q': 'Warum Bitcoin?',
   'home.faq6A':
-    'Bitcoin ist schnell und zensurresistent. Wallet of Satoshi macht Senden und Empfangen so einfach wie eine E-Mail-Adresse. So braucht es keine verwahrende Zwischenschicht, und jede Person weltweit kann geben und empfangen, ohne jemanden um Erlaubnis zu fragen.',
+    'Damit du auch kleine Beträge direkt an die gewählte Wallet-Adresse schicken kannst. 21.gifts verwahrt die Spende nicht. Dein Wallet-Anbieter kann Gebühren berechnen.',
   'home.faq7Q': 'Ist das reguliert, und wie sieht es mit Steuern aus?',
   'home.faq7A':
-    '21.gifts ist eine gemeinnützige Kommunikations- und Vermittlungsschicht. Es ist kein Zahlungsdienstleister und bewegt kein Geld. Gebende und Empfangende sind selbst für die steuerliche Behandlung in ihrem Land verantwortlich.',
-  'home.faq8Q': 'Was bedeutet ₿1?',
-  'home.faq8A': '₿1 ist die kleinste Einheit von Bitcoin, auch «Sat» genannt.',
-  'about.kicker': 'Über uns',
-  'about.heading': 'Drei Überzeugungen',
+    '21.gifts verwahrt die Spende nicht. Welche Regeln und Steuern gelten, hängt von deinem Wohnort und deiner Situation ab. Prüfe die für dich geltenden Anforderungen.',
+  'home.faq8Q': 'Was bedeutet ₿1 hier?',
+  'home.faq8A':
+    'Auf 21.gifts steht ₿1 für einen Sat, die kleinste Bitcoin-Einheit. 100 Millionen Sats ergeben einen Bitcoin.',
+  'about.kicker': 'Die Idee',
+  'about.heading': 'Wofür 21.gifts steht',
   'about.lead':
-    '21.gifts ist ein Ort, um Hilfe zu erbitten oder zu senden, ohne Organisation dazwischen. 21.gifts steht auf drei Überzeugungen.',
+    'Im Wohnzimmer können Menschen um Hilfe bitten und einander Bitcoin spenden. Hinter 21.gifts stehen drei Überzeugungen.',
   'about.verse': "Umsonst habt ihr's empfangen, umsonst gebt es auch.",
   'about.verseRef': 'Matthäus 10,8',
   'about.conv1Num': '1',
-  'about.conv1Title': 'Geben ist Pflicht',
+  'about.conv1Title': 'Geben gehört zum Glauben',
   'about.conv1Body':
-    'Wir glauben: Geben ist Pflicht eines jeden Christen. Die Schrift fragt nicht, ob du gibst — sie setzt es voraus: «Wenn du nun Almosen gibst» (Matthäus 6,2). Wer dieser Welt Güter hat und seinen Bruder darben sieht und sein Herz vor ihm verschliesst, in dem bleibt die Liebe Gottes nicht (1. Johannes 3,17). Glaube ohne Werke ist tot (Jakobus 2,17). Wie viel, ist eine Sache zwischen der gebenden Person und Gott (2. Korinther 9,7).',
+    'Für uns gehört Geben zum christlichen Glauben. Jesus spricht in Matthäus 6,2 vom Geben wie von etwas Selbstverständlichem. Auch 1. Johannes 3,17 und Jakobus 2,17 erinnern uns daran, Menschen in Not nicht allein zu lassen. Wie viel wir geben, entscheiden wir selbst vor Gott (2. Korinther 9,7).',
   'about.conv1Body2':
-    'Geben ist nicht nur Geld. Ein freundliches Lächeln, Zeit, ein Mantel, ein Besuch — Matthäus 25 nennt die Hungrigen, die Durstigen, den Fremden, die Nackten, die Kranken und die Gefangenen. 21.gifts ist der Weg für das Geldgeschenk: von einer Person zur anderen.',
+    'Helfen heißt nicht immer Geld geben. Manchmal zählen ein Gespräch, ein Besuch oder ein warmer Mantel. Matthäus 25 erinnert an Menschen, die hungrig, krank, fremd oder gefangen sind. 21.gifts macht eine Form der Hilfe möglich: eine Geldspende direkt von einem Menschen an einen anderen.',
   'about.conv1Verse':
     'Meine Kinder, lasst uns nicht lieben mit Worten noch mit der Zunge, sondern mit der Tat und mit der Wahrheit.',
   'about.conv1VerseRef': '1. Johannes 3,18',
   'about.conv2Num': '2',
-  'about.conv2Title': 'Direkt, niemand dazwischen',
+  'about.conv2Title': 'Direkt von Mensch zu Mensch',
   'about.conv2Body':
-    'Wir glauben: Das beste und schönste Geschenk geht von der gebenden direkt zur empfangenden Person, ohne Organisation dazwischen. Niemand hält es auf oder macht ein Programm daraus. Beide bleiben Personen, keine Akte. Die Würde bleibt bei beiden. Der Weg ist der kürzeste, den es gibt. Die Empfangsadresse gehört der empfangenden Person, nicht uns; verschwände 21.gifts morgen, liefe sie weiter.',
+    'Du suchst selbst aus, wem du etwas spendest. Die Person hat ihre Wallet-Adresse hinterlegt, damit deine Bitcoin-Spende bei ihr ankommt. 21.gifts nimmt keinen Anteil. Ihre Adresse kann sie auch ohne unsere Website weiter nutzen.',
   'about.conv3Num': '3',
-  'about.conv3Title': 'Bitcoin ist das wirksamste Geld',
+  'about.conv3Title': 'Warum Bitcoin?',
   'about.conv3Body':
-    'Wir glauben: Bitcoin ist das wirksamste Geld, das uns heute zur Verfügung steht. Es ist zensurresistent und erlaubnisfrei. Es braucht keine Bank, keinen Ausweis und keine Öffnungszeiten. Es verbindet die ganze Welt, rund um die Uhr. Für ein internationales Geschenk ist es der einfachste Weg, Geld zu senden — so einfach wie eine E-Mail-Adresse. Es landet bei der empfangenden Person, nicht bei uns. Niemand kann mehr davon drucken oder es an der Grenze zurückhalten. Am meisten zählt das für Menschen, die ohnehin wenig haben.',
-  'about.ctaForum': 'Wohnzimmer öffnen',
-  'donate.pageTitle': 'Hilfe senden',
+    'Mit Bitcoin lassen sich auch kleine Beträge an Menschen in anderen Ländern schicken. Die Person braucht dafür eine Wallet-Adresse. Du bezahlst mit deiner Wallet; 21.gifts verwahrt die Spende nicht.',
+  'about.ctaForum': 'Zum Wohnzimmer',
+  'donate.pageTitle': 'Jemandem helfen',
   'donate.lead':
-    'Öffnen Sie das Forum, wählen Sie eine Nachricht, öffnen Sie «Reaktionen anzeigen» und senden Sie Bitcoin auf einer Reaktion.',
-  'donate.continue': 'Forum öffnen',
+    'Melde dich an und öffne einen Beitrag im Wohnzimmer. Schreib eine Reaktion darunter, gib einen Betrag an und bezahle mit deiner Wallet. Der Bitcoin geht an die Person, die den Beitrag geschrieben hat.',
+  'donate.continue': 'Zum Wohnzimmer',
   'notFound.body': 'Diese Seite gibt es nicht.',
   'notFound.back': 'Zur Startseite',
   'handbook.title': 'Handbuch',
@@ -1345,35 +1307,34 @@ const de = {
   'handbook.previousImage': 'Vorheriger Screen',
   'handbook.nextImage': 'Nächster Screen',
   'login.pageTitle': 'Bei 21.gifts anmelden',
-  'login.heading': 'Mit Ihrem Gerät anmelden',
+  'login.heading': 'Melde dich mit deinem Gerät an',
   'login.submit': 'Anmelden',
   'login.preparing': 'Anmeldung wird vorbereitet…',
-  'login.error': 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.',
+  'login.error': 'Das hat nicht geklappt. Versuch es bitte noch einmal.',
   'login.iosVersion':
     'Installiert ist iOS {version}. Für die Anmeldung braucht es mindestens iOS {required}.',
   'login.androidVersion':
     'Installiert ist Android {version}. Für die Anmeldung braucht es mindestens Android {required}.',
   'login.wrongAccount':
-    'Sie haben sich mit dem falschen Konto angemeldet. Bitte versuchen Sie es nochmals mit dem richtigen Konto.',
+    'Du hast dich mit einem anderen Konto angemeldet. Versuch es noch einmal mit dem richtigen.',
   'login.retry': 'Erneut versuchen',
-  'login.choiceHeading': 'Haben Sie schon ein Konto?',
-  'login.existing': 'Mit bestehendem Konto einloggen',
-  'login.create': 'Ein neues Konto eröffnen',
-  'login.nameHeading': 'Wählen Sie Ihren Namen',
+  'login.choiceHeading': 'Hast du schon ein Konto?',
+  'login.existing': 'Mit meinem Konto anmelden',
+  'login.create': 'Neues Konto erstellen',
+  'login.nameHeading': 'Wähle deinen Namen',
   'login.nameBody':
-    'Dieser Name wird im Passkey gespeichert. Er ist auch Ihr Kontoname und Ihr 21.gifts-Benutzername. 1–32 Zeichen: Buchstaben, Ziffern, Bindestrich, Unterstrich oder Punkt. Er wird in Kleinbuchstaben gespeichert.',
+    'Dieser Name wird im Passkey gespeichert. Er ist auch dein Kontoname und dein 21.gifts-Benutzername. 1–32 Zeichen: Buchstaben, Ziffern, Bindestrich, Unterstrich oder Punkt. Er wird in Kleinbuchstaben gespeichert.',
   'login.nameLabel': 'Name',
   'login.nameSubmit': 'Weiter',
   'login.nameInvalid': '1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt.',
   'login.nameTaken': 'Dieser Benutzername ist schon vergeben.',
   'login.unknownHeading': 'Dieser Passkey ist kein Konto',
   'login.unknownBody':
-    'Dieses Telefon hat einen Passkey angeboten, den 21.gifts nicht kennt. Eröffnen Sie ein neues Konto. Bietet das Telefon denselben Passkey erneut an, löschen Sie den gespeicherten 21.gifts-Passkey in den Passwort-Einstellungen und versuchen Sie es erneut.',
+    'Dieses Telefon hat einen Passkey angeboten, den 21.gifts nicht kennt. Erstelle ein neues Konto. Bietet das Telefon denselben Passkey erneut an, lösche den gespeicherten 21.gifts-Passkey in den Passwort-Einstellungen und versuch es noch einmal.',
   'login.inAppHeading': 'Diese Seite im Browser öffnen',
   'login.inAppBody':
-    'Passkeys funktionieren in Telegram und anderen In-App-Browsern nicht. Öffnen Sie diese Seite in Safari oder Chrome, um sich anzumelden.',
-  'login.inAppIosHint':
-    'Tippen Sie auf dem iPhone oben rechts auf das Kompass- oder Safari-Symbol.',
+    'Passkeys funktionieren in Telegram und anderen Browsern innerhalb von Apps nicht. Öffne diese Seite in Safari oder Chrome, um dich anzumelden.',
+  'login.inAppIosHint': 'Auf dem iPhone findest du oben rechts das Kompass- oder Safari-Symbol.',
   'login.openInBrowser': 'Im Browser öffnen',
   'login.copyLink': 'Link kopieren',
   'login.linkCopied': 'Kopiert',
@@ -1381,37 +1342,37 @@ const de = {
   'login.helloName': 'Hallo, {name}',
   'login.welcomeHeading': 'Willkommen, {name}',
   'login.welcomeSignedOut': 'Willkommen',
-  'setup.nameTitle': 'Ihr Name',
-  'setup.usernameTitle': 'Ihr 21.gifts-Name',
+  'setup.nameTitle': 'Dein Name',
+  'setup.usernameTitle': 'Dein Name auf 21.gifts',
   'setup.usernameHint':
-    'Das ist die Adresse, an die Bitcoin geht: du@21.gifts. Empfangen tut weiter Wallet of Satoshi.',
-  'setup.usernameEmpty': 'Bitte einen Benutzernamen eingeben',
-  'setup.usernameInvalid': 'Nur englische Buchstaben, Zahlen, Bindestrich, Unterstrich oder Punkt',
-  'setup.usernameTaken': 'Dieser Benutzername ist schon vergeben',
-  'setup.usernameRequest': 'Benutzername konnte nicht gespeichert werden',
-  'setup.addressTitle': 'Ihre Wallet of Satoshi address',
+    'Deine Adresse sieht dann so aus: du@21.gifts. Bitcoin kommt weiterhin in deiner Wallet of Satoshi an.',
+  'setup.usernameEmpty': 'Gib einen Benutzernamen ein',
+  'setup.usernameInvalid': 'Erlaubt sind a–z, 0–9, Bindestrich, Unterstrich und Punkt',
+  'setup.usernameTaken': 'Dieser Name ist schon vergeben',
+  'setup.usernameRequest': 'Dein Benutzername konnte nicht gespeichert werden',
+  'setup.addressTitle': 'Deine Wallet of Satoshi-Adresse',
   'setup.continue': 'Weiter',
   'setup.skip': 'Überspringen',
   'setup.rulesTitle': 'Wohnzimmerregeln',
-  'setup.rulesPrompt': 'Bitte lesen Sie dieses Kapitel.',
+  'setup.rulesPrompt': 'Lies dir dieses Kapitel durch.',
   'setup.rulesPromptLast':
-    'Bitte lesen Sie dieses Kapitel. Sie können fortfahren, sobald Sie den Regeln zustimmen.',
+    'Lies dir dieses Kapitel durch. Danach kannst du den Regeln zustimmen und weitermachen.',
   'setup.rulesProgress': '{current} von {total}',
   'setup.rulesBack': 'Zurück',
   'setup.agree': 'Ich stimme diesen Regeln zu',
-  'setup.rulesErrorRequest': 'Zustimmung konnte nicht gespeichert werden',
+  'setup.rulesErrorRequest': 'Deine Zustimmung konnte nicht gespeichert werden',
   'name.heading': 'Name',
-  'name.prompt': 'Hinterlegen Sie Ihren Namen, damit andere wissen, wer Sie sind.',
-  'name.placeholder': 'Ihr Name',
+  'name.prompt': 'Trag deinen Namen ein, damit andere wissen, mit wem sie sprechen.',
+  'name.placeholder': 'Dein Name',
   'name.aria': 'Name',
   'name.save': 'Speichern',
   'name.saveName': 'Namen speichern',
   'name.cancel': 'Abbrechen',
   'name.edit': 'Bearbeiten',
-  'name.errorEmpty': 'Bitte geben Sie Ihren Namen ein',
+  'name.errorEmpty': 'Gib deinen Namen ein',
   'name.errorRequest': 'Name konnte nicht gespeichert werden',
   'location.heading': 'Ort',
-  'location.placeholder': 'Stadt, Land oder irgendwo',
+  'location.placeholder': 'Stadt oder Land',
   'location.aria': 'Ort',
   'location.save': 'Speichern',
   'location.cancel': 'Abbrechen',
@@ -1419,18 +1380,18 @@ const de = {
   'location.clear': 'Ort löschen',
   'location.unset': 'Nicht angegeben',
   'location.errorRequest': 'Ort konnte nicht gespeichert werden',
-  'la.heading': 'Wallet of Satoshi address',
-  'la.prompt': 'Hinterlegen Sie Ihre Wallet of Satoshi address, damit Geschenke Sie erreichen.',
+  'la.heading': 'Wallet of Satoshi-Adresse',
+  'la.prompt': 'Trag deine Wallet of Satoshi-Adresse ein, damit du Geschenke empfangen kannst.',
   'la.save': 'Speichern',
   'la.link': 'Adresse verknüpfen',
   'la.cancel': 'Abbrechen',
   'la.edit': 'Bearbeiten',
   'la.unlink': 'Trennen',
-  'la.aria': 'Wallet of Satoshi address',
-  'la.errorEmpty': 'Bitte geben Sie Ihre Wallet of Satoshi address ein',
-  'la.errorNotFound': 'Diese Wallet of Satoshi address wurde nicht gefunden',
-  'la.errorRequest': 'Wallet of Satoshi address konnte nicht aktualisiert werden',
-  'la.errorNotZap': 'Diese Wallet of Satoshi address kann diese Bitcoin-Zahlungen nicht empfangen',
+  'la.aria': 'Wallet of Satoshi-Adresse',
+  'la.errorEmpty': 'Gib deine Wallet of Satoshi-Adresse ein',
+  'la.errorNotFound': 'Diese Wallet of Satoshi-Adresse wurde nicht gefunden',
+  'la.errorRequest': 'Deine Wallet of Satoshi-Adresse konnte nicht aktualisiert werden',
+  'la.errorNotZap': 'Diese Wallet of Satoshi-Adresse kann diese Bitcoin-Zahlungen nicht empfangen',
   'forum.heading': 'Forum',
   'forum.modeLabel': 'Forum-Ansicht',
   'forum.modeActive': 'Aktiv',
@@ -1634,25 +1595,21 @@ const de = {
   'forum.translateShowTranslation': 'Übersetzung anzeigen',
   'forum.translateError': 'Diese Notiz konnte nicht übersetzt werden. Bitte erneut versuchen.',
   'forum.showMore': 'Mehr anzeigen',
-
   'link.externalTitle': 'Externe Seite öffnen?',
   'link.externalBody':
     'Diese Adresse gehört nicht zu 21.gifts. Öffnen Sie sie nur, wenn Sie ihr vertrauen.',
   'link.externalContinue': 'Link öffnen',
   'link.externalClose': 'Schließen',
-
   'requirements.nameTitle': 'Namen hinzufügen',
   'requirements.usernameTitle': '21.gifts-Namen hinzufügen',
   'requirements.rulesTitle': 'Wohnzimmerregeln zustimmen',
   'requirements.addressTitle': 'Wallet of Satoshi address hinterlegen',
   'requirements.close': 'Schließen',
-
   'introduce.title': 'Stell dich vor',
   'introduce.body':
     'Schreib einen kurzen Beitrag im Forum, damit die anderen dich kennen. Geschenke gehen nur an Mitglieder, die sich vorgestellt haben.',
   'introduce.cta': 'Vorstellung schreiben',
   'introduce.close': 'Schließen',
-
   'wallet.title': 'Wallet',
   'wallet.addPhrase': 'Wiederherstellungssatz hinzufügen',
   'wallet.addPhraseHint':
@@ -1684,7 +1641,6 @@ const de = {
     'Der Wiederherstellungssatz konnte nicht angelegt oder geöffnet werden. Prüfen Sie dieses Gerät und versuchen Sie es erneut.',
   'wallet.errorHint':
     'Wenn das weiter passiert, nutzen Sie einen anderen Browser oder das Gerät, mit dem Sie sich angemeldet haben.',
-
   'profile.title': 'Profil',
   'profile.given': 'Gegeben {amount}',
   'profile.received': 'Erhalten {amount}',
@@ -1772,7 +1728,6 @@ const de = {
   'pos.rateLoading': 'Der Wechselkurs für {code} wird noch geladen.',
   'pos.keypadDelete': 'Löschen',
   'profile.message': 'Nachricht',
-
   'view.unnamed': 'Unbenannt',
   'view.noAddress': 'Keine Wallet of Satoshi address',
   'view.noGiftsAddress': 'Keine 21.gifts-Adresse',
@@ -1784,7 +1739,6 @@ const de = {
   'view.activate': 'Aktivieren',
   'view.alreadyClaimed': 'Dieses Profil hat bereits einen Passkey. Melden Sie sich stattdessen an.',
   'view.claimError': 'Passkey konnte nicht eingerichtet werden. Bitte versuchen Sie es erneut.',
-
   'forum.laws1':
     '21.gifts ist eine Spendenplattform: Geschenke sind frei, und niemand zahlt für ein Versprechen.',
   'forum.laws2': 'Spender sind rar — kein Betteln, kein Drama, kein Druck.',
@@ -1837,7 +1791,7 @@ const de = {
   'rules.wanted1': 'Ein Dankeschön: kurz, konkret und ohne die nächste Bitte im Schlepptau.',
   'rules.wanted2': 'Eine ruhige, ehrliche Nachricht, die das Geben leicht macht statt schwer.',
   'rules.wanted3': 'Ein gelassener Ton — ohne Steigerung, ohne Countdown, ohne Publikum.',
-  'rules.wanted4': 'Fragen, wie Schenken hier funktioniert, und geduldige Antworten darauf.',
+  'rules.wanted4': 'Fragen, wie Spenden hier funktioniert, und geduldige Antworten darauf.',
   'rules.wanted5': 'Humor und Wärme, die niemanden unter Druck setzen.',
   'rules.wanted6':
     'Eine Nachricht würdigen, die Ihnen etwas bedeutet hat — freiwillig und ohne dass der Autor darum gebeten hätte.',
@@ -1896,7 +1850,7 @@ const de = {
   'rules.forbiddenOther2':
     'Illegale Inhalte, sexuelle Inhalte mit Minderjährigen, Gore, Pornografie, Schockmaterial.',
   'rules.forbiddenOther3': 'Doxxing, Drohungen, Stalking, Hass gegen eine Person oder eine Gruppe.',
-  'rules.forbiddenOther4': 'Spam, Werbung, Anwerben, Zusatzkonten, um mehr Geschenke einzusammeln.',
+  'rules.forbiddenOther4': 'Spam, Werbung, Anwerben, Zusatzkonten, um mehr Spenden einzusammeln.',
   'rules.forbiddenOther5':
     'Sich als 21.gifts-Team ausgeben. Der Support schreibt Ihnen nie im Forum.',
   'rules.houseHeading': 'Unser Haus',
@@ -1906,7 +1860,6 @@ const de = {
     'Diese Regeln sind keine AGB und kein Gesetzbuch. Sie sagen nur, was 21.gifts ist: eine Spendenplattform. Wer daraus einen Laden, eine Jobbörse oder eine Bettelbühne macht, hat nicht den falschen Ton getroffen, sondern das falsche Haus.',
   'rules.contactCta': '21.gifts kontaktieren',
   'rules.forumCta': 'Zurück zum Forum',
-
   'contact.pageTitle': 'Kontakt',
   'contact.heading': 'Kontakt',
   'contact.lead':
@@ -1919,7 +1872,6 @@ const de = {
   'contact.errorTooLong': 'Maximal 8000 Zeichen',
   'contact.errorRequest': 'Nachricht konnte nicht gesendet werden',
   'contact.rulesLink': 'Wohnzimmerregeln',
-
   'shops.heading': 'Shops',
   'shops.lead':
     'Fügen Sie einen Shop mit Bildern, einem Ort, einem Text und optional einem 21.gifts-Nutzer hinzu. Er erscheint hier und im Forum mit einem #Shop-Tag.',
@@ -1952,7 +1904,6 @@ const de = {
   'shops.columnOperator': 'Betreiber',
   'shops.showMore': 'Mehr anzeigen',
   'shops.missing': '—',
-
   'inbox.heading': 'Nachrichten',
   'inbox.listLabel': 'Unterhaltungen',
   'inbox.filterLabel': 'Art der Unterhaltung',
@@ -1990,7 +1941,6 @@ const de = {
   'inbox.sentPreview': 'Du: {text}',
   'inbox.authorProfile': 'Profil anzeigen',
   'inbox.giftForLabel': 'Bezahlt von {name}: {amount}',
-
   'notifications.heading': 'Benachrichtigungen',
   'notifications.listLabel': 'Benachrichtigungen',
   'notifications.unreadHeading': 'Ungelesen',
@@ -2010,7 +1960,6 @@ const de = {
   'notifications.moderatorAppointed': 'Du bist jetzt Moderator',
   'notifications.moderatorProposal': '{name} hat einen Moderator vorgeschlagen',
   'notifications.mention': '{name} hat dich markiert',
-
   'moderate.heading': 'Moderation',
   'statistics.heading': 'Statistiken',
   'statistics.shops.widgetLabel': 'Aktive Shops',
@@ -2071,7 +2020,6 @@ const de = {
   'moderate.payouts.cell.paid': '{name}, {date}, Auszahlung erhalten',
   'moderate.payouts.cell.welcome': '{name}, {date}, Willkommensgeschenk',
   'moderate.payouts.cell.both': '{name}, {date}, Tagesförderung und Willkommensgeschenk',
-
   'moderate.handbook.heading': 'Handbuch',
   'moderate.handbook.tocLabel': 'Kapitel',
   'moderate.handbook.login.title': '21.gifts-Anmeldung',
@@ -2192,7 +2140,6 @@ const de = {
   'funding.review.unmet': 'Nicht erfüllt',
   'funding.review.yes': 'Ja',
   'funding.review.no': 'Nein',
-
   'trustChain.title': 'Trust-Kette',
   'trustChain.lead':
     'Wer wen persönlich getroffen hat, und wer die Moderatoren ernannt hat. Klicken Sie auf eine Person, um alle mit ihr verbundenen zu laden. Ziehen Sie eine Person, um sie zu verschieben.',
@@ -2227,47 +2174,68 @@ const de = {
   'trustChain.waitingConfirm':
     'Warten auf die Bestätigung durch eine andere Moderatorin oder einen anderen Moderator.',
   'trustChain.alreadyOnChain': 'Bereits auf der Trust-Kette.',
+  'happyland.lanesTitle': 'Wege durch das Viertel',
+  'happyland.source': 'Nach den Schilderungen von Pater Severin.',
+  'happyland.photoAlt': 'Mehrere Menschen an einem Essensstand in Happyland',
+  'happyland.photoCaption': 'An einem Essensstand in Happyland',
+  'happyland.streetAlt': 'Menschen auf einer Straße mit Wohnhäusern und kleinen Geschäften',
+  'happyland.streetCaption': 'Eine Straße in Happyland. Foto von Pater Severin',
+  'happyland.homeAlt': 'Zwei Erwachsene und drei Kinder in einem kleinen Wohnraum',
+  'happyland.homeCaption': 'Eine Familie zu Hause',
+  'happyland.householdAlt': 'Eine Frau neben Kochutensilien und Wasserbehältern',
+  'happyland.householdCaption': 'Haushaltsgegenstände auf engem Raum',
+  'home.heroKicker': 'Direkt von Mensch zu Mensch',
+  'home.heroProof': 'Die Person bekommt deine Spende. 21.gifts behält keinen Anteil.',
+  'home.previewLabel': 'Der Ablauf',
+  'home.previewKicker': 'Nach der Anmeldung',
+  'home.previewTitle': 'So kommt deine Spende an',
+  'home.previewStep1': 'Beitrag im Wohnzimmer lesen',
+  'home.previewStep2': 'Reagieren und spenden',
+  'home.previewStep3': 'Mit deiner Wallet verschicken',
+  'home.previewWalletTitle': 'Wohin der Bitcoin geht',
+  'home.previewWalletBody': 'Die empfangende Person hat ihre Wallet-Adresse selbst hinterlegt.',
+  'home.previewFrom': 'Deine Wallet',
+  'home.previewTo': 'Wallet der Person',
+  'home.give1Title': 'Anmelden und umsehen',
+  'home.give1Body':
+    'Melde dich an, öffne einen Beitrag im Wohnzimmer und lies, was die Person erzählt.',
+  'home.give2Title': 'Reagieren',
+  'home.give2Body':
+    'Tippe unter dem Beitrag auf den Pfeil, schreib ein paar Worte und gib einen Betrag an. Die Spende ist für die Person, die den Beitrag geschrieben hat.',
+  'home.give3Title': 'Bezahlen',
+  'home.give3Body':
+    'Öffne Wallet of Satoshi oder scanne am Computer den QR-Code mit deiner Wallet.',
+  'home.receiveTitle': 'Du möchtest selbst um Hilfe bitten?',
+  'home.receiveBody':
+    'Melde dich an, hinterlege deine Wallet-Adresse und erzähl im Wohnzimmer, was du brauchst.',
+  'home.discoverTitle': 'Was hinter 21.gifts steckt',
+  'home.discoverStoryKicker': 'Happyland in Manila',
+  'home.discoverStoryTitle': 'Happyland · Tondo',
+  'home.discoverStoryBody':
+    'Pater Severin erzählt von Familien in Happyland und davon, wie sie ihren Alltag bestreiten.',
+  'home.discoverBitcoinKicker': 'Die Zahlung',
+  'home.discoverBitcoinTitle': 'Warum Bitcoin?',
+  'home.discoverBitcoinBody':
+    'Auch kleine Beträge lassen sich an die Wallet-Adresse der Person schicken.',
+  'home.discoverTrustKicker': 'Der Weg des Geldes',
+  'home.discoverTrustTitle': 'Bei wem kommt es an?',
+  'home.discoverTrustBody':
+    'Bei der Person, auf deren Beitrag du reagierst. So funktioniert die Zahlung.',
 } satisfies Messages;
 
 const es = {
-  'happyland.title': 'Happyland: una mirada a la vida en Manila',
+  'happyland.title': 'Happyland en Tondo',
   'happyland.intro':
-    'Happyland está en Tondo, Manila. Las familias viven aquí en condiciones difíciles, a menudo extremadamente difíciles. Queremos conocer mejor a las personas y su entorno y mostrarlos con respeto.',
+    'Happyland está en Tondo, Manila. El padre Severin cuenta sobre calles estrechas, poco espacio para vivir y personas que ganan dinero con cosas que otros tiran.',
   'happyland.daily':
-    'Para algunas familias, recoger y clasificar materiales reciclables es una fuente de ingresos. Los residuos alrededor de sus viviendas también dificultan la vida cotidiana. A veces, el olor puede ser abrumador.',
-  'happyland.observation':
-    'Un ejemplo extremo es la recogida de huesos de pollo desechados que aún tienen distintas cantidades de carne. Se vuelven a cocinar y se venden como «pagpag». Yo, el padre Severin, moderador, lo he presenciado personalmente varias veces.',
+    'Lo que otros desechan es una fuente de ingresos para algunas familias. Recogen y separan lo que todavía se puede aprovechar.',
   'happyland.poverty':
-    'Los asentamientos informales de Tondo se encuentran entre las zonas más pobres de Manila. Las pequeñas habitaciones donde vive la gente suelen servir a la vez de cocina, dormitorio y sala de estar. A menudo, las personas se lavan en la calle, sacando agua de un cubo y vertiéndola sobre su cuerpo.',
-  'happyland.lanes': 'Los caminos suelen estar en muy mal estado y muy sucios.',
+    'Cocinar, dormir, reunirse: todo eso a menudo tiene que caber en una sola habitación pequeña.',
+  'happyland.lanes':
+    'Entre las casas hay caminos estrechos y desiguales. El padre Severin describe cómo es la vida cotidiana allí.',
   'happyland.kicker': 'Tondo · Manila',
-  'happyland.dailyTitle': 'Vida cotidiana, residuos y reciclaje',
-  'happyland.povertyTitle': 'Vivir con la pobreza',
-  'happyland.photo0.alt': 'Personas caminando por una calle con viviendas y pequeñas tiendas.',
-  'happyland.photo0.caption':
-    'La calle principal de Happyland, con viviendas y pequeñas tiendas. Fotografía del padre Severin.',
-  'happyland.photo1.alt': 'Vista desde arriba de tejados muy juntos y callejones estrechos.',
-  'happyland.photo1.caption': 'Vista desde arriba de edificios muy juntos y callejones estrechos.',
-  'happyland.photo2.alt': 'Personas en un callejón junto a viviendas de dos plantas.',
-  'happyland.photo2.caption': 'Al fondo se ve el trabajo de separar los residuos.',
-  'happyland.photo3.alt': 'Una mujer cocina junto a un puesto de comida con varias personas cerca.',
-  'happyland.photo3.caption': 'Pagpag',
-  'happyland.photo4.alt':
-    'Una persona sentada sobre tablones de madera junto a una zona llena de materiales desechados.',
-  'happyland.photo4.caption':
-    'Se han acumulado materiales desechados junto a los edificios y debajo de ellos.',
-  'happyland.photo5.alt':
-    'Dos personas adultas y tres niños en el interior de una vivienda pequeña.',
-  'happyland.photo5.caption': 'El espacio donde vive una familia.',
-  'happyland.photo6.alt':
-    'Una mujer junto a sartenes, cubos y enseres domésticos en un espacio reducido.',
-  'happyland.photo6.caption':
-    'Los utensilios de cocina, los recipientes de agua y los enseres domésticos comparten un espacio reducido.',
-  'happyland.photo7.alt':
-    'Un callejón estrecho con suelo irregular, recipientes y basura dispersa.',
-  'happyland.photo7.caption':
-    'Un paso estrecho entre viviendas, con suelo irregular y residuos dispersos.',
-
+  'happyland.dailyTitle': 'Lo que otros desechan',
+  'happyland.povertyTitle': 'Vivir en un espacio reducido',
   'language.label': 'Idioma',
   'amount.unit': 'Bitcoin o fiat',
   'amount.noRate': 'Aún no hay tipo de cambio',
@@ -2275,7 +2243,7 @@ const es = {
   'nav.happyland': 'Happyland',
   'nav.why': 'Por qué',
   'nav.faq': 'FAQ',
-  'nav.about': 'Sobre nosotros',
+  'nav.about': 'Sobre 21.gifts',
   'nav.stats': 'Estadísticas',
   'nav.trustChain': 'Cadena de confianza',
   'nav.handbook': 'Manual',
@@ -2331,10 +2299,10 @@ const es = {
   'nav.back': 'Volver',
   'pwa.install': 'Instalar app',
   'pwa.iosTitle': 'Añadir 21.gifts a la pantalla de inicio',
-  'pwa.iosLead': 'En iPhone son tres toques en el menú Compartir.',
-  'pwa.iosShare': 'Toque Compartir (el cuadrado con la flecha).',
-  'pwa.iosAdd': 'Toque Añadir a pantalla de inicio.',
-  'pwa.iosOpen': 'Si ve Abrir como app web, déjelo activado y toque Añadir.',
+  'pwa.iosLead': 'En el iPhone son tres pasos:',
+  'pwa.iosShare': 'Toca Compartir (el cuadrado con la flecha).',
+  'pwa.iosAdd': 'Elige Añadir a pantalla de inicio.',
+  'pwa.iosOpen': 'Si aparece Abrir como app web, déjalo activado y toca Añadir.',
   'pwa.close': 'Cerrar',
   'aria.primary': 'Principal',
   'aria.menu': 'Menú',
@@ -2355,90 +2323,87 @@ const es = {
   'theme.system': 'Sistema',
   'theme.light': 'Claro',
   'theme.dark': 'Oscuro',
-  'home.headline1': 'Regalos directos de persona a persona',
-  'home.headline2': 'en Bitcoin',
+  'home.headline1': 'Ayuda a otras personas',
+  'home.headline2': 'con Bitcoin',
   'home.lead':
-    '21.gifts es el lugar para pedir ayuda o enviar ayuda, sin ninguna organización de por medio. El dinero va directamente de quien da a quien recibe — la plataforma nunca retiene el Bitcoin.',
+    'En el foro, la gente cuenta lo que está viviendo. Inicia sesión y lee sus publicaciones. Si quieres apoyar a alguien, simplemente reacciona a una publicación e indica la cantidad que quieres donar. Los satoshis se envían directamente de ti a esa persona y llegan en segundos.',
   'home.ctaAsk': 'Pedir ayuda',
-  'home.ctaSend': 'Enviar ayuda',
-  'home.howKicker': 'Cómo funciona',
-  'home.howTitle': 'Tres pasos, y sin cuenta en el sentido tradicional',
+  'home.ctaSend': 'Envía ayuda',
+  'home.howKicker': 'Dona Bitcoin',
+  'home.howTitle': 'Así donas Bitcoin a alguien',
   'home.howLead':
-    'Inicias sesión aquí mismo, en este sitio. Sin contraseñas y sin registro por correo.',
-  'home.step1Title': 'Iniciar sesión',
-  'home.step1Body':
-    'Un toque en tu navegador. Usa un acceso seguro guardado en tu dispositivo, o crea uno nuevo. Esa es tu cuenta — no hay nada más que recordar.',
-  'home.step2Title': 'Añade una Wallet of Satoshi address',
-  'home.step2BodyBefore': 'Indica dónde deben llegar los regalos, por ejemplo',
-  'home.step2BodyAfter':
-    '. A partir de ahí, cualquiera podrá enviarte Bitcoin desde Wallet of Satoshi.',
-  'home.step3Title': 'Publica y recibe ayuda',
-  'home.step3Body':
-    'Una vez dentro, escribe una publicación en el foro. Otras personas pueden enviar Bitcoin a una reacción pagable — llega a la Wallet of Satoshi de quien la escribió, no a la nuestra. La plataforma nunca toca el dinero.',
-  'home.whyKicker': 'Por qué existe',
-  'home.whyTitle': 'El camino más corto de una persona a otra',
-  'home.why1Title': 'De persona a persona, de verdad',
+    'En tu primera visita, configuras tu cuenta. Después encontrarás publicaciones y respuestas en el foro.',
+  'home.whyKicker': 'Adónde va tu donación',
+  'home.whyTitle': 'La persona elige su dirección de recepción',
+  'home.why1Title': 'Tú eliges a quién ayudar',
   'home.why1Body':
-    'Los fondos van de la Wallet of Satoshi de quien da directamente a la Wallet of Satoshi address de quien recibe. 21.gifts nunca retiene, enruta ni custodia el dinero — no hay nada que podamos congelar.',
-  'home.why2Title': 'Tu login permanece en tu dispositivo',
+    'Lee primero lo que escribe la persona. 21.gifts nunca pasa tu donación a otra persona.',
+  'home.why2Title': 'La persona indica su dirección',
   'home.why2Body':
-    '21.gifts nunca ve una contraseña — solo una confirmación de inicio de sesión firmada. No hay ninguna base de datos de contraseñas que se pueda filtrar.',
-  'home.why3Title': 'Tu Bitcoin, no el nuestro',
+    'Antes de poder recibir donaciones, la persona indica la dirección de cartera a la que debe llegarle el Bitcoin.',
+  'home.why3Title': 'Pagas desde tu cartera',
   'home.why3Body':
-    'Los regalos son pagos en Bitcoin a una Wallet of Satoshi address. Si 21.gifts desapareciera mañana, esas direcciones seguirían funcionando.',
-  'home.projectKicker': 'El proyecto',
-  'home.projectTitle': 'Dona a este proyecto',
+    'Tú fijas el importe y confirmas el pago. En el ordenador puedes escanear el código QR.',
+  'home.why4Title': '21.gifts no se queda con una parte',
+  'home.why4Body':
+    'Para el funcionamiento del sitio hay una dirección separada. Aun así, pueden aplicarse comisiones de tu cartera.',
+  'home.projectKicker': 'Apoyar a 21.gifts',
+  'home.projectTitle': '21.gifts también necesita apoyo',
   'home.projectLead':
-    'Los regalos del foro van a la persona que escribió la reacción. Para ayudar a mantener 21.gifts, envía Bitcoin a esta Wallet of Satoshi address.',
-  'home.faqKicker': 'FAQ',
-  'home.faqTitle': 'Preguntas frecuentes, en breve',
-  'home.faq1Q': '¿Quién puede usarlo?',
+    'Si quieres apoyar la web en sí, puedes enviar a esta dirección. Está separada de las donaciones del foro.',
+  'home.faqKicker': 'Conviene saber',
+  'home.faqTitle': 'Preguntas frecuentes',
+  'home.faq1Q': '¿Necesito una cuenta para ver el foro?',
   'home.faq1A':
-    'Cualquiera con una Wallet of Satoshi address. No hay solicitud ni proceso de revisión.',
-  'home.faq3Q': '¿Qué pasa con mis claves?',
+    'Sí. Para el foro inicias sesión. Si quieres recibir donaciones en Bitcoin, añade además una dirección de Wallet of Satoshi.',
+  'home.faq2Q': '¿Se queda 21.gifts con algo de mi donación?',
+  'home.faq2A':
+    '21.gifts no se queda con ninguna parte. Tu cartera o la red de pago pueden cobrar sus propias comisiones.',
+  'home.faq3Q': '¿Guarda 21.gifts mi contraseña?',
   'home.faq3A':
-    'Tus credenciales de acceso se quedan en tu dispositivo (y en la sincronización de tu plataforma, si la usas). 21.gifts solo ve una confirmación de inicio de sesión firmada y, si decides publicarla, tu Wallet of Satoshi address. En nuestros servidores no se guarda ninguna contraseña ni frase semilla.',
-  'home.faq4Q': '¿Puedo perder el acceso a mi cuenta?',
+    'No creas una contraseña para 21.gifts. Tu acceso queda en tu dispositivo o en su sincronización. Nunca compartas tus palabras de recuperación.',
+  'home.faq4Q': '¿Y si pierdo mi dispositivo?',
   'home.faq4A':
-    'Sí. Si pierdes tu acceso y cualquier sincronización de plataforma, por ahora la cuenta no se puede recuperar. Guarda una copia de seguridad del dispositivo con el que inicias sesión.',
-  'home.faq5Q': '¿Cómo envío un regalo?',
+    'Si pierdes el acceso en tu dispositivo y en todas las copias sincronizadas, todavía no podemos recuperar tu cuenta. Comprueba cómo guarda tu dispositivo el acceso.',
+  'home.faq5Q': '¿Quién recibe el Bitcoin?',
   'home.faq5A':
-    'Abre Enviar ayuda, elige un mensaje en el foro, abre Mostrar reacciones y pulsa Enviar Bitcoin en una reacción. Indica un importe en ₿ y paga con Wallet of Satoshi — el Bitcoin va directamente a quien escribió la reacción.',
-  'home.faq6Q': '¿Por qué solo Bitcoin?',
+    'Quien escribió la publicación. Escribe una reacción debajo e indica un importe. El Bitcoin va a la dirección de cartera de esa persona.',
+  'home.faq6Q': '¿Por qué Bitcoin?',
   'home.faq6A':
-    'Bitcoin es rápido y resistente a la censura. Wallet of Satoshi hace que enviar y recibir sea tan sencillo como una dirección de correo. Eso elimina la necesidad de cualquier capa de custodia y permite que cualquier persona del mundo dé o reciba sin pedir permiso.',
+    'Para que puedas enviar incluso cantidades pequeñas directamente a la dirección de cartera elegida. 21.gifts no guarda la donación. Tu proveedor de cartera puede cobrar comisiones.',
   'home.faq7Q': '¿Está regulado y cómo funcionan los impuestos?',
   'home.faq7A':
-    '21.gifts es una capa de comunicación y descubrimiento sin ánimo de lucro. No es un proveedor de servicios de pago y no mueve fondos. Quien da y quien recibe son responsables de su propio tratamiento fiscal en su jurisdicción.',
-  'home.faq8Q': '¿Qué significa ₿1?',
-  'home.faq8A': '₿1 es la unidad más pequeña de Bitcoin, también conocida como un sat.',
-  'about.kicker': 'Sobre nosotros',
-  'about.heading': 'Tres convicciones',
+    '21.gifts no guarda la donación. Las normas y los impuestos que se aplican dependen de dónde vives y de tu situación. Comprueba los requisitos que te corresponden.',
+  'home.faq8Q': '¿Qué significa ₿1 aquí?',
+  'home.faq8A':
+    'En 21.gifts, ₿1 representa un sat, la unidad más pequeña de Bitcoin. Un Bitcoin equivale a 100 millones de sats.',
+  'about.kicker': 'La idea',
+  'about.heading': 'Lo que representa 21.gifts',
   'about.lead':
-    '21.gifts es un lugar para pedir ayuda o enviarla, sin ninguna organización de por medio. Se sostiene sobre tres convicciones.',
+    'En el foro, las personas pueden pedir ayuda y donarse Bitcoin entre sí. Detrás de 21.gifts hay tres convicciones.',
   'about.verse': 'De gracia recibisteis, dad de gracia.',
   'about.verseRef': 'Mateo 10:8',
   'about.conv1Num': '1',
-  'about.conv1Title': 'Dar es un deber',
+  'about.conv1Title': 'Dar forma parte de la fe',
   'about.conv1Body':
-    'Creemos que dar es un deber de todo cristiano. La Escritura no dice si das — dice cuándo: «Cuando des limosna» (Mateo 6:2). Quien tiene bienes de este mundo, ve a su hermano en necesidad y le cierra el corazón no tiene en sí el amor de Dios (1 Juan 3:17). La fe sin obras está muerta (Santiago 2:17). Cuánto dar queda entre quien da y Dios (2 Corintios 9:7).',
+    'Para nosotros, dar forma parte de la fe cristiana. En Mateo 6:2, Jesús habla de dar como algo natural. También 1 Juan 3:17 y Santiago 2:17 nos recuerdan no dejar solas a las personas necesitadas. Cuánto damos lo decidimos nosotros mismos ante Dios (2 Corintios 9:7).',
   'about.conv1Body2':
-    'Dar no es solo dinero. Una sonrisa amable, tiempo, un abrigo, una visita — Mateo 25 nombra al hambriento, al sediento, al forastero, al desnudo, al enfermo y al preso. 21.gifts es el camino para el regalo de dinero: de una persona a otra.',
+    'Ayudar no siempre significa dar dinero. A veces cuenta una conversación, una visita o un abrigo cálido. Mateo 25 recuerda a las personas que tienen hambre, están enfermas, son extranjeras o están presas. 21.gifts hace posible una forma de ayuda: una donación de dinero directamente de una persona a otra.',
   'about.conv1Verse': 'Hijitos míos, no amemos de palabra ni de lengua, sino de hecho y en verdad.',
   'about.conv1VerseRef': '1 Juan 3:18',
   'about.conv2Num': '2',
-  'about.conv2Title': 'Directo, sin intermediario',
+  'about.conv2Title': 'Directamente de persona a persona',
   'about.conv2Body':
-    'Creemos que el mejor y más hermoso regalo va de quien da a quien recibe, sin ninguna organización de por medio. Nadie lo retrasa ni lo convierte en un programa. Ambos siguen siendo personas, no un expediente. La dignidad se conserva en los dos lados. El camino es el más corto posible. La dirección de recepción es de quien recibe, no nuestra; si 21.gifts desapareciera mañana, seguiría funcionando.',
+    'Tú eliges a quién donas. La persona ha añadido su dirección de cartera para que tu donación en Bitcoin le llegue. 21.gifts no se queda con ninguna parte. Puede seguir usando su dirección sin nuestra web.',
   'about.conv3Num': '3',
-  'about.conv3Title': 'Bitcoin es el dinero más eficaz',
+  'about.conv3Title': '¿Por qué Bitcoin?',
   'about.conv3Body':
-    'Creemos que Bitcoin es el dinero más eficaz que existe hoy. Es resistente a la censura y no pide permiso. No necesita banco, ni documento de identidad, ni horario de oficina. Conecta el mundo entero, día y noche. Para un regalo internacional es la forma más sencilla de enviar dinero — tan sencilla como una dirección de correo. Llega a quien recibe, no a nosotros. Nadie puede emitir más ni retenerlo en una frontera. Eso importa sobre todo a quien ya tiene poco.',
-  'about.ctaForum': 'Abrir el salón',
-  'donate.pageTitle': 'Enviar ayuda',
+    'Con Bitcoin se pueden enviar incluso pequeñas cantidades a personas de otros países. Para ello, la persona necesita una dirección de cartera. Pagas con tu cartera; 21.gifts no guarda la donación.',
+  'about.ctaForum': 'Ir al foro',
+  'donate.pageTitle': 'Ayuda a alguien',
   'donate.lead':
-    'Abre el foro, elige un mensaje, abre Mostrar reacciones y envía Bitcoin en una reacción.',
-  'donate.continue': 'Abrir el foro',
+    'Inicia sesión y abre una publicación en el foro. Escribe una reacción debajo, indica un importe y paga desde tu cartera. El Bitcoin va a quien escribió la publicación.',
+  'donate.continue': 'Ir al foro',
   'notFound.body': 'Esta página no existe.',
   'notFound.back': 'Volver al inicio',
   'handbook.title': 'Manual',
@@ -2475,8 +2440,7 @@ const es = {
     'Este dispositivo tiene iOS {version}. Para iniciar sesión hace falta como mínimo iOS {required}.',
   'login.androidVersion':
     'Este dispositivo tiene Android {version}. Para iniciar sesión hace falta como mínimo Android {required}.',
-  'login.wrongAccount':
-    'Ha iniciado sesión con la cuenta equivocada. Inténtelo de nuevo con la cuenta correcta.',
+  'login.wrongAccount': 'Iniciaste sesión con otra cuenta. Vuelve a intentarlo con la correcta.',
   'login.retry': 'Intentar de nuevo',
   'login.choiceHeading': '¿Ya tienes una cuenta?',
   'login.existing': 'Iniciar sesión con una cuenta existente',
@@ -2490,11 +2454,12 @@ const es = {
   'login.nameTaken': 'Ese usuario ya está en uso.',
   'login.unknownHeading': 'Esta llave de acceso no es una cuenta',
   'login.unknownBody':
-    'Este teléfono ofreció una llave de acceso que 21.gifts no reconoce. Abra una cuenta nueva. Si el teléfono vuelve a ofrecer la misma llave, borre la llave de acceso guardada de 21.gifts en los ajustes de contraseñas y vuelva a intentarlo.',
+    'Este teléfono ofreció una llave de acceso que 21.gifts no reconoce. Abre una cuenta nueva. Si el teléfono vuelve a ofrecer la misma llave, borra la llave de acceso guardada de 21.gifts en los ajustes de contraseñas y vuelve a intentarlo.',
   'login.inAppHeading': 'Abre esta página en tu navegador',
   'login.inAppBody':
     'Las passkeys no funcionan dentro de Telegram ni de otros navegadores integrados. Abre esta página en Safari o Chrome para iniciar sesión.',
-  'login.inAppIosHint': 'En el iPhone, toca el icono de brújula o Safari arriba a la derecha.',
+  'login.inAppIosHint':
+    'En el iPhone, encontrarás el icono de brújula o Safari arriba a la derecha.',
   'login.openInBrowser': 'Abrir en el navegador',
   'login.copyLink': 'Copiar enlace',
   'login.linkCopied': 'Copiado',
@@ -2505,9 +2470,9 @@ const es = {
   'setup.nameTitle': 'Tu nombre',
   'setup.usernameTitle': 'Tu nombre en 21.gifts',
   'setup.usernameHint':
-    'Esta es la dirección a la que envían Bitcoin: tu@21.gifts. Wallet of Satoshi sigue recibiéndolo.',
+    'Tu dirección se verá así: tu@21.gifts. El Bitcoin sigue llegando a tu Wallet of Satoshi.',
   'setup.usernameEmpty': 'Escribe un nombre de usuario',
-  'setup.usernameInvalid': 'Usa letras inglesas, números, guion, guion bajo o punto',
+  'setup.usernameInvalid': 'Se permiten a–z, 0–9, guion, guion bajo y punto',
   'setup.usernameTaken': 'Ese nombre de usuario ya está en uso',
   'setup.usernameRequest': 'No se pudo guardar el nombre de usuario',
   'setup.addressTitle': 'Tu Wallet of Satoshi address',
@@ -2515,7 +2480,7 @@ const es = {
   'setup.skip': 'Omitir',
   'setup.rulesTitle': 'Reglas del salón',
   'setup.rulesPrompt': 'Lee este capítulo.',
-  'setup.rulesPromptLast': 'Lee este capítulo. Podrás continuar cuando aceptes las reglas.',
+  'setup.rulesPromptLast': 'Lee este capítulo. Después podrás aceptar las reglas y continuar.',
   'setup.rulesProgress': '{current} de {total}',
   'setup.rulesBack': 'Atrás',
   'setup.agree': 'Acepto estas reglas',
@@ -2531,7 +2496,7 @@ const es = {
   'name.errorEmpty': 'Introduce tu nombre',
   'name.errorRequest': 'No se pudo guardar el nombre',
   'location.heading': 'Ubicación',
-  'location.placeholder': 'Ciudad, país o cualquier lugar',
+  'location.placeholder': 'Ciudad o país',
   'location.aria': 'Ubicación',
   'location.save': 'Guardar',
   'location.cancel': 'Cancelar',
@@ -2750,24 +2715,20 @@ const es = {
   'forum.translateShowTranslation': 'Mostrar traducción',
   'forum.translateError': 'No se pudo traducir esta nota. Inténtalo de nuevo.',
   'forum.showMore': 'Mostrar más',
-
   'link.externalTitle': '¿Abrir un enlace externo?',
   'link.externalBody': 'Esta dirección no es 21.gifts. Ábrela solo si confías en ella.',
   'link.externalContinue': 'Abrir enlace',
   'link.externalClose': 'Cerrar',
-
   'requirements.nameTitle': 'Añade tu nombre',
   'requirements.usernameTitle': 'Añade tu nombre en 21.gifts',
   'requirements.rulesTitle': 'Acepta las reglas del salón',
   'requirements.addressTitle': 'Añade tu Wallet of Satoshi address',
   'requirements.close': 'Cerrar',
-
   'introduce.title': 'Preséntate',
   'introduce.body':
     'Escribe una nota breve en el foro para que la gente sepa quién eres. Los regalos solo se envían a los miembros que se han presentado.',
   'introduce.cta': 'Escribe una presentación',
   'introduce.close': 'Cerrar',
-
   'wallet.title': 'Wallet',
   'wallet.addPhrase': 'Añadir frase de recuperación',
   'wallet.addPhraseHint':
@@ -2800,7 +2761,6 @@ const es = {
     'No se pudo crear ni abrir la frase de recuperación. Comprueba este dispositivo e inténtalo de nuevo.',
   'wallet.errorHint':
     'Si sigue ocurriendo, prueba otro navegador o el dispositivo con el que ya iniciaste sesión.',
-
   'profile.title': 'Perfil',
   'profile.given': 'Donado {amount}',
   'profile.received': 'Recibido {amount}',
@@ -2889,7 +2849,6 @@ const es = {
   'pos.rateLoading': 'El tipo de cambio de {code} todavía se está cargando.',
   'pos.keypadDelete': 'Borrar',
   'profile.message': 'Mensaje',
-
   'view.unnamed': 'Sin nombre',
   'view.noAddress': 'Sin Wallet of Satoshi address',
   'view.noGiftsAddress': 'Sin dirección 21.gifts',
@@ -2901,7 +2860,6 @@ const es = {
   'view.activate': 'Activar',
   'view.alreadyClaimed': 'Este perfil ya tiene una passkey. Inicia sesión en su lugar.',
   'view.claimError': 'No se pudo configurar la passkey. Inténtalo de nuevo.',
-
   'forum.laws1':
     '21.gifts es una plataforma de donaciones: los regalos son libres y nadie paga por una promesa.',
   'forum.laws2': 'Los donantes escasean — sin mendigar, sin drama, sin presión.',
@@ -2954,7 +2912,7 @@ const es = {
   'rules.wanted1': 'Un gracias: corto, concreto y sin la siguiente petición pegada.',
   'rules.wanted2': 'Una nota tranquila y honesta que hace que dar se sienta fácil, no pesado.',
   'rules.wanted3': 'Un tono sereno — sin escalada, sin cuenta atrás, sin público.',
-  'rules.wanted4': 'Preguntas sobre cómo funcionan los regalos aquí, y respuestas pacientes.',
+  'rules.wanted4': 'Preguntas sobre cómo funcionan aquí las donaciones, y respuestas pacientes.',
   'rules.wanted5': 'Humor y calidez que no presionan a nadie.',
   'rules.wanted6':
     'Reconocer una nota que significó algo para ti — libremente, y sin que el autor lo haya pedido.',
@@ -3009,7 +2967,7 @@ const es = {
     'Contenido ilegal, contenido sexual con menores, gore, pornografía, material de impacto.',
   'rules.forbiddenOther3': 'Doxxing, amenazas, acoso, odio contra una persona o un grupo.',
   'rules.forbiddenOther4':
-    'Spam, publicidad, reclutamiento, cuentas adicionales creadas para recibir más regalos.',
+    'Spam, publicidad, captación, cuentas adicionales para recaudar más donaciones.',
   'rules.forbiddenOther5':
     'Hacerse pasar por el equipo de 21.gifts. El soporte nunca te escribirá en el foro.',
   'rules.houseHeading': 'Nuestra casa',
@@ -3019,7 +2977,6 @@ const es = {
     'Estas reglas no son condiciones de servicio ni son la ley. Solo dicen lo que 21.gifts es: una plataforma de donaciones. Convertirla en una tienda, un tablón de encargos o un escenario para mendigar no es el tono equivocado. Es la casa equivocada.',
   'rules.contactCta': 'Contactar a 21.gifts',
   'rules.forumCta': 'Volver al foro',
-
   'contact.pageTitle': 'Contacto',
   'contact.heading': 'Contacto',
   'contact.lead':
@@ -3032,7 +2989,6 @@ const es = {
   'contact.errorTooLong': 'Máximo 8000 caracteres',
   'contact.errorRequest': 'No se pudo enviar el mensaje',
   'contact.rulesLink': 'Reglas del salón',
-
   'shops.heading': 'Tiendas',
   'shops.lead':
     'Añade una tienda con fotos, un lugar, un texto y un usuario opcional de 21.gifts. Aparece aquí y en el foro con una etiqueta #Shop.',
@@ -3065,7 +3021,6 @@ const es = {
   'shops.columnOperator': 'Operador',
   'shops.showMore': 'Mostrar más',
   'shops.missing': '—',
-
   'inbox.heading': 'Mensajes',
   'inbox.listLabel': 'Conversaciones',
   'inbox.filterLabel': 'Tipo de conversación',
@@ -3102,7 +3057,6 @@ const es = {
   'inbox.sentPreview': 'Tú: {text}',
   'inbox.authorProfile': 'Ver perfil',
   'inbox.giftForLabel': 'Pagado por {name}: {amount}',
-
   'notifications.heading': 'Notificaciones',
   'notifications.listLabel': 'Notificaciones',
   'notifications.unreadHeading': 'No leídas',
@@ -3121,7 +3075,6 @@ const es = {
   'notifications.moderatorAppointed': 'Ahora eres moderador',
   'notifications.moderatorProposal': '{name} propuso un moderador',
   'notifications.mention': '{name} te marcó',
-
   'moderate.heading': 'Moderación',
   'statistics.heading': 'Estadísticas',
   'statistics.shops.widgetLabel': 'Tiendas activas',
@@ -3176,7 +3129,6 @@ const es = {
   'moderate.payouts.cell.paid': '{name}, {date}, pago recibido',
   'moderate.payouts.cell.welcome': '{name}, {date}, regalo de bienvenida',
   'moderate.payouts.cell.both': '{name}, {date}, ayuda diaria y regalo de bienvenida',
-
   'moderate.handbook.heading': 'Manual',
   'moderate.handbook.tocLabel': 'Capítulos',
   'moderate.handbook.login.title': 'Inicio de sesión en 21.gifts',
@@ -3292,7 +3244,6 @@ const es = {
   'funding.review.unmet': 'No cumplido',
   'funding.review.yes': 'Sí',
   'funding.review.no': 'No',
-
   'trustChain.title': 'Cadena de confianza',
   'trustChain.lead':
     'Quién conoció a quién en persona, y quién nombró a las personas moderadoras. Haz clic en una persona para cargar a todas las vinculadas a ella. Arrastra a una persona para moverla.',
@@ -3325,50 +3276,68 @@ const es = {
   'trustChain.actionFailed': 'No se pudo actualizar a este miembro. Inténtalo de nuevo.',
   'trustChain.waitingConfirm': 'Esperando a que otra persona moderadora confirme.',
   'trustChain.alreadyOnChain': 'Ya está en la cadena de confianza.',
+  'happyland.lanesTitle': 'Caminos por el barrio',
+  'happyland.source': 'Basado en el relato del padre Severin.',
+  'happyland.photoAlt': 'Varias personas junto a un puesto de comida en Happyland',
+  'happyland.photoCaption': 'En un puesto de comida de Happyland',
+  'happyland.streetAlt': 'Personas en una calle con viviendas y pequeñas tiendas',
+  'happyland.streetCaption': 'Una calle de Happyland. Fotografía del padre Severin',
+  'happyland.homeAlt': 'Dos personas adultas y tres niños en una vivienda pequeña',
+  'happyland.homeCaption': 'Una familia en casa',
+  'happyland.householdAlt': 'Una mujer junto a utensilios de cocina y recipientes de agua',
+  'happyland.householdCaption': 'Enseres domésticos en un espacio reducido',
+  'home.heroKicker': 'Directamente de persona a persona',
+  'home.heroProof': 'La persona recibe tu donación. 21.gifts no se queda con ninguna parte.',
+  'home.previewLabel': 'Así funciona',
+  'home.previewKicker': 'Después de iniciar sesión',
+  'home.previewTitle': 'Así llega tu donación',
+  'home.previewStep1': 'Lee una publicación en el foro',
+  'home.previewStep2': 'Reacciona y dona',
+  'home.previewStep3': 'Envía desde tu cartera',
+  'home.previewWalletTitle': 'Adónde va el Bitcoin',
+  'home.previewWalletBody': 'La persona que recibe ha añadido su propia dirección de cartera.',
+  'home.previewFrom': 'Tu cartera',
+  'home.previewTo': 'Cartera de quien recibe',
+  'home.give1Title': 'Inicia sesión y echa un vistazo',
+  'home.give1Body':
+    'Inicia sesión, abre una publicación en el foro y lee lo que cuenta esa persona.',
+  'home.give2Title': 'Reacciona',
+  'home.give2Body':
+    'Toca la flecha debajo de la publicación, escribe unas palabras e indica un importe. La donación es para quien escribió la publicación.',
+  'home.give3Title': 'Paga',
+  'home.give3Body':
+    'Abre Wallet of Satoshi o, en el ordenador, escanea el código QR con tu cartera.',
+  'home.receiveTitle': '¿Quieres pedir ayuda para ti?',
+  'home.receiveBody':
+    'Inicia sesión, añade tu dirección de cartera y cuenta en el foro qué necesitas.',
+  'home.discoverTitle': 'Lo que hay detrás de 21.gifts',
+  'home.discoverStoryKicker': 'Happyland en Manila',
+  'home.discoverStoryTitle': 'Happyland · Tondo',
+  'home.discoverStoryBody':
+    'El padre Severin cuenta sobre familias en Happyland y cómo llevan su vida diaria.',
+  'home.discoverBitcoinKicker': 'El pago',
+  'home.discoverBitcoinTitle': '¿Por qué Bitcoin?',
+  'home.discoverBitcoinBody':
+    'Incluso pequeñas cantidades se pueden enviar a la dirección de cartera de la persona.',
+  'home.discoverTrustKicker': 'El camino del dinero',
+  'home.discoverTrustTitle': '¿Quién lo recibe?',
+  'home.discoverTrustBody':
+    'A quien escribió la publicación a la que reaccionas. Aquí te explicamos cómo funciona el pago.',
 } satisfies Messages;
 
 const fil = {
-  'happyland.title': 'Happyland – isang sulyap sa buhay sa Maynila',
+  'happyland.title': 'Happyland sa Tondo',
   'happyland.intro':
-    'Ang Happyland ay nasa Tondo, Maynila. Namumuhay rito ang mga pamilya sa mahirap, at kadalasan ay napakahirap, na kalagayan. Nais naming mas maunawaan at mailarawan nang may paggalang ang mga tao at ang kanilang paligid.',
+    'Nasa Tondo, Maynila ang Happyland. Isinasalaysay ni Padre Severin ang tungkol sa makikitid na daan, kakaunting puwang para tumira, at mga taong kumikita ng pera mula sa mga bagay na itinapon.',
   'happyland.daily':
-    'Para sa ilang pamilya, pinagkukunan ng kita ang pangongolekta at pagbubukod ng mga materyal na maaaring i-recycle. Pinahihirap din ng basura sa paligid ng kanilang mga tahanan ang araw-araw na pamumuhay. Kung minsan, napakatindi ng amoy.',
-  'happyland.observation':
-    'Isang matinding halimbawa ang pangongolekta ng mga itinapong buto ng manok na may natitira pang karne. Niluluto itong muli at ibinebenta bilang “pagpag”. Ako, si Padre Severin, isang moderator, ay ilang beses nang personal na nakasaksi nito.',
+    'Ang itinatapon ng iba ay pinagkakakitaan ng ilang pamilya. Nangongolekta at nag-uuri sila ng mga bagay na magagamit pa.',
   'happyland.poverty':
-    'Ang mga impormal na pamayanan sa Tondo ay kabilang sa pinakamahihirap na lugar sa Maynila. Ang maliliit na kuwartong tinitirhan ay madalas na nagsisilbing kusina, silid-tulugan at sala nang sabay-sabay. Madalas maligo ang mga tao sa kalye, gamit ang tubig na sinasalok mula sa balde at ibinubuhos sa katawan.',
-  'happyland.lanes': 'Ang mga daanan ay madalas na sira-sira at napakarumi.',
+    'Ang pagluluto, pagtulog, at pagsasama-sama — kadalasan kailangang magkasya ang lahat ng ito sa iisang maliit na kuwarto.',
+  'happyland.lanes':
+    'May makikitid at hindi pantay na daan sa pagitan ng mga bahay. Inilalarawan ni Padre Severin kung ano ang hitsura ng pang-araw-araw na buhay doon.',
   'happyland.kicker': 'Tondo · Manila',
-  'happyland.dailyTitle': 'Araw-araw na buhay, basura at pagre-recycle',
-  'happyland.povertyTitle': 'Pamumuhay sa kahirapan',
-  'happyland.photo0.alt':
-    'Mga taong naglalakad sa kalyeng may mga tahanan at maliliit na tindahan.',
-  'happyland.photo0.caption':
-    'Ang pangunahing kalye ng Happyland, na may mga tahanan at maliliit na tindahan. Kuha ni Padre Severin.',
-  'happyland.photo1.alt': 'Tanaw mula sa itaas ang magkakadikit na bubong at makikitid na daanan.',
-  'happyland.photo1.caption':
-    'Tanaw mula sa itaas ang magkakadikit na gusali at makikitid na daanan.',
-  'happyland.photo2.alt':
-    'Mga taong nakatayo sa isang daanan sa tabi ng mga tahanang may dalawang palapag.',
-  'happyland.photo2.caption': 'Makikita sa likuran ang pagbubukod ng mga itinapong materyal.',
-  'happyland.photo3.alt':
-    'Isang babaeng nagluluto sa tabi ng isang tindahan ng pagkain, na may ilang tao sa paligid.',
-  'happyland.photo3.caption': 'Pagpag',
-  'happyland.photo4.alt':
-    'Isang taong nakaupo sa mga tablang kahoy sa tabi ng lugar na puno ng mga itinapong materyal.',
-  'happyland.photo4.caption': 'Naipon ang mga itinapong materyal sa tabi at ilalim ng mga gusali.',
-  'happyland.photo5.alt':
-    'Dalawang nakatatanda at tatlong bata sa loob ng isang maliit na tahanan.',
-  'happyland.photo5.caption': 'Ang tirahan ng isang pamilya.',
-  'happyland.photo6.alt':
-    'Isang babae sa tabi ng mga kawali, balde at gamit sa bahay sa isang masikip na lugar.',
-  'happyland.photo6.caption':
-    'Magkakasama sa isang maliit na lugar ang mga gamit sa pagluluto, lalagyan ng tubig at iba pang gamit sa bahay.',
-  'happyland.photo7.alt':
-    'Isang makitid na daanan na may lubak-lubak na lupa, mga lalagyan at kalat na basura.',
-  'happyland.photo7.caption':
-    'Isang makitid na daanan sa pagitan ng mga tahanan, na may lubak-lubak na lupa at kalat na basura.',
-
+  'happyland.dailyTitle': 'Ang itinatapon ng iba',
+  'happyland.povertyTitle': 'Pamumuhay sa masikip na espasyo',
   'language.label': 'Wika',
   'amount.unit': 'Bitcoin o fiat',
   'amount.noRate': 'Wala pang halaga ng palitan',
@@ -3376,7 +3345,7 @@ const fil = {
   'nav.happyland': 'Happyland',
   'nav.why': 'Bakit',
   'nav.faq': 'FAQ',
-  'nav.about': 'Tungkol sa amin',
+  'nav.about': 'Tungkol sa 21.gifts',
   'nav.stats': 'Stats',
   'nav.trustChain': 'Trust Chain',
   'nav.handbook': 'Handbook',
@@ -3432,10 +3401,10 @@ const fil = {
   'nav.back': 'Bumalik',
   'pwa.install': 'I-install ang app',
   'pwa.iosTitle': 'Idagdag ang 21.gifts sa Home Screen',
-  'pwa.iosLead': 'Sa iPhone, tatlong tap sa Share menu.',
+  'pwa.iosLead': 'Sa iPhone, tatlong hakbang ito:',
   'pwa.iosShare': 'I-tap ang Share (parisukat na may arrow).',
-  'pwa.iosAdd': 'I-tap ang Add to Home Screen.',
-  'pwa.iosOpen': 'Kung nakikita ang Open as Web App, iwanang naka-on, tapos Add.',
+  'pwa.iosAdd': 'Piliin ang Add to Home Screen.',
+  'pwa.iosOpen': 'Kung lumabas ang Open as Web App, iwanang naka-on at i-tap ang Add.',
   'pwa.close': 'Isara',
   'aria.primary': 'Pangunahin',
   'aria.menu': 'Menu',
@@ -3456,90 +3425,87 @@ const fil = {
   'theme.system': 'Sistema',
   'theme.light': 'Maliwanag',
   'theme.dark': 'Madilim',
-  'home.headline1': 'Direktang regalo mula sa tao patungo sa tao',
-  'home.headline2': 'sa Bitcoin',
+  'home.headline1': 'Tumulong sa kapwa',
+  'home.headline2': 'gamit ang Bitcoin',
   'home.lead':
-    'Ang 21.gifts ang lugar kung saan humihingi o magpapadala ng tulong, nang walang organisasyong namamagitan. Diretso ang pera mula sa nagbibigay patungo sa tumatanggap — hindi kailanman hawak ng platform ang Bitcoin.',
+    'Sa forum, ikinukuwento ng mga tao ang pinagdaraanan nila. Mag-log in at basahin ang mga post nila. Kung gusto mong tumulong sa isang tao, mag-react lang sa isang post at ilagay ang halagang gusto mong i-donate. Direktang ipapadala mula sa iyo ang satoshis sa taong iyon at darating ito sa loob ng ilang segundo.',
   'home.ctaAsk': 'Humiling ng tulong',
   'home.ctaSend': 'Magpadala ng tulong',
-  'home.howKicker': 'Paano ito gumagana',
-  'home.howTitle': 'Tatlong hakbang, at walang account sa tradisyonal na kahulugan',
+  'home.howKicker': 'Mag-donate ng Bitcoin',
+  'home.howTitle': 'Ganito ka magdo-donate ng Bitcoin sa isang tao',
   'home.howLead':
-    'Dito ka mismo magla-log in sa site na ito. Walang password, at walang pag-sign up gamit ang email.',
-  'home.step1Title': 'Mag-log in',
-  'home.step1Body':
-    'Isang tap sa browser mo. Gagamitin nito ang secure na login na nakaimbak sa device mo, o gagawa ito ng bago. Iyon na ang account mo — wala nang ibang kailangang tandaan.',
-  'home.step2Title': 'Magdagdag ng Wallet of Satoshi address',
-  'home.step2BodyBefore': 'Sabihin kung saan dapat dumating ang mga regalo, halimbawa',
-  'home.step2BodyAfter':
-    '. Mula roon, puwede ka nang padalhan ng Bitcoin ng kahit sino mula sa Wallet of Satoshi.',
-  'home.step3Title': 'Mag-post at tumanggap ng tulong',
-  'home.step3Body':
-    'Kapag naka-log in ka na, sumulat ng post sa forum. Puwedeng magpadala ng Bitcoin ang iba sa isang nababayarang reaksyon — sa Wallet of Satoshi ng may-akda ito dumarating, hindi sa amin. Hindi kailanman hinahawakan ng platform ang pera.',
-  'home.whyKicker': 'Bakit ito umiiral',
-  'home.whyTitle': 'Ang pinakamaikling daan mula sa isang tao patungo sa iba',
-  'home.why1Title': 'Tunay na peer-to-peer',
+    'Sa unang pagbisita mo, ise-set up mo ang account mo. Pagkatapos, makikita mo ang mga post at tugon sa forum.',
+  'home.whyKicker': 'Saan napupunta ang donasyon mo',
+  'home.whyTitle': 'Ang tao mismo ang pumipili ng address na tatanggap ng Bitcoin',
+  'home.why1Title': 'Ikaw ang pipili ng tutulungan',
   'home.why1Body':
-    'Diretsong lumilipat ang pondo mula sa Wallet of Satoshi ng nagbibigay patungo sa Wallet of Satoshi address ng tumatanggap. Hindi kailanman hinahawakan, nire-route, o ini-escrow ng 21.gifts ang pera — walang anumang puwede naming i-freeze.',
-  'home.why2Title': 'Nasa device mo ang login',
+    'Basahin muna ang isinulat ng tao. Hindi kailanman ipapasa ng 21.gifts ang donasyon mo sa iba.',
+  'home.why2Title': 'Inilalagay ng tao ang kanyang address',
   'home.why2Body':
-    'Hindi kailanman nakikita ng 21.gifts ang password — isang naka-sign na login assertion lang. Walang password database na puwedeng ma-leak.',
-  'home.why3Title': 'Ang Bitcoin mo, hindi sa amin',
+    'Bago siya makatanggap ng donasyon, itinuturo niya ang wallet address kung saan dapat dumating ang Bitcoin sa kanya.',
+  'home.why3Title': 'Nagbabayad ka gamit ang wallet mo',
   'home.why3Body':
-    'Ang mga regalo ay Bitcoin payment sa isang Wallet of Satoshi address. Kung mawala man ang 21.gifts bukas, gagana pa rin ang mga address na iyon.',
-  'home.projectKicker': 'Ang proyekto',
-  'home.projectTitle': 'Mag-donate sa proyektong ito',
+    'Ikaw ang magtatakda ng halaga at magkukumpirma ng bayad. Sa computer, puwede mong i-scan ang QR code.',
+  'home.why4Title': 'Walang bahaging kinukuha ang 21.gifts',
+  'home.why4Body':
+    'May hiwalay na address para sa pagpapatakbo ng site. Maaari pa ring maningil ng bayarin ang wallet mo.',
+  'home.projectKicker': 'Suportahan ang 21.gifts',
+  'home.projectTitle': 'Kailangan din ng suporta ang 21.gifts',
   'home.projectLead':
-    'Ang mga regalo sa forum ay napupunta sa taong nagsulat ng reaksyon. Para tumulong sa pagpapatakbo ng 21.gifts mismo, magpadala ng Bitcoin sa Wallet of Satoshi address na ito.',
-  'home.faqKicker': 'FAQ',
-  'home.faqTitle': 'Mga karaniwang tanong, maikling sagot',
-  'home.faq1Q': 'Sino ang puwedeng gumamit nito?',
+    'Kung gusto mong suportahan ang website mismo, puwede kang magpadala sa address na ito. Hiwalay ito sa mga donasyon sa forum.',
+  'home.faqKicker': 'Magandang malaman',
+  'home.faqTitle': 'Mga madalas itanong',
+  'home.faq1Q': 'Kailangan ko ba ng account para makita ang forum?',
   'home.faq1A':
-    'Sinumang may Wallet of Satoshi address. Walang application at walang review process.',
-  'home.faq3Q': 'Ano ang nangyayari sa mga key ko?',
+    'Oo. Mag-log in ka para sa forum. Kung gusto mo ring tumanggap ng Bitcoin donation, maglagay ka rin ng Wallet of Satoshi address.',
+  'home.faq2Q': 'May kinukuha ba ang 21.gifts sa donasyon ko?',
+  'home.faq2A':
+    'Walang bahaging kinukuha ang 21.gifts. Maaaring may sariling bayarin ang wallet mo o ang payment network.',
+  'home.faq3Q': 'Iniimbak ba ng 21.gifts ang password ko?',
   'home.faq3A':
-    'Nananatili sa device mo ang login credentials mo (at sa platform sync, kung gumagamit ka nito). Nakikita lang ng 21.gifts ang naka-sign na login assertion at, kung pipiliin mong i-publish, ang Wallet of Satoshi address mo. Walang password o seed phrase na nakaimbak sa mga server namin.',
-  'home.faq4Q': 'Puwede ba akong mawalan ng access sa account?',
+    'Hindi ka gagawa ng password para sa 21.gifts. Mananatili ang access mo sa iyong device o sa sync nito. Huwag kailanman ibahagi ang iyong mga recovery word.',
+  'home.faq4Q': 'Paano kung mawala ang device ko?',
   'home.faq4A':
-    'Oo. Kung mawala ang login mo at ang anumang platform sync, hindi pa mababawi ang account sa ngayon. Mag-backup ng device na ginagamit mo sa pag-log in.',
-  'home.faq5Q': 'Paano ako magpapadala ng regalo?',
+    'Kung mawala ang access sa device mo at sa lahat ng naka-sync na kopya, hindi pa namin maibabalik ang account. Alamin kung paano bina-back up ng device mo ang pag-log in.',
+  'home.faq5Q': 'Sino ang tatanggap ng Bitcoin?',
   'home.faq5A':
-    'Buksan ang Magpadala ng tulong, pumili ng mensahe sa forum, buksan ang Ipakita ang mga reaksyon, at i-tap ang Magpadala ng Bitcoin sa isang reaksyon. Maglagay ng halaga sa ₿ at magbayad gamit ang Wallet of Satoshi — diretso sa sumulat ng reaksyon ang Bitcoin.',
-  'home.faq6Q': 'Bakit Bitcoin lang?',
+    'Ang sumulat ng post. Sumulat ng reaksyon sa ilalim nito at maglagay ng halaga. Sa wallet address niya mapupunta ang Bitcoin.',
+  'home.faq6Q': 'Bakit Bitcoin?',
   'home.faq6A':
-    'Mabilis ang Bitcoin at hindi ito madaling i-censor. Ginagawang kasing-simple ng email address ng Wallet of Satoshi ang pagpapadala at pagtanggap. Inaalis nito ang pangangailangan ng anumang custodial layer at nagbibigay-daan sa sinuman sa mundo na magbigay o tumanggap nang hindi humihingi ng pahintulot.',
+    'Para makapagpadala ka ng kahit maliit na halaga direkta sa napiling wallet address. Hindi hinahawakan ng 21.gifts ang donasyon. Maaaring maningil ang wallet provider mo.',
   'home.faq7Q': 'Regulado ba ito, at paano ang buwis?',
   'home.faq7A':
-    'Ang 21.gifts ay isang non-profit na communication at discovery layer. Hindi ito payment service provider at hindi ito naglilipat ng pondo. Responsibilidad ng nagbibigay at ng tumatanggap ang sarili nilang tax treatment sa kanilang bansa.',
-  'home.faq8Q': 'Ano ang ibig sabihin ng ₿1?',
-  'home.faq8A': 'Ang ₿1 ang pinakamaliit na yunit ng Bitcoin, na kilala rin bilang isang sat.',
-  'about.kicker': 'Tungkol sa amin',
-  'about.heading': 'Tatlong paniniwala',
+    'Hindi hinahawakan ng 21.gifts ang donasyon. Nakadepende sa tinitirhan at sitwasyon mo kung aling mga tuntunin at buwis ang naaangkop. Alamin ang mga kinakailangang naaangkop sa iyo.',
+  'home.faq8Q': 'Ano ang ibig sabihin ng ₿1 dito?',
+  'home.faq8A':
+    'Sa 21.gifts, ang ₿1 ay isang sat, ang pinakamaliit na yunit ng Bitcoin. May 100 milyong sat sa isang Bitcoin.',
+  'about.kicker': 'Ang ideya',
+  'about.heading': 'Ang pinaninindigan ng 21.gifts',
   'about.lead':
-    'Ang 21.gifts ay isang lugar para humiling ng tulong o magpadala ng tulong, nang walang organisasyon sa gitna. Nakatayo ang 21.gifts sa tatlong paniniwala.',
+    "Sa forum, puwedeng humingi ng tulong ang mga tao at mag-donate ng Bitcoin sa isa't isa. Tatlong paniniwala ang nasa likod ng 21.gifts.",
   'about.verse': 'Yamang tumanggap kayo nang walang bayad, magbigay naman kayo nang walang bayad.',
   'about.verseRef': 'Mateo 10:8',
   'about.conv1Num': '1',
-  'about.conv1Title': 'Tungkulin ang magbigay',
+  'about.conv1Title': 'Bahagi ng pananampalataya ang pagbibigay',
   'about.conv1Body':
-    'Naniniwala kami: tungkulin ng bawat Kristiyano ang magbigay. Hindi sinasabi ng Kasulatan na “kung” magbibigay ka — kundi “kapag”: “Kapag naglilimos ka” (Mateo 6:2). Hindi nananahan ang pag-ibig ng Diyos sa taong may kaya sa buhay, nakakakita ng kapatid na nangangailangan, at nagpapakatigas ng puso (1 Juan 3:17). Patay ang pananampalatayang walang gawa (Santiago 2:17). Kung magkano, nasa pagitan iyon ng nagbibigay at ng Diyos (2 Corinto 9:7).',
+    'Para sa amin, bahagi ng pananampalatayang Kristiyano ang pagbibigay. Sa Mateo 6:2, binabanggit ni Jesus ang pagbibigay bilang isang bagay na likas nating ginagawa. Ipinapaalala rin ng 1 Juan 3:17 at Santiago 2:17 na huwag pabayaang mag-isa ang mga taong nangangailangan. Tayo mismo ang nagpapasya sa harap ng Diyos kung magkano ang ibibigay natin (2 Corinto 9:7).',
   'about.conv1Body2':
-    'Hindi pera lang ang pagbibigay. Isang magiliw na ngiti, oras, isang damit, isang dalaw — binabanggit ng Mateo 25 ang nagugutom, ang nauuhaw, ang dayuhan, ang walang damit, ang maysakit, at ang nakabilanggo. Ang 21.gifts ang daan para sa regalong pera: mula sa isang tao patungo sa iba.',
+    'Hindi laging pera ang ibig sabihin ng pagtulong. Minsan, isang kuwentuhan, isang pagdalaw o isang mainit na damit ang mahalaga. Ipinapaalala ng Mateo 25 ang mga taong gutom, may sakit, dayuhan o nakakulong. Isang uri ng tulong ang ginagawang posible ng 21.gifts: donasyong pera direkta mula sa isang tao patungo sa iba.',
   'about.conv1Verse':
     'Mga anak, huwag tayong magmahal sa pamamagitan lamang ng salita, subalit ipakita rin natin ang tunay na pag-ibig sa pamamagitan ng gawa.',
   'about.conv1VerseRef': '1 Juan 3:18',
   'about.conv2Num': '2',
-  'about.conv2Title': 'Direkta, walang tagapamagitan',
+  'about.conv2Title': 'Direkta mula sa isang tao patungo sa iba',
   'about.conv2Body':
-    'Naniniwala kami: ang pinakamabuti at pinakamagandang regalo ay diretsong napupunta mula sa nagbibigay sa tumatanggap, nang walang organisasyon sa gitna. Walang nagpapatagal dito, at walang gumagawa ritong programa. Nananatiling tao ang dalawa, hindi isang case file. Nananatili ang dignidad sa magkabilang panig. Ito ang pinakamaikling daang posible. Sa tumatanggap ang address, hindi sa amin; kung mawala man ang 21.gifts bukas, gagana pa rin ito.',
+    'Ikaw ang pipili kung kanino ka magdo-donate. Inilagay ng tao ang wallet address niya para makarating sa kanya ang Bitcoin donation mo. Walang bahaging kinukuha ang 21.gifts. Magagamit pa rin niya ang address niya kahit wala ang website namin.',
   'about.conv3Num': '3',
-  'about.conv3Title': 'Ang Bitcoin ang pinakamabisang pera',
+  'about.conv3Title': 'Bakit Bitcoin?',
   'about.conv3Body':
-    'Naniniwala kami: ang Bitcoin ang pinakamabisang pera na mayroon tayo ngayon. Hindi ito madaling i-censor at hindi ito humihingi ng pahintulot. Hindi ito nangangailangan ng bangko, ng ID, o ng oras ng opisina. Pinag-uugnay nito ang buong mundo, araw at gabi. Para sa internasyonal na regalo, ito ang pinakasimpleng paraan ng pagpapadala ng pera — kasing-simple ng email address. Sa tumatanggap napupunta ang pera, hindi sa amin. Walang makakagawa ng dagdag nito at walang makakaharang dito sa hangganan. Pinakamahalaga ito sa mga taong kakaunti na ang hawak.',
-  'about.ctaForum': 'Buksan ang living room',
-  'donate.pageTitle': 'Magpadala ng tulong',
+    'Sa Bitcoin, puwedeng magpadala ng kahit maliit na halaga sa mga tao sa ibang bansa. Kailangan ng tao ng wallet address para dito. Magbabayad ka gamit ang wallet mo; hindi hinahawakan ng 21.gifts ang donasyon.',
+  'about.ctaForum': 'Pumunta sa forum',
+  'donate.pageTitle': 'Tumulong sa kapwa',
   'donate.lead':
-    'Buksan ang forum, pumili ng mensahe, buksan ang Ipakita ang mga reaksyon, at magpadala ng Bitcoin sa isang reaksyon.',
+    'Mag-log in at buksan ang isang post sa forum. Sumulat ng reaksyon sa ilalim nito, maglagay ng halaga at magbayad gamit ang wallet mo. Sa sumulat ng post mapupunta ang Bitcoin.',
   'donate.continue': 'Buksan ang forum',
   'notFound.body': 'Walang ganitong page.',
   'notFound.back': 'Bumalik sa home',
@@ -3577,8 +3543,7 @@ const fil = {
     'Naka-install ang iOS {version}. Kailangan ng hindi bababa sa iOS {required} para makapag-log in.',
   'login.androidVersion':
     'Naka-install ang Android {version}. Kailangan ng hindi bababa sa Android {required} para makapag-log in.',
-  'login.wrongAccount':
-    'Nag-sign in kayo gamit ang maling account. Subukan ulit gamit ang tamang account.',
+  'login.wrongAccount': 'Nag-sign in ka gamit ang ibang account. Subukan ulit gamit ang tama.',
   'login.retry': 'Subukan ulit',
   'login.choiceHeading': 'May account ka na ba?',
   'login.existing': 'Mag-log in gamit ang existing account',
@@ -3596,7 +3561,7 @@ const fil = {
   'login.inAppHeading': 'Buksan ang page na ito sa browser',
   'login.inAppBody':
     'Hindi gumagana ang mga passkey sa Telegram o sa ibang in-app browser. Buksan ang page na ito sa Safari o Chrome para mag-log in.',
-  'login.inAppIosHint': 'Sa iPhone, i-tap ang compass o Safari icon sa taas-kanan.',
+  'login.inAppIosHint': 'Sa iPhone, makikita mo ang compass o Safari icon sa taas-kanan.',
   'login.openInBrowser': 'Buksan sa browser',
   'login.copyLink': 'Kopyahin ang link',
   'login.linkCopied': 'Nakopya',
@@ -3607,9 +3572,9 @@ const fil = {
   'setup.nameTitle': 'Ang pangalan mo',
   'setup.usernameTitle': 'Ang 21.gifts name mo',
   'setup.usernameHint':
-    'Ito ang address na padadalhan ng Bitcoin: ikaw@21.gifts. Wallet of Satoshi pa rin ang tumatanggap.',
+    'Ganito ang magiging hitsura ng address mo: ikaw@21.gifts. Sa Wallet of Satoshi mo pa rin dumarating ang Bitcoin.',
   'setup.usernameEmpty': 'Maglagay ng username',
-  'setup.usernameInvalid': 'Mga English na letra, numero, hyphen, underscore, o tuldok lang',
+  'setup.usernameInvalid': 'Pinapayagan: a–z, 0–9, hyphen, underscore at tuldok',
   'setup.usernameTaken': 'Nakuha na ang username na iyan',
   'setup.usernameRequest': 'Hindi ma-save ang username',
   'setup.addressTitle': 'Ang Wallet of Satoshi address mo',
@@ -3618,7 +3583,7 @@ const fil = {
   'setup.rulesTitle': 'Mga patakaran sa living room',
   'setup.rulesPrompt': 'Pakibasa ang kabanatang ito.',
   'setup.rulesPromptLast':
-    'Pakibasa ang kabanatang ito. Makakapagpatuloy ka kapag sumang-ayon ka sa mga patakaran.',
+    'Pakibasa ang kabanatang ito. Pagkatapos, maaari ka nang sumang-ayon sa mga patakaran at magpatuloy.',
   'setup.rulesProgress': '{current} sa {total}',
   'setup.rulesBack': 'Bumalik',
   'setup.agree': 'Sumasang-ayon ako sa mga patakarang ito',
@@ -3634,7 +3599,7 @@ const fil = {
   'name.errorEmpty': 'Maglagay ng pangalan',
   'name.errorRequest': 'Hindi ma-save ang pangalan',
   'location.heading': 'Lugar',
-  'location.placeholder': 'Lungsod, bansa, o kahit saan',
+  'location.placeholder': 'Lungsod o bansa',
   'location.aria': 'Lugar',
   'location.save': 'I-save',
   'location.cancel': 'Kanselahin',
@@ -3854,25 +3819,21 @@ const fil = {
   'forum.translateShowTranslation': 'Ipakita ang pagsasalin',
   'forum.translateError': 'Hindi maisalin ang notang ito. Pakisubukan muli.',
   'forum.showMore': 'Magpakita pa',
-
   'link.externalTitle': 'Buksan ang panlabas na link?',
   'link.externalBody':
     'Hindi 21.gifts ang address na ito. Buksan mo lang kung pinagkakatiwalaan mo ito.',
   'link.externalContinue': 'Buksan ang link',
   'link.externalClose': 'Isara',
-
   'requirements.nameTitle': 'Idagdag ang pangalan mo',
   'requirements.usernameTitle': 'Idagdag ang 21.gifts name mo',
   'requirements.rulesTitle': 'Sang-ayunan ang mga patakaran sa living room',
   'requirements.addressTitle': 'Idagdag ang Wallet of Satoshi address mo',
   'requirements.close': 'Isara',
-
   'introduce.title': 'Ipakilala ang sarili mo',
   'introduce.body':
     'Magsulat ng maikling post sa forum para makilala ka ng iba. Ang mga regalo ay ipinapadala lang sa mga miyembrong nagpakilala na.',
   'introduce.cta': 'Sumulat ng pagpapakilala',
   'introduce.close': 'Isara',
-
   'wallet.title': 'Wallet',
   'wallet.addPhrase': 'Magdagdag ng recovery phrase',
   'wallet.addPhraseHint':
@@ -3904,7 +3865,6 @@ const fil = {
     'Hindi magawa o mabuksan ang recovery phrase. Tingnan ang device na ito at subukan ulit.',
   'wallet.errorHint':
     'Kung magpatuloy ito, subukan ang ibang browser o ang device na ginamit mo sa pag-sign in.',
-
   'profile.title': 'Profile',
   'profile.given': 'Ibinigay {amount}',
   'profile.received': 'Natanggap {amount}',
@@ -3993,7 +3953,6 @@ const fil = {
   'pos.rateLoading': 'Naglo-load pa ang palitan para sa {code}.',
   'pos.keypadDelete': 'Burahin',
   'profile.message': 'Mensahe',
-
   'view.unnamed': 'Walang pangalan',
   'view.noAddress': 'Walang Wallet of Satoshi address',
   'view.noGiftsAddress': 'Walang 21.gifts address',
@@ -4005,7 +3964,6 @@ const fil = {
   'view.activate': 'I-activate',
   'view.alreadyClaimed': 'May passkey na ang profile na ito. Mag-log in na lang.',
   'view.claimError': 'Hindi ma-set up ang passkey. Subukan ulit.',
-
   'forum.laws1':
     'Donation platform ang 21.gifts: libre ang mga regalo, at walang nagbabayad para sa pangako.',
   'forum.laws2': 'Bihira ang mga donor — walang panghihingi, walang drama, walang pressure.',
@@ -4059,7 +4017,7 @@ const fil = {
   'rules.wanted2':
     'Isang kalmado at tapat na mensahe na nagpapagaan sa pagbibigay, hindi nagpapabigat.',
   'rules.wanted3': 'Mahinahong tono — walang pag-iinit, walang countdown, walang manonood.',
-  'rules.wanted4': 'Mga tanong kung paano gumagana ang pagbibigay dito, at mga matiyagang sagot.',
+  'rules.wanted4': 'Mga tanong kung paano gumagana ang pagdo-donate dito, at mga matiyagang sagot.',
   'rules.wanted5': 'Katatawanan at init na walang ipinipilit kaninuman.',
   'rules.wanted6':
     'Pagpapahalaga sa isang mensaheng may saysay sa iyo — kusang-loob, at hindi hiningi ng sumulat.',
@@ -4119,7 +4077,7 @@ const fil = {
     'Ilegal na content, sekswal na content na may kinalaman sa menor de edad, gore, pornograpiya, shock material.',
   'rules.forbiddenOther3': 'Doxxing, pananakot, stalking, pagkamuhi laban sa isang tao o grupo.',
   'rules.forbiddenOther4':
-    'Spam, advertising, recruiting, dagdag na account para makakuha ng mas maraming regalo.',
+    'Spam, advertising, recruiting, dagdag na account para makakolekta ng mas maraming donasyon.',
   'rules.forbiddenOther5':
     'Pagpapanggap na 21.gifts team. Hindi kailanman susulat sa iyo ang support sa forum.',
   'rules.houseHeading': 'Ang bahay namin',
@@ -4129,7 +4087,6 @@ const fil = {
     'Ang mga patakarang ito ay hindi terms of service at hindi batas. Sinasabi lang nila kung ano ang 21.gifts: isang donation platform. Ang gawin itong tindahan, job board, o entablado ng panghihingi ay hindi maling tono. Maling bahay ito.',
   'rules.contactCta': 'Makipag-ugnayan sa 21.gifts',
   'rules.forumCta': 'Bumalik sa forum',
-
   'contact.pageTitle': 'Contact',
   'contact.heading': 'Contact',
   'contact.lead':
@@ -4142,7 +4099,6 @@ const fil = {
   'contact.errorTooLong': 'Hanggang 8000 na karakter',
   'contact.errorRequest': 'Hindi maipadala ang mensahe',
   'contact.rulesLink': 'Mga patakaran sa living room',
-
   'shops.heading': 'Mga Tindahan',
   'shops.lead':
     'Magdagdag ng shop na may mga larawan, lugar, teksto, at opsyonal na user ng 21.gifts. Lilitaw ito rito at sa forum na may #Shop na tag.',
@@ -4175,7 +4131,6 @@ const fil = {
   'shops.columnOperator': 'Operator',
   'shops.showMore': 'Magpakita pa',
   'shops.missing': '—',
-
   'inbox.heading': 'Mga mensahe',
   'inbox.listLabel': 'Mga usapan',
   'inbox.filterLabel': 'Uri ng usapan',
@@ -4212,7 +4167,6 @@ const fil = {
   'inbox.sentPreview': 'Ikaw: {text}',
   'inbox.authorProfile': 'Tingnan ang profile',
   'inbox.giftForLabel': 'Binayaran ng {name}: {amount}',
-
   'notifications.heading': 'Mga abiso',
   'notifications.listLabel': 'Mga abiso',
   'notifications.unreadHeading': 'Hindi pa nababasa',
@@ -4231,7 +4185,6 @@ const fil = {
   'notifications.moderatorAppointed': 'Isa ka nang moderator',
   'notifications.moderatorProposal': '{name} nagmungkahi ng moderator',
   'notifications.mention': 'Minarkahan ka ni {name}',
-
   'moderate.heading': 'Moderasyon',
   'statistics.heading': 'Mga istatistika',
   'statistics.shops.widgetLabel': 'Mga aktibong tindahan',
@@ -4285,7 +4238,6 @@ const fil = {
   'moderate.payouts.cell.paid': '{name}, {date}, natanggap ang bayad',
   'moderate.payouts.cell.welcome': '{name}, {date}, welcome gift',
   'moderate.payouts.cell.both': '{name}, {date}, araw-araw na grant at welcome gift',
-
   'moderate.handbook.heading': 'Handbook',
   'moderate.handbook.tocLabel': 'Mga kabanata',
   'moderate.handbook.login.title': 'Pag-login sa 21.gifts',
@@ -4400,7 +4352,6 @@ const fil = {
   'funding.review.unmet': 'Hindi natugunan',
   'funding.review.yes': 'Oo',
   'funding.review.no': 'Hindi',
-
   'trustChain.title': 'Trust Chain',
   'trustChain.lead':
     'Sino ang nagkita sa totoo, at sino ang nagtalaga sa mga moderator. I-click ang isang tao para i-load ang lahat ng nakaugnay sa kanya. I-drag ang isang tao para ilipat siya.',
@@ -4433,6 +4384,53 @@ const fil = {
   'trustChain.actionFailed': 'Hindi ma-update ang miyembrong ito. Subukan ulit.',
   'trustChain.waitingConfirm': 'Naghihintay ng kumpirmasyon mula sa ibang moderator.',
   'trustChain.alreadyOnChain': 'Nasa Trust Chain na.',
+  'happyland.lanesTitle': 'Mga daan sa kapitbahayan',
+  'happyland.source': 'Batay sa salaysay ni Padre Severin.',
+  'happyland.photoAlt': 'Ilang tao sa isang tindahan ng pagkain sa Happyland',
+  'happyland.photoCaption': 'Sa isang tindahan ng pagkain sa Happyland',
+  'happyland.streetAlt': 'Mga tao sa kalyeng may mga tahanan at maliliit na tindahan',
+  'happyland.streetCaption': 'Isang kalye sa Happyland. Kuha ni Padre Severin',
+  'happyland.homeAlt': 'Dalawang nakatatanda at tatlong bata sa isang maliit na tahanan',
+  'happyland.homeCaption': 'Isang pamilya sa kanilang tahanan',
+  'happyland.householdAlt': 'Isang babae sa tabi ng mga gamit sa pagluluto at lalagyan ng tubig',
+  'happyland.householdCaption': 'Mga gamit sa bahay sa isang maliit na silid',
+  'home.heroKicker': 'Direkta mula sa isang tao patungo sa iba',
+  'home.heroProof': 'Sa tao mapupunta ang donasyon mo. Walang bahaging kinukuha ang 21.gifts.',
+  'home.previewLabel': 'Ganito ang paraan',
+  'home.previewKicker': 'Pagkatapos mong mag-log in',
+  'home.previewTitle': 'Ganito nakakarating ang donasyon mo',
+  'home.previewStep1': 'Magbasa ng post sa forum',
+  'home.previewStep2': 'Mag-react at mag-donate',
+  'home.previewStep3': 'Ipadala gamit ang wallet mo',
+  'home.previewWalletTitle': 'Saan napupunta ang Bitcoin',
+  'home.previewWalletBody': 'Inilagay mismo ng tumatanggap ang kanyang sariling wallet address.',
+  'home.previewFrom': 'Wallet mo',
+  'home.previewTo': 'Wallet ng tatanggap',
+  'home.give1Title': 'Mag-log in at tumingin-tingin',
+  'home.give1Body':
+    'Mag-log in, buksan ang isang post sa forum at basahin ang ikinukuwento ng tao.',
+  'home.give2Title': 'Mag-react',
+  'home.give2Body':
+    'I-tap ang arrow sa ilalim ng post, sumulat ng ilang salita at maglagay ng halaga. Para sa sumulat ng post ang donasyon.',
+  'home.give3Title': 'Magbayad',
+  'home.give3Body':
+    'Buksan ang Wallet of Satoshi, o sa computer, i-scan ang QR code gamit ang wallet mo.',
+  'home.receiveTitle': 'Gusto mo bang humingi ng tulong para sa sarili mo?',
+  'home.receiveBody':
+    'Mag-log in, ilagay ang wallet address mo at ikuwento sa forum kung ano ang kailangan mo.',
+  'home.discoverTitle': 'Ang nasa likod ng 21.gifts',
+  'home.discoverStoryKicker': 'Happyland sa Maynila',
+  'home.discoverStoryTitle': 'Happyland · Tondo',
+  'home.discoverStoryBody':
+    'Isinalaysay ni Padre Severin ang mga pamilya sa Happyland at kung paano nila pinamamahalaan ang kanilang araw-araw na buhay.',
+  'home.discoverBitcoinKicker': 'Ang bayad',
+  'home.discoverBitcoinTitle': 'Bakit Bitcoin?',
+  'home.discoverBitcoinBody':
+    'Kahit maliit na halaga ay puwedeng ipadala sa wallet address ng tao.',
+  'home.discoverTrustKicker': 'Ang daan ng pera',
+  'home.discoverTrustTitle': 'Sino ang tumatanggap nito?',
+  'home.discoverTrustBody':
+    'Sa sumulat ng post na nire-react-an mo. Alamin dito kung paano gumagana ang bayad.',
 } satisfies Messages;
 
 /**

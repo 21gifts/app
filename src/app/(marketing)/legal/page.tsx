@@ -1,14 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { ReactElement } from 'react';
+import { marketingMetadata } from '@/lib/marketing-metadata';
 
 /**
  * Title and description for `/legal` (overrides the root layout metadata).
  */
-export const metadata: Metadata = {
-  title: 'Legal Notice & Privacy — 21.gifts',
-  description: 'Legal notice and privacy policy of 21.gifts.',
-};
+export const metadata: Metadata = marketingMetadata(
+  '/legal',
+  'Legal Notice & Privacy — 21.gifts',
+  'Legal notice and privacy policy of 21.gifts.',
+);
 
 /**
  * Legal notice and privacy policy at `/legal`.
@@ -48,13 +50,14 @@ export default function LegalPage(): ReactElement {
         <h3 className="text-lg font-semibold">Data on this website</h3>
         <p className="text-paper/70">
           This origin does not load analytics scripts. It sets a <code>locale</code> cookie only
-          after you choose a language, or to mirror the language stored on your account. It sets a{' '}
-          <code>fiat</code> cookie (CHF, EUR, USD, or PHP) only after you choose a currency, or to
-          mirror the currency stored on your account. Choosing a number format writes a{' '}
-          <code>numberFormat</code> cookie; absent means Swiss grouping 10&apos;000.23. Choosing a
-          light or dark appearance writes a <code>theme</code> cookie; choosing System removes it.
-          The application stores a session token in <code>localStorage</code> after you log in so a
-          returning visitor stays logged in.
+          after you choose a language, when you open a language address such as <code>/de</code>, or
+          to mirror the language stored on your account. It sets a <code>fiat</code> cookie (CHF,
+          EUR, USD, or PHP) only after you choose a currency, or to mirror the currency stored on
+          your account. Choosing a number format writes a <code>numberFormat</code> cookie; absent
+          means Swiss grouping 10&apos;000.23. Choosing a light or dark appearance writes a{' '}
+          <code>theme</code> cookie; choosing System removes it. The application stores a session
+          token in <code>localStorage</code> after you log in so a returning visitor stays logged
+          in.
         </p>
         <h3 className="text-lg font-semibold">Hosting</h3>
         <p className="text-paper/70">

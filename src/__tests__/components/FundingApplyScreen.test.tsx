@@ -278,7 +278,7 @@ describe('FundingApplyScreen', () => {
     expect(
       await screen.findByText('Do your profile posts match the core principles of 21.gifts?'),
     ).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: 'About 21.gifts' }).getAttribute('href')).toBe(
       'https://21.gifts/about',
     );
     expect(screen.queryByText('Giving is a duty')).toBeNull();
@@ -287,7 +287,7 @@ describe('FundingApplyScreen', () => {
     expect(
       await screen.findByText('Do these posts, to your knowledge, correspond to the truth?'),
     ).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'About' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'About 21.gifts' })).toBeNull();
     expect(applyMock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     await waitFor(() => {

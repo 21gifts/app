@@ -1,8 +1,8 @@
 {
   "/:default": {
-    "de": "Desktop-/Breitdarstellung (ab 1024px): Die Abschnittsnavigation ist in der Kopfzeile sichtbar (So funktioniert's, Happyland, Warum, FAQ, Über uns, Statistik, Handbuch, Anmelden). Happyland verweist auf /#happyland, auch von anderen Werbeseiten, und lässt unter der fixierten Kopfzeile Platz für die Abschnittsüberschrift. Kein Hamburger.",
-    "es": "Diseño de escritorio/ancho (desde 1024px): la navegación de secciones es visible en el encabezado (Cómo funciona, Happyland, Por qué, FAQ, Sobre nosotros, Estadísticas, Manual, Iniciar sesión). Happyland enlaza a /#happyland, también desde otras páginas promocionales, y deja espacio debajo del encabezado fijo para el título de la sección. Sin hamburguesa.",
-    "fil": "Ayos ng malawak na screen (mula 1024px): nakikita ang nabigasyon ng bahagi sa ulo ng pahina (Paano ito gumagana, Happyland, Bakit, FAQ, Tungkol sa amin, Stats, Handbook, Mag-log in). Ang Happyland ay nakaugnay sa /#happyland, kasama mula sa ibang mga pahina ng pampromosyon, at nag-iiwan ng puwang sa ibaba ng nakapirming ulo ng pahina para sa pamagat ng bahagi. Walang hamburger."
+    "de": "Desktop-/Breitdarstellung (ab 1024px): Die Abschnittsnavigation ist in der Kopfzeile sichtbar (So funktioniert's, Happyland, Warum, FAQ, Über 21.gifts, Statistik, Handbuch, Anmelden). Happyland verweist auf /{locale}#happyland, auch von anderen Werbeseiten, und lässt unter der fixierten Kopfzeile Platz für die Abschnittsüberschrift. Kein Hamburger.",
+    "es": "Diseño de escritorio/ancho (desde 1024px): la navegación de secciones es visible en el encabezado (Cómo funciona, Happyland, Por qué, FAQ, Sobre 21.gifts, Estadísticas, Manual, Iniciar sesión). Happyland enlaza a /{locale}#happyland, también desde otras páginas promocionales, y deja espacio debajo del encabezado fijo para el título de la sección. Sin hamburguesa.",
+    "fil": "Ayos ng malawak na screen (mula 1024px): nakikita ang nabigasyon ng bahagi sa ulo ng pahina (Paano ito gumagana, Happyland, Bakit, FAQ, Tungkol sa 21.gifts, Stats, Handbook, Mag-log in). Ang Happyland ay nakaugnay sa /{locale}#happyland, kasama mula sa ibang mga pahina ng pampromosyon, at nag-iiwan ng puwang sa ibaba ng nakapirming ulo ng pahina para sa pamagat ng bahagi. Walang hamburger."
   },
   "/welcome:goal-credit": {
     "de": "Bei Alle: oberste Ada-Notiz mit sats: 10500, goalSats: 21000, goalRepayable: true und goalTermDays: 30. Die Anfrage ist in bitcoin definiert, daher zeigt die Leiste Anfragen ₿21'000 · $21.00 und den Notizbetrag ₿10'500 · $10.50. Ein Darlehen-Tag neben dem Namen erklärt den Kredit, wenn er gedrückt wird. Unter der Anfrage: Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 Tage. Fortschrittsbalken bei 50 %. Die Tagesliste steht nicht auf dieser Karte. Rückzahlungsliste öffnet /messages/<id>/repayment-list. Verfasser-Kapsel Post senden / Um Geld bitten sichtbar.",
@@ -105,9 +105,9 @@
     "fil": "Walang nodo. Wala pang nasa Trust Chain."
   },
   "/donate:default": {
-    "de": "Überschrift Hilfe senden, erklärender Vorspann, Forum öffnen.",
-    "es": "Encabezado Enviar ayuda, texto introductorio, Abrir el foro.",
-    "fil": "Pamagat Magpadala ng tulong, pambungad na paliwanag, Buksan ang forum."
+    "de": "Überschrift Jemandem helfen, erklärender Vorspann, Zum Wohnzimmer.",
+    "es": "Encabezado Ayuda a alguien, texto introductorio, Ir al foro.",
+    "fil": "Pamagat Tumulong sa kapwa, pambungad na paliwanag, Buksan ang forum."
   },
   "/grants/apply:translate-done": {
     "de": "Der Rundgang zeigt die englische Notiz und Original anzeigen.",
@@ -190,9 +190,9 @@
     "fil": "Isang publikasyon sa sala na Aleman sa lakad ay nag-aalok ng Isalin."
   },
   "/stats/[day]:default": {
-    "de": "Geladener Tag mit mindestens einer Geschenkezeile (Empfängerin alice).",
-    "es": "Día cargado con al menos una fila de regalo (destinataria alice).",
-    "fil": "Naikargang araw na may kahit isang hilera ng regalo (tatanggap na si alice)."
+    "de": "Geladener Tag mit mindestens einer Spendenzeile (Empfängerin alice).",
+    "es": "Día cargado con al menos una fila de donación (destinataria alice).",
+    "fil": "Naikargang araw na may kahit isang hanay ng donasyon (tatanggap na si alice)."
   },
   "/welcome:ask-preview-video-text-daily": {
     "de": "Anfragen, Schritt 4 von 4, Täglich gedrückt, ein Video und die Bildunterschrift.",
@@ -215,9 +215,9 @@
     "fil": "Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit."
   },
   "/stats/[day]:empty": {
-    "de": "Keine Geschenke an diesem UTC-Tag. Text No gifts recorded on this day.",
-    "es": "No hay regalos ese día UTC. Texto No gifts recorded on this day.",
-    "fil": "Walang mga regalo sa araw na UTC na iyon. Teksto No gifts recorded on this day."
+    "de": "Keine Spenden an diesem UTC-Tag. Text No donations recorded on this day.",
+    "es": "No hay donaciones ese día UTC. Texto No donations recorded on this day.",
+    "fil": "Walang mga donasyon sa araw na UTC na iyon. Teksto No donations recorded on this day."
   },
   "/welcome:ask-preview-several-daily": {
     "de": "Anfragen, Schritt 4 von 4, Täglich gedrückt, zwei Fotos und keine Bildunterschrift.",
@@ -630,9 +630,9 @@
     "fil": "Pinindot ang 1 reaksyon. Ipinapakita ng daloy sa ilalim ng kard ang Naglo-load…. Wala pang teksto ng nota."
   },
   "/stats:error": {
-    "de": "Abruf fehlgeschlagen. Text Could not load gift stats. Please try again. und Try again.",
-    "es": "Falló la obtención. Texto Could not load gift stats. Please try again. y Try again.",
-    "fil": "Nabigo ang pagkuha. Teksto Could not load gift stats. Please try again. at Try again."
+    "de": "Abruf fehlgeschlagen. Text Could not load donation stats. Please try again. und Try again.",
+    "es": "Falló la obtención. Texto Could not load donation stats. Please try again. y Try again.",
+    "fil": "Nabigo ang pagkuha. Teksto Could not load donation stats. Please try again. at Try again."
   },
   "/welcome:mention-suggest": {
     "de": "Das Beitragsfeld enthält @ und die Liste Personen ist geöffnet, mit @ada und @adam.",
@@ -930,9 +930,9 @@
     "fil": "Pagkatapos ng Ipakita ang orihinal: ang icon ng Mga wika ay may pangalang Ipakita ang pagsasalin at walang nakikitang teksto."
   },
   "/stats:empty": {
-    "de": "Keine Geschenke und keine Beiträge. Posts zeigt 0 ohne Balken. KPI-Nullen und No gifts recorded yet.",
-    "es": "Cero regalos y cero publicaciones. Posts muestra 0 sin barras. Ceros de KPI y No gifts recorded yet.",
-    "fil": "Walang mga regalo at walang mga post. Ipinapakita ng Posts ang 0 na walang mga bar. Mga sero ng KPI at No gifts recorded yet."
+    "de": "Keine Spenden und keine Beiträge. Posts zeigt 0 ohne Balken. KPI-Nullen und No donations recorded yet.",
+    "es": "Cero donaciones y cero publicaciones. Posts muestra 0 sin barras. Ceros de KPI y No donations recorded yet.",
+    "fil": "Walang mga donasyon at walang mga post. Ipinapakita ng Posts ang 0 na walang mga bar. Mga sero ng KPI at No donations recorded yet."
   },
   "/welcome:mention-inserted-reply": {
     "de": "Die Auswahl von @ada aus dieser offenen Liste schreibt @ada  in das Reaktionsfeld und schließt die Liste.",
@@ -2085,9 +2085,9 @@
     "fil": "Klik Lahat — nakikita ang hindi pa nabayarang nota ni Bob (Does anyone have spare sats this week?) kasama sina Ada at Carol; ayos ng listahan pinakabago muna (Ada, Carol, Bob)."
   },
   "/grants/applications/[accountId]:truth": {
-    "de": "Ja auf die Grundsätze-Frage. Text Entsprechen diese Beiträge nach Ihrem Wissen der Wahrheit? Der Link Über uns ist verschwunden. Ja lässt zu. Nein lehnt ab.",
-    "es": "Sí en la pregunta de principios. Texto ¿Estos mensajes, según tu conocimiento, corresponden a la verdad? El enlace Sobre nosotros ha desaparecido. Sí admite. No rechaza.",
-    "fil": "Oo sa tanong sa mga prinsipyo. Teksto Sa iyong kaalaman, tumutugma ba ang mga post sa katotohanan? Wala na ang link na Tungkol sa amin. Oo ay tumatanggap. Hindi ay tumatanggi."
+    "de": "Ja auf die Grundsätze-Frage. Text Entsprechen diese Beiträge nach Ihrem Wissen der Wahrheit? Der Link Über 21.gifts ist verschwunden. Ja lässt zu. Nein lehnt ab.",
+    "es": "Sí en la pregunta de principios. Texto ¿Estos mensajes, según tu conocimiento, corresponden a la verdad? El enlace Sobre 21.gifts ha desaparecido. Sí admite. No rechaza.",
+    "fil": "Oo sa tanong sa mga prinsipyo. Teksto Sa iyong kaalaman, tumutugma ba ang mga post sa katotohanan? Wala na ang link na Tungkol sa 21.gifts. Oo ay tumatanggap. Hindi ay tumatanggi."
   },
   "/messages/[id]:reply": {
     "de": "Derselbe Verlauf geöffnet auf der Antwort-UUID. Übergeordnet + Geschenk; Permalink-Zielring (data-permalink-target=\"true\", ring-1 ring-app-fg) auf der Geschenk-Antwort.",
@@ -3235,9 +3235,9 @@
     "fil": "Utang, hakbang 4 sa 9, para sa 1000 dolyar ng Estados Unidos sa loob ng 30 araw. Parehong pamagat at parehong pang-araw-araw na tuntunin. Ang pang-araw-araw na linya ay Ibabalik bawat araw: $33.33 bawat araw sa loob ng 29 araw, tapos $33.43 sa huling araw. Ipinapakita ng parehong grapiko ang pang-araw-araw na mga bar at ang utang na bumababa mula araw 1 hanggang sa huling araw. Ang pindutan ay Magpatuloy."
   },
   "/:mobile-nav": {
-    "de": "Aufgenommen am Desktop und mobil. Unter 1024px zeigt der Kopfbereich die Schaltfläche Menü; beim Öffnen erscheinen dieselben Links gestapelt, mit Happyland unmittelbar nach So funktioniert's. Tippen auf Happyland schließt das Menü und scrollt zum vorhandenen Fotoessay. Am Desktop ist dies die Startseite ohne das Hamburger-Symbol.",
-    "es": "Capturado en escritorio y móvil. Por debajo de 1024px el encabezado muestra el botón Menú; al abrirlo se revelan los mismos enlaces apilados, con Happyland inmediatamente después de Cómo funciona. Al pulsar Happyland se cierra el menú y se desplaza al ensayo fotográfico existente. En escritorio es la página de inicio sin el icono de hamburguesa.",
-    "fil": "Nakunan sa kompyuter at sa mobile. Sa ibaba ng 1024px, ipinapakita ng pangkataasang bahagi ang pindutang Menu; sa pagbukas nito, lumilitaw ang parehong mga link na nakasalansan, na ang Happyland ay kaagad pagkatapos ng Paano ito gumagana. Ang pag-tap sa Happyland ay nagsasara ng menu at nag-i-scroll sa umiiral na sanaysay ng mga litrato. Sa kompyuter ito ang landing nang walang hamburger."
+    "de": "Aufgenommen am Desktop und mobil. Unter 1024px zeigt der Kopfbereich die Schaltfläche Menü; beim Öffnen erscheinen dieselben Links gestapelt, mit Happyland unmittelbar nach So funktioniert's. Tippen auf Happyland schließt das Menü und scrollt zum vorhandenen Ortsporträt. Am Desktop ist dies die Startseite ohne das Hamburger-Symbol.",
+    "es": "Capturado en escritorio y móvil. Por debajo de 1024px el encabezado muestra el botón Menú; al abrirlo se revelan los mismos enlaces apilados, con Happyland inmediatamente después de Cómo funciona. Al pulsar Happyland se cierra el menú y se desplaza al retrato del lugar existente. En escritorio es la página de inicio sin el icono de hamburguesa.",
+    "fil": "Nakunan sa kompyuter at sa mobile. Sa ibaba ng 1024px, ipinapakita ng pangkataasang bahagi ang pindutang Menu; sa pagbukas nito, lumilitaw ang parehong mga link na nakasalansan, na ang Happyland ay kaagad pagkatapos ng Paano ito gumagana. Ang pag-tap sa Happyland ay nagsasara ng menu at nag-i-scroll sa umiiral na larawan ng lugar. Sa kompyuter ito ang landing nang walang hamburger."
   },
   "/grants:open-applications": {
     "de": "Moderator auf /grants mit zwei offenen Förderbewerbungen. Die Förderkarte wird gezeigt, und Offene Bewerbungen (2) verweist auf /grants/applications. Wenn die Liste leer ist, ist dieses Steuerelement der Satz Keine offenen Bewerbungen. und kein Link; dieser Zustand ist no-applications. Nadel state-grants-open-applications.",
@@ -3430,14 +3430,14 @@
     "fil": "Wasto at kilalang UUID. Ang talakayan ay maaaring magulang lang kapag walang laman ang mga sagot. Kard na may pangalan ng may-akda, tatak ng oras, teksto (Hello from Ada), sats sa pamamagitan ng formatBitcoin plus opsyonal na ninanais na fiat · formatFiatDisplay ng halagang naka-imbak noong ginawa ang bayad (kung hindi, ang rate ng araw ng regalo; walang  · — kapag hindi magamit ang rate na iyon), opsyonal na larawan o <video> na sukat ng clip. CTA ng pagpapatunay sa ilalim ng kard."
   },
   "/grants:default": {
-    "de": "Verifizierter Inhaber mit funding.status none. Seiten-h1 21-Förderprogramm, der pausierte Satz Bewerbungen sind zurzeit pausiert. Eine Bewerbung ist wieder möglich, wenn die Shop-Transaktionen gestiegen sind., der Link https://21.gifts/statistics und Ziele. Kein Link Über uns und keine Schaltfläche Bewerben. Öffentliche pausierte Bildschirmfotos bleiben unverändert, weil diese Fixtures nicht joey-rosima, vincent oder jewel-bacolbas sind.",
-    "es": "Propietario verificado con funding.status none. h1 de la página Beca 21 gifts, la frase en pausa Las solicitudes están en pausa por ahora. Volverán a ser posibles cuando hayan aumentado las transacciones de las tiendas., el enlace https://21.gifts/statistics y Objetivos. Sin enlace Sobre nosotros y sin botón Solicitar. Las capturas públicas en pausa no cambian porque esos fixtures no son joey-rosima, vincent ni jewel-bacolbas.",
-    "fil": "Na-verify na may-ari na may funding.status none. h1 ng pahina na 21 gifts grant, ang naka-pause na pangungusap Naka-pause ang mga aplikasyon sa ngayon. Magiging posible ulit ang pag-apply kapag tumaas ang mga transaksyon ng tindahan., ang link na https://21.gifts/statistics, at Mga layunin. Walang link na Tungkol sa amin at walang pindutang Mag-apply. Hindi nagbabago ang mga naka-pause na pampublikong kuha dahil ang mga fixture na iyon ay hindi joey-rosima, vincent, o jewel-bacolbas."
+    "de": "Verifizierter Inhaber mit funding.status none. Seiten-h1 21-Förderprogramm, der pausierte Satz Bewerbungen sind zurzeit pausiert. Eine Bewerbung ist wieder möglich, wenn die Shop-Transaktionen gestiegen sind., der Link https://21.gifts/statistics und Ziele. Kein Link Über 21.gifts und keine Schaltfläche Bewerben. Öffentliche pausierte Bildschirmfotos bleiben unverändert, weil diese Fixtures nicht joey-rosima, vincent oder jewel-bacolbas sind.",
+    "es": "Propietario verificado con funding.status none. h1 de la página Beca 21 gifts, la frase en pausa Las solicitudes están en pausa por ahora. Volverán a ser posibles cuando hayan aumentado las transacciones de las tiendas., el enlace https://21.gifts/statistics y Objetivos. Sin enlace Sobre 21.gifts y sin botón Solicitar. Las capturas públicas en pausa no cambian porque esos fixtures no son joey-rosima, vincent ni jewel-bacolbas.",
+    "fil": "Na-verify na may-ari na may funding.status none. h1 ng pahina na 21 gifts grant, ang naka-pause na pangungusap Naka-pause ang mga aplikasyon sa ngayon. Magiging posible ulit ang pag-apply kapag tumaas ang mga transaksyon ng tindahan., ang link na https://21.gifts/statistics, at Mga layunin. Walang link na Tungkol sa 21.gifts at walang pindutang Mag-apply. Hindi nagbabago ang mga naka-pause na pampublikong kuha dahil ang mga fixture na iyon ay hindi joey-rosima, vincent, o jewel-bacolbas."
   },
   "/login:wrong-account": {
-    "de": "GET /me 403 mit dem api-Text wrong-account, oder Passkey-Abschluss mit derselben Zeichenkette. Hinweis Sie haben sich mit dem falschen Konto angemeldet. Bitte versuchen Sie es nochmals mit dem richtigen Konto. (login.wrongAccount) und Erneut versuchen. Telefonbilder zeigen auch die gedämpfte Zeile für installiertes iOS. Die restliche Sitzung wird gelöscht, damit die Besuchenden nicht angemeldet bleiben. Erneut versuchen startet die Anmeldung mit Authentifizierung zuerst.",
-    "es": "GET /me 403 con el texto de api wrong-account, o finalización de passkey con la misma cadena. Alerta Ha iniciado sesión con la cuenta equivocada. Inténtelo de nuevo con la cuenta correcta. (login.wrongAccount) e Intentar de nuevo. Las fotos de teléfono también muestran la línea atenuada de iOS instalado. La sesión restante se borra para que quien visita no quede con sesión iniciada. Intentar de nuevo inicia el inicio de sesión con autenticación primero.",
-    "fil": "GET /me 403 na may api na teksto na wrong-account, o tapos ng passkey na may parehong string. Alerto Nag-sign in kayo gamit ang maling account. Subukan ulit gamit ang tamang account. (login.wrongAccount) at Subukan ulit. Ipinapakita rin ng mga larawan ng telepono ang naka-mute na linya ng naka-install na iOS. Nililinis ang natitirang session para hindi maiwang naka-sign in ang bisita. Ang Subukan ulit ay nagsisimula ng pag-login na authenticate-first."
+    "de": "GET /me 403 mit dem api-Text wrong-account, oder Passkey-Abschluss mit derselben Zeichenkette. Hinweis Du hast dich mit einem anderen Konto angemeldet. Versuch es noch einmal mit dem richtigen. (login.wrongAccount) und Erneut versuchen. Telefonbilder zeigen auch die gedämpfte Zeile für installiertes iOS. Die restliche Sitzung wird gelöscht, damit die Besuchenden nicht angemeldet bleiben. Erneut versuchen startet die Anmeldung mit Authentifizierung zuerst.",
+    "es": "GET /me 403 con el texto de api wrong-account, o finalización de passkey con la misma cadena. Alerta Iniciaste sesión con otra cuenta. Vuelve a intentarlo con la correcta. (login.wrongAccount) e Intentar de nuevo. Las fotos de teléfono también muestran la línea atenuada de iOS instalado. La sesión restante se borra para que quien visita no quede con sesión iniciada. Intentar de nuevo inicia el inicio de sesión con autenticación primero.",
+    "fil": "GET /me 403 na may api na teksto na wrong-account, o tapos ng passkey na may parehong string. Alerto Nag-sign in ka gamit ang ibang account. Subukan ulit gamit ang tama. (login.wrongAccount) at Subukan ulit. Ipinapakita rin ng mga larawan ng telepono ang naka-mute na linya ng naka-install na iOS. Nililinis ang natitirang session para hindi maiwang naka-sign in ang bisita. Ang Subukan ulit ay nagsisimula ng pag-login na authenticate-first."
   },
   "/grants:funding-admitted": {
     "de": "Verifizierter Inhaber mit funding.status admitted. Text Sie sind zum täglichen 21.gifts-Förderprogramm zugelassen. plus Nimmt seit {date} am 21.gifts Förderprogramm teil. Wenn reviewedByName gesetzt ist, nennt dieser Satz die prüfende Person. Trial, pending und rejected zeigen keinen Namen. Das Symbol des Förderprogramms auf den öffentlichen Fakten ist hier geschlossen. Das gedrückte Ergebnis ist funding-program-open.",

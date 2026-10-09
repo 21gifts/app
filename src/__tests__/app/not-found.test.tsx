@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import NotFound from '@/app/not-found';
@@ -31,14 +31,17 @@ vi.mock('@/lib/request-locale', () => ({
 afterEach(cleanup);
 
 describe('NotFound', () => {
-  it('shows 404 and the one top-left back arrow', async () => {
+  it('shows 404, the one top-left back arrow, and localized wordmarks', async () => {
     renderWithLocale(await NotFound());
     expect(screen.getByRole('heading', { name: '404' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Back home' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',
     );
-    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/en');
+    const footer = screen.getByRole('contentinfo');
+    expect(within(footer).queryByRole('link', { name: '21.gifts' })).toBeNull();
+    expect(within(footer).getByText('21.gifts').tagName).toBe('SPAN');
     expect(screen.queryByLabelText('Number format')).toBeNull();
   });
 

@@ -1022,11 +1022,11 @@ export async function fetchGiftDay(day: string): Promise<GiftDay> {
   try {
     const response = await fetch(`/gifts?day=${encodeURIComponent(day)}`);
     if (!response.ok) {
-      throw new Error('Could not load gift stats. Please try again.');
+      throw new Error('Could not load donation stats. Please try again.');
     }
     return giftDaySchema.parse(await response.json());
   } catch {
-    throw new Error('Could not load gift stats. Please try again.');
+    throw new Error('Could not load donation stats. Please try again.');
   }
 }
 
@@ -1046,11 +1046,11 @@ export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
       trimmed === '' ? '/gifts/stats' : `/gifts/stats?recipient=${encodeURIComponent(trimmed)}`;
     const response = await fetch(path);
     if (!response.ok) {
-      throw new Error('Could not load gift stats. Please try again.');
+      throw new Error('Could not load donation stats. Please try again.');
     }
     return giftStatsSchema.parse(await response.json());
   } catch {
-    throw new Error('Could not load gift stats. Please try again.');
+    throw new Error('Could not load donation stats. Please try again.');
   }
 }
 

@@ -1,9 +1,11 @@
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
-import DonatePage from '@/app/donate/page';
+import DonatePage, { generateMetadata } from '@/app/donate/page';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { OG_IMAGE_ALT } from '@/lib/marketing-metadata';
+import { getRequestLocale } from '@/lib/request-locale';
 
 vi.mock('next/link', () => ({
   default: ({
@@ -43,14 +45,51 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('DonatePage', () => {
+  it('publishes the same English preview on every language URL', async () => {
+    const title = 'Donate Bitcoin and help someone | 21.gifts';
+    const description =
+      'Sign in and open a post in the forum. Write a reaction under it, add an amount and pay from your wallet. The Bitcoin goes to the person who wrote the post.';
+    const preview = {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: [{ url: '/og.png', alt: OG_IMAGE_ALT }],
+      },
+      twitter: {
+        title,
+        description,
+        images: [{ url: '/og.png', alt: OG_IMAGE_ALT }],
+      },
+    };
+    expect(await generateMetadata()).toMatchObject({
+      ...preview,
+      alternates: { canonical: '/en/donate', languages: { fil: '/fil/donate' } },
+      openGraph: { ...preview.openGraph, url: '/en/donate' },
+    });
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('de');
+    expect(await generateMetadata()).toMatchObject({
+      ...preview,
+      alternates: { canonical: '/de/donate' },
+      openGraph: { ...preview.openGraph, url: '/de/donate' },
+    });
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('es');
+    expect(await generateMetadata()).toMatchObject({
+      ...preview,
+      alternates: { canonical: '/es/donate' },
+      openGraph: { ...preview.openGraph, url: '/es/donate' },
+    });
+  });
+
   it('renders the page heading', async () => {
     renderWithLocale(await DonatePage());
-    expect(screen.getByRole('heading', { name: 'Send help' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Help someone' })).toBeTruthy();
   });
 
   it('renders the explainer lead', async () => {
     renderWithLocale(await DonatePage());
-    expect(screen.getByText(/open Show reactions/i)).toBeTruthy();
+    expect(screen.getByText(/Write a reaction under it, add an amount/i)).toBeTruthy();
   });
 
   it('links Open the forum to /welcome', async () => {
@@ -66,7 +105,7 @@ describe('DonatePage', () => {
 
   it('links the unsigned wordmark home', async () => {
     renderWithLocale(await DonatePage());
-    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/en');
     expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
       '/welcome',
     );

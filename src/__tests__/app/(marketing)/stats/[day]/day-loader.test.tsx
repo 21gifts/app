@@ -97,12 +97,12 @@ describe('DayLoader', () => {
     fetchMock.mockResolvedValue(EMPTY);
     renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
-      expect(screen.getByText('No gifts recorded on this day.')).toBeTruthy();
+      expect(screen.getByText('No donations recorded on this day.')).toBeTruthy();
     });
   });
 
   it('shows a fetch error and retries', async () => {
-    fetchMock.mockRejectedValueOnce(new Error('Could not load gift stats. Please try again.'));
+    fetchMock.mockRejectedValueOnce(new Error('Could not load donation stats. Please try again.'));
     fetchMock.mockResolvedValueOnce(EMPTY);
     renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
@@ -110,7 +110,7 @@ describe('DayLoader', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
-      expect(screen.getByText('No gifts recorded on this day.')).toBeTruthy();
+      expect(screen.getByText('No donations recorded on this day.')).toBeTruthy();
     });
   });
 
@@ -118,7 +118,7 @@ describe('DayLoader', () => {
     fetchMock.mockRejectedValueOnce('nope');
     renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
-      expect(screen.getByText('Could not load gift stats. Please try again.')).toBeTruthy();
+      expect(screen.getByText('Could not load donation stats. Please try again.')).toBeTruthy();
     });
   });
 
@@ -132,15 +132,15 @@ describe('DayLoader', () => {
     view.rerender(<DayLoader day="2026-06-02" />);
     expect(screen.queryByText('alice')).toBeNull();
     await waitFor(() => {
-      expect(screen.getByText('No gifts recorded on this day.')).toBeTruthy();
+      expect(screen.getByText('No donations recorded on this day.')).toBeTruthy();
     });
   });
 
-  it('uses singular gift copy for one gift', async () => {
+  it('uses singular donation copy for one donation', async () => {
     fetchMock.mockResolvedValue(ALICE);
     renderWithLocale(<DayLoader day="2026-06-01" />);
     await waitFor(() => {
-      expect(screen.getByText('1 gift · ₿500 · $0.48')).toBeTruthy();
+      expect(screen.getByText('1 donation · ₿500 · $0.48')).toBeTruthy();
     });
   });
 
@@ -157,7 +157,7 @@ describe('DayLoader', () => {
     fetchMock.mockResolvedValue(ALICE);
     renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'CHF');
     await waitFor(() => {
-      expect(screen.getByText('1 gift · ₿500 · CHF 0.40')).toBeTruthy();
+      expect(screen.getByText('1 donation · ₿500 · CHF 0.40')).toBeTruthy();
     });
     expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
   });
@@ -167,7 +167,7 @@ describe('DayLoader', () => {
     fetchMock.mockResolvedValue(ALICE);
     renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'CHF');
     await waitFor(() => {
-      expect(screen.getByText('1 gift · ₿500 · CHF 0.40')).toBeTruthy();
+      expect(screen.getByText('1 donation · ₿500 · CHF 0.40')).toBeTruthy();
     });
     expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
   });
@@ -176,7 +176,7 @@ describe('DayLoader', () => {
     fetchMock.mockResolvedValue(ALICE);
     renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'CHF');
     await waitFor(() => {
-      expect(screen.getByText('1 gift · ₿500 · CHF 0.40')).toBeTruthy();
+      expect(screen.getByText('1 donation · ₿500 · CHF 0.40')).toBeTruthy();
     });
   });
 
@@ -184,7 +184,7 @@ describe('DayLoader', () => {
     fetchMock.mockResolvedValue(ALICE);
     renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'EUR');
     await waitFor(() => {
-      expect(screen.getByText('1 gift · ₿500 · EUR 0.44')).toBeTruthy();
+      expect(screen.getByText('1 donation · ₿500 · EUR 0.44')).toBeTruthy();
     });
   });
 
@@ -192,7 +192,7 @@ describe('DayLoader', () => {
     fetchMock.mockResolvedValue(ALICE);
     renderWithLocale(<DayLoader day="2026-06-01" />, 'en', 'ch', 'PHP');
     await waitFor(() => {
-      expect(screen.getByText('1 gift · ₿500 · ₱27.00')).toBeTruthy();
+      expect(screen.getByText('1 donation · ₿500 · ₱27.00')).toBeTruthy();
     });
   });
 
