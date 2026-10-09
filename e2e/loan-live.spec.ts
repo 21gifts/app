@@ -72,7 +72,12 @@ async function control(
     method: pathname === '/health' ? 'GET' : 'POST',
     headers: bearer(ui),
     ...(data === undefined ? {} : { data }),
-    timeout: pathname === '/pay' || pathname === '/restart' ? 300_000 : 30_000,
+    timeout:
+      pathname === '/pay' || pathname === '/restart'
+        ? 300_000
+        : pathname === '/message'
+          ? 60_000
+          : 30_000,
   });
   if (response.status() !== 204 && !(pathname === '/health' && response.status() === 200)) {
     throw new Error(`${pathname} returned ${response.status()}`);
@@ -181,6 +186,21 @@ async function createCredit(page: Page, ui: LoanUi): Promise<string> {
 }
 
 async function give(page: Page, giver: Giver, messageId: string, ui: LoanUi): Promise<void> {
+  // A gift posted before the note has a signed event is refused. The composer
+  // still accepts the click, so wait for the public note before posting.
+  await expect
+    .poll(
+      async () => {
+        const note = await page.request.get(`/public-messages/${messageId}`);
+        if (!note.ok()) {
+          return false;
+        }
+        const body = (await note.json()) as { payable?: boolean };
+        return body.payable === true;
+      },
+      { timeout: 30_000, intervals: [500] },
+    )
+    .toBe(true);
   const amount = page.locator('#forum-reply-amount');
   await expect(amount).toBeEnabled();
   await choosePhp(page);
