@@ -4224,7 +4224,7 @@ test.describe('onboarding screens', () => {
     // Carol's note, not Ada's own: its form has the amount entry.
     await page
       .locator('li', { hasText: 'I can send a small gift tomorrow.' })
-      .getByRole('button', { name: 'React' })
+      .getByRole('button', { name: 'React', exact: true })
       .click();
     const field = page.getByPlaceholder('Write a reaction');
     await expect(field).toBeEnabled();
