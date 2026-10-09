@@ -145,7 +145,7 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
               size="md"
               aria-label={chapter0Label}
               onClick={() => {
-                goToPreviousView(router.push);
+                goToPreviousView(router);
               }}
             >
               <ArrowLeft aria-hidden="true" className="h-5 w-5" />

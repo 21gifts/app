@@ -493,7 +493,7 @@
 
 - **Purpose:** Shared top-left chrome: one icon-only arrow (44px, ArrowLeft) plus a wordmark. The arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. An ask-wizard or shop-wizard override replaces the history link with a button. The arrow is a `next/link`: it opens that view with the client-side router, never with a document load, so tab memory such as the open wallet stays. Optional `onBackClick` runs on an unmodified click and returns `true` when it took an in-page step (wallet hides the words, closes a send step, or returns from Send or Receive to the wallet home); `false` lets the arrow leave. Optional `wordmark` replaces the default wordmark. Optional `wordmarkHref` defaults to `/welcome` and is ignored when `wordmark` is set. `tone="dark"` is the ink marketing header. `hideHistoryArrow` omits the history arrow whatever this tab's view stack holds (`/welcome`); a wizard override still shows.
 - **Inputs:** Optional `onBackClick` (`() => boolean`), `wordmark`, `wordmarkHref`, `tone`, and `hideHistoryArrow`; catalog via `useTranslations`; previous path via `previousViewPath`.
-- **Returns / side effects:** A link (`profile.back` when this tab has no earlier view, otherwise `nav.back`), the override button, or no arrow when `hideHistoryArrow` is set and no override is armed, plus the wordmark. The first client render matches SSR (`/welcome`, `profile.back`) unless `hideHistoryArrow` hides that arrow. An unmodified primary click calls `onBackClick` first; when it returns `true` the link does not follow its href. Otherwise the click marks the href with `markBackNavigation` and the link opens it client-side. Modified clicks follow the href. No network.
+- **Returns / side effects:** A link (`profile.back` when this tab has no earlier view, otherwise `nav.back`), the override button, or no arrow when `hideHistoryArrow` is set and no override is armed, plus the wordmark. The first client render matches SSR (`/welcome`, `profile.back`) unless `hideHistoryArrow` hides that arrow. An unmodified primary click calls `onBackClick` first; when it returns `true` the link does not follow its href. Otherwise, when this document pushed the current entry on top of that view (`canStepBackTo`) and `ViewHistoryRoot` provides its back step, the click takes that step (`router.back()`), so the arrow and the browser's back agree; else it marks the href with `markBackNavigation` and the link opens it client-side. Modified clicks follow the href. No network.
 - **Used by:** `ProfilePage`, `WelcomePage`, `MarketingHeader`, `LoginPage`, `DonatePage`, `PayLinkScreen`, `ViewProfilePage`, `NameSetupPage`, `UsernameSetupPage`, `WalletChromeLeft`, `WalletScreenView` (the visible `/wallet` Back, via `AppShellTopLeft`), `ShopsPage`, `GrantsPage`, `FundingApplyPage`, `MemberProfilePage` (`/members/[accountId]`), `ContactPage`, `MessagesPage` (via `MessagesChromeLeft`), `MessagesChromeLeft`, `NotificationsPage`, `ModeratePage`, `HiddenNotesPage`, `ProposalsPage`, `FundingApplicationsPage`, `FundingApplicationDetailPage`, `ModeratorGroupPage`, `TrustChainPage`, `RulesPageChrome`, `PublicMessageChrome`. `WalletPage` mounts `WalletChromeLeft` as page `topLeft`; the card's registration wins while Wallet is shown.
 
 ## Function: resetWalletReturn
@@ -555,8 +555,8 @@
 ## Function: goToPreviousView
 
 - **Purpose:** Leave for the previous in-app view in this tab, or open `/welcome` when this tab has none. Does not jump to a fixed parent, does not leave the site, and does not load a new document, so tab memory such as the open wallet stays.
-- **Inputs:** `push`, the client-side navigation (`useRouter().push`). Reads `previousViewPath`.
-- **Returns / side effects:** Marks the target with `markBackNavigation`, then `push` of the previous path, or `push('/welcome')` when this tab has none. Does not call `history.back()` (a browser back step can leave the site when the current entry replaced an outside referrer) and does not pop the stack before the router arrives, so a second click pushes the same path. The record that arrives there steps the cursor back. No network.
+- **Inputs:** The client-side router (`useRouter()`, its `push` and `back`). Reads `previousViewPath` and `canStepBackTo`.
+- **Returns / side effects:** When this document pushed the current entry on top of the target, `router.back()`, the same step as the browser's back. Otherwise marks the target with `markBackNavigation`, then `push` of the previous path, or `push('/welcome')` when this tab has none; it does not step back then, because that step could leave the site or load a document. It does not pop the stack before the router arrives, so a second click pushes the same path. The record that arrives there steps the cursor back. No network.
 - **Used by:** `RulesSetup` (the chapter 0 arrow).
 
 ## Function: markBackNavigation
@@ -568,10 +568,24 @@
 
 ## Function: recordCurrentView
 
-- **Purpose:** Record the current in-app path on this tab's view stack, or restore a stamped index on browser back and forward. A router `pushState` is a push, even when `history.length` does not grow. A URL-changing `replaceState` replaces the current entry once this document is anchored, so a replaced screen is not a previous view. The first path of a new document, and any path after a client-side navigation, is a push, unless it is the arrow's one-shot target (`markBackNavigation`), which steps the cursor back. Unsafe paths are ignored. A real return to an earlier path is a new entry, not a collapse. The stack caps at 50 once a push is committed. A push that is not yet committed does not drop the oldest view; a later replace collapses that push first. A dropped entry keeps its absolute stamp, so browser back still finds it.
+- **Purpose:** Record the current in-app path on this tab's view stack, or restore a stamped index on browser back and forward. A router `pushState` is a push, even when `history.length` does not grow. A URL-changing `replaceState` replaces the current entry once this document is anchored, so a replaced screen is not a previous view; when that replace lands on the view before it, the cursor steps back onto that view, so the stack never holds the same view twice in a row after a replace. The first path of a new document, and any path after a client-side navigation, is a push, unless it is the arrow's one-shot target (`markBackNavigation`), which steps the cursor back. Unsafe paths are ignored. A real return to an earlier path is a new entry, not a collapse. The stack caps at 50 once a push is committed. A push that is not yet committed does not drop the oldest view; a later replace collapses that push first. A dropped entry keeps its absolute stamp, so browser back still finds it.
 - **Inputs:** A pathname, optionally with a query string. Optional `stampHistory` defaults to true. False updates the stack and does not write `giftsView`, so the history entry being left keeps its stamp.
-- **Returns / side effects:** Updates the module slot and `sessionStorage` (`stack` and `cursor`, plus `base` after a capped drop). When `stampHistory` is true, stamps `giftsView` with `history.replaceState` without pushing a history entry. A stored stack that contains an unsafe path is ignored. A thrown storage write leaves the slot intact. No network.
+- **Returns / side effects:** Updates the module slot and `sessionStorage` (`stack` and `cursor`, plus `base` after a capped drop). When `stampHistory` is true, stamps `giftsView` with `history.replaceState` without pushing a history entry. A stored stack that contains an unsafe path is ignored. Each stamp also writes `giftsBelow` (this document's id) when the entry was pushed in this document on top of the view before it; a browser step reads it back. A thrown storage write leaves the slot intact. No network.
 - **Used by:** `ViewHistoryRoot`; `SignedInChrome` (Menu **Home** pressed on `/welcome`, plain click, records that path as the only view).
+
+## Function: returnToView
+
+- **Purpose:** Leave a step for the view it was opened from (the till amount for `/pos`, a grant application for `/grants`, a decided application for the queue) without leaving that step, or a second copy of the view, in this tab's history. The top-left arrow and the browser back on the returned-to view then both continue from the view before it, or `/welcome`.
+- **Inputs:** The in-app path the step was opened from, and the client-side router (`useRouter()`, its `back` and `replace`).
+- **Returns / side effects:** When the current entry was pushed in this document on top of that path, calls `router.back()` once (a client-side step back, no document load) and does not step back again on a second call. Otherwise (a direct link, the first view after a document load, an arrival by the arrow or a browser step) calls `router.replace(path)`; `recordCurrentView` then steps back onto the view before when it is the same path. No network.
+- **Used by:** `PosAmount`, `FundingApplyScreen`, `FundingApplicationDetailScreen`, `ContactLoader` (back to the thread it opens), and every in-app redirect that used `router.replace`: `OnboardingGate`, `LogoutButton`, `ViewProfileClaim`, `ForumLoader`, `ProfileScreen`, `MemberProfileScreen`, `MemberProfileLoader`, `FundingApplyScreen` (`/setup/rules`, `/login`, and the next onboarding step).
+
+## Function: canStepBackTo
+
+- **Purpose:** Tell whether a browser back step opens a given view client-side: true only when this document pushed the current history entry on top of that view, which is the previous view in this tab. The arrow and the step returns use it, so they step back instead of adding an entry when the browser's back would do the same.
+- **Inputs:** An in-app path.
+- **Returns / side effects:** A boolean. Reads the tab stack's `pushed` flag, which each stamp also writes on the entry as `giftsBelow` (this document's id), so a browser step back or forward reads it again; an entry of an earlier document, an arrival by the arrow's link, and a replace that collapsed onto the view before never count. No network.
+- **Used by:** `ProfileChromeLeft`, `goToPreviousView`, `returnToView`.
 
 ## Function: resetViewHistory
 
@@ -584,21 +598,21 @@
 
 - **Purpose:** Record the current pathname and search on the in-app view stack and provide the chrome back override. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Inputs:** `children` — the page tree.
-- **Returns / side effects:** `ChromeBackProvider` around `children`. A location recorder writes the stack during render without stamping history, and stamps `giftsView` from a layout effect after the router commits the history entry. A pathname the location has not reached yet is not recorded, so a query is not stored as its own hop. A replace committed after that render collapses the provisional push, so a replaced screen is not a previous view. Search comes from `window.location.search` when it matches the pathname, so a full navigation is stored before the load event. A suspended search recorder re-renders on a query-only change, including a cleared query, and records the live location — the same string as the location recorder, and only once that location has reached the pathname. No network.
+- **Returns / side effects:** `ChromeBackProvider` around `children`, with `router.back()` as its `stepBack`. A location recorder writes the stack during render without stamping history, and stamps `giftsView` from a layout effect after the router commits the history entry. A pathname the location has not reached yet is not recorded, so a query is not stored as its own hop. A replace committed after that render collapses the provisional push, so a replaced screen is not a previous view. Search comes from `window.location.search` when it matches the pathname, so a full navigation is stored before the load event. A suspended search recorder re-renders on a query-only change, including a cleared query, and records the live location — the same string as the location recorder, and only once that location has reached the pathname. No network.
 - **Used by:** `RootLayout`, inside `ThemeProvider`, beside `RememberWalletReturn`.
 
 ## Function: useChromeBack
 
 - **Purpose:** Read and set the top-left arrow override for an in-page step such as the ask wizard, the shop wizard, or a wallet Receive or Send view over `/welcome` (label `nav.back`). Without a provider, the override is null and the setter is a no-op, so a wizard render does not throw.
 - **Inputs:** None. Reads `ChromeBackProvider` context when it is present.
-- **Returns / side effects:** `{ override, setOverride }`. Does not navigate by itself. No network.
+- **Returns / side effects:** `{ override, setOverride, stepBack }`; `stepBack` is the root's `router.back()`, or `null` without `ViewHistoryRoot`. Does not navigate by itself. No network.
 - **Used by:** `ProfileChromeLeft`, `ForumAskWizard`, `ShopAddWizard`, `WelcomeScreen`, the welcome top-left chrome.
 
 ## Function: ChromeBackProvider
 
 - **Purpose:** Hold the top-left back overrides, one slot per caller. The chrome arrow runs the latest in-page step instead of the view history; an override marked `over` (a wallet view laid over `/welcome`) beats every page step, even one that registers again after it. Pay-sheet dismiss stays Close (`X`), not this control.
-- **Inputs:** `children`.
-- **Returns / side effects:** Context provider. Each caller has its own slot. The arrow shows the last set override. Clearing or unmounting a caller restores the previous. No network.
+- **Inputs:** `children`; optional `stepBack`, the client-side back step the arrow takes (default `null`).
+- **Returns / side effects:** Context provider. Each caller has its own slot. `useChromeBack` hands out `stepBack`. The arrow shows the last set override. Clearing or unmounting a caller restores the previous. No network.
 - **Used by:** `ViewHistoryRoot`.
 
 ## Function: ProfileScreen

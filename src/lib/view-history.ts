@@ -6,6 +6,9 @@ const BACK_KEY = '21gifts.viewHistoryBack';
 
 const SLOT = '__giftsViewHistory';
 
+/** Id of this document, shared by every copy of this module. */
+const DOC_SLOT = '__giftsViewDocument';
+
 const CAP = 50;
 
 const SAFE_IN_APP_PATH = /^\/[A-Za-z0-9._~/-]*(?:\?[A-Za-z0-9._~%=&*+-]*)?$/;
@@ -25,10 +28,23 @@ type StoredViewHistory = { stack: string[]; cursor: number; base: number };
  * back drops the forward entry without growing the length, and some browsers
  * stop growing it. A new document is not yet anchored, so its first path is a
  * push unless it is the arrow's one-shot target.
+ *
+ * `pushed` is true while the current entry was pushed in this document on top
+ * of the view before it, so a browser back step lands on that view without a
+ * document load. Each stamp also writes it on the entry (`giftsBelow`, this
+ * document's id), so a browser step back or forward reads it again. An entry
+ * of an earlier document never counts.
  */
-type ViewHistoryMemory = StoredViewHistory & { historyLength: number; anchored: boolean };
+type ViewHistoryMemory = StoredViewHistory & {
+  historyLength: number;
+  anchored: boolean;
+  pushed: boolean;
+};
 
-type ViewHistoryGlobal = typeof globalThis & { [SLOT]?: ViewHistoryMemory };
+type ViewHistoryGlobal = typeof globalThis & {
+  [SLOT]?: ViewHistoryMemory;
+  [DOC_SLOT]?: string;
+};
 
 type NavKind = 'push' | 'replace';
 
@@ -132,6 +148,7 @@ function hydrateSlot(): ViewHistoryMemory | null {
     base: stored.base,
     historyLength: window.history.length,
     anchored: false,
+    pushed: false,
   };
   g[SLOT] = hydrated;
   return hydrated;
@@ -158,6 +175,7 @@ function browserSlot(): ViewHistoryMemory | null {
     base: 0,
     historyLength: window.history.length,
     anchored: true,
+    pushed: false,
   };
   (globalThis as ViewHistoryGlobal)[SLOT] = created;
   return created;
@@ -233,17 +251,40 @@ function writeStoredMemory(memory: StoredViewHistory | null): void {
 }
 
 /**
- * Stamp `giftsView` on the current history entry without pushing.
+ * This document's id, made on first use. It survives no document load.
  *
- * @param absolute - `cursor` plus how many entries have been dropped.
+ * @returns The id `giftsBelow` carries for an entry pushed in this document.
  */
-function stampCommitted(stampHistory: boolean, absolute: number): void {
+function documentId(): string {
+  const g = globalThis as ViewHistoryGlobal;
+  g[DOC_SLOT] ??= `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  return g[DOC_SLOT];
+}
+
+/**
+ * Whether the current history entry says it was pushed in this document on
+ * top of the view before it.
+ *
+ * @returns True only for a `giftsBelow` stamp of this document.
+ */
+function stampedBelow(): boolean {
+  const state = window.history.state as { giftsBelow?: unknown } | null;
+  return state?.giftsBelow === documentId();
+}
+
+/**
+ * Stamp `giftsView` and `giftsBelow` on the current history entry without pushing.
+ *
+ * @param stampHistory - False leaves the entry alone.
+ * @param slot - Tab stack whose cursor and `pushed` are stamped.
+ */
+function stampCommitted(stampHistory: boolean, slot: ViewHistoryMemory): void {
   if (stampHistory) {
-    stampGiftsView(absolute);
+    stampGiftsView(slot.cursor + slot.base, slot.pushed);
   }
 }
 
-function stampGiftsView(absolute: number): void {
+function stampGiftsView(absolute: number, pushed: boolean): void {
   /* v8 ignore next 3 -- SSR has no history */
   if (typeof window === 'undefined') {
     return;
@@ -253,7 +294,13 @@ function stampGiftsView(absolute: number): void {
   if (rawReplaceState === null) {
     return;
   }
-  rawReplaceState({ ...window.history.state, giftsView: absolute }, '');
+  const state: Record<string, unknown> = { ...window.history.state, giftsView: absolute };
+  if (pushed) {
+    state['giftsBelow'] = documentId();
+  } else {
+    delete state['giftsBelow'];
+  }
+  rawReplaceState(state, '');
 }
 
 /**
@@ -359,6 +406,22 @@ function stampedIndex(): number | null {
 }
 
 /**
+ * Step the cursor back when the view under it is the same path, so a step
+ * that replaced itself with the view it was opened from does not stay
+ * behind as a second copy that the arrow would open.
+ *
+ * @param slot - Tab stack, already holding the replaced path at the cursor.
+ */
+function dropRepeatedView(slot: ViewHistoryMemory): void {
+  if (slot.cursor >= 1 && slot.stack[slot.cursor - 1] === slot.stack[slot.cursor]) {
+    slot.cursor -= 1;
+    slot.stack = slot.stack.slice(0, slot.cursor + 1);
+    // The entry below is the other copy, not the view before this one.
+    slot.pushed = false;
+  }
+}
+
+/**
  * Clear the in-app view stack used by the top-left back arrow, its stored
  * copy in `sessionStorage`, and a pending arrow target (module copy and the
  * stored one-shot mark).
@@ -394,7 +457,8 @@ export function previousViewPath(): string | null {
  *
  * Restores a stamped stack index on browser back/forward. A router `pushState`
  * pushes, even when `history.length` does not grow. A URL-changing
- * `replaceState` replaces the current entry once this document is anchored.
+ * `replaceState` replaces the current entry once this document is anchored;
+ * when that lands on the view before it, the cursor steps back onto it.
  * The first path of a new document is a push, unless it is the arrow's
  * one-shot target, which steps the cursor back. Caps the stack at 50.
  *
@@ -417,9 +481,10 @@ export function recordCurrentView(path: string, stampHistory = true): void {
   installHistoryTap();
   const kind = takeNavKind();
   if (arriveFromBack(slot, path)) {
+    slot.pushed = false;
     slot.historyLength = length;
     slot.anchored = true;
-    stampCommitted(stampHistory, slot.cursor + slot.base);
+    stampCommitted(stampHistory, slot);
     writeStoredMemory(slot);
     return;
   }
@@ -432,10 +497,12 @@ export function recordCurrentView(path: string, stampHistory = true): void {
     index < slot.stack.length &&
     slot.stack[index] === path
   ) {
+    // The entry says whether it was pushed in this document on top of the view before it.
+    slot.pushed = stampedBelow();
     slot.cursor = index;
     slot.historyLength = length;
     slot.anchored = true;
-    stampCommitted(stampHistory, slot.cursor + slot.base);
+    stampCommitted(stampHistory, slot);
     writeStoredMemory(slot);
     return;
   }
@@ -447,14 +514,16 @@ export function recordCurrentView(path: string, stampHistory = true): void {
       slot.cursor -= 1;
       kept[slot.cursor] = path;
       slot.stack = kept;
+      slot.pushed = false;
+      dropRepeatedView(slot);
     } else if (stampHistory && slot.stack.length > CAP) {
       const dropped = slot.stack.length - CAP;
       slot.stack = slot.stack.slice(dropped);
       slot.cursor -= dropped;
       slot.base += dropped;
     }
-    if (stamped !== slot.cursor + slot.base) {
-      stampCommitted(stampHistory, slot.cursor + slot.base);
+    if (stamped !== slot.cursor + slot.base || stampedBelow() !== slot.pushed) {
+      stampCommitted(stampHistory, slot);
     }
     slot.historyLength = length;
     slot.anchored = true;
@@ -464,9 +533,12 @@ export function recordCurrentView(path: string, stampHistory = true): void {
   const replacing = kind === 'replace' && slot.anchored && slot.stack.length > 0;
   if (replacing) {
     const kept = slot.stack.slice(0, slot.cursor + 1);
+    // The entry below is unchanged, so `pushed` stays.
     kept[slot.cursor] = path;
     slot.stack = kept;
+    dropRepeatedView(slot);
   } else {
+    slot.pushed = slot.anchored && slot.stack.length > 0;
     const next = slot.stack.slice(0, slot.cursor + 1);
     next.push(path);
     if (stampHistory && next.length > CAP) {
@@ -478,7 +550,7 @@ export function recordCurrentView(path: string, stampHistory = true): void {
   }
   slot.historyLength = length;
   slot.anchored = true;
-  stampCommitted(stampHistory, slot.cursor + slot.base);
+  stampCommitted(stampHistory, slot);
   writeStoredMemory(slot);
 }
 
@@ -495,25 +567,71 @@ export function markBackNavigation(path: string): void {
 }
 
 /**
+ * Whether the current history entry was pushed in this document on top of
+ * `path`, the view before it in this tab. Then a browser back step opens
+ * `path` client-side, the same step as the browser's own back.
+ *
+ * @param path - In-app path the caller wants to open.
+ * @returns True when `router.back()` opens `path` without leaving the site.
+ */
+export function canStepBackTo(path: string): boolean {
+  const slot = hydrateSlot();
+  return slot !== null && slot.pushed && previousViewPath() === path;
+}
+
+/**
  * Return to the previous in-app view, or open the forum when this tab has none.
  *
- * Opens that path with the client-side router `push`, so the document and
- * its tab memory (the open wallet) stay. Leaves the stack for the record
- * that arrives there, which steps the cursor back. A second click before that
- * record pushes the same path. It does not step back in the browser history: a
- * back step can leave the site when the current entry replaced an external
- * referrer.
+ * When the current entry was pushed in this document on top of that view
+ * ({@link canStepBackTo}), steps back with `router.back()`, so the arrow and
+ * the browser's back agree. Otherwise opens that path with the client-side
+ * router `push` and leaves the stack for the record that arrives there, which
+ * steps the cursor back; it does not step back in the browser history then,
+ * because that step could leave the site or load a document. Either way the
+ * document and its tab memory (the open wallet) stay.
  *
- * @param push - Client-side navigation, usually `useRouter().push`.
+ * @param router - Client-side router, usually `useRouter()` (its `push` and `back`).
  * @returns void
  */
-export function goToPreviousView(push: (href: string) => void): void {
+export function goToPreviousView(router: { push: (href: string) => void; back: () => void }): void {
   /* v8 ignore next 3 -- SSR has no history */
   if (typeof window === 'undefined') {
     return;
   }
   const prev = previousViewPath();
   const target = prev ?? '/welcome';
+  if (canStepBackTo(target)) {
+    router.back();
+    return;
+  }
   markBackTarget(target);
-  push(target);
+  router.push(target);
+}
+
+/**
+ * Leave a step for the view it was opened from, without a second copy of
+ * that view in this tab's history.
+ *
+ * When the step was pushed in this document on top of `path`, this steps back
+ * in the browser history, so the step's entry is dropped and the arrow and the
+ * browser back both continue from the view before `path`. Otherwise (a deep
+ * link, a document load, or an arrival by the arrow) it replaces the step with
+ * `path`; the record of that replace steps back when the view before it is
+ * already `path`.
+ *
+ * @param path - In-app path the step was opened from, such as `/pos`.
+ * @param router - Client-side router, usually `useRouter()`.
+ * @returns void
+ */
+export function returnToView(
+  path: string,
+  router: { back: () => void; replace: (href: string) => void },
+): void {
+  const slot = hydrateSlot();
+  if (slot !== null && canStepBackTo(path)) {
+    slot.pushed = false;
+    router.back();
+    return;
+  }
+  router.replace(path);
 }
