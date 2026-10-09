@@ -14,9 +14,10 @@ vi.mock('@/lib/api', () => ({
 }));
 
 const routerPush = vi.hoisted(() => vi.fn());
+const routerBack = vi.hoisted(() => vi.fn());
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: routerPush }),
+  useRouter: () => ({ push: routerPush, back: routerBack }),
 }));
 
 const baseAccount: Account = {
@@ -162,8 +163,10 @@ describe('RulesSetup', () => {
     recordCurrentView('/setup/rules');
     renderWithLocale(<RulesSetup chapters={oneChapter} />);
     expect(screen.queryByRole('button', { name: 'Back to the forum' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    expect(routerPush).toHaveBeenCalledWith('/shops');
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }), { detail: 1 });
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }), { detail: 2 });
+    expect(routerBack).toHaveBeenCalledTimes(1);
+    expect(routerPush).not.toHaveBeenCalled();
   });
 
   it('advances chapters without posting until the last agree', () => {

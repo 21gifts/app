@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PosAmount, PosScreen, resetPosTillWriteForTests } from '@/components/PosScreen';
 import { fetchFxSpot } from '@/lib/api';
 import { logInteraction } from '@/lib/interaction-log';
+import { previousViewPath, recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -22,9 +23,14 @@ vi.mock('@/hooks/useWalletSetup', async () => {
 
 const push = vi.fn();
 const replace = vi.fn();
+const back = vi.fn();
 vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof push; replace: typeof replace } => ({ push, replace }),
+  useRouter: (): { push: typeof push; replace: typeof replace; back: typeof back } => ({
+    push,
+    replace,
+    back,
+  }),
 }));
 
 vi.mock('@/lib/api', async () => {
@@ -93,6 +99,8 @@ afterEach(() => {
   resetPosTillWriteForTests();
   push.mockClear();
   replace.mockClear();
+  back.mockClear();
+  resetViewHistory();
   useAuthStore.setState({ session: null, account: null });
   if (ORIGINAL_BREEZ === undefined) delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
   else process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
@@ -162,6 +170,39 @@ describe('PosScreen', () => {
       expect(replace).toHaveBeenCalledWith('/pos');
     });
     expect(screen.queryByRole('img', { name: 'Open CryptoPay QR code' })).toBeNull();
+  });
+
+  it('steps back to the till it was opened from, so the till keeps its own back', async () => {
+    const charge = {
+      id: 'c1',
+      amountSats: 21,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
+        init?.method === 'POST'
+          ? jsonResponse({ charge })
+          : jsonResponse({ charge: null, history: [] }),
+      ),
+    );
+    recordCurrentView('/welcome');
+    recordCurrentView('/pos');
+    recordCurrentView('/pos/amount');
+    renderWithLocale(<PosAmount />);
+    await pressAmount('21');
+    fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+    await waitFor(() => {
+      expect(back).toHaveBeenCalledTimes(1);
+    });
+    act(() => {
+      useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT } });
+    });
+    expect(back).toHaveBeenCalledTimes(1);
+    expect(replace).not.toHaveBeenCalled();
+    expect(previousViewPath()).toBe('/pos');
   });
 
   it('cancels an open charge and returns to set an amount', async () => {

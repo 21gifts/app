@@ -8,9 +8,11 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 const navigation = vi.hoisted(() => ({
   pathname: null as string | null,
   query: '',
+  back: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
+  useRouter: (): { back: () => void } => ({ back: navigation.back }),
   usePathname: (): string | null => navigation.pathname,
   useSearchParams: (): { toString: () => string } => ({
     toString: (): string => navigation.query,
@@ -277,5 +279,27 @@ describe('ViewHistoryRoot', () => {
     expect(screen.getByText('page:nav.back')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'page set' }));
     expect(screen.getByText('page:nav.back')).toBeTruthy();
+  });
+
+  it('hands the router back step to the chrome, and none without the root', () => {
+    function Probe({ name }: { name: string }): ReactElement {
+      const { stepBack } = useChromeBack();
+      return (
+        <button type="button" onClick={() => stepBack?.()}>
+          {`${name}:${stepBack === null ? 'none' : 'step'}`}
+        </button>
+      );
+    }
+    renderWithLocale(
+      <>
+        <ViewHistoryRoot>
+          <Probe name="root" />
+        </ViewHistoryRoot>
+        <Probe name="bare" />
+      </>,
+    );
+    expect(screen.getByRole('button', { name: 'bare:none' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'root:step' }));
+    expect(navigation.back).toHaveBeenCalledTimes(1);
   });
 });

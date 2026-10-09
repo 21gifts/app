@@ -4,14 +4,17 @@ import { ShopTable } from '@/components/ShopTable';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import type { ForumMessage } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
+import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 const replace = vi.fn();
+const back = vi.fn();
 
 vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof replace; replace: typeof replace } => ({
+  useRouter: (): { push: typeof replace; replace: typeof replace; back: typeof back } => ({
     push: replace,
     replace,
+    back,
   }),
 }));
 
@@ -80,6 +83,8 @@ const SHOP: ForumMessage = {
 afterEach(() => {
   cleanup();
   replace.mockClear();
+  back.mockClear();
+  resetViewHistory();
   linkPush.mockReset();
   fetchMessagesMock.mockReset();
   useAuthStore.setState({ session: null, account: null });
@@ -94,6 +99,18 @@ describe('ShopTable', () => {
       expect(replace).toHaveBeenCalledWith('/setup/rules');
     });
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('steps back to setup when the shops were opened from it', async () => {
+    recordCurrentView('/setup/rules');
+    recordCurrentView('/shops');
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    renderWithLocale(<ShopTable />);
+    await waitFor(() => {
+      expect(back).toHaveBeenCalledTimes(1);
+    });
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it('opens a place and an operator with client-side links', async () => {

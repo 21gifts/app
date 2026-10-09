@@ -73,6 +73,7 @@ import { useHeartTip } from '@/lib/heart-tip';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { closeLocalPushNotifications, pushTagForNotification } from '@/lib/push';
 import { isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** How many times to poll `GET /messages` for payable status. */
@@ -879,7 +880,7 @@ export function ForumLoader({
           if (result === 'ok') {
             setError(false);
           } else if (result === 'requirements') {
-            router.replace('/setup/rules');
+            returnToView('/setup/rules', router);
           } else if (result === 'error') {
             if (messagesRef.current === null) {
               setError(true);
@@ -960,7 +961,7 @@ export function ForumLoader({
           }
         } catch (err) {
           if (!cancelled && activeSession === null && err instanceof PublicForumUnauthorizedError) {
-            router.replace('/login');
+            returnToView('/login', router);
             return;
           }
           // Keep the current pages and cursor so a later intersection may retry.
@@ -977,7 +978,7 @@ export function ForumLoader({
       loadingMoreRef.current = false;
       observer.disconnect();
     };
-    /* router.replace is used on 401; next/navigation's identity is not stable */
+    /* returnToView(…, router) is used on 401; next/navigation's identity is not stable */
   }, [feed, feedHashtag, feedMode, nearEndElement, nextCursor, session]);
 
   const onRefresh = useCallback((): void => {
@@ -1004,7 +1005,7 @@ export function ForumLoader({
       return;
     }
     if (session === null && feedMode !== 'active') {
-      router.replace('/login');
+      returnToView('/login', router);
       return;
     }
     let cancelled = false;
@@ -1039,7 +1040,7 @@ export function ForumLoader({
             })()
           : await loadMessagesOnce(session, feedMode, () => !cancelled, false, true);
       if (!cancelled && result === 'requirements') {
-        router.replace('/setup/rules');
+        returnToView('/setup/rules', router);
         return;
       }
       if (!cancelled && result === 'error') {
@@ -1061,7 +1062,7 @@ export function ForumLoader({
       paginationGeneration.current += 1;
       loadingMoreRef.current = false;
     };
-    /* router.replace is used on 409; next/navigation's identity is not stable */
+    /* returnToView(…, router) is used on 409; next/navigation's identity is not stable */
   }, [attempt, feed, feedMode, session]);
 
   useEffect(() => {
@@ -2195,7 +2196,7 @@ export function ForumLoader({
       return;
     }
     if (session === null) {
-      router.replace('/login');
+      returnToView('/login', router);
       return;
     }
     const listedParent =

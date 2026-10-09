@@ -19,6 +19,7 @@ import { logInteraction } from '@/lib/interaction-log';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
+import { returnToView } from '@/lib/view-history';
 import type { AmountUnit } from '@/lib/api-types';
 import {
   formatBitcoin,
@@ -563,7 +564,9 @@ export function PosTill(): ReactElement {
 /**
  * Amount-only page. No QR and no other till actions. Confirming returns to
  * `/pos`, which then shows Cancel, the countdown, and the amount. A charge
- * that is already paid does not block a new one.
+ * that is already paid does not block a new one. It leaves with
+ * {@link returnToView}, once: opened from `/pos`, that is a step back, so
+ * `/pos` keeps its own back (the view before it, or `/welcome`).
  *
  * @returns The amount card.
  */
@@ -572,10 +575,15 @@ export function PosAmount(): ReactElement {
   const router = useRouter();
   const till = usePosTillState();
   const account = useAuthStore((state) => state.account);
+  const left = useRef(false);
 
   useEffect(() => {
+    if (left.current) {
+      return;
+    }
     if (till.charge !== null || (account !== null && !till.canCharge)) {
-      router.replace('/pos');
+      left.current = true;
+      returnToView('/pos', router);
     }
     /* next/navigation's identity is not stable */
   }, [account, till.canCharge, till.charge]);

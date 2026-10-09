@@ -4319,6 +4319,32 @@ test('Function: goToPreviousView opens the shops view from notifications', async
   expect(new URL(page.url()).origin).toBe(origin);
 });
 
+test('Function: takeStepBack — after the arrow, the browser back continues to the view before', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/welcome');
+  const origin = new URL(page.url()).origin;
+  await openSignedInMenu(page);
+  await page.locator('#signed-in-menu').getByRole('link', { name: 'Shops', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/shops`);
+  await openSignedInMenu(page);
+  await page
+    .locator('#signed-in-menu')
+    .getByRole('link', { name: 'Notifications', exact: true })
+    .click();
+  await expect(page).toHaveURL(`${origin}/notifications`);
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/shops`);
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
+  await page.goBack();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+});
+
 test('Function: previousViewPath is the shops href on the back link', async ({ page }) => {
   await seedAdaSession(page);
   await routeForumLists(page);
@@ -8870,6 +8896,169 @@ test('Function: createPosCharge — create opens the charge', async ({ page }) =
   await page.getByRole('button', { name: 'Create payment' }).click();
   await expect(page).toHaveURL(/\/pos$/);
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+});
+
+/** Signed-in till with a verified wallet: `POST /pos/charge` opens a charge that later reads return. */
+async function routeChargeableTill(page: Page): Promise<void> {
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        sparkWalletVerified: true,
+      }),
+    });
+  });
+  let charge: Record<string, unknown> | null = null;
+  await page.route(/\/pos\/charge$/, async (route) => {
+    if (route.request().method() === 'POST') {
+      charge = {
+        id: 'pos-e2e',
+        amountSats: 21,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 120_000).toISOString(),
+      };
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge, history: charge === null ? [] : [charge] }),
+    });
+  });
+}
+
+/** Menu → Point of sale → Set an amount → ₿21 → Create payment, from the forum home. */
+async function createChargeFromMenu(page: Page, origin: string): Promise<void> {
+  await openSignedInMenu(page);
+  await page
+    .locator('#signed-in-menu')
+    .getByRole('link', { name: 'Point of sale', exact: true })
+    .click();
+  await expect(page).toHaveURL(`${origin}/pos`);
+  await page.getByRole('link', { name: 'Set an amount' }).click();
+  await expect(page).toHaveURL(`${origin}/pos/amount`);
+  await page.getByRole('button', { name: '2', exact: true }).click();
+  await page.getByRole('button', { name: '1', exact: true }).click();
+  await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page).toHaveURL(`${origin}/pos`);
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+}
+
+test('Function: returnToView — after a charge, the till arrow opens the forum', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await routeChargeableTill(page);
+  await page.goto('/welcome');
+  const origin = new URL(page.url()).origin;
+  await createChargeFromMenu(page, origin);
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveAttribute('href', '/welcome');
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+});
+
+test('Function: PosAmount — after a charge, the browser back on the till opens the forum', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await routeChargeableTill(page);
+  await page.goto('/welcome');
+  const origin = new URL(page.url()).origin;
+  await createChargeFromMenu(page, origin);
+  await page.goBack();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+});
+
+test('Function: PosAmount — the amount arrow returns to the till, whose arrow opens the forum', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await routeChargeableTill(page);
+  await page.goto('/welcome');
+  const origin = new URL(page.url()).origin;
+  await openSignedInMenu(page);
+  await page
+    .locator('#signed-in-menu')
+    .getByRole('link', { name: 'Point of sale', exact: true })
+    .click();
+  await page.getByRole('link', { name: 'Set an amount' }).click();
+  await expect(page).toHaveURL(`${origin}/pos/amount`);
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveAttribute('href', '/pos');
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/pos`);
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+  await expect(back).toHaveAttribute('href', '/welcome');
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+});
+
+test('Function: returnToView — a reloaded amount page replaces itself, and the till arrow opens the forum', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await routeChargeableTill(page);
+  await page.goto('/welcome');
+  const origin = new URL(page.url()).origin;
+  await openSignedInMenu(page);
+  await page
+    .locator('#signed-in-menu')
+    .getByRole('link', { name: 'Point of sale', exact: true })
+    .click();
+  await page.getByRole('link', { name: 'Set an amount' }).click();
+  await expect(page).toHaveURL(`${origin}/pos/amount`);
+  await page.reload();
+  await page.getByRole('button', { name: '2', exact: true }).click();
+  await page.getByRole('button', { name: '1', exact: true }).click();
+  await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page).toHaveURL(`${origin}/pos`);
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveAttribute('href', '/welcome');
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+});
+
+test('Function: PosTill — a direct load of the till has the arrow to the forum', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeChargeableTill(page);
+  await page.goto('/pos');
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
 });
 
 test('Function: cancelPosCharge — cancel returns the amount form', async ({ page }) => {

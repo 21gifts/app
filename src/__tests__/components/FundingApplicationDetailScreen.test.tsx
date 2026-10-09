@@ -3,13 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FundingApplicationDetailScreen } from '@/components/FundingApplicationDetailScreen';
 import type { Account, FundingApplicationDetail, ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
+import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const push = vi.fn();
+const back = vi.fn();
 
 vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof push } => ({ push }),
+  useRouter: (): { replace: typeof push; back: typeof back } => ({ replace: push, back }),
 }));
 
 vi.mock('next/link', () => ({
@@ -106,6 +108,7 @@ const DECISION = {
 beforeEach(() => {
   vi.clearAllMocks();
   push.mockReset();
+  resetViewHistory();
   fetchMock.mockResolvedValue(DETAIL);
   admitMock.mockResolvedValue({
     ...DECISION,
@@ -239,6 +242,17 @@ describe('FundingApplicationDetailScreen', () => {
     });
     expect(push).toHaveBeenCalledWith('/grants/applications');
     expect(rejectMock).not.toHaveBeenCalled();
+  });
+
+  it('steps back to the queue after a decision when it was opened from there', async () => {
+    recordCurrentView('/grants/applications');
+    recordCurrentView('/grants/applications/acc_rose');
+    renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'No' }));
+    await waitFor(() => {
+      expect(back).toHaveBeenCalledTimes(1);
+    });
+    expect(push).not.toHaveBeenCalled();
   });
 
   it('posts Reject when No is clicked', async () => {

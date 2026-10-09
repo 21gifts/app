@@ -63,13 +63,42 @@ describe('ProfileChromeLeft', () => {
     expect(sessionStorage.getItem(BACK_KEY)).toBe('/welcome');
   });
 
-  it('leaves through the link without a document load and keeps the wallet unlocked', () => {
+  it('steps back in the browser history when this document pushed the view, and keeps the wallet unlocked', () => {
+    rememberSessionPhrase('abandon ability able');
+    recordCurrentView('/wallet');
+    recordCurrentView('/shops');
+    const stepBack = vi.fn();
+    const assign = vi.fn();
+    const replace = vi.fn();
+    const reload = vi.fn();
+    vi.stubGlobal('location', { ...window.location, assign, replace, reload });
+    renderWithLocale(
+      <ChromeBackProvider stepBack={stepBack}>
+        <ProfileChromeLeft />
+      </ChromeBackProvider>,
+    );
+    const back = screen.getByRole('link', { name: 'Back' });
+    expect(back.getAttribute('href')).toBe('/wallet');
+    fireEvent.click(back);
+    expect(stepBack).toHaveBeenCalledTimes(1);
+    expect(routerPush).not.toHaveBeenCalled();
+    expect(assign).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    expect(reload).not.toHaveBeenCalled();
+    expect(peekSessionPhrase()).toBe('abandon ability able');
+  });
+
+  it('leaves through the link after a document load and keeps the wallet unlocked', () => {
     rememberSessionPhrase('abandon ability able');
     recordCurrentView('/wallet');
     Object.defineProperty(window.history, 'length', {
       configurable: true,
       value: window.history.length + 1,
     });
+    recordCurrentView('/shops');
+    // A document load: the entry below this one is not known.
+    delete (globalThis as { __giftsViewHistory?: unknown }).__giftsViewHistory;
+    delete (globalThis as { __giftsViewDocument?: unknown }).__giftsViewDocument;
     recordCurrentView('/shops');
     const assign = vi.fn();
     const replace = vi.fn();
@@ -87,6 +116,30 @@ describe('ProfileChromeLeft', () => {
     recordCurrentView('/wallet');
     expect(previousViewPath()).toBeNull();
     expect(peekSessionPhrase()).toBe('abandon ability able');
+  });
+
+  it('ignores the second click of a double click, so the arrow steps back once', () => {
+    recordCurrentView('/wallet');
+    recordCurrentView('/shops');
+    const stepBack = vi.fn();
+    renderWithLocale(
+      <ChromeBackProvider stepBack={stepBack}>
+        <ProfileChromeLeft />
+      </ChromeBackProvider>,
+    );
+    const back = screen.getByRole('link', { name: 'Back' });
+    fireEvent.click(back, { detail: 1 });
+    fireEvent.click(back, { detail: 2 });
+    expect(stepBack).toHaveBeenCalledTimes(1);
+    expect(routerPush).not.toHaveBeenCalled();
+  });
+
+  it('follows the link when no root provides a back step', () => {
+    recordCurrentView('/wallet');
+    recordCurrentView('/shops');
+    renderWithLocale(<ProfileChromeLeft />);
+    fireEvent.click(screen.getByRole('link', { name: 'Back' }));
+    expect(routerPush).toHaveBeenCalledWith('/wallet');
   });
 
   it('points the back link at the previous in-app view', () => {
