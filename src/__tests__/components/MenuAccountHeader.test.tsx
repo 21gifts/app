@@ -143,6 +143,7 @@ describe('MenuAccountHeader', () => {
       expect(card.querySelectorAll('.flex-1.flex-col .animate-pulse')).toHaveLength(2);
       expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(5);
       expect(screen.queryByText(/^@/)).toBeNull();
+      expect(screen.queryByRole('link')).toBeNull();
       expect(fetchAccountActivity).not.toHaveBeenCalled();
       act(() => {
         signIn();
@@ -150,6 +151,7 @@ describe('MenuAccountHeader', () => {
       expect(screen.getByText('Ada')).toBeTruthy();
       expect(screen.getByText('@ada')).toBeTruthy();
       expect(identityLines()).toEqual(pending);
+      expect(screen.getByRole('link', { name: 'Open your profile Ada @ada' })).toBeTruthy();
       expect(card.querySelectorAll('.flex-1.flex-col .animate-pulse')).toHaveLength(0);
     },
   );
@@ -270,9 +272,10 @@ describe('MenuAccountHeader', () => {
     vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
     const first = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();
-    expect(screen.getByRole('img', { name: 'Profile photo' }).getAttribute('src')).toBe(
-      'blob:photo',
-    );
+    const profile = screen.getByRole('link', { name: 'Open your profile Ada @ada' });
+    const photo = profile.querySelector('img') as HTMLImageElement;
+    expect(photo.getAttribute('src')).toBe('blob:photo');
+    expect(photo.getAttribute('alt')).toBe('');
     first.unmount();
     signIn();
     renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
@@ -297,6 +300,35 @@ describe('MenuAccountHeader', () => {
     );
     expect(container.querySelector('span[aria-hidden="true"].rounded-full')?.textContent).toBe('');
     expect(screen.queryByText(/^@/)).toBeNull();
+  });
+
+  it('makes the photo or initial, name, and @username one link to /profile that closes the Menu', () => {
+    signIn();
+    const onNavigate = vi.fn();
+    renderWithLocale(<MenuAccountHeader onNavigate={onNavigate} tight={false} open />);
+    const profile = screen.getByRole('link', { name: 'Open your profile Ada @ada' });
+    expect(profile.getAttribute('href')).toBe('/profile');
+    expect(profile.className).toContain('min-h-11');
+    expect(within(profile).getByText('A').getAttribute('aria-hidden')).toBe('true');
+    expect(within(profile).getByText('Ada')).toBeTruthy();
+    expect(within(profile).getByText('@ada')).toBeTruthy();
+    expect(statRow().closest('a')).toBeNull();
+    fireEvent.click(within(profile).getByText('@ada'));
+    expect(onNavigate).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the profile link and the balance link apart', async () => {
+    signIn();
+    vi.mocked(useWallet).mockReturnValue(walletWith('ready', 21_000));
+    const onNavigate = vi.fn();
+    renderWithLocale(<MenuAccountHeader onNavigate={onNavigate} tight={false} open />);
+    await settle();
+    const profile = screen.getByRole('link', { name: 'Open your profile Ada @ada' });
+    const balance = screen.getByRole('link', { name: "Balance ₿21'000 $21.00" });
+    expect(profile.contains(balance)).toBe(false);
+    expect(balance.contains(profile)).toBe(false);
+    fireEvent.click(balance);
+    expect(onNavigate).toHaveBeenCalledTimes(1);
   });
 
   it('shows the ready balance with fiat as a link to /wallet that closes the Menu', async () => {
@@ -340,7 +372,9 @@ describe('MenuAccountHeader', () => {
     signIn();
     vi.mocked(useWallet).mockReturnValue(walletWith(status));
     renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
-    expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual([
+      '/profile',
+    ]);
     expect(screen.queryByRole('status')).toBeNull();
   });
 
@@ -391,7 +425,7 @@ describe('MenuAccountHeader', () => {
     await settle();
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
     expect(URL.revokeObjectURL).not.toHaveBeenCalled();
-    expect(screen.getByRole('img', { name: 'Profile photo' })).toBeTruthy();
+    expect(document.querySelector('img')?.getAttribute('src')).toBe('blob:photo');
   });
 
   it('keeps nothing from a load that settles after sign-out, and drops the cache when the session changes', async () => {

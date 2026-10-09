@@ -20263,7 +20263,10 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Menu' }).click();
-    const photo = page.locator('#signed-in-menu').getByRole('img', { name: 'Profile photo' });
+    const photo = page
+      .locator('#signed-in-menu')
+      .getByRole('link', { name: /^Open your profile/ })
+      .locator('img');
     await expect(photo).toBeVisible();
     await expect.poll(() => photo.evaluate((img: HTMLImageElement) => img.complete)).toBe(true);
     await shotScreen(page, 'state-welcome-menu-header-photo');

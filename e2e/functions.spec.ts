@@ -10775,7 +10775,7 @@ test('Function: fetchAccountActivity — profile chart shows received sats and t
   await page.goto('/profile');
   await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Profile', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /Received ₿/ })).toHaveCount(0);
 });
 test('Function: fetchMemberActivity — member card shows empty activity copy', async ({
@@ -10845,7 +10845,7 @@ test('Function: useAccountTotals — profile chart reads /me/activity and the me
   await page.goto('/profile');
   await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Profile', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /Received ₿/ })).toHaveCount(0);
 });
 
