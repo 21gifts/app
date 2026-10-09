@@ -390,8 +390,9 @@ test('Function: MenuAccountHeader shows the ready balance with fiat, the name, a
   }
   await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
   const rows = menu.getByRole('link');
-  await expect(rows.nth(1)).toHaveAccessibleName('Home');
-  await expect(rows.nth(2)).toHaveAccessibleName('Balance');
+  await expect(rows.nth(0)).toHaveAccessibleName('Open your profile Ada @ada');
+  await expect(rows.nth(2)).toHaveAccessibleName('Home');
+  await expect(rows.nth(3)).toHaveAccessibleName('Balance');
   await markDocument(page);
   const origin = new URL(page.url()).origin;
   await balance.click();
@@ -400,6 +401,59 @@ test('Function: MenuAccountHeader shows the ready balance with fiat, the name, a
   expect(await sameDocument(page)).toBe('same');
   expect(await passkeyPrompts(page)).toBe(0);
 });
+
+for (const layout of [
+  { name: 'phone', width: 390, height: 844 },
+  { name: 'desktop', width: 1280, height: 900 },
+]) {
+  for (const target of ['photo', 'name'] as const) {
+    test(`the Menu account header's ${target} opens the profile on a ${layout.name} without a document load`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: layout.width, height: layout.height });
+      await signInWithPasskey(page);
+      await fulfillSpotRate(page);
+      await page.goto('/settings?visual=balance-ready');
+      await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+      await page.getByRole('button', { name: 'Menu' }).click();
+      const menu = page.locator('#signed-in-menu');
+      const profile = menu.getByRole('link', { name: 'Open your profile Ada @ada', exact: true });
+      await expect(profile).toHaveAttribute('href', '/profile');
+      const box = (await profile.boundingBox())!;
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      await expect(menu.getByRole('link', { name: /₿21'000/ })).toHaveAttribute('href', '/wallet');
+      await markDocument(page);
+      const origin = new URL(page.url()).origin;
+      // The initial stands in for the photo when none is stored.
+      await (
+        target === 'photo'
+          ? profile.getByText('A', { exact: true })
+          : profile.getByText('Ada', { exact: true })
+      ).click();
+      await expect(page).toHaveURL(`${origin}/profile`);
+      await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+      await expect(menu).toBeHidden();
+      expect(await sameDocument(page)).toBe('same');
+      expect(await passkeyPrompts(page)).toBe(0);
+    });
+  }
+
+  test(`the Menu account header's balance still opens the wallet on a ${layout.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: layout.width, height: layout.height });
+    await signInWithPasskey(page);
+    await fulfillSpotRate(page);
+    await page.goto('/settings?visual=balance-ready');
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const menu = page.locator('#signed-in-menu');
+    const origin = new URL(page.url()).origin;
+    await menu.getByRole('link', { name: /₿21'000/ }).click();
+    await expect(page).toHaveURL(`${origin}/wallet`);
+    await expect(menu).toBeHidden();
+  });
+}
 
 test('MenuAccountHeader keeps the stats row height while the numbers load', async ({ page }) => {
   await signInWithPasskey(page);
@@ -440,9 +494,15 @@ test('the Menu rows stay put when it opens right after a page load', async ({ pa
   const home = menu.getByRole('link', { name: 'Home' });
   await expect(home).toBeVisible();
   await expect(menu.locator('dl .animate-pulse')).toHaveCount(5);
+  // The placeholder is not a link; the profile link appears with the account.
+  await expect(menu.getByRole('link', { name: /^Open your profile/ })).toHaveCount(0);
   const before = (await home.boundingBox())!;
   release();
   await expect(menu.getByText('@ada')).toBeVisible();
+  await expect(menu.getByRole('link', { name: /^Open your profile/ })).toHaveAttribute(
+    'href',
+    '/profile',
+  );
   await page.waitForTimeout(3_000);
   const after = (await home.boundingBox())!;
   expect(after.y).toBe(before.y);

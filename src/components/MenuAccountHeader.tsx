@@ -90,7 +90,7 @@ function loadStats(session: string, accountId: string): Promise<MenuStats> {
 
 /** Props for {@link MenuAccountHeader}. */
 export interface MenuAccountHeaderProps {
-  /** Closes the Menu after the balance link is followed. */
+  /** Closes the Menu after the profile or the balance link is followed. */
   onNavigate: () => void;
   /** The compact wide Menu, whose panel has no top padding. */
   tight: boolean;
@@ -104,7 +104,7 @@ const SKELETON_CLASS = 'block rounded bg-app-border animate-pulse motion-reduce:
 /**
  * Card at the top of the signed-in Menu. The first row is the profile photo
  * (or the name's initial in a circle), display name, and `@username`, which
- * truncate, and in the right corner the wallet balance (₿, the default fiat
+ * truncate, together one link to `/profile`, and in the right corner the wallet balance (₿, the default fiat
  * small under it, right-aligned, never wrapping) as a link to `/wallet`; a
  * skeleton of the same size while the wallet connects, and nothing on error
  * or without a wallet. Under it Received, Given, and Posts, always in their
@@ -115,7 +115,7 @@ const SKELETON_CLASS = 'block rounded bg-app-border animate-pulse motion-reduce:
  * waits for them. Until the account is loaded (a stored session still being
  * checked right after a page load), the card already has its final size:
  * a skeleton circle for the photo, skeleton bars for the name and
- * `@username`, and the stats row's skeletons.
+ * `@username`, and the stats row's skeletons; that placeholder is not a link.
  *
  * @param props - See {@link MenuAccountHeaderProps}.
  * @returns The header card while the Menu is open, or `null` while it is
@@ -264,46 +264,53 @@ export function MenuAccountHeader({
     <div className={`flex flex-col gap-3 rounded-xl bg-app-card-muted p-3${tight ? ' mt-2' : ''}`}>
       <div className="flex min-w-0 items-center gap-3">
         {pending ? (
-          <span
-            aria-hidden="true"
-            className={`${SKELETON_CLASS} h-10 w-10 shrink-0 rounded-full`}
-          />
-        ) : stats?.pictureUrl !== null && stats?.pictureUrl !== undefined ? (
-          // eslint-disable-next-line @next/next/no-img-element -- blob URL from the profile photo
-          <img
-            src={stats.pictureUrl}
-            alt={t('profile.about.portraitAlt')}
-            className="h-10 w-10 shrink-0 rounded-full object-cover"
-          />
-        ) : (
-          <span
-            aria-hidden="true"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-app-border text-base font-semibold text-app-fg"
-          >
-            {initial}
-          </span>
-        )}
-        <div className="flex min-w-0 flex-1 flex-col">
-          {pending ? (
-            <>
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <span
+              aria-hidden="true"
+              className={`${SKELETON_CLASS} h-10 w-10 shrink-0 rounded-full`}
+            />
+            <div className="flex min-w-0 flex-1 flex-col">
               <span aria-hidden="true" className="flex h-5 items-center">
                 <span className={`${SKELETON_CLASS} h-3.5 w-24`} />
               </span>
               <span aria-hidden="true" className="flex h-4 items-center">
                 <span className={`${SKELETON_CLASS} h-3 w-16`} />
               </span>
-            </>
-          ) : (
-            <>
+            </div>
+          </div>
+        ) : (
+          // 44px tap target; the negative margins keep the row at the photo's 40px.
+          <Link
+            href="/profile"
+            onClick={onNavigate}
+            className="-mx-1 -my-0.5 flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-lg px-1 py-0.5 no-underline transition hover:bg-app-hover"
+          >
+            <span className="sr-only">{t('nav.openProfile')}</span>
+            {stats?.pictureUrl !== null && stats?.pictureUrl !== undefined ? (
+              // eslint-disable-next-line @next/next/no-img-element -- blob URL from the profile photo
+              <img
+                src={stats.pictureUrl}
+                alt=""
+                className="h-10 w-10 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <span
+                aria-hidden="true"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-app-border text-base font-semibold text-app-fg"
+              >
+                {initial}
+              </span>
+            )}
+            <span className="flex min-w-0 flex-1 flex-col">
               {name !== '' ? (
                 <span className="h-5 truncate text-sm font-semibold text-app-fg">{name}</span>
               ) : null}
               {username !== null ? (
                 <span className="h-4 truncate text-xs text-app-muted">@{username}</span>
               ) : null}
-            </>
-          )}
-        </div>
+            </span>
+          </Link>
+        )}
         {balance}
       </div>
       <dl className="grid grid-cols-3 gap-2">

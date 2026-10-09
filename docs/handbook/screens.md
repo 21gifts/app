@@ -760,7 +760,7 @@ Existing member without a recovery phrase yet. The **Wallet** section shows the 
 
 ### Variant: menu-header-account-loading
 
-**Menu** opened right after the page loads, while the stored session is still being checked: the account header already has its final size, with a grey skeleton circle in place of the photo, two skeleton bars for the name and `@username`, and skeleton bars under **Received**, **Given**, and **Posts**. **Home** and every row below sit where they stay once the account and the numbers arrive, so nothing moves.
+**Menu** opened right after the page loads, while the stored session is still being checked: the account header already has its final size, with a grey skeleton circle in place of the photo, two skeleton bars for the name and `@username`, and skeleton bars under **Received**, **Given**, and **Posts**. **Home** and every row below sit where they stay once the account and the numbers arrive, so nothing moves. The placeholder is not a link yet; once the account is loaded, the photo or initial and the name open `/profile`.
 
 ![21.gifts settings menu with the account header loading](images/settings-menu-header-account-loading.png)
 
@@ -2556,7 +2556,7 @@ POST fails after caption+JPEG → **Could not post your message**; preview and c
 
 ### Variant: menu-open
 
-Open **Menu** top-right → Menu starts with the account header (photo or initial, name, @username, balance, Received / Given / Posts), then Home, Balance, Shops, Point of sale, Profile, Grants, Settings, Living room rules, Habit-Tracker, Trust Chain, Statistics, Notifications, Messages, Contact, optional Install, Log out, then a quiet **Version {version}** line (`app.version`)). Profile is one line (User + Profile; no given or received amounts). Notifications shows an unread count on the right only when `unreadCount` > 0 (Ada’s default shot is 0, so no count). Messages shows a count on the right only when inbox unread > 0; Ada’s default shots are 0 so no number. Ada’s default welcome-menu shot shows Profile with no amounts. Living room rules and Contact each have an icon, optional **Install app** when an install offer exists, Log out, then a quiet **Version {version}** line (`app.version`). Language, theme, and number format live on `/profile`, not in this Menu. The Profile link’s accessible name is Profile. Other accessible names are unchanged. No English / Deutsch / Español / Filipino option rows. No native language select.
+Open **Menu** top-right → Menu starts with the account header (photo or initial, name, @username, balance, Received / Given / Posts), then Home, Balance, Shops, Point of sale, Profile, Grants, Settings, Living room rules, Habit-Tracker, Trust Chain, Statistics, Notifications, Messages, Contact, optional Install, Log out, then a quiet **Version {version}** line (`app.version`)). Profile is one line (User + Profile; no given or received amounts). Notifications shows an unread count on the right only when `unreadCount` > 0 (Ada’s default shot is 0, so no count). Messages shows a count on the right only when inbox unread > 0; Ada’s default shots are 0 so no number. Ada’s default welcome-menu shot shows Profile with no amounts. Living room rules and Contact each have an icon, optional **Install app** when an install offer exists, Log out, then a quiet **Version {version}** line (`app.version`). Language, theme, and number format live on `/profile`, not in this Menu. The Profile link’s accessible name is Profile. Tapping the account header's photo or initial, or its name or @username, also opens `/profile` and closes the Menu (one link, accessible name **Open your profile** followed by the name and @username); the balance in its top-right corner still opens `/wallet`. Other accessible names are unchanged. No English / Deutsch / Español / Filipino option rows. No native language select.
 ![21.gifts welcome menu](images/welcome-menu.png)
 
 ### Variant: menu-lifted
@@ -2603,7 +2603,7 @@ The open Menu when the totals and the post count could not be read: **Received**
 
 ### Variant: menu-header-photo
 
-The open Menu for a member with a profile photo: the round photo replaces the initial at the start of the account header.
+The open Menu for a member with a profile photo: the round photo replaces the initial at the start of the account header. Together with the name it is one link to `/profile`.
 
 ![21.gifts welcome menu header photo](images/welcome-menu-header-photo.png)
 
