@@ -45,8 +45,31 @@ vi.mock('@/components/ForumLoader', async () => {
    */
   function Forum({ writer }: { writer?: ForumWriter }): ReactNode {
     const [renders, setRenders] = useState(0);
+    const [form, setForm] = useState(false);
     return (
       <>
+        <button
+          type="button"
+          onClick={() => {
+            setForm(true);
+            writer?.onFeedForm?.(true);
+          }}
+        >
+          Stub open form
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setForm(false);
+            writer?.onFeedForm?.(false);
+          }}
+        >
+          Stub close form
+        </button>
+        {form ? <textarea aria-label="Stub form field" /> : null}
+        <textarea aria-label="Stub reaction" />
+        <input aria-label="Stub amount" inputMode="decimal" />
+        <input type="checkbox" aria-label="Stub check" />
         <button
           type="button"
           onClick={() => {
@@ -219,6 +242,15 @@ describe('WelcomeScreen writer', () => {
     useAuthStore.setState({ session: null, account: null });
     renderWelcome();
     expect(screen.queryByRole('button', { name: 'Write a post' })).toBeNull();
+    expect(document.querySelector('[data-plus-clearance]')).toBeNull();
+  });
+
+  it('ends the signed-in page with room under the last note for the +', () => {
+    renderWelcome();
+    const clearance = document.querySelector('[data-plus-clearance]') as HTMLElement;
+    expect(clearance.getAttribute('aria-hidden')).toBe('true');
+    expect(clearance.className).toBe('h-20 w-full shrink-0');
+    expect(clearance.previousElementSibling?.textContent).toContain('Welcome, Ada');
   });
 
   it('floats an icon-only + at the bottom right, above Receive / Send when they are there', () => {
@@ -231,7 +263,7 @@ describe('WelcomeScreen writer', () => {
     expect(plus.className).toContain(
       'group-has-[[data-footer-actions]]/body:bottom-[calc(4.75rem+23px-1.75rem*var(--footer-collapse,0))]',
     );
-    expect(plus.className).toContain('group-data-[footer-snap]/body:ease-glide');
+    expect(plus.className).toContain('group-data-[footer-snap]/body:duration-320');
     expect(plus.querySelector('svg')?.getAttribute('class')).toContain('lucide-plus');
   });
 
@@ -359,6 +391,128 @@ describe('WelcomeScreen writer', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Write a post' }));
     fireEvent.click(screen.getByRole('button', { name: 'Stub posted' }));
     expect(screen.queryByTestId('writer')).toBeNull();
+  });
+});
+
+/** The welcome screen inside the shell, with Receive / Send when `wallet` is ready. */
+function renderInShell(wallet: 'ready' | 'disabled' = 'ready'): {
+  body: HTMLElement;
+  plus: () => HTMLElement;
+} {
+  vi.mocked(useWallet).mockReturnValue(walletWith(wallet));
+  const view = renderWithLocale(
+    <ChromeBackProvider>
+      <AppShell mode="fill" topLeft={<ProfileChromeLeft hideHistoryArrow />}>
+        <WelcomeScreen />
+      </AppShell>
+    </ChromeBackProvider>,
+  );
+  return {
+    body: view.container.querySelector('[data-app-body]') as HTMLElement,
+    plus: () => screen.getByRole('button', { name: 'Write a post' }),
+  };
+}
+
+/** True while the + is faded out and cannot be pressed. */
+function plusAside(plus: HTMLElement): boolean {
+  return plus.className.endsWith(' pointer-events-none invisible opacity-0');
+}
+
+describe('WelcomeScreen while a form in the feed is open', () => {
+  it('fades the + with the glide easing, at once with reduced motion', () => {
+    const { plus } = renderInShell();
+    expect(plus().className).toContain(
+      'transition-[opacity,visibility] duration-250 ease-glide motion-reduce:transition-none',
+    );
+    expect(plus().className).toContain(
+      'group-data-[footer-snap]/body:transition-[bottom,opacity,visibility] group-data-[footer-snap]/body:duration-320',
+    );
+    expect(plusAside(plus())).toBe(false);
+  });
+
+  it('hides the + and folds Receive / Send while a form is open, and brings both back when it closes', () => {
+    const { body, plus } = renderInShell();
+    expect(body.hasAttribute('data-footer-fold')).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Stub open form' }));
+    expect(plusAside(plus())).toBe(true);
+    expect(body.dataset['footerFold']).toBe('');
+    // Its field taking the focus keeps them aside.
+    act(() => {
+      screen.getByRole('textbox', { name: 'Stub form field' }).focus();
+    });
+    expect(plusAside(plus())).toBe(true);
+    act(() => {
+      screen.getByRole('textbox', { name: 'Stub form field' }).blur();
+    });
+    expect(plusAside(plus())).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Stub close form' }));
+    expect(plusAside(plus())).toBe(false);
+    expect(body.hasAttribute('data-footer-fold')).toBe(false);
+  });
+
+  it('counts a focused field that left with its form as left', () => {
+    const { body, plus } = renderInShell();
+    fireEvent.click(screen.getByRole('button', { name: 'Stub open form' }));
+    const field = screen.getByRole('textbox', { name: 'Stub form field' });
+    act(() => {
+      field.focus();
+    });
+    // The form closes under the focused field: no click, so the focus never moved.
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Stub close form' }), { detail: 0 });
+    });
+    expect(field.isConnected).toBe(false);
+    expect(plusAside(plus())).toBe(false);
+    expect(body.hasAttribute('data-footer-fold')).toBe(false);
+  });
+
+  it('moves them aside while a text field in the page has the focus, not for a checkbox', () => {
+    const { body, plus } = renderInShell();
+    act(() => {
+      screen.getByRole('textbox', { name: 'Stub reaction' }).focus();
+    });
+    expect(plusAside(plus())).toBe(true);
+    expect(body.dataset['footerFold']).toBe('');
+    // From the text to the amount: still aside.
+    act(() => {
+      screen.getByRole('textbox', { name: 'Stub amount' }).focus();
+    });
+    expect(plusAside(plus())).toBe(true);
+    act(() => {
+      screen.getByRole('checkbox', { name: 'Stub check' }).focus();
+    });
+    expect(plusAside(plus())).toBe(false);
+    act(() => {
+      screen.getByRole('textbox', { name: 'Stub amount' }).focus();
+    });
+    expect(plusAside(plus())).toBe(true);
+    act(() => {
+      screen.getByRole('textbox', { name: 'Stub amount' }).blur();
+    });
+    expect(plusAside(plus())).toBe(false);
+    expect(body.hasAttribute('data-footer-fold')).toBe(false);
+  });
+
+  it('does not count a field outside the page', () => {
+    const { plus } = renderInShell();
+    const outside = document.createElement('textarea');
+    document.body.append(outside);
+    act(() => {
+      screen.getByRole('textbox', { name: 'Stub reaction' }).focus();
+    });
+    act(() => {
+      outside.focus();
+    });
+    expect(plusAside(plus())).toBe(false);
+    outside.remove();
+  });
+
+  it('hides the + also without Receive / Send', () => {
+    const { body, plus } = renderInShell('disabled');
+    expect(screen.queryByRole('button', { name: 'Receive' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Stub open form' }));
+    expect(plusAside(plus())).toBe(true);
+    expect(body.hasAttribute('data-footer-fold')).toBe(false);
   });
 });
 
