@@ -388,15 +388,16 @@ test('a borrower takes a credit, three people give, and every share is paid back
 
   const home = await openMember(browser, ui.borrower, '/welcome');
   await repayAll(home, messageId, ui);
-  await home.getByRole('button', { name: 'Who gave and who is paid back' }).click();
-  const paidBack = home.getByRole('region', { name: 'Paid back' });
+  await expect(home.getByRole('button', { name: "Pay today's repayment" })).toBeVisible();
+  await home.goto(`/messages/${messageId}/repayment-list`);
+  const paidBack = home.getByLabel('Paid back');
   await expect(paidBack.getByText('Paid', { exact: true })).toHaveCount(
     ui.givers.length * ui.termDays,
   );
   const ledger = await readLedger(home, messageId);
   expect(ledger.daysPaid).toBe(ui.termDays);
   expect(ledger.termDays).toBe(ui.termDays);
-  const given = home.getByRole('region', { name: 'Given' });
+  const given = home.getByLabel('Given');
   for (const giver of ui.givers) {
     await expect(given.getByText(`@${giver.username}`)).toBeVisible();
     const row = ledger.givers.find((item) => item.username === giver.username);
@@ -410,5 +411,4 @@ test('a borrower takes a credit, three people give, and every share is paid back
     );
     expect(paid).toHaveLength(ui.termDays);
   }
-  await expect(home.getByRole('button', { name: "Pay today's repayment" })).toBeVisible();
 });
