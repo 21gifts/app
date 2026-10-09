@@ -590,24 +590,14 @@
     "fil": "Pagkatapos ng POST /translate 502: Hindi maisalin ang notang ito. Pakisubukan muli."
   },
   "/messages/[id]:heart-needs-balance": {
-    "de": "Derselbe angemeldete öffentliche Thread nach dem Stubben von POST /messages/*/invoice auf 400 wallet_required und dem Klick auf ₿1 senden. Text Dafür ist ein Bitcoin-Guthaben nötig.",
-    "es": "El mismo hilo público con sesión iniciada tras simular POST /messages/*/invoice a 400 wallet_required y pulsar Enviar ₿1. Texto Para esto hace falta saldo de Bitcoin.",
-    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos i-stub ang POST /messages/*/invoice sa 400 wallet_required at pindutin ang Magpadala ng ₿1. Sipi Kailangan ng Bitcoin balance para dito."
+    "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
   "/messages/[id]:heart-paid": {
-    "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Die bezahlte Markierung +1 ist sichtbar.",
-    "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar ₿1. La marca pagada +1 está visible.",
-    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nakikita ang bayad na marka +1."
-  },
-  "/messages/[id]:heart-unavailable": {
-    "de": "Derselbe angemeldete öffentliche Thread nach dem Stubben von POST /messages/*/invoice auf 503 HEART_UNAVAILABLE und dem Klick auf ₿1 senden. Nichts wird gesendet, das Herz bleibt leer. Text Herzen sind gerade nicht verfügbar.",
-    "es": "El mismo hilo público con sesión iniciada tras simular POST /messages/*/invoice a 503 HEART_UNAVAILABLE y pulsar Enviar ₿1. No se envía nada y el corazón queda vacío. Texto Los corazones no están disponibles en este momento.",
-    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos i-stub ang POST /messages/*/invoice sa 503 HEART_UNAVAILABLE at pindutin ang Magpadala ng ₿1. Walang naipadala at nananatiling walang laman ang puso. Sipi Hindi available ang mga puso ngayon."
-  },
-  "/messages/[id]:heart-pending": {
-    "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-pending und dem Klick auf ₿1 senden: Das Senden lief in den Timeout, der Ausgang ist noch offen. Das Herz bleibt gefüllt, kein +1, und ein weiteres Tippen auf diese Notiz zahlt nicht. Text Dein letztes Herz ist noch unterwegs. Versuch es gleich nochmal.",
-    "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-pending y pulsar Enviar ₿1: el envío agotó el tiempo y aún no se sabe el resultado. El corazón queda lleno, sin +1, y otro toque en esta nota no paga. Texto Tu último corazón todavía está en camino. Inténtalo de nuevo en un momento.",
-    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-pending at pindutin ang Magpadala ng ₿1: nag-time out ang pagpapadala at hindi pa alam ang resulta. Nananatiling puno ang puso, walang +1, at hindi magbabayad ang isa pang tap sa talang ito. Sipi Papunta pa ang huling puso mo. Subukan ulit maya-maya."
+    "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
+    "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
+    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
   "/welcome:composer-photos-and-text": {
     "de": "Zwei JPEG-Vorschauen plus Bildunterschrift Caption with selected photos., bereit zum Senden.",
@@ -1940,24 +1930,14 @@
     "fil": "Parehong notang Aleman pagkatapos mabigo ang POST /translate. Alerto Hindi maisalin ang notang ito. Pakisubukan muli. at nananatili ang kontrol na Isalin."
   },
   "/welcome:heart-needs-balance": {
-    "de": "Dieselbe angemeldete deutsche Notiz nach dem Stubben von POST /messages/*/invoice auf 400 wallet_required und dem Klick auf ₿1 senden. Text Dafür ist ein Bitcoin-Guthaben nötig.",
-    "es": "La misma nota en alemán con sesión iniciada tras simular POST /messages/*/invoice a 400 wallet_required y pulsar Enviar ₿1. Texto Para esto hace falta saldo de Bitcoin.",
-    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos i-stub ang POST /messages/*/invoice sa 400 wallet_required at pindutin ang Magpadala ng ₿1. Sipi Kailangan ng Bitcoin balance para dito."
+    "de": "Dieselbe angemeldete deutsche Notiz nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "La misma nota en alemán con sesión iniciada tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
   "/welcome:heart-paid": {
-    "de": "Dieselbe angemeldete deutsche Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Die bezahlte Markierung +1 ist sichtbar.",
-    "es": "La misma nota en alemán con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar ₿1. La marca pagada +1 está visible.",
-    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nakikita ang bayad na marka +1."
-  },
-  "/welcome:heart-unavailable": {
-    "de": "Dieselbe angemeldete deutsche Notiz nach dem Stubben von POST /messages/*/invoice auf 503 HEART_UNAVAILABLE und dem Klick auf ₿1 senden. Nichts wird gesendet, das Herz bleibt leer. Text Herzen sind gerade nicht verfügbar.",
-    "es": "La misma nota en alemán con sesión iniciada tras simular POST /messages/*/invoice a 503 HEART_UNAVAILABLE y pulsar Enviar ₿1. No se envía nada y el corazón queda vacío. Texto Los corazones no están disponibles en este momento.",
-    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos i-stub ang POST /messages/*/invoice sa 503 HEART_UNAVAILABLE at pindutin ang Magpadala ng ₿1. Walang naipadala at nananatiling walang laman ang puso. Sipi Hindi available ang mga puso ngayon."
-  },
-  "/welcome:heart-pending": {
-    "de": "Dieselbe angemeldete deutsche Notiz nach dem Öffnen von ?visual=heart-pending und dem Klick auf ₿1 senden: Das Senden lief in den Timeout, der Ausgang ist noch offen. Das Herz bleibt gefüllt, kein +1, und ein weiteres Tippen auf diese Notiz zahlt nicht. Text Dein letztes Herz ist noch unterwegs. Versuch es gleich nochmal.",
-    "es": "La misma nota en alemán con sesión iniciada tras abrir ?visual=heart-pending y pulsar Enviar ₿1: el envío agotó el tiempo y aún no se sabe el resultado. El corazón queda lleno, sin +1, y otro toque en esta nota no paga. Texto Tu último corazón todavía está en camino. Inténtalo de nuevo en un momento.",
-    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos buksan ang ?visual=heart-pending at pindutin ang Magpadala ng ₿1: nag-time out ang pagpapadala at hindi pa alam ang resulta. Nananatiling puno ang puso, walang +1, at hindi magbabayad ang isa pang tap sa talang ito. Sipi Papunta pa ang huling puso mo. Subukan ulit maya-maya."
+    "de": "Dieselbe angemeldete deutsche Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
+    "es": "La misma nota en alemán con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
+    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
   "/members/[accountId]:translate-error": {
     "de": "Derselbe deutsche Beitrag nach fehlgeschlagenem POST /translate. Hinweis Diese Notiz konnte nicht übersetzt werden. Bitte erneut versuchen. und die Steuerung Übersetzen bleibt.",
@@ -1965,24 +1945,14 @@
     "fil": "Parehong post sa German pagkatapos mabigo ang POST /translate. Alerto Hindi maisalin ang notang ito. Pakisubukan muli. at nananatili ang kontrol na Isalin."
   },
   "/members/[accountId]:heart-needs-balance": {
-    "de": "Derselbe deutsche Beitrag im Beitragsfeed nach dem Stubben von POST /messages/*/invoice auf 400 wallet_required und dem Klick auf ₿1 senden. Text Dafür ist ein Bitcoin-Guthaben nötig.",
-    "es": "La misma publicación en alemán en el feed de publicaciones tras simular POST /messages/*/invoice a 400 wallet_required y pulsar Enviar ₿1. Texto Para esto hace falta saldo de Bitcoin.",
-    "fil": "Parehong post sa German sa feed ng mga post pagkatapos i-stub ang POST /messages/*/invoice sa 400 wallet_required at pindutin ang Magpadala ng ₿1. Sipi Kailangan ng Bitcoin balance para dito."
+    "de": "Derselbe deutsche Beitrag im Beitragsfeed nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "La misma publicación en alemán en el feed de publicaciones tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Parehong post sa German sa feed ng mga post pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
   "/members/[accountId]:heart-paid": {
-    "de": "Derselbe deutsche Beitrag nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Die bezahlte Markierung +1 ist sichtbar.",
-    "es": "La misma publicación en alemán tras abrir ?visual=heart-paid y pulsar Enviar ₿1. La marca pagada +1 está visible.",
-    "fil": "Parehong post sa German pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nakikita ang bayad na marka +1."
-  },
-  "/members/[accountId]:heart-unavailable": {
-    "de": "Derselbe deutsche Beitrag nach dem Stubben von POST /messages/*/invoice auf 503 HEART_UNAVAILABLE und dem Klick auf ₿1 senden. Nichts wird gesendet, das Herz bleibt leer. Text Herzen sind gerade nicht verfügbar.",
-    "es": "La misma publicación en alemán tras simular POST /messages/*/invoice a 503 HEART_UNAVAILABLE y pulsar Enviar ₿1. No se envía nada y el corazón queda vacío. Texto Los corazones no están disponibles en este momento.",
-    "fil": "Parehong post na Aleman pagkatapos i-stub ang POST /messages/*/invoice sa 503 HEART_UNAVAILABLE at pindutin ang Magpadala ng ₿1. Walang naipadala at nananatiling walang laman ang puso. Sipi Hindi available ang mga puso ngayon."
-  },
-  "/members/[accountId]:heart-pending": {
-    "de": "Derselbe deutsche Beitrag nach dem Öffnen von ?visual=heart-pending und dem Klick auf ₿1 senden: Das Senden lief in den Timeout, der Ausgang ist noch offen. Das Herz bleibt gefüllt, kein +1, und ein weiteres Tippen auf diese Notiz zahlt nicht. Text Dein letztes Herz ist noch unterwegs. Versuch es gleich nochmal.",
-    "es": "La misma publicación en alemán tras abrir ?visual=heart-pending y pulsar Enviar ₿1: el envío agotó el tiempo y aún no se sabe el resultado. El corazón queda lleno, sin +1, y otro toque en esta nota no paga. Texto Tu último corazón todavía está en camino. Inténtalo de nuevo en un momento.",
-    "fil": "Parehong post na Aleman pagkatapos buksan ang ?visual=heart-pending at pindutin ang Magpadala ng ₿1: nag-time out ang pagpapadala at hindi pa alam ang resulta. Nananatiling puno ang puso, walang +1, at hindi magbabayad ang isa pang tap sa talang ito. Sipi Papunta pa ang huling puso mo. Subukan ulit maya-maya."
+    "de": "Derselbe deutsche Beitrag nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
+    "es": "La misma publicación en alemán tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
+    "fil": "Parehong post sa German pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
   "/grants/applications/[accountId]:translate-error": {
     "de": "Derselbe deutsche Beitrag nach fehlgeschlagenem POST /translate. Hinweis Diese Notiz konnte nicht übersetzt werden. Bitte erneut versuchen. und die Steuerung Übersetzen bleibt.",
@@ -3045,24 +3015,14 @@
     "fil": "Heading na Mga Tindahan, panimula, ang saradong pagpipiliang Bansa na nakatakda sa Lahat ng bansa, ang maliit na label na Post / Mapa / Talahanayan na napili ang Post, Magdagdag ng shop (walang kahon ng pagsulat sa sala), isang tala ng tindahan Cafe Luna na may maliit na label na #Shop. Ang tindahang may serong sat ay nakalista pa rin. Walang pahiwatig sa mga batas. Hindi nakikita ang hilaw na #21GiftsShop."
   },
   "/shops:heart-needs-balance": {
-    "de": "Shop-Beitragsfeed mit Cafe Luna nach dem Stubben von POST /messages/*/invoice auf 400 wallet_required und dem Klick auf ₿1 senden. Text Dafür ist ein Bitcoin-Guthaben nötig.",
-    "es": "Feed de publicaciones de tienda con Cafe Luna tras simular POST /messages/*/invoice a 400 wallet_required y pulsar Enviar ₿1. Texto Para esto hace falta saldo de Bitcoin.",
-    "fil": "Feed ng post ng tindahan na may Cafe Luna pagkatapos i-stub ang POST /messages/*/invoice sa 400 wallet_required at pindutin ang Magpadala ng ₿1. Sipi Kailangan ng Bitcoin balance para dito."
+    "de": "Shop-Beitragsfeed mit Cafe Luna nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "Feed de publicaciones de tienda con Cafe Luna tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Feed ng post ng tindahan na may Cafe Luna pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
   "/shops:heart-paid": {
-    "de": "Dieselbe Cafe-Luna-Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Die bezahlte Markierung +1 ist sichtbar.",
-    "es": "La misma publicación de Cafe Luna tras abrir ?visual=heart-paid y pulsar Enviar ₿1. La marca pagada +1 está visible.",
-    "fil": "Parehong post ng Cafe Luna pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nakikita ang bayad na marka +1."
-  },
-  "/shops:heart-unavailable": {
-    "de": "Derselbe Beitrag Cafe Luna nach dem Stubben von POST /messages/*/invoice auf 503 HEART_UNAVAILABLE und dem Klick auf ₿1 senden. Nichts wird gesendet, das Herz bleibt leer. Text Herzen sind gerade nicht verfügbar.",
-    "es": "La misma publicación Cafe Luna tras simular POST /messages/*/invoice a 503 HEART_UNAVAILABLE y pulsar Enviar ₿1. No se envía nada y el corazón queda vacío. Texto Los corazones no están disponibles en este momento.",
-    "fil": "Parehong post na Cafe Luna pagkatapos i-stub ang POST /messages/*/invoice sa 503 HEART_UNAVAILABLE at pindutin ang Magpadala ng ₿1. Walang naipadala at nananatiling walang laman ang puso. Sipi Hindi available ang mga puso ngayon."
-  },
-  "/shops:heart-pending": {
-    "de": "Derselbe Beitrag Cafe Luna nach dem Öffnen von ?visual=heart-pending und dem Klick auf ₿1 senden: Das Senden lief in den Timeout, der Ausgang ist noch offen. Das Herz bleibt gefüllt, kein +1, und ein weiteres Tippen auf diese Notiz zahlt nicht. Text Dein letztes Herz ist noch unterwegs. Versuch es gleich nochmal.",
-    "es": "La misma publicación Cafe Luna tras abrir ?visual=heart-pending y pulsar Enviar ₿1: el envío agotó el tiempo y aún no se sabe el resultado. El corazón queda lleno, sin +1, y otro toque en esta nota no paga. Texto Tu último corazón todavía está en camino. Inténtalo de nuevo en un momento.",
-    "fil": "Parehong post na Cafe Luna pagkatapos buksan ang ?visual=heart-pending at pindutin ang Magpadala ng ₿1: nag-time out ang pagpapadala at hindi pa alam ang resulta. Nananatiling puno ang puso, walang +1, at hindi magbabayad ang isa pang tap sa talang ito. Sipi Papunta pa ang huling puso mo. Subukan ulit maya-maya."
+    "de": "Dieselbe Cafe-Luna-Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
+    "es": "La misma publicación de Cafe Luna tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
+    "fil": "Parehong post ng Cafe Luna pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
   "/shops:edit-open": {
     "de": "Eine Moderatorin oder ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna angeklickt. Schritt 1 von 5 · Bilder ist geöffnet. Der Fotoschritt schließt mit einem rein ikonischen Schließen (X). Der barrierefreie Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Weiter ist beschriftet. Verlauf liegt unter der Karte.",

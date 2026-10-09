@@ -2982,18 +2982,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/members/[accountId]:heart-unavailable",
-    "label": "/members/[accountId] heart-unavailable",
-    "visual": "state-members-heart-unavailable",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/members/[accountId]:heart-pending",
-    "label": "/members/[accountId] heart-pending",
-    "visual": "state-members-heart-pending",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/members/[accountId]:about-translate",
     "label": "/members/[accountId] about-translate",
     "visual": "state-members-about-translate",
@@ -5064,18 +5052,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:heart-unavailable",
-    "label": "/welcome heart-unavailable",
-    "visual": "state-welcome-heart-unavailable",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/welcome:heart-pending",
-    "label": "/welcome heart-pending",
-    "visual": "state-welcome-heart-pending",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/welcome:note-truncated",
     "label": "/welcome note-truncated",
     "visual": "state-welcome-note-truncated",
@@ -5181,18 +5157,6 @@
     "id": "/shops:heart-paid",
     "label": "/shops heart-paid",
     "visual": "state-shops-heart-paid",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:heart-unavailable",
-    "label": "/shops heart-unavailable",
-    "visual": "state-shops-heart-unavailable",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/shops:heart-pending",
-    "label": "/shops heart-pending",
-    "visual": "state-shops-heart-pending",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5733,18 +5697,6 @@
     "id": "/messages/[id]:heart-paid",
     "label": "/messages/[id] heart-paid",
     "visual": "state-messages-id-heart-paid",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/messages/[id]:heart-unavailable",
-    "label": "/messages/[id] heart-unavailable",
-    "visual": "state-messages-id-heart-unavailable",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/messages/[id]:heart-pending",
-    "label": "/messages/[id] heart-pending",
-    "visual": "state-messages-id-heart-pending",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

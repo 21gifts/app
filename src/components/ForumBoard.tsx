@@ -82,24 +82,12 @@ import { isOwnNote } from '@/lib/roles';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
-import type { HeartTipAlert, HeartTipView } from '@/lib/heart-tip';
+import type { HeartTipView } from '@/lib/heart-tip';
 import type { MessageKey } from '@/lib/messages';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 
 export type { ForumPayError, ForumPayInvoice } from '@/components/ForumPaySheet';
-/** Catalog key for each {@link HeartTipAlert}. */
-const HEART_TIP_ALERT_KEY: Record<HeartTipAlert, MessageKey> = {
-  sunday: 'sunday.zappingPaused',
-  needsBalance: 'forum.heartNeedsBalance',
-  rateLimit: 'forum.payErrorRateLimit',
-  authorWallet: 'forum.payErrorAuthorWallet',
-  request: 'forum.payErrorRequest',
-  payFailed: 'wallet.payFailed',
-  unavailable: 'forum.heartUnavailable',
-  pending: 'forum.heartPending',
-};
-
 /** Top-level compose mode: messenger post or Ask wizard. */
 export type ForumComposeIntent = 'post' | 'ask';
 
@@ -514,7 +502,7 @@ function ForumHeartControl({
   const pressed = view !== undefined && view.pressed;
   const plusOne = view !== undefined && view.plusOne;
   const filled = pressed || plusOne;
-  const alert = view === undefined ? null : view.alert;
+  const needsBalance = view !== undefined && view.needsBalance;
   return (
     <>
       <span className="relative inline-flex">
@@ -545,9 +533,9 @@ function ForumHeartControl({
           </span>
         ) : null}
       </span>
-      {alert !== null ? (
+      {needsBalance ? (
         <p role="alert" className="text-xs text-app-danger">
-          {t(HEART_TIP_ALERT_KEY[alert])}
+          {t('forum.heartNeedsBalance')}
         </p>
       ) : null}
     </>

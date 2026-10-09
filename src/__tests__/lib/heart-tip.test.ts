@@ -1,3 +1,4 @@
+import { captureMessage } from '@sentry/nextjs';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CannotReceiveError, postMessageInvoice, WalletRequiredError } from '@/lib/api';
@@ -15,6 +16,8 @@ import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { listWalletPayments, payFromWallet } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
+
+vi.mock('@sentry/nextjs', () => ({ captureMessage: vi.fn() }));
 
 vi.mock('@/lib/config', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/config')>();
@@ -84,6 +87,7 @@ beforeEach(() => {
   vi.mocked(listWalletPayments).mockReset().mockResolvedValue([]);
   vi.mocked(unlockWalletPhrase).mockReset();
   vi.mocked(logInteraction).mockClear();
+  vi.mocked(captureMessage).mockClear();
   useWalletStore.setState({ status: 'ready', balanceSats: 21, identityPubkey: null });
 });
 
@@ -112,13 +116,19 @@ describe('sendHeartTip', () => {
 
   it('does not send without a sparkInvoice and never pays pr', async () => {
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
-    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({
+      kind: 'failed',
+      reason: 'heart_unavailable',
+    });
     vi.mocked(postMessageInvoice).mockResolvedValue({
       pr: 'lnbc1',
       amountSats: 1,
       sparkInvoice: null,
     });
-    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({
+      kind: 'failed',
+      reason: 'heart_unavailable',
+    });
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
@@ -131,7 +141,10 @@ describe('sendHeartTip', () => {
       feeSats: 1,
       send,
     });
-    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({
+      kind: 'failed',
+      reason: 'heart_unavailable',
+    });
     expect(send).not.toHaveBeenCalled();
   });
 
@@ -144,14 +157,20 @@ describe('sendHeartTip', () => {
       feeSats: 0,
       send,
     });
-    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({
+      kind: 'failed',
+      reason: 'heart_unavailable',
+    });
     vi.mocked(payFromWallet).mockResolvedValue({
       kind: 'confirm',
       amountSats: 0,
       feeSats: 0,
       send,
     });
-    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({
+      kind: 'failed',
+      reason: 'heart_unavailable',
+    });
     expect(send).not.toHaveBeenCalled();
   });
 
@@ -164,13 +183,16 @@ describe('sendHeartTip', () => {
     vi.mocked(unlockWalletPhrase).mockResolvedValue('unlocked');
     await expect(
       sendHeartTip({ ...BASE, walletStatus: 'locked', balanceSats: null }),
-    ).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    ).resolves.toEqual({ kind: 'failed', reason: 'heart_unavailable' });
     expect(send).not.toHaveBeenCalled();
   });
 
   it('maps the api HEART_UNAVAILABLE refusal to unavailable', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValueOnce(new Error('HEART_UNAVAILABLE'));
-    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({
+      kind: 'failed',
+      reason: 'heart_unavailable',
+    });
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
@@ -182,24 +204,24 @@ describe('sendHeartTip', () => {
 
   it('does not send on Sunday', async () => {
     await expect(sendHeartTip({ ...BASE, isLocalSunday: true })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'sunday',
+      kind: 'failed',
+      reason: 'sunday',
     });
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
   it('needs a balance when ready sats are below 1', async () => {
     await expect(sendHeartTip({ ...BASE, balanceSats: 0 })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'needsBalance',
+      kind: 'failed',
+      reason: 'no_balance',
     });
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
-  it('needs a balance when wallet setup is still due', async () => {
+  it('does not send while wallet setup is still due', async () => {
     await expect(sendHeartTip({ ...BASE, needsWalletSetup: true })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'needsBalance',
+      kind: 'failed',
+      reason: 'wallet_setup_due',
     });
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
@@ -208,8 +230,8 @@ describe('sendHeartTip', () => {
     vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
-      kind: 'alert',
-      alert: 'needsBalance',
+      kind: 'failed',
+      reason: 'no_balance',
     });
   });
 
@@ -238,7 +260,7 @@ describe('sendHeartTip', () => {
 
     await expect(
       sendHeartTip({ ...BASE, walletStatus: 'locked', balanceSats: null }),
-    ).resolves.toEqual({ kind: 'alert', alert: 'payFailed' });
+    ).resolves.toEqual({ kind: 'failed', reason: 'payment_failed' });
     expect(unlockWalletPhrase).toHaveBeenCalledTimes(1);
     expect(payFromWallet).toHaveBeenCalledTimes(2);
   });
@@ -250,45 +272,45 @@ describe('sendHeartTip', () => {
 
     await expect(
       sendHeartTip({ ...BASE, walletStatus: 'locked', balanceSats: null }),
-    ).resolves.toEqual({ kind: 'alert', alert: 'payFailed' });
+    ).resolves.toEqual({ kind: 'failed', reason: 'payment_failed' });
   });
 
   it('maps author-wallet and rate-limit invoice errors', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValueOnce(new CannotReceiveError());
     await expect(sendHeartTip(BASE)).resolves.toEqual({
-      kind: 'alert',
-      alert: 'authorWallet',
+      kind: 'failed',
+      reason: 'author_cannot_receive',
     });
     vi.mocked(postMessageInvoice).mockRejectedValueOnce(new Error('Too many payments'));
     await expect(sendHeartTip(BASE)).resolves.toEqual({
-      kind: 'alert',
-      alert: 'rateLimit',
+      kind: 'failed',
+      reason: 'rate_limited',
     });
     vi.mocked(postMessageInvoice).mockRejectedValueOnce(new Error('SUNDAY_REST'));
     await expect(sendHeartTip(BASE)).resolves.toEqual({
-      kind: 'alert',
-      alert: 'sunday',
+      kind: 'failed',
+      reason: 'sunday',
     });
   });
 
-  it('needs a balance when the invoice requires a wallet', async () => {
+  it('maps an invoice that requires a wallet to wallet_setup_due', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValueOnce(new WalletRequiredError());
     await expect(sendHeartTip(BASE)).resolves.toEqual({
-      kind: 'alert',
-      alert: 'needsBalance',
+      kind: 'failed',
+      reason: 'wallet_setup_due',
     });
   });
 
-  it('maps any other invoice rejection to request', async () => {
+  it('maps any other invoice rejection to request_failed', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValueOnce(new Error('offline'));
     await expect(sendHeartTip(BASE)).resolves.toEqual({
-      kind: 'alert',
-      alert: 'request',
+      kind: 'failed',
+      reason: 'request_failed',
     });
     vi.mocked(postMessageInvoice).mockRejectedValueOnce('nope');
     await expect(sendHeartTip(BASE)).resolves.toEqual({
-      kind: 'alert',
-      alert: 'request',
+      kind: 'failed',
+      reason: 'request_failed',
     });
   });
 
@@ -302,8 +324,8 @@ describe('sendHeartTip', () => {
       send,
     });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
-      kind: 'alert',
-      alert: 'needsBalance',
+      kind: 'failed',
+      reason: 'no_balance',
     });
   });
 
@@ -317,8 +339,8 @@ describe('sendHeartTip', () => {
       send,
     });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
-      kind: 'alert',
-      alert: 'request',
+      kind: 'failed',
+      reason: 'payment_failed',
     });
   });
 
@@ -326,8 +348,8 @@ describe('sendHeartTip', () => {
     vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'failed' });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
-      kind: 'alert',
-      alert: 'request',
+      kind: 'failed',
+      reason: 'payment_failed',
     });
   });
 
@@ -335,8 +357,8 @@ describe('sendHeartTip', () => {
     vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'belowMinimum', minSats: 1 });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
-      kind: 'alert',
-      alert: 'request',
+      kind: 'failed',
+      reason: 'payment_failed',
     });
   });
 
@@ -344,8 +366,8 @@ describe('sendHeartTip', () => {
     vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'unlock' });
     await expect(sendHeartTip({ ...BASE, canUnlockWallet: false })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'request',
+      kind: 'failed',
+      reason: 'payment_failed',
     });
     expect(unlockWalletPhrase).not.toHaveBeenCalled();
   });
@@ -361,8 +383,8 @@ describe('sendHeartTip', () => {
       send,
     });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
-      kind: 'alert',
-      alert: 'needsBalance',
+      kind: 'failed',
+      reason: 'no_balance',
     });
     expect(send).not.toHaveBeenCalled();
   });
@@ -372,8 +394,8 @@ describe('sendHeartTip', () => {
     vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
     await expect(sendHeartTip(BASE)).resolves.toEqual({
-      kind: 'alert',
-      alert: 'needsBalance',
+      kind: 'failed',
+      reason: 'no_balance',
     });
     expect(postMessageInvoice).toHaveBeenCalledTimes(1);
   });
@@ -385,23 +407,29 @@ describe('sendHeartTip', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
-  it('ignores visual=heart-pending in a production build and still invoices', async () => {
-    window.history.replaceState({}, '', '/welcome?visual=heart-pending');
+  it('ignores visual=heart-needs-balance in a production build and still pays', async () => {
+    window.history.replaceState({}, '', '/welcome?visual=heart-needs-balance');
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
     vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
-    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send,
+    });
     await expect(sendHeartTip({ ...BASE, messageId: 'pin-prod' })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'needsBalance',
+      kind: 'paid',
     });
     expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
   });
 
-  it('returns pending for visual=heart-pending in a Playwright build without invoicing', async () => {
+  it('returns no_balance for visual=heart-needs-balance in a Playwright build without invoicing', async () => {
     vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
-    window.history.replaceState({}, '', '/welcome?visual=heart-pending');
+    window.history.replaceState({}, '', '/welcome?visual=heart-needs-balance');
     await expect(sendHeartTip({ ...BASE, isLocalSunday: true })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'pending',
+      kind: 'failed',
+      reason: 'no_balance',
     });
     await expect(sendHeartTip({ ...BASE, readOnly: true })).resolves.toEqual({ kind: 'noop' });
     expect(postMessageInvoice).not.toHaveBeenCalled();
@@ -421,8 +449,55 @@ describe('sendHeartTip', () => {
       amountSats: 1,
       sparkInvoice: '',
     });
-    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'alert', alert: 'unavailable' });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({
+      kind: 'failed',
+      reason: 'heart_unavailable',
+    });
     expect(payFromWallet).not.toHaveBeenCalled();
+  });
+});
+
+describe('sendHeartTip error report', () => {
+  it('reports a heart that was not sent with its reason code and the message id only', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValueOnce(new Error('HEART_UNAVAILABLE'));
+    await sendHeartTip({ ...BASE, messageId: 'r-unavailable' });
+    expect(captureMessage).toHaveBeenCalledTimes(1);
+    expect(captureMessage).toHaveBeenCalledWith('Heart not sent', {
+      level: 'error',
+      fingerprint: ['heart-not-sent', 'heart_unavailable'],
+      tags: { heart_reason: 'heart_unavailable' },
+      extra: { messageId: 'r-unavailable' },
+    });
+  });
+
+  it('reports each local refusal with its own reason code', async () => {
+    await sendHeartTip({ ...BASE, isLocalSunday: true });
+    await sendHeartTip({ ...BASE, needsWalletSetup: true });
+    expect(vi.mocked(captureMessage).mock.calls.map((call) => call[1])).toEqual([
+      expect.objectContaining({ tags: { heart_reason: 'sunday' } }),
+      expect.objectContaining({ tags: { heart_reason: 'wallet_setup_due' } }),
+    ]);
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('does not report a paid heart, a silent tap, or a missing balance', async () => {
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      send,
+    });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'paid' });
+    await expect(sendHeartTip({ ...BASE, readOnly: true })).resolves.toEqual({ kind: 'noop' });
+    await expect(sendHeartTip({ ...BASE, balanceSats: 0 })).resolves.toEqual({
+      kind: 'failed',
+      reason: 'no_balance',
+    });
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient' });
+    await expect(sendHeartTip(BASE)).resolves.toEqual({ kind: 'failed', reason: 'no_balance' });
+    expect(captureMessage).not.toHaveBeenCalled();
   });
 });
 
@@ -447,8 +522,8 @@ describe('sendHeartTip after a send timed out', () => {
       send,
     });
     await expect(sendHeartTip({ ...BASE, messageId })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'pending',
+      kind: 'failed',
+      reason: 'timeout_pending',
     });
     expect(send).toHaveBeenCalledTimes(1);
   }
@@ -479,21 +554,21 @@ describe('sendHeartTip after a send timed out', () => {
     vi.mocked(postMessageInvoice).mockClear();
     vi.mocked(listWalletPayments).mockResolvedValueOnce([sentPayment('spark1pending', 'pending')]);
     await expect(sendHeartTip({ ...BASE, messageId: 't-pending' })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'pending',
+      kind: 'failed',
+      reason: 'timeout_pending',
     });
     vi.mocked(listWalletPayments).mockResolvedValueOnce([
       sentPayment('spark1other', 'completed'),
       sentPayment('spark1pending', 'completed', 'received'),
     ]);
     await expect(sendHeartTip({ ...BASE, messageId: 't-pending' })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'pending',
+      kind: 'failed',
+      reason: 'timeout_pending',
     });
     vi.mocked(listWalletPayments).mockRejectedValueOnce(new Error('wallet-connect'));
     await expect(sendHeartTip({ ...BASE, messageId: 't-pending' })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'pending',
+      kind: 'failed',
+      reason: 'timeout_pending',
     });
     expect(postMessageInvoice).not.toHaveBeenCalled();
     expect(listWalletPayments).toHaveBeenCalledWith({ offset: 0, limit: 50 });
@@ -530,8 +605,8 @@ describe('sendHeartTip after a send timed out', () => {
     await timeOutHeart('t-missing', 'spark1missing');
     now.mockReturnValue(1_000_000 + HEART_TIP_UNSETTLED_MS - 1);
     await expect(sendHeartTip({ ...BASE, messageId: 't-missing' })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'pending',
+      kind: 'failed',
+      reason: 'timeout_pending',
     });
     now.mockReturnValue(1_000_000 + HEART_TIP_UNSETTLED_MS);
     const send = payNext();
@@ -554,8 +629,8 @@ describe('sendHeartTip after a send timed out', () => {
       send: async () => ({ kind: 'failed', sentLate }),
     });
     await expect(sendHeartTip({ ...BASE, messageId: 't-late' })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'pending',
+      kind: 'failed',
+      reason: 'timeout_pending',
     });
     expect(logInteraction).not.toHaveBeenCalled();
     late(true);
@@ -584,8 +659,8 @@ describe('sendHeartTip after a send timed out', () => {
       send: async () => ({ kind: 'failed', sentLate }),
     });
     await expect(sendHeartTip({ ...BASE, messageId: 't-late-failed' })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'pending',
+      kind: 'failed',
+      reason: 'timeout_pending',
     });
     await sentLate;
     await Promise.resolve();
@@ -619,16 +694,16 @@ describe('sendHeartTip after a send timed out', () => {
       send: async () => ({ kind: 'failed', sentLate: new Promise<boolean>(() => undefined) }),
     });
     await expect(sendHeartTip({ ...BASE, messageId: 't-two' })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'pending',
+      kind: 'failed',
+      reason: 'timeout_pending',
     });
     lateOld(false);
     await oldSentLate;
     await Promise.resolve();
     vi.mocked(postMessageInvoice).mockClear();
     await expect(sendHeartTip({ ...BASE, messageId: 't-two' })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'pending',
+      kind: 'failed',
+      reason: 'timeout_pending',
     });
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
@@ -643,8 +718,8 @@ describe('sendHeartTip after a send timed out', () => {
       send: failed,
     });
     await expect(sendHeartTip({ ...BASE, messageId: 't-rejected' })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'request',
+      kind: 'failed',
+      reason: 'payment_failed',
     });
     const send = payNext();
     await expect(sendHeartTip({ ...BASE, messageId: 't-rejected' })).resolves.toEqual({
@@ -675,8 +750,8 @@ describe('sendHeartTip after a send timed out', () => {
       expect(send).toHaveBeenCalledTimes(1);
     });
     await expect(sendHeartTip({ ...BASE, messageId: 't-flight' })).resolves.toEqual({
-      kind: 'alert',
-      alert: 'pending',
+      kind: 'failed',
+      reason: 'in_flight',
     });
     expect(postMessageInvoice).toHaveBeenCalledTimes(1);
     finish?.({ kind: 'paid' });
@@ -782,25 +857,154 @@ describe('useHeartTip', () => {
     Reflect.deleteProperty(navigator, 'vibrate');
   });
 
-  it('vibrates, shows plusOne, and clears the view after HEART_TIP_PLUS_ONE_MS', async () => {
+  it('vibrates and shows the press and +1 before the payment resolves', async () => {
     const vibrate = vi.fn();
     Object.defineProperty(navigator, 'vibrate', { configurable: true, value: vibrate });
+    let resolveInvoice: ((value: typeof HEART_INVOICE) => void) | undefined;
+    vi.mocked(postMessageInvoice).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveInvoice = resolve;
+        }),
+    );
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    act(() => {
+      result.current.onHeartTip('h-early');
+    });
+    expect(vibrate).toHaveBeenCalledWith(10);
+    expect(result.current.heartTipViews['h-early']).toEqual({
+      pressed: true,
+      plusOne: true,
+      needsBalance: false,
+    });
+    expect(payFromWallet).not.toHaveBeenCalled();
+    await vi.waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    });
+    await act(async () => {
+      resolveInvoice?.(HEART_INVOICE);
+      await vi.waitFor(() => {
+        expect(logInteraction).toHaveBeenCalledTimes(1);
+      });
+    });
+    expect(postMessageInvoice).toHaveBeenCalledWith(
+      'sess',
+      'h-early',
+      1,
+      undefined,
+      undefined,
+      true,
+    );
+  });
+
+  it('clears the press and +1 after HEART_TIP_PLUS_ONE_MS from the tap', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const { result } = renderHook(() => useHeartTip({ readOnly: false }));
     await clickHeart(result);
-    expect(vibrate).toHaveBeenCalledWith(10);
     expect(result.current.heartTipViews['m1']).toEqual({
       pressed: true,
       plusOne: true,
-      alert: null,
+      needsBalance: false,
     });
-    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
-    expect(postMessageInvoice).toHaveBeenCalledWith('sess', 'm1', 1, undefined, undefined, true);
+    act(() => {
+      vi.advanceTimersByTime(HEART_TIP_PLUS_ONE_MS - 1);
+    });
+    expect(result.current.heartTipViews['m1']?.plusOne).toBe(true);
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current.heartTipViews['m1']).toBeUndefined();
+  });
+
+  it('shows nothing more when the heart fails, and reports it', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('HEART_UNAVAILABLE'));
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    await clickHeart(result, 'h-fail');
+    expect(captureMessage).toHaveBeenCalledWith(
+      'Heart not sent',
+      expect.objectContaining({
+        tags: { heart_reason: 'heart_unavailable' },
+        extra: { messageId: 'h-fail' },
+      }),
+    );
+    expect(result.current.heartTipViews['h-fail']).toEqual({
+      pressed: true,
+      plusOne: true,
+      needsBalance: false,
+    });
     act(() => {
       vi.advanceTimersByTime(HEART_TIP_PLUS_ONE_MS);
     });
-    expect(result.current.heartTipViews['m1']).toBeUndefined();
-    vi.useRealTimers();
+    expect(result.current.heartTipViews['h-fail']).toBeUndefined();
+  });
+
+  it('shows the press and +1 on a Sunday tap and reports it without invoicing', async () => {
+    document.documentElement.dataset['localSunday'] = '1';
+    try {
+      const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+      await clickHeart(result, 'h-sunday');
+      expect(result.current.heartTipViews['h-sunday']).toEqual({
+        pressed: true,
+        plusOne: true,
+        needsBalance: false,
+      });
+      expect(postMessageInvoice).not.toHaveBeenCalled();
+      expect(captureMessage).toHaveBeenCalledWith(
+        'Heart not sent',
+        expect.objectContaining({ tags: { heart_reason: 'sunday' } }),
+      );
+    } finally {
+      delete document.documentElement.dataset['localSunday'];
+    }
+  });
+
+  it('shows only the balance line, without vibrate, press, or +1, when the ready wallet is empty', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const vibrate = vi.fn();
+    Object.defineProperty(navigator, 'vibrate', { configurable: true, value: vibrate });
+    useWalletStore.setState({ status: 'ready', balanceSats: 0, identityPubkey: null });
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    await clickHeart(result);
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: false,
+      plusOne: false,
+      needsBalance: true,
+    });
+    expect(vibrate).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(captureMessage).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(HEART_TIP_PLUS_ONE_MS);
+    });
+    expect(result.current.heartTipViews['m1']?.needsBalance).toBe(true);
+  });
+
+  it('replaces the balance line with the press and +1 once the wallet has a balance', async () => {
+    useWalletStore.setState({ status: 'ready', balanceSats: 0, identityPubkey: null });
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    await clickHeart(result);
+    expect(result.current.heartTipViews['m1']?.needsBalance).toBe(true);
+    useWalletStore.setState({ status: 'ready', balanceSats: 21, identityPubkey: null });
+    await clickHeart(result);
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: true,
+      plusOne: true,
+      needsBalance: false,
+    });
+  });
+
+  it('shows the balance line for visual=heart-needs-balance in a Playwright build', async () => {
+    vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
+    window.history.replaceState({}, '', '/welcome?visual=heart-needs-balance');
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    await clickHeart(result);
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: false,
+      plusOne: false,
+      needsBalance: true,
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
   it('keeps plusOne on screen when visual=heart-paid', async () => {
@@ -810,20 +1014,14 @@ describe('useHeartTip', () => {
     const { result } = renderHook(() => useHeartTip({ readOnly: false }));
     await clickHeart(result);
     expect(postMessageInvoice).not.toHaveBeenCalled();
-    expect(result.current.heartTipViews['m1']).toEqual({
-      pressed: true,
-      plusOne: true,
-      alert: null,
-    });
     act(() => {
       vi.advanceTimersByTime(HEART_TIP_PLUS_ONE_MS);
     });
     expect(result.current.heartTipViews['m1']).toEqual({
       pressed: true,
       plusOne: true,
-      alert: null,
+      needsBalance: false,
     });
-    vi.useRealTimers();
   });
 
   it('still pays when navigator.vibrate is missing', async () => {
@@ -833,11 +1031,12 @@ describe('useHeartTip', () => {
     expect(result.current.heartTipViews['m1']).toEqual({
       pressed: true,
       plusOne: true,
-      alert: null,
+      needsBalance: false,
     });
+    expect(logInteraction).toHaveBeenCalledTimes(1);
   });
 
-  it('ignores a second click on the same id while the invoice is in flight', async () => {
+  it('shows the +1 on a retap while a heart is still sending, without paying twice', async () => {
     let resolveInvoice: ((value: typeof HEART_INVOICE) => void) | undefined;
     vi.mocked(postMessageInvoice).mockImplementation(
       () =>
@@ -846,41 +1045,37 @@ describe('useHeartTip', () => {
         }),
     );
     const { result } = renderHook(() => useHeartTip({ readOnly: false }));
-    await act(async () => {
-      result.current.onHeartTip('m1');
-    });
-    await act(async () => {
-      result.current.onHeartTip('m1');
+    await clickHeart(result, 'h-twice');
+    await clickHeart(result, 'h-twice');
+    expect(result.current.heartTipViews['h-twice']).toEqual({
+      pressed: true,
+      plusOne: true,
+      needsBalance: false,
     });
     expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    expect(captureMessage).toHaveBeenCalledWith(
+      'Heart not sent',
+      expect.objectContaining({ tags: { heart_reason: 'in_flight' } }),
+    );
     await act(async () => {
       resolveInvoice?.(HEART_INVOICE);
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+      await vi.waitFor(() => {
+        expect(logInteraction).toHaveBeenCalledTimes(1);
+      });
     });
     expect(postMessageInvoice).toHaveBeenCalledTimes(1);
   });
 
-  it('needs a balance when the ready wallet is empty', async () => {
-    useWalletStore.setState({ status: 'ready', balanceSats: 0, identityPubkey: null });
+  it('starts another send on a second click after the first one finished', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const { result } = renderHook(() => useHeartTip({ readOnly: false }));
     await clickHeart(result);
-    expect(result.current.heartTipViews['m1']).toEqual({
-      pressed: false,
-      plusOne: false,
-      alert: 'needsBalance',
+    await clickHeart(result);
+    expect(postMessageInvoice).toHaveBeenCalledTimes(2);
+    expect(Object.keys(result.current.heartTipViews)).toEqual(['m1']);
+    act(() => {
+      vi.advanceTimersByTime(HEART_TIP_PLUS_ONE_MS);
     });
-    expect(postMessageInvoice).not.toHaveBeenCalled();
-  });
-
-  it('removes the view when the session is null', async () => {
-    useAuthStore.setState({ session: null, account: HEART_ACCOUNT });
-    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
-    await clickHeart(result);
     expect(result.current.heartTipViews['m1']).toBeUndefined();
   });
 
@@ -888,39 +1083,14 @@ describe('useHeartTip', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const { result, unmount } = renderHook(() => useHeartTip({ readOnly: false }));
     await clickHeart(result);
-    expect(result.current.heartTipViews['m1']).toEqual({
-      pressed: true,
-      plusOne: true,
-      alert: null,
-    });
+    expect(result.current.heartTipViews['m1']?.plusOne).toBe(true);
     unmount();
     act(() => {
       vi.advanceTimersByTime(HEART_TIP_PLUS_ONE_MS);
     });
-    vi.useRealTimers();
   });
 
-  it('starts another send on a second click while plusOne is showing', async () => {
-    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
-    await clickHeart(result);
-    expect(result.current.heartTipViews['m1']).toEqual({
-      pressed: true,
-      plusOne: true,
-      alert: null,
-    });
-    await clickHeart(result);
-    expect(postMessageInvoice).toHaveBeenCalledTimes(2);
-    expect(Object.keys(result.current.heartTipViews)).toEqual(['m1']);
-    expect(result.current.heartTipViews['m1']).toEqual({
-      pressed: true,
-      plusOne: true,
-      alert: null,
-    });
-    vi.useRealTimers();
-  });
-
-  it('keeps a timed-out heart filled and pending, and a retap does not pay again', async () => {
+  it('shows the +1 on a retap after a timed-out heart, and does not pay again', async () => {
     const send = vi.fn(async () => ({
       kind: 'failed' as const,
       sentLate: new Promise<boolean>(() => undefined),
@@ -938,31 +1108,18 @@ describe('useHeartTip', () => {
     vi.mocked(listWalletPayments).mockResolvedValue([sentPayment('spark1hook', 'pending')]);
     const { result } = renderHook(() => useHeartTip({ readOnly: false }));
     await clickHeart(result, 'h-timeout');
-    expect(result.current.heartTipViews['h-timeout']).toEqual({
-      pressed: true,
-      plusOne: false,
-      alert: 'pending',
-    });
     await clickHeart(result, 'h-timeout');
     expect(result.current.heartTipViews['h-timeout']).toEqual({
       pressed: true,
-      plusOne: false,
-      alert: 'pending',
+      plusOne: true,
+      needsBalance: false,
     });
     expect(postMessageInvoice).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenCalledTimes(1);
-  });
-
-  it('shows unavailable with an empty glyph when the api issued no Spark invoice', async () => {
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
-    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
-    await clickHeart(result, 'h-unavailable');
-    expect(result.current.heartTipViews['h-unavailable']).toEqual({
-      pressed: false,
-      plusOne: false,
-      alert: 'unavailable',
-    });
-    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(vi.mocked(captureMessage).mock.calls.map((call) => call[1])).toEqual([
+      expect.objectContaining({ tags: { heart_reason: 'timeout_pending' } }),
+      expect.objectContaining({ tags: { heart_reason: 'timeout_pending' } }),
+    ]);
   });
 
   it('does not vibrate or pay when readOnly is true', async () => {
