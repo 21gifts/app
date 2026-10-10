@@ -3546,7 +3546,7 @@ test('Function: screenVariantDescription — German screen cards follow the loca
   await context.addCookies([{ name: 'locale', value: 'de', url: 'http://localhost:3000' }]);
   await page.goto('/handbook/screens');
   await expect(page.getByRole('heading', { name: 'Screens' })).toBeVisible();
-  await expect(page.getByText(/Heutige Rate zahlen/).first()).toBeVisible();
+  await expect(page.getByText(/Kredit zurückzahlen/).first()).toBeVisible();
   await expect(page.getByText(/Desktop\/wide layout/)).toHaveCount(0);
 });
 

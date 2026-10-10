@@ -10,7 +10,6 @@ import {
   type MyLoans,
   type RepaymentBill,
 } from '@/lib/api';
-import { logInteraction } from '@/lib/interaction-log';
 import { fittingPrefix } from '@/lib/loan-repay';
 import { visualPin } from '@/lib/visual-pin';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
@@ -122,7 +121,6 @@ interface SettlementTarget {
 }
 
 interface SendRun {
-  session: string;
   sentSats: number;
   feeSats: number;
   names: string[];
@@ -158,6 +156,8 @@ const PIN_BASE = {
 /** Playwright-only repayment states; completed pins carry the amount and recipients sent. */
 const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
   'repay-ready': { ...PIN_BASE, phase: 'idle', balanceSats: 21_000 },
+  'repay-connecting': { ...PIN_BASE, phase: 'connecting', balanceSats: null },
+  'repay-setup-failed': { ...PIN_BASE, phase: 'setupFailed', balanceSats: null },
   'repay-short': { ...PIN_BASE, phase: 'idle', balanceSats: 600 },
   'repay-topup': { ...PIN_BASE, phase: 'idle', balanceSats: 600, topUpOpen: true },
   'repay-sending': { ...PIN_BASE, phase: 'sending', balanceSats: 21_000 },
@@ -211,6 +211,7 @@ export function useLoanRepay(options: {
   const [sentNames, setSentNames] = useState<string[]>([]);
   const [feeSats, setFeeSats] = useState(0);
   const [missingSats, setMissingSats] = useState<number | null>(null);
+  const missingBalance = useRef<number | null | undefined>(undefined);
   const [errorKey, setErrorKey] = useState<ErrorKey | null>(null);
   const [topUpOpen, setTopUpOpen] = useState(false);
   const generation = useRef(0);
@@ -244,6 +245,7 @@ export function useLoanRepay(options: {
     setSentSats(0);
     setSentNames([]);
     setFeeSats(0);
+    missingBalance.current = undefined;
     setMissingSats(null);
     setErrorKey(null);
     setTopUpOpen(false);
@@ -252,6 +254,13 @@ export function useLoanRepay(options: {
       clearSettlement();
     };
   }, [session, pinned, clearSettlement]);
+
+  useEffect(() => {
+    if (missingBalance.current !== undefined && missingBalance.current !== storeBalance) {
+      missingBalance.current = undefined;
+      setMissingSats(null);
+    }
+  }, [storeBalance]);
 
   useEffect(() => {
     if (!topUpOpen || pinned || status !== 'ready') {
@@ -304,6 +313,7 @@ export function useLoanRepay(options: {
       setSentSats(0);
       setSentNames([]);
       setFeeSats(0);
+      missingBalance.current = undefined;
       setMissingSats(null);
       setErrorKey(null);
       setLivePhase('preparing');
@@ -389,6 +399,7 @@ export function useLoanRepay(options: {
           kept.length === 0 ||
           (limitSats === undefined && (insufficient || knownTotal > currentBalance))
         ) {
+          missingBalance.current = useWalletStore.getState().balanceSats;
           setMissingSats(Math.max(0, allTotal - currentBalance));
           setLivePhase('idle');
           return;
@@ -398,7 +409,6 @@ export function useLoanRepay(options: {
         setLivePhase('sending');
         const beforeByMessage = new Map(loans.map((loan) => [loan.messageId, loan.repaidSats]));
         const sent: SendRun = {
-          session: currentSession,
           sentSats: 0,
           feeSats: 0,
           names: [],
@@ -414,9 +424,6 @@ export function useLoanRepay(options: {
           setSentSats(sent.sentSats);
           setFeeSats(sent.feeSats);
           setSentNames([...sent.names]);
-        };
-        const recordSent = (item: PreparedBill): void => {
-          logInteraction('payment_sent', { amountSats: item.bill.amountSats }, sent.session);
         };
         const countSent = (item: PreparedBill): void => {
           sent.sentSats += item.bill.amountSats;
@@ -501,24 +508,16 @@ export function useLoanRepay(options: {
           if (!active()) {
             return;
           }
-          if (sent.sentSats > 0) {
+          if (sent.sentSats > 0 || sent.latePending) {
             startSettlement();
           } else if (sent.failed) {
+            clearSettlement();
             setLivePhase('failed');
           }
         };
 
         for (const [index, item] of kept.entries()) {
           const result = await item.send();
-          if (result.kind === 'paid') {
-            recordSent(item);
-          } else if (!active() && result.kind === 'failed' && result.sentLate !== undefined) {
-            void result.sentLate.then((wasSent) => {
-              if (wasSent) {
-                recordSent(item);
-              }
-            });
-          }
           if (!active()) {
             return;
           }
@@ -527,29 +526,32 @@ export function useLoanRepay(options: {
             countSent(item);
             continue;
           }
-          sent.failed = true;
           setErrorKey('forum.payErrorRequest');
           if (result.kind === 'insufficient') {
+            sent.failed = true;
             const remainingCost = kept
               .slice(index)
               .reduce((sum, row) => sum + row.bill.amountSats + row.feeSats, 0);
-            const balance = useWalletStore.getState().balanceSats ?? 0;
+            const rawBalance = useWalletStore.getState().balanceSats;
+            const balance = rawBalance ?? 0;
+            missingBalance.current = rawBalance;
             setMissingSats(Math.max(0, remainingCost - balance));
           } else if (result.kind === 'failed' && result.sentLate !== undefined) {
             sent.latePending = true;
             void result.sentLate.then((wasSent) => {
-              if (wasSent) {
-                recordSent(item);
-              }
               if (!active()) {
                 return;
               }
               sent.latePending = false;
               if (wasSent) {
                 countSent(item);
+              } else {
+                sent.failed = true;
               }
               finishSending();
             });
+          } else {
+            sent.failed = true;
           }
           break;
         }

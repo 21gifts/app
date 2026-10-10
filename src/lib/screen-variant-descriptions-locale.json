@@ -4774,6 +4774,21 @@
     "es": "El préstamo A muestra Vence hoy, ₿1'000 · $1.00, para 3 personas y el progreso del préstamo. En lugar del saldo y Enviar dice Tu wallet de 21.gifts no está disponible aquí, así que esto no se puede pagar.",
     "fil": "Ipinapakita ng utang A ang Bayaran ngayon, ₿1'000 · $1.00, sa 3 tao, at pag-usad ng utang. Sa halip ng balanse at Ipadala ay Hindi available dito ang 21.gifts wallet mo, kaya hindi ito mababayaran."
   },
+  "/loans/repay:connecting": {
+    "de": "Kredit A zeigt weiter den fälligen Betrag, die empfangenden Personen und den Fortschritt. Die Wallet ist noch nicht bereit, daher stehen im Zahlungsbereich ein Spinner und Ihre Wallet wird geprüft… statt Guthaben und Senden.",
+    "es": "El préstamo A sigue mostrando el importe vencido, los destinatarios y el progreso. La wallet aún no está lista, así que el área de pago muestra un indicador giratorio y Comprobando tu wallet… en lugar del saldo y Enviar.",
+    "fil": "Ipinapakita pa rin ng utang A ang halagang dapat bayaran, mga tatanggap, at pag-usad. Hindi pa handa ang wallet, kaya may spinner at Tinitingnan ang wallet mo… sa lugar ng balanse at Ipadala."
+  },
+  "/loans/repay:setup-failed": {
+    "de": "Kredit A zeigt weiter den fälligen Betrag, die empfangenden Personen und den Fortschritt. Im Zahlungsbereich stehen Ihre Wallet konnte noch nicht eingerichtet werden. und Erneut versuchen.",
+    "es": "El préstamo A sigue mostrando el importe vencido, los destinatarios y el progreso. El área de pago muestra Tu wallet aún no se pudo configurar. e Intentar de nuevo.",
+    "fil": "Ipinapakita pa rin ng utang A ang halagang dapat bayaran, mga tatanggap, at pag-usad. Ipinapakita ng bahagi ng bayad ang Hindi pa ma-set up ang wallet mo. at Subukan ulit."
+  },
+  "/loans/repay:loading": {
+    "de": "Der erste Aufruf von GET /me/loans steht noch aus. Unter der angemeldeten Kopfzeile stehen ein Spinner und Ihre Kredite werden geladen…; Fälligkeits- und Kreditkarte fehlen noch.",
+    "es": "La primera llamada a GET /me/loans sigue pendiente. Bajo el encabezado con sesión iniciada aparecen un indicador giratorio y Cargando tus préstamos…; aún no se muestran las tarjetas de vencimiento ni de préstamo.",
+    "fil": "Nakabinbin pa ang unang GET /me/loans. May spinner at Nilo-load ang mga utang mo… sa ilalim ng signed-in header; wala pang due card o loan card."
+  },
   "/loans/repay:multi": {
     "de": "Zwei Kredite sind zusammengefasst: Heute fällig, ₿2'200 mit $2.20 darunter, an 5 Personen · 2 Kredite, Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿2'200 · $2.20 senden. Ihre Kredite enthält den Nähmaschinen- und den Schulbücher-Kredit; letzterer zeigt ₱300.00 · 10 Tage · ₱30.00 pro Tag, ₿4'800 · $4.80 von ₿12'000 · $12.00 zurückgezahlt und Tag 5 von 10.",
     "es": "Se combinan dos préstamos: Vence hoy, ₿2'200 con $2.20 debajo, para 5 personas · 2 préstamos, Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿2'200 · $2.20. Tus préstamos contiene el préstamo de la máquina de coser y el de libros escolares; este último muestra ₱300.00 · 10 días · ₱30.00 al día, Devuelto ₿4'800 · $4.80 de ₿12'000 · $12.00 y Día 5 de 10.",

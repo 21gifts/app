@@ -336,6 +336,8 @@ export function LoanRepayScreen(): ReactElement {
   // `fittingPrefix` stops before the first share whose satoshi amount is unknown.
   const fittingSats = fitting.reduce((sum, share) => sum + (share.sats as number), 0);
   const fittingNames = [...new Set(fitting.map((share) => share.name))].join(', ');
+  const hasMissingSats = repay.missingSats !== null && repay.missingSats > 0;
+  const feeGap = balanceSats !== null && balanceSats >= payable && hasMissingSats;
   const rememberAndPay = (limitSats?: number): void => {
     setPaidLoans(loans.loans);
     setSendingSats(limitSats === undefined ? payable : fittingSats);
@@ -343,7 +345,7 @@ export function LoanRepayScreen(): ReactElement {
   };
 
   const idleControls =
-    balanceSats === null ? null : balanceSats >= payable ? (
+    balanceSats === null ? null : balanceSats >= payable && !hasMissingSats ? (
       <>
         <p className="text-center text-xs tabular-nums lining-nums text-app-muted">
           {t('loans.fromWallet', { amount: money(balanceSats) })}
@@ -378,7 +380,7 @@ export function LoanRepayScreen(): ReactElement {
             </div>
           )}
         </div>
-        {fitting.length > 0 ? (
+        {!feeGap && fitting.length > 0 ? (
           <button
             type="button"
             className="text-sm font-medium text-app-fg underline underline-offset-2"
@@ -483,7 +485,10 @@ export function LoanRepayScreen(): ReactElement {
       </p>
       {waiting > 0 ? (
         <div className="mt-3 flex gap-2 rounded-xl bg-app-notice px-3 py-2 text-sm text-app-notice-fg">
-          <AlertTriangle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-app-accent" />
+          <AlertTriangle
+            aria-hidden="true"
+            className="mt-0.5 h-4 w-4 shrink-0 text-app-notice-fg"
+          />
           <p>
             {payable > 0
               ? t(summary.waitingPeople === 1 ? 'loans.waitsOne' : 'loans.waitsMany', {
@@ -534,7 +539,7 @@ export function LoanRepayScreen(): ReactElement {
                       {share.canReceive ? null : (
                         <AlertTriangle
                           aria-hidden="true"
-                          className="h-4 w-4 shrink-0 text-app-accent"
+                          className="h-4 w-4 shrink-0 text-app-notice-fg"
                         />
                       )}
                       <span className="min-w-0 flex-1">

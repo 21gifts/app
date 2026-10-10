@@ -696,6 +696,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:connecting",
+    "label": "/loans/repay connecting",
+    "visual": "state-loans-repay-connecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:setup-failed",
+    "label": "/loans/repay setup-failed",
+    "visual": "state-loans-repay-setup-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:loading",
+    "label": "/loans/repay loading",
+    "visual": "state-loans-repay-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:multi",
     "label": "/loans/repay multi",
     "visual": "state-loans-repay-multi",

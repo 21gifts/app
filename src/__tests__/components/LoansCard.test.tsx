@@ -88,6 +88,9 @@ describe('LoansCard', () => {
     loading.unmount();
     show({ sundayRest: false, loans: [] });
     expect(screen.queryByRole('region')).toBeNull();
+    cleanup();
+    show({ sundayRest: false, loans: [] }, 'wallet');
+    expect(screen.queryByRole('region')).toBeNull();
   });
 
   it('shows a collecting loan, its exact goal fields, and the collapsed post link', () => {
@@ -95,6 +98,8 @@ describe('LoansCard', () => {
     show({ sundayRest: false, loans: [item] });
     const card = screen.getByRole('region', { name: 'Your loan' });
     expect(card.className).toContain('mt-4');
+    expect(card.className).not.toContain('-mt-2');
+    expect(card.className).not.toContain('max-w-xl');
     expect(card.className).toContain('border-app-border');
     expect(screen.getByRole('heading', { name: 'Your loan' }).className).toBe(
       'text-sm font-semibold text-app-fg',
@@ -230,6 +235,10 @@ describe('LoansCard', () => {
     expect(screen.queryByText(/lenders have no wallet/)).toBeNull();
     welcome.unmount();
     show(data, 'wallet');
+    const card = screen.getByRole('region', { name: 'Your loan' });
+    expect(card.className).toContain('-mt-2');
+    expect(card.className).toContain('max-w-xl');
+    expect(card.className).not.toContain('mt-4');
     expect(screen.getByText('₿200 · $0.20 waits · 2 lenders have no wallet yet')).toBeTruthy();
     expect(screen.getByText('Nothing due today').className).toContain('text-app-muted');
   });

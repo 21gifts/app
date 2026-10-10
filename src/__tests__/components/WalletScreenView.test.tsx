@@ -226,6 +226,7 @@ describe('WalletScreenView', () => {
     renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult('ready')} />);
     const history = screen.getByRole('region', { name: 'Payments history stub' });
     const loans = screen.getByRole('region', { name: 'Loans wallet' });
+    expect(loans.parentElement).toBe(history.parentElement);
     expect(follows(screen.getByRole('region', { name: 'Balance' }), loans)).toBe(true);
     expect(follows(loans, history)).toBe(true);
     expect(follows(history, screen.getByRole('button', { name: 'Receive' }))).toBe(true);

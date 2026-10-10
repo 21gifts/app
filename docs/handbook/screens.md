@@ -727,6 +727,24 @@ Loan A still shows **Due today**, **₿1'000** and **$1.00**, **to 3 people**, a
 
 ![21.gifts loans repay unavailable wallet](images/loans-repay-unavailable.png)
 
+### Variant: connecting
+
+Loan A still shows its due amount, recipients, and progress. The wallet is not ready, so the pay area has a spinner and **Checking your wallet…** instead of balance and Send controls.
+
+![21.gifts loans repay connecting wallet](images/loans-repay-connecting.png)
+
+### Variant: setup-failed
+
+Loan A still shows its due amount, recipients, and progress. The pay area says **Your wallet could not be set up yet.** and offers **Try again**.
+
+![21.gifts loans repay wallet setup failed](images/loans-repay-setup-failed.png)
+
+### Variant: loading
+
+The initial `GET /me/loans` is still pending. A spinner and **Loading your loans…** appear below the signed-in header; no due or loan card is shown yet.
+
+![21.gifts loans repay loading](images/loans-repay-loading.png)
+
 ### Variant: multi
 
 Two payable loans are combined: **Due today**, **₿2'200** with **$2.20** below, **to 5 people · 2 loans**, **From your wallet · ₿21'000 · $21.00**, and **Send ₿2'200 · $2.20**. **Your loans** contains the sewing-machine loan and the school-books loan; the latter shows **₱300.00 · 10 days · ₱30.00 per day**, **Repaid ₿4'800 · $4.80 of ₿12'000 · $12.00**, and **Day 5 of 10**.
