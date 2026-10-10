@@ -418,8 +418,34 @@ describe('useLoanRepay preparation', () => {
     const { result } = renderHook(() => useLoanRepay({ reload: vi.fn() }));
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('idle'));
-    expect(result.current.missingSats).toBe(310);
+    expect(result.current.missingSats).toBe(330);
     expect(result.current.sentSats).toBe(0);
+  });
+
+  it('includes the insufficient preparation fee in the missing sats', async () => {
+    setWallet('ready', 1_000);
+    vi.mocked(postRepaymentDue).mockResolvedValue({
+      bills: [bill('Bruno', 1_000)],
+      waiting: [],
+    });
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient', feeSats: 25 });
+    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn() }));
+    act(() => result.current.pay([loan()]));
+    await waitFor(() => expect(result.current.phase).toBe('idle'));
+    expect(result.current.missingSats).toBe(25);
+  });
+
+  it('reports at least one missing sat after an insufficient preparation without a fee', async () => {
+    setWallet('ready', 1_000);
+    vi.mocked(postRepaymentDue).mockResolvedValue({
+      bills: [bill('Bruno', 1_000)],
+      waiting: [],
+    });
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
+    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn() }));
+    act(() => result.current.pay([loan()]));
+    await waitFor(() => expect(result.current.phase).toBe('idle'));
+    expect(result.current.missingSats).toBe(1);
   });
 
   it('sends nothing when individually prepared bills exceed the current balance', async () => {
@@ -478,6 +504,7 @@ describe('useLoanRepay preparation', () => {
     act(() => result.current.pay([loan()], 100));
     await waitFor(() => expect(result.current.phase).toBe('idle'));
     expect(result.current.sentSats).toBe(0);
+    expect(result.current.missingSats).toBe(1);
   });
 });
 
@@ -808,6 +835,7 @@ describe('useLoanRepay visual pins', () => {
     ['repay-connecting', 'connecting', null],
     ['repay-setup-failed', 'setupFailed', null],
     ['repay-short', 'idle', 600],
+    ['repay-fee-gap', 'idle', 1_000],
     ['repay-topup', 'idle', 600],
     ['repay-sending', 'sending', 21_000],
     ['repay-partial', 'idle', 21_000],
@@ -833,6 +861,9 @@ describe('useLoanRepay visual pins', () => {
     expect(refreshWallet).not.toHaveBeenCalled();
     if (visual === 'repay-topup') {
       expect(result.current.topUpOpen).toBe(true);
+    }
+    if (visual === 'repay-fee-gap') {
+      expect(result.current.missingSats).toBe(25);
     }
     if (visual === 'repay-partial') {
       expect(result.current).toMatchObject({ sentSats: 500, sentNames: ['Bruno'] });

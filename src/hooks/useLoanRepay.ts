@@ -159,6 +159,7 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
   'repay-connecting': { ...PIN_BASE, phase: 'connecting', balanceSats: null },
   'repay-setup-failed': { ...PIN_BASE, phase: 'setupFailed', balanceSats: null },
   'repay-short': { ...PIN_BASE, phase: 'idle', balanceSats: 600 },
+  'repay-fee-gap': { ...PIN_BASE, phase: 'idle', balanceSats: 1_000, missingSats: 25 },
   'repay-topup': { ...PIN_BASE, phase: 'idle', balanceSats: 600, topUpOpen: true },
   'repay-sending': { ...PIN_BASE, phase: 'sending', balanceSats: 21_000 },
   'repay-partial': {
@@ -364,6 +365,7 @@ export function useLoanRepay(options: {
 
         const prepared: PreparedBill[] = [];
         let insufficient = false;
+        let insufficientFeeSats = 0;
         for (const bill of bills) {
           const result = await payFromWallet({
             type: 'input',
@@ -374,6 +376,7 @@ export function useLoanRepay(options: {
           }
           if (result.kind === 'insufficient') {
             insufficient = true;
+            insufficientFeeSats = result.feeSats ?? 0;
             break;
           }
           if (result.kind !== 'confirm' || result.amountSats !== bill.amountSats) {
@@ -390,7 +393,8 @@ export function useLoanRepay(options: {
         );
         const allTotal =
           bills.reduce((sum, bill) => sum + bill.amountSats, 0) +
-          prepared.reduce((sum, item) => sum + item.feeSats, 0);
+          prepared.reduce((sum, item) => sum + item.feeSats, 0) +
+          insufficientFeeSats;
         const kept =
           limitSats === undefined
             ? prepared
@@ -400,7 +404,7 @@ export function useLoanRepay(options: {
           (limitSats === undefined && (insufficient || knownTotal > currentBalance))
         ) {
           missingBalance.current = useWalletStore.getState().balanceSats;
-          setMissingSats(Math.max(0, allTotal - currentBalance));
+          setMissingSats(Math.max(1, allTotal - currentBalance));
           setLivePhase('idle');
           return;
         }

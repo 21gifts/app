@@ -964,6 +964,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'fee-gap',
+    image: 'loans-repay-fee-gap.png',
+    visual: 'state-loans-repay-fee-gap',
+    needle: 'state /loans/repay fee-gap',
+  },
+  {
+    route: '/loans/repay',
     id: 'topup',
     image: 'loans-repay-topup.png',
     visual: 'state-loans-repay-topup',
