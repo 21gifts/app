@@ -42,6 +42,8 @@ import {
   pushSubscriptionResponseSchema,
   vapidPublicSchema,
   viewProfileSchema,
+  fiatAmountSchema,
+  FORUM_GOAL_CURRENCIES,
   type Account,
   type AmountUnit,
   type NotificationLevel,
@@ -2686,6 +2688,8 @@ const repaymentLineSchema = z.object({
   username: z.string().nullable(),
   amount: z.string().nullable(),
   sats: z.number().int().nonnegative().nullable(),
+  /** Optional until every deployed api includes the live sats value for due fiat shares. */
+  dueSats: z.number().int().nonnegative().nullable().optional().default(null),
   status: z.enum(['scheduled', 'due', 'paid']),
   via: z.literal('lightning'),
 });
@@ -2704,6 +2708,8 @@ const repaymentLedgerSchema = z.object({
       username: z.string().nullable(),
       givenSats: z.number().int().nonnegative(),
       givenAmount: z.string().nullable(),
+      /** Optional until every deployed api includes receiver availability. */
+      canReceive: z.boolean().optional().default(true),
     }),
   ),
   repayments: z.array(repaymentLineSchema),
@@ -2716,10 +2722,16 @@ const repaymentLedgerSchema = z.object({
     .nullable(),
 });
 
-/** Public credit ledger from `GET /messages/:id/repayment`. */
+/**
+ * Public credit ledger from `GET /messages/:id/repayment`.
+ * `givers[].canReceive` defaults to true while older api bodies omit it.
+ */
 export type RepaymentLedger = z.infer<typeof repaymentLedgerSchema>;
 
-/** One row of {@link RepaymentLedger}. */
+/**
+ * One row of {@link RepaymentLedger}; `dueSats` defaults to null while older
+ * api bodies omit it.
+ */
 export type RepaymentLine = z.infer<typeof repaymentLineSchema>;
 
 /**
@@ -2740,26 +2752,126 @@ export async function getRepayment(messageId: string): Promise<RepaymentLedger |
   }
 }
 
+const myLoanSchema = z.object({
+  messageId: z.string(),
+  text: z.string(),
+  createdAt: z.string(),
+  goalSats: z.number().int().positive(),
+  sats: z.number().int().nonnegative(),
+  goalCurrency: z.enum(FORUM_GOAL_CURRENCIES),
+  goalAmount: z.string(),
+  goalAmountUsd: fiatAmountSchema,
+  goalAmountChf: fiatAmountSchema,
+  goalAmountEur: fiatAmountSchema,
+  goalAmountPhp: fiatAmountSchema,
+  amountUsd: fiatAmountSchema,
+  amountChf: fiatAmountSchema,
+  amountEur: fiatAmountSchema,
+  amountPhp: fiatAmountSchema,
+  termDays: z.number().int().positive(),
+  fundedAt: z.string().nullable(),
+  daysDue: z.number().int().nonnegative(),
+  daysPaid: z.number().int().nonnegative(),
+  repaidSats: z.number().int().nonnegative(),
+  totalSats: z.number().int().nonnegative(),
+  due: z.object({
+    payableSats: z.number().int().nonnegative(),
+    payablePeople: z.number().int().nonnegative(),
+    waitingSats: z.number().int().nonnegative(),
+    waitingPeople: z.number().int().nonnegative(),
+    behindDays: z.number().int().nonnegative(),
+    payableAmount: z.string().nullable(),
+    waitingAmount: z.string().nullable(),
+    lastPayment: z.boolean(),
+  }),
+  next: z
+    .object({
+      dueOn: z.string(),
+      sats: z.number().int().nonnegative().nullable(),
+      amount: z.string().nullable(),
+    })
+    .nullable(),
+});
+
+const myLoansSchema = z.object({
+  sundayRest: z.boolean(),
+  loans: z.array(myLoanSchema),
+});
+
+/** `GET /me/loans` body. */
+export type MyLoans = z.infer<typeof myLoansSchema>;
+
+/** One loan of {@link MyLoans}. */
+export type MyLoan = MyLoans['loans'][number];
+
 /**
- * Asks for a BOLT11 that pays the next giver their share of the next due day.
+ * Loads the signed-in member's loans that are still collecting or being repaid.
+ *
+ * @param sessionToken - Bearer session of the member.
+ * @returns The member's live loans and the current Sunday-rest flag.
+ * @throws Error `Could not load your loans` on any non-2xx response, network
+ *   failure, or invalid body.
+ */
+export async function getMyLoans(sessionToken: string): Promise<MyLoans> {
+  try {
+    const response = await fetch('/me/loans', {
+      headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
+    });
+    if (!response.ok) {
+      throw new Error('Could not load your loans');
+    }
+    return myLoansSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load your loans');
+  }
+}
+
+const repaymentBillSchema = z.object({
+  dayIndex: z.number().int().nonnegative(),
+  recipientAccountId: z.string(),
+  name: z.string(),
+  username: z.string().nullable(),
+  amountSats: z.number().int().positive(),
+  amount: z.string().nullable(),
+  pr: z.string().min(1),
+  sparkInvoice: z.string().min(1).nullable().optional().default(null),
+});
+
+const repaymentWaitingSchema = repaymentBillSchema.omit({ pr: true, sparkInvoice: true });
+
+const repaymentDueSchema = z.object({
+  bills: z.array(repaymentBillSchema),
+  waiting: z.array(repaymentWaitingSchema),
+});
+
+/**
+ * `POST /messages/:id/repayment/due` body; a missing bill `sparkInvoice` defaults to null.
+ */
+export type RepaymentDue = z.infer<typeof repaymentDueSchema>;
+
+/** One bill of {@link RepaymentDue}. */
+export type RepaymentBill = RepaymentDue['bills'][number];
+
+/**
+ * Asks for every payable bill of the author's funded loan at once.
  *
  * @param sessionToken - Bearer session of the credit's author.
  * @param messageId - Credit note id.
- * @returns The invoice the author pays from their wallet. The body may also
- *   carry `sparkInvoice`, which the in-app wallet pays instead of `pr`.
+ * @returns Payable bills plus due shares whose recipients cannot receive yet.
  * @throws {@link WalletRequiredError} or {@link CannotReceiveError} on a 400 with that `code`.
- * @throws Error with visitor copy when the api refuses.
+ * @throws {@link MissingRequirementsError} on a matching 409 response,
+ *   otherwise Error with payment copy.
  */
-export async function postRepaymentInvoice(
+export async function postRepaymentDue(
   sessionToken: string,
   messageId: string,
-): Promise<MessageInvoice> {
-  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment`, {
+): Promise<RepaymentDue> {
+  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment/due`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
   });
   await throwIfWalletAnswer(response);
-  if (response.status === 400 || response.status === 429 || response.status === 404) {
+  if (response.status === 400 || response.status === 404 || response.status === 429) {
     const raw = await readApiError(response);
     throw new Error(raw === null ? 'Could not start the Bitcoin payment' : toUserFacingError(raw));
   }
@@ -2776,10 +2888,10 @@ export async function postRepaymentInvoice(
     }
     throw new Error('Could not start the Bitcoin payment');
   }
-  if (response.status === 503 || !response.ok) {
+  if (!response.ok) {
     throw new Error('Could not start the Bitcoin payment');
   }
-  return messageInvoiceSchema.parse(await response.json());
+  return repaymentDueSchema.parse(await response.json());
 }
 
 /**
