@@ -633,6 +633,8 @@ describe('PlacesMapScreen', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     renderWithLocale(<PlacesMapScreen />);
     fireEvent.click(await screen.findByRole('button', { name: 'Edit shop note' }));
@@ -670,6 +672,8 @@ describe('PlacesMapScreen', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
       place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
     };
     useAuthStore.setState({ session: 'tok', account: null });

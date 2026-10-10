@@ -74,6 +74,8 @@ const POST: ForumMessage = {
   videoContentType: null,
   role: 'verified',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const DETAIL: FundingApplicationDetail = {

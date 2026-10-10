@@ -179,6 +179,8 @@ const note = {
   videoContentType: null,
   role: 'verified' as const,
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 function fundedCredit(): ForumMessage {
@@ -2699,6 +2701,8 @@ describe('MemberProfileScreen', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     renderWithLocale(

@@ -76,6 +76,8 @@ const SHOP: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
   place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
   shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
 };

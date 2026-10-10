@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
   ForumBoard,
   type ForumFormError,
@@ -172,7 +172,6 @@ export function PublicMessageThread(props: {
   const { root, highlightId, seedReply, onRootDeleted } = props;
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
-  const { onHeartTip, heartTipViews } = useHeartTip({ readOnly: session === null });
   const { fiat } = useFiatPreference();
   const amountUnit = account?.amountUnit ?? 'btc';
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
@@ -195,6 +194,20 @@ export function PublicMessageThread(props: {
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const repliesRef = useRef(replies);
   repliesRef.current = replies;
+  const heartCounts = useMemo(() => {
+    const counts: Record<string, number> = { [note.id]: note.heartCount };
+    const boardReplies = expandedId === null ? null : replies;
+    if (boardReplies !== null) {
+      for (const message of boardReplies) {
+        counts[message.id] = message.heartCount;
+      }
+    }
+    return counts;
+  }, [note, expandedId, replies]);
+  const { onHeartTip, heartTipViews } = useHeartTip({
+    readOnly: session === null,
+    heartCounts,
+  });
   const [repliesLoading, setRepliesLoading] = useState(true);
   const [repliesError, setRepliesError] = useState(false);
   const [replyDraft, setReplyDraft] = useState('');

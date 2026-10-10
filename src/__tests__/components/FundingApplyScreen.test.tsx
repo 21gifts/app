@@ -106,6 +106,8 @@ const post: ForumMessage = {
   videoContentType: null,
   role: 'verified',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 beforeEach(() => {

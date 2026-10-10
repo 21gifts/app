@@ -3589,6 +3589,8 @@ describe('InboxScreen', () => {
       hasVideo: false,
       videoContentType: null,
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
       role: 'founder',
     };
     vi.mocked(fetchPublicMessage).mockResolvedValue(quoted);

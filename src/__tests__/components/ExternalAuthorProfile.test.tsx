@@ -74,6 +74,8 @@ const FEED_NOTE: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
   photoCount: 0,
 };
 

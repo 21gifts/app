@@ -118,6 +118,8 @@ const root: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const giftReply: ForumMessage = {
@@ -1041,6 +1043,8 @@ describe('PublicMessageThread', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     signIn();
     renderThread();
