@@ -22,7 +22,6 @@ import {
   openConversation,
   postMessage,
   postMessageInvoice,
-  postRepaymentInvoice,
   setName,
   WalletRequiredError,
 } from '@/lib/api';
@@ -83,7 +82,6 @@ vi.mock('@/lib/api', () => ({
   postMessage: vi.fn(),
   postMessageVideo: vi.fn(),
   postMessageInvoice: vi.fn(),
-  postRepaymentInvoice: vi.fn(),
   NoteDeletedError: class NoteDeletedError extends Error {
     constructor() {
       super('This note was deleted');
@@ -135,7 +133,6 @@ vi.mock('@/hooks/useHydrateSession', () => ({
 }));
 
 const photoMock = vi.mocked(fetchMessagePhoto);
-const repayMock = vi.mocked(postRepaymentInvoice);
 const NULL_TRUST = {
   verifiedBy: null,
   proposedBy: null,
@@ -4432,32 +4429,25 @@ describe('MemberProfileScreen', () => {
     ).toHaveLength(1);
   });
 
-  it("shows Pay today's repayment on the author's funded credit and disables it after the invoice", async () => {
+  it("links the author's funded credit to the loan repayment screen", async () => {
     useAuthStore.setState({
       session: 'sess',
       account: { ...account, id: profile.id },
     });
-    repayMock.mockResolvedValue({ pr: 'lnbc21n1again', amountSats: 21 });
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
     await openPostsShowingNote(fundedCredit());
-    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
-    await waitFor(() => {
-      expect(postRepaymentInvoice).toHaveBeenCalledWith('sess', note.id);
-      expect(
-        (screen.getByRole('button', { name: "Pay today's repayment" }) as HTMLButtonElement)
-          .disabled,
-      ).toBe(true);
-    });
-    expect(vi.mocked(useWalletPay).mock.calls.at(-1)?.[3]).toBe('repay');
+    expect(screen.getByRole('link', { name: 'Repay your loan' }).getAttribute('href')).toBe(
+      '/loans/repay',
+    );
   });
 
-  it("does not show Pay today's repayment on another member's funded credit", async () => {
+  it("does not show the repayment link on another member's funded credit", async () => {
     renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
     await openPostsShowingNote(fundedCredit());
-    expect(screen.queryByRole('button', { name: "Pay today's repayment" })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
   });
 
-  it("does not show Pay today's repayment on the author's own profile facts", async () => {
+  it("does not show the repayment link on the author's own profile facts", async () => {
     useAuthStore.setState({
       session: 'sess',
       account: { ...account, id: profile.id },
@@ -4466,136 +4456,7 @@ describe('MemberProfileScreen', () => {
       <MemberProfileScreen factsOnly profile={profileWithNote} received={[]} donated={[]} />,
     );
     await openPostsShowingNote(fundedCredit());
-    expect(screen.queryByRole('button', { name: "Pay today's repayment" })).toBeNull();
-  });
-
-  it('pays today repayment and opens requirements when the author is missing one', async () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: { ...account, id: profile.id },
-    });
-    repayMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
-    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
-    await openPostsShowingNote(fundedCredit());
-    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
-    await waitFor(() => {
-      expect(repayMock).toHaveBeenCalledWith('sess', note.id);
-    });
-    expect(await screen.findByRole('button', { name: 'I agree to these rules' })).toBeTruthy();
-    vi.mocked(agreeToRules).mockResolvedValue({
-      ...account,
-      id: profile.id,
-      rulesAgreedAt: 2,
-      missing: [],
-      setup: 'name',
-    });
-    repayMock.mockResolvedValueOnce({ pr: 'lnbc21n1again', amountSats: 21 });
-    fireEvent.click(screen.getByRole('button', { name: 'I agree to these rules' }));
-    await waitFor(() => {
-      expect(repayMock).toHaveBeenCalledTimes(2);
-      expect(
-        (screen.getByRole('button', { name: "Pay today's repayment" }) as HTMLButtonElement)
-          .disabled,
-      ).toBe(true);
-    });
-  });
-
-  it('shows a repayment error when the missing field is not an overlay', async () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: { ...account, id: profile.id },
-    });
-    repayMock.mockRejectedValueOnce(new MissingRequirementsError([]));
-    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
-    await openPostsShowingNote(fundedCredit());
-    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
-    expect((await screen.findByRole('alert')).textContent).toBe(
-      'Could not start the Bitcoin payment',
-    );
-  });
-
-  it('shows the rate limit, the author wallet, and a failed repayment', async () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: { ...account, id: profile.id },
-    });
-    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
-    await openPostsShowingNote(fundedCredit());
-    repayMock.mockRejectedValueOnce(new Error('Too many payments'));
-    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
-    expect((await screen.findByRole('alert')).textContent).toBe(
-      'Too many payments. Please wait a moment and try again.',
-    );
-    repayMock.mockRejectedValueOnce(new CannotReceiveError());
-    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
-    await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe(
-        "The author's wallet cannot receive this Bitcoin payment",
-      );
-    });
-    repayMock.mockRejectedValueOnce(new Error('Could not start the Bitcoin payment'));
-    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
-    await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
-    });
-  });
-
-  it('does not start a repayment after the session is gone', async () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: { ...account, id: profile.id },
-    });
-    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
-    await openPostsShowingNote(fundedCredit());
-    await screen.findByRole('button', { name: "Pay today's repayment" });
-    act(() => {
-      useAuthStore.setState({ session: null });
-    });
-    fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
-    expect(repayMock).not.toHaveBeenCalled();
-  });
-
-  it('drops a repayment that finishes after the feed unmounts', async () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: { ...account, id: profile.id },
-    });
-    let resolveOld: (value: { pr: string; amountSats: number }) => void = () => {};
-    repayMock.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolveOld = resolve;
-        }),
-    );
-    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
-    await openPostsShowingNote(fundedCredit());
-    fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
-    await waitFor(() => {
-      expect(repayMock).toHaveBeenCalledTimes(1);
-    });
-    cleanup();
-    await act(async () => {
-      resolveOld({ pr: 'lnbc21n1old', amountSats: 99 });
-      await Promise.resolve();
-    });
-    let rejectOld: (err: Error) => void = () => {};
-    repayMock.mockImplementationOnce(
-      () =>
-        new Promise((_resolve, reject) => {
-          rejectOld = reject;
-        }),
-    );
-    renderWithLocale(<MemberProfileScreen profile={profileWithNote} received={[]} donated={[]} />);
-    await openPostsShowingNote(fundedCredit());
-    fireEvent.click(await screen.findByRole('button', { name: "Pay today's repayment" }));
-    await waitFor(() => {
-      expect(repayMock).toHaveBeenCalledTimes(2);
-    });
-    cleanup();
-    await act(async () => {
-      rejectOld(new Error('late'));
-      await Promise.resolve();
-    });
+    expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
   });
 });
 
