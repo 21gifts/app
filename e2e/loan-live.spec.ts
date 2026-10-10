@@ -4,8 +4,8 @@ import { expect, test, type APIRequestContext, type Browser, type Page } from '@
 
 /**
  * Live credit on the staging screens. The default Playwright run ignores this
- * file. The harness pays each Spark invoice the screen mints; the pay slot
- * itself only sends from an in-app wallet, which these accounts do not use.
+ * file. The harness asks the repayment-due route for Spark invoices and pays
+ * each one through the local control service.
  */
 
 const CONTROL = 'http://127.0.0.1:3997';
@@ -45,7 +45,13 @@ type Ledger = {
   termDays: number;
   next: LedgerNext;
   givers: { username: string | null; givenSats: number; givenAmount: string | null }[];
-  repayments: { username: string | null; status: string; sats: number | null }[];
+  repayments: {
+    dayIndex: number;
+    accountId: string;
+    username: string | null;
+    status: string;
+    sats: number | null;
+  }[];
 };
 
 const TERM_DAYS = 4;
@@ -264,8 +270,6 @@ async function give(page: Page, giver: Giver, messageId: string, ui: LoanUi): Pr
 }
 
 async function repayAll(page: Page, messageId: string, ui: LoanUi): Promise<void> {
-  const repay = page.getByRole('button', { name: "Pay today's repayment" });
-  await expect(repay).toBeVisible();
   let posts = 0;
   let since = 0;
   let stalled = 0;
@@ -282,61 +286,71 @@ async function repayAll(page: Page, messageId: string, ui: LoanUi): Promise<void
       await page.waitForTimeout(2_000);
       continue;
     }
-    stalled = 0;
-    const key = `${ledger.next.dayIndex}:${ledger.next.recipientAccountId}`;
     await waitGap(since);
     if (posts >= INVOICE_BATCH) {
       await control(page.request, ui, '/restart');
       posts = 0;
       await page.reload();
-      await expect(repay).toBeVisible();
     }
-    const minted = page.waitForResponse(
-      (response) => response.request().method() === 'POST' && response.url().includes('/repayment'),
-      { timeout: 60_000 },
-    );
-    await expect(repay).toBeEnabled();
-    await repay.click();
-    const response = await minted;
+    const response = await page.request.post(`/messages/${messageId}/repayment/due`, {
+      headers: { Authorization: `Bearer ${ui.borrower.token}` },
+      timeout: 60_000,
+    });
     since = Date.now();
     if (response.status() === 429) {
       await control(page.request, ui, '/restart');
       posts = 0;
       await page.reload();
-      await expect(repay).toBeVisible();
       continue;
     }
     if (!response.ok()) {
       throw new Error(`repayment returned ${response.status()}`);
     }
-    const body = (await response.json()) as { sparkInvoice?: string | null };
-    if (typeof body.sparkInvoice !== 'string' || body.sparkInvoice === '') {
-      throw new Error('repayment has no spark invoice');
+    const body = (await response.json()) as {
+      bills?: {
+        dayIndex: number;
+        recipientAccountId: string;
+        sparkInvoice?: string | null;
+      }[];
+    };
+    const bills = body.bills ?? [];
+    if (bills.length === 0) {
+      stalled += 1;
+      if (stalled > 5) {
+        throw new Error(`repayment returned no bills at day ${ledger.next.dayIndex}`);
+      }
+      continue;
     }
-    await control(page.request, ui, '/pay', {
-      invoice: body.sparkInvoice,
-      role: 'borrower',
-      mode: 'repay',
-      recipientAccountId: ledger.next.recipientAccountId,
-    });
+    stalled = 0;
+    for (const bill of bills) {
+      if (typeof bill.sparkInvoice !== 'string' || bill.sparkInvoice === '') {
+        throw new Error('repayment bill has no spark invoice');
+      }
+      await control(page.request, ui, '/pay', {
+        invoice: bill.sparkInvoice,
+        role: 'borrower',
+        mode: 'repay',
+        recipientAccountId: bill.recipientAccountId,
+      });
+    }
     await expect
       .poll(
         async () => {
           const updated = await readLedger(page, messageId);
-          if (updated.next === null) {
-            return 'done';
-          }
-          return `${updated.next.dayIndex}:${updated.next.recipientAccountId}`;
+          return bills.every((bill) =>
+            updated.repayments.some(
+              (row) =>
+                row.dayIndex === bill.dayIndex &&
+                row.accountId === bill.recipientAccountId &&
+                row.status === 'paid',
+            ),
+          );
         },
         { timeout: 180_000, intervals: [2_000] },
       )
-      .not.toBe(key);
-    const sheet = page.locator('[data-pay-sheet]');
-    if ((await sheet.count()) > 0) {
-      await sheet.getByRole('button', { name: 'Close' }).click();
-    }
-    posts += 1;
-    process.stdout.write(`share ${ledger.next.dayIndex} paid\n`);
+      .toBe(true);
+    posts += bills.length;
+    process.stdout.write(`day ${bills[0]?.dayIndex ?? ledger.next.dayIndex} paid\n`);
   }
 }
 
@@ -381,5 +395,13 @@ test('a borrower takes a credit, three people give, and every share is paid back
     );
     expect(paid).toHaveLength(TERM_DAYS);
   }
-  await expect(home.getByRole('button', { name: "Pay today's repayment" })).toBeVisible();
+  await expect(home.getByRole('link', { name: 'Repay your loan' })).toBeVisible();
+  await home.goto('/loans/repay');
+  const nothingDue = home.getByText('Nothing due today');
+  const heading = home.getByRole('heading', { name: 'Loan repayment' });
+  if (await nothingDue.isVisible().catch(() => false)) {
+    await expect(nothingDue).toBeVisible();
+  } else {
+    await expect(heading).toBeAttached();
+  }
 });

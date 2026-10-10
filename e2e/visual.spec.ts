@@ -11,6 +11,17 @@ import {
 } from './no-prf';
 import { pageFrameProblems } from '../src/lib/page-frame';
 import { fulfillSpot, spotRatesFromStats } from './fx-spot';
+import {
+  fulfillLedger,
+  fulfillMyLoans,
+  ledgerA,
+  ledgerB,
+  ledgerWith,
+  loanA,
+  loanB,
+  loanWith,
+  myLoans,
+} from './loan-fixtures';
 
 /**
  * Locked pay slot button once its fiat has loaded: the shown amount is not
@@ -202,6 +213,28 @@ async function stubWalletSetupAccount(
       body: JSON.stringify({ charge: null, history: [] }),
     });
   });
+}
+
+const LOAN_CLOCK = new Date('2026-10-07T10:00:00.000Z');
+
+/** Signed-in member and stable network state shared by loan screenshots. */
+async function seedLoanMember(page: Page): Promise<void> {
+  await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+  await fulfillRateDay(page);
+  await page.clock.install({ time: LOAN_CLOCK });
+}
+
+/** Routes the supplied loans and every matching public ledger. */
+async function seedLoanData(
+  page: Page,
+  loans: Parameters<typeof myLoans>[0],
+  ledgers: Readonly<Record<string, typeof ledgerA>>,
+  sundayRest = false,
+): Promise<void> {
+  await fulfillMyLoans(page, myLoans(loans, sundayRest));
+  for (const [messageId, ledger] of Object.entries(ledgers)) {
+    await fulfillLedger(page, messageId, ledger);
+  }
 }
 
 const FX_USD = {
@@ -1385,6 +1418,24 @@ test.describe('screen baselines', () => {
     await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Back up your wallet' })).toBeVisible();
     await shotScreen(page, 'screen-wallet');
+  });
+
+  test('state /wallet loans', async ({ page }) => {
+    const waitingLoan = loanWith(loanA, {
+      due: { payableSats: 800, payablePeople: 2, waitingSats: 200, waitingPeople: 1 },
+    });
+    const waitingLedger = ledgerWith(ledgerA, {
+      givers: ledgerA.givers.map((giver) => ({
+        ...giver,
+        canReceive: giver.accountId !== 'acc_diego',
+      })),
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [waitingLoan], { 'loan-a': waitingLedger });
+    await page.goto('/wallet?visual=balance-ready');
+    await expect(page.getByText('Your loan')).toBeVisible();
+    await expect(page.getByText(/waits · a lender has no wallet yet/i)).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans');
   });
 
   test('screen /wallet/phrase', async ({ page }) => {
@@ -3377,6 +3428,413 @@ test.describe('screen baselines', () => {
     await page.goto('/404');
     await expect(page.getByRole('heading', { name: '404' })).toBeVisible();
     await shotScreen(page, 'screen-404');
+  });
+});
+
+test.describe('loans repay screens', () => {
+  const waitingLoan = loanWith(loanA, {
+    due: { payableSats: 800, payablePeople: 2, waitingSats: 200, waitingPeople: 1 },
+  });
+  const waitingLedger = ledgerWith(ledgerA, {
+    givers: ledgerA.givers.map((giver) => ({
+      ...giver,
+      canReceive: giver.accountId !== 'acc_diego',
+    })),
+  });
+  const waitingAllLoan = loanWith(loanA, {
+    due: { payableSats: 0, payablePeople: 0, waitingSats: 1_000, waitingPeople: 3 },
+  });
+  const waitingAllLedger = ledgerWith(ledgerA, {
+    givers: ledgerA.givers.map((giver) => ({ ...giver, canReceive: false })),
+  });
+  const behindLoan = loanWith(loanA, {
+    daysPaid: 9,
+    repaidSats: 9_000,
+    due: { payableSats: 3_000, payablePeople: 3, behindDays: 2 },
+  });
+  const currentDue = ledgerA.repayments.filter((row) => row.status === 'due');
+  const behindLedger = ledgerWith(ledgerA, {
+    daysPaid: 9,
+    repayments: [
+      ...ledgerA.repayments.filter((row) => row.status === 'paid' && row.dayIndex < 9),
+      ...currentDue.flatMap((row) =>
+        [
+          { dayIndex: 9, dueOn: '2026-10-05' },
+          { dayIndex: 10, dueOn: '2026-10-06' },
+          { dayIndex: 11, dueOn: '2026-10-07' },
+        ].map((day) => ({ ...row, ...day })),
+      ),
+      ...ledgerA.repayments.filter((row) => row.status === 'scheduled'),
+    ],
+  });
+  const partialLoan = loanWith(loanA, {
+    repaidSats: 11_500,
+    due: { payableSats: 500, payablePeople: 2 },
+  });
+  const partialLedger = ledgerWith(ledgerA, {
+    repayments: ledgerA.repayments.map((row) =>
+      row.status === 'due' && row.accountId === 'acc_bruno'
+        ? { ...row, status: 'paid' as const, dueSats: null }
+        : row,
+    ),
+  });
+  const paidLedger = ledgerWith(ledgerA, {
+    repayments: ledgerA.repayments.map((row) =>
+      row.status === 'due' ? { ...row, status: 'paid' as const, dueSats: null } : row,
+    ),
+  });
+  const paidLoan = loanWith(loanA, {
+    repaidSats: 12_000,
+    due: { payableSats: 0, payablePeople: 0 },
+  });
+  const lastLoan = loanWith(loanA, {
+    daysDue: 30,
+    daysPaid: 29,
+    repaidSats: 29_000,
+    due: { lastPayment: true },
+    next: null,
+  });
+  const lastLedger = ledgerWith(ledgerA, {
+    daysDue: 30,
+    daysPaid: 29,
+    repayments: ledgerA.repayments.map((row) =>
+      row.dayIndex < 29
+        ? { ...row, status: 'paid' as const, dueSats: null }
+        : { ...row, status: 'due' as const, dueOn: '2026-10-07', dueSats: row.sats },
+    ),
+    next: null,
+  });
+  const repaidLastLoan = loanWith(lastLoan, {
+    daysPaid: 30,
+    repaidSats: 30_000,
+    due: {
+      payableSats: 0,
+      payablePeople: 0,
+      waitingSats: 0,
+      waitingPeople: 0,
+      behindDays: 0,
+      payableAmount: null,
+      waitingAmount: null,
+      lastPayment: true,
+    },
+    next: null,
+  });
+  const repaidLastLedger = ledgerWith(lastLedger, {
+    daysPaid: 30,
+    repayments: lastLedger.repayments.map((row) => ({
+      ...row,
+      status: 'paid' as const,
+      dueSats: null,
+    })),
+    next: null,
+  });
+  const repaidLoanB = loanWith(loanB, {
+    daysPaid: 5,
+    repaidSats: 6_000,
+    due: {
+      payableSats: 0,
+      payablePeople: 0,
+      waitingSats: 0,
+      waitingPeople: 0,
+      behindDays: 0,
+      payableAmount: null,
+      waitingAmount: null,
+      lastPayment: false,
+    },
+    next: loanB.next,
+  });
+  const repaidLedgerB = ledgerWith(ledgerB, {
+    daysPaid: 5,
+    repayments: ledgerB.repayments.map((row) =>
+      row.dayIndex === 4 ? { ...row, status: 'paid' as const, dueSats: null } : row,
+    ),
+  });
+  const collectingLoan = loanWith(loanA, {
+    sats: 18_000,
+    fundedAt: null,
+    daysDue: 0,
+    daysPaid: 0,
+    repaidSats: 0,
+    due: {
+      payableSats: 0,
+      payablePeople: 0,
+      waitingSats: 0,
+      waitingPeople: 0,
+      behindDays: 0,
+      lastPayment: false,
+    },
+    next: null,
+  });
+
+  async function loanShot(
+    page: Page,
+    options: {
+      loans: Parameters<typeof myLoans>[0];
+      ledgers?: Readonly<Record<string, typeof ledgerA>>;
+      visual?: string;
+      text: string | RegExp;
+      pressWho?: boolean;
+      sundayRest?: boolean;
+      qr?: boolean;
+    },
+  ): Promise<void> {
+    await seedLoanMember(page);
+    await seedLoanData(page, options.loans, options.ledgers ?? {}, options.sundayRest);
+    const query = options.visual === undefined ? '' : `?visual=${options.visual}`;
+    await page.goto(`/loans/repay${query}`);
+    if (options.pressWho === true) {
+      await page.getByRole('button', { name: 'Who gets paid' }).click();
+    }
+    await expect(page.getByText(options.text).first()).toBeVisible();
+    if (options.qr === true) {
+      await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toHaveCount(1);
+      await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(1);
+      await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible();
+      await expect(page.getByText('Waiting for your top-up…')).toBeVisible();
+    } else {
+      await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
+    }
+  }
+
+  test('screen /loans/repay', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-ready',
+      text: 'Due today',
+    });
+    await shotScreen(page, 'screen-loans-repay');
+  });
+
+  test('state /loans/repay who-open', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-ready',
+      text: 'Diego',
+      pressWho: true,
+    });
+    await shotScreen(page, 'state-loans-repay-who-open');
+  });
+
+  test('state /loans/repay unavailable', async ({ page }) => {
+    await loanShot(page, { loans: [loanA], ledgers: { 'loan-a': ledgerA }, text: PAY_UNAVAILABLE });
+    await shotScreen(page, 'state-loans-repay-unavailable');
+  });
+
+  test('state /loans/repay multi', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA, loanB],
+      ledgers: { 'loan-a': ledgerA, 'loan-b': ledgerB },
+      visual: 'repay-ready',
+      text: 'to 5 people · 2 loans',
+    });
+    await shotScreen(page, 'state-loans-repay-multi');
+  });
+
+  test('state /loans/repay multi-who-open', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA, loanB],
+      ledgers: { 'loan-a': ledgerA, 'loan-b': ledgerB },
+      visual: 'repay-ready',
+      text: loanB.text,
+      pressWho: true,
+    });
+    await shotScreen(page, 'state-loans-repay-multi-who-open');
+  });
+
+  test('state /loans/repay fiat', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanB],
+      ledgers: { 'loan-b': ledgerB },
+      visual: 'repay-ready',
+      text: "₱30.00 · ₿1'200",
+    });
+    await shotScreen(page, 'state-loans-repay-fiat');
+  });
+
+  test('state /loans/repay behind', async ({ page }) => {
+    await loanShot(page, {
+      loans: [behindLoan],
+      ledgers: { 'loan-a': behindLedger },
+      visual: 'repay-ready',
+      text: "You're 2 days behind",
+    });
+    await shotScreen(page, 'state-loans-repay-behind');
+  });
+
+  test('state /loans/repay waiting', async ({ page }) => {
+    await loanShot(page, {
+      loans: [waitingLoan],
+      ledgers: { 'loan-a': waitingLedger },
+      visual: 'repay-ready',
+      text: /₿200.*waits for a lender/i,
+    });
+    await shotScreen(page, 'state-loans-repay-waiting');
+  });
+
+  test('state /loans/repay waiting-who-open', async ({ page }) => {
+    await loanShot(page, {
+      loans: [waitingLoan],
+      ledgers: { 'loan-a': waitingLedger },
+      visual: 'repay-ready',
+      text: 'No wallet yet · waits',
+      pressWho: true,
+    });
+    await shotScreen(page, 'state-loans-repay-waiting-who-open');
+  });
+
+  test('state /loans/repay waiting-all', async ({ page }) => {
+    await loanShot(page, {
+      loans: [waitingAllLoan],
+      ledgers: { 'loan-a': waitingAllLedger },
+      visual: 'repay-ready',
+      text: /Your lenders haven't set up their wallets yet/i,
+    });
+    await shotScreen(page, 'state-loans-repay-waiting-all');
+  });
+
+  test('state /loans/repay short', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-short',
+      text: 'Send ₿500 · $0.50 now to Bruno, the rest after your top-up',
+    });
+    await shotScreen(page, 'state-loans-repay-short');
+  });
+
+  test('state /loans/repay topup', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-topup',
+      text: 'ada@21.gifts',
+      qr: true,
+    });
+    await shotScreen(page, 'state-loans-repay-topup');
+  });
+
+  test('state /loans/repay sending', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-sending',
+      text: "Sending ₿1'000 · $1.00…",
+    });
+    await shotScreen(page, 'state-loans-repay-sending');
+  });
+
+  test('state /loans/repay partial', async ({ page }) => {
+    await loanShot(page, {
+      loans: [partialLoan],
+      ledgers: { 'loan-a': partialLedger },
+      visual: 'repay-partial',
+      text: 'Still due today',
+    });
+    await shotScreen(page, 'state-loans-repay-partial');
+  });
+
+  test('state /loans/repay repaid', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      ledgers: { 'loan-a': paidLedger },
+      visual: 'repay-repaid',
+      text: "Repaid ₿1'000 · $1.00",
+    });
+    await shotScreen(page, 'state-loans-repay-repaid');
+  });
+
+  test('state /loans/repay last-due', async ({ page }) => {
+    await loanShot(page, {
+      loans: [lastLoan],
+      ledgers: { 'loan-a': lastLedger },
+      visual: 'repay-ready',
+      text: 'Due today · last payment',
+    });
+    await shotScreen(page, 'state-loans-repay-last-due');
+  });
+
+  test('state /loans/repay last', async ({ page }) => {
+    await loanShot(page, {
+      loans: [repaidLastLoan],
+      ledgers: { 'loan-a': repaidLastLedger },
+      visual: 'repay-repaid',
+      text: 'That was your last payment',
+    });
+    await shotScreen(page, 'state-loans-repay-last');
+  });
+
+  test('state /loans/repay last-multi', async ({ page }) => {
+    await loanShot(page, {
+      loans: [repaidLastLoan, repaidLoanB],
+      ledgers: { 'loan-a': repaidLastLedger, 'loan-b': repaidLedgerB },
+      visual: 'repay-repaid-multi',
+      text: "Repaid ₿2'200 · $2.20",
+    });
+    await shotScreen(page, 'state-loans-repay-last-multi');
+  });
+
+  test('state /loans/repay nothing-due', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      ledgers: { 'loan-a': paidLedger },
+      text: 'Nothing due today',
+    });
+    await shotScreen(page, 'state-loans-repay-nothing-due');
+  });
+
+  test('state /loans/repay sunday', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      sundayRest: true,
+      text: 'No repayments on Sundays',
+    });
+    await shotScreen(page, 'state-loans-repay-sunday');
+  });
+
+  test('state /loans/repay unconfirmed', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-unconfirmed',
+      text: 'This payment is not confirmed yet. Check your balance again later.',
+    });
+    await shotScreen(page, 'state-loans-repay-unconfirmed');
+  });
+
+  test('state /loans/repay failed', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-failed',
+      text: 'Could not start the Bitcoin payment',
+    });
+    await shotScreen(page, 'state-loans-repay-failed');
+  });
+
+  test('state /loans/repay collecting', async ({ page }) => {
+    await loanShot(page, { loans: [collectingLoan], text: 'Not fully funded yet.' });
+    await shotScreen(page, 'state-loans-repay-collecting');
+  });
+
+  test('state /loans/repay none', async ({ page }) => {
+    await loanShot(page, { loans: [], text: 'You have no loan to repay.' });
+    await shotScreen(page, 'state-loans-repay-none');
+  });
+
+  test('state /loans/repay load-error', async ({ page }) => {
+    await seedLoanMember(page);
+    await page.route('**/me/loans', async (route) => {
+      await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/loans/repay');
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'Could not load your loans.' }),
+    ).toBeVisible();
+    await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
+    await shotScreen(page, 'state-loans-repay-load-error');
   });
 });
 
@@ -9674,6 +10132,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
     await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -9684,208 +10143,10 @@ test.describe('onboarding screens', () => {
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
-    const repay = page.getByRole('button', { name: "Pay today's repayment" });
+    const repay = page.getByRole('link', { name: 'Repay your loan' });
     await expect(repay).toBeVisible();
     await repay.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-repay-today');
-  });
-
-  test('state /members posts-open-repay-today-error', async ({ page }) => {
-    const memberId = '11111111-1111-4111-8111-111111111111';
-    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 400,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: 'Cannot receive', code: 'cannot_receive' }),
-        });
-        return;
-      }
-      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
-    });
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          id: memberId,
-          name: 'Ada',
-          username: 'alice',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: 1_700_000_001,
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await page.route(`**/forum/members/${memberId}`, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: memberId,
-          name: 'Ada',
-          username: 'alice',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          role: 'basis',
-          location: null,
-          createdAt: '2026-01-15T12:00:00.000Z',
-          aboutMe: null,
-          profileMessage: null,
-          postCount: 1,
-          replyCount: 0,
-        }),
-      });
-    });
-    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          messages: [
-            {
-              id: '44444444-4444-4444-8444-444444444444',
-              accountId: memberId,
-              name: 'Ada',
-              text: 'Need help with a train ticket',
-              createdAt: '2026-08-02T10:00:00.000Z',
-              sats: 21000,
-              goalSats: 21000,
-              goalRepayable: true,
-              goalTermDays: 30,
-              payable: true,
-              hasPhoto: false,
-              hasVideo: false,
-              videoContentType: null,
-              role: 'basis',
-              replyCount: 0,
-            },
-          ],
-        }),
-      });
-    });
-    await fulfillRateDay(page);
-    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EMPTY_ACTIVITY),
-      });
-    });
-    await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 post' }).click();
-    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
-    await page.getByRole('button', { name: "Pay today's repayment" }).click();
-    const walletAlert = page.getByRole('alert').filter({
-      hasText: "The author's wallet cannot receive this Bitcoin payment",
-    });
-    await expect(walletAlert).toBeVisible();
-    await walletAlert.scrollIntoViewIfNeeded();
-    await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toHaveCount(0);
-    await shotScreen(page, 'state-members-posts-open-repay-today-error');
-  });
-
-  test('state /members posts-open-repay-today-invoice', async ({ page }) => {
-    const memberId = '11111111-1111-4111-8111-111111111111';
-    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ pr: 'lnbc21n1repay', amountSats: 700 }),
-        });
-        return;
-      }
-      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
-    });
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          id: memberId,
-          name: 'Ada',
-          username: 'alice',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: 1_700_000_001,
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await page.route(`**/forum/members/${memberId}`, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: memberId,
-          name: 'Ada',
-          username: 'alice',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          role: 'basis',
-          location: null,
-          createdAt: '2026-01-15T12:00:00.000Z',
-          aboutMe: null,
-          profileMessage: null,
-          postCount: 1,
-          replyCount: 0,
-        }),
-      });
-    });
-    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          messages: [
-            {
-              id: '44444444-4444-4444-8444-444444444444',
-              accountId: memberId,
-              name: 'Ada',
-              text: 'Need help with a train ticket',
-              createdAt: '2026-08-02T10:00:00.000Z',
-              sats: 21000,
-              goalSats: 21000,
-              goalRepayable: true,
-              goalTermDays: 30,
-              payable: true,
-              hasPhoto: false,
-              hasVideo: false,
-              videoContentType: null,
-              role: 'basis',
-              replyCount: 0,
-            },
-          ],
-        }),
-      });
-    });
-    await fulfillRateDay(page);
-    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EMPTY_ACTIVITY),
-      });
-    });
-    await page.goto(`/members/${memberId}`);
-    await page.getByRole('button', { name: '1 post' }).click();
-    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
-    await page.getByRole('button', { name: "Pay today's repayment" }).click();
-    const wallet = page.getByText(
-      'Your 21.gifts wallet is not available here, so this cannot be paid.',
-    );
-    await expect(wallet).toBeVisible();
-    await wallet.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-members-posts-open-repay-today-invoice');
   });
 
   test('state /members posts-open-photos', async ({ page }) => {
@@ -17789,6 +18050,7 @@ test.describe('welcome forum variants', () => {
     });
     await seedAda(page);
     await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -17815,205 +18077,139 @@ test.describe('welcome forum variants', () => {
     });
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
-    await expect(page.getByRole('button', { name: "Pay today's repayment" })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repay your loan' })).toBeVisible();
     await shotScreen(page, 'state-welcome-repay-today');
   });
 
-  test('state /welcome repay-today-error', async ({ page }) => {
-    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 400,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            error: "The author's wallet cannot receive this Bitcoin payment",
-            code: 'cannot_receive',
-          }),
-        });
-        return;
-      }
-      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
-    });
+  async function openWelcomeLoans(page: Page, body: ReturnType<typeof myLoans>): Promise<void> {
     await seedAda(page);
     await fulfillRateDay(page);
-    await page.route(/\/messages(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          messages: [
-            {
-              id: 'm-goal-credit',
-              accountId: 'acc_e2e',
-              name: 'Ada',
-              text: 'Need help with a train ticket',
-              createdAt: '2026-08-28T12:00:00.000Z',
-              sats: 21000,
-              goalSats: 21000,
-              goalRepayable: true,
-              goalTermDays: 30,
-              payable: true,
-              hasPhoto: false,
-              role: 'basis',
-            },
-          ],
-        }),
-      });
-    });
+    await page.clock.install({ time: LOAN_CLOCK });
+    await fulfillMyLoans(page, body);
+    await emptyForum(page);
     await page.goto('/welcome');
-    await chooseForumView(page, 'All');
-    await page.getByRole('button', { name: "Pay today's repayment" }).click();
-    const walletAlert = page.getByRole('alert').filter({
-      hasText: "The author's wallet cannot receive this Bitcoin payment",
-    });
-    await expect(walletAlert).toBeVisible();
-    await walletAlert.scrollIntoViewIfNeeded();
-    await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
-      0,
-    );
-    await shotScreen(page, 'state-welcome-repay-today-error');
-  });
-
-  test('state /welcome repay-today-invoice', async ({ page }) => {
-    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ pr: 'lnbc21n1repay', amountSats: 700 }),
-        });
-        return;
-      }
-      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
-    });
-    await seedAda(page);
-    await fulfillRateDay(page);
-    await page.route(/\/messages(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          messages: [
-            {
-              id: 'm-goal-credit',
-              accountId: 'acc_e2e',
-              name: 'Ada',
-              text: 'Need help with a train ticket',
-              createdAt: '2026-08-28T12:00:00.000Z',
-              sats: 21000,
-              goalSats: 21000,
-              goalRepayable: true,
-              goalTermDays: 30,
-              payable: true,
-              hasPhoto: false,
-              role: 'basis',
-            },
-          ],
-        }),
-      });
-    });
-    await page.goto('/welcome');
-    await chooseForumView(page, 'All');
-    await page.getByRole('button', { name: "Pay today's repayment" }).click();
-    const wallet = page.getByText(PAY_UNAVAILABLE);
-    await expect(wallet).toBeVisible();
-    await wallet.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-welcome-repay-today-invoice');
-  });
-
-  /** Opens today's repayment card with an in-app wallet pin (`?visual=wallet-pay-…`). */
-  async function openRepayWalletPay(page: Page, visual: string): Promise<void> {
-    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            pr: 'lnbc21n1repay',
-            amountSats: 700,
-            sparkInvoice: 'spark1visualrepay',
-          }),
-        });
-        return;
-      }
-      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
-    });
-    await seedAda(page);
-    await fulfillRateDay(page);
-    await page.route(/\/messages(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          messages: [
-            {
-              id: 'm-goal-credit',
-              accountId: 'acc_e2e',
-              name: 'Ada',
-              text: 'Need help with a train ticket',
-              createdAt: '2026-08-28T12:00:00.000Z',
-              sats: 21000,
-              goalSats: 21000,
-              goalRepayable: true,
-              goalTermDays: 30,
-              payable: true,
-              hasPhoto: false,
-              role: 'basis',
-            },
-          ],
-        }),
-      });
-    });
-    await page.goto(`/welcome?visual=${visual}`);
-    await chooseForumView(page, 'All');
-    await page.getByRole('button', { name: "Pay today's repayment" }).click();
-    await expect(page.getByRole('paragraph').filter({ hasText: /^Pay ₿700\b/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
   }
 
-  test('state /welcome repay-wallet-pay-preparing', async ({ page }) => {
-    await openRepayWalletPay(page, 'wallet-pay-preparing');
-    const slot = page.getByText('Checking your wallet…');
-    await expect(slot).toBeVisible();
-    await slot.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-welcome-repay-wallet-pay-preparing');
-  });
-
-  test('state /welcome repay-wallet-pay-confirm', async ({ page }) => {
-    await openRepayWalletPay(page, 'wallet-pay-confirm');
-    const slot = page.getByRole('button', { name: 'Send', exact: true });
-    await expect(slot).toBeVisible();
-    await slot.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-welcome-repay-wallet-pay-confirm');
-  });
-
-  test('state /welcome repay-wallet-pay-paying', async ({ page }) => {
-    await openRepayWalletPay(page, 'wallet-pay-paying');
-    const slot = page.getByText('Paying from your wallet…');
-    await expect(slot).toBeVisible();
-    await slot.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-welcome-repay-wallet-pay-paying');
-  });
-
-  test('state /welcome repay-wallet-pay-insufficient', async ({ page }) => {
-    await openRepayWalletPay(page, 'wallet-pay-insufficient');
-    await expect(
-      page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
-    ).toBeVisible();
-    const missing = page.getByText(/^Still missing: ₿/);
-    await expect(missing).toBeVisible();
-    await missing.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-welcome-repay-wallet-pay-insufficient');
-  });
-
-  test('state /welcome repay-wallet-pay-unconfirmed', async ({ page }) => {
-    await openRepayWalletPay(page, 'wallet-pay-unconfirmed');
-    const slot = page.getByText(
-      'This payment is not confirmed yet. Check your balance again later.',
+  test('state /welcome loans-collecting', async ({ page }) => {
+    const collecting = loanWith(loanA, {
+      sats: 18_000,
+      fundedAt: null,
+      daysDue: 0,
+      daysPaid: 0,
+      repaidSats: 0,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: 0,
+        waitingPeople: 0,
+        behindDays: 0,
+        lastPayment: false,
+      },
+      next: null,
+    });
+    await openWelcomeLoans(page, myLoans([collecting]));
+    await expect(page.getByRole('region', { name: 'Your loan' })).toContainText(
+      'Not fully funded yet.',
     );
-    await expect(slot).toBeVisible();
-    await slot.scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-welcome-repay-wallet-pay-unconfirmed');
+    await shotScreen(page, 'state-welcome-loans-collecting');
+  });
+
+  test('state /welcome loans-due', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanA]));
+    await expect(page.getByRole('region', { name: 'Your loan' })).toContainText('Due today');
+    await expect(page.getByRole('link', { name: 'Send' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-due');
+  });
+
+  test('state /welcome loans-behind', async ({ page }) => {
+    const behind = loanWith(loanA, {
+      due: { payableSats: 3_000, payablePeople: 3, behindDays: 2 },
+    });
+    await openWelcomeLoans(page, myLoans([behind]));
+    await expect(page.getByText("You're 2 days behind")).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-behind');
+  });
+
+  test('state /welcome loans-nothing-due', async ({ page }) => {
+    const paid = loanWith(loanA, {
+      repaidSats: 12_000,
+      due: { payableSats: 0, payablePeople: 0 },
+    });
+    await openWelcomeLoans(page, myLoans([paid]));
+    await expect(page.getByText('Nothing due today')).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-nothing-due');
+  });
+
+  test('state /welcome loans-sunday', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanA], true));
+    await expect(page.getByText('No repayments on Sundays')).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-sunday');
+  });
+
+  test('state /welcome loans-multi', async ({ page }) => {
+    const collecting = loanWith(loanA, {
+      sats: 18_000,
+      fundedAt: null,
+      daysDue: 0,
+      daysPaid: 0,
+      repaidSats: 0,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: 0,
+        waitingPeople: 0,
+        behindDays: 0,
+        lastPayment: false,
+      },
+      next: null,
+    });
+    await openWelcomeLoans(page, myLoans([collecting, loanB]));
+    const card = page.getByRole('region', { name: 'Your loans (2)' });
+    await expect(card).toContainText('1 of 2 fully funded.');
+    await shotScreen(page, 'state-welcome-loans-multi');
+  });
+
+  test('state /welcome loans-multi-open', async ({ page }) => {
+    const collecting = loanWith(loanA, {
+      sats: 18_000,
+      fundedAt: null,
+      daysDue: 0,
+      daysPaid: 0,
+      repaidSats: 0,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: 0,
+        waitingPeople: 0,
+        behindDays: 0,
+        lastPayment: false,
+      },
+      next: null,
+    });
+    await openWelcomeLoans(page, myLoans([collecting, loanB]));
+    await page.getByRole('button', { name: 'Show loans' }).click();
+    await expect(page.getByText(loanB.text)).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-multi-open');
+  });
+
+  test('state /welcome menu-loan-due', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanA]));
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByText('Loan repayment due today')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Send' }).last()).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-loan-due');
+  });
+
+  test('state /welcome menu-loan-behind', async ({ page }) => {
+    const behind = loanWith(loanA, {
+      due: { payableSats: 3_000, payablePeople: 3, behindDays: 2 },
+    });
+    await openWelcomeLoans(page, myLoans([behind]));
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByText("You're behind on your loan")).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-loan-behind');
   });
 
   test('state /welcome ask-amount', async ({ page }) => {
