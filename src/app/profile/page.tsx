@@ -6,7 +6,7 @@ import { ProfileScreen } from '@/components/ProfileScreen';
 import { SignedInChrome } from '@/components/SignedInChrome';
 
 /**
- * `/profile` — edit name and Wallet of Satoshi address after onboarding.
+ * `/profile` — edit name, location, and settings after onboarding.
  *
  * @returns The profile screen.
  */

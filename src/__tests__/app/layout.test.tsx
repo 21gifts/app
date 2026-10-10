@@ -11,6 +11,7 @@ import RootLayout, { metadata, SITE_JSON_LD, viewport } from '@/app/layout';
 import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { DiagnosticsListener } from '@/components/DiagnosticsListener';
+import { InteractionLog } from '@/components/InteractionLog';
 import { ScrollSurfaceGuard } from '@/components/ScrollSurfaceGuard';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
@@ -19,6 +20,7 @@ import { PushOpenListener } from '@/components/PushOpenListener';
 import { RememberWalletReturn } from '@/components/RememberWalletReturn';
 import { ViewHistoryRoot } from '@/components/ViewHistoryRoot';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { WalletSync } from '@/components/WalletSync';
 import { APP_HEIGHT_BOOTSTRAP_SCRIPT } from '@/lib/app-height';
 import { SUNDAY_BOOTSTRAP_SCRIPT } from '@/lib/sunday-rest';
 import { THEME_BOOTSTRAP_SCRIPT } from '@/lib/theme';
@@ -198,7 +200,7 @@ describe('RootLayout', () => {
     }
   });
 
-  it('wraps children LocaleProvider → NumberFormatProvider → FiatPreferenceProvider → ThemeProvider with AppHeightSync first on body', async () => {
+  it('mounts the providers, root listeners, and AppHeightSync in order', async () => {
     const tree = await RootLayout({ children: 'content' });
     const htmlProps = tree.props as {
       children: ReactElement[];
@@ -241,14 +243,16 @@ describe('RootLayout', () => {
     expect(Array.isArray(themeChildren)).toBe(true);
     expect((themeChildren[0] as ReactElement).type).toBe(AccountPreferenceSync);
     expect((themeChildren[1] as ReactElement).type).toBe(PushOpenListener);
-    const suspense = themeChildren[2] as ReactElement<{
+    expect((themeChildren[2] as ReactElement).type).toBe(WalletSync);
+    expect((themeChildren[3] as ReactElement).type).toBe(InteractionLog);
+    const suspense = themeChildren[4] as ReactElement<{
       fallback: null;
       children: ReactElement;
     }>;
     expect(suspense.type).toBe(Suspense);
     expect(suspense.props.fallback).toBe(null);
     expect(suspense.props.children.type).toBe(RememberWalletReturn);
-    const viewHistory = themeChildren[3] as ReactElement<{ children: ReactNode }>;
+    const viewHistory = themeChildren[5] as ReactElement<{ children: ReactNode }>;
     expect(viewHistory.type).toBe(ViewHistoryRoot);
     expect(viewHistory.props.children).toBe('content');
   });

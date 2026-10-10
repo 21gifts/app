@@ -160,7 +160,7 @@ export function formatDefinedGoalAmount(
  *
  * @param raw - Field value.
  * @param unit - `btc` or `fiat`.
- * @param day - Gift day for fiat, or `null`.
+ * @param day - Spot rate for fiat, or `null`.
  * @param code - Preferred fiat.
  * @returns Whole sats in range, or `null`.
  */

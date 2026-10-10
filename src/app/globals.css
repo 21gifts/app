@@ -31,6 +31,8 @@
   --color-app-notice-fg: #171717;
   --color-app-qr-bg: #ffffff;
   --color-app-qr-fg: #000000;
+  /* Receive / Send settling to full or slim after the scroll stopped. */
+  --ease-glide: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 html {
@@ -145,6 +147,28 @@ html:not([data-local-sunday='1']) .sunday-write-notice {
     scroll-behavior: auto !important;
   }
 }
+
+@keyframes forum-heart-plus-one {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-1.25rem);
+  }
+}
+
+.forum-heart-plus-one {
+  pointer-events: none;
+  animation: forum-heart-plus-one 700ms ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forum-heart-plus-one {
+    animation: none !important;
+  }
+}
 body {
   position: fixed;
   top: var(--app-offset-top, 0px);
@@ -156,4 +180,21 @@ body {
 
 html[data-menu-sheet='1'] [data-scroll-page] {
   display: none !important;
+}
+
+/* The open sheet ends above the footer and scrolls inside its own border. */
+html[data-menu-sheet='1'] [data-menu-sheet-host] {
+  height: 100%;
+  padding-bottom: 1.25rem;
+}
+
+html[data-menu-sheet='1'] [data-menu-sheet-host] > #signed-in-menu {
+  max-height: 100%;
+}
+
+/* A full-size layer (the wallet Send camera) fills the visible page port:
+   it is absolute to the port, so the port is its containing block only
+   while such a layer is in the page. */
+[data-scrollport]:has(> [data-scroll-page] [data-port-fill]) {
+  position: relative;
 }

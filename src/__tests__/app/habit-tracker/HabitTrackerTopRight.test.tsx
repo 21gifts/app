@@ -46,4 +46,11 @@ describe('HabitTrackerTopRight', () => {
     expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
   });
+
+  it('shows no Log in link for a held-back session (the login card is in the page)', () => {
+    useAuthStore.setState({ session: null, account: null, lockedSession: 'held' });
+    renderWithLocale(<HabitTrackerTopRight />);
+    expect(screen.queryByRole('link', { name: 'Log in' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
+  });
 });

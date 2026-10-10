@@ -73,8 +73,6 @@ vi.mock('@/lib/api', () => ({
   }),
   setName: vi.fn(),
   setLocation: vi.fn(),
-  setLightningAddress: vi.fn(),
-  unlinkLightningAddress: vi.fn(),
   putAboutMe: vi.fn(),
   postFundingApply: vi.fn(),
   fetchAboutMePhoto: vi
@@ -87,6 +85,9 @@ vi.mock('@/lib/api', () => ({
   fetchMember: vi.fn(),
   fetchComposeTarget: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchMemberPosts: vi.fn().mockResolvedValue([]),
   fetchMemberReplies: vi.fn().mockResolvedValue([]),
   fetchMessagePhoto: vi.fn(),
@@ -240,7 +241,7 @@ beforeEach(() => {
       role: 'basis',
       name: 'Ada',
       location: null,
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       lightningAddressVerified: false,
       forumLawsDismissed: false,
       createdAt: 1,
@@ -260,12 +261,13 @@ afterEach(() => {
 });
 
 describe('ProfileScreen', () => {
-  it('shows the heading, name form, address form, chart, theme group, and number format group', async () => {
+  it('shows the heading, name form, chart, theme group, and number format group, without an address field', async () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
     expect(screen.getByText('Name')).toBeTruthy();
     expect(screen.getByText('Location')).toBeTruthy();
-    expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
+    expect(screen.queryByLabelText(/address/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /link address/i })).toBeNull();
     expect(screen.queryByText('You are not verified yet.')).toBeNull();
     expect(screen.getByRole('group', { name: 'Language' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'English' }).getAttribute('aria-pressed')).toBe(
@@ -657,13 +659,12 @@ describe('ProfileScreen', () => {
     expect(screen.queryByText('Software Developer')).toBeNull();
   });
 
-  it('shows forum.error and keeps address editors when fetchMember rejects, and retry fetches again', async () => {
+  it('shows forum.error and keeps the name editor when fetchMember rejects, and retry fetches again', async () => {
     vi.mocked(fetchMember).mockRejectedValue(new Error('network'));
     renderWithLocale(<ProfileScreen />);
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
     expect(screen.getByText('Name')).toBeTruthy();
-    expect(screen.getByText('Wallet of Satoshi address')).toBeTruthy();
     expect(fetchMember).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {

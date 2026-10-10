@@ -8,6 +8,7 @@ import {
 } from '@/components/FundingApplyScreen';
 import type { Account, ForumMessage } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
+import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -20,9 +21,14 @@ vi.mock('@/lib/grant-applications', async (importOriginal) => {
 });
 
 const push = vi.fn();
+const back = vi.fn();
 
 vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof push; replace: typeof push } => ({ push, replace: push }),
+  useRouter: (): { push: typeof push; replace: typeof push; back: typeof back } => ({
+    push,
+    replace: push,
+    back,
+  }),
 }));
 
 vi.mock('next/link', () => ({
@@ -62,7 +68,7 @@ const account: Account = {
   role: 'verified',
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
@@ -106,6 +112,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(grantApplicationsPaused).mockReturnValue(false);
   push.mockReset();
+  resetViewHistory();
   postsMock.mockResolvedValue([post]);
   applyMock.mockResolvedValue({
     status: 'pending',
@@ -278,9 +285,7 @@ describe('FundingApplyScreen', () => {
     expect(
       await screen.findByText('Do your profile posts match the core principles of 21.gifts?'),
     ).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe(
-      'https://21.gifts/about',
-    );
+    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
     expect(screen.queryByText('Giving is a duty')).toBeNull();
     expect(screen.getByText('Living-room note.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
@@ -294,6 +299,22 @@ describe('FundingApplyScreen', () => {
       expect(applyMock).toHaveBeenCalledWith('sess');
     });
     expect(push).toHaveBeenCalledWith('/grants');
+    expect(back).not.toHaveBeenCalled();
+  });
+
+  it('steps back to /grants after apply when it was opened from there', async () => {
+    recordCurrentView('/welcome');
+    recordCurrentView('/grants');
+    recordCurrentView('/grants/apply');
+    useAuthStore.setState({ session: 'sess', account: complete });
+    renderWithLocale(<FundingApplyScreen />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes' }));
+    await screen.findByText('Do these posts, to your knowledge, correspond to the truth?');
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    await waitFor(() => {
+      expect(back).toHaveBeenCalledTimes(1);
+    });
+    expect(push).not.toHaveBeenCalledWith('/grants');
   });
 
   it('disables Yes while apply is in flight', async () => {

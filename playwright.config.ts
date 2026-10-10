@@ -7,9 +7,9 @@ const DESKTOP_VIEWPORT = { width: 1280, height: 720 };
 const MOBILE_VIEWPORT = { width: 375, height: 812 };
 
 /**
- * iPhone UA so a specific invoice omits its payment QR
- * (`isSmartphoneUserAgent`): the forum pay sheet, the inbox pay sheet, and the public pay link.
- * Other screens show the same QR as desktop.
+ * iPhone UA so the public pay link omits its invoice QR (`isSmartphoneUserAgent`).
+ * Member pay sheets show no invoice QR on any device; profile, till, and
+ * address QRs show as on desktop.
  */
 const IPHONE_UA =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
@@ -77,7 +77,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: '**/visual.spec.ts',
+      testIgnore: ['**/visual.spec.ts', '**/loan-live.spec.ts'],
       use: { ...desktopChrome },
     },
     visualProject('desktop-light', 'light', 'desktop'),
@@ -103,6 +103,10 @@ export default defineConfig({
         NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3001',
         NEXT_PUBLIC_APP_VERSION: 'dev',
         NEXT_PUBLIC_E2E_NOW: '2026-01-07T12:00:00.000Z',
+        NEXT_PUBLIC_PLATFORM_USERNAME: '21gifts',
+        // Error reporting stays off in every Playwright run, whatever the shell sets.
+        NEXT_PUBLIC_SENTRY_DSN: '',
+        NEXT_PUBLIC_SENTRY_ENVIRONMENT: '',
       },
     },
   ],

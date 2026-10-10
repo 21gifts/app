@@ -3,13 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FundingApplicationDetailScreen } from '@/components/FundingApplicationDetailScreen';
 import type { Account, FundingApplicationDetail, ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
+import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const push = vi.fn();
+const back = vi.fn();
 
 vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof push } => ({ push }),
+  useRouter: (): { replace: typeof push; back: typeof back } => ({ replace: push, back }),
 }));
 
 vi.mock('next/link', () => ({
@@ -47,7 +49,7 @@ const account: Account = {
   role: 'moderator',
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   createdAt: 1_700_000_000,
   forumLawsDismissed: false,
@@ -79,7 +81,7 @@ const DETAIL: FundingApplicationDetail = {
     id: 'acc_rose',
     name: 'Rose',
     role: 'verified',
-    lightningAddress: 'rose@walletofsatoshi.com',
+    lightningAddress: null,
   },
   grant: {
     status: 'pending',
@@ -106,6 +108,7 @@ const DECISION = {
 beforeEach(() => {
   vi.clearAllMocks();
   push.mockReset();
+  resetViewHistory();
   fetchMock.mockResolvedValue(DETAIL);
   admitMock.mockResolvedValue({
     ...DECISION,
@@ -171,9 +174,7 @@ describe('FundingApplicationDetailScreen', () => {
     expect(
       screen.getByText('Do their profile posts match the core principles of 21.gifts?'),
     ).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe(
-      'https://21.gifts/about',
-    );
+    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
     expect(screen.queryByText('Giving is a duty')).toBeNull();
     expect(screen.getByText('Living-room note.')).toBeTruthy();
     expect(screen.getAllByText(formatForumTime(POST.createdAt, 'en')).length).toBeGreaterThan(0);
@@ -241,6 +242,17 @@ describe('FundingApplicationDetailScreen', () => {
     });
     expect(push).toHaveBeenCalledWith('/grants/applications');
     expect(rejectMock).not.toHaveBeenCalled();
+  });
+
+  it('steps back to the queue after a decision when it was opened from there', async () => {
+    recordCurrentView('/grants/applications');
+    recordCurrentView('/grants/applications/acc_rose');
+    renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'No' }));
+    await waitFor(() => {
+      expect(back).toHaveBeenCalledTimes(1);
+    });
+    expect(push).not.toHaveBeenCalled();
   });
 
   it('posts Reject when No is clicked', async () => {

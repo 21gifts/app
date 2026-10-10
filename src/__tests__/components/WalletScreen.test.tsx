@@ -2,6 +2,7 @@ import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { WalletPhraseScreen, WalletScreen } from '@/components/WalletScreen';
 import { WalletScreenView } from '@/components/WalletScreenView';
+import type { UseWalletResult } from '@/hooks/useWallet';
 import {
   WALLET_VISUAL_FIXTURE_MNEMONIC,
   type UseWalletPhraseResult,
@@ -10,6 +11,15 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const showPhrase = vi.fn();
 const retry = vi.fn();
+const { walletState, useWalletMock } = vi.hoisted(() => {
+  const state: UseWalletResult = {
+    status: 'connecting',
+    balanceSats: null,
+    retry: vi.fn(),
+    setupFailed: false,
+  };
+  return { walletState: state, useWalletMock: vi.fn((): UseWalletResult => state) };
+});
 const phraseState: UseWalletPhraseResult = {
   view: 'activate',
   status: 'idle',
@@ -27,6 +37,9 @@ vi.mock('@/hooks/useWalletPhrase', async (importOriginal) => {
     useWalletPhrase: (): UseWalletPhraseResult => phraseState,
   };
 });
+vi.mock('@/hooks/useWallet', () => ({
+  useWallet: useWalletMock,
+}));
 
 afterEach(() => {
   cleanup();
@@ -34,12 +47,16 @@ afterEach(() => {
   phraseState.view = 'activate';
   phraseState.words = [];
   phraseState.status = 'idle';
+  walletState.status = 'connecting';
+  walletState.balanceSats = null;
+  walletState.setupFailed = false;
+  useWalletMock.mockClear();
 });
 
 const words = WALLET_VISUAL_FIXTURE_MNEMONIC.split(' ');
 
 describe('WalletScreenView', () => {
-  it('renders Add recovery phrase', () => {
+  it('renders the home without a recovery link when the account has no phrase', () => {
     renderWithLocale(
       <WalletScreenView
         view="activate"
@@ -53,12 +70,10 @@ describe('WalletScreenView', () => {
       />,
     );
     expect(screen.getByRole('heading', { name: 'Wallet' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Add recovery phrase' }).getAttribute('href')).toBe(
-      '/wallet/phrase',
-    );
+    expect(screen.queryByRole('link', { name: 'Add recovery phrase' })).toBeNull();
   });
 
-  it('renders Show recovery phrase', () => {
+  it('renders the home without a recovery link when the account has a phrase', () => {
     renderWithLocale(
       <WalletScreenView
         view="reveal"
@@ -71,10 +86,8 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
-    expect(screen.getByText('Advanced functions')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Show recovery phrase' }).getAttribute('href')).toBe(
-      '/wallet/phrase',
-    );
+    expect(screen.queryByText('Advanced functions')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Show recovery phrase' })).toBeNull();
   });
 
   it('renders Try again on timeout', () => {
@@ -110,7 +123,7 @@ describe('WalletScreenView', () => {
         retry={vi.fn()}
       />,
     );
-    expect(screen.getByText(/cannot create a recovery phrase/i)).toBeTruthy();
+    expect(screen.getByText(/cannot hold a 21\.gifts wallet/i)).toBeTruthy();
     expect(screen.getByRole('alert')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
   });
@@ -141,7 +154,22 @@ describe('WalletScreen', () => {
     phraseState.words = [];
     phraseState.error = null;
     renderWithLocale(<WalletScreen />);
-    expect(screen.getByRole('link', { name: 'Add recovery phrase' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Receive' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Balance' })).toBeTruthy();
+    // Once for the screen and once for its send flow, which waits on the same wallet state.
+    expect(useWalletMock).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+  });
+
+  it('opens the send flow from Send while the wallet is ready', () => {
+    walletState.status = 'ready';
+    walletState.balanceSats = 21_000;
+    renderWithLocale(<WalletScreen />);
+    expect(screen.queryByRole('region', { name: 'Send Bitcoin' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Enter manually' }));
+    expect(screen.getByLabelText('Payment request or address')).toBeTruthy();
   });
 
   it('calls retry from Try again on the phrase page', () => {
@@ -151,12 +179,15 @@ describe('WalletScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(retry).toHaveBeenCalled();
     expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
+    expect(useWalletMock).not.toHaveBeenCalled();
   });
 
-  it('does not show the recovery words on the receive page', () => {
+  it('does not show the recovery words on the wallet page or in Receive', () => {
     phraseState.view = 'phrase';
     phraseState.words = words;
     renderWithLocale(<WalletScreen />);
+    expect(screen.queryByText('abandon')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
     expect(screen.queryByText('abandon')).toBeNull();
     expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
   });

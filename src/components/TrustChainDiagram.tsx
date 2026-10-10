@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import type { TrustChain, TrustChainNode } from '@/lib/api-types';
@@ -263,9 +264,10 @@ export function TrustChainDiagram({
             node.name === null || node.name === '' ? t('trustChain.unnamed') : node.name;
           const busy = expandingId === node.id;
           return (
-            <a
+            <Link
               key={node.id}
               href={`/members/${node.id}`}
+              prefetch={false}
               data-testid={`trust-node-${node.id}`}
               aria-busy={busy ? 'true' : undefined}
               className="touch-none cursor-grab"
@@ -320,7 +322,7 @@ export function TrustChainDiagram({
               >
                 {busy ? t('trustChain.loading') : t(roleMessageKey(node.role))}
               </text>
-            </a>
+            </Link>
           );
         })}
       </svg>

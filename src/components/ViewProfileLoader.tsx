@@ -12,8 +12,8 @@ const VIEW_KEY_RE = /^[0-9a-f]{64}$/;
 
 /**
  * Client loader for `/view/[viewKey]`: validates the key, fetches the public
- * profile, then given/received activity for the chart (even when the Lightning
- * Address is blank). An activity fetch failure keeps the card and sets
+ * profile, then given/received activity for the chart (even when the
+ * profile has no wallet yet). An activity fetch failure keeps the card and sets
  * `activityFailed`. Does not use `useAuthStore`.
  *
  * @param props - Dynamic route `viewKey`.

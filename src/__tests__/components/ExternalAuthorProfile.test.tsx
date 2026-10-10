@@ -38,7 +38,9 @@ vi.mock('@/lib/api', () => ({
   fetchExternalAuthorProfile: vi.fn(),
   fetchExternalAuthorPosts: vi.fn(),
   fetchExternalAuthorReplies: vi.fn(),
-  fetchGiftStats: vi.fn(),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
   fetchForumMessage: vi.fn(),
@@ -52,14 +54,13 @@ import {
   fetchExternalAuthorPosts,
   fetchExternalAuthorProfile,
   fetchExternalAuthorReplies,
-  fetchGiftStats,
+  fetchFxSpot,
 } from '@/lib/api';
 import { ExternalAuthorProfile } from '@/components/ExternalAuthorProfile';
 
 const fetchProfile = vi.mocked(fetchExternalAuthorProfile);
 const fetchPosts = vi.mocked(fetchExternalAuthorPosts);
 const fetchReplies = vi.mocked(fetchExternalAuthorReplies);
-const fetchStats = vi.mocked(fetchGiftStats);
 
 const FEED_NOTE: ForumMessage = {
   id: 'note-1',
@@ -83,7 +84,9 @@ const HINT =
   'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.';
 
 beforeEach(() => {
-  fetchStats.mockResolvedValue({ spendOverTime: [] } as never);
+  vi.mocked(fetchFxSpot)
+    .mockReset()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
 });
 
 afterEach(() => {
@@ -92,7 +95,6 @@ afterEach(() => {
   push.mockClear();
   fetchPosts.mockReset();
   fetchReplies.mockReset();
-  fetchStats.mockReset();
 });
 
 describe('ExternalAuthorProfile', () => {
@@ -552,6 +554,25 @@ describe('ExternalAuthorProfile', () => {
     expect(screen.queryByRole('button', { name: 'React' })).toBeNull();
   });
 
+  it('shows no heart on a loaded post, even when its author can receive', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 0,
+    });
+    fetchPosts.mockResolvedValue([{ ...FEED_NOTE, payable: true }]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 post' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    await waitFor(() => {
+      expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+  });
+
   it('omits the truncated status line when the loaded list is not shorter than the count', async () => {
     fetchProfile.mockResolvedValue({
       name: 'Robin',
@@ -832,17 +853,11 @@ describe('ExternalAuthorProfile', () => {
   });
 
   it('opens a post expand control to that note', async () => {
-    fetchStats.mockResolvedValue({
-      spendOverTime: [
-        {
-          sats: 100_000_000,
-          usd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-        },
-      ],
-    } as Awaited<ReturnType<typeof fetchStats>>);
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
     fetchProfile.mockResolvedValue({
       name: 'Robin',
       npub: 'npub1example',

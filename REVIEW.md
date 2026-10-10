@@ -59,17 +59,24 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 
 ## Shown amounts
 
-Reject the PR when a shown bitcoin amount has no equivalent in the visitor's default fiat. Signed in, the code is the currency stored for that person (`useFiatPreference`: a stored profile choice wins). Signed out, it is `defaultFiatForLocale` of the UI language. A payment that stored a fiat string shows that string; otherwise the page uses the latest gift-day rate. A baseline of a payment amount that omits the fiat line is rejected. See CONTRIBUTING.md “Shown amounts”.
+Reject the PR when a shown bitcoin amount has no equivalent in the visitor's default fiat. Signed in, the code is the currency stored for that person (`useFiatPreference`: a stored profile choice wins). Signed out, it is `defaultFiatForLocale` of the UI language. A payment that stored a fiat string shows that string; otherwise the page uses the current spot rate. A fee of ₿0 on the wallet send confirm step shows no fiat, the **Pay {amount} and post** button on the posting fee shows its amount without fiat, and a pay sheet's `WalletPay` slot shows no fee row for a fee of ₿0; none of these is a reason to reject. A baseline of a payment amount that omits the fiat line is rejected. See CONTRIBUTING.md “Shown amounts”.
 
-## Payment QR vs deep links
+## Payment QR vs wallet links
 
-Reject the PR when the forum-post pay sheet, the inbox pay sheet, or the
-public pay-link invoice mounts its invoice QR on a smartphone
-user-agent, or when a profile, member, public view, or point of sale QR
-is hidden on a smartphone. Detection is `isSmartphoneUserAgent`, not
-viewport width. On those invoice screens the phone opens Wallet of
-Satoshi and shows no QR. Everywhere else the phone matches the desktop.
-See CONTRIBUTING.md “Payment QR vs deep links”.
+Reject the PR when a member pay sheet — the forum post pay sheet (including
+the posting fee and today's repayment), the reply pay page, or the inbox pay
+sheet — mounts an invoice QR on any user agent, shows a button or link to
+another wallet app, or falls back to anything but the in-app wallet. Reject
+it when the public pay-link invoice mounts its invoice QR on a smartphone
+user-agent, when its **Pay** names or targets a particular wallet app
+instead of a generic `lightning:` link, or when a profile, member, public
+view, or point of sale QR is hidden on a smartphone. Detection is
+`isSmartphoneUserAgent`, not viewport width. The member's own address QR
+shown when the balance is too low, and the one in the `/wallet` Receive view,
+follow the profile rule. That is not a
+reason to reject. Reject a screen or string that names another wallet or
+lets a member link an external address.
+See CONTRIBUTING.md “Payment QR vs wallet links”.
 
 ## Completeness gates
 
@@ -95,4 +102,12 @@ screenshot baselines for new screenshot-gated screens/variants in the same PR
 follow the labeled vs icon-only table in `docs/ui.md` and CONTRIBUTING
 **Icon controls**. A new control that ignores the table is rejected. The `profile.chartError` chart-slot exception in CONTRIBUTING is not a new variant.
 
-Reject the PR when any screen in the app has a second back control, or when the top-left back arrow jumps to a fixed parent or can leave the site. A second back control is absolutely forbidden, including a back link in the page body. The arrow returns to the in-app view this tab showed immediately before. With no earlier in-app view it opens `/welcome`, except on `/welcome` itself, which omits the arrow only in that case. See CONTRIBUTING.md “One back”.
+Reject the PR when any screen in the app has a second back control, or when the top-left back arrow jumps to a fixed parent or can leave the site. A second back control is absolutely forbidden, including a back link in the page body. The arrow returns to the in-app view this tab showed immediately before. With no earlier in-app view it opens `/welcome`. `/welcome` itself never shows the arrow, whatever the view stack holds, and the Menu's **Home** clears the in-app view stack before it opens `/welcome` client-side. See CONTRIBUTING.md “One back”.
+
+Reject the PR when a screenshot pin (`?visual=…`, `e2e-now`, or other fixture switch) is read without the Playwright-build check (`getE2eNow()`, or the `e2e-now` meta tag in a pre-React script), or when a new pin has no unit test that a production build ignores it. See CONTRIBUTING.md “Screenshot baselines”.
+
+Reject the PR when a passkey without PRF output ends in a generic error instead of `wallet.prfUnsupported`, or when it adds a second wording for that case. See `docs/ui.md` “No PRF, no wallet on this device”.
+
+Reject the PR when the **Introduce yourself** dialog can open anywhere but `/welcome`.
+
+Reject the PR when moving between in-app views loads a new document (a raw `<a href="/…">`, `window.location.assign`, `location.href =`, or `location.replace` to an in-app path, or a link to a path that only redirects), when it adds a `window.location.reload()` other than the wallet retry after a failed initialisation, or when it asks for the passkey while the recovery phrase is already in tab memory. Reject it when it writes the phrase or the PRF bytes anywhere but tab memory. See CONTRIBUTING.md “No document load inside the app”.

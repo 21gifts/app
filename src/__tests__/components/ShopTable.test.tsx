@@ -4,15 +4,48 @@ import { ShopTable } from '@/components/ShopTable';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import type { ForumMessage } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
+import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 const replace = vi.fn();
+const back = vi.fn();
 
 vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof replace; replace: typeof replace } => ({
+  useRouter: (): { push: typeof replace; replace: typeof replace; back: typeof back } => ({
     push: replace,
     replace,
+    back,
   }),
+}));
+
+const linkPush = vi.hoisted(() => vi.fn());
+
+// Like next/link: after the caller's onClick, an unprevented plain click is a
+// client-side router push, not a document load.
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    onClick,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+    [key: string]: unknown;
+  }) => (
+    <a
+      href={href}
+      {...rest}
+      onClick={(event) => {
+        onClick?.(event);
+        event.preventDefault();
+        linkPush(href);
+      }}
+    >
+      {children}
+    </a>
+  ),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -50,6 +83,9 @@ const SHOP: ForumMessage = {
 afterEach(() => {
   cleanup();
   replace.mockClear();
+  back.mockClear();
+  resetViewHistory();
+  linkPush.mockReset();
   fetchMessagesMock.mockReset();
   useAuthStore.setState({ session: null, account: null });
 });
@@ -63,6 +99,48 @@ describe('ShopTable', () => {
       expect(replace).toHaveBeenCalledWith('/setup/rules');
     });
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('steps back to setup when the shops were opened from it', async () => {
+    recordCurrentView('/setup/rules');
+    recordCurrentView('/shops');
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    renderWithLocale(<ShopTable />);
+    await waitFor(() => {
+      expect(back).toHaveBeenCalledTimes(1);
+    });
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('opens a place and an operator with client-side links', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockResolvedValue({ messages: [SHOP], nextCursor: null });
+    renderWithLocale(<ShopTable />);
+    fireEvent.click(await screen.findByRole('link', { name: 'Happyland' }));
+    expect(linkPush).toHaveBeenLastCalledWith('/shops?pin=m-shop#map');
+    fireEvent.click(screen.getByRole('link', { name: '@luna' }));
+    expect(linkPush).toHaveBeenLastCalledWith('/members/acc-luna');
+  });
+
+  it('loads only the shops of a country', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockResolvedValue({ messages: [SHOP], nextCursor: null });
+    renderWithLocale(<ShopTable country="PH" />);
+    expect(await screen.findByRole('link', { name: 'Happyland' })).toBeTruthy();
+    expect(fetchMessagesMock).toHaveBeenCalledWith('tok', {
+      mode: 'all',
+      limit: 20,
+      hashtag: '21GiftsShop',
+      country: 'PH',
+    });
+  });
+
+  it('shows the empty copy when a country has no shop left', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockResolvedValue({ messages: [], nextCursor: null });
+    renderWithLocale(<ShopTable country="KE" />);
+    expect(await screen.findByText('No shops yet — add the first one.')).toBeTruthy();
   });
 
   it('returns nothing without a session', () => {
@@ -85,7 +163,7 @@ describe('ShopTable', () => {
     renderWithLocale(<ShopTable />);
     expect(await screen.findByRole('link', { name: 'Happyland' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Happyland' }).getAttribute('href')).toBe(
-      '/map?pin=m-shop',
+      '/shops?pin=m-shop#map',
     );
     expect(screen.getAllByRole('link', { name: '@luna' })[0]?.getAttribute('href')).toBe(
       '/members/acc-luna',
@@ -220,7 +298,8 @@ describe('ShopTable', () => {
       ...SHOP,
       text: 'Cafe Sol\n\n#21GiftsShop',
     });
-    renderWithLocale(<ShopTable />);
+    const shopsChanged = vi.fn();
+    renderWithLocale(<ShopTable onShopsChanged={shopsChanged} />);
     const pencils = await screen.findAllByRole('button', { name: 'Edit shop note' });
     expect(pencils).toHaveLength(2);
     fireEvent.click(pencils[0]!);
@@ -234,5 +313,8 @@ describe('ShopTable', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(await screen.findByText('Cafe Sol')).toBeTruthy();
     expect(screen.getByText('Other stall')).toBeTruthy();
+    await waitFor(() => {
+      expect(shopsChanged).toHaveBeenCalled();
+    });
   });
 });

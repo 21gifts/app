@@ -6,7 +6,7 @@ const E2E_ACCOUNT = {
   role: 'basis' as const,
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
@@ -108,7 +108,7 @@ test('Function: ShopTable — name, place, and operator', async ({ page }) => {
   await page.getByRole('button', { name: 'Table' }).click();
   await expect(page.getByRole('link', { name: 'Happyland' })).toHaveAttribute(
     'href',
-    '/map?pin=m-shop',
+    '/shops?pin=m-shop#map',
   );
   await expect(page.getByRole('link', { name: '@luna' })).toHaveAttribute(
     'href',
@@ -746,4 +746,161 @@ test('Function: setMessageShopAccount — moderator save shows the account', asy
   await note.getByLabel('Username').fill('luna');
   await note.getByRole('button', { name: 'Save account' }).click();
   await expect(note.getByRole('link', { name: '@luna' })).toBeVisible();
+});
+
+const PH_SHOP = {
+  ...SHOP_NOTE,
+  id: 'm-ph',
+  text: 'Sari-sari Manila\n\n#21GiftsShop',
+  place: { lat: 14.6, lng: 120.98, label: 'Manila' },
+};
+
+const KE_SHOP = {
+  ...SHOP_NOTE,
+  id: 'm-ke',
+  text: 'Duka Nairobi\n\n#21GiftsShop',
+  createdAt: '2026-08-28T11:30:00.000Z',
+  place: { lat: -1.29, lng: 36.82, label: 'Nairobi' },
+};
+
+/**
+ * Shops in the Philippines and Kenya. The list answers the `country` query like
+ * the api; the pins carry the api's `countryCode`.
+ */
+async function seedCountryShops(page: import('@playwright/test').Page): Promise<string[]> {
+  await seedSignedIn(page);
+  const listQueries: string[] = [];
+  await page.route(/\/forum\/messages\?/, async (route) => {
+    const country = new URL(route.request().url()).searchParams.get('country');
+    listQueries.push(country ?? 'all');
+    const byCountry: Record<string, unknown[]> = { PH: [PH_SHOP], KE: [KE_SHOP] };
+    const messages = country === null ? [PH_SHOP, KE_SHOP] : (byCountry[country] ?? []);
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages }),
+    });
+  });
+  await page.route('**/forum/messages/places', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        places: [
+          {
+            id: 'm-ph',
+            name: 'Ada',
+            createdAt: PH_SHOP.createdAt,
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Manila',
+            shop: true,
+            countryCode: 'PH',
+          },
+          {
+            id: 'm-ke',
+            name: 'Ada',
+            createdAt: KE_SHOP.createdAt,
+            lat: -1.29,
+            lng: 36.82,
+            label: 'Nairobi',
+            shop: true,
+            countryCode: 'KE',
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/maps/key', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ key: null }),
+    });
+  });
+  return listQueries;
+}
+
+test('Function: ShopsCountryFilter — choosing a country filters the list, pins, and table, and the URL keeps it', async ({
+  page,
+}) => {
+  const listQueries = await seedCountryShops(page);
+  await page.goto('/shops#table');
+  const table = page.getByRole('table');
+  await expect(table.getByText('Sari-sari Manila')).toBeVisible();
+  await expect(table.getByText('Duka Nairobi')).toBeVisible();
+  const country = page.getByRole('combobox', { name: 'Country' });
+  await expect(country).toHaveText('All countries');
+  await country.click();
+  await expect(page.getByRole('option')).toHaveText([
+    'All countries',
+    'Kenya (1)',
+    'Philippines (1)',
+  ]);
+  await page.getByRole('option', { name: 'Philippines (1)' }).click();
+  await expect(page).toHaveURL(/\/shops\?country=PH#table$/);
+  await expect(country).toHaveText('Philippines (1)');
+  await expect(table.getByText('Sari-sari Manila')).toBeVisible();
+  await expect(table.getByText('Duka Nairobi')).toHaveCount(0);
+  expect(listQueries).toContain('PH');
+
+  await page.getByRole('button', { name: 'Map' }).click();
+  await expect(page).toHaveURL(/\/shops\?country=PH#map$/);
+  await expect(page.getByRole('link', { name: 'Manila' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Nairobi' })).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Post' }).click();
+  await expect(page.getByText('Sari-sari Manila')).toBeVisible();
+  await expect(page.getByText('Duka Nairobi')).toHaveCount(0);
+
+  // Back returns to All countries, Forward to the Philippines.
+  await page.goBack();
+  await expect(country).toHaveText('All countries');
+  await expect(page.getByText('Duka Nairobi')).toBeVisible();
+  await page.goForward();
+  await expect(country).toHaveText('Philippines (1)');
+  await expect(page.getByText('Duka Nairobi')).toHaveCount(0);
+
+  // A shared link keeps the country; an unknown code is All countries.
+  await page.goto('/shops?country=ke#table');
+  await expect(country).toHaveText('Kenya (1)');
+  await expect(table.getByText('Duka Nairobi')).toBeVisible();
+  await expect(table.getByText('Sari-sari Manila')).toHaveCount(0);
+  await page.goto('/shops?country=QQ#table');
+  await expect(country).toHaveText('All countries');
+  await expect(table.getByText('Sari-sari Manila')).toBeVisible();
+  await expect(table.getByText('Duka Nairobi')).toBeVisible();
+});
+
+test('Function: shopCountryFromQuery — a known code filters and anything else is All countries', async ({
+  page,
+}) => {
+  await seedCountryShops(page);
+  await page.goto('/shops?country=Ph#table');
+  await expect(page.getByRole('combobox', { name: 'Country' })).toHaveText('Philippines (1)');
+  await page.goto('/shops?country=PHL#table');
+  await expect(page.getByRole('combobox', { name: 'Country' })).toHaveText('All countries');
+  await page.goto('/shops?country=EU#table');
+  await expect(page.getByRole('combobox', { name: 'Country' })).toHaveText('All countries');
+});
+
+test('Function: shopCountryOptions — countries with shops, named in the UI language, with counts', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await context.addCookies([{ name: 'locale', value: 'de', url: baseURL ?? '' }]);
+  await seedCountryShops(page);
+  await page.goto('/shops?country=CH#table');
+  const country = page.getByRole('combobox', { name: 'Land' });
+  // A chosen country without shops stays listed with 0 and shows the empty copy.
+  await expect(country).toHaveText('Schweiz (0)');
+  await expect(page.getByText('Noch keine Shops — fügen Sie den ersten hinzu.')).toBeVisible();
+  await country.click();
+  await expect(page.getByRole('option')).toHaveText([
+    'Alle Länder',
+    'Kenia (1)',
+    'Philippinen (1)',
+    'Schweiz (0)',
+  ]);
 });

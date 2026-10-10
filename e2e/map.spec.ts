@@ -6,7 +6,7 @@ const E2E_ACCOUNT = {
   role: 'basis' as const,
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,

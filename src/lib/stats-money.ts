@@ -158,12 +158,15 @@ export function formatUsdTick(
   return formatFiatTick(usd, 'USD', style);
 }
 
-/** One gift-day row used to scale sats into CHF/EUR/USD/PHP. */
+/**
+ * Sats and their price in CHF/EUR/USD/PHP, used to scale sats into fiat:
+ * one gift day's totals, or the current spot price of 1 BTC ({@link spotRateDay}).
+ */
 export interface FiatRateDay {
-  /** Gift sats on that UTC day (must be greater than 0). */
+  /** Sats priced by the fiat fields (must be greater than 0). */
   sats: number;
-  /** USD total for that day. */
-  usd: string;
+  /** USD total, or `null` when there is no USD price. */
+  usd: string | null;
   /** CHF total, or `null` when unsummed. */
   chf: string | null;
   /** EUR total, or `null` when unsummed. */
@@ -185,12 +188,15 @@ function fiatFieldOnDay(day: FiatRateDay, code: FiatCode): string | null {
   }
 }
 
+/** Sats in one bitcoin, the amount a spot price is quoted for. */
+const SATS_PER_BTC = 100_000_000;
+
 /**
- * True when a gift-day total can scale sats into that currency.
+ * True when a total or price can scale sats into that currency.
  *
  * A null total, a non-numeric total, and `"0.00"` are not rates.
  *
- * @param raw - Stored gift-day total, or `null`.
+ * @param raw - Gift-day total or spot price, or `null`.
  * @returns Whether conversion may use it.
  */
 function fiatTotalUsable(raw: string | null): boolean {
@@ -202,46 +208,22 @@ function fiatTotalUsable(raw: string | null): boolean {
 }
 
 /**
- * Latest spend-over-time day that has gifts, for sats→fiat scaling.
+ * The current price of 1 BTC as a rate for sats→fiat scaling.
  *
- * This is the newest day with gifts, even when a currency total is missing.
- * Conversion uses {@link latestRateDayFor}, which skips that day.
- *
- * @param series - `GET /gifts/stats` `spendOverTime` (oldest first).
- * @returns Last day with `sats > 0`, or `null`.
+ * @param rates - `GET /fx/spot` prices of 1 BTC by code. A missing code has no rate.
+ * @returns A rate of 100'000'000 sats, or `null` when no code has a usable price.
  */
-export function latestRateDay(series: readonly FiatRateDay[]): FiatRateDay | null {
-  for (let i = series.length - 1; i >= 0; i -= 1) {
-    const day = series[i];
-    if (day !== undefined && day.sats > 0) {
-      return day;
-    }
-  }
-  return null;
-}
-
-/**
- * Latest gift day that can convert the preferred currency.
- *
- * Walks newest first. A day with gifts but a null or zero total for `code`
- * is skipped, so one incomplete gift cannot block the till. Returns `null`
- * when no earlier day has that currency either.
- *
- * @param series - `GET /gifts/stats` `spendOverTime` (oldest first).
- * @param code - Preferred fiat.
- * @returns That day, or `null`.
- */
-export function latestRateDayFor(
-  series: readonly FiatRateDay[],
-  code: FiatCode,
+export function spotRateDay(
+  rates: Partial<Record<FiatCode, string | undefined>>,
 ): FiatRateDay | null {
-  for (let i = series.length - 1; i >= 0; i -= 1) {
-    const day = series[i];
-    if (day !== undefined && day.sats > 0 && fiatTotalUsable(fiatFieldOnDay(day, code))) {
-      return day;
-    }
-  }
-  return null;
+  const day: FiatRateDay = {
+    sats: SATS_PER_BTC,
+    usd: rates.USD ?? null,
+    chf: rates.CHF ?? null,
+    eur: rates.EUR ?? null,
+    php: rates.PHP ?? null,
+  };
+  return FIAT_CODES.some((code) => satsToFiatAmount(SATS_PER_BTC, day, code) !== null) ? day : null;
 }
 
 /** The four amounts shown next to a sat amount, or null when that currency has no rate. */
@@ -253,10 +235,10 @@ export interface ShownFiat {
 }
 
 /**
- * The fiat the payer sees for these sats, using the same day as the preview.
+ * The fiat the payer sees for these sats, using the same rate as the preview.
  *
  * @param sats - Whole sats about to be paid.
- * @param rateDay - Latest gift day, or null when no rate is on screen.
+ * @param rateDay - Current spot rate, or null when no rate is on screen.
  * @returns Four strings or nulls. Null is stored as empty, not filled in later.
  */
 export function shownFiatForSats(sats: number, rateDay: FiatRateDay | null): ShownFiat {
@@ -269,13 +251,14 @@ export function shownFiatForSats(sats: number, rateDay: FiatRateDay | null): Sho
 }
 
 /**
- * Scales whole sats into a two-decimal fiat amount using one gift day's totals.
+ * Scales whole sats into a two-decimal fiat amount using one rate: the spot
+ * rate, or one gift day's totals on the statistics pages.
  *
  * @param sats - Whole sats to convert (may be 0).
- * @param day - Gift day with `sats > 0`, or `null`.
+ * @param day - Rate with `sats > 0` (the spot rate, or a gift day on the statistics pages), or `null`.
  * @param code - Selected fiat.
  * @returns Two-decimal string, or `null` when the day or that fiat is missing
- *   or zero (a `"0.00"` gift-day total is not a usable rate).
+ *   or zero (a `"0.00"` price is not a usable rate).
  */
 export function satsToFiatAmount(
   sats: number,
@@ -310,7 +293,7 @@ export function satsToFiatAmount(
  * or when no digit count round-trips.
  *
  * @param sats - Whole sats to show.
- * @param day - Gift day, or `null`.
+ * @param day - Rate (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns A plain dot-decimal string, or `null`.
  */
@@ -347,9 +330,9 @@ export function fiatDraftForSats(
 /**
  * A trimmed amount draft, as whole sats or a reason it is not.
  *
- * `no-rate` means a positive fiat amount whose gift-day total for that
- * currency is missing, not finite, or zero. A well-formed amount on a usable
- * total that does not become a safe sat count is `invalid`, not `no-rate`.
+ * `no-rate` means a positive fiat amount whose rate for that currency is
+ * missing, not finite, or zero. A well-formed amount on a usable rate that
+ * does not become a safe sat count is `invalid`, not `no-rate`.
  */
 export type AmountDraft =
   { kind: 'empty' } | { kind: 'invalid' } | { kind: 'no-rate' } | { kind: 'sats'; sats: number };
@@ -357,10 +340,10 @@ export type AmountDraft =
 const FIAT_DRAFT = /^\d+([.,]\d{0,8})?$/;
 
 /**
- * Inverse of {@link satsToFiatAmount} on the same gift-day totals.
+ * Inverse of {@link satsToFiatAmount} on the same rate.
  *
  * @param amount - Fiat amount (not a grouped string).
- * @param day - Gift day with `sats > 0`, or `null`.
+ * @param day - Rate with `sats > 0` (the spot rate, or a gift day on the statistics pages), or `null`.
  * @param code - Selected fiat.
  * @returns Whole sats, `0` when `amount` is 0, `1` when a positive amount
  *   rounds to 0, or `null` when the day or that fiat is missing or zero.
@@ -395,12 +378,12 @@ export function fiatToSats(amount: number, day: FiatRateDay | null, code: FiatCo
  *
  * @param unit - `btc` for digits-only sats, `fiat` for up to eight decimal places.
  * @param draft - Raw field value.
- * @param day - Gift day used for fiat conversion, or `null`.
+ * @param day - Rate used for fiat conversion (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns `empty` when blank, `invalid` when the text is not an amount
- *   or a well-formed amount on a usable total that does not become a safe
- *   sat count, `no-rate` when a positive fiat amount's gift-day total for
- *   that currency is missing, not finite, or zero, or `sats` (including 0;
+ *   or a well-formed amount on a usable rate that does not become a safe
+ *   sat count, `no-rate` when a positive fiat amount's rate for that
+ *   currency is missing, not finite, or zero, or `sats` (including 0;
  *   callers still clamp).
  */
 export function parseAmountDraft(
@@ -447,7 +430,7 @@ export function parseAmountDraft(
  *
  * @param draft - Raw field value.
  * @param unit - Active typing unit.
- * @param day - Gift day, or `null`.
+ * @param day - Rate (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns Whole sats, `empty`, or `invalid`.
  */
@@ -472,7 +455,7 @@ export function replySatsFromDraft(
  *
  * @param draft - Raw field value.
  * @param unit - Active typing unit.
- * @param day - Gift day, or `null`.
+ * @param day - Rate (the spot rate), or `null`.
  * @param code - Preferred fiat.
  * @returns Whole sats, or `invalid`.
  */

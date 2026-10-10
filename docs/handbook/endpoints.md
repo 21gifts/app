@@ -9,23 +9,23 @@
 
 ## Endpoint: GET /.well-known/lnurlp/[username]
 
-- **Purpose:** Proxies LUD-16 payRequest from the api onto the site apex so wallets can pay `username@21.gifts`. CORS `*`. Settlement stays on the linked Wallet of Satoshi callback.
+- **Purpose:** Proxies LUD-16 payRequest from the api onto the site apex so wallets can pay `username@21.gifts`. CORS `*`. Once the member's in-app wallet is verified the api answers with the callback `GET /lnurlp/[username]/invoice`, so payments to that address settle in the member's own in-app wallet.
 - **Errors:** Upstream 404/502.
 - **Used by:** Lightning wallets.
 - **Auth:** none.
 
 ## Endpoint: GET /pay/[username]
 
-- **Purpose:** Proxies the public pay-link card (`name`, `username`, `minSats`, `maxSats`) from the api.
-- **Errors:** Upstream 404 when the person cannot be paid, 502 when the linked address cannot be resolved.
-- **Used by:** `PayLinkScreen`.
+- **Purpose:** Proxies the public pay-link card (`name`, `username`, `minSats`, `maxSats`, and `charge`, the shop's pending charge or `null`) from the api.
+- **Errors:** Upstream 404 when the person cannot be paid, 502 when the payee's wallet cannot be resolved.
+- **Used by:** `PayLinkScreen`, `fetchShopChargeInvoice`.
 - **Auth:** none.
 
 ## Endpoint: POST /pay/[username]/invoice
 
-- **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats }`. Response `{ pr, amountSats }`.
+- **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats, comment? }`. Response `{ pr, amountSats, sparkInvoice }`. With a pending charge, `sparkInvoice` is a Spark invoice for that charge when `amountSats` is its amount. Without one, it is a Spark invoice for exactly `amountSats` to the member's verified wallet, carrying the message when one is sent. It is `null` when the api issues no Spark invoice.
 - **Errors:** Upstream 400 for a bad amount, 404 when the person cannot be paid, 502 when the invoice cannot be created.
-- **Used by:** `PayLinkScreen` after **Continue**.
+- **Used by:** `PayLinkScreen` after **Continue**; `fetchShopChargeInvoice` and `fetchMemberSparkInvoice` for the in-app wallet.
 - **Auth:** none.
 
 ## Endpoint: OPTIONS /.well-known/lnurlp/[username]
@@ -69,6 +69,13 @@
 - **Errors:** Upstream 400 for a bad body, 429 when the caller is over the limit, 500 when the log cannot be written, or 502 if the api is unreachable.
 - **Used by:** `reportDiagnostic`.
 - **Auth:** Public. No session.
+
+## Endpoint: POST /monitoring
+
+- **Purpose:** Same-origin tunnel for browser error reports (`forwardSentryEnvelope`). Forwards the envelope to the project of `NEXT_PUBLIC_SENTRY_DSN`, and to nothing else.
+- **Errors:** 404 while error reporting is off (no DSN), 413 above 1 MiB, 400 when the envelope names another host or project or its header is missing or broken, 502 when the Sentry server cannot be reached; otherwise the upstream status.
+- **Used by:** The browser SDK (`sentryOptions('browser')`).
+- **Auth:** Public. No session; the visitor's IP address, cookies, and headers are not forwarded.
 
 ## Endpoint: POST /auth/passkey/register/begin
 
@@ -132,7 +139,7 @@
 
 - **Purpose:** Same-origin proxy of api `GET /gifts/stats` (aggregated outbound gift totals; optional `recipient` query forwarded).
 - **Errors:** Upstream 503, or 502 if the api is unreachable.
-- **Used by:** `fetchGiftStats` on `/stats`, `/welcome`, `/messages/[id]`, `/members/[accountId]`, and the people-count chart on `/statistics` (every visitor, including signed-out, no goal).
+- **Used by:** `fetchGiftStats` on `/stats` and the people-count chart on `/statistics` (every visitor, including signed-out, no goal). Historical amounts there stay on each day's rate; live amounts use `GET /fx/spot`.
 - **Auth:** Public.
 
 ## Endpoint: GET /habits
@@ -149,6 +156,13 @@
 - **Used by:** `postMemberHabit` on `/habit-tracker`.
 - **Auth:** Bearer. The client sends `Authorization`; this proxy does not add it.
 
+## Endpoint: GET /fx/spot
+
+- **Purpose:** Same-origin proxy of api `GET /fx/spot`: the current price of 1 BTC in USD, CHF, EUR, and PHP with `asOf` and `source`. A code the api could not price is left out of `rates`. Without any quote the body is `{ "asOf": null, "source": null, "rates": {} }`; the route has no error status of its own.
+- **Errors:** The proxy forwards the upstream status, or 502 if this proxy cannot reach the api.
+- **Used by:** `fetchFxSpot` through `useSpotRate`, on every screen that enters or converts an amount live (the amount field, `/pos`, gift and reaction amounts, the wallet, and the payment fiat suffixes).
+- **Auth:** Public. No bearer.
+
 ## Endpoint: GET /shops/activity
 
 - **Purpose:** Same-origin proxy of api `GET /shops/activity` (shop-use counts, 30 UTC days).
@@ -162,13 +176,6 @@
 - **Errors:** The proxy forwards the upstream status. Expected upstream errors are 401 without a bearer session and 503 when the goal is unavailable, or 502 if this proxy cannot reach the api.
 - **Used by:** `fetchGrantContinuation` on `/grants/goals`.
 - **Auth:** Bearer. The client sends `Authorization`; this proxy does not add it.
-
-## Endpoint: GET /lightning-address
-
-- **Purpose:** Same-origin proxy of public LUD-16 resolve.
-- **Errors:** Upstream 400/502, or 502 if the api is unreachable.
-- **Used by:** `resolveLightningAddress` (LUD-16 helper).
-- **Auth:** Public.
 
 ## Endpoint: POST /me/name
 
@@ -247,6 +254,64 @@
 - **Used by:** `postWalletBackupSeen`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/wallet/report
+
+- **Purpose:** Same-origin proxy of api `POST /me/wallet/report`. While the member is signed in, sends the wallet's balance (`balanceSats`, `syncedAt`) and the payments the api has not acknowledged yet (`payments`, at most 200 per request, each with `id`, `direction`, `status`, `amountSats`, `feeSats`, `timestamp`, `method`, `paymentHash`, `invoice`, `destination`, `description`, `lnurlComment`). Never a recovery phrase, private key, PRF output, or preimage.
+- **Returns:** Upstream `{ acknowledgedIds }`.
+- **Errors:** Upstream 400, 401, 413, 429, or 502 if the api is unreachable.
+- **Used by:** `postWalletReport` (from `reportWallet`).
+- **Auth:** Bearer.
+
+## Endpoint: POST /me/events
+
+- **Purpose:** Same-origin proxy of api `POST /me/events`. Sends a batch of at most 50 interaction events of the signed-in member, each `{ name, at, path, props }`.
+- **Returns:** The upstream status.
+- **Errors:** Upstream 400, 401, 413, 429, or 502 if the api is unreachable.
+- **Used by:** `flushInteractions` and `logLogout` (the logout event in a request of its own).
+- **Auth:** Bearer.
+
+## Endpoint: PUT /me/wallet
+
+- **Purpose:** Same-origin proxy of api `PUT /me/wallet`. Claims the in-app wallet's identity public key for the account. Write-once after the wallet is verified.
+- **Errors:** Upstream 400, 401, 404 (feature off), 409 (wallet already verified), or 502 if the api is unreachable.
+- **Used by:** `putWallet`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /lnurlpay/[pubkey]
+
+- **Purpose:** Same-origin proxy of api `POST /lnurlpay/:pubkey`. The in-app wallet registers the account's username as its address on the app's own host; success marks the wallet verified.
+- **Errors:** Upstream 404 (feature off or not the account's own username and key), 409, other 4xx from the address server, 503, or 502 if the api is unreachable.
+- **Used by:** The in-app wallet (`registerWalletAddress`).
+- **Auth:** Signed by the wallet (`X-Breez-Signature`, `X-Breez-Timestamp` forwarded).
+
+## Endpoint: POST /lnurlpay/[pubkey]/recover
+
+- **Purpose:** Same-origin proxy of api `POST /lnurlpay/:pubkey/recover`. The in-app wallet looks up the address it registered.
+- **Errors:** Upstream 404 or 503, or 502 if the api is unreachable.
+- **Used by:** The in-app wallet.
+- **Auth:** Signed by the wallet.
+
+## Endpoint: GET /lnurlpay/[pubkey]/metadata
+
+- **Purpose:** Same-origin proxy of api `GET /lnurlpay/:pubkey/metadata`. The in-app wallet reads the notes payers left on received payments.
+- **Errors:** Upstream 404 or 503, or 502 if the api is unreachable.
+- **Used by:** The in-app wallet.
+- **Auth:** Signed by the wallet.
+
+## Endpoint: GET /lnurlp/[username]/invoice
+
+- **Purpose:** Same-origin proxy of api `GET /lnurlp/:username/invoice`. A payer's wallet asks for a payment request to a member's verified in-app wallet. CORS `*`.
+- **Errors:** Upstream 404 or 503, or 502 if the api is unreachable.
+- **Used by:** Payers' wallets, after `GET /.well-known/lnurlp/[username]`.
+- **Auth:** none.
+
+## Endpoint: GET /verify/[paymentHash]
+
+- **Purpose:** Same-origin proxy of api `GET /verify/:paymentHash`. A payer's wallet checks whether a payment to a member's in-app wallet settled. CORS `*`.
+- **Errors:** Upstream 404 or 503, or 502 if the api is unreachable.
+- **Used by:** Payers' wallets.
+- **Auth:** none.
+
 ## Endpoint: POST /me/passkey-renew/report
 
 - **Purpose:** Same-origin proxy of api `POST /me/passkey-renew/report`. Stores a browser ceremony failure or cancel. The body is the six safe fields plus optional public authenticator facts and browser capability names.
@@ -263,7 +328,7 @@
 
 ## Endpoint: POST /me/setup/skip
 
-- **Purpose:** Same-origin proxy to skip the name or Lightning Address onboarding step (`{ step }`).
+- **Purpose:** Same-origin proxy to skip the name onboarding step (`{ step: 'name' }`). Rules and username cannot be skipped.
 - **Errors:** Upstream 400/401, or 502 if the api is unreachable.
 - **Used by:** `skipSetup`.
 - **Auth:** Bearer.
@@ -310,6 +375,13 @@
 - **Used by:** `postNotificationLevel`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/heart-notifications
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/me/heart-notifications`. JSON body `{ enabled: boolean }` returns the owner Account (`notifyHearts`).
+- **Errors:** Upstream 401, 400 invalid body, or 502 if the api is unreachable.
+- **Used by:** `postHeartNotifications`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/amount-unit
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/me/amount-unit`. JSON body `{ unit: "btc"|"fiat" }` returns the owner Account. The same unit again is still 200.
@@ -340,9 +412,9 @@
 
 ## Endpoint: GET /pos/charge
 
-- **Purpose:** Same-origin proxy of api `GET /pos`. Returns the open charge or null, plus history.
+- **Purpose:** Same-origin proxy of api `GET /pos`. Returns `charge` (the pending charge, or one paid within the last minute, else `null`) and `history` (including paid rows). Each charge has `status` `pending`, `paid`, `cancelled`, or `expired`, and `paidAt` (ISO string or `null`). The till asks it every three seconds while a charge is open and for one minute after it ran out.
 - **Errors:** Upstream 401, or 502 if the api is unreachable.
-- **Used by:** `fetchPosState`.
+- **Used by:** `fetchPosState` (`PosTill`, `PosAmount`).
 - **Auth:** Bearer.
 
 ## Endpoint: POST /pos/charge
@@ -466,7 +538,7 @@
 
 ## Endpoint: GET /messages/compose-target
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/messages/compose-target`. Returns `{ messageId, sats }` for the official platform profile note so a basis account can invoice 1 sat to 21.gifts before posting or replying.
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/compose-target`. Returns `{ messageId, sats, firstPostFree }`: the official platform profile note so a basis account can invoice 1 sat to 21.gifts before posting or replying, and whether this member's next top-level post is their free first post (no live or hidden top-level note of their own besides About me).
 - **Errors:** Upstream 401/409/400/503, or 502 if the api is unreachable.
 - **Used by:** `fetchComposeTarget`.
 - **Auth:** Bearer.
@@ -494,16 +566,30 @@
 
 ## Endpoint: POST /messages/[id]/repayment
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/repayment`. The author pays the next giver their share of the next due day.
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/repayment`. The author pays the next giver their share of the next due day. Success `{ pr, amountSats, sparkInvoice? }`; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
 - **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable.
 - **Used by:** `postRepaymentInvoice`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /messages/[id]/invoice
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty).
-- **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable. 409 `missing_requirements` is a setup overlay, not a pay-sheet error.
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty). Success `{ pr, amountSats, sparkInvoice? }`; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
+- **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable. 409 `missing_requirements` is a setup overlay, not a pay-sheet error. A heart (`heart: true`) the api cannot issue as a fee-free Spark invoice is 503 `{ error: 'HEART_UNAVAILABLE' }` with no `pr`; the proxy passes it through unchanged.
 - **Used by:** `postMessageInvoice`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /lnurl/pay-request
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/lnurl/pay-request`. Body `{ target }` (`user@domain` or a bech32 LNURL on another host). 200 `{ target, minSendableMsat, maxSendableMsat, commentAllowed, description, domain }`.
+- **Errors:** Upstream 400 `Not a payable address` (malformed, not https, not a pay request, or on this app's own host), 404 `Address not found`, 502 `Address could not be reached`, 401 without a session; 502 `Upstream api unreachable` when the api is unreachable.
+- **Used by:** `postLnurlPayRequest`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /lnurl/invoice
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/lnurl/invoice`. Body `{ target, amountMsat, comment? }`. The api resolves the target again, never takes a callback URL from the client, and checks amount, comment, invoice amount, and description hash. 200 `{ pr }`.
+- **Errors:** The errors of `POST /lnurl/pay-request`, plus 400 `Amount out of range` and 400 `Comment too long`.
+- **Used by:** `postLnurlInvoice`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /contact/submit
@@ -533,20 +619,6 @@
 - **Errors:** Route 404 for unknown `file`; upstream 404/502 for known video names when missing or unreachable.
 - **Used by:** Feed `<video src>` via `forumVideoSrc`.
 - **Auth:** None required.
-
-## Endpoint: POST /me/lightning-address
-
-- **Purpose:** Same-origin proxy to link or replace a Wallet of Satoshi address.
-- **Errors:** Upstream 400, or 502 if the api is unreachable.
-- **Used by:** `setLightningAddress`.
-- **Auth:** Bearer.
-
-## Endpoint: DELETE /me/lightning-address
-
-- **Purpose:** Same-origin proxy to unlink a Wallet of Satoshi address.
-- **Errors:** Upstream status, or 502 if the api is unreachable.
-- **Used by:** `unlinkLightningAddress`.
-- **Auth:** Bearer.
 
 ## Endpoint: GET /push/vapid-public
 
@@ -613,7 +685,7 @@
 
 ## Endpoint: POST /conversations/[id]/invoice
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/invoice` with `{ sats, text? }`. Success `{ pr, amountSats, messageId }` for the inbox pay sheet.
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/invoice` with `{ sats, text? }`. Success `{ pr, amountSats, messageId, sparkInvoice? }` for the inbox pay sheet; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
 - **Errors:** Upstream 400/401/404/429/503, or 502 if the api is unreachable.
 - **Used by:** `postConversationInvoice` in the inbox composer.
 - **Auth:** Bearer.

@@ -85,7 +85,7 @@ const account: Account = {
   role: 'basis',
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
@@ -782,6 +782,262 @@ describe('ShopNoteEditControl', () => {
       expect(setMessageShopAccount).toHaveBeenCalledWith('token', 'shop1', null);
     });
     expect(setMessageShopPhotos).not.toHaveBeenCalled();
+  });
+
+  it('reports a whole save once, and not when a later part of the save fails', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopMessage,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    vi.mocked(setMessageShopAccount).mockRejectedValueOnce(new Error('no'));
+    const onUpdated = vi.fn();
+    const onSaved = vi.fn();
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          shopAccount: { id: 'old', username: 'old', name: 'Old' },
+        }}
+        onUpdated={onUpdated}
+        onSaved={onSaved}
+      />,
+    );
+    const save = async (): Promise<void> => {
+      fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+        target: { value: 'Cafe Sol' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    };
+    await save();
+    // The text is saved, the user is not: the row takes the text, the whole save is not reported.
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
+    expect(onUpdated).toHaveBeenCalledTimes(1);
+    expect(onSaved).not.toHaveBeenCalled();
+    vi.mocked(setMessageShopAccount).mockResolvedValue({ ...shopMessage });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+  });
+
+  it('reports a partly written save when the editor is closed', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopMessage,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    vi.mocked(setMessageShopAccount).mockRejectedValueOnce(new Error('no'));
+    const onSaved = vi.fn();
+    const view = renderWithLocale(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          shopAccount: { id: 'old', username: 'old', name: 'Old' },
+        }}
+        onUpdated={vi.fn()}
+        onSaved={onSaved}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
+    expect(onSaved).not.toHaveBeenCalled();
+    // Closing with the text already written reports it once.
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(onSaved).toHaveBeenCalledTimes(1);
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit shop note' }));
+    await screen.findByText('1 / 5 · Photos');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(onSaved).toHaveBeenCalledTimes(1);
+    view.unmount();
+    expect(onSaved).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a partly written save when the editor unmounts while open', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopMessage,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    vi.mocked(setMessageShopAccount).mockRejectedValueOnce(new Error('no'));
+    const onSaved = vi.fn();
+    const view = renderWithLocale(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          shopAccount: { id: 'old', username: 'old', name: 'Old' },
+        }}
+        onUpdated={vi.fn()}
+        onSaved={onSaved}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await screen.findByRole('alert');
+    expect(onSaved).not.toHaveBeenCalled();
+    view.unmount();
+    expect(onSaved).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports once when the editor unmounts while a save is still running', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const deferred = <T,>(): {
+      promise: Promise<T>;
+      resolve: (v: T) => void;
+      reject: (e: unknown) => void;
+    } => {
+      let resolve: (v: T) => void = () => undefined;
+      let reject: (e: unknown) => void = () => undefined;
+      const promise = new Promise<T>((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      return { promise, resolve, reject };
+    };
+    const run = async (
+      finish: 'fail' | 'succeed',
+      unmountAfterText: boolean,
+      close = false,
+    ): Promise<number> => {
+      const text = deferred<ForumMessage>();
+      const user = deferred<ForumMessage>();
+      vi.mocked(setMessageShopText).mockReturnValueOnce(text.promise);
+      vi.mocked(setMessageShopAccount).mockReturnValueOnce(user.promise);
+      const onSaved = vi.fn();
+      const view = renderWithLocale(
+        <ShopNoteEditControl
+          message={{
+            ...shopMessage,
+            shopAccount: { id: 'old', username: 'old', name: 'Old' },
+          }}
+          onUpdated={vi.fn()}
+          onSaved={onSaved}
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+        target: { value: 'Cafe Sol' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+      await waitFor(() => {
+        expect(setMessageShopText).toHaveBeenCalled();
+      });
+      if (!unmountAfterText) {
+        view.unmount();
+      }
+      text.resolve({ ...shopMessage, text: 'Cafe Sol\n\n#21GiftsShop' });
+      await waitFor(() => {
+        expect(setMessageShopAccount).toHaveBeenCalled();
+      });
+      if (unmountAfterText) {
+        if (close) {
+          // The pencil closes the editor while the save still runs; it stays mounted.
+          fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+        } else {
+          view.unmount();
+        }
+      }
+      // Nothing is reported while the save is still running.
+      expect(onSaved).not.toHaveBeenCalled();
+      if (finish === 'fail') {
+        user.reject(new Error('no'));
+      } else {
+        user.resolve({ ...shopMessage });
+      }
+      await Promise.resolve();
+      await Promise.resolve();
+      await waitFor(() => {
+        expect(onSaved).toHaveBeenCalled();
+      });
+      vi.mocked(setMessageShopText).mockClear();
+      vi.mocked(setMessageShopAccount).mockClear();
+      const reported = onSaved.mock.calls.length;
+      view.unmount();
+      // A later unmount does not report the same save again.
+      expect(onSaved).toHaveBeenCalledTimes(reported);
+      return reported;
+    };
+    expect(await run('fail', false)).toBe(1);
+    expect(await run('succeed', true)).toBe(1);
+    expect(await run('fail', true)).toBe(1);
+    expect(await run('fail', true, true)).toBe(1);
+    expect(await run('succeed', true, true)).toBe(1);
+  });
+
+  it('does not reopen while a closed save is still running', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    let finish: (note: ForumMessage) => void = () => undefined;
+    vi.mocked(setMessageShopText).mockReturnValueOnce(
+      new Promise<ForumMessage>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const onSaved = vi.fn();
+    renderWithLocale(
+      <ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} onSaved={onSaved} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessageShopText).toHaveBeenCalled();
+    });
+    const pencil = screen.getByRole('button', { name: 'Edit shop note' });
+    fireEvent.click(pencil);
+    expect(screen.queryByText('5 / 5 · Summary')).toBeNull();
+    // The pencil does nothing until the running save settles.
+    fireEvent.click(pencil);
+    expect(screen.queryByText('1 / 5 · Photos')).toBeNull();
+    finish({ ...shopMessage, text: 'Cafe Sol\n\n#21GiftsShop' });
+    await waitFor(() => {
+      expect(onSaved).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.click(pencil);
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
   });
 
   it('reads kept stills before a text save can drop their addresses', async () => {

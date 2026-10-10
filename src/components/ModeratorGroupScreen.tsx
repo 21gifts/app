@@ -5,7 +5,7 @@ import { InboxScreen, type InboxFormError } from '@/components/InboxScreen';
 import { useLocalSunday } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import {
   CONVERSATION_LIVE_POLL_MS,
   fetchConversation,
@@ -55,7 +55,7 @@ function appendUnseenMessages(
  * (`posting || preparing`). Thread stills load via {@link fetchConversationMessagePhoto}.
  * Losing staff while mounted bumps `pickGeneration`, clears drafts and
  * preparing, and revokes blob URLs (same cleanup as unmount). Passes
- * `rateDay` from {@link useLatestRateDay} into {@link InboxScreen}.
+ * `rateDay` from {@link useSpotRate} into {@link InboxScreen}.
  * After a successful group and thread fetch, marks the room read
  * (`markConversationRead`), bumps the badge epoch, and refreshes the
  * home-screen badge with staff-room unread `0`. The newest 20-message page
@@ -79,7 +79,7 @@ export function ModeratorGroupScreen(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const staff = roleAtLeast(account?.role, 'moderator');
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const [group, setGroup] = useState<Conversation | null>(null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);

@@ -1,12 +1,14 @@
 'use client';
 
 import { Pencil } from 'lucide-react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
 import { Button, Card, IconButton } from '@/components/ui';
 import { fetchForumMessage, fetchPlaces } from '@/lib/api';
+import { logInteraction } from '@/lib/interaction-log';
 import type { ForumMessage, ForumPlaceRow } from '@/lib/api-types';
 import { isShopNote } from '@/lib/forum-shop';
 import { roleAtLeast } from '@/lib/roles';
@@ -38,9 +40,11 @@ type GoogleMapsNamespace = {
 function ShopPinEdit({
   placeId,
   onUpdated,
+  onSaved,
 }: {
   placeId: string;
   onUpdated: (message: ForumMessage) => void;
+  onSaved?: (() => void) | undefined;
 }): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
@@ -56,6 +60,7 @@ function ShopPinEdit({
         <ShopNoteEditControl
           message={message}
           startOpen
+          {...(onSaved !== undefined ? { onSaved } : {})}
           onUpdated={(updated) => {
             setMessage(updated);
             onUpdated(updated);
@@ -103,8 +108,13 @@ type GoogleWindow = Window & {
   gm_authFailure?: () => void;
 };
 
+/** The Maps script while it loads, so a redraw before `onload` waits for the same script. */
+let pendingMapsLoad: Promise<void> | null = null;
+
 /**
- * Load the Maps JavaScript API once. Resolves when `google.maps` exists.
+ * Load the Maps JavaScript API once. Resolves when `google.maps` exists. A call
+ * while the script is still loading (a redraw for another country) gets the
+ * same promise instead of a second script tag.
  *
  * @param key - Browser key from GET /maps/key. Not logged.
  * @returns Resolves when the script has loaded.
@@ -114,7 +124,10 @@ function loadGoogleMaps(key: string): Promise<void> {
   if (host.google?.maps !== undefined) {
     return Promise.resolve();
   }
-  return new Promise((resolve, reject) => {
+  if (pendingMapsLoad !== null) {
+    return pendingMapsLoad;
+  }
+  const load = new Promise<void>((resolve, reject) => {
     const script = document.createElement('script');
     script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly`;
     script.async = true;
@@ -127,27 +140,64 @@ function loadGoogleMaps(key: string): Promise<void> {
     };
     document.head.appendChild(script);
   });
+  pendingMapsLoad = load;
+  const settle = (): void => {
+    pendingMapsLoad = null;
+  };
+  load.then(settle, settle);
+  return load;
 }
 
 /**
  * Signed-in map of every forum note that has a pin.
  *
  * Without a Google key the places stay a list of links. A key draws the
- * same places as markers and does not replace the list.
+ * same places as markers and does not replace the list. With a country, the
+ * list and the markers keep only the shop pins in that country (`shop` and
+ * `countryCode`, the same pins the country filter counts) and the map fits
+ * those pins; none left is the empty copy.
  *
- * @param props - `embedded` omits the Map heading and card so `/shops` can reuse the body.
+ * @param props - `embedded` omits the Map heading and card so `/shops` can reuse the body;
+ * `country` (ISO 3166-1 alpha-2, or null for every pin) narrows the pins to that country's
+ * shops; `onShopsChanged` runs once per moderator shop save (complete, or partly written
+ * once its editor closes or unmounts).
  * @returns The map card, or only the body when `embedded` is true.
  */
-export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {}): ReactElement {
+export function PlacesMapScreen({
+  embedded = false,
+  country = null,
+  onShopsChanged,
+}: {
+  embedded?: boolean;
+  country?: string | null;
+  onShopsChanged?: () => void;
+} = {}): ReactElement {
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
-  const [places, setPlaces] = useState<ForumPlaceRow[] | null>(null);
+  const [loadedPlaces, setPlaces] = useState<ForumPlaceRow[] | null>(null);
+  const places = useMemo(
+    () =>
+      loadedPlaces === null || country === null
+        ? loadedPlaces
+        : loadedPlaces.filter((row) => row.shop === true && row.countryCode === country),
+    [loadedPlaces, country],
+  );
   const [mapsKey, setMapsKey] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const pinId = useSearchParams().get('pin');
   const frameRef = useRef<HTMLDivElement | null>(null);
   const authFailedRef = useRef(false);
+
+  const openedShop =
+    pinId !== null && places?.some((row) => row.id === pinId && row.shop === true) === true
+      ? pinId
+      : null;
+  useEffect(() => {
+    if (openedShop !== null) {
+      logInteraction('shop_opened', { placeId: openedShop });
+    }
+  }, [openedShop]);
 
   useEffect(() => {
     const host = window as GoogleWindow;
@@ -218,8 +268,12 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
       }
       try {
         await loadGoogleMaps(mapsKey);
-        if (cancelled || authFailedRef.current) {
+        if (authFailedRef.current) {
           frame.replaceChildren();
+          return;
+        }
+        // A newer draw (another country or pin) owns the frame now.
+        if (cancelled) {
           return;
         }
         const maps = (window as GoogleWindow).google?.maps;
@@ -318,30 +372,31 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
                     data-selected={selected ? 'true' : 'false'}
                     className={`min-w-0 max-w-full break-words text-sm ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
                   >
-                    <a
+                    <Link
                       href={`/members/${place.accountId}`}
                       aria-label={t('forum.authorProfile')}
                       className="underline underline-offset-2"
                     >
                       {place.name}
-                    </a>
+                    </Link>
                     {' · '}
-                    <a href={`/messages/${place.id}`} className="underline">
+                    <Link href={`/messages/${place.id}`} className="underline">
                       {label}
-                    </a>
+                    </Link>
                   </span>
                 ) : (
-                  <a
+                  <Link
                     href={`/messages/${place.id}`}
                     data-selected={selected ? 'true' : 'false'}
                     className={`min-w-0 max-w-full break-words text-sm underline ${selected ? 'font-semibold text-app-fg' : 'text-app-fg'}`}
                   >
                     {place.name} · {label}
-                  </a>
+                  </Link>
                 )}
                 {place.shop === true ? (
                   <ShopPinEdit
                     placeId={place.id}
+                    onSaved={onShopsChanged}
                     onUpdated={(updated) => {
                       const pin = updated.place;
                       setPlaces((current) => {

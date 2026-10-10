@@ -10,6 +10,7 @@ import {
 import { fetchMe, finishPasskeySeed, postWalletBackupSeen, startPasskeySeed } from '@/lib/api';
 import { obtainPrfFirst, obtainPrfFirstFromGet, mnemonicFromPrfFirst } from '@/lib/prf-mnemonic';
 import { creationOptionsFromJSON } from '@/lib/webauthn-browser';
+import { rememberPhraseFromPrf, settlePhraseDerivations } from '@/lib/wallet/wallet-phrase';
 import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/api', () => ({
@@ -72,8 +73,25 @@ const mnemonic =
   'abandon ability able about above absent absorb abstract absurd abuse access accident';
 
 const originalHref = window.location.href;
+const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
+
+/**
+ * Puts a `?visual=` pin in the URL. `playwright` sets the Playwright clock,
+ * which marks a Playwright build; without it the build is a production one.
+ */
+function pinVisual(name: string, playwright = true): void {
+  if (playwright) {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+  } else {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+  }
+  const url = new URL(originalHref);
+  url.search = `?visual=${name}`;
+  window.history.replaceState({}, '', url.toString());
+}
 
 beforeEach(() => {
+  delete process.env.NEXT_PUBLIC_E2E_NOW;
   clearSessionPhrase();
   resetWalletCeremonyLock();
   useAuthStore.setState({ session: 'tok', account });
@@ -107,6 +125,11 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   window.history.replaceState({}, '', originalHref);
+  if (ORIGINAL_E2E_NOW === undefined) {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+  } else {
+    process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  }
 });
 
 describe('session phrase helpers', () => {
@@ -542,24 +565,35 @@ describe('useWalletPhrase', () => {
   });
 
   it('uses the visual phrase fixture', () => {
-    const url = new URL(originalHref);
-    url.search = '?visual=phrase';
-    window.history.replaceState({}, '', url.toString());
+    pinVisual('phrase');
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.view).toBe('phrase');
     expect(result.current.words).toHaveLength(12);
   });
 
   it('refreshes the visual phrase when the wallet event fires', () => {
-    const url = new URL(originalHref);
-    url.search = '?visual=phrase';
-    window.history.replaceState({}, '', url.toString());
+    pinVisual('phrase');
     const { result } = renderHook(() => useWalletPhrase());
     act(() => {
       window.dispatchEvent(new Event('21gifts:wallet-phrase'));
     });
     expect(result.current.view).toBe('phrase');
     expect(result.current.words).toHaveLength(12);
+  });
+
+  it('ignores every visual pin in a production build', () => {
+    for (const name of ['phrase', 'timeout', 'error', 'prf-unsupported']) {
+      pinVisual(name, false);
+      const { result, unmount } = renderHook(() => useWalletPhrase());
+      act(() => {
+        window.dispatchEvent(new Event('21gifts:wallet-phrase'));
+      });
+      expect(result.current.view).toBe('activate');
+      expect(result.current.words).toEqual([]);
+      expect(result.current.error).toBeNull();
+      expect(result.current.status).toBe('idle');
+      unmount();
+    }
   });
 
   it('ignores the wallet phrase event when no visual fixture is set', () => {
@@ -638,39 +672,134 @@ describe('useWalletPhrase', () => {
   });
 
   it('uses the visual timeout fixture', () => {
-    const url = new URL(originalHref);
-    url.search = '?visual=timeout';
-    window.history.replaceState({}, '', url.toString());
+    pinVisual('timeout');
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.error).toBe('timeout');
   });
 
   it('uses the visual error fixture', () => {
-    const url = new URL(originalHref);
-    url.search = '?visual=error';
-    window.history.replaceState({}, '', url.toString());
+    pinVisual('error');
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.error).toBe('generic');
     expect(result.current.status).toBe('idle');
   });
 
   it('uses the visual prf-unsupported fixture', () => {
-    const url = new URL(originalHref);
-    url.search = '?visual=prf-unsupported';
-    window.history.replaceState({}, '', url.toString());
+    pinVisual('prf-unsupported');
     const { result } = renderHook(() => useWalletPhrase());
     expect(result.current.error).toBe('prfUnsupported');
   });
 
-  it('hidePhrase and retry clear error state', async () => {
+  it('hidePhrase and retry clear error state and keep the wallet unlocked', async () => {
     rememberSessionPhrase(mnemonic);
     const { result } = renderHook(() => useWalletPhrase());
     act(() => {
       result.current.hidePhrase();
       result.current.retry();
     });
-    expect(peekSessionPhrase()).toBeNull();
+    expect(peekSessionPhrase()).toBe(mnemonic);
     expect(result.current.error).toBeNull();
+    expect(result.current.status).toBe('idle');
+  });
+
+  it('showPhrase shows the words of the unlocked wallet without a passkey prompt', async () => {
+    useAuthStore.setState({ session: 'tok', account: seededAccount });
+    rememberSessionPhrase(mnemonic);
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.showPhrase();
+    });
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(result.current.words).toEqual(mnemonic.split(' '));
+    expect(result.current.view).toBe('phrase');
+    act(() => {
+      result.current.hidePhrase();
+    });
+    expect(result.current.words).toEqual([]);
+    expect(peekSessionPhrase()).toBe(mnemonic);
+    await act(async () => {
+      await result.current.showPhrase();
+    });
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(result.current.words).toHaveLength(12);
+  });
+
+  it('showPhrase waits for the login derivation instead of prompting again', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    const walletAccount = { ...seededAccount, walletRequired: true };
+    useAuthStore.setState({ session: 'tok', account: walletAccount });
+    let resolveDerive!: (value: string) => void;
+    vi.mocked(mnemonicFromPrfFirst).mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveDerive = resolve;
+        }),
+    );
+    void rememberPhraseFromPrf({
+      prfFirst: new Uint8Array(32).fill(7),
+      credentialId: 'cred-owner',
+      account: walletAccount,
+      sessionToken: 'tok',
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    let showing!: Promise<void>;
+    act(() => {
+      showing = result.current.showPhrase();
+    });
+    await act(async () => {
+      resolveDerive(mnemonic);
+      await showing;
+    });
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(result.current.words).toHaveLength(12);
+  });
+
+  it('showPhrase unlocks the wallet with the same prompt', async () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    useAuthStore.setState({
+      session: 'tok',
+      account: { ...seededAccount, walletRequired: true },
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    await act(async () => {
+      await result.current.showPhrase();
+    });
+    await settlePhraseDerivations();
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    expect(obtainPrfFirstFromGet).toHaveBeenCalledTimes(1);
+    expect(peekSessionPhrase()).toBe(mnemonic);
+  });
+
+  it('showPhrase stops when the session ends while the login derivation runs', async () => {
+    useAuthStore.setState({ session: 'tok', account: seededAccount });
+    let resolveDerive!: (value: string) => void;
+    vi.mocked(mnemonicFromPrfFirst).mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveDerive = resolve;
+        }),
+    );
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    void rememberPhraseFromPrf({
+      prfFirst: new Uint8Array(32).fill(7),
+      credentialId: 'cred-owner',
+      account: { ...seededAccount, walletRequired: true },
+      sessionToken: 'tok',
+    });
+    const { result } = renderHook(() => useWalletPhrase());
+    let showing!: Promise<void>;
+    act(() => {
+      showing = result.current.showPhrase();
+    });
+    await act(async () => {
+      useAuthStore.setState({ session: null, account: null });
+      resolveDerive(mnemonic);
+      await showing;
+    });
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    expect(obtainPrfFirstFromGet).not.toHaveBeenCalled();
+    expect(result.current.words).toEqual([]);
     expect(result.current.status).toBe('idle');
   });
 

@@ -11,6 +11,7 @@ const NOTIFICATION_TITLE_KEY = {
   forum_post: 'notifications.post',
   forum_reply: 'notifications.reply',
   zap: 'notifications.zap',
+  heart: 'notifications.heart',
   moderator_appointed: 'notifications.moderatorAppointed',
   moderator_proposal: 'notifications.moderatorProposal',
   forum_mention: 'notifications.mention',
@@ -27,16 +28,18 @@ function NotificationRow({
   const unread = row.readAt === null;
   const nameOnlyPost = row.type === 'forum_post' && row.text.trim() === row.name.trim();
   const bodyLine =
-    row.type === 'zap' ||
-    row.type === 'moderator_appointed' ||
-    row.type === 'moderator_proposal' ||
-    row.type === 'forum_mention'
-      ? row.text
-      : nameOnlyPost
-        ? ''
-        : row.text !== ''
-          ? row.text
-          : t(row.type === 'forum_post' ? 'notifications.photoPost' : 'notifications.photoOnly');
+    row.type === 'heart'
+      ? ''
+      : row.type === 'zap' ||
+          row.type === 'moderator_appointed' ||
+          row.type === 'moderator_proposal' ||
+          row.type === 'forum_mention'
+        ? row.text
+        : nameOnlyPost
+          ? ''
+          : row.text !== ''
+            ? row.text
+            : t(row.type === 'forum_post' ? 'notifications.photoPost' : 'notifications.photoOnly');
   return (
     <li>
       <button
@@ -86,7 +89,7 @@ export interface NotificationsScreenProps {
 
 /**
  * Presentational signed-in notifications list of living-room posts, replies,
- * payments, moderator appointment, and moderator proposal. There is no
+ * payments, hearts, moderator appointment, and moderator proposal. There is no
  * composer, no thread view, and no filter. Unread rows (`readAt === null`)
  * are a section above rows that already have `readAt`, each section keeping
  * API order; an empty section is omitted.

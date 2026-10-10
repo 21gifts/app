@@ -1,81 +1,51 @@
 'use client';
 
-import { useRef, useState, useEffect, type ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { Loader2 } from 'lucide-react';
-import Link from 'next/link';
 import { AppShellTopLeft } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
-import { QrCode } from '@/components/QrCode';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
-import { Button, ButtonLink, Card } from '@/components/ui';
-import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
-import { profileQrLogo } from '@/lib/profile-qr-logo';
-import { goToPreviousView } from '@/lib/view-history';
-import { useAuthStore } from '@/stores/auth-store';
+import { WalletBalance } from '@/components/WalletBalance';
+import { WalletFooterActions } from '@/components/WalletFooterActions';
+import { WalletHistory } from '@/components/WalletHistory';
+import { WalletPanelView } from '@/components/WalletPanelView';
+import { Button, Card } from '@/components/ui';
+import type { UseWalletResult } from '@/hooks/useWallet';
+import { useWalletPanel } from '@/hooks/useWalletPanel';
 import type { UseWalletPhraseResult } from '@/hooks/useWalletPhrase';
-
-/**
- * Receive handle: the 21.gifts address and Open CryptoPay QR, plus a link
- * to `/pos`. No keypad and no charge. The button is content width, like the
- * other centered actions, not a full-width bar.
- *
- * @returns The receive block.
- */
-function WalletReceive(): ReactElement {
-  const { t } = useTranslations();
-  const account = useAuthStore((state) => state.account);
-  const [showQr, setShowQr] = useState(false);
-  useEffect(() => {
-    setShowQr(true);
-  }, []);
-  /* v8 ignore next -- this client screen always runs in a browser */
-  const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
-  const username = account?.username ?? null;
-  const address = giftsLightningAddress(username, host);
-  const qr = openCryptoPayQrValue(username, host);
-  return (
-    <Card surface={false}>
-      <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-        {t('wallet.title')}
-      </h1>
-      {address !== null ? (
-        <div className="flex flex-col items-stretch gap-3">
-          <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-            {t('profile.giftsHeading')}
-          </p>
-          <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">{address}</p>
-          {showQr && qr !== null ? (
-            <div className="flex justify-center">
-              <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
-            </div>
-          ) : null}
-        </div>
-      ) : account !== null ? (
-        <p className="text-center text-sm text-app-fg">
-          <Link href="/profile" className="underline">
-            {t('pos.needUsername')}
-          </Link>
-        </p>
-      ) : null}
-      <ButtonLink href="/pos">{t('wallet.setAmount')}</ButtonLink>
-    </Card>
-  );
-}
+import type { UseWalletSendResult } from '@/hooks/useWalletSend';
 
 /** Which wallet body to render. `entry` is `/wallet`. `phrase` is `/wallet/phrase`. */
 export type WalletSurface = 'entry' | 'phrase';
 
 /** Props for {@link WalletScreenView}. */
 export type WalletScreenViewProps = UseWalletPhraseResult & {
-  /** Receive page or the recovery subpage. Default `entry`. */
+  /** Wallet home or the recovery subpage. Default `entry`. */
   surface?: WalletSurface;
+  /** Balance block state. Entry surface only. */
+  wallet?: UseWalletResult;
+  /**
+   * Send flow state. Its view opens from Send, also while the wallet is still
+   * opening, and stays while a send is in flight, its Sent line shows, or a
+   * send alert is up. Entry surface only.
+   */
+  send?: UseWalletSendResult;
 };
 
 /**
- * `/wallet` shows the receive address above the recovery entry. The 12 words
- * and recovery errors render only on `/wallet/phrase`.
+ * `/wallet` home shows the large balance and, while the wallet is ready, the
+ * payment list, with Receive and Send side by side in the shell footer
+ * (`WalletFooterActions`, Receive on the left). Recovery-phrase access lives
+ * on `/settings`. The views and their Back steps come from `useWalletPanel`,
+ * shared with `/welcome`: Send opens the send flow and Receive the address,
+ * QR, and Set an amount, both also while the wallet is still opening (only a
+ * step that needs the open wallet waits for it). The Send view stays while a send is in flight, its
+ * Sent line shows, or a send alert is up, and Done returns home. Back first
+ * closes the manual-entry sheet or an open send step (or is held while a send
+ * is in flight), then returns from Send or Receive to home. The 12 words and
+ * recovery errors render only on `/wallet/phrase`.
  *
- * @param props - State from {@link useWalletPhrase}, plus the surface.
+ * @param props - Phrase state, surface, and optional wallet balance and send state.
  * @returns The card, and the one-step Back registered through `AppShellTopLeft`.
  */
 export function WalletScreenView({
@@ -88,21 +58,24 @@ export function WalletScreenView({
   showPhrase,
   hidePhrase,
   retry,
+  wallet,
+  send,
 }: WalletScreenViewProps): ReactElement {
   const { t } = useTranslations();
-  const detailsRef = useRef<HTMLDetailsElement>(null);
   const busy = status === 'busy';
   const showGrid = view === 'phrase' && words.length === 12;
-  const stepBack = (): void => {
-    if (surface === 'phrase' && showGrid) {
-      hidePhrase();
-      return;
+  const walletReady = wallet?.status === 'ready';
+  const panel = useWalletPanel({ send });
+  const shown = panel.shown;
+  const stepBack = (): boolean => {
+    if (surface === 'phrase') {
+      if (showGrid) {
+        hidePhrase();
+        return true;
+      }
+      return false;
     }
-    if (surface !== 'phrase' && detailsRef.current?.open === true) {
-      detailsRef.current.open = false;
-      return;
-    }
-    goToPreviousView();
+    return panel.stepBack();
   };
   const hasError = error === 'prfUnsupported' || error === 'timeout' || error === 'generic';
   const errorCopy =
@@ -165,45 +138,59 @@ export function WalletScreenView({
       {t('wallet.showPhrase')}
     </Button>
   );
-  const entryBody =
-    view === 'activate' ? (
-      <>
-        <p className="text-center text-sm text-app-muted">{t('wallet.addPhraseHint')}</p>
-        <ButtonLink href="/wallet/phrase">{t('wallet.addPhrase')}</ButtonLink>
-      </>
-    ) : (
-      <details
-        ref={detailsRef}
-        className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2"
-      >
-        <summary className="cursor-pointer text-sm text-app-muted">{t('wallet.advanced')}</summary>
-        <div className="mt-3 flex justify-center">
-          <ButtonLink href="/wallet/phrase" variant="secondary">
-            {t('wallet.showPhrase')}
-          </ButtonLink>
-        </div>
-      </details>
-    );
-  const card = (
-    <Card surface={false}>
-      <AppShellTopLeft>
-        <ProfileChromeLeft onBackClick={stepBack} />
-      </AppShellTopLeft>
-      {surface === 'phrase' ? (
-        <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
-          {t('wallet.title')}
-        </h1>
-      ) : null}
-      {surface === 'phrase' ? phraseBody : entryBody}
-    </Card>
+  const chrome = (
+    <AppShellTopLeft>
+      <ProfileChromeLeft onBackClick={stepBack} />
+    </AppShellTopLeft>
   );
   if (surface === 'phrase') {
-    return <div className="flex w-full flex-col items-center gap-6">{card}</div>;
+    return (
+      <div className="flex w-full flex-col items-center gap-6">
+        <Card surface={false}>
+          {chrome}
+          <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
+            {t('wallet.title')}
+          </h1>
+          {phraseBody}
+        </Card>
+      </div>
+    );
+  }
+  if (shown !== 'none') {
+    return (
+      <>
+        {chrome}
+        <WalletPanelView
+          panel={shown}
+          send={send}
+          manualEntry={panel.manualEntry}
+          onManualEntry={panel.setManualEntry}
+        />
+      </>
+    );
   }
   return (
     <div className="flex w-full flex-col items-center gap-6">
-      <WalletReceive />
-      {card}
+      <Card surface={false}>
+        {chrome}
+        <h1 className="sr-only">{t('wallet.title')}</h1>
+        {wallet === undefined || wallet.status === 'disabled' ? null : (
+          <div className="flex min-h-48 w-full flex-col items-center justify-center py-6">
+            <WalletBalance
+              status={wallet.status}
+              balanceSats={wallet.balanceSats}
+              onRetry={wallet.retry}
+              setupFailed={wallet.setupFailed}
+            />
+          </div>
+        )}
+      </Card>
+      {walletReady ? <WalletHistory /> : null}
+      <WalletFooterActions
+        onReceive={panel.openReceive}
+        onSend={panel.openSend}
+        focus={panel.returnFocus}
+      />
     </div>
   );
 }

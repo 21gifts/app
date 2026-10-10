@@ -13,10 +13,11 @@ import {
   type ForumReplyFormError,
   type ForumPayError,
   type ForumPayInvoice,
+  type ForumWriter,
 } from '@/components/ForumBoard';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import {
   fiatDraftForSats,
   parseAmountDraft,
@@ -25,7 +26,9 @@ import {
   shownFiatForSats,
 } from '@/lib/stats-money';
 import {
+  CannotReceiveError,
   dismissForumLaws,
+  fetchComposeTarget,
   fetchMessagePhoto,
   fetchMessages,
   fetchNotifications,
@@ -34,16 +37,17 @@ import {
   fetchPublicMessagePhoto,
   fetchPublicReplies,
   fetchReplies,
-  PublicForumUnauthorizedError,
   markNotificationRead,
   markNotificationsReadForMessage,
   markVisibleForumNoteRead,
   NoteDeletedError,
   postMessage,
-  fetchComposeTarget,
   postMessageInvoice,
-  postRepaymentInvoice,
   postMessageVideo,
+  postRepaymentInvoice,
+  PostFeeRequiredError,
+  PublicForumUnauthorizedError,
+  WalletRequiredError,
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
@@ -68,9 +72,11 @@ import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
+import { useHeartTip } from '@/lib/heart-tip';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { closeLocalPushNotifications, pushTagForNotification } from '@/lib/push';
-import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** How many times to poll `GET /messages` for payable status. */
@@ -131,17 +137,15 @@ function shellScrollToTop(scroller: HTMLElement | null): void {
 }
 
 /**
- * True when a thrown value is the api author's-wallet rejection for payments.
+ * True when a thrown value is the api answer that the receiving wallet
+ * cannot take this payment: a {@link CannotReceiveError}, recognised by the
+ * api's `code` only.
  *
  * @param err - Caught rejection.
- * @returns Whether the message looks like an author's-wallet error.
+ * @returns Whether the receiver's wallet refused the payment.
  */
 function isAuthorWalletError(err: unknown): boolean {
-  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
-  if (!(err instanceof Error)) {
-    return false;
-  }
-  return /wallet cannot receive this Bitcoin payment/i.test(err.message);
+  return err instanceof CannotReceiveError;
 }
 
 /**
@@ -352,16 +356,32 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
  * `markVisibleForumNoteRead` and does not mark replies that are not that card.
  * Renders nothing when there is no session.
  *
- * @param feed - Optional `'living-room'` (default) or `'shops'`.
+ * @param props - Optional `feed`: `'living-room'` (default) or `'shops'`; optional
+ * `country` (ISO 3166-1 alpha-2) on the shops feed loads only shops pinned in that
+ * country. The parent remounts the loader when the country changes. Optional
+ * `onShopsChanged` runs after a shop is created, or a moderator saves a shop note or
+ * its place or hides a shop, so the parent can reload what depends on the pins.
+ * Optional `writer` (the forum home): the living-room composer lives in that
+ * writer instead of on the page (see `ForumBoard`), and every successful own
+ * post closes it, also one that the posting fee's payment created.
  * @returns The forum board, or `null` without a session.
  */
 export function ForumLoader({
   feed = 'living-room',
+  country = null,
+  onShopsChanged,
+  writer,
 }: {
   feed?: 'living-room' | 'shops';
+  country?: string | null;
+  onShopsChanged?: () => void;
+  writer?: ForumWriter;
 } = {}): ReactElement | null {
+  const writerRef = useRef(writer);
+  writerRef.current = writer;
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const { onHeartTip, heartTipViews } = useHeartTip({ readOnly: session === null });
   const { fiat } = useFiatPreference();
   const amountUnit = account?.amountUnit ?? 'btc';
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
@@ -430,7 +450,7 @@ export function ForumLoader({
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const nextCursorRef = useRef(nextCursor);
   nextCursorRef.current = nextCursor;
-  const [nearEndElement, setNearEndElement] = useState<HTMLLIElement | null>(null);
+  const [nearEndElement, setNearEndElement] = useState<HTMLElement | null>(null);
   const loadingMoreRef = useRef(false);
   const paginationGeneration = useRef(0);
   const optimisticMessages = useRef(new Map<string, ForumMessage>());
@@ -447,9 +467,11 @@ export function ForumLoader({
   const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
+  /** The rate the last reply amount was read with, so a retry stores fiat from that same rate. */
+  const replyRateRef = useRef(rateDay);
   useEffect(() => {
     if (askUnit.current === amountUnit) {
       return;
@@ -500,7 +522,7 @@ export function ForumLoader({
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
-    'name' | 'username' | 'rules' | 'lightning-address' | null
+    'name' | 'username' | 'rules' | 'wallet' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const startRepaymentRef = useRef<(messageId: string) => void>(() => undefined);
@@ -519,6 +541,39 @@ export function ForumLoader({
   const pendingComposePlaceRef = useRef<ForumPlacePin | null>(null);
   const pendingComposeShopUsernameRef = useRef<string | null>(null);
   const composeFeePaidRef = useRef(false);
+  const [firstPostFree, setFirstPostFree] = useState(false);
+  /** Bumps whenever the hint is decided, so an older compose-target answer cannot bring it back. */
+  const firstPostFreeGeneration = useRef(0);
+  const decideFirstPostFree = (free: boolean): void => {
+    firstPostFreeGeneration.current += 1;
+    setFirstPostFree(free);
+  };
+  const belowVerified = account !== null && !roleAtLeast(account.role, 'verified');
+  const missingCount = (account?.missing ?? []).length;
+
+  useEffect(() => {
+    if (session === null || !belowVerified || missingCount > 0) {
+      setFirstPostFree(false);
+      return;
+    }
+    let cancelled = false;
+    const generation = firstPostFreeGeneration.current;
+    void (async () => {
+      let free = false;
+      try {
+        free = (await fetchComposeTarget(session)).firstPostFree;
+      } catch {
+        // No hint when the fee note cannot be read; Post still asks the api.
+      }
+      if (!cancelled && generation === firstPostFreeGeneration.current) {
+        setFirstPostFree(free);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session, belowVerified, missingCount]);
+
   const payPollGeneration = useRef(0);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payablePollGeneration = useRef(0);
@@ -567,6 +622,7 @@ export function ForumLoader({
           .join('\0');
 
   const feedHashtag = feed === 'shops' ? SHOP_HASHTAG : undefined;
+  const feedCountry = feed === 'shops' && country !== null ? country : undefined;
   const forumPageArgs = (
     mode: ForumFeedMode,
     extras: { cursor?: string } = {},
@@ -574,11 +630,13 @@ export function ForumLoader({
     mode: ForumFeedMode;
     limit: number;
     hashtag?: string;
+    country?: string;
     cursor?: string;
   } => ({
     mode,
     limit: FORUM_PAGE_LIMIT,
     ...(feedHashtag !== undefined ? { hashtag: feedHashtag } : {}),
+    ...(feedCountry !== undefined ? { country: feedCountry } : {}),
     ...(extras.cursor !== undefined ? { cursor: extras.cursor } : {}),
   });
 
@@ -744,6 +802,7 @@ export function ForumLoader({
           messageId,
           pr: invoice.pr,
           amountSats: invoice.amountSats,
+          sparkInvoice: invoice.sparkInvoice,
         });
       })
       .catch((err: unknown) => {
@@ -759,6 +818,11 @@ export function ForumLoader({
             return;
           }
           setRepayNotice({ messageId, error: 'request' });
+          return;
+        }
+        if (err instanceof WalletRequiredError) {
+          setRepayNotice(null);
+          setOverlayRequirement('wallet');
           return;
         }
         setRepayNotice({
@@ -827,7 +891,7 @@ export function ForumLoader({
           if (result === 'ok') {
             setError(false);
           } else if (result === 'requirements') {
-            router.replace('/setup/rules');
+            returnToView('/setup/rules', router);
           } else if (result === 'error') {
             if (messagesRef.current === null) {
               setError(true);
@@ -855,7 +919,7 @@ export function ForumLoader({
     };
   }, []);
 
-  const nearEndRef = useCallback((node: HTMLLIElement | null): void => {
+  const nearEndRef = useCallback((node: HTMLElement | null): void => {
     setNearEndElement(node);
   }, []);
 
@@ -908,7 +972,7 @@ export function ForumLoader({
           }
         } catch (err) {
           if (!cancelled && activeSession === null && err instanceof PublicForumUnauthorizedError) {
-            router.replace('/login');
+            returnToView('/login', router);
             return;
           }
           // Keep the current pages and cursor so a later intersection may retry.
@@ -925,7 +989,7 @@ export function ForumLoader({
       loadingMoreRef.current = false;
       observer.disconnect();
     };
-    /* router.replace is used on 401; next/navigation's identity is not stable */
+    /* returnToView(…, router) is used on 401; next/navigation's identity is not stable */
   }, [feed, feedHashtag, feedMode, nearEndElement, nextCursor, session]);
 
   const onRefresh = useCallback((): void => {
@@ -952,7 +1016,7 @@ export function ForumLoader({
       return;
     }
     if (session === null && feedMode !== 'active') {
-      router.replace('/login');
+      returnToView('/login', router);
       return;
     }
     let cancelled = false;
@@ -987,7 +1051,7 @@ export function ForumLoader({
             })()
           : await loadMessagesOnce(session, feedMode, () => !cancelled, false, true);
       if (!cancelled && result === 'requirements') {
-        router.replace('/setup/rules');
+        returnToView('/setup/rules', router);
         return;
       }
       if (!cancelled && result === 'error') {
@@ -1009,7 +1073,7 @@ export function ForumLoader({
       paginationGeneration.current += 1;
       loadingMoreRef.current = false;
     };
-    /* router.replace is used on 409; next/navigation's identity is not stable */
+    /* returnToView(…, router) is used on 409; next/navigation's identity is not stable */
   }, [attempt, feed, feedMode, session]);
 
   useEffect(() => {
@@ -1446,6 +1510,8 @@ export function ForumLoader({
     postAfterPay = false,
     clearReplyDraft = false,
     baselineReceivedSats?: number,
+    // The visitor's own top-level post behind the posting fee: once it exists, the writer closes.
+    ownPost = false,
   ): void => {
     /* v8 ignore next -- pay polling starts only after a signed-in invoice */
     if (session === null) return;
@@ -1478,11 +1544,10 @@ export function ForumLoader({
       if (composePay && !postAfterPay) {
         try {
           baselineOwn = await countOwn();
-          /* v8 ignore start -- a failed baseline count is retried after sats rise */
         } catch {
+          // Without a baseline, any own row with this text after the sats rise is the new one.
           baselineOwn = null;
         }
-        /* v8 ignore stop */
       }
       for (;;) {
         try {
@@ -1506,9 +1571,7 @@ export function ForumLoader({
               ownContent = true;
             } else if (composePay) {
               try {
-                if (baselineOwn !== null) {
-                  ownContent = (await countOwn()) > baselineOwn;
-                }
+                ownContent = (await countOwn()) > (baselineOwn ?? 0);
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
               } catch {
                 ownContent = false;
@@ -1626,6 +1689,10 @@ export function ForumLoader({
               setPosting(false);
               setReplyPosting(false);
               notePostInFlightRef.current = false;
+              if (ownPost && !postAfterPay) {
+                // The payment itself created the note (no media to send afterwards).
+                writerRef.current?.onClose();
+              }
               const current = useAuthStore.getState();
               if (current.session !== session) {
                 return;
@@ -1783,6 +1850,10 @@ export function ForumLoader({
     /* v8 ignore next -- a created note is only applied for a signed-in post */
     if (session === null) return;
     composeFeePaidRef.current = false;
+    decideFirstPostFree(false);
+    if (feed === 'shops') {
+      onShopsChanged?.();
+    }
     optimisticMessages.current.set(created.id, created);
     setMessages((prev) => {
       if (prev === null) {
@@ -1852,6 +1923,66 @@ export function ForumLoader({
     setPhotoDrafts([]);
     setVideoDraft(null);
     startPayablePoll(session);
+    writerRef.current?.onClose();
+  };
+
+  const createNote = (
+    trimmed: string,
+    pendingPhotos: ForumPhotoPayload[],
+    pendingVideo: ForumVideoPayload | null,
+    askGoal:
+      | {
+          goalCurrency: ForumGoalCurrency;
+          goalAmount: string;
+          goalRepayable?: true;
+          goalTermDays?: number;
+        }
+      | undefined,
+    pendingPlace: ForumPlacePin | null,
+    sessionToken: string,
+  ): Promise<ForumMessage> => {
+    const placeFields = pendingPlace !== null ? { place: pendingPlace } : {};
+    const shopHandle = composeShopUsername(feed, shopUsername);
+    const shopAccount = shopHandle === null ? {} : { shopUsername: shopHandle };
+    return pendingVideo !== null
+      ? postMessageVideo(sessionToken, {
+          text: trimmed,
+          video: pendingVideo.file,
+          poster: pendingVideo.poster,
+          ...(askGoal !== undefined ? askGoal : {}),
+          ...placeFields,
+          ...shopAccount,
+        })
+      : postMessage(sessionToken, {
+          text: trimmed,
+          ...(pendingPhotos.length === 0
+            ? {}
+            : {
+                photos: pendingPhotos.map(({ contentType, data, takenAt }) => ({
+                  contentType,
+                  data,
+                  ...(takenAt === undefined ? {} : { takenAt }),
+                })),
+              }),
+          ...(askGoal !== undefined ? askGoal : {}),
+          ...placeFields,
+          ...shopAccount,
+        });
+  };
+
+  const showCreatedNote = (
+    created: ForumMessage,
+    pendingPhotos: ForumPhotoPayload[],
+    pendingVideo: ForumVideoPayload | null,
+    sessionToken: string,
+  ): void => {
+    applyCreatedNote(created, pendingPhotos, pendingVideo);
+    pendingPostRef.current = null;
+    const current = useAuthStore.getState();
+    if (current.session !== sessionToken || current.account === null) {
+      return;
+    }
+    setAccount({ ...current.account, hasPosted: true });
   };
 
   const runNotePost = async (
@@ -1880,13 +2011,33 @@ export function ForumLoader({
         !roleAtLeast(account.role, 'verified') &&
         !composeFeePaidRef.current
       ) {
+        const target = await fetchComposeTarget(session);
+        decideFirstPostFree(target.firstPostFree);
+        if (target.firstPostFree) {
+          try {
+            const created = await createNote(
+              trimmed,
+              pendingPhotos,
+              pendingVideo,
+              askGoal,
+              pendingPlace,
+              session,
+            );
+            showCreatedNote(created, pendingPhotos, pendingVideo, session);
+            return;
+          } catch (err) {
+            if (!(err instanceof PostFeeRequiredError)) {
+              throw err;
+            }
+            decideFirstPostFree(false);
+          }
+        }
         const hasMedia = pendingPhotos.length > 0 || pendingVideo !== null;
         const shopHandle = composeShopUsername(feed, shopUsername);
         const postAfterPay =
           hasMedia || askGoal !== undefined || pendingPlace !== null || shopHandle !== null;
         pendingComposePlaceRef.current = pendingPlace;
         pendingComposeShopUsernameRef.current = shopHandle;
-        const target = await fetchComposeTarget(session);
         const invoice = await postMessageInvoice(
           session,
           target.messageId,
@@ -1900,13 +2051,24 @@ export function ForumLoader({
           messageId: target.messageId,
           pr: invoice.pr,
           amountSats: invoice.amountSats,
+          sparkInvoice: invoice.sparkInvoice,
+          postsOnPay: true,
         });
         setPayHost('composer');
         pendingComposeTextRef.current = trimmed;
         pendingComposePhotosRef.current = pendingPhotos;
         pendingComposeVideoRef.current = pendingVideo;
         pendingComposeGoalRef.current = askGoal;
-        startPayPoll(target.messageId, target.sats, askGoal === undefined, null, postAfterPay);
+        startPayPoll(
+          target.messageId,
+          target.sats,
+          askGoal === undefined,
+          null,
+          postAfterPay,
+          false,
+          undefined,
+          true,
+        );
         pendingPostRef.current = null;
         setDraft('');
         if (!hasMedia) {
@@ -1916,42 +2078,20 @@ export function ForumLoader({
         awaitingPay = true;
         return;
       }
-      const placeFields = pendingPlace !== null ? { place: pendingPlace } : {};
-      const shopHandle = composeShopUsername(feed, shopUsername);
-      const shopAccount = shopHandle === null ? {} : { shopUsername: shopHandle };
-      const created =
-        pendingVideo !== null
-          ? await postMessageVideo(session, {
-              text: trimmed,
-              video: pendingVideo.file,
-              poster: pendingVideo.poster,
-              ...(askGoal !== undefined ? askGoal : {}),
-              ...placeFields,
-              ...shopAccount,
-            })
-          : await postMessage(session, {
-              text: trimmed,
-              ...(pendingPhotos.length === 0
-                ? {}
-                : {
-                    photos: pendingPhotos.map(({ contentType, data, takenAt }) => ({
-                      contentType,
-                      data,
-                      ...(takenAt === undefined ? {} : { takenAt }),
-                    })),
-                  }),
-              ...(askGoal !== undefined ? askGoal : {}),
-              ...placeFields,
-              ...shopAccount,
-            });
-      applyCreatedNote(created, pendingPhotos, pendingVideo);
-      pendingPostRef.current = null;
-      const current = useAuthStore.getState();
-      if (current.session !== session || current.account === null) {
+      const created = await createNote(
+        trimmed,
+        pendingPhotos,
+        pendingVideo,
+        askGoal,
+        pendingPlace,
+        session,
+      );
+      showCreatedNote(created, pendingPhotos, pendingVideo, session);
+    } catch (err) {
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
         return;
       }
-      setAccount({ ...current.account, hasPosted: true });
-    } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => {
@@ -2061,6 +2201,8 @@ export function ForumLoader({
       return;
     }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+    // The fiat stored with the invoice uses the same rate as these sats, also on a retry.
+    const payRate = rateDay;
     if (sats === 'invalid') {
       setPayError('amount');
       return;
@@ -2079,7 +2221,7 @@ export function ForumLoader({
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, rateDayRef.current),
+            shownFiatForSats(sats, payRate),
           );
           if (generation !== payPollGeneration.current) {
             return null;
@@ -2088,6 +2230,7 @@ export function ForumLoader({
             messageId,
             pr: invoice.pr,
             amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
           };
           setPayInvoice(minted);
           setPayBusy(false);
@@ -2110,6 +2253,11 @@ export function ForumLoader({
           }
           if (err instanceof NoteDeletedError) {
             setPayError('deleted');
+            return null;
+          }
+          if (err instanceof WalletRequiredError) {
+            setPayError(null);
+            setOverlayRequirement('wallet');
             return null;
           }
           setPayError(
@@ -2139,7 +2287,7 @@ export function ForumLoader({
       return;
     }
     if (session === null) {
-      router.replace('/login');
+      returnToView('/login', router);
       return;
     }
     const listedParent =
@@ -2262,6 +2410,7 @@ export function ForumLoader({
     parentId: string,
     parentBaseline: number,
     isRetry: boolean,
+    ownNote = false,
   ): Promise<void> => {
     /* v8 ignore next -- reactions are not posted without a session */
     if (session === null) return;
@@ -2279,13 +2428,19 @@ export function ForumLoader({
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
-          pendingPostRef.current = () => runReplyPost(trimmed, parentId, parentBaseline, true);
+          pendingPostRef.current = () =>
+            runReplyPost(trimmed, parentId, parentBaseline, true, ownNote);
           return;
         }
         setReplyFormError('request');
         return;
       }
       if (isReplyPaymentError(err)) {
+        // A reply on your own note is never paid; the api owes it unpaid.
+        if (ownNote) {
+          setReplyFormError('request');
+          return;
+        }
         await runComposePay(trimmed, parentId, 1, isRetry);
         return;
       }
@@ -2325,14 +2480,14 @@ export function ForumLoader({
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             )
           : await postMessageInvoice(
               session,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             );
       if (generation !== payPollGeneration.current) {
         return;
@@ -2343,6 +2498,7 @@ export function ForumLoader({
         messageId: parentId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('card');
       setReplyPayPreview(trimmed);
@@ -2351,6 +2507,10 @@ export function ForumLoader({
       startPayPoll(parentId, baselineSats, false, null, false, true);
     } catch (err) {
       if (generation !== payPollGeneration.current) {
+        return;
+      }
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
         return;
       }
       if (err instanceof MissingRequirementsError) {
@@ -2374,7 +2534,9 @@ export function ForumLoader({
             ? 'tooLong'
             : isRateLimitError(err)
               ? 'rateLimit'
-              : 'request',
+              : isAuthorWalletError(err)
+                ? 'authorWallet'
+                : 'request',
         );
       }
     } finally {
@@ -2406,7 +2568,7 @@ export function ForumLoader({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(sats, rateDayRef.current),
+        shownFiatForSats(sats, replyRateRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -2418,6 +2580,8 @@ export function ForumLoader({
         messageId: target.messageId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
+        postsOnPay: true,
       });
       setPayHost('composer');
       setReplyDraft('');
@@ -2432,6 +2596,10 @@ export function ForumLoader({
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runComposePay(trimmed, parentId, sats, true);
@@ -2462,12 +2630,14 @@ export function ForumLoader({
       return;
     }
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
+    replyRateRef.current = rateDay;
     const parentId = expandedId;
     const parentRow = messagesRef.current?.find((message) => message.id === parentId);
     /* v8 ignore next 2 -- expanded parent is always in the loaded list */
     const parentBaseline = parentRow === undefined ? 0 : parentRow.replyCount;
     const parentSats = parentRow === undefined ? 0 : parentRow.sats;
     const parentAccountId = parentRow?.accountId;
+    const own = isOwnNote(account?.id, parentAccountId);
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
     const composeOverhead = `inReplyTo:${parentId}\n`.length;
@@ -2476,6 +2646,14 @@ export function ForumLoader({
       return;
     }
     const continueReply = (isRetry: boolean): Promise<void> => {
+      // Your own note shows no amount field: the reply is posted without a payment.
+      if (own) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return runReplyPost(trimmed, parentId, parentBaseline, isRetry, true);
+      }
       if (parsed === 'invalid') {
         setReplyFormError('amount');
         return Promise.resolve();
@@ -2546,6 +2724,7 @@ export function ForumLoader({
         {...(feed === 'shops' ? { modeSelector: false as const } : {})}
         {...(feed === 'shops' ? { allowAsk: false as const } : {})}
         {...(feed === 'shops' ? { composerMaxLength } : {})}
+        {...(writer === undefined ? {} : { writer })}
         {...(feed === 'shops'
           ? {
               shopComposer: true as const,
@@ -2561,6 +2740,7 @@ export function ForumLoader({
           ? {
               shopPlaceEdit: true as const,
               onShopPlaceUpdated: (messageId: string, place: ForumPlacePin | null) => {
+                onShopsChanged?.();
                 setMessages((prev) =>
                   prev!.map((row) => {
                     if (row.id !== messageId) {
@@ -2603,6 +2783,7 @@ export function ForumLoader({
         {...(account !== null && roleAtLeast(account.role, 'moderator')
           ? {
               shopNoteEdit: true as const,
+              ...(onShopsChanged !== undefined ? { onShopNoteSaved: onShopsChanged } : {}),
               onShopNoteUpdated: (updated: ForumMessage) => {
                 setPhotoUrls((prev) => {
                   const prefix = `${updated.id}:`;
@@ -2691,6 +2872,9 @@ export function ForumLoader({
                   );
                   return;
                 }
+                if (feed === 'shops') {
+                  onShopsChanged?.();
+                }
                 setMessages((prev) => prev!.filter((row) => row.id !== messageId));
                 const wasExpanded = expandedIdRef.current === messageId;
                 if (wasExpanded) {
@@ -2747,6 +2931,7 @@ export function ForumLoader({
           setAttempt((n) => n + 1);
         }}
         formError={formError}
+        firstPostFree={firstPostFree}
         photoDrafts={photoDrafts}
         videoDraft={videoDraft}
         onPickFiles={onPickFiles}
@@ -2781,6 +2966,9 @@ export function ForumLoader({
           setPayBusy(false);
         }}
         viewerAccountId={account?.id ?? null}
+        heartViewerId={account?.id ?? null}
+        onHeartTip={onHeartTip}
+        heartTipViews={heartTipViews}
         onRepay={(messageId) => {
           startRepaymentRef.current(messageId);
         }}

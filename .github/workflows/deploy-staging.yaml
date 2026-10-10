@@ -44,6 +44,7 @@ jobs:
           cache-to: type=registry,ref=21gifts/app:buildcache,mode=max
           build-args: |
             APP_VERSION=${{ github.run_number }}
+            NEXT_PUBLIC_BREEZ_API_KEY=${{ secrets.BREEZ_API_KEY_STAGING }}
 
       - name: Notify infrastructure to pull :staging
         env:

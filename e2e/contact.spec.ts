@@ -6,7 +6,7 @@ const E2E_ACCOUNT = {
   role: 'basis' as const,
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
@@ -54,8 +54,8 @@ test('contact empty send shows Enter a message', async ({ page }) => {
   await expect(page.getByText('Enter a message')).toBeVisible();
 });
 
-test('contact success opens the official thread with Hello team', async ({ page }) => {
-  await seedSignedIn(page);
+/** Contact submit, and the official thread it opens, both answered. */
+async function stubContactThread(page: import('@playwright/test').Page): Promise<void> {
   await page.route(/\/contact\/submit$/, async (route) => {
     if (route.request().method() !== 'POST') {
       await route.continue();
@@ -113,9 +113,34 @@ test('contact success opens the official thread with Hello team', async ({ page 
       }),
     });
   });
+}
+
+test('contact success opens the official thread with Hello team', async ({ page }) => {
+  await seedSignedIn(page);
+  await stubContactThread(page);
   await page.goto('/contact');
   await page.getByLabel('Your message').fill('Hello team');
   await page.getByRole('button', { name: 'Send' }).click();
   await expect(page).toHaveURL(/\/messages\?c=conv-21/);
   await expect(page.getByText('Hello team')).toBeVisible();
+});
+
+test('contact opened from the official thread steps back to it, so the thread does not lead to Contact again', async ({
+  page,
+}) => {
+  await seedSignedIn(page);
+  await stubContactThread(page);
+  await page.goto('/messages?c=conv-21');
+  await expect(page.getByText('Hello team')).toBeVisible();
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.locator('#signed-in-menu').getByRole('link', { name: 'Contact', exact: true }).click();
+  await expect(page).toHaveURL(/\/contact$/);
+  await page.getByLabel('Your message').fill('Hello team');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await expect(page).toHaveURL(/\/messages\?c=conv-21/);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
 });

@@ -24,6 +24,9 @@ vi.mock('@/lib/api', () => ({
   fetchMemberPosts: vi.fn(),
   fetchMemberReplies: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchMessagePhoto: vi.fn(),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
 }));
@@ -41,7 +44,7 @@ const profile: MemberProfile = {
   name: 'Carol',
   location: null,
   role: 'verified',
-  lightningAddress: 'carol@walletofsatoshi.com',
+  lightningAddress: null,
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
   aboutMeHasPhoto: false,
@@ -78,7 +81,7 @@ beforeEach(() => {
       role: 'basis',
       name: 'Ada',
       location: null,
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       lightningAddressVerified: false,
       forumLawsDismissed: true,
       createdAt: 1,
@@ -183,7 +186,7 @@ describe('MemberProfileLoader', () => {
     expect(fetchMemberActivity).toHaveBeenCalledWith('sess', memberId);
   });
 
-  it('fetches activity when lightningAddress is blank', async () => {
+  it('fetches activity before the member has a wallet', async () => {
     vi.mocked(fetchMember).mockResolvedValue({ ...profile, lightningAddress: '   ' });
     renderWithLocale(<MemberProfileLoader accountId={memberId} />);
     expect(await screen.findByText('Carol')).toBeTruthy();

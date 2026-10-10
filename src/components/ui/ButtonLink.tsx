@@ -5,7 +5,7 @@ import type { ReactElement, ReactNode } from 'react';
 export type ButtonLinkVariant = 'primary' | 'secondary' | 'accent';
 
 /** Padding scale for {@link ButtonLink}. */
-export type ButtonLinkSize = 'sm' | 'md' | 'lg';
+export type ButtonLinkSize = 'chrome' | 'sm' | 'md' | 'lg';
 
 /** Shell for secondary-on-ink vs app tokens. */
 export type ButtonLinkTone = 'app' | 'dark';
@@ -16,7 +16,10 @@ export interface ButtonLinkProps {
   href: string;
   /** Filled primary, bordered secondary, or accent fill. Default `primary`. */
   variant?: ButtonLinkVariant;
-  /** Hit-target size. Default `md`. `lg` is full width. */
+  /**
+   * Hit-target size. Default `md`. `lg` is full width. `chrome` is the compact
+   * page-chrome pill (12px text on phones, 14px from `sm`).
+   */
   size?: ButtonLinkSize;
   /** App tokens or marketing ink. Default `app`. */
   tone?: ButtonLinkTone;
@@ -31,9 +34,10 @@ export interface ButtonLinkProps {
 }
 
 const SIZE_CLASS: Record<ButtonLinkSize, string> = {
-  sm: 'min-h-11 px-4 py-2',
-  md: 'min-h-11 px-6 py-3',
-  lg: 'min-h-11 w-full px-6 py-3',
+  chrome: 'min-h-11 gap-1 px-1.5 py-1 text-xs sm:gap-1.5 sm:px-3 sm:text-sm',
+  sm: 'min-h-11 gap-2 px-4 py-2 text-sm',
+  md: 'min-h-11 gap-2 px-6 py-3 text-sm',
+  lg: 'min-h-11 w-full gap-2 px-6 py-3 text-sm',
 };
 
 /**
@@ -79,7 +83,7 @@ export function ButtonLink({
   'aria-label': ariaLabel,
 }: ButtonLinkProps): ReactElement {
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
-  const classes = `inline-flex items-center justify-center gap-2 rounded-full text-sm font-medium no-underline transition ${SIZE_CLASS[size]} ${variantClass(variant, tone)}${extra}`;
+  const classes = `inline-flex items-center justify-center rounded-full font-medium no-underline transition ${SIZE_CLASS[size]} ${variantClass(variant, tone)}${extra}`;
   const internal = href.startsWith('#') || (href.startsWith('/') && !href.startsWith('//'));
   const named = ariaLabel === undefined ? {} : { 'aria-label': ariaLabel };
   if (!internal) {

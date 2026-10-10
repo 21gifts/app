@@ -8,12 +8,18 @@ import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { PosHistory } from '@/components/PosHistory';
 import { QrCode } from '@/components/QrCode';
+import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button, ButtonLink, Card } from '@/components/ui';
-import { useLatestRateDayState } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
+import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { logInteraction } from '@/lib/interaction-log';
+import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
 import { cancelPosCharge, createPosCharge, fetchPosState, type PosState } from '@/lib/pos';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
+import { returnToView } from '@/lib/view-history';
 import type { AmountUnit } from '@/lib/api-types';
 import {
   formatBitcoin,
@@ -39,15 +45,50 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
   }
 }
 
+/** How often the till asks whether an open charge is paid. */
+const POS_POLL_MS = 3_000;
+
+/**
+ * How long past its end the till keeps asking about a charge. The api still
+ * marks a charge paid when the payment is confirmed after it ran out, and
+ * shows a paid charge for one minute.
+ */
+const POS_LATE_PAID_MS = 60_000;
+
+/** Till reads started and the newest one whose answer is on screen. */
+type TillReads = { started: number; applied: number };
+
+/** Number the next till read. */
+function startRead(reads: { current: TillReads }): number {
+  reads.current.started += 1;
+  return reads.current.started;
+}
+
+/**
+ * Apply the answer of read `seq` only when no newer read is already on
+ * screen, so a slow refresh cannot replace a newer answer (such as a paid
+ * charge) with an older one.
+ */
+function applyRead(reads: { current: TillReads }, seq: number, apply: () => void): void {
+  if (seq > reads.current.applied) {
+    reads.current.applied = seq;
+    apply();
+  }
+}
+
 /** Create or cancel that is still talking to the server, across page changes. */
 let tillWrite: Promise<void> | null = null;
 
+/** Paid charges already recorded as seen in this tab, so each is recorded once. */
+const paidSeen = new Set<string>();
+
 /**
- * Drop a till write left behind by a test. Production clears it when the
- * request settles.
+ * Drop a till write and the paid charges recorded as seen, left behind by a
+ * test. Production clears the write when the request settles.
  */
 export function resetPosTillWriteForTests(): void {
   tillWrite = null;
+  paidSeen.clear();
 }
 
 /** Remember `work` until it settles so a later till load does not race it. */
@@ -66,10 +107,14 @@ type PosTillState = {
   qr: string | null;
   showQr: boolean;
   state: PosState | null;
+  /** Session whose till read or create produced `state`. */
+  stateSession: string | null;
   error: string | null;
   charge: PosState['charge'];
+  paid: PosState['charge'];
   remaining: number;
   chargeFiat: string | null;
+  paidFiat: string | null;
   amount: string;
   setAmount: (value: string) => void;
   shownUnit: AmountUnit;
@@ -78,7 +123,7 @@ type PosTillState = {
   rateDay: FiatRateDay | null;
   canCharge: boolean;
   needsUsername: boolean;
-  needsAddress: boolean;
+  needsWallet: boolean;
   onCreate: (event: FormEvent) => Promise<void>;
   onCancel: () => Promise<void>;
   retryLoad: () => void;
@@ -90,12 +135,18 @@ function usePosTillState(): PosTillState {
   const { fiat } = useFiatPreference();
   const refreshed = useRef<string | null>(null);
   const generation = useRef(0);
+  const reads = useRef<TillReads>({ started: 0, applied: 0 });
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
-  const { rateDay, settled: rateSettled } = useLatestRateDayState(session !== null);
-  const [state, setState] = useState<PosState | null>(null);
-  const [error, setErrorState] = useState<string | null>(null);
-  const [loadingAlert, setLoadingAlert] = useState(false);
+  const rateDay = useSpotRate(session !== null);
+  // The till and the session whose read or create produced it, set together so
+  // an effect of one render never pairs one member's till with another's session.
+  const [till, setTill] = useState<{ state: PosState | null; session: string | null }>({
+    state: null,
+    session: null,
+  });
+  const state = till.state;
+  const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
   const [shownUnit, setShownUnit] = useState<AmountUnit>(account?.amountUnit ?? 'btc');
   const [busy, setBusy] = useState(false);
@@ -104,11 +155,7 @@ function usePosTillState(): PosTillState {
   const [now, setNow] = useState(() => Date.now());
   const [showQr, setShowQr] = useState(false);
   const [reload, setReload] = useState(0);
-
-  function setError(message: string | null, loading?: boolean): void {
-    setLoadingAlert(loading === true);
-    setErrorState(message);
-  }
+  const [watchUntil, setWatchUntil] = useState<number | null>(null);
 
   useEffect(() => {
     setShowQr(true);
@@ -131,12 +178,15 @@ function usePosTillState(): PosTillState {
         return;
       }
       try {
+        const seq = startRead(reads);
         const next = await fetchPosState(session);
         if (!alive) {
           return;
         }
         whenCurrent(generation, mine, () => {
-          setState(next);
+          applyRead(reads, seq, () => {
+            setTill({ state: next, session });
+          });
         });
       } catch {
         if (!alive) {
@@ -152,8 +202,24 @@ function usePosTillState(): PosTillState {
     };
   }, [reload, session, t]);
 
+  const username = account?.username ?? null;
+  /* v8 ignore next -- this client screen always runs in a browser */
+  const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
+  const address = giftsLightningAddress(username, host);
+  const qr = openCryptoPayQrValue(username, host);
+  const shown = state?.charge ?? null;
+  const charge = shown !== null && shown.status === 'pending' ? shown : null;
+  const paid = shown !== null && shown.status === 'paid' ? shown : null;
+  const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
+  const chargeFiat = charge === null ? null : satsToFiatAmount(charge.amountSats, rateDay, fiat);
+  const paidFiat = paid === null ? null : satsToFiatAmount(paid.amountSats, rateDay, fiat);
+  const needsUsername = account !== null && (account.username ?? '') === '';
+  const needsWallet =
+    account !== null && (account.username ?? '') !== '' && account.sparkWalletVerified !== true;
+  const canCharge = (account?.username ?? '') !== '' && account?.sparkWalletVerified === true;
+
   useEffect(() => {
-    if (state?.charge === null || state?.charge === undefined) {
+    if (charge === null) {
       return;
     }
     const timer = setInterval(() => {
@@ -162,23 +228,56 @@ function usePosTillState(): PosTillState {
     return () => {
       clearInterval(timer);
     };
-  }, [state?.charge]);
+  }, [charge]);
 
-  const username = account?.username ?? null;
-  /* v8 ignore next -- this client screen always runs in a browser */
-  const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
-  const address = giftsLightningAddress(username, host);
-  const qr = openCryptoPayQrValue(username, host);
-  const charge = state?.charge ?? null;
-  const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
-  const chargeFiat = charge === null ? null : satsToFiatAmount(charge.amountSats, rateDay, fiat);
-  const needsUsername = account !== null && (account.username ?? '') === '';
-  const needsAddress =
-    account !== null &&
-    (account.username ?? '') !== '' &&
-    (account.lightningAddress ?? '').trim() === '';
-  const canCharge =
-    (account?.username ?? '') !== '' && (account?.lightningAddress ?? '').trim() !== '';
+  const chargeEnd = charge === null ? null : Date.parse(charge.expiresAt);
+  useEffect(() => {
+    if (chargeEnd !== null) {
+      setWatchUntil(chargeEnd + POS_LATE_PAID_MS);
+    }
+  }, [chargeEnd]);
+
+  useEffect(() => {
+    if (paid !== null) {
+      setWatchUntil(null);
+    }
+  }, [paid]);
+
+  useEffect(() => {
+    // While a charge is open, and for a minute after it ran out, ask the api
+    // every few seconds whether it is paid.
+    if (session === null || busy || watchUntil === null) {
+      return;
+    }
+    let alive = true;
+    const timer = setInterval(() => {
+      if (Date.now() > watchUntil) {
+        clearInterval(timer);
+        setWatchUntil(null);
+        return;
+      }
+      const mine = generation.current;
+      const seq = startRead(reads);
+      fetchPosState(session).then(
+        (next) => {
+          if (alive) {
+            whenCurrent(generation, mine, () => {
+              applyRead(reads, seq, () => {
+                setTill({ state: next, session });
+              });
+            });
+          }
+        },
+        () => {
+          // The next poll, or the refresh at expiry, tries again.
+        },
+      );
+    }, POS_POLL_MS);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [busy, session, watchUntil]);
 
   useEffect(() => {
     if (
@@ -192,10 +291,13 @@ function usePosTillState(): PosTillState {
     }
     refreshed.current = charge.id;
     const mine = generation.current;
+    const seq = startRead(reads);
     fetchPosState(session)
       .then((next) => {
         whenCurrent(generation, mine, () => {
-          setState(next);
+          applyRead(reads, seq, () => {
+            setTill({ state: next, session });
+          });
         });
       })
       .catch(() => {
@@ -205,35 +307,25 @@ function usePosTillState(): PosTillState {
       });
   }, [busy, charge, remaining, session, t]);
 
-  useEffect(() => {
-    if (!loadingAlert || !rateSettled) {
-      return;
-    }
-    const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
-    if (parsed.kind === 'no-rate') {
-      setError(t('pos.noRate', { code: fiat }));
-      return;
-    }
-    if (parsed.kind === 'sats' && parsed.sats >= 1) {
-      setError(null);
-      return;
-    }
-    setError(t('pos.badAmount'));
-  }, [amount, fiat, loadingAlert, rateDay, rateSettled, shownUnit, t]);
-
   async function onCreate(event: FormEvent): Promise<void> {
     event.preventDefault();
     if (session === null || busyRef.current) {
       return;
     }
     const parsed = parseAmountDraft(shownUnit, amount, rateDay, fiat);
-    if (shownUnit === 'fiat' && !rateSettled && parsed.kind === 'no-rate') {
-      setError(t('pos.rateLoading', { code: fiat }), true);
-      return;
-    }
     if (parsed.kind === 'no-rate') {
       setError(t('pos.noRate', { code: fiat }));
       return;
+    }
+    if (shownUnit === 'fiat') {
+      if (parsed.kind === 'invalid') {
+        setError(t('amount.cannotConvert'));
+        return;
+      }
+      if (parsed.kind === 'empty' || parsed.sats < 1) {
+        setError(t('wallet.sendAmountMin', { min: formatBitcoin(1) }));
+        return;
+      }
     }
     if (parsed.kind !== 'sats' || !Number.isInteger(parsed.sats) || parsed.sats < 1) {
       setError(t('pos.badAmount'));
@@ -250,21 +342,23 @@ function usePosTillState(): PosTillState {
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- the form is only shown once state.history is an array */
           const history = state?.history ?? [];
-          setState({ charge: created, history: [created, ...history] });
+          setTill({ state: { charge: created, history: [created, ...history] }, session });
           setAmount('');
         });
       } catch (err) {
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- createPosCharge only rejects with Error */
           const message = err instanceof Error ? err.message : t('pos.error');
-          if (message === 'Amount is outside the wallet range') {
+          if (err instanceof WalletRequiredError) {
+            setError(t('pos.needWallet'));
+          } else if (err instanceof CannotReceiveError) {
+            setError(t('pos.cannotReceive'));
+          } else if (message === 'Amount is outside the wallet range') {
             setError(t('pos.outside'));
           } else if (message === 'A payment is already open') {
             setError(t('pos.already'));
           } else if (message === 'Set a username first') {
             setError(t('pos.needUsername'));
-          } else if (message === 'Set a Wallet of Satoshi address first') {
-            setError(t('pos.needAddress'));
           } else {
             setError(t('pos.error'));
           }
@@ -291,9 +385,13 @@ function usePosTillState(): PosTillState {
     const work = (async (): Promise<void> => {
       try {
         await cancelPosCharge(session);
+        const seq = startRead(reads);
         const next = await fetchPosState(session);
         whenCurrent(generation, mine, () => {
-          setState(next);
+          setWatchUntil(null);
+          applyRead(reads, seq, () => {
+            setTill({ state: next, session });
+          });
         });
       } catch {
         whenCurrent(generation, mine, () => {
@@ -315,10 +413,13 @@ function usePosTillState(): PosTillState {
     qr,
     showQr,
     state,
+    stateSession: till.session,
     error,
     charge,
+    paid,
     remaining,
     chargeFiat,
+    paidFiat,
     amount,
     setAmount,
     shownUnit,
@@ -327,7 +428,7 @@ function usePosTillState(): PosTillState {
     rateDay,
     canCharge,
     needsUsername,
-    needsAddress,
+    needsWallet,
     onCreate,
     onCancel,
     retryLoad: () => {
@@ -339,7 +440,15 @@ function usePosTillState(): PosTillState {
 
 /**
  * Signed-in till QR. With no charge, **Set an amount** opens `/pos/amount`.
- * With a charge, this page shows the countdown, bitcoin, fiat, and Cancel.
+ * With a charge, this page shows the countdown, bitcoin, fiat, and Cancel,
+ * and asks every few seconds whether it is paid. A paid charge shows
+ * **Paid ✓**, bitcoin, fiat, and **New payment** (to `/pos/amount`). Under
+ * that, once the till has loaded, {@link PosHistory} lists the past charges
+ * from the same answer, so the list changes whenever the till reloads. An
+ * account whose wallet is not verified sees **Set up your wallet first.**
+ * (to `/wallet`), or the inline setup note once the background wallet setup
+ * gave up; while that setup is due or gave up, the address and its QR stay
+ * hidden, because the address is not registered yet.
  *
  * @returns The point-of-sale card.
  */
@@ -348,13 +457,24 @@ export function PosTill(): ReactElement {
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const till = usePosTillState();
+  const setup = useWalletSetup();
+  const paidId = till.paid?.id ?? null;
+  const paidSats = till.paid?.amountSats ?? 0;
+  const paidFor = till.stateSession;
+  useEffect(() => {
+    if (paidId !== null && !paidSeen.has(paidId)) {
+      paidSeen.add(paidId);
+      // Recorded where the paid charge shows, for the member whose till showed it.
+      logInteraction('pos_charge_paid_seen', { chargeId: paidId, amountSats: paidSats }, paidFor);
+    }
+  }, [paidId, paidSats, paidFor]);
 
   return (
     <Card surface={false}>
       <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
         {t('pos.title')}
       </h1>
-      {till.address !== null ? (
+      {till.address !== null && !setup.due && !setup.failed ? (
         <div className="flex flex-col items-stretch gap-3 border-t border-app-border pt-6">
           <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
             {t('profile.giftsHeading')}
@@ -376,10 +496,11 @@ export function PosTill(): ReactElement {
           </Link>
         </p>
       ) : null}
-      {till.needsAddress ? (
+      {till.needsWallet && setup.failed ? <WalletSetupNote /> : null}
+      {till.needsWallet && !setup.failed ? (
         <p className="text-center text-sm text-app-fg">
-          <Link href="/profile" className="underline">
-            {t('pos.needAddress')}
+          <Link href="/wallet" className="underline">
+            {t('pos.needWallet')}
           </Link>
         </p>
       ) : null}
@@ -409,7 +530,23 @@ export function PosTill(): ReactElement {
           </Button>
         </div>
       ) : null}
-      {till.state !== null && till.charge === null && till.canCharge ? (
+      {till.paid !== null ? (
+        <div className="flex flex-col items-center gap-3">
+          <p role="status" className="text-center text-lg font-semibold text-app-success">
+            {t('pos.paid')}
+          </p>
+          <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
+            {formatBitcoin(till.paid.amountSats, numberFormat)}
+          </p>
+          {till.paidFiat === null ? null : (
+            <p className="text-center text-sm text-app-subtle">
+              {formatFiatDisplay(till.paidFiat, fiat, numberFormat)}
+            </p>
+          )}
+          <ButtonLink href="/pos/amount">{t('pos.newPayment')}</ButtonLink>
+        </div>
+      ) : null}
+      {till.state !== null && till.charge === null && till.paid === null && till.canCharge ? (
         <ButtonLink href="/pos/amount">{t('wallet.setAmount')}</ButtonLink>
       ) : null}
       {till.error !== null ? (
@@ -417,13 +554,23 @@ export function PosTill(): ReactElement {
           {till.error}
         </p>
       ) : null}
+      {till.state !== null ? (
+        <PosHistory
+          history={till.state.history}
+          openChargeId={till.charge?.id ?? null}
+          rateDay={till.rateDay}
+        />
+      ) : null}
     </Card>
   );
 }
 
 /**
  * Amount-only page. No QR and no other till actions. Confirming returns to
- * `/pos`, which then shows Cancel, the countdown, and the amount.
+ * `/pos`, which then shows Cancel, the countdown, and the amount. A charge
+ * that is already paid does not block a new one. It leaves with
+ * {@link returnToView}, once: opened from `/pos`, that is a step back, so
+ * `/pos` keeps its own back (the view before it, or `/welcome`).
  *
  * @returns The amount card.
  */
@@ -432,10 +579,15 @@ export function PosAmount(): ReactElement {
   const router = useRouter();
   const till = usePosTillState();
   const account = useAuthStore((state) => state.account);
+  const left = useRef(false);
 
   useEffect(() => {
+    if (left.current) {
+      return;
+    }
     if (till.charge !== null || (account !== null && !till.canCharge)) {
-      router.replace('/pos');
+      left.current = true;
+      returnToView('/pos', router);
     }
     /* next/navigation's identity is not stable */
   }, [account, till.canCharge, till.charge]);
