@@ -1696,6 +1696,8 @@ describe('fetchMessages', () => {
           hasVideo: false,
           videoContentType: null,
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
           photoCount: 0,
         },
       ],
