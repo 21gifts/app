@@ -28,6 +28,15 @@ export const SENTRY_TUNNEL_PATH = '/monitoring';
  */
 const MAX_ENVELOPE_BYTES = 1024 * 1024;
 
+/**
+ * Span data keys that describe page elements (web vitals: the LCP element and
+ * its image URL, the CLS sources). Their DOM text can hold a member's name.
+ */
+const ELEMENT_DATA_KEY = /^(?:browser\.web_vital\.)?(?:lcp\.(?:element|url|id)|cls\.source\.\d+)$/;
+
+/** First absolute http(s) origin in a text, such as a span description. */
+const ABSOLUTE_ORIGIN = /\bhttps?:\/\/[^\s/?#"'<>]+/i;
+
 /** Envelope item types the tunnel forwards: errors and transactions. */
 const FORWARDED_ITEM_TYPES = new Set(['event', 'transaction']);
 
@@ -89,6 +98,8 @@ const REDACTIONS: ReadonlyArray<readonly [RegExp, string]> = [
   [/\b(?:lnbc|lntb|lnurl)[0-9a-z]{10,}/gi, FILTERED],
   // Spark addresses.
   [/\bspark(?:rt)?1[0-9a-z]{10,}/gi, FILTERED],
+  // Base-chain (bech32) addresses; longer than a 32-digit trace id.
+  [/\b(?:bc|tb|bcrt)1[02-9ac-hj-np-z]{36,87}\b/gi, FILTERED],
   // Keys, hashes, preimages, view keys: 64 or more hex digits.
   [/\b[0-9a-f]{64,}\b/gi, FILTERED],
   // Bearer tokens.
@@ -368,6 +379,14 @@ function scrubRequest(request: EventRequest): EventRequest {
 function scrubEvent<T extends ErrorEvent | TransactionEvent>(event: T): T {
   const copy: T = { ...event };
   delete copy.user;
+  // The SDK reads only these two after this filter; the rest are live SDK objects.
+  if (copy.sdkProcessingMetadata !== undefined) {
+    const { dynamicSamplingContext, spanCountBeforeProcessing } = copy.sdkProcessingMetadata;
+    copy.sdkProcessingMetadata = {
+      ...(dynamicSamplingContext === undefined ? {} : { dynamicSamplingContext }),
+      ...(spanCountBeforeProcessing === undefined ? {} : { spanCountBeforeProcessing }),
+    };
+  }
   if (copy.request !== undefined) {
     copy.request = scrubRequest(copy.request);
   }
@@ -382,6 +401,81 @@ function scrubEvent<T extends ErrorEvent | TransactionEvent>(event: T): T {
     }
   }
   return scrubValue(copy, 0) as T;
+}
+
+/** One span of a transaction event. */
+type TransactionSpan = NonNullable<TransactionEvent['spans']>[number];
+
+/**
+ * Origin of a URL, or `null` when it is not an absolute URL.
+ *
+ * @param url - URL text.
+ * @returns `scheme://host[:port]`, or `null`.
+ */
+function originOf(url: string): string | null {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Whether a span reaches a host other than the page's own: a request or
+ * resource on another origin, such as a receiver's Lightning address server
+ * the wallet asks, whose path can name that receiver or an address.
+ *
+ * @param span - Span of a transaction.
+ * @param pageOrigin - Origin of the page, or `null` when unknown.
+ * @returns `true` when the span names another origin, or any absolute URL
+ * while the page origin is unknown.
+ */
+function isForeignSpan(span: TransactionSpan, pageOrigin: string | null): boolean {
+  const data = span.data;
+  if (data['url.same_origin'] === false) {
+    return true;
+  }
+  return [data['url.full'], data['http.url'], data['url'], span.description].some((value) => {
+    const match = typeof value === 'string' ? ABSOLUTE_ORIGIN.exec(value) : null;
+    return match !== null && (pageOrigin === null || originOf(match[0]) !== pageOrigin);
+  });
+}
+
+/**
+ * Span data without the element descriptors of web vitals.
+ *
+ * @param data - Span or trace data.
+ * @returns A copy without those keys.
+ */
+function withoutElements<D extends Record<string, unknown>>(data: D): D {
+  return Object.fromEntries(
+    Object.entries(data).filter(([key]) => !ELEMENT_DATA_KEY.test(key)),
+  ) as D;
+}
+
+/**
+ * Transaction filter: the event filter, after spans that reach another origin,
+ * web-vital element descriptors, and breadcrumbs are removed. A transaction
+ * needs none of them to show where time goes, and click breadcrumbs carry
+ * control labels such as the digits of a typed amount.
+ *
+ * @param event - Transaction event about to be sent.
+ * @returns The scrubbed transaction.
+ */
+function scrubTransaction(event: TransactionEvent): TransactionEvent {
+  const copy: TransactionEvent = { ...event };
+  delete copy.breadcrumbs;
+  const pageOrigin = originOf(copy.request?.url ?? '');
+  if (copy.spans !== undefined) {
+    copy.spans = copy.spans
+      .filter((span) => !isForeignSpan(span, pageOrigin))
+      .map((span) => ({ ...span, data: withoutElements(span.data) }));
+  }
+  const trace = copy.contexts?.trace;
+  if (trace?.data !== undefined) {
+    copy.contexts = { ...copy.contexts, trace: { ...trace, data: withoutElements(trace.data) } };
+  }
+  return scrubEvent(copy);
 }
 
 /**
@@ -431,7 +525,7 @@ export function sentryOptions(runtime: 'browser' | 'server'): SentryInitOptions 
     },
     integrations: (defaults) => defaults.filter((item) => !DROPPED_INTEGRATIONS.has(item.name)),
     beforeSend: scrubEvent,
-    beforeSendTransaction: scrubEvent,
+    beforeSendTransaction: scrubTransaction,
     beforeBreadcrumb: scrubBreadcrumb,
   };
   const environment = getSentryEnvironment();

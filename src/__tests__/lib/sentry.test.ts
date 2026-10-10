@@ -189,6 +189,7 @@ describe('beforeSendTransaction scrubber', () => {
   it('removes queries and fragments from span descriptions and span URLs', () => {
     const scrubbed = scrubTransaction({
       transaction: '/pl/',
+      request: { url: 'https://app.example/pl/?lightning=x' },
       spans: [
         {
           span_id: '1',
@@ -270,6 +271,132 @@ describe('beforeSendTransaction scrubber', () => {
     });
     expect(scrubbed.measurements).toEqual({ lcp: { value: 1200, unit: 'millisecond' } });
   });
+
+  /**
+   * A finished span for these tests.
+   *
+   * @param id - Span id.
+   * @param fields - Description and data.
+   * @returns The span.
+   */
+  function span(
+    id: string,
+    fields: { description?: string; data?: Record<string, string | number | boolean> },
+  ): NonNullable<Event['spans']>[number] {
+    return {
+      span_id: id,
+      trace_id: 'a'.repeat(32),
+      start_timestamp: 1,
+      status: 'ok',
+      data: fields.data ?? {},
+      ...(fields.description === undefined ? {} : { description: fields.description }),
+    };
+  }
+
+  it('drops spans that reach another origin and keeps the page origin', () => {
+    const scrubbed = scrubTransaction({
+      transaction: 'wallet.prepare',
+      request: { url: 'https://app.example/welcome' },
+      spans: [
+        span('own', {
+          description: 'GET https://app.example/gifts',
+          data: { 'url.full': 'https://app.example/gifts' },
+        }),
+        span('relative', { description: 'POST /messages/7/invoice' }),
+        span('lnurl', {
+          description: 'GET https://payee.example/.well-known/lnurlp/alice',
+          data: { 'url.full': 'https://payee.example/.well-known/lnurlp/alice' },
+        }),
+        span('chain', { description: 'GET https://chain.example/api/address/x' }),
+        span('http-url', { data: { 'http.url': 'http://app.example:8080/x' } }),
+        span('url', { data: { url: 'https://cdn.example/a.js' } }),
+        span('resource', { description: '/_next/a.js', data: { 'url.same_origin': false } }),
+        span('broken', { description: 'GET https://[bad/x' }),
+        span('number', { data: { 'url.full': 7 } }),
+      ],
+    });
+    expect(scrubbed.spans?.map((item) => item.span_id)).toEqual(['own', 'relative', 'number']);
+  });
+
+  it('drops every span with an absolute URL when the page origin is unknown', () => {
+    const scrubbed = scrubTransaction({
+      transaction: 'wallet.connect',
+      spans: [
+        span('absolute', { description: 'GET https://app.example/gifts' }),
+        span('relative', { description: 'GET /gifts' }),
+        span('plain', {}),
+      ],
+    });
+    expect(scrubbed.spans?.map((item) => item.span_id)).toEqual(['relative', 'plain']);
+  });
+
+  it('removes web-vital element descriptors from the trace and its spans', () => {
+    const scrubbed = scrubTransaction({
+      transaction: '/welcome',
+      request: { url: 'https://app.example/welcome' },
+      contexts: {
+        trace: {
+          trace_id: 'a'.repeat(32),
+          span_id: 'b'.repeat(16),
+          data: {
+            'lcp.element': 'body > img[alt="Photo by Ada"]',
+            'lcp.url': 'https://app.example/messages/7/photo',
+            'lcp.id': 'hero',
+            'lcp.size': 24_000,
+            'cls.source.1': 'div.card > p[title="Ada"]',
+            'url.template': '/welcome',
+          },
+        },
+      },
+      spans: [
+        span('vital', {
+          description: 'Main UI thread blocked',
+          data: { 'browser.web_vital.lcp.element': 'img', 'browser.web_vital.cls.source.2': 'p' },
+        }),
+      ],
+    });
+    expect(scrubbed.contexts?.trace?.data).toEqual({
+      'lcp.size': 24_000,
+      'url.template': '/welcome',
+    });
+    expect(scrubbed.spans?.[0]?.data).toEqual({});
+  });
+
+  it('drops breadcrumbs, so click labels such as typed amount digits are not sent', () => {
+    const crumbs: Breadcrumb[] = ['2', '1', '0'].map((digit) => ({
+      category: 'ui.click',
+      message: `button[aria-label="${digit}"]`,
+    }));
+    const scrubbed = scrubTransaction({ transaction: 'wallet.prepare', breadcrumbs: crumbs });
+    expect(scrubbed).not.toHaveProperty('breadcrumbs');
+    expect(on().beforeSend({ type: undefined, breadcrumbs: crumbs }).breadcrumbs).toHaveLength(3);
+  });
+
+  it('keeps only the sampling context and span count of the processing metadata', () => {
+    const scrubbed = scrubTransaction({
+      transaction: '/legal',
+      sdkProcessingMetadata: {
+        capturedSpanScope: { client: { options: { dsn: DSN } } },
+        dynamicSamplingContext: { trace_id: 'a'.repeat(32), transaction: '/pl/?lightning=x' },
+        spanCountBeforeProcessing: 4,
+      } as unknown as NonNullable<Event['sdkProcessingMetadata']>,
+    });
+    expect(scrubbed.sdkProcessingMetadata).toEqual({
+      dynamicSamplingContext: { trace_id: 'a'.repeat(32), transaction: '/pl/' },
+      spanCountBeforeProcessing: 4,
+    });
+    expect(
+      scrubTransaction({ transaction: 'x', sdkProcessingMetadata: {} }).sdkProcessingMetadata,
+    ).toEqual({});
+  });
+
+  it('leaves a transaction without spans or trace data intact', () => {
+    expect(scrubTransaction({ transaction: '/legal', contexts: {} })).toEqual({
+      transaction: '/legal',
+      type: 'transaction',
+      contexts: {},
+    });
+  });
 });
 
 describe('traceWallet', () => {
@@ -343,6 +470,15 @@ describe('beforeSend scrubber', () => {
 
   it('keeps the lnurlp path segment of a lightning address URL', () => {
     expect(scrubText('GET /.well-known/lnurlp/alice')).toBe('GET /.well-known/lnurlp/alice');
+  });
+
+  it('redacts base-chain addresses but not trace ids', () => {
+    const address = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+    expect(scrubText(`pay ${address} now`)).toBe('pay [Filtered] now');
+    expect(scrubText(`pay ${address.toUpperCase()}`)).toBe('pay [Filtered]');
+    expect(scrubText('trace bc1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')).toBe(
+      'trace bc1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    );
   });
 
   it('redacts bearer tokens', () => {
