@@ -52,6 +52,7 @@ export default defineConfig({
       NEXT_PUBLIC_PLATFORM_USERNAME: '21gifts',
       NEXT_PUBLIC_SENTRY_DSN: '',
       NEXT_PUBLIC_SENTRY_ENVIRONMENT: '',
+      NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: '',
       TZ: 'UTC',
     },
   },

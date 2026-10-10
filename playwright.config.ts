@@ -107,6 +107,7 @@ export default defineConfig({
         // Error reporting stays off in every Playwright run, whatever the shell sets.
         NEXT_PUBLIC_SENTRY_DSN: '',
         NEXT_PUBLIC_SENTRY_ENVIRONMENT: '',
+        NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: '',
       },
     },
   ],

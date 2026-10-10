@@ -20,7 +20,7 @@ beforeEach(() => {
   writeFileSync(join(root, 'entrypoint.sh'), SCRIPT.replaceAll('/app/', `${root}/`));
   writeFileSync(
     join(root, '.next', 'static', 'chunk.js'),
-    'a="__NEXT_PUBLIC_API_URL__";b="__NEXT_PUBLIC_SENTRY_DSN__";c="__NEXT_PUBLIC_SENTRY_ENVIRONMENT__";d="__NEXT_PUBLIC_PLATFORM_USERNAME__";',
+    'a="__NEXT_PUBLIC_API_URL__";b="__NEXT_PUBLIC_SENTRY_DSN__";c="__NEXT_PUBLIC_SENTRY_ENVIRONMENT__";d="__NEXT_PUBLIC_PLATFORM_USERNAME__";r="__NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE__";',
   );
   writeFileSync(join(root, 'server.js'), 'u="__NEXT_PUBLIC_PLATFORM_USERNAME__";');
 });
@@ -59,7 +59,7 @@ function output(): string {
 describe.skipIf(process.platform !== 'linux')('entrypoint.sh', () => {
   it('starts with the optional values unset and substitutes empty strings', () => {
     expect(run({ NEXT_PUBLIC_API_URL: 'https://api.example' }).status).toBe(0);
-    expect(output()).toBe('a="https://api.example";b="";c="";d="";u="";');
+    expect(output()).toBe('a="https://api.example";b="";c="";d="";r="";u="";');
   });
 
   it('substitutes the optional values when set', () => {
@@ -69,10 +69,11 @@ describe.skipIf(process.platform !== 'linux')('entrypoint.sh', () => {
         NEXT_PUBLIC_SENTRY_DSN: 'https://key@errors.example/1',
         NEXT_PUBLIC_SENTRY_ENVIRONMENT: 'staging',
         NEXT_PUBLIC_PLATFORM_USERNAME: '21gifts',
+        NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE: '0.25',
       }).status,
     ).toBe(0);
     expect(output()).toBe(
-      'a="https://api.example";b="https://key@errors.example/1";c="staging";d="21gifts";u="21gifts";',
+      'a="https://api.example";b="https://key@errors.example/1";c="staging";d="21gifts";r="0.25";u="21gifts";',
     );
   });
 

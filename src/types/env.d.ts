@@ -8,10 +8,11 @@
  * `NEXT_PUBLIC_APP_VERSION` is baked at `next build` via Docker ARG
  * `APP_VERSION` / `next.config.ts` env, not an `entrypoint.sh` placeholder.
  * `NEXT_PUBLIC_BREEZ_API_KEY` is read through `getBreezApiKey`.
- * `NEXT_PUBLIC_PLATFORM_USERNAME`, `NEXT_PUBLIC_SENTRY_DSN`, and
- * `NEXT_PUBLIC_SENTRY_ENVIRONMENT` are optional `entrypoint.sh` placeholders
- * read through `getPlatformUsername`, `getSentryDsn`, and
- * `getSentryEnvironment`.
+ * `NEXT_PUBLIC_PLATFORM_USERNAME`, `NEXT_PUBLIC_SENTRY_DSN`,
+ * `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, and `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`
+ * are optional `entrypoint.sh` placeholders read through
+ * `getPlatformUsername`, `getSentryDsn`, `getSentryEnvironment`, and
+ * `getSentryTracesSampleRate`.
  */
 declare global {
   namespace NodeJS {
@@ -61,6 +62,13 @@ declare global {
        * An optional `entrypoint.sh` placeholder. Tests assign it.
        */
       NEXT_PUBLIC_SENTRY_ENVIRONMENT?: string;
+      /**
+       * Optional share (0 to 1) of browser traces sent while error reporting is
+       * on. Unset, empty, or invalid uses the default (0.1).
+       * Read exclusively through `getSentryTracesSampleRate()` in `src/lib/config.ts`.
+       * An optional `entrypoint.sh` placeholder. Tests assign it.
+       */
+      NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE?: string;
       /**
        * Docker build-arg / CI deploy run number consumed by `next.config.ts`
        * when baking `NEXT_PUBLIC_APP_VERSION`. Not an `entrypoint.sh` placeholder.
