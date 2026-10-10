@@ -7,6 +7,7 @@ import { WRONG_ACCOUNT_ERROR } from '@/lib/api';
 import { isInAppBrowser, openInSystemBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import type { Account } from '@/lib/api-types';
 
 vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
 
@@ -80,6 +81,117 @@ afterEach(() => {
 });
 
 describe('LoginCard', () => {
+  describe('held-back session', () => {
+    beforeEach(() => {
+      useAuthStore.setState({ lockedSession: 'held', lockedName: 'Ada' });
+    });
+
+    afterEach(() => {
+      useAuthStore.setState({ lockedSession: null, lockedName: null });
+    });
+
+    it('is the ordinary login with a greeting, Open a new account, and no Log out', () => {
+      renderWithLocale(<LoginCard />);
+      expect(screen.getByText('Welcome back, Ada')).toBeTruthy();
+      expect(screen.getByRole('heading', { name: 'Log in with your device' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+      expect(screen.getByText('New to 21.gifts?')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Open a new account' })).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('greets nobody when the held account has no name', () => {
+      useAuthStore.setState({ lockedName: null });
+      renderWithLocale(<LoginCard />);
+      expect(screen.queryByText(/Welcome back/)).toBeNull();
+      expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+    });
+
+    it('logs in with one authenticate prompt, never the account question', () => {
+      renderWithLocale(<LoginCard />);
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      expect(authenticateSpy).toHaveBeenCalledTimes(1);
+      expect(loginSpy).not.toHaveBeenCalled();
+    });
+
+    it.each<PasskeyStatus>(['idle', 'error', 'unknown'])(
+      'stays on the held view with the retry message after a %s prompt',
+      (after) => {
+        const view = renderWithLocale(<LoginCard />);
+        fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+        mockPasskey(after, 'Failed');
+        view.rerender(<LoginCard />);
+        expect(screen.getByRole('alert').textContent).toBe(
+          'Something went wrong. Please try again.',
+        );
+        expect(screen.getByText('Welcome back, Ada')).toBeTruthy();
+        expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+        expect(screen.queryByText('This passkey is not an account')).toBeNull();
+      },
+    );
+
+    it('shows a refused account on the held view and clears it on the next Log in', () => {
+      const view = renderWithLocale(<LoginCard />);
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      mockPasskey('error', WRONG_ACCOUNT_ERROR);
+      view.rerender(<LoginCard />);
+      expect(screen.getByRole('alert').textContent).toBe(
+        'You signed in with the wrong account. Please try again with the correct account.',
+      );
+      expect(screen.getByText('Welcome back, Ada')).toBeTruthy();
+      act(() => {
+        useAuthStore.setState({ wrongAccount: true });
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      expect(useAuthStore.getState().wrongAccount).toBe(false);
+      expect(authenticateSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('shows the failed wallet open as the retry message', () => {
+      renderWithLocale(<LoginCard heldProblem="failed" />);
+      expect(screen.getByRole('alert').textContent).toBe('Something went wrong. Please try again.');
+    });
+
+    it('shows a passkey without PRF as the one no-wallet sentence', () => {
+      renderWithLocale(<LoginCard heldProblem="noPrf" />);
+      expect(screen.getByRole('alert').textContent).toBe(
+        'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+      );
+    });
+
+    it('opens the name form for a new account and clears the retry message', () => {
+      const view = renderWithLocale(<LoginCard />);
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      mockPasskey('idle');
+      view.rerender(<LoginCard />);
+      expect(screen.getByRole('alert')).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Open a new account' }));
+      expect(registerSpy).toHaveBeenCalledTimes(1);
+      mockPasskey('name');
+      view.rerender(<LoginCard />);
+      expect(screen.getByRole('heading', { name: 'Choose your name' })).toBeTruthy();
+      mockPasskey('error', 'Failed to start passkey registration: 503');
+      view.rerender(<LoginCard />);
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+      expect(screen.queryByText('Welcome back, Ada')).toBeNull();
+    });
+
+    it('forgets a dismissed try once a login signs in', () => {
+      const view = renderWithLocale(<LoginCard />);
+      fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+      act(() => {
+        useAuthStore.setState({ account: { id: 'a' } as Account });
+      });
+      expect(cancelPasskeySpy).toHaveBeenCalled();
+      act(() => {
+        useAuthStore.setState({ account: null });
+      });
+      view.rerender(<LoginCard />);
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+  });
+
   it('shows the installed iOS version when the phone is below iOS 18', async () => {
     Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
@@ -102,6 +214,26 @@ describe('LoginCard', () => {
       await Promise.resolve();
     });
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('says this phone or browser cannot hold a wallet when the new passkey has no PRF', async () => {
+    mockPasskey('error', 'wallet.prfUnsupported');
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+    );
+    expect(screen.queryByText('Something went wrong. Please try again.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+  });
+
+  it('keeps the generic error for a failure that is not about PRF', async () => {
+    mockPasskey('error', 'Failed to start passkey registration: 503');
+    renderWithLocale(<LoginCard />);
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      'Something went wrong. Please try again.',
+    );
   });
 
   it('shows the iOS version as the error when registration could not finish', async () => {
@@ -148,11 +280,22 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('shows a single Log in button when logged out and idle', () => {
+  it('shows Log in and Open a new account when logged out and idle', () => {
     renderWithLocale(<LoginCard />);
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.map((button) => button.textContent)).toEqual(['Log in', 'Open a new account']);
+    expect(screen.getByText('New to 21.gifts?')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /^log in$/i }));
     expect(loginSpy).toHaveBeenCalledTimes(1);
-    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(registerSpy).not.toHaveBeenCalled();
+  });
+
+  it('opens the name form from idle without starting login', () => {
+    renderWithLocale(<LoginCard />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open a new account' }));
+    expect(registerSpy).toHaveBeenCalledTimes(1);
+    expect(registerSpy).toHaveBeenCalledWith();
+    expect(loginSpy).not.toHaveBeenCalled();
   });
 
   it('shows the account choice with existing and new-account buttons', () => {

@@ -14,8 +14,11 @@ export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>
   children: ReactNode;
   /** Filled, bordered, or bare. Default `secondary`. */
   variant?: IconButtonVariant;
-  /** Painted size. Default `md`. `sm` keeps 24px paint with a 44px hit slop. */
-  size?: 'sm' | 'md' | 'lg';
+  /**
+   * Painted size. Default `md`. `sm` keeps 24px paint with a 44px hit slop.
+   * `xl` (56px) is the floating **+** on the forum home.
+   */
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   /** App tokens or marketing ink. Default `app`. */
   tone?: IconButtonTone;
 }
@@ -37,10 +40,17 @@ const SIZE_CLASS: Record<NonNullable<IconButtonProps['size']>, string> = {
   sm: "relative isolate h-6 w-6 before:absolute before:content-[''] before:block before:-inset-2.5 before:min-h-11 before:min-w-11 before:rounded-full",
   md: 'h-11 w-11',
   lg: 'h-12 w-12',
+  xl: 'h-14 w-14',
 };
 
 /**
  * Icon-only control with a required accessible name.
+ *
+ * The `sm` size is `relative`, because its 44px hit slop is positioned against
+ * the button. An `absolute` class on an `sm` button loses to that, so a close
+ * over card content goes in a positioned wrapper instead:
+ * `absolute right-3 top-3`, or `absolute left-3 top-3` where back would be
+ * (see `docs/ui.md`).
  *
  * @param props - Native button props plus variant, size, and tone (default `app`).
  * @returns The icon button element.

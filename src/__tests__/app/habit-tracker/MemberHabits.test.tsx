@@ -130,7 +130,7 @@ function periodControl(day: string, name: string): HTMLElement {
   return within(row).getByRole('button', { name });
 }
 
-function isGiftStats(input: RequestInfo | URL): boolean {
+function isRateRequest(input: RequestInfo | URL): boolean {
   let url = '';
   if (typeof input === 'string') {
     url = input;
@@ -139,7 +139,7 @@ function isGiftStats(input: RequestInfo | URL): boolean {
   } else {
     url = input.url;
   }
-  return url.includes('/gifts/stats');
+  return url.includes('/fx/spot');
 }
 
 function formsNamed(buttonName: string): HTMLFormElement[] {
@@ -246,8 +246,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           return Promise.resolve(json({ ok: true }));
@@ -438,8 +438,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -505,8 +505,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -569,8 +569,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -664,8 +664,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -716,8 +716,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         const auth = `${init?.method === 'POST' ? 'POST' : 'GET'} ${new Headers(init?.headers).get('Authorization') ?? ''}`;
         if (init?.method === 'POST') {
@@ -817,8 +817,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -888,8 +888,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         callAuth.push(
           `${init?.method === 'POST' ? 'POST' : 'GET'} ${new Headers(init?.headers).get('Authorization') ?? ''}`,
@@ -951,8 +951,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -1009,8 +1009,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -1085,8 +1085,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -1188,8 +1188,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -1237,8 +1237,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -1284,8 +1284,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -1356,8 +1356,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           const parsed = JSON.parse(String(init.body)) as { action?: string };
@@ -1475,8 +1475,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -1532,8 +1532,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           const parsed = JSON.parse(String(init.body)) as { action?: string };
@@ -1610,8 +1610,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -1654,8 +1654,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         if (init?.method === 'POST') {
           const parsed = JSON.parse(String(init.body)) as { action?: string; id?: string };
@@ -1701,8 +1701,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         if (init?.method === 'POST') {
           return json({ error: 'down' }, 500);
@@ -1727,8 +1727,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -1765,8 +1765,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -1833,8 +1833,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -1894,8 +1894,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -1937,8 +1937,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -1994,8 +1994,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           return Promise.resolve(json({ error: 'Invalid name' }, 400));
@@ -2049,8 +2049,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         if (init?.method === 'POST') {
           const headers = new Headers(init.headers);
@@ -2278,8 +2278,10 @@ describe('MemberHabits', () => {
     fireEvent.change(amount, { target: { value: '23' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByText('Pay ₿23')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+    expect(
+      screen.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+    ).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     expect(screen.queryByText('lnbc23')).toBeNull();
     expect(screen.queryByDisplayValue('lnbc23')).toBeNull();
 
@@ -2327,8 +2329,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -2398,8 +2400,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         return json(payload());
       }),
@@ -2434,8 +2436,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         return json(payload());
       }),
@@ -2465,8 +2467,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
-        if (isGiftStats(input)) {
-          return json({ spendOverTime: [] });
+        if (isRateRequest(input)) {
+          return json({ asOf: null, source: null, rates: {} });
         }
         return json(payload());
       }),
@@ -2516,8 +2518,8 @@ describe('MemberHabits', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        if (isGiftStats(input)) {
-          return Promise.resolve(json({ spendOverTime: [] }));
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
         }
         if (init?.method === 'POST') {
           posts += 1;
@@ -2591,7 +2593,7 @@ describe('MemberHabits', () => {
     });
   });
 
-  it('does not invoice until the gift-day rate has settled', async () => {
+  it('does not invoice until the spot rate read has settled', async () => {
     let releaseStats!: (value: Response) => void;
     const posts: string[] = [];
     vi.stubGlobal(
@@ -2599,7 +2601,7 @@ describe('MemberHabits', () => {
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url =
           typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-        if (url.includes('/gifts/stats')) {
+        if (url.includes('/fx/spot')) {
           return new Promise<Response>((resolve) => {
             releaseStats = resolve;
           });
@@ -2626,7 +2628,7 @@ describe('MemberHabits', () => {
     expect(posts).toEqual([]);
 
     await act(async () => {
-      releaseStats(json({ spendOverTime: [] }));
+      releaseStats(json({ asOf: null, source: null, rates: {} }));
     });
     await waitFor(() => {
       expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
@@ -2743,7 +2745,7 @@ describe('MemberHabits', () => {
         if (url.includes('/habits')) {
           return new Promise<Response>(() => undefined);
         }
-        return json({ spendOverTime: [] });
+        return json({ asOf: null, source: null, rates: {} });
       }),
     );
     useAuthStore.setState({ session: 'tok', account: owner });
@@ -2777,7 +2779,7 @@ describe('MemberHabits', () => {
         const url =
           typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
         if (!url.includes('/habits')) {
-          return json({ spendOverTime: [] });
+          return json({ asOf: null, source: null, rates: {} });
         }
         return new Promise<Response>((resolve) => {
           pending.push(resolve);

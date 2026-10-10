@@ -13,6 +13,11 @@
 # An empty value counts as missing — a silently empty API URL would only
 # surface as broken requests much later.
 #
+# Optional placeholders are the exception: the variables in OPTIONAL_VARS may
+# be unset or empty, so their placeholder is substituted with an empty string
+# and the container starts. The app reads that empty string as unset: no
+# donation address, no error reporting, or the default environment name.
+#
 # Substitution happens in place, so it applies once per container lifetime;
 # recreate the container (do not restart it with different env) to change
 # configuration.
@@ -20,6 +25,16 @@
 set -eu
 
 SEARCH_PATHS='/app/.next /app/server.js'
+
+# Variables whose placeholder may be substituted with an empty string.
+OPTIONAL_VARS='NEXT_PUBLIC_PLATFORM_USERNAME NEXT_PUBLIC_SENTRY_DSN NEXT_PUBLIC_SENTRY_ENVIRONMENT'
+
+is_optional() {
+  case " ${OPTIONAL_VARS} " in
+    *" $1 "*) return 0 ;;
+  esac
+  return 1
+}
 
 for path in $SEARCH_PATHS; do
   if [ ! -e "$path" ]; then
@@ -49,7 +64,7 @@ for placeholder in $placeholders; do
   var_name=${var_name%__}
 
   eval "value=\${${var_name}:-}"
-  if [ -z "$value" ]; then
+  if [ -z "$value" ] && ! is_optional "$var_name"; then
     echo "entrypoint.sh: ${var_name} is unset or empty, but the build output references ${placeholder}. Refusing to start." >&2
     exit 1
   fi
@@ -66,7 +81,11 @@ for placeholder in $placeholders; do
     sed -i "s|${placeholder}|${value}|g" "$file"
   done
 
-  echo "entrypoint.sh: substituted ${placeholder} with the value of ${var_name}"
+  if [ -z "$value" ]; then
+    echo "entrypoint.sh: substituted ${placeholder} with an empty string (${var_name} is optional and unset)"
+  else
+    echo "entrypoint.sh: substituted ${placeholder} with the value of ${var_name}"
+  fi
 done
 
 exec "$@"

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { SegmentedControl } from '@/components/ui';
-import { postNotificationLevel } from '@/lib/api';
+import { postHeartNotifications, postNotificationLevel } from '@/lib/api';
 import { accountNotificationLevel, type NotificationLevel } from '@/lib/api-types';
 import { disablePush, enablePush, isIosSafari, isStandaloneDisplay } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
@@ -14,14 +14,16 @@ type DevicePushValue = 'on' | 'off';
 
 /**
  * Profile identity-card Notifications section: uppercase heading, a three-stage
- * `SegmentedControl` (All / Active / Mentions) whenever a session exists, and a
- * second On / Off `SegmentedControl` (`aria.push`) when Push/Service Worker APIs
- * are ready. The level control stays visible while Push APIs are inspected and
- * when they are missing (in-app list still uses the level). Renders nothing
- * without a session. On iPhone Safari outside standalone, also shows an install
- * hint under the device pill. A successful level POST merges
- * `notificationLevel` into the current store account and ignores the response
- * if the session no longer matches.
+ * `SegmentedControl` (All / Active / Mentions) whenever a session exists, a
+ * Hearts On / Off `SegmentedControl` under that level, and a This-device On / Off
+ * `SegmentedControl` (`aria.push`) when Push/Service Worker APIs are ready. The
+ * level control stays visible while Push APIs are inspected and when they are
+ * missing (in-app list still uses the level). Renders nothing without a session.
+ * On iPhone Safari outside standalone, also shows an install hint under the
+ * device pill. A successful level POST merges `notificationLevel` into the
+ * current store account and ignores the response if the session no longer
+ * matches. Hearts default on when `notifyHearts` is omitted; a successful POST
+ * `/me/heart-notifications` merges `notifyHearts`.
  *
  * @returns The notifications section, or `null` without a session.
  */
@@ -34,10 +36,13 @@ export function PushToggle(): ReactElement | null {
   const [subscribed, setSubscribed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [levelBusy, setLevelBusy] = useState(false);
+  const [heartBusy, setHeartBusy] = useState(false);
   const [showInstallHint, setShowInstallHint] = useState(false);
   const [errorKey, setErrorKey] = useState<'profile.push.unavailable' | null>(null);
   const [levelError, setLevelError] = useState(false);
+  const [heartError, setHeartError] = useState(false);
   const selected: NotificationLevel = account === null ? 'all' : accountNotificationLevel(account);
+  const heartsEnabled = account?.notifyHearts ?? true;
 
   useEffect(() => {
     let cancelled = false;
@@ -145,6 +150,40 @@ export function PushToggle(): ReactElement | null {
     [levelBusy, selected, session, setAccount],
   );
 
+  const onHeartNotifyChange = useCallback(
+    async (next: DevicePushValue): Promise<void> => {
+      const enabled = next === 'on';
+      if (heartBusy || enabled === heartsEnabled) {
+        return;
+      }
+      /* v8 ignore next 3 -- the control is unmounted without a session */
+      if (session === null) {
+        return;
+      }
+      setHeartBusy(true);
+      setHeartError(false);
+      try {
+        const updated = await postHeartNotifications(session, enabled);
+        if (useAuthStore.getState().session !== session) {
+          return;
+        }
+        const current = useAuthStore.getState().account;
+        if (current === null) {
+          return;
+        }
+        setAccount({
+          ...current,
+          notifyHearts: updated.notifyHearts === undefined ? enabled : updated.notifyHearts,
+        });
+      } catch {
+        setHeartError(true);
+      } finally {
+        setHeartBusy(false);
+      }
+    },
+    [heartBusy, heartsEnabled, session, setAccount],
+  );
+
   if (session === null) {
     return null;
   }
@@ -177,6 +216,27 @@ export function PushToggle(): ReactElement | null {
       {levelError ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t('profile.push.level.error')}
+        </p>
+      ) : null}
+      <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+        {t('profile.heartNotify.label')}
+      </p>
+      <SegmentedControl
+        tone="neutral"
+        value={heartsEnabled ? 'on' : 'off'}
+        options={[
+          { value: 'on' as const, label: t('profile.push.on') },
+          { value: 'off' as const, label: t('profile.push.off') },
+        ]}
+        onChange={(next) => {
+          void onHeartNotifyChange(next);
+        }}
+        ariaLabel={t('profile.heartNotify.label')}
+      />
+      <p className="text-sm text-app-muted">{t('profile.heartNotify.hint')}</p>
+      {heartError ? (
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('profile.heartNotify.error')}
         </p>
       ) : null}
       {phase === 'ready' ? (

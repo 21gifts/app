@@ -57,4 +57,37 @@ describe('LegalPage', () => {
       expect(link.getAttribute('href')).toBe('/contact');
     }
   });
+
+  it('describes only the in-app wallet and names no other wallet app', () => {
+    const { container } = render(<LegalPage />);
+    expect(container.textContent).toContain('your own Bitcoin wallet');
+    expect(container.textContent).not.toMatch(
+      new RegExp(['wallet', 'of', 'satoshi'].join(' '), 'i'),
+    );
+  });
+
+  it('links the Terms of Use from the imprint', () => {
+    render(<LegalPage />);
+    expect(screen.getByRole('link', { name: 'Terms of Use' }).getAttribute('href')).toBe('/terms');
+  });
+
+  it('keeps what is true about the website and no longer promises no tracking', () => {
+    const { container } = render(<LegalPage />);
+    expect(container.textContent).toContain(
+      'The website does not run advertising and does not load analytics scripts.',
+    );
+    expect(container.textContent).not.toMatch(/sell data/i);
+    expect(container.textContent).not.toMatch(/track visitors/i);
+  });
+
+  it('points wallet and payment data to the Wallet and data section of the Terms of Use', () => {
+    const { container } = render(<LegalPage />);
+    expect(screen.getByRole('heading', { name: 'Wallet and payment data', level: 3 })).toBeTruthy();
+    expect(container.textContent).toContain(
+      '21.gifts sees the balance and the complete transaction history of the wallet in the app.',
+    );
+    expect(screen.getByRole('link', { name: 'Wallet and data' }).getAttribute('href')).toBe(
+      '/terms#wallet-and-data',
+    );
+  });
 });

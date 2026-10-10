@@ -6,18 +6,21 @@ import { useLayoutEffect, useState, type ReactElement, type ReactNode } from 're
 import { useChromeBack } from '@/components/ViewHistoryRoot';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Wordmark } from '@/components/ui';
-import { goToPreviousView, previousViewPath } from '@/lib/view-history';
+import { takeStepBack, markBackNavigation, previousViewPath } from '@/lib/view-history';
 
 const BACK_CLASS = 'inline-flex h-11 w-11 items-center justify-center rounded-full transition';
 
 /** Props for {@link ProfileChromeLeft}. */
 export interface ProfileChromeLeftProps {
   /**
-   * Unmodified primary click. The link does not follow its href. Modified
-   * clicks still do. Wallet uses this for one in-page step: hide the words or
-   * close Advanced functions before {@link goToPreviousView}.
+   * Unmodified primary click, before the link leaves. Return `true` when it
+   * took an in-page step: the link then does not follow its href. Return
+   * `false` to let the arrow leave for the previous view. Modified clicks
+   * always follow the href. Wallet uses this for one in-page step: hide the
+   * words, close a send step, or return from Send or Receive to the wallet
+   * home.
    */
-  onBackClick?: () => void;
+  onBackClick?: () => boolean;
   /** Wordmark destination. Default `/welcome`. Ignored when `wordmark` is set. */
   wordmarkHref?: string;
   /** Replaces the default wordmark. The wordmark is not the back control. */
@@ -25,21 +28,25 @@ export interface ProfileChromeLeftProps {
   /** App shell or the ink marketing header. Default `app`. */
   tone?: 'app' | 'dark';
   /**
-   * Omit the arrow when this tab has no earlier in-app view. `/welcome` uses
-   * this because the fallback would be the current page. An ask or shop
-   * wizard override still shows.
+   * Omit the history arrow whatever this tab's view stack holds. `/welcome`
+   * uses this: the forum home has no back arrow. An ask or shop wizard
+   * override still shows.
    */
-  hideWithoutHistory?: boolean;
+  hideHistoryArrow?: boolean;
 }
 
 /**
  * Shared top-left chrome: one icon-only back plus wordmark.
  *
  * Back is a link to the previous in-app view, or `/welcome` when this tab has
- * none. The first client render matches SSR (`/welcome`, `profile.back`). An
+ * none. When this document pushed the current entry on top of that view
+ * ({@link takeStepBack}), a plain click takes the root's `stepBack` (`router.back()`), the
+ * same step as the browser's own back. Otherwise it marks that path with
+ * {@link markBackNavigation} and the link opens it client-side. Either way the
+ * document and the open wallet in tab memory stay. The first client render matches SSR (`/welcome`, `profile.back`). An
  * ask or shop wizard override replaces the history link with a button. The wordmark is
- * not the back control. `hideWithoutHistory` omits the arrow only when there
- * is no earlier view and no wizard override.
+ * not the back control. `hideHistoryArrow` omits the history arrow; a wizard
+ * override still shows.
  *
  * @param props - Optional plain-click handler, wordmark, tone, and history hide.
  * @returns The back control and wordmark.
@@ -49,10 +56,10 @@ export function ProfileChromeLeft({
   wordmarkHref = '/welcome',
   wordmark,
   tone = 'app',
-  hideWithoutHistory = false,
+  hideHistoryArrow = false,
 }: ProfileChromeLeftProps = {}): ReactElement {
   const { t } = useTranslations();
-  const { override } = useChromeBack();
+  const { override, stepBack } = useChromeBack();
   const [target, setTarget] = useState<{
     href: string;
     labelKey: 'nav.back' | 'profile.back';
@@ -69,7 +76,6 @@ export function ProfileChromeLeft({
     tone === 'dark'
       ? `${BACK_CLASS} text-paper/70 hover:bg-paper/10 hover:text-paper`
       : `${BACK_CLASS} text-app-muted hover:bg-app-hover hover:text-app-fg`;
-  const showHistoryArrow = !hideWithoutHistory || target.labelKey === 'nav.back';
   const mark =
     wordmark !== undefined ? (
       wordmark
@@ -88,7 +94,7 @@ export function ProfileChromeLeft({
         >
           <ArrowLeft aria-hidden="true" className="h-5 w-5" />
         </button>
-      ) : showHistoryArrow ? (
+      ) : !hideHistoryArrow ? (
         <Link
           href={target.href}
           aria-label={t(target.labelKey)}
@@ -103,12 +109,21 @@ export function ProfileChromeLeft({
             ) {
               return;
             }
-            event.preventDefault();
-            if (onBackClick !== undefined) {
-              onBackClick();
+            if (onBackClick !== undefined && onBackClick()) {
+              event.preventDefault();
               return;
             }
-            goToPreviousView();
+            if (event.detail > 1) {
+              // A double click: the first click already left or stepped back.
+              event.preventDefault();
+              return;
+            }
+            if (stepBack !== null && takeStepBack(target.href)) {
+              event.preventDefault();
+              stepBack();
+              return;
+            }
+            markBackNavigation(target.href);
           }}
         >
           <ArrowLeft aria-hidden="true" className="h-5 w-5" />

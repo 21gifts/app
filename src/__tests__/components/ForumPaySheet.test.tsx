@@ -38,7 +38,6 @@ function sheet(
       onPayCancel={onPayCancel}
       rateDay={DAY}
       {...(extra?.ratePending === undefined ? {} : { ratePending: extra.ratePending })}
-      showPaymentQr={false}
       onInteract={vi.fn()}
     />,
   );
@@ -56,7 +55,12 @@ describe('ForumPaySheet', () => {
     expect(screen.getByText('$0.02')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(onPaySubmit).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(close.parentElement?.className).toBe('absolute left-3 top-3');
+    const form = close.closest('[data-pay-sheet]');
+    expect(form?.className).toContain('pl-12');
+    expect(form?.className).toContain('pt-12');
+    fireEvent.click(close);
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 
@@ -87,7 +91,10 @@ describe('ForumPaySheet', () => {
     const { onPayCancel } = sheet(null, true);
     expect(screen.getByText(/Pay ₿21/)).toBeTruthy();
     expect(screen.getByText('$0.02')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+    expect(
+      screen.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+    ).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     expect(screen.queryByLabelText('Amount')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onPayCancel).toHaveBeenCalledTimes(1);

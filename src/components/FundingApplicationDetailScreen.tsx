@@ -12,6 +12,7 @@ import { fetchFundingApplication, postFundingAdmit, postFundingReject } from '@/
 import type { FundingApplicationDetail } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { roleAtLeast } from '@/lib/roles';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -111,7 +112,7 @@ export function FundingApplicationDetailScreen({
     void (async () => {
       try {
         await run(session, accountId);
-        router.push('/grants/applications');
+        returnToView('/grants/applications', router);
       } catch {
         setDecideFailed(true);
         setDeciding(false);
@@ -154,12 +155,12 @@ export function FundingApplicationDetailScreen({
           {step === 'truth' ? t('funding.review.truth') : t('funding.review.question.staff')}
         </p>
         {step === 'principles' ? (
-          <a
-            href="https://21.gifts/about"
+          <Link
+            href="/about"
             className="text-center text-sm text-app-fg underline underline-offset-2"
           >
             {t('nav.about')}
-          </a>
+          </Link>
         ) : null}
         {detail.messages.length === 0 ? (
           <p className="text-center text-sm text-app-muted">{t('funding.detail.emptyPosts')}</p>

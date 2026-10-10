@@ -1,7 +1,7 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PushToggle } from '@/components/PushToggle';
-import { postNotificationLevel } from '@/lib/api';
+import { postHeartNotifications, postNotificationLevel } from '@/lib/api';
 import type { Account, NotificationLevel } from '@/lib/api-types';
 import { disablePush, enablePush, isIosSafari, isStandaloneDisplay } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
@@ -16,6 +16,7 @@ vi.mock('@/lib/push', () => ({
 
 vi.mock('@/lib/api', () => ({
   postNotificationLevel: vi.fn(),
+  postHeartNotifications: vi.fn(),
 }));
 
 const VIEW_KEY = 'a'.repeat(64);
@@ -26,7 +27,7 @@ const ACCOUNT: Account = {
   role: 'basis',
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1,
@@ -72,6 +73,10 @@ beforeEach(() => {
   vi.mocked(postNotificationLevel).mockImplementation(async (_session, level) =>
     accountWithLevel(level),
   );
+  vi.mocked(postHeartNotifications).mockImplementation(async (_session, enabled) => ({
+    ...ACCOUNT,
+    notifyHearts: enabled,
+  }));
   stubPushApis();
 });
 
@@ -432,5 +437,126 @@ describe('PushToggle', () => {
     renderWithLocale(<PushToggle />);
     expect(screen.getByRole('button', { name: 'All' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'All' }).getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('selects Hearts On when notifyHearts is omitted', () => {
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    expect(within(hearts).getByRole('button', { name: 'On' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(within(hearts).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    );
+  });
+
+  it('posts enabled false when Hearts is turned off', async () => {
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    await waitFor(() => {
+      expect(postHeartNotifications).toHaveBeenCalledWith('tok', false);
+    });
+    expect(useAuthStore.getState().account?.notifyHearts).toBe(false);
+    expect(within(hearts).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
+  it('does not post when Hearts On is already selected', () => {
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'On' }));
+    expect(postHeartNotifications).not.toHaveBeenCalled();
+  });
+
+  it('ignores a second Hearts Off click while the POST is in flight', async () => {
+    let resolvePost: ((account: Account) => void) | undefined;
+    vi.mocked(postHeartNotifications).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePost = resolve;
+        }),
+    );
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    await waitFor(() => {
+      expect(postHeartNotifications).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    expect(postHeartNotifications).toHaveBeenCalledTimes(1);
+    resolvePost?.({ ...ACCOUNT, notifyHearts: false });
+    await waitFor(() => {
+      expect(within(hearts).getByRole('button', { name: 'Off' }).getAttribute('aria-pressed')).toBe(
+        'true',
+      );
+    });
+  });
+
+  it('shows an error when the heart POST fails', async () => {
+    vi.mocked(postHeartNotifications).mockRejectedValue(new Error('boom'));
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Could not save the heart setting.')).toBeTruthy();
+  });
+
+  it('does not update notifyHearts when the session changes during the heart POST', async () => {
+    let resolvePost: ((account: Account) => void) | undefined;
+    vi.mocked(postHeartNotifications).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePost = resolve;
+        }),
+    );
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    await waitFor(() => {
+      expect(postHeartNotifications).toHaveBeenCalledTimes(1);
+    });
+    useAuthStore.setState({ session: 'other' });
+    await act(async () => {
+      resolvePost?.({ ...ACCOUNT, notifyHearts: false });
+    });
+    expect(useAuthStore.getState().session).toBe('other');
+    expect(useAuthStore.getState().account?.notifyHearts).toBeUndefined();
+  });
+
+  it('does not restore a null account while the session remains during the heart POST', async () => {
+    let resolvePost: ((account: Account) => void) | undefined;
+    vi.mocked(postHeartNotifications).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePost = resolve;
+        }),
+    );
+    const setAccountSpy = vi.spyOn(useAuthStore.getState(), 'setAccount');
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    await waitFor(() => {
+      expect(postHeartNotifications).toHaveBeenCalledTimes(1);
+    });
+    useAuthStore.setState({ account: null });
+    await act(async () => {
+      resolvePost?.({ ...ACCOUNT, notifyHearts: false });
+    });
+    expect(useAuthStore.getState().account).toBeNull();
+    expect(useAuthStore.getState().session).toBe('tok');
+    expect(setAccountSpy).not.toHaveBeenCalled();
+    setAccountSpy.mockRestore();
+  });
+
+  it('uses the posted heart flag when the response omits notifyHearts', async () => {
+    vi.mocked(postHeartNotifications).mockResolvedValueOnce(ACCOUNT);
+    renderWithLocale(<PushToggle />);
+    const hearts = screen.getByRole('group', { name: 'Hearts' });
+    fireEvent.click(within(hearts).getByRole('button', { name: 'Off' }));
+    await waitFor(() => {
+      expect(useAuthStore.getState().account?.notifyHearts).toBe(false);
+    });
   });
 });

@@ -55,7 +55,7 @@ function bodyToDescription(body: readonly string[]): string {
 /**
  * Parse `docs/handbook/screens.md` into a map of catalog topic id → description.
  *
- * Keys match the screen-variant catalog (`/:default`, `/welcome:pay-qr`, …).
+ * Keys match the screen-variant catalog (`/:default`, `/welcome:wallet-pay-unavailable`, …).
  * Descriptions are the paragraphs under each `### Variant:` heading (English
  * handbook body; catalog exception), excluding image-only lines, with
  * bold and inline-code markers unwrapped. Empty descriptions are omitted.

@@ -13,15 +13,19 @@ import {
 import { androidInstalledVersion, androidPasskeyBlock } from '@/lib/android-passkey';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { iosInstalledVersion, iosPasskeyBlock } from '@/lib/ios-passkey';
+import { getBreezApiKey } from '@/lib/config';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
-import { obtainPrfFirst, prfEvalFirstSalt } from '@/lib/prf-mnemonic';
+import { obtainPrfFirst, prfEvalFirstSalt, readPrfFirst } from '@/lib/prf-mnemonic';
+import { rememberPhraseFromPrf } from '@/lib/wallet/wallet-phrase';
 import {
   base64UrlToBytes,
+  bytesToBase64Url,
   creationOptionsFromJSON,
   credentialToJSON,
   requestOptionsFromJSON,
 } from '@/lib/webauthn-browser';
 import { reportDiagnostic, type DiagnosticReport } from '@/lib/diagnostics';
+import { logInteraction } from '@/lib/interaction-log';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Exact api 409 when the chosen username is taken during register. */
@@ -471,7 +475,54 @@ class SupersededError extends Error {
 }
 
 /**
+ * Reads PRF bytes from a login assertion when the Breez API key is set and the
+ * request used the app's own PRF salt. Reports presence only (never the bytes).
+ * A missing, unreadable, or different salt and a throw or empty result count as absent.
+ *
+ * @param credential - WebAuthn assertion.
+ * @param request - Browser request that produced the assertion.
+ * @param challengeId - Challenge id from authenticate-begin.
+ * @param stage - `login` or `authenticate` entry point.
+ * @returns PRF first bytes when present, otherwise `undefined`.
+ */
+async function readLoginPrfFirst(
+  credential: PublicKeyCredential,
+  request: CredentialRequestOptions,
+  challengeId: string,
+  stage: 'login' | 'authenticate',
+): Promise<Uint8Array | undefined> {
+  if (getBreezApiKey() === null) {
+    return undefined;
+  }
+  let prfFirst: Uint8Array | undefined;
+  try {
+    const requestSalt = request.publicKey?.extensions?.prf?.eval?.first;
+    if (requestSalt !== undefined) {
+      const expectedSalt = await prfEvalFirstSalt();
+      const requestBytes = ArrayBuffer.isView(requestSalt)
+        ? new Uint8Array(requestSalt.buffer, requestSalt.byteOffset, requestSalt.byteLength)
+        : new Uint8Array(requestSalt);
+      if (bytesToBase64Url(requestBytes) === bytesToBase64Url(expectedSalt)) {
+        prfFirst = readPrfFirst(credential);
+      }
+    }
+  } catch {
+    prfFirst = undefined;
+  }
+  const present = prfFirst !== undefined && prfFirst.byteLength > 0;
+  reportDiagnostic({
+    event: 'client.passkey.login.prf',
+    prfPresent: present,
+    stage,
+    challengeId,
+  });
+  return present ? prfFirst : undefined;
+}
+
+/**
  * Drives passkey register / authenticate. A run id ignores superseded clicks.
+ * When the Breez API key is set, a successful ceremony may remember the
+ * recovery phrase in tab memory from PRF output.
  *
  * @returns Status plus login, register, submitName, authenticate, retry, cancel, and error.
  */
@@ -682,7 +733,16 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         throw error;
       }
       guard(runId);
+      // Start the derivation before the session is visible, so a wallet unlock
+      // that reacts to the new session waits for it instead of prompting again.
+      void rememberPhraseFromPrf({
+        prfFirst,
+        credentialId: publicKeyCredential.id,
+        account: session.account,
+        sessionToken: session.token,
+      });
       setAuth(session.token, session.account);
+      logInteraction('signup_completed');
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;
       setLastError(null);
@@ -742,6 +802,13 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         throw error;
       }
       const publicKeyCredential = credential as PublicKeyCredential;
+      const prfFirst = await readLoginPrfFirst(
+        publicKeyCredential,
+        request,
+        begin.challengeId,
+        entryKindRef.current === 'login' ? 'login' : 'authenticate',
+      );
+      guard(runId);
       let session: Awaited<ReturnType<typeof finishPasskeyAuthentication>>;
       try {
         session = await finishPasskeyAuthentication(
@@ -767,7 +834,16 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         throw error;
       }
       guard(runId);
+      // Start the derivation before the session is visible, so a wallet unlock
+      // that reacts to the new session waits for it instead of prompting again.
+      void rememberPhraseFromPrf({
+        prfFirst,
+        credentialId: publicKeyCredential.id,
+        account: session.account,
+        sessionToken: session.token,
+      });
       setAuth(session.token, session.account);
+      logInteraction('login');
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;
       setLastError(null);
@@ -808,7 +884,11 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         return;
       }
       if (isWrongAccountError(error)) {
-        clearAuth();
+        // The refusal is about the passkey that just answered, not about a
+        // held-back session: that one stays, so its login card stays too.
+        if (useAuthStore.getState().lockedSession === null) {
+          clearAuth();
+        }
         setWrongAccount(true);
         setLastError(WRONG_ACCOUNT_ERROR);
         setStatus('error');

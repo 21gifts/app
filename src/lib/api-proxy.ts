@@ -9,6 +9,9 @@ const FORWARDED_HEADERS = [
   'origin',
   'user-agent',
   'range',
+  // Signature headers the in-app wallet sends with its address calls.
+  'x-breez-signature',
+  'x-breez-timestamp',
 ] as const;
 
 /** Upstream response headers copied onto the client response when present. */

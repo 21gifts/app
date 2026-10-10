@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
+import { fulfillSpot, spotRatesFromStats } from './fx-spot';
 
 const HIDDEN = {
   id: 'h1',
@@ -33,7 +34,7 @@ async function seedAdaSession(
         role,
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -341,6 +342,12 @@ async function stubModeratorGroupStipend(page: import('@playwright/test').Page):
       }),
     });
   });
+  await fulfillSpot(
+    page,
+    spotRatesFromStats({
+      spendOverTime: [{ sats: 6158, usd: '5.00', chf: '4.00', eur: '4.50', php: '280.00' }],
+    }),
+  );
 }
 
 test('moderators see the Moderators hub link', async ({ page }) => {
@@ -586,13 +593,13 @@ test('Function: preferredFiatSuffix — the nested stipend line shows a fiat suf
   await expect(note).toContainText('$5.00');
 });
 
-test('Function: useLatestRateDay — the moderator group thread loads a live fiat rate', async ({
+test('Function: useSpotRate — the moderator group thread loads a live fiat rate', async ({
   page,
 }) => {
   await seedAdaSession(page, 'moderator');
   await stubModeratorGroupStipend(page);
-  const statsRequest = page.waitForRequest((req) => /\/gifts\/stats/.test(req.url()));
+  const spotRequest = page.waitForRequest((req) => /\/fx\/spot/.test(req.url()));
   await page.goto('/moderate/group');
-  await statsRequest;
+  await spotRequest;
   await expect(page.getByRole('note', { name: /21\.gifts/ })).toContainText('$5.00');
 });

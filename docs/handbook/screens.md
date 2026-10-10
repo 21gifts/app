@@ -2,13 +2,15 @@
 
 Every variant below is captured in all four Linux Chromium combos (desktop/mobile × light/dark). Markdown images are the desktop-light shot. The other combo PNGs are visual-test baselines only.
 
+**Signed-in header.** Signed in means the wallet's recovery phrase is in this tab's memory, except for accounts that cannot hold a wallet. After reload, in a new tab, or after reopening the app, a valid stored session without that phrase counts as signed out. The central `OnboardingGate` keeps the visitor on the requested path and shows the ordinary login card in place of every signed-in screen; **Log in** refreshes the session and derives the phrase with that passkey prompt, asking for the seed passkey only when another passkey signed in. For a held-back session the card greets the member (**Welcome back, {name}**, the name or else the username) above **Log in with your device**, keeps **Log in** and **New to 21.gifts?** / **Open a new account**, and has no **Log out**: whichever passkey logs in decides the account, and a different account (or a new one) replaces the held session. No-PRF shows `wallet.prfUnsupported` above **Log in**; a cancelled prompt or any other failure shows `login.error` there and stays on the card. While the login card shows, the signed-in Menu is absent. The guest-allowed `/welcome`, `/statistics`, and `/habit-tracker` show this card too, without their **Log in** link; only a visitor without any stored session sees their signed-out view. One-time wallet setup is not part of this gate and may continue in the background. Every signed-in screen with the Menu (`SignedInChrome`) shows one **Menu** top-right; there is no separate wallet button in the header. Open, the Menu starts with the account header (`MenuAccountHeader`): the profile photo or the name's initial, the name and `@username` (together one link to `/profile` that closes the Menu, once the account is loaded), and in the top-right corner the wallet balance small (₿, with the default fiat under it; a link to `/wallet`; two skeleton bars while the wallet opens; nothing while it has failed or is not available), then a row **Received** / **Given** (each ₿ with the default fiat under it) / **Posts**. That row keeps its height from the first frame: skeleton bars until the numbers arrive, `–` for a value that could not be read. Opened right after a page load, while the stored session is still being checked, the header already has its final size: a skeleton circle for the photo and skeleton bars for the name and `@username`, so **Home** and the rows under it do not move when the account arrives. Photo and numbers start loading when the header chrome mounts, not when the Menu opens, and are kept for the session, so they are usually there on the first open. A divider follows, then **Home** and **Balance** (`/wallet`) as the first two rows. On a phone the open Menu is a sheet that ends above the page footer (Receive / Send or a page button) and scrolls by itself, so its last row (the version line) is reachable while the page behind stays put. The page frame uses a tighter inset (`px-3 py-2`, `px-2` below 360px) and the frame rows `px-5`, so the header fits at 320px.
+
 **Role hierarchy.** Ranks are basis 0, verified 1, moderator 2, initiator 2, founder 3. Initiator is rank 2, equal to moderator. A named minimum means that rank or any higher rank, and an equal rank meets it. The app checks this with `roleAtLeast` (`src/lib/roles.ts`); an equality test on the viewer's role is a defect. Do not write "moderator or initiator" or „Moderator oder Initiator“; permission checks name the minimum rank only.
 
 ## Screen: /
 
 - **URL:** `/` — public marketing landing (no auth gate).
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login and Wallet of Satoshi address) / Happyland (Father Severin’s account, eight captioned photographs in all four languages; food-stall caption **Pagpag**) / Why / Donate to this project (Wallet of Satoshi address `21gifts@walletofsatoshi.com` to run 21.gifts itself, distinct from `/donate`) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
-- **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open About, open Stats, open Legal & Privacy, open the Handbook.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, headline about peer-to-peer Bitcoin gifts, How it works (login, wallet setup, and the `you@21.gifts` address) / Happyland (Father Severin’s account, eight captioned photographs in all four languages; food-stall caption **Pagpag**) / Why / Donate to this project (the platform account's own 21.gifts address, `<platform username>@<host>`, to run 21.gifts itself, distinct from `/donate`; shown only when the build names the platform account) / FAQ, CTAs **Ask for help** (`/login`) and **Send help** (`/donate`). **Install app** appears in the header and after Send help only for iPhone Safari/Chrome/Firefox/Edge (not standalone, not in-app) or when Chromium fires `beforeinstallprompt`; idle visual snapshots stay without it because the control renders `null` until after mount detection.
+- **Actions:** Read the pitch, change language, open login, open Send help, optionally install the app (Chromium prompt or iPhone three-step Share sheet), jump to in-page sections, open About, open Stats, open Legal & Privacy, open Terms of Use, open the Handbook.
 - **Calls:** `Home` (`src/app/(marketing)/page.tsx`) inside `MarketingLayout`, `LanguageSwitcher`, `PwaInstall`, `HappylandSection`, `HappylandPhoto`.
 
 ### Variant: default
@@ -32,8 +34,8 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, Legal Notice (Switzerland) and Privacy Policy (no analytics; `locale` only after a language choice or to mirror the account language; `fiat` only as CHF/EUR/USD/PHP after a currency choice or to mirror the account currency; choosing `numberFormat` writes its cookie and absent means Swiss `10'000.23`; choosing light/dark writes `theme` and System removes it; a logged-in session token is stored in `localStorage`; Cloudflare TLS; login on this origin). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
-- **Actions:** Change language. Signed-out choices remain cookie-only and do not write an account. Read the legal body. Open **Open the app** (`/contact`). Header **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, Legal Notice (Switzerland; a line that using 21.gifts is governed by the **Terms of Use**, linked to `/terms`) and Privacy Policy (the website runs no advertising and loads no analytics scripts; `locale` only after a language choice or to mirror the account language; `fiat` only as CHF/EUR/USD/PHP after a currency choice or to mirror the account currency; choosing `numberFormat` writes its cookie and absent means Swiss `10'000.23`; choosing light/dark writes `theme` and System removes it; a logged-in session token is stored in `localStorage`; Cloudflare TLS; login on this origin; **Wallet and payment data**: 21.gifts sees the balance and the complete transaction history of the in-app wallet, and the paragraph links **Wallet and data** to `/terms#wallet-and-data` for how that data is used, who in the team may see it, and what may be published). There is **no published email**; contact is in-app only via `/contact` after login. Legal body copy stays English.
+- **Actions:** Change language. Signed-out choices remain cookie-only and do not write an account. Read the legal body. Open **Open the app** (`/contact`). Open **Terms of Use** (`/terms`) or **Wallet and data** (`/terms#wallet-and-data`). Header **Log in** goes to `/login`.
 - **Calls:** `LegalPage` inside `MarketingLayout`, `LanguageSwitcher`.
 
 ### Variant: default
@@ -41,6 +43,20 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 The only state: imprint plus privacy, marketing chrome.
 
 ![21.gifts legal](images/legal.png)
+
+## Screen: /terms
+
+- **Purpose:** Public Terms of Use of 21.gifts.
+- **URL:** `/terms` — public marketing page (no auth gate). Linked from `/legal`, the marketing footer, and the last chapter of `/setup/rules`.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (`/` when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, heading **Terms of Use**, the muted line **Last updated: 6 October 2026**, the section heading **Wallet and data** (anchor `#wallet-and-data`), and five numbered clauses, each opening with a short bold heading: **Self-custody**, **Access to wallet data**, **Analysis of spending**, **Access by the team**, **Public assessments**. All copy comes from the catalog in the visitor's locale (German, English, Spanish, or Filipino).
+- **Actions:** Change language. Read the clauses. Header **Log in** goes to `/login`.
+- **Calls:** `TermsPage` inside `MarketingLayout`, `LanguageSwitcher`.
+
+### Variant: default
+
+The only state: title, last-updated date, the **Wallet and data** heading, and the five numbered clauses, marketing chrome.
+
+![21.gifts terms of use](images/terms.png)
 
 ## Screen: /about
 
@@ -128,8 +144,8 @@ Fetch failed. Copy **Could not load gift stats. Please try again.** and **Try ag
 ## Screen: /trust-chain
 
 - **URL:** `/trust-chain` — signed-in Trust Chain. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). JSON is `/trust/graph` (Next.js forbids `route.ts` beside this page). Any logged-in completed account may view (not staff-only).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="start"`). Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Trust Chain**, a short lead that says to click a person to load everyone linked to them and drag a person to move them, then a chain that starts with the founder. Clicking a person loads one hop of stored links (never the whole thousand-person graph at once). One next person sits to the right; several people hanging off one person (everyone a moderator verified) stack top to bottom. Dragging a person moves that block; already-placed people keep their spot when a hop arrives. Below the diagram, four short explanations: **Verified**, **Moderator**, **Initiator**, and **Founder** (an initiator is named directly, with no proposal step; catalog `trustChain.explainInitiator`). Empty copy: **No one is on the Trust Chain yet.** Loading copy: **Loading…**. Error copy plus **Try again**.
-- **Actions:** Click a person to load who they met or appointed. Drag a person to rearrange. Modifier-click a person to open the member card (`/members/{id}`). The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="start"`). Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Trust Chain**, a short lead that says to click a person to load everyone linked to them and drag a person to move them, then a chain that starts with the founder. Clicking a person loads one hop of stored links (never the whole thousand-person graph at once). One next person sits to the right; several people hanging off one person (everyone a moderator verified) stack top to bottom. Dragging a person moves that block; already-placed people keep their spot when a hop arrives. Below the diagram, four short explanations: **Verified**, **Moderator**, **Initiator**, and **Founder** (an initiator is named directly, with no proposal step; catalog `trustChain.explainInitiator`). Empty copy: **No one is on the Trust Chain yet.** Loading copy: **Loading…**. Error copy plus **Try again**.
+- **Actions:** Click a person to load who they met or appointed. Drag a person to rearrange. Modifier-click a person to open the member card (`/members/{id}`). The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `TrustChainPage`, `TrustChainLoader`, `TrustChainScreen`, `TrustChainDiagram`, `layoutTrustChain`, `mergeTrustChain`, `fetchTrustChain` (same-origin `GET /trust/graph` and `GET /trust/graph?around=`), `SignedInChrome`, `OnboardingGate`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
@@ -171,34 +187,520 @@ Founder seed is on screen. Clicking that person fails the hop fetch. The diagram
 
 ## Screen: /wallet
 
-- **URL:** `/wallet` — signed-in receive address. The recovery phrase is a separate page.
-- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Wallet** is first, then the centered 21.gifts address, Open CryptoPay QR, and a content-width **Set an amount** link to `/pos`. Below that card, the phrase is not a setup step and is not shown at sign-in. Missing or empty `passkeyCredentialId`: content-width **Add recovery phrase** linking to `/wallet/phrase`, plus a hint that the phrase is created on this device and the existing login passkey stays. Set id: **Show recovery phrase** under **Advanced functions**, linking to `/wallet/phrase`. This page never shows the 12 words, a recovery error, a keypad, or an open charge.
-- **Actions:** **Set an amount** opens `/pos`. **Add recovery phrase** opens `/wallet/phrase`. **Show recovery phrase** opens `/wallet/phrase` and is only inside **Advanced functions**. Open **Menu** (Home, Shops, Point of sale, Profile, Grants, Wallet, …). Back closes **Advanced functions** when that row is open, then the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
-- **Calls:** `AppShell`, `WalletScreenView` (registers `ProfileChromeLeft` through `AppShellTopLeft`; that Back is the one on screen, not the page `WalletChromeLeft`), `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWalletPhrase`.
+- **URL:** `/wallet` — signed-in wallet home, with a **Send** view and a **Receive** view on the same page. The recovery phrase is a separate page. When the in-app wallet is enabled by configuration and the account can produce a phrase (`walletRequired` with a `passkeyCredentialId`), the balance block sits in the centre of the home view.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. The wallet is already open here. Open **Menu** (see **Signed-in header**) for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. The heading **Wallet** is for screen readers only. **Home:** with the wallet configured for an eligible account, the balance region **Balance** sits large in the centre with connecting, ready, and error states only. Connecting shows the pending line; ready shows the Bitcoin balance as a large figure with the default fiat in small type under it once a usable rate is loaded (without a usable rate, only the Bitcoin figure); error shows a sentence and **Try again**. A visitor whose stored session has no phrase in this tab sees the login card in place of this entire page on the same `/wallet` path, so no wallet heading, balance, history, or footer actions show until login opens the wallet. One-time setup is separate and runs in the background; until verification finishes the balance stays connecting. If all quiet setup retries fail, the balance instead shows the alert **Your wallet could not be set up yet.** with a secondary **Try again** button; **Receive** and **Send** stay in place and enabled. A reload, a new tab, or reopening the app clears the tab-only phrase and brings back the in-place login card. Moving inside the app does not: the top-left arrow, the **Menu**, and in-app links open the next view client-side in the same document, so the wallet stays open and a payment does not ask for the passkey again. Without configuration there is no balance region. While the wallet is ready, a **Payments** card under the balance lists payments newest first (received or sent, Bitcoin with the default fiat, date, and the payer's note when there is one); the next page loads when the end of the list is in view, checked again after every completed load, and the list reloads after every wallet sync. Fixed at the bottom of the screen are two large, equal buttons side by side, **Receive** on the left and **Send** on the right. Nothing sits under them: the recovery phrase is reached from **Settings** in the Menu (`/settings`). **Receive** and **Send** are always enabled, also right after login while the wallet still opens: only a step that needs the open wallet waits for it. **Receive view:** the label **Receive**, the Open CryptoPay QR of the member's 21.gifts address, the address itself, a **Copy** button that says **Copied** for two seconds after a copy, and **Set an amount** to `/pos`. Without a username it says **Set a username first.** with a link to `/profile`. While the one-time setup has not registered the address yet, a spinner and **Opening your wallet…** stand where the QR and address go, and the address appears on its own once it is registered; a setup that gave up shows **Your wallet could not be set up yet.** with a secondary **Try again** there instead. **Send view:** region **Send Bitcoin** opens with the camera already live (rear camera preferred), filling the whole page area under the header row edge to edge, down to the bottom of the page frame (the picture is cropped to fill). A white square with bold corners in the middle shows where to hold the code; it is only a guide, and the whole picture is read. The line **Point the camera at a Bitcoin QR code** sits in large white type over the top of the picture. Two dark translucent buttons float over the lower part of the camera: **Paste** and **Enter manually** (side by side, or stacked on a narrow phone). **Paste** reads the clipboard (iOS shows its own small **Paste** bubble first) and sends that text on exactly as a scanned code; when the browser refuses, a short alert says **Pasting was not allowed. Use Enter manually instead.**, and an empty clipboard says **The clipboard is empty.**; either disappears after a few seconds while the camera keeps running. **Enter manually** opens a sheet from the bottom over the camera with a Close (`X`) top-left, the **Payment request or address** field (focused, so the keyboard opens), and **Continue**; Close or the top-left arrow returns to the camera. The first QR code the camera reads goes into the field exactly as if it had been typed, and **Continue** runs on it. While the text is read a spinner turns in the middle and both floating buttons wait. A blocked camera shows **Camera access was blocked. Allow it in your browser settings, or paste the payment request.** in large white type on the black area; a device without a camera, or a page that cannot use one, shows **No camera found. Paste the payment request instead.** there. **Paste** and **Enter manually** keep working in both cases. Text that cannot be used always ends in one plain alert, never in silence: over the camera in large white type with **Try again** (which clears it and starts the camera again), or under the field while the sheet is open. That includes an unexpected error while reading it (**This could not be read. Please try again.**) and, for an account that has no wallet it can use here, **Your 21.gifts wallet is not available here, so this cannot be paid.** once a step needs the wallet. The camera, **Paste**, and **Enter manually** never wait for the wallet. A Lightning address or LNURL on another host and a 21.gifts shop's open charge are read without the wallet. A text the wallet itself has to read (a payment request, a Spark address or request, a base-chain address, or an address on this app's own host) keeps the text while the wallet still opens: the camera stays off, a spinner turns in the middle with **Opening your wallet…** under it, both floating buttons wait, and the text is read on its own once the wallet is open. When the wallet could not be opened, **Your wallet could not be opened. Please try again.** shows there instead, with **Try again**, which opens the wallet again (or runs its one-time setup again) and then goes on with the same text. The camera runs only while the input step shows no alert, nothing is being read, and the sheet is closed; it stops on a scan, on a paste, on **Continue**, on the next step, on Back, and when the view closes, and it starts again when the input step comes back without an alert. **Copy** pressed again while it says **Copied** shows **Copied** for another two seconds. A request or address without an amount then asks for an amount (the amount field with the ₿ / fiat switch and **Continue**); a Lightning address or LNURL receiver also shows its bounds and, when it takes one, an optional message within its limit. A receiver that takes exactly one amount, such as a shop's point-of-sale QR while a charge is open, skips the amount step and goes straight to the confirm step for that amount, without a message. For a 21.gifts shop on this app's own host (its address, its LNURL, or its `/pl/?lightning=` link), the page first asks `GET /pay/<name>` for an open charge and `POST /pay/<name>/invoice` for its Spark invoice; with one, the confirm step shows **To <name>@<host>**, the charge amount, and **Fee ₿0**, and **Send** pays that Spark invoice. Without an open charge or a Spark invoice, or when that payment cannot be prepared, the text is read as before. For a 21.gifts member on this app's own host without an open charge (also when the charge closed while it was asked), the amount and optional message are entered as for any address; **Continue** then asks `POST /pay/<name>/invoice` for a Spark invoice of exactly that amount, and with one the confirm step shows **To <name>@<host>**, the amount, and **Fee ₿0**, and **Send** pays that Spark invoice. Without a Spark invoice, or when it cannot be prepared, the member is paid over Lightning as before, with the fee the wallet quotes. The confirm step has no box and no Close: the amount sits large in the centre, like the home balance, with the default fiat in small type under it once a usable rate is loaded; under it **To …** in small type (cut short when it is long) and **Fee ₿…** in small type, with the default fiat only when the fee is above ₿0. Fixed at the bottom of the screen are one large, full-width **Send** and under it a small **Cancel** text button. The amount step never waits for the wallet. When a payment is ready to be confirmed while the wallet still opens, the confirm step already shows the large amount and **To …**, with a spinner and **Opening your wallet…** where the fee goes and **Send** disabled; once the wallet is open the fee is read and the step shows it with **Send** enabled, without a tap. When the wallet could not be opened, **Your wallet could not be opened. Please try again.** with a secondary **Try again** stands there instead. **Cancel** works throughout. When the wallet closes and opens again while a confirm step shows, that step reads its fee again the same way. For an LNURL that points at an address (`https://<host>/.well-known/lnurlp/<name>`, pasted, scanned, or inside a `/pl/?lightning=` link), **To …** names `<name>@<host>`, as for a pasted Lightning address; another LNURL names its domain. After sending: a large green check, **Sent ₿…** as the large figure with the default fiat in small type under it, **To …** in small type, and at the bottom one large, full-width **Done**, which returns home. A base-chain Bitcoin address, pasted, scanned, or in a `bitcoin:` URI that offers no Lightning or Spark payment, asks for an amount (a URI amount is used at once); an amount below the smallest the wallet sends to that address reopens the amount step with **Enter an amount of at least ₿… · $….** Its confirm step keeps the large amount and **To …** (the address cut short), then **Fee ₿…** and **Total ₿…** in larger type with the default fiat, then the **Speed** rows **Fast**, **Medium** (chosen first), and **Slow**, each with its fee in Bitcoin and the default fiat on one line; a speed the balance does not cover is greyed out and says **Balance too low**, and the slow speed is chosen first when the medium one is not covered. Under the rows a muted line says that this network fee is much higher than the fee of other payments. **Send** sends with the chosen speed, and the payment then shows in **Payments** as sent, marked **Pending** until the network confirms it. When the fee offer ran out before **Send**, nothing is sent: the confirm step comes back with a new fee and the alert **The fee offer expired, so nothing was sent. Check the new fee and press Send again.** Text that is not a payment request, a payment request this wallet cannot pay yet, a receiver whose server this browser cannot reach, a failed send, and too little balance each show one plain alert. A Lightning address or LNURL on another host is read through the 21.gifts api instead of this browser (`POST /lnurl/pay-request`, then `POST /lnurl/invoice` for the chosen amount); the wallet then pays the returned invoice, and the steps look the same. An address the api cannot pay, an address its server does not know, and a server that did not answer the api each show one plain alert; a message longer than the receiver accepts shows an alert in the amount step. Addresses on this app's own host and Spark targets are read by the wallet as before. The Send view stays on screen while a send is in flight, while its Sent line shows, and while an input alert is up. A Send or Receive view never closes because the wallet is not ready. This page never shows the 12 words, a recovery error, a keypad, or an open charge.
+- **Actions:** **Send** opens the Send view (and the camera); **Receive** opens the Receive view. Tapping the ready balance swaps which of Bitcoin and fiat is the large figure; it does nothing without a usable rate. Login opening is handled by the in-place login card before this screen appears. **Try again** retries connection after a normal wallet error. The setup note's **Try again** reloads when wallet initialisation requires it, otherwise starts the background setup again. **Try again** on the **Payments** card loads the list again. **Copy** puts the 21.gifts address on the clipboard. **Set an amount** opens `/pos`. Open **Menu** (Home, Balance, Shops, Point of sale, Profile, Grants, …). Show a QR code to the camera, press **Paste**, or press **Enter manually**, type a payment request or address, and **Continue**; enter an amount and **Continue**; **Send**; **Done**. The amount step's Close (`X`, **Cancel**) and the confirm step's **Cancel** close that step, back to the field (also a confirm step reached without an amount step), except while a confirm send is in flight, when **Cancel** is disabled and the confirm step stays. Back, in the Send view, first closes the manual-entry sheet, then an open send step (while a confirm send is in flight, or while the text is read, it does nothing); on the input step it clears the field and its alert and returns home, also while a text waits for the wallet, which it then drops. In the Receive view, Back returns home. On home, the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `AppShellFooter`, `WalletScreenView` (registers `ProfileChromeLeft` through `AppShellTopLeft`; that Back is the one on screen, not the page `WalletChromeLeft`), `SignedInChrome`, `OnboardingGate`, `WalletScreen`, `useWallet`, `WalletBalance`, `useSpotRate`, `WalletHistory`, `useWalletHistory`, `WalletSetupNote`, `useWalletSetup`, `useWalletPhrase`, `useWalletSend`, `useWalletPanel`, `WalletFooterActions`, `WalletPanelView`, `WalletReceive`, `WalletSend`, `QrScanner`, `parseWalletInput`, `payFromWallet`, `AmountEntry`, `lnurlRelayTarget`, `ownShop`, `fetchShopChargeInvoice`, `fetchMemberSparkInvoice`, `postLnurlPayRequest`, `postLnurlInvoice`, `QrCode`, `giftsLightningAddress`, `openCryptoPayQrValue`.
 
 ### Variant: default
 
-Existing member, no phrase yet. Receive address and QR above **Add recovery phrase**.
+Existing member with the wallet not configured (Playwright builds). The home view has no balance region; **Receive** and **Send** are both enabled at the bottom under the soft fade, Receive on the left, with nothing under them.
 
-![21.gifts wallet add recovery phrase](images/wallet.png)
+![21.gifts wallet home](images/wallet.png)
 
-### Variant: reveal
+### Variant: balance-locked
 
-Account that can already show a phrase. Receive address above closed **Advanced functions**.
+Pinned fixture (`?visual=balance-locked`, Playwright builds only), not a live wallet. The ordinary `/login` card appears in place of the wallet while the path stays `/wallet`: the muted greeting **Welcome back, Ada**, heading **Log in with your device**, primary **Log in**, the new-account line, and **Open a new account**. The wallet heading, balance, payment history, **Receive** / **Send** footer, and the signed-in **Menu** are absent, and there is no **Log out**: logging in with any passkey decides the account. The pin represents a valid stored session whose tab does not hold the recovery phrase; in a live browser, login opens the wallet and then reveals the page.
 
-![21.gifts wallet reveal](images/wallet-reveal.png)
+![21.gifts wallet balance locked](images/wallet-balance-locked.png)
 
-### Variant: reveal-open
+### Variant: balance-locked-prf-unsupported
 
-Account that can already show a phrase. Open **Advanced functions** shows **Show recovery phrase**, which links to `/wallet/phrase`.
+Pinned fixture (`?visual=balance-locked-prf-unsupported`, Playwright builds only), not a live wallet. The same in-place login card stays on `/wallet`, with the alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) inside the card, above **Log in**. No wallet content is mounted. In live use this follows a wallet-opening passkey response without PRF output; the session is held back again.
 
-![21.gifts wallet reveal open](images/wallet-reveal-open.png)
+![21.gifts wallet balance locked prf unsupported](images/wallet-balance-locked-prf-unsupported.png)
+
+### Variant: balance-locked-error
+
+Pinned fixture (`?visual=balance-locked-error`, Playwright builds only), not a live wallet. The same in-place login card stays on `/wallet`, with **Something went wrong. Please try again.** (`login.error`) inside the card, above **Log in**. No wallet content is mounted. In live use another failure, or a cancelled passkey prompt, holds the session back again with this alert.
+
+![21.gifts wallet balance locked error](images/wallet-balance-locked-error.png)
+
+### Variant: balance-connecting
+
+Pinned fixture (`?visual=balance-connecting`, Playwright builds only), not a live wallet. Region **Balance** shows the pending line **Opening your wallet…**.
+
+![21.gifts wallet balance connecting](images/wallet-balance-connecting.png)
+
+### Variant: balance-ready
+
+Pinned fixture (`?visual=balance-ready`, Playwright builds only), not a live wallet. The home view: region **Balance** shows the ready fixture `₿21'000` as the large figure with the default fiat (`$21.00`) in small type under it; **Send** and **Receive** are both enabled at the bottom.
+
+![21.gifts wallet balance ready](images/wallet-balance-ready.png)
+
+### Variant: balance-ready-no-rate
+
+The same ready fixture while no usable rate is loaded (the rate request failed): only the large `₿21'000`, no fiat line, and nothing to tap.
+
+![21.gifts wallet balance ready no rate](images/wallet-balance-ready-no-rate.png)
+
+### Variant: balance-fiat
+
+The same ready fixture after a tap on the balance: `$21.00` is the large figure and `₿21'000` is in small type under it. Another tap swaps them back.
+
+![21.gifts wallet balance fiat](images/wallet-balance-fiat.png)
+
+### Variant: receive
+
+The Receive view after **Receive** on the ready fixture: the label **Receive**, the Open CryptoPay QR, the address `ada@21.gifts`, **Copy**, and **Set an amount**. No balance and no **Send** / **Receive** buttons.
+
+![21.gifts wallet receive](images/wallet-receive.png)
+
+### Variant: receive-copied
+
+The Receive view right after **Copy**: the button shows a check mark and **Copied**. After two seconds it says **Copy** again.
+
+![21.gifts wallet receive copied](images/wallet-receive-copied.png)
+
+### Variant: receive-no-username
+
+The Receive view for an account without a username: no QR, no address, and no **Copy**; **Set a username first.** links to `/profile`, above **Set an amount**.
+
+![21.gifts wallet receive no username](images/wallet-receive-no-username.png)
+
+### Variant: receive-opening
+
+The Receive view opened while the one-time wallet setup has not registered the address yet (pin `?visual=setup-pending`, then **Receive**; Playwright builds only): the label **Receive**, a spinner and **Opening your wallet…** where the QR, the address, and **Copy** go, and **Set an amount** under it. The address appears on its own once it is registered.
+
+![21.gifts wallet receive while the wallet opens](images/wallet-receive-opening.png)
+
+### Variant: receive-setup-failed
+
+The Receive view after the background setup gave up (pin `?visual=balance-setup-failed`, then **Receive**; Playwright builds only): the label **Receive**, then **Your wallet could not be set up yet.** with a secondary **Try again** where the QR and address go, and **Set an amount** under it.
+
+![21.gifts wallet receive after the setup gave up](images/wallet-receive-setup-failed.png)
+
+### Variant: balance-error
+
+Pinned fixture (`?visual=balance-error`, Playwright builds only), not a live wallet. Region **Balance** shows the open-failed sentence and labeled **Try again**.
+
+![21.gifts wallet balance error](images/wallet-balance-error.png)
+
+### Variant: setup-failed
+
+Pinned fixture (`?visual=balance-setup-failed`, Playwright builds only), not a live wallet. The account still needs wallet verification after the background setup exhausted its quiet retries. Region **Balance** shows the alert **Your wallet could not be set up yet.** (`walletSetup.error`) followed by a secondary **Try again** button under it. The note does not cover or block the page; **Receive** and **Send** stay at the bottom, enabled.
+
+![21.gifts wallet setup failed](images/wallet-setup-failed.png)
+
+### Variant: setup-pending
+
+Pinned fixture (`?visual=setup-pending`, Playwright builds only), not a live wallet. The background setup is still due: region **Balance** shows **Opening your wallet…**, and **Receive** and **Send** stay at the bottom, both enabled; a step that needs the open wallet waits for it inside the view. No dialog.
+
+![21.gifts wallet setup pending](images/wallet-setup-pending.png)
+
+### Variant: history-empty
+
+Pinned fixture (`?visual=history-empty`, Playwright builds only). Ready balance, then the **Payments** card with **No payments yet.**, above **Send** and **Receive**.
+
+![21.gifts wallet history empty](images/wallet-history-empty.png)
+
+### Variant: history-rows
+
+Pinned fixture (`?visual=history-rows`, Playwright builds only; ten synthetic payments that net to the ₿21'000 balance). **Payments** lists them newest first, each row a link with a chevron to its payment screen: **Gift on your post** `+₿2'100` with **Great photo!**, **Gift to @alice** `−₿5'000`, **Coffee & croissant** `+₿12'500`, **bob@example.com** `−₿10'000` with **Thanks for dinner**, **Received** `+₿21'000` with **Happy birthday!**, **Sticker pack #42** marked **Pending**, **Hardware wallet** struck through and marked **Failed**, **On-chain deposit**, **On-chain withdrawal**, and **Posting fee** `−₿1`. Each row shows its date and time and the default fiat. The shot is scrolled to the end of the list, so **Receive** and **Send** are slim (36 px); the other `/wallet` home shots, at the top, show them full size.
+![21.gifts wallet history rows](images/wallet-history-rows.png)
+
+### Variant: history-error
+
+Pinned fixture (`?visual=history-error`, Playwright builds only). **Payments** shows **Your payments could not be loaded. Please try again.** and **Try again**.
+
+![21.gifts wallet history error](images/wallet-history-error.png)
+
+### Variant: send-input
+
+Pinned fixture (`?visual=send-input`, Playwright builds only), not a live wallet, after **Send**. Region **Send Bitcoin** is the full-size live camera (a stubbed black stream, since the test browser has no camera) from the header row to the bottom of the page frame, with the white viewfinder square, **Point the camera at a Bitcoin QR code** in large type over the top of the picture, and the floating **Paste** and **Enter manually** buttons over its lower part. The send variants below are this Send view too: the amount and confirm steps after **Send**, the alerts, the Sent line, and the sending confirm step without it, because those keep the Send view on screen.
+
+![21.gifts wallet send input](images/wallet-send-input.png)
+
+### Variant: send-manual
+
+The Send view after **Enter manually**: the sheet over the bottom of the camera area with the Close (`X`) top-left, `bob@example.com` typed into the **Payment request or address** field, and **Continue** enabled. The camera is off behind the sheet.
+
+![21.gifts wallet send manual entry](images/wallet-send-manual.png)
+
+### Variant: send-manual-alert
+
+The manual-entry sheet with an alert (pin `?visual=send-invalid`, then **Enter manually**): **This is not a Bitcoin payment request or address.** in the danger colour under the field instead of over the camera; the other input alerts take the same place.
+
+![21.gifts wallet send manual alert](images/wallet-send-manual-alert.png)
+
+### Variant: send-manual-busy
+
+The manual-entry sheet while the typed text is read (pin `?visual=send-input-busy`, then **Enter manually**, **bob@example.com** and **Continue**): the field and **Continue** wait, and **Continue** shows a spinner.
+
+![21.gifts wallet send manual busy](images/wallet-send-manual-busy.png)
+
+### Variant: send-paste-denied
+
+The Send view after **Paste** when the browser refuses the clipboard: the small alert **Pasting was not allowed. Use Enter manually instead.** above the floating buttons, over the camera, which keeps running.
+
+![21.gifts wallet send paste denied](images/wallet-send-paste-denied.png)
+
+### Variant: send-paste-empty
+
+The Send view after **Paste** with an empty clipboard: the small alert **The clipboard is empty.** above the floating buttons, over the camera, which keeps running.
+
+![21.gifts wallet send paste empty](images/wallet-send-paste-empty.png)
+
+### Variant: send-camera-denied
+
+The Send view when the camera is blocked: **Camera access was blocked. Allow it in your browser settings, or paste the payment request.** in large white type on the black camera area, with **Paste** and **Enter manually** still floating at the bottom.
+
+![21.gifts wallet send camera denied](images/wallet-send-camera-denied.png)
+
+### Variant: send-camera-unavailable
+
+The Send view on a device without a camera: **No camera found. Paste the payment request instead.** in large white type on the black camera area, with **Paste** and **Enter manually** still floating at the bottom.
+
+![21.gifts wallet send camera unavailable](images/wallet-send-camera-unavailable.png)
+
+### Variant: send-amount
+
+Pinned fixture (`?visual=send-amount`, Playwright builds only). A receiver that asks for an amount: **To bob@example.com**, the amount field with the ₿ / fiat switch, **Between ₿1 · $0.00 and ₿1'000'000 · $1'000.00** (each bound with the default fiat), **Message (optional)**, **Continue**, and the step Close (`X`, **Cancel**).
+
+![21.gifts wallet send amount](images/wallet-send-amount.png)
+
+### Variant: send-amount-fiat
+
+Same pinned amount step for a member whose amount unit is fiat: the switch is on **USD**, **2.10** is typed, and **₿2'100** shows under the field. The bounds line stays the same.
+
+![21.gifts wallet send amount fiat](images/wallet-send-amount-fiat.png)
+
+### Variant: send-confirm
+
+Pinned fixture (`?visual=send-confirm`, Playwright builds only). The large **₿2'100** with **$2.10** under it, **To bob@example.com**, and **Fee ₿0** without fiat. At the bottom the large, full-width **Send** and the **Cancel** text button. No box and no Close.
+
+![21.gifts wallet send confirm](images/wallet-send-confirm.png)
+
+### Variant: send-sent
+
+Pinned fixture (`?visual=send-sent`, Playwright builds only). The green check, the large **Sent ₿2'100** with **$2.10** under it, **To bob@example.com**, and the large, full-width **Done** at the bottom.
+
+![21.gifts wallet send sent](images/wallet-send-sent.png)
+
+### Variant: send-amount-onchain
+
+Pinned fixture (`?visual=send-amount-onchain`, Playwright builds only). The amount step for a base-chain Bitcoin address: **To bc1qar0srr…wf5mdq**, the amount field with the ₿ / fiat switch, no bounds line and no message field, and **Continue**, in the box with Close (`X`).
+
+![21.gifts wallet send amount onchain](images/wallet-send-amount-onchain.png)
+
+### Variant: send-amount-onchain-min
+
+Pinned fixture (`?visual=send-amount-onchain-min`, Playwright builds only). The same amount step after the wallet refused an amount below its minimum for this address: the alert **Enter an amount of at least ₿294 · $0.29.** under the field.
+
+![21.gifts wallet send amount onchain min](images/wallet-send-amount-onchain-min.png)
+
+### Variant: send-confirm-onchain
+
+Pinned fixture (`?visual=send-confirm-onchain`, Playwright builds only). The large **₿50'000** with **$50.00** under it and **To bc1qar0srr…wf5mdq**. Under it **Fee ₿1'420 · $1.42** and **Total ₿51'420 · $51.42** in larger type, then the **Speed** rows **Fast** (₿2'840 · $2.84), **Medium** (₿1'420 · $1.42, pressed) and **Slow** (₿710 · $0.71), and the muted line that the network fee is much higher than the fee of other payments. At the bottom the large, full-width **Send** and the **Cancel** text button.
+
+![21.gifts wallet send confirm onchain](images/wallet-send-confirm-onchain.png)
+
+### Variant: send-confirm-onchain-fast
+
+Pinned fixture (`?visual=send-confirm-onchain-fast`, Playwright builds only). The same confirm step after pressing **Fast**: that row is pressed, and **Fee ₿2'840 · $2.84** and **Total ₿52'840 · $52.84**.
+
+![21.gifts wallet send confirm onchain fast](images/wallet-send-confirm-onchain-fast.png)
+
+### Variant: send-confirm-onchain-slow
+
+Pinned fixture (`?visual=send-confirm-onchain-slow`, Playwright builds only). The same confirm step after pressing **Slow**: that row is pressed, and **Fee ₿710 · $0.71** and **Total ₿50'710 · $50.71**.
+
+![21.gifts wallet send confirm onchain slow](images/wallet-send-confirm-onchain-slow.png)
+
+### Variant: send-confirm-onchain-low
+
+Pinned fixture (`?visual=send-confirm-onchain-low`, Playwright builds only). The confirm step when the balance covers at most a ₿2'000 fee: **Fast** is disabled and says **Balance too low**; **Medium** stays pressed.
+
+![21.gifts wallet send confirm onchain low](images/wallet-send-confirm-onchain-low.png)
+
+### Variant: send-confirm-onchain-renewed
+
+Pinned fixture (`?visual=send-confirm-onchain-renewed`, Playwright builds only). The confirm step after **Send** found the fee offer expired: nothing was sent, the wallet asked for a new fee, and the alert **The fee offer expired, so nothing was sent. Check the new fee and press Send again.** stands above the **Speed** rows.
+
+![21.gifts wallet send confirm onchain renewed](images/wallet-send-confirm-onchain-renewed.png)
+
+### Variant: send-confirm-onchain-renewing
+
+Pinned fixture (`?visual=send-confirm-onchain-renewing`, Playwright builds only). The confirm step after **Send** found the fee offer expired, while the wallet asks for a new one: nothing was sent, the speed rows and **Send** (with its spinner) are disabled, and **Cancel** stays usable.
+
+![21.gifts wallet send confirm onchain renewing](images/wallet-send-confirm-onchain-renewing.png)
+
+### Variant: send-confirm-onchain-sending
+
+Pinned fixture (`?visual=send-confirm-onchain-sending`, Playwright builds only). The confirm step after **Send**: the speed rows, **Send** with its spinner, and **Cancel** are disabled until the wallet answers.
+
+![21.gifts wallet send confirm onchain sending](images/wallet-send-confirm-onchain-sending.png)
+
+### Variant: send-error
+
+Pinned fixture (`?visual=send-error`, Playwright builds only). After a receiver whose server this browser cannot reach: the plain alert **The receiver could not be reached from this browser. Please try again later.** over the black camera area, with **Try again** under it.
+
+![21.gifts wallet send error](images/wallet-send-error.png)
+
+### Variant: send-unsupported
+
+Pinned fixture (`?visual=send-unsupported`, Playwright builds only). After a payment request the wallet recognises but cannot pay (for example a token invoice): the alert **This payment request cannot be paid from your wallet yet.** over the black camera area, with **Try again** under it.
+
+![21.gifts wallet send unsupported](images/wallet-send-unsupported.png)
+
+### Variant: send-invalid
+
+Pinned fixture (`?visual=send-invalid`, Playwright builds only). After text that is not a payment request or address: the alert **This is not a Bitcoin payment request or address.** over the black camera area, with **Try again** under it.
+
+![21.gifts wallet send invalid](images/wallet-send-invalid.png)
+
+### Variant: send-failed
+
+Pinned fixture (`?visual=send-failed`, Playwright builds only). After a prepare or send that failed or timed out: the alert **The payment could not be sent. Check your balance before you try again.** over the black camera area, with **Try again** under it.
+
+![21.gifts wallet send failed](images/wallet-send-failed.png)
+
+### Variant: send-insufficient
+
+Pinned fixture (`?visual=send-insufficient`, Playwright builds only). After a payment the balance does not cover: the alert **Your wallet does not have enough Bitcoin for this payment.** over the black camera area, with **Try again** under it.
+
+![21.gifts wallet send insufficient](images/wallet-send-insufficient.png)
+
+### Variant: send-amount-error
+
+Pinned fixture (`?visual=send-amount-error`, Playwright builds only). The amount step for a Lightning address after **Continue** with an amount outside the receiver's bounds: the alert **Enter an amount between ₿1 · $0.00 and ₿1'000'000 · $1'000.00.**
+
+![21.gifts wallet send amount error](images/wallet-send-amount-error.png)
+
+### Variant: send-amount-request
+
+Pinned fixture (`?visual=send-amount-request`, Playwright builds only). The amount step for an address without an amount and without receiver bounds: **To sp1qexample…a9f2**, the amount field and **Continue**; no bounds line and no message field.
+
+![21.gifts wallet send amount request](images/wallet-send-amount-request.png)
+
+### Variant: send-amount-no-comment
+
+Pinned fixture (`?visual=send-amount-no-comment`, Playwright builds only). The amount step for a Lightning address whose receiver takes no comment: **To bob@example.com**, the amount field, the bounds line, and **Continue**; no message field.
+
+![21.gifts wallet send amount no comment](images/wallet-send-amount-no-comment.png)
+
+### Variant: send-amount-min
+
+Pinned fixture (`?visual=send-amount-min`, Playwright builds only). The same amount step after **Continue** with no usable amount: the alert **Enter an amount of at least ₿1 · $0.00.**
+
+![21.gifts wallet send amount min](images/wallet-send-amount-min.png)
+
+### Variant: send-confirm-sending
+
+Pinned fixture (`?visual=send-confirm-sending`, Playwright builds only). The confirm step while the send runs: the large **Send** is disabled with a spinner, and **Cancel** is disabled; Back keeps this step.
+
+![21.gifts wallet send confirm sending](images/wallet-send-confirm-sending.png)
+
+### Variant: send-confirm-fixed
+
+Pinned fixture (`?visual=send-confirm-fixed`, Playwright builds only). The confirm step reached straight from a shop's point-of-sale QR while a charge is open: the large **₿7'000** with **$7.00** under it, **To shop@21.gifts** (read from the QR's `/pl/?lightning=` link), and **Fee ₿3** with the default fiat; at the bottom the large **Send** and **Cancel**. This is the Lightning payment of that charge, used when the api issues no Spark invoice for it; the fee is the Lightning fee. No amount field and no message; **Cancel** returns to the input step.
+
+![21.gifts wallet send confirm fixed amount](images/wallet-send-confirm-fixed.png)
+
+### Variant: send-confirm-shop
+
+Pinned fixture (`?visual=send-confirm-shop`, Playwright builds only). The confirm step of the same point-of-sale QR when the api issued a Spark invoice for the open charge: the large **₿7'000** with **$7.00** under it, **To shop@21.gifts**, and **Fee ₿0** without fiat; at the bottom the large **Send** and **Cancel**. The in-app wallet pays the shop's charge without a fee. No amount field and no message; **Cancel** returns to the input step.
+
+![21.gifts wallet send confirm shop charge](images/wallet-send-confirm-shop.png)
+
+### Variant: send-confirm-member
+
+Pinned fixture (`?visual=send-confirm-member`, Playwright builds only). The confirm step after **Continue** for a 21.gifts member on this host without an open charge, when the api issued a Spark invoice for the amount entered: the large **₿2'100** with **$2.10** under it, **To alice@21.gifts**, and **Fee ₿0** without fiat; at the bottom the large **Send** and **Cancel**. The in-app wallet pays the member without a fee. **Cancel** returns to the input step.
+
+![21.gifts wallet send confirm member](images/wallet-send-confirm-member.png)
+
+### Variant: send-input-busy
+
+Pinned fixture (`?visual=send-input-busy`, Playwright builds only). The input step while the pasted text is read: `bob@example.com` in the disabled **Payment request or address** field and **Continue** disabled with a spinner.
+
+![21.gifts wallet send input busy](images/wallet-send-input-busy.png)
+
+### Variant: send-amount-busy
+
+Pinned fixture (`?visual=send-amount-busy`, Playwright builds only). The amount step while the payment is prepared: **To bob@example.com**, `2100` in the disabled amount field with $2.10 under it, and **Continue** disabled with a spinner.
+
+![21.gifts wallet send amount busy](images/wallet-send-amount-busy.png)
+
+### Variant: send-not-payable
+
+Pinned fixture (`?visual=send-not-payable`, Playwright builds only). After a Lightning address or LNURL on another host that the api does not read as payable (malformed, not https, not a pay request, or on this app's own host): the alert **This address cannot receive a payment.** over the black camera area, with **Try again** under it.
+
+![21.gifts wallet send not payable](images/wallet-send-not-payable.png)
+
+### Variant: send-not-found
+
+Pinned fixture (`?visual=send-not-found`, Playwright builds only). After a Lightning address on another host whose server does not know it: the alert **This address was not found.** over the black camera area, with **Try again** under it.
+
+![21.gifts wallet send not found](images/wallet-send-not-found.png)
+
+### Variant: send-relay-unreachable
+
+Pinned fixture (`?visual=send-relay-unreachable`, Playwright builds only). After a Lightning address or LNURL on another host whose server did not answer the api: the alert **The receiver's server did not answer. Please try again later.** over the black camera area, with **Try again** under it. `send-error` is the same slot when this browser could not reach the receiver itself.
+
+![21.gifts wallet send relay unreachable](images/wallet-send-relay-unreachable.png)
+
+### Variant: send-unreadable
+
+Pinned fixture (`?visual=send-unreadable`, Playwright builds only). After reading the text ended in an unexpected error: the alert **This could not be read. Please try again.** over the black camera area, with **Try again** under it.
+
+![21.gifts wallet send unreadable](images/wallet-send-unreadable.png)
+
+### Variant: send-unavailable
+
+Pinned fixture (`?visual=send-unavailable`, Playwright builds only). A step needed the wallet for an account that has no wallet it can use here: the alert **Your 21.gifts wallet is not available here, so this cannot be paid.** over the black camera area, with **Try again** under it.
+
+![21.gifts wallet send unavailable](images/wallet-send-unavailable.png)
+
+### Variant: send-input-opening
+
+Pinned fixture (`?visual=send-input-opening`, Playwright builds only). A scanned, pasted, or typed text that the wallet itself has to read, while the wallet still opens: the camera is off, a white spinner turns in the middle of the black camera area with **Opening your wallet…** under it, and **Paste** and **Enter manually** wait. The text is kept and read on its own once the wallet is open.
+
+![21.gifts wallet send input while the wallet opens](images/wallet-send-input-opening.png)
+
+### Variant: send-input-wallet-error
+
+Pinned fixture (`?visual=send-input-wallet-error`, Playwright builds only). The same waiting text after the wallet could not be opened: **Your wallet could not be opened. Please try again.** over the black camera area, with **Try again** under it, which opens the wallet again and keeps the text.
+
+![21.gifts wallet send input after the wallet could not be opened](images/wallet-send-input-wallet-error.png)
+
+### Variant: send-confirm-opening
+
+Pinned fixture (`?visual=send-confirm-opening`, Playwright builds only). The confirm step before its fee is known, while the wallet still opens: the large **₿2'100** with **$2.10** under it, **To bob@example.com**, then a spinner and **Opening your wallet…** where the fee goes; at the bottom **Send** is disabled and **Cancel** works. The fee and an enabled **Send** follow on their own once the wallet is open.
+
+![21.gifts wallet send confirm while the wallet opens](images/wallet-send-confirm-opening.png)
+
+### Variant: send-confirm-wallet-error
+
+Pinned fixture (`?visual=send-confirm-wallet-error`, Playwright builds only). The same confirm step after the wallet could not be opened: the large amount, **To bob@example.com**, then **Your wallet could not be opened. Please try again.** with a secondary **Try again** where the fee goes; **Send** stays disabled and **Cancel** works.
+
+![21.gifts wallet send confirm after the wallet could not be opened](images/wallet-send-confirm-wallet-error.png)
+
+### Variant: send-comment-long
+
+Pinned fixture (`?visual=send-comment-long`, Playwright builds only). The amount step for a Lightning address on another host (**To bob@example.com**, its bounds, **Message (optional)**) after the receiver refused the message as too long: the alert **This message is too long for the receiver.** above **Continue**.
+
+![21.gifts wallet send comment long](images/wallet-send-comment-long.png)
+
+## Screen: /wallet/payment
+
+- **URL:** `/wallet/payment?id=<payment id>` — one payment of the signed-in member's wallet, opened from a row of the **Payments** list on `/wallet`.
+- **What the user sees:** The same frame as `/wallet`: one top-left arrow (the previous in-app view, the list when opened from it, or `/welcome` when this tab has none) and the wordmark, **Menu** top-right. The heading **Payment** is for screen readers only. At the top, centred: a round badge with the direction arrow, the title (a gift on your post, the paid Lightning address, the description, the on-chain direction, or Received / Sent), the amount large with **+** or **−** (a failed payment struck through and muted), the default fiat under it, and a status pill: **Completed** in green, **Pending** in the notice colour, **Failed** in red. A pending send adds **Still on its way. The amount stays reserved until it arrives or comes back.**; a failed send adds **Nothing left your wallet.** A message that came with the payment (the payer's note, the zap message, or the comment sent to a Lightning address) follows in a soft box. A bordered list shows **Date**, **Type**, **To** (the paid Lightning address), **Description** (only when it is not already the title), **Amount**, **Fee** (**Free** at ₿0; left out for a fee-less receive and for a failed payment), **Total** (a send with a fee), and **Arrived on-chain** (a deposit whose claim fee was deducted); each Bitcoin figure there also shows the default fiat. Under **Details**, the technical values are shortened in the middle, each with a Copy icon: **Transaction** and **Output**, **Payment request**, **Payment hash**, **Proof of payment**, and **Payment ID**. An on-chain payment adds **View on mempool.space**, which first asks **Open external link?**. Nothing shows while the payment or the rate is still loading; when the rate read finds no usable rate, the Bitcoin amounts show without a fiat line. The screen reads the payment again after each wallet sync, so a pending payment updates in place. A missing or unknown id shows **This payment could not be found.**
+- **Actions:** Copy a technical value; open the transaction on mempool.space after the warning; go back to the previous in-app view (the list when opened from it) with the top-left arrow; open **Menu** (see **Signed-in header**).
+- **Calls:** `AppShell`, `WalletChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletPaymentDetails`, `useWalletPayment`, `getWalletPayment`, `paymentTitle`, `paymentMessage`, `ExternalLinkWarning`, `openInSystemBrowser`, `useSpotRateState`.
+
+### Variant: default
+
+Pinned fixture (`?visual=history-rows` with the zap's id, Playwright builds only). A received zap: **Gift on your post**, **+₿2'100** with **$2.10**, **Completed**, the message **Great photo!**, **Type** Instant payment, **Amount**, no fee row, and under **Details** the payment request, payment hash, proof of payment, and the payment id.
+
+![21.gifts wallet payment zap](images/wallet-payment.png)
+
+### Variant: address-send
+
+A payment to the Lightning address **bob@example.com** with the comment **Thanks for dinner**: **−₿10'000**, **To** bob@example.com, **Fee** ₿3, **Total** ₿10'003 (each with fiat).
+
+![21.gifts wallet payment Lightning-address send](images/wallet-payment-address-send.png)
+
+### Variant: spark-send
+
+A wallet transfer of **₿5'000** with the description **Gift to @alice**: **Type** Wallet transfer, **Fee** Free, and no **Total** row.
+
+![21.gifts wallet payment wallet transfer](images/wallet-payment-spark-send.png)
+
+### Variant: pending
+
+A Lightning send still in flight (**Sticker pack #42**): the **Pending** pill with **Still on its way. The amount stays reserved until it arrives or comes back.**, its fee and total, and no proof of payment yet.
+
+![21.gifts wallet payment pending](images/wallet-payment-pending.png)
+
+### Variant: failed
+
+A failed Lightning send (**Hardware wallet**): the amount struck through, the **Failed** pill with **Nothing left your wallet.**, and no fee or total.
+
+![21.gifts wallet payment failed](images/wallet-payment-failed.png)
+
+### Variant: deposit
+
+An on-chain deposit: **On-chain deposit**, **Fee** ₿254, **Arrived on-chain** ₿44'000, the **Transaction** and **Output** among the details, and **View on mempool.space**.
+
+![21.gifts wallet payment deposit](images/wallet-payment-deposit.png)
+
+### Variant: withdraw
+
+An on-chain withdrawal: **On-chain withdrawal**, **−₿40'000**, **Fee** ₿1'840, **Total** ₿41'840, the **Transaction**, and **View on mempool.space**.
+
+![21.gifts wallet payment withdrawal](images/wallet-payment-withdraw.png)
+
+### Variant: missing
+
+An id the wallet does not know: only **This payment could not be found.**
+
+![21.gifts wallet payment not found](images/wallet-payment-missing.png)
+
+### Variant: load-error
+
+The wallet is open but reading the payment failed (Playwright pin `?visual=history-error`): **This payment could not be loaded. Please try again.** in the danger colour, and **Try again**.
+
+![21.gifts wallet payment load error](images/wallet-payment-load-error.png)
+
+### Variant: copied
+
+The deposit after **Copy** on **Payment ID**: that row's icon turns into a green check for two seconds (and a screen reader hears **Copied**).
+
+![21.gifts wallet payment copied](images/wallet-payment-copied.png)
+
+### Variant: external-link
+
+The deposit after **View on mempool.space**: the **Open external link?** dialog over the screen, with **Open link** and **Close**; only **Open link** leaves 21.gifts.
+
+![21.gifts wallet payment external link](images/wallet-payment-external-link.png)
+
+### Variant: loading
+
+The screen while the rate is still on its way (the payment itself is known): only the frame and the top-left arrow, no amount yet. Once the read has finished without a usable rate, the ₿ figures show without their fiat line.
+
+![21.gifts wallet payment loading](images/wallet-payment-loading.png)
+
+### Variant: locked
+
+Opened directly (a reload or a new tab) without the wallet phrase in this tab (pin `?visual=balance-locked`, Playwright builds only): the ordinary login card appears in place of the payment, with **Log in**. Once login opens the wallet, the payment loads.
+
+![21.gifts wallet payment locked](images/wallet-payment-locked.png)
+
+### Variant: connecting
+
+The same while the wallet is opening (pin `?visual=balance-connecting`): the spinner and **Opening your wallet…**.
+
+![21.gifts wallet payment connecting](images/wallet-payment-connecting.png)
+
+### Variant: error
+
+The same when the wallet could not be opened (pin `?visual=balance-error`): **Your wallet could not be opened. Please try again.** and **Try again**.
+
+![21.gifts wallet payment error](images/wallet-payment-error.png)
+
+### Variant: prf-unsupported
+
+The same on a phone or browser that cannot hold the wallet (pin `?visual=balance-locked-prf-unsupported`): the ordinary login card stays in place of the payment, with the no-PRF alert above **Log in**.
+
+![21.gifts wallet payment no PRF](images/wallet-payment-prf-unsupported.png)
+
+### Variant: locked-error
+
+The same when opening the wallet failed for another reason (pin `?visual=balance-locked-error`): the login card stays in place of the payment, with **Something went wrong. Please try again.** (`login.error`) above **Log in**.
+
+![21.gifts wallet payment login error](images/wallet-payment-locked-error.png)
+
+### Variant: setup-failed
+
+The same when the background wallet setup gave up (pin `?visual=balance-setup-failed`): the balance shows **Your wallet could not be set up yet.** (`walletSetup.error`) with a secondary **Try again** under it.
+
+![21.gifts wallet payment setup failed](images/wallet-payment-setup-failed.png)
 
 ## Screen: /wallet/phrase
 
 - **URL:** `/wallet/phrase` — recovery phrase only. No receive QR.
-- **What the user sees:** Same signed-in chrome as `/wallet`. Heading **Wallet**. No address, no QR, and no **Set an amount**. Missing or empty `passkeyCredentialId`: the hint and **Add recovery phrase**, which runs the ceremony on this page. Set id and no words yet: **Show recovery phrase** runs PRF get of that id, without `credentials.create` and without seed/begin. The 12 words and the only-backup line replace that button. There is no confirmation and no **Continue**. An error is `role="alert"` plus a reason, a hint, and **Try again**.
-- **Actions:** **Add recovery phrase** calls seed/begin and seed/finish and does not replace the login passkey. `walletBackupSeenAt` is not read and not posted. **Show recovery phrase** is the only way to see an existing phrase, and only after **Advanced functions** on `/wallet`. **Try again** clears the error. Back hides the 12 words, then the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **What the user sees:** The usual signed-in header (see **Signed-in header**): profile chrome left and **Menu** right. Heading **Wallet**. No address, no QR, and no **Set an amount**. Missing or empty `passkeyCredentialId`: the hint and **Add recovery phrase**, which runs the ceremony on this page. Set id and no words yet: **Show recovery phrase** shows the words of the open wallet from tab memory without a passkey prompt. A wallet-backed account whose wallet is not open in this tab sees the login card (`WalletLoginCard`) in place of the screen. Only where the login gate does not apply (a build without the wallet) and the phrase is not in tab memory does it run PRF get of that id, without `credentials.create` and without seed/begin, and that one prompt also keeps the phrase in tab memory. The 12 words and the only-backup line replace that button. There is no confirmation and no **Continue**. An error is `role="alert"` plus a reason, a hint, and **Try again**.
+- **Actions:** **Add recovery phrase** calls seed/begin and seed/finish and does not replace the login passkey. `walletBackupSeenAt` is not read and not posted. **Show recovery phrase** is the only way to see an existing phrase, reached from **Recovery phrase** on `/settings`. **Try again** clears the error. Back hides the 12 words and keeps the wallet open, then the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none, without a page load. One arrow. The wordmark is not that control.
 - **Calls:** `AppShell`, `WalletScreenView` `surface="phrase"`, `WalletPhraseScreen`, `WalletPhrasePage`, `useWalletPhrase`, `OnboardingGate`.
 
 ### Variant: default
@@ -215,38 +717,63 @@ The passkey can already show a phrase. **Show recovery phrase** is the only cont
 
 ### Variant: phrase
 
-12-word grid from a fixture mnemonic (not live PRF). No receive QR.
+Pinned fixture (`?visual=phrase`, Playwright builds only): 12-word grid from a fixture mnemonic (not live PRF). A production build ignores the pin and never shows these words. No receive QR.
 
 ![21.gifts wallet phrase](images/wallet-phrase.png)
 
 ### Variant: error
 
-Generic failure. Alert **The recovery phrase could not be created or opened. Check this device and try again.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**. No receive QR.
+Pinned fixture (`?visual=error`, Playwright builds only). Generic failure. Alert **The recovery phrase could not be created or opened. Check this device and try again.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**. No receive QR.
 
 ![21.gifts wallet error](images/wallet-error.png)
 
 ### Variant: timeout
 
-Device prompt timed out. Alert **The device prompt timed out before you finished. Try again.** plus the same muted hint and labeled **Try again**. No receive QR.
+Pinned fixture (`?visual=timeout`, Playwright builds only). Device prompt timed out. Alert **The device prompt timed out before you finished. Try again.** plus the same muted hint and labeled **Try again**. No receive QR.
 
 ![21.gifts wallet timeout](images/wallet-timeout.png)
 
 ### Variant: prf-unsupported
 
-PRF missing. Alert **This browser cannot create a recovery phrase. Try another browser or device.** plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**. No receive QR.
+Pinned fixture (`?visual=prf-unsupported`, Playwright builds only). The passkey gave no PRF output while adding or showing the phrase. Alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) plus hint **If this keeps happening, try another browser or the device you already used to sign in.** and labeled **Try again**. No receive QR.
 
 ![21.gifts wallet prf unsupported](images/wallet-prf-unsupported.png)
+
+## Screen: /settings
+
+- **URL:** `/settings` — signed-in settings, opened from **Settings** in the Menu. Requires a name, a username, and the living-room rules agreement, like `/profile`.
+- **What the user sees:** Fill `AppShell` with profile chrome left and **Menu** right. Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Settings**, then a **Wallet** section. When the account has a recovery passkey (`passkeyCredentialId` set), the section holds one button, **Recovery phrase**. When `passkeyCredentialId` is missing or empty, it shows the hint that the phrase is created on this device and the existing login passkey stays, followed by **Add recovery phrase**.
+- **Actions:** **Recovery phrase** and **Add recovery phrase** open `/wallet/phrase` without a page load; the words and the passkey ceremony happen there, not on this page. The top-left arrow on `/wallet/phrase` then returns here. The top-left arrow on `/settings` returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `SettingsPage`, `SettingsScreen`, `OnboardingGate`, `ProfileChromeLeft`, `SignedInChrome`.
+
+### Variant: default
+
+Account with a recovery passkey. The **Wallet** section shows **Recovery phrase**.
+
+![21.gifts settings](images/settings.png)
+
+### Variant: activate
+
+Existing member without a recovery phrase yet. The **Wallet** section shows the add hint and **Add recovery phrase**.
+
+![21.gifts settings add recovery phrase](images/settings-activate.png)
+
+### Variant: menu-header-account-loading
+
+**Menu** opened right after the page loads, while the stored session is still being checked: the account header already has its final size, with a grey skeleton circle in place of the photo, two skeleton bars for the name and `@username`, and skeleton bars under **Received**, **Given**, and **Posts**. **Home** and every row below sit where they stay once the account and the numbers arrive, so nothing moves. The placeholder is not a link yet; once the account is loaded, the photo or initial and the name open `/profile`.
+
+![21.gifts settings menu with the account header loading](images/settings-menu-header-account-loading.png)
 
 ## Screen: /login
 
 - **URL:** `/login` — login only.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. **Open a new account** opens the name form. No passkey and no account until a valid name is submitted and the create ceremony is finished. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in**. Generic error is **Something went wrong. Please try again.** A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. On idle, choice, unknown, error, and wrong-account, when the phone reports iOS below 18, the card shows a muted line with the installed version and that sign-in needs at least iOS 18. A new account that cannot finish uses that sentence as the alert and does not create an account. When the phone reports Android below 9, those same five variants show a muted line with the installed version and that sign-in needs at least Android 9, and a new account that cannot finish uses that sentence as the alert and does not create an account. Desktop pictures of those five variants omit the muted line. Phone pictures of those five include it, because those baselines use an iPhone user agent below iOS 18. Those phone pictures are the iPhone baselines, not Android, and the Android alert is variant android-version. The name, name-invalid, and name-taken pictures do not show that muted line. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
-- **Actions:** Change language. Log in with an existing passkey. After `NotAllowedError`, choose an existing account or open a new one. In an in-app browser: open the page in the system browser or copy the link.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark `/` when unsigned, `/welcome` when a session is hydrated — not the marketing header). Idle **Log in**, then the muted line **New to 21.gifts?** and **Open a new account**, which opens the name form straight away without a passkey prompt. After **Log in**, if the browser reports `NotAllowedError`, heading **Do you already have an account?** with **Log in with existing account** and **Open a new account**. **Open a new account** opens the name form. No passkey and no account until a valid name is submitted and the create ceremony is finished. In Telegram or another in-app browser, an escape card (**Open this page in your browser**) with **Open in browser** and **Copy link** instead of **Log in** and **Open a new account**. Generic error is **Something went wrong. Please try again.** A new account whose passkey gives no PRF output says **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** instead, and no account is created. A leftover session whose GET `/me` is the wrong-account 403 shows **You signed in with the wrong account. Please try again with the correct account.** Both errors are terminal until **Try again**. On idle, choice, unknown, error, and wrong-account, when the phone reports iOS below 18, the card shows a muted line with the installed version and that sign-in needs at least iOS 18. A new account that cannot finish uses that sentence as the alert and does not create an account. When the phone reports Android below 9, those same five variants show a muted line with the installed version and that sign-in needs at least Android 9, and a new account that cannot finish uses that sentence as the alert and does not create an account. Desktop pictures of those five variants omit the muted line. Phone pictures of those five include it, because those baselines use an iPhone user agent below iOS 18. Those phone pictures are the iPhone baselines, not Android, and the Android alert is variant android-version. The name, name-invalid, and name-taken pictures do not show that muted line. After success the visitor goes to `/setup/name`, `/setup/username`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
+- **Actions:** Change language. Log in with an existing passkey. Open a new account from the idle card. After `NotAllowedError`, choose an existing account or open a new one. In an in-app browser: open the page in the system browser or copy the link. After **Log in** the screen stays on `/login` until the wallet is open, then moves on as before; meanwhile, and while a stored session is held back, `OnboardingGate` shows `WalletLoginCard` (the same card, with any no-PRF or error alert; for a held-back session with the greeting and without **Log out**).
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `HomeWordmark`, `LoginCard`, `OnboardingGate`, `usePasskeyLogin`, `useAuthStore`, `LanguageSwitcher`, `isInAppBrowser`, `iosPasskeyBlock`, `androidPasskeyBlock`, `openInSystemBrowser`.
 
 ### Variant: idle
 
-Logged out. Heading **Log in with your device**, one **Log in** button. On iOS below 18 a muted line under the heading names the installed version and the iOS 18 minimum. Desktop pictures omit that line. Phone pictures include it. Android below 9 shows the same kind of muted line in the product, while these pictures stay the iPhone baselines.
+Logged out. Heading **Log in with your device**, primary **Log in**, the muted line **New to 21.gifts?** (`login.newHere`), and secondary **Open a new account** (`login.create`). **Open a new account** opens the name form (variant name) without a passkey prompt; no passkey and no account exist until a valid name is submitted and the create ceremony is finished. On iOS below 18 a muted line under the heading names the installed version and the iOS 18 minimum. Desktop pictures omit that line. Phone pictures include it. Android below 9 shows the same kind of muted line in the product, while these pictures stay the iPhone baselines.
 
 ![21.gifts login idle](images/login.png)
 
@@ -261,6 +788,12 @@ Transient after a login click, before the ceremony finishes: spinner and **Prepa
 Login begin or finish failed. Copy **Something went wrong. Please try again.** (`login.error`) and **Try again**. Phone pictures also show the muted installed-iOS line. An old-iOS register that cannot finish is variant ios-version, not this picture. No account is created there.
 
 ![21.gifts login error](images/login-error.png)
+
+### Variant: prf-unsupported
+
+**Open a new account** on a phone or browser whose new passkey gives no PRF output. The account is not created. Alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) instead of the generic error, then **Try again**. A dismissed prompt or a failed request keeps its own state and copy. On iOS below 18 the old-iOS sentence (variant ios-version) takes precedence, so the phone pictures of this variant use an iPhone on iOS 18.
+
+![21.gifts login prf unsupported](images/login-prf-unsupported.png)
 
 ### Variant: ios-version
 
@@ -312,7 +845,7 @@ A valid name whose username is already in use stays on this form. Alert: That us
 
 ### Variant: in-app
 
-Telegram or another in-app WebView detected. Heading **Open this page in your browser**; no **Log in** button; **Open in browser** and **Copy link** instead.
+Telegram or another in-app WebView detected. Heading **Open this page in your browser**; no **Log in** or **Open a new account** button; **Open in browser** and **Copy link** instead.
 
 ![21.gifts login in-app](images/login-in-app.png)
 
@@ -321,6 +854,12 @@ Telegram or another in-app WebView detected. Heading **Open this page in your br
 Open the light language switcher top-right. Custom listbox with endonym rows (English / Deutsch / Español / Filipino) — not a native OS select.
 
 ![21.gifts login language](images/login-language.png)
+
+### Variant: held-session
+
+A stored session is held back (after a reload, in a new tab, or in a reopened app; pinned with `?visual=held-session`, Playwright builds only). The card is the idle login with the muted greeting **Welcome back, Ada** above **Log in with your device**, then **Log in**, **New to 21.gifts?**, and **Open a new account**. There is no **Log out**: **Log in** is one passkey prompt that opens the session and the wallet, and if another account's passkey answers, that account replaces the held session. A dismissed prompt or another failure stays on this card with **Something went wrong. Please try again.** above **Log in**.
+
+![21.gifts login for a held-back session](images/login-held-session.png)
 
 ## Screen: /donate
 
@@ -338,8 +877,8 @@ Heading **Send help**, explainer lead, **Open the forum**.
 ## Screen: /pl
 
 - **URL:** `/pl?lightning=LNURL…` — public, no auth gate. `/pl` without a usable link stays on this page and does not 404.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none). The shop sticker's storefront sits above the person's name, which is the only heading. With no open payment, under it an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When a payment is active, either because `GET /pay/:username` returned an unexpired `charge` or because **Continue** minted an invoice, that amount field and **Continue** are gone. The page shows the same active payment: five minutes left, the sat amount, the viewer's default fiat beside it, and **Pay**. **Pay** is the width of the invoice QR plate (232px plus its padding and border), centered, not the width of the page. The fiat code is the profile cookie when set, otherwise the language default. Desktop shows the Bitcoin invoice QR only while that payment is active. A smartphone (`isSmartphoneUserAgent`, not viewport) never shows it. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
-- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. A positive PHP amount while the gift-day request has not returned shows **The PHP exchange rate is still loading.** and keeps the form; when the request then settles, that loading alert changes in place without another press and without creating the payment: **No PHP exchange rate yet.** when the currency still cannot be priced, **Enter a whole number.** when the amount is not a safe sat count inside the bounds that button already uses, and the alert goes away when it is; after that request settles, a positive PHP amount when no gift day can price PHP shows **No PHP exchange rate yet.** and keeps the form. `{code}` in the product is the preferred fiat; these variants use PHP. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with Wallet of Satoshi**), which sets `location.href` to the Wallet of Satoshi link (Android Intent on Android). An open till mints that exact amount with no amount step. **Pay** opens Wallet of Satoshi. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none). The shop sticker's storefront sits above the person's name, which is the only heading. With no open payment, under it an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When a payment is active, either because `GET /pay/:username` returned an unexpired `charge` or because **Continue** minted an invoice, that amount field and **Continue** are gone. The page shows the same active payment: five minutes left, the sat amount, the viewer's default fiat beside it, and **Pay**. **Pay** is the width of the invoice QR plate (232px plus its padding and border), centered, not the width of the page. **Pay** hands the invoice to the visitor's own Bitcoin wallet app with a generic `lightning:` link; no particular wallet is named. The fiat code is the profile cookie when set, otherwise the language default. Desktop shows the Bitcoin invoice QR only while that payment is active. A smartphone (`isSmartphoneUserAgent`, not viewport) never shows it. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
+- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. A positive fiat amount that the spot rate cannot price in the preferred fiat (typed before that fiat changed to one without a price) shows **No {code} exchange rate yet.** and keeps the form; `{code}` is the preferred fiat. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with a Bitcoin wallet app**), which sets `location.href` to `lightning:` plus the invoice (`lightningHref`), so the device opens whichever Bitcoin wallet app handles that link. An open till mints that exact amount with no amount step. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
 - **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `ProfileChromeLeft`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `GET /pay/[username]`, `POST /pay/[username]/invoice`.
 
 ### Variant: default
@@ -359,18 +898,6 @@ After **Continue**, the same active payment as an open till: the shop sticker, f
 **Continue** with an empty or non-whole amount shows **Enter a whole number.** The form stays. No **Pay**.
 
 ![21.gifts pay link amount invalid](images/pl-amount-invalid.png)
-
-### Variant: rate-loading
-
-PHP is pressed and the amount is 100. **Continue** while the gift-day request has not returned. Alert **The PHP exchange rate is still loading.** The form stays. No **Pay**.
-
-![21.gifts pay link rate loading](images/pl-rate-loading.png)
-
-### Variant: no-rate
-
-PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **Continue** shows **No PHP exchange rate yet.** The form stays. No **Pay**.
-
-![21.gifts pay link no rate](images/pl-no-rate.png)
 
 ### Variant: invalid
 
@@ -399,20 +926,20 @@ Open till, mint failed. The shop sticker, time left, the sat amount, the viewer'
 ## Screen: /setup/name
 
 - **URL:** `/setup/name` — when `account.setup === 'name'`.
-- **What the user sees:** Chrome is the page-frame header (one top-left arrow that returns to the previous in-app view, or `/welcome` when this tab has none, a non-link wordmark, and Menu inside the rounded sheet). Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Your name**, name form with **Continue** and labeled **Skip**. No Wallet of Satoshi form.
-- **Actions:** Enter a name and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/username`).
+- **What the user sees:** Chrome is the page-frame header (one top-left arrow that returns to the previous in-app view, or `/welcome` when this tab has none, a non-link wordmark, and Menu inside the rounded sheet). Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Your name**, name form with **Continue** and labeled **Skip**. No address form.
+- **Actions:** Enter a name and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/username`).
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `Wordmark`, `NameSetup`, `NameForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
 
 ### Variant: default
 
-Signed in, no name yet. **Your name** and the name field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
+Signed in, no name yet. **Your name** and the name field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right (see **Signed-in header**); open the Menu for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
 ![21.gifts name setup](images/setup-name.png)
 
 ## Screen: /setup/username
 
 - **URL:** `/setup/username` — after the display name (`account.setup === 'username'`). Cannot skip.
-- **What the user sees:** Chrome is the page-frame header (one top-left arrow that returns to the previous in-app view, or `/welcome` when this tab has none, a non-link wordmark, and Menu inside the rounded sheet). Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Your 21.gifts name**, hint that Bitcoin is sent to `you@21.gifts` while Wallet of Satoshi still receives it, username field, **Continue**. No Skip.
-- **Actions:** Enter a LUD-16 handle and **Continue** (`POST /me/username`). Taken or invalid handles stay on this screen. After save, the visitor is sent to the next `account.setup` path (usually `/setup/address`).
+- **What the user sees:** Chrome is the page-frame header (one top-left arrow that returns to the previous in-app view, or `/welcome` when this tab has none, a non-link wordmark, and Menu inside the rounded sheet). Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Your 21.gifts name**, hint that Bitcoin is sent to `you@21.gifts` and goes straight into the member's own wallet in this app, username field, **Continue**. No Skip.
+- **Actions:** Enter a LUD-16 handle and **Continue** (`POST /me/username`). Once the account's in-app wallet is verified the username is fixed: field and **Continue** are disabled with a line that says why. Taken or invalid handles stay on this screen. After save, the visitor is sent to the next `account.setup` path (usually `/setup/rules`). There is no address step: background wallet setup registers the member's in-app wallet.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `Wordmark`, `UsernameSetup`, `UsernameForm`, `SignedInChrome`, `OnboardingGate`, `setUsername`.
 
 ### Variant: default
@@ -420,28 +947,22 @@ Signed in, no name yet. **Your name** and the name field at the top, **Continue*
 Signed in with a display name (or a skipped name) and no username. **Your 21.gifts name**, the username field, and **Continue**. One **Menu** top-right.
 ![21.gifts username setup](images/setup-username.png)
 
-## Screen: /setup/address
+### Variant: username-frozen
 
-- **URL:** `/setup/address` — after username (`account.setup === 'address'`). Name may already be saved or skipped; username is required.
-- **What the user sees:** Chrome is the page-frame header (one top-left arrow that returns to the previous in-app view, or `/welcome` when this tab has none, a non-link wordmark, and Menu inside the rounded sheet). Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Your Wallet of Satoshi address**, greeting **Hi, {name}**, address form with **Continue** and labeled **Skip**. No name form.
-- **Actions:** Enter an address and **Continue**, or **Skip** (`POST /me/setup/skip`); open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. After save or skip, the visitor is sent to the next `account.setup` path (usually `/setup/rules`).
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `Wordmark`, `AddressSetup`, `LightningAddressForm`, `SignedInChrome`, `OnboardingGate`, `skipSetup`.
+Account whose in-app wallet is verified (`sparkWalletVerified`). The hint under the heading is left out, the field shows the current username and is disabled, **Continue** is disabled, and one line reads **Your username can no longer be changed because your wallet address uses it.**
 
-### Variant: default
-
-Signed in with a name (or a skipped name) and no address. **Your Wallet of Satoshi address** and the address field at the top, **Continue** and labeled **Skip** pinned at the bottom of the screen. One **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
-![21.gifts address setup](images/setup-address.png)
+![21.gifts username frozen](images/setup-username-frozen.png)
 
 ## Screen: /setup/rules
 
-- **URL:** `/setup/rules` — when living-room rules are not yet agreed (`account.setup === 'rules'`). Name, username, and address may already be done; username cannot be skipped; rules cannot be skipped.
-- **What the user sees:** Chrome is the page-frame header (wordmark is a non-link span, plus Menu). Chapter 0 shows one arrow that returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Later chapters replace it with the previous-chapter arrow. One arrow. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact link, and a full-width **Continue** button. The last chapter shows **I agree to these rules** instead of **Continue**.
-- **Actions:** Read the current chapter and **Continue** to advance. Chapter 0's arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Later chapters use that same arrow for the previous chapter. One arrow. The wordmark is not that control. Changing chapter (Continue or Back) scrolls the fill inner scroller back to the top. The last **I agree to these rules** POSTs agreement, then the visitor is sent to `/welcome`. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**.
+- **URL:** `/setup/rules` — when living-room rules are not yet agreed (`account.setup === 'rules'`). Name and username may already be done; username cannot be skipped; rules cannot be skipped.
+- **What the user sees:** Chrome is the page-frame header (wordmark is a non-link span, plus Menu). Chapter 0 shows one arrow that returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Later chapters replace it with the previous-chapter arrow. One arrow. Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Living room rules**, prompt to read this chapter, progress (`1 of 9` on the first chapter), one rules chapter at a time (lead first) without the public Contact link, and a full-width **Continue** button. The last chapter shows **I agree to these rules** instead of **Continue**, and above it the line **By continuing you accept the Terms of Use.** whose **Terms of Use** links to `/terms`. There is no checkbox and no extra step.
+- **Actions:** Read the current chapter and **Continue** to advance. Chapter 0's arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Later chapters use that same arrow for the previous chapter. One arrow. The wordmark is not that control. Changing chapter (Continue or Back) scrolls the fill inner scroller back to the top. The last **I agree to these rules** POSTs agreement, then the visitor is sent to `/welcome`. On the last chapter **Terms of Use** opens `/terms` client-side; its arrow returns here and reopens that last chapter (a reload starts at the first chapter again). Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**.
 - **Calls:** `AppShell`, `Wordmark`, `RulesSetup`, `RulesDocument`, `SignedInChrome`, `OnboardingGate`, `agreeToRules` (`POST /me/rules-agreement`) on the last chapter only.
 
 ### Variant: default
 
-Signed in with a name and address and `rulesAgreedAt` still null. First chapter (lead paragraph plus the accent-bordered **The test** callout) and **Continue** visible.
+Signed in with a name and username and `rulesAgreedAt` still null. First chapter (lead paragraph plus the accent-bordered **The test** callout) and **Continue** visible.
 
 ![21.gifts rules setup](images/setup-rules.png)
 
@@ -489,13 +1010,13 @@ Heading **Forbidden**, muted lead, and the three forbidden groups (red cross gly
 
 ### Variant: house
 
-Last chapter: muted **Our house** block (body plus emphasised closing paragraph) and **I agree to these rules**. That click POSTs agreement.
+Last chapter: muted **Our house** block (body plus emphasised closing paragraph), the line **By continuing you accept the Terms of Use.** with **Terms of Use** linked to `/terms`, and **I agree to these rules**. That click POSTs agreement.
 
 ![21.gifts rules setup house](images/setup-rules-house.png)
 
 ### Variant: error
 
-Last-chapter POST failed. Alert **Could not save your agreement**.
+Last-chapter POST failed. Alert **Could not save your agreement**. The Terms of Use line stays above the button.
 
 ![21.gifts rules setup error](images/setup-rules-error.png)
 
@@ -507,14 +1028,14 @@ Last-chapter POST in flight. Agree disabled with a spinner; **Our house** still 
 
 ## Screen: /welcome
 
-- **URL:** `/welcome` — when `account.setup` is null (name and address may be saved or skipped; username is required; living-room rules agreement is required). New passkey accounts reach this after name, username, address, and rules. The phrase is not on that path.
-- **What the user sees:** Chrome is the page-frame header. The top-left arrow is omitted only when this tab has no earlier in-app view; otherwise it returns to that view. An ask step uses that same slot. The wordmark is not that control. Menu sits inside the rounded sheet. Content scrolls inside the frame. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**, then a quiet **Version {version}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}** when the account has a name, or **Welcome** with no session and no empty "Welcome, ". A signed-out visit keeps the wordmark, shows **Log in**, and does not show the member menu. Each note still shows its bitcoin amount. The active list loads without Authorization. Another forum mode, or a later page that returns 401, opens `/login`. No composer, reaction form, pay, or delete while signed out. **Show reactions** still loads public replies. A resolved `@username` opens that member only when a session exists; without a session the mark stays text. An author name with a non-empty `accountId` is the profile button even without a session. dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a `ForumModeSelect` dropdown (**Active** / **No gifts yet** / **All** / **Most popular**), default **Active**, not a four-way SegmentedControl and not a two-column grid. First paint is one page of 20 notes for the selected mode; further cursor pages prefetch near the end of the visible list. Page-one polling does not replace older loaded pages. **No gifts yet** shows a count chip on the closed control for loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes (`sats` > 0) plus unpaid moderator notes; a top-level ask with `goalSats` > 0 and zero sats is not included, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name when `accountId` is set (opens `/members/:id`), including without a session; without `accountId` the name stays text, optional Founder / Moderator / Initiator / Verified pill when the api `role` is one of those four (`basis` has no pill), a `#Shop` link to `/shops` on top-level shop notes (raw `#21GiftsShop` hidden); a moderator also sees **Edit shop note** on each of those notes and can open the same five steps as on `/shops`, timestamp, optional inline photo then caption text below the photo, a link to `/map?pin=<id>` (the label, or coordinates when the label is null) on a top-level note that has a place, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait; the player has its own fullscreen button, including a narrow portrait clip); note and reply bodies longer than 560 characters (twice the 280-character preview) show a 280-character collapsed preview, an ellipsis, and inline **Show more** (`forum.showMore`), expanding in place with no Show less, while permalink `/messages/[id]` stays full text. Cards also show ₿ amount always, plus optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate) (no FiatPicker), replyCount text, React (`forum.react`, lucide Reply) on every top-level note, copy-link control (**Copy link to this note** → origin `/l/<8 hex>` (first group of that note id); nested replies get their own copy control, **Copy link to this reply** → origin `/l/<8 hex>` (first group of that reply id)), and expand/collapse on the card body (**Show reactions** / **Hide reactions**; the footer ₿ amount and the reaction-count text also expand; React expands a collapsed card and does not collapse an expanded one; Gift on a payable reply / role / copy / delete / Translate do not; the card body remains the unique **Show reactions** / **Hide reactions** name). Expanded cards show the replies list (Gift on a payable reply, copy, and moderator trash are also on nested replies) plus an in-card reply composer (**Write a reaction** and an **Amount** field with the ₿ / fiat switch and the other unit under it; the last choice is `account.amountUnit`; empty reply text and an empty amount invoices 21 sats (pay-sheet default); a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Initiator / Verified pills (`basis` has none). Pay control / Send Bitcoin only on a payable reply (open **Show reactions**, then Gift on that reply — never on the post); composer under the filters: **Send a post** / **Ask for money** pill, then Post-path **Add a photo or video** (ImagePlus) and **Add a place** (MapPin) left of the textarea, **Post** (Send icon) to the right (Ask path is `ForumAskWizard`), optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. Top-level notes with `goalSats` show `ForumGoalBar`: **Ask**, then the defined fiat amount only when the ask was defined in fiat, then `formatBitcoin(goalSats)`, then the visitor's default fiat unless the ask was defined in that same fiat. That visitor figure is the stored snapshot when the string is present, otherwise the gift-day rate. A legacy ask is bitcoin plus that same visitor figure. Then orange 0–100, green overflow, uncapped percent. A missing name, username, Lightning Address, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. When an unread `moderator_appointed` notification exists, a labeled **You are a moderator** pill uses the same chrome (sticky under the frame header); if both pills show, appointment stays at `top-2` and **New posts** moves to `top-14`. Clicking the appointment pill marks that row read and stays on `/welcome`; it is omitted when the flag is falsy and absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a payable reply opens a sheet with a Close (`X`) control, not Back, and a **Pay** button that includes the Wallet of Satoshi icon. On a computer the sheet also shows a QR; on a smartphone there is no QR. No name or address form. No guest donate CTA. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. **Translate** (Languages icon) sits in the footer icon row with react / copy; **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale.
-- **Actions:** Dismiss the living-room laws hint (permanent), post a text and/or photo or video message, attach/remove a photo, a video, or a place draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, open a `#Shop` tag to `/shops`, edit a shop note when the session is a moderator, copy a note link or a reply's own link to origin `/l/<8 hex>` (first group of that note or reply id), click a role pill for its explanation, pay a payable reply in-app, switch the forum view (Active / No gifts yet / All / Most popular), pull down from the top to refresh the forum list, click **You are a moderator** to mark that appointment read and hide the pill, click **New posts** or the wordmark / Menu **Home** (already on `/welcome`) to scroll to top and apply new notes, leave the forum in view for 30 seconds so a visible-tab poll can pick up new ids, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name, username, Wallet of Satoshi address, or rules agreement, open the rules or contact pages, retry a failed load; open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
-- **Calls:** `PageChrome`, `AppShell`, `ProfileChromeLeft`, `ForumHomeWordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `ShopNoteEditControl`, `ForumModeSelect`, `ForumAskWizard`, `ForumGoalBar`, `parseForumAskAmount`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`, `hasUnseenForumPosts`, `unpaidNewCount`, `fetchGiftStats`, `latestRateDay`, `satsToFiatAmount`, `fetchNotifications`, `markNotificationRead`.
+- **URL:** `/welcome` — when `account.setup` is null (name may be saved or skipped; username is required; living-room rules agreement is required). New passkey accounts reach this after name, username, and rules. Their sign-up prompt already placed the recovery phrase in tab memory, so wallet setup can finish in the background during onboarding or here; the phrase itself is never shown on that path.
+- **What the user sees:** Chrome is the page-frame header. The forum home shows no top-left arrow, whatever this tab's view history holds; only the wordmark sits top-left. An ask step uses that same slot. The Menu's **Home** clears this tab's in-app view history and opens `/welcome` client-side (the open wallet stays open), so the first screen opened from here has an arrow back to `/welcome`, as on a fresh tab. The browser's own back button is not affected. The wordmark is not that control. Menu sits inside the rounded sheet. Content scrolls inside the frame. A signed-in member has no composer on the page: a round **+** (**Write a post**, 56 px, primary colours, a shadow) floats at the bottom right of the frame, 24 px from the edge and 23 px above **Receive** / **Send** (near the frame's bottom edge without them). Tapping it opens the writer right under the header row, from the header row's bottom edge to the frame's (frame background, rounded bottom corners), with the text field focused so the keyboard comes up within the tap: a centred title **Send a post** (or **Ask for money** while Ask is chosen), the **Send a post** / **Ask for money** pill, then the composer as before (text field, photo, place, send; the Ask wizard on **Ask for money**; the posting-fee pay slot; errors). It covers the feed and **Receive** / **Send**, scrolls inside itself when taller, and moves with the frame when the keyboard shifts the page. The top-left arrow closes it (after stepping back through any Ask step inside); there is no close or cancel button. A successful post closes it by itself and the post appears on the feed; the feed then shows its top with the new note (a posting fee that completes after the writer was closed changes neither the scroll nor the focus). Closed with the arrow, an unsent draft stays for the next opening and the feed comes back where it was. **Receive** and **Send** follow the scroll: about 80 px of scrolling down slims them from 56 px to 36 px (slightly smaller text, smaller icons, less padding), about 80 px up brings them back, with no animation while the finger moves; when the scroll stops half way they glide (320 ms) to the nearer size, and within 24 px of the top they are always full. The **+** moves with them. With reduced motion they settle without the glide. The same buttons on `/wallet` behave the same way. While a post's reaction form, a gift sheet or a reaction's pay slot is open on this page, or while a text field in the feed has the focus (a reaction or reply text, an amount, a mention box), the **+** fades out and **Receive** / **Send** fold away (about 280 ms, the same easing as their glide; at once with reduced motion), so the form keeps the whole height above the keyboard and the **+** never lies over its send button. The page only grows downwards while they fold, so nothing under the finger moves. Once the focus has left the field and no such form is open, both come back, and **Receive** / **Send** follow the scroll again. `/wallet` and every other page keep their buttons as they are. The signed-in page ends with 80 px of empty room under the last note, so at the end of the feed its controls scroll clear of the **+**. Open **Menu** (see **Signed-in header**) for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**, then a quiet **Version {version}** line (`app.version`). Gift icon with an integrated Bitcoin symbol, **Welcome, {name}** when the account has a name, or **Welcome** with no session and no empty "Welcome, ". Wallet setup may still be finishing in the background for a new account, but it never covers this non-money screen and no failure note appears here. A signed-out visit (no stored session) keeps the wordmark, shows **Log in**, and does not show the member menu. A held-back stored session is not a guest: the login card replaces the feed, and the top right shows neither **Log in** nor the member menu (variant held-session). Each note still shows its bitcoin amount. The active list loads without Authorization. Another forum mode, or a later page that returns 401, opens `/login`. No composer, reaction form, pay, or delete while signed out. **Show reactions** still loads public replies. A resolved `@username` opens that member only when a session exists; without a session the mark stays text. An author name with a non-empty `accountId` is the profile button even without a session. dismissible living-room laws hint box with an X when not yet dismissed on the account (two laws plus links to **Living room rules** `/rules` and **Contact** `/contact`; after dismiss the box is gone and the flag persists on the account), then a `ForumModeSelect` dropdown (**Active** / **No gifts yet** / **All** / **Most popular**), default **Active**, not a four-way SegmentedControl and not a two-column grid. First paint is one page of 20 notes for the selected mode; further cursor pages prefetch near the end of the visible list. Page-one polling does not replace older loaded pages. **No gifts yet** shows a count chip on the closed control for loaded zero-sat notes created after the last time that filter was opened; omitted when the count is 0 or the filter is selected. Default is **Active** (paid notes (`sats` > 0) plus unpaid moderator notes; a top-level ask with `goalSats` > 0 and zero sats is not included, newest-first feed: newest at the top). **All** shows every note newest-first. **Most popular** ranks paid notes by sats (highest first). Below the selector: clickable author name when `accountId` is set (opens `/members/:id`), including without a session; without `accountId` the name stays text, optional Founder / Moderator / Initiator / Verified pill when the api `role` is one of those four (`basis` has no pill), a `#Shop` link to `/shops` on top-level shop notes (raw `#21GiftsShop` hidden); a moderator also sees **Edit shop note** on each of those notes and can open the same five steps as on `/shops`, timestamp, optional inline photo then caption text below the photo, a link to `/shops?pin=<id>#map` (the label, or coordinates when the label is null) on a top-level note that has a place, optional inline `<video>` playback for notes with video (player follows the clip aspect — portrait stays portrait; the player has its own fullscreen button, including a narrow portrait clip); note and reply bodies longer than 560 characters (twice the 280-character preview) show a 280-character collapsed preview, an ellipsis, and inline **Show more** (`forum.showMore`), expanding in place with no Show less, while permalink `/messages/[id]` stays full text. Cards also show ₿ amount always, plus optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is; a null or missing field uses the spot rate) (no FiatPicker), replyCount text, React (`forum.react`, lucide Reply) on every top-level note, copy-link control (**Copy link to this note** → origin `/l/<8 hex>` (first group of that note id); nested replies get their own copy control, **Copy link to this reply** → origin `/l/<8 hex>` (first group of that reply id)), and expand/collapse on the card body (**Show reactions** / **Hide reactions**; the footer ₿ amount and the reaction-count text also expand; React expands a collapsed card and does not collapse an expanded one; Gift on a payable reply / role / copy / delete / Translate / Heart do not; the card body remains the unique **Show reactions** / **Hide reactions** name). Expanded cards show the replies list (Gift on a payable reply, copy, and moderator trash are also on nested replies) plus an in-card reply composer (**Write a reaction** and an **Amount** field with the ₿ / fiat switch and the other unit under it; the last choice is `account.amountUnit`; empty reply text and an empty amount invoices 21 sats (pay-sheet default); a reply with text and an empty amount is unpaid for a verified member and for every role on their own note (that form has no **Amount** field, an empty reaction there shows `forum.errorEmpty` instead of paying, and the member's own payable reactions show no Gift: a wallet cannot pay itself), otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat); reply authors show the same Founder / Moderator / Initiator / Verified pills (`basis` has none). Pay control / Send Bitcoin only on a payable reply (open **Show reactions**, then Gift on that reply — never on the post); composer in the writer (opened with **+**): **Send a post** / **Ask for money** pill, then Post-path **Add a photo or video** (ImagePlus) and **Add a place** (MapPin) left of the textarea, **Post** (Send icon) to the right (Ask path is `ForumAskWizard`), optional photo draft preview with **Remove photo** (X icon), and optional video draft preview with **Remove video** (X icon) — icon-only action controls, catalog `aria-label`s, no visible button text. In the writer on a touch device (phone or tablet) the Post composer has its phone shape: the text field on top at full width, and one row below it with **Add a photo or video** and **Add a place** on the left and **Post** on the right. Top-level notes with `goalSats` show `ForumGoalBar`: **Ask**, then the defined fiat amount only when the ask was defined in fiat, then `formatBitcoin(goalSats)`, then the visitor's default fiat unless the ask was defined in that same fiat. That visitor figure is the stored snapshot when the string is present, otherwise the spot rate. A legacy ask is bitcoin plus that same visitor figure. Then orange 0–100, green overflow, uncapped percent. A missing name, username, or rules agreement opens `RequirementsOverlay` (no Skip) before a post or reply retries; when the api lists `lightning-address` (the member cannot receive yet), or answers a gift, paid reply, posting fee, or today's repayment invoice with `code` `wallet_required`, the same dialog explains that gifts and posts need the member's own 21.gifts wallet. No always-visible refresh control; there is no visible refresh chrome — while refreshing or pull-armed only a visually hidden (`sr-only`) `role="status"` (`forum.refreshing`) is mounted, and idle markup has no status node. When the visitor is scrolled down and a silent refresh found new ids, a labeled **New posts** pill appears over the feed; it is absent from idle screenshots. When an unread `moderator_appointed` notification exists, a labeled **You are a moderator** pill uses the same chrome (sticky under the frame header); if both pills show, appointment stays at `top-2` and **New posts** moves to `top-14`. Clicking the appointment pill marks that row read and stays on `/welcome`; it is omitted when the flag is falsy and absent from idle screenshots. While the tab is visible the list also silent-refetches every 30 seconds (`FORUM_LIST_POLL_MS`); hidden tabs do not poll. Clicking a role pill toggles a short explanation under that card header. Paying a payable reply opens a sheet with a Close (`X`) control, not Back, and the in-app wallet pay slot. No invoice QR and no button to another wallet app, on any device. No name or address form. No guest donate CTA. Signed-in chrome shows `IntroduceYourselfOverlay` on this screen, and on no other, when `setup` is null and `hasPosted` is false. **Translate** (Languages icon) sits in the footer icon row with react / copy; **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale. Heart (lucide Heart, `forum.heart` “Send ₿1”) is icon-only in that same footer row after Translate and before React or Gift; it shows on a note or reply that is not deleted, not the viewer's own, and whose author can receive (`payable`), including a signed-out card, and never on the external author profile; a signed-out or read-only tap does nothing; a payable tap vibrates and shows the filled heart before payment; `+1` appears only after the payment succeeds. The invoice card pays from the member's in-app wallet only (the `sparkInvoice` when the api issued one, otherwise the payment request). The wallet is open whenever the member is signed in; otherwise the central gate shows the login card in place of this screen. While the wallet connects, prepares amount and fee, or finishes one-time setup in the background, the slot shows **Checking your wallet…**. A prepared payment shows **Send**; the posting fee of a new post or reply instead says **Pay {amount} and post**, without a fiat suffix, here, on the signed-in public note, and on a member profile. Only a quoted fee above ₿0 adds a **Fee {amount}** row with the default fiat above that button. Every payment waits for that explicit tap, including a zero-fee payment. After paying it says **Paying from your wallet…** and the existing long-poll closes the sheet on confirmation. A send that fails or times out is not retried: the sheet keeps waiting for 60 seconds, then shows a neutral not-confirmed-yet sentence; a sheet still open 60 seconds after a successful send shows the same sentence. Too little balance shows an alert, then **Still missing: {amount}** in ₿ and fiat (absent only while the balance is unknown), then the member's own 21.gifts address and QR to add Bitcoin (without a username, only the address and QR are left out). While this shows, the slot reads the synced balance every 4 s; once the balance covers the amount and known fee, it prepares again and stops at **Send** (with the fee row only when the quoted fee is above ₿0), never paying without that tap. The same applies to today's repayment and the posting fee in the composer. Without a configured wallet, or for an account that cannot hold one, the card says **Your 21.gifts wallet is not available here, so this cannot be paid.**; a failed connection or prepare shows **Your wallet could not prepare this payment. Please try again.** with **Try again**. If background setup exhausts its retries, this money surface instead shows the alert **Your wallet could not be set up yet.** with a secondary **Try again** button; it never appears elsewhere on the forum.
+- **Actions:** Dismiss the living-room laws hint (permanent), tap **+** to open the writer and close it with the top-left arrow, post a text and/or photo or video message from the writer, attach/remove a photo, a video, or a place draft, expand a note to load replies and post a reply, open an author profile at `/members/:id`, open a `#Shop` tag to `/shops`, edit a shop note when the session is a moderator, copy a note link or a reply's own link to origin `/l/<8 hex>` (first group of that note or reply id), click a role pill for its explanation, pay a payable reply in-app, switch the forum view (Active / No gifts yet / All / Most popular), pull down from the top to refresh the forum list, click **You are a moderator** to mark that appointment read and hide the pill, click **New posts** or the wordmark / Menu **Home** (already on `/welcome`) to scroll to top and apply new notes (Menu **Home** also clears the in-app view history), open Menu **Home** on any other screen to clear the in-app view history and return here, leave the forum in view for 30 seconds so a visible-tab poll can pick up new ids, return to the web app to refresh the list when it becomes visible again, complete a `RequirementsOverlay` for a missing name, username, or rules agreement (a missing wallet is explained there, not filled in), open the rules or contact pages, retry a failed load; open **Menu** (see **Signed-in header**) for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, opens the writer and focuses its text field via `requestForumCompose` / `FORUM_COMPOSE_EVENT`).
+- **Calls:** `PageChrome`, `AppShell`, `ProfileChromeLeft`, `ForumHomeWordmark`, `WelcomeScreen`, `ForumLoader`, `ForumBoard`, `AppShellOverlay`, `WalletFooterActions`, `useAppHeight`, `ShopNoteEditControl`, `ForumModeSelect`, `ForumAskWizard`, `ForumGoalBar`, `parseForumAskAmount`, `RequirementsOverlay`, `SegmentedControl`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `prepareForumPhoto`, `prepareForumVideo`, `fetchMessagePhoto`, `forumVideoSrc`, `fetchReplies`, `visibleForumMessages`, `hasUnseenForumPosts`, `unpaidNewCount`, `useSpotRate`, `fetchFxSpot`, `spotRateDay`, `satsToFiatAmount`, `fetchNotifications`, `markNotificationRead`, `WalletPay`, `useWalletPay`, the wallet payment primitive.
 
 ### Variant: default
 
-Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the living-room laws hint (`forumLawsDismissed`), **Active** selected. Paid notes newest-first (Ada ₿5 then Carol ₿21); Bob's unpaid note is not visible. Composer is **Send a post** / **Ask for money**; Post is attach + Send icons, no Ask field on the Post messenger. React (`forum.react`) on every top-level note. Posts do not show Send Bitcoin; Gift appears on a payable reply after **Show reactions**. Founder / Moderator / Initiator / Verified pills beside the name when `role` is one of those four; `basis` has no pill (Carol is `verified`, Ada is `moderator`; Bob is `basis` and hidden on Active). One **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
+Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the living-room laws hint (`forumLawsDismissed`), **Active** selected. Paid notes newest-first (Ada ₿5 then Carol ₿21); Bob's unpaid note is not visible. No composer on the page: the **+** (**Write a post**) floats at the bottom right; the writer holds **Send a post** / **Ask for money** and the composer. React (`forum.react`) on every top-level note. Posts do not show Send Bitcoin; Gift appears on a payable reply after **Show reactions**. Heart (`forum.heart` “Send ₿1”) sits after Translate and before React or Gift on a note or reply that is not deleted, not the viewer's own, and whose author can receive (`payable`), including a signed-out card, and never on the external author profile; a signed-out or read-only tap does nothing; a payable tap vibrates and shows the filled heart before payment; `+1` appears only after the payment succeeds. Founder / Moderator / Initiator / Verified pills beside the name when `role` is one of those four; `basis` has no pill (Carol is `verified`, Ada is `moderator`; Bob is `basis` and hidden on Active). One **Menu** top-right (see **Signed-in header**); open the Menu for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**.
 
 ![21.gifts welcome](images/welcome.png)
 
@@ -523,6 +1044,336 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 One author row on the welcome forum. Beside the name, a static Software Developer label (a span, not a button and not a role) sits after any role pill. The rest of this state matches the smallest one-note welcome screen.
 
 ![21.gifts welcome software developer](images/welcome-software-developer.png)
+
+### Variant: held-session
+
+A signed-in member reloaded the page (pinned with `?visual=held-session`, Playwright builds only): the stored session is held back until the wallet is open again, so the forum home shows the login card in place of the feed, not the guest view. The card greets **Welcome back, Ada** above **Log in with your device**, with **Log in**, **New to 21.gifts?**, and **Open a new account**, and no **Log out**. The top right shows neither **Log in** nor the **Menu**. One tap on **Log in**, one passkey prompt, and the member is back on `/welcome`, signed in with the wallet open. A visitor without any stored session still sees the guest forum with **Log in** top right.
+
+![21.gifts welcome for a held-back session](images/welcome-held-session.png)
+
+### Variant: wallet-buttons
+
+Signed in with the wallet open (Playwright pin `?visual=balance-ready`, honoured only in a Playwright build): the forum home as in the default shot, plus **Receive** (left, arrow pointing in) and **Send** (right, arrow pointing out) at full size, fixed at the bottom of the screen under a soft fade, with the **+** (**Write a post**) 23 px above **Send**.
+
+![21.gifts welcome with Receive and Send](images/welcome-wallet-buttons.png)
+
+### Variant: wallet-buttons-slim
+
+The same page scrolled down by more than 80 px: **Receive** and **Send** are slim (36 px tall, slightly smaller text and icons, less padding around them), and the **+** has moved down with them, still 23 px above **Send**.
+
+![21.gifts welcome with slim Receive and Send](images/welcome-wallet-buttons-slim.png)
+
+### Variant: reaction-open
+
+Signed in with the wallet open (`?visual=balance-ready`) after **React** on another member's post (Carol's): the post is expanded with its reaction form (**Amount** with the ₿ / fiat switch, **Write a reaction**, and the send button) and its text field has the focus. The **+** is gone and **Receive** / **Send** have folded away, so the page reaches down to the frame's bottom edge and nothing lies over the send button. Closing the post (**Hide reactions**) and leaving the field brings both back.
+
+![21.gifts welcome with a reaction form open](images/welcome-reaction-open.png)
+
+### Variant: wallet-setup-pending
+
+Signed in while the background wallet setup is still due (Playwright pin `?visual=setup-pending`): **Receive** and **Send** are both enabled at the bottom of the forum home; a step that needs the open wallet waits for it inside the view. No dialog.
+
+![21.gifts welcome while wallet setup is pending](images/welcome-wallet-setup-pending.png)
+
+### Variant: wallet-receive
+
+After **Receive**: the wallet's Receive view over the forum home (label **Receive**, the address QR, **ada@21.gifts**, **Copy**, **Set an amount**), with the top-left arrow and without the feed or the bottom buttons.
+
+![21.gifts welcome receive view](images/welcome-wallet-receive.png)
+
+### Variant: wallet-receive-opening
+
+The `/wallet` variant `receive-opening` over the forum home (pin `?visual=setup-pending`, then **Receive**; Playwright builds only): the same Receive view as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet receive while the wallet opens](images/welcome-wallet-receive-opening.png)
+
+### Variant: wallet-receive-setup-failed
+
+The `/wallet` variant `receive-setup-failed` over the forum home (pin `?visual=balance-setup-failed`, then **Receive**; Playwright builds only): the same Receive view as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet receive after the setup gave up](images/welcome-wallet-receive-setup-failed.png)
+
+### Variant: wallet-send-camera
+
+After **Send** (pin `?visual=send-input`, which opens the Send view on its own): the full-size camera over the forum home (a stubbed black stream in the test browser) with the viewfinder, **Point the camera at a Bitcoin QR code** over the top of the picture, and **Paste** and **Enter manually** floating over its lower part; the top-left arrow closes it.
+
+![21.gifts welcome send camera](images/welcome-wallet-send-camera.png)
+
+### Variant: wallet-send-camera-denied
+
+The same Send view when the camera is blocked: **Camera access was blocked. Allow it in your browser settings, or paste the payment request.** in white on the black camera area, with **Paste** and **Enter manually** still at the bottom.
+
+![21.gifts welcome send camera denied](images/welcome-wallet-send-camera-denied.png)
+
+### Variant: wallet-send-manual
+
+The Send view after **Enter manually**: the sheet over the bottom of the camera area with the Close (`X`), `bob@example.com` typed into **Payment request or address**, and **Continue**.
+
+![21.gifts welcome send manual entry](images/welcome-wallet-send-manual.png)
+
+### Variant: wallet-send-manual-alert
+
+The `/wallet` variant `send-manual-alert` over the forum home: the manual-entry sheet with the input alert under the field.
+
+![21.gifts welcome wallet send manual alert](images/welcome-wallet-send-manual-alert.png)
+
+### Variant: wallet-send-manual-busy
+
+The `/wallet` variant `send-manual-busy` over the forum home: the manual-entry sheet while the typed text is read.
+
+![21.gifts welcome wallet send manual busy](images/welcome-wallet-send-manual-busy.png)
+
+### Variant: wallet-send-paste-denied
+
+The `/wallet` variant `send-paste-denied` in the Send view a `?visual=send-input` pin opens over the forum home: the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send paste denied](images/welcome-wallet-send-paste-denied.png)
+
+### Variant: wallet-send-paste-empty
+
+The `/wallet` variant `send-paste-empty` in the Send view a `?visual=send-input` pin opens over the forum home: the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send paste empty](images/welcome-wallet-send-paste-empty.png)
+
+### Variant: wallet-send-camera-unavailable
+
+The `/wallet` variant `send-camera-unavailable` in the Send view a `?visual=send-input` pin opens over the forum home: the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send camera unavailable](images/welcome-wallet-send-camera-unavailable.png)
+
+### Variant: wallet-send-amount
+
+The `/wallet` variant `send-amount` in the Send view the `?visual=send-amount` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount](images/welcome-wallet-send-amount.png)
+
+### Variant: wallet-send-amount-fiat
+
+The `/wallet` variant `send-amount-fiat` in the Send view the `?visual=send-amount-fiat` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount fiat](images/welcome-wallet-send-amount-fiat.png)
+
+### Variant: wallet-send-confirm
+
+The `/wallet` variant `send-confirm` in the Send view the `?visual=send-confirm` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm](images/welcome-wallet-send-confirm.png)
+
+### Variant: wallet-send-sent
+
+The `/wallet` variant `send-sent` in the Send view the `?visual=send-sent` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send sent](images/welcome-wallet-send-sent.png)
+
+### Variant: wallet-send-unsupported
+
+The `/wallet` variant `send-unsupported` in the Send view the `?visual=send-unsupported` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send unsupported](images/welcome-wallet-send-unsupported.png)
+
+### Variant: wallet-send-unreadable
+
+The `/wallet` variant `send-unreadable` in the Send view the `?visual=send-unreadable` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send unreadable](images/welcome-wallet-send-unreadable.png)
+
+### Variant: wallet-send-input-opening
+
+The `/wallet` variant `send-input-opening` in the Send view the `?visual=send-input-opening` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send input while the wallet opens](images/welcome-wallet-send-input-opening.png)
+
+### Variant: wallet-send-input-wallet-error
+
+The `/wallet` variant `send-input-wallet-error` in the Send view the `?visual=send-input-wallet-error` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send input after the wallet could not be opened](images/welcome-wallet-send-input-wallet-error.png)
+
+### Variant: wallet-send-confirm-opening
+
+The `/wallet` variant `send-confirm-opening` in the Send view the `?visual=send-confirm-opening` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm while the wallet opens](images/welcome-wallet-send-confirm-opening.png)
+
+### Variant: wallet-send-confirm-wallet-error
+
+The `/wallet` variant `send-confirm-wallet-error` in the Send view the `?visual=send-confirm-wallet-error` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm after the wallet could not be opened](images/welcome-wallet-send-confirm-wallet-error.png)
+
+### Variant: wallet-send-invalid
+
+The `/wallet` variant `send-invalid` in the Send view the `?visual=send-invalid` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send invalid](images/welcome-wallet-send-invalid.png)
+
+### Variant: wallet-send-failed
+
+The `/wallet` variant `send-failed` in the Send view the `?visual=send-failed` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send failed](images/welcome-wallet-send-failed.png)
+
+### Variant: wallet-send-insufficient
+
+The `/wallet` variant `send-insufficient` in the Send view the `?visual=send-insufficient` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send insufficient](images/welcome-wallet-send-insufficient.png)
+
+### Variant: wallet-send-amount-error
+
+The `/wallet` variant `send-amount-error` in the Send view the `?visual=send-amount-error` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount error](images/welcome-wallet-send-amount-error.png)
+
+### Variant: wallet-send-amount-request
+
+The `/wallet` variant `send-amount-request` in the Send view the `?visual=send-amount-request` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount request](images/welcome-wallet-send-amount-request.png)
+
+### Variant: wallet-send-amount-no-comment
+
+The `/wallet` variant `send-amount-no-comment` in the Send view the `?visual=send-amount-no-comment` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount no comment](images/welcome-wallet-send-amount-no-comment.png)
+
+### Variant: wallet-send-amount-min
+
+The `/wallet` variant `send-amount-min` in the Send view the `?visual=send-amount-min` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount min](images/welcome-wallet-send-amount-min.png)
+
+### Variant: wallet-send-confirm-sending
+
+The `/wallet` variant `send-confirm-sending` in the Send view the `?visual=send-confirm-sending` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm sending](images/welcome-wallet-send-confirm-sending.png)
+
+### Variant: wallet-send-confirm-fixed
+
+The `/wallet` variant `send-confirm-fixed` in the Send view the `?visual=send-confirm-fixed` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm fixed](images/welcome-wallet-send-confirm-fixed.png)
+
+### Variant: wallet-send-confirm-shop
+
+The `/wallet` variant `send-confirm-shop` in the Send view the `?visual=send-confirm-shop` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm shop](images/welcome-wallet-send-confirm-shop.png)
+
+### Variant: wallet-send-confirm-member
+
+The `/wallet` variant `send-confirm-member` in the Send view the `?visual=send-confirm-member` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm member](images/welcome-wallet-send-confirm-member.png)
+
+### Variant: wallet-send-amount-onchain
+
+The `/wallet` variant `send-amount-onchain` in the Send view the `?visual=send-amount-onchain` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount onchain](images/welcome-wallet-send-amount-onchain.png)
+
+### Variant: wallet-send-amount-onchain-min
+
+The `/wallet` variant `send-amount-onchain-min` in the Send view the `?visual=send-amount-onchain-min` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount onchain min](images/welcome-wallet-send-amount-onchain-min.png)
+
+### Variant: wallet-send-confirm-onchain
+
+The `/wallet` variant `send-confirm-onchain` in the Send view the `?visual=send-confirm-onchain` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain](images/welcome-wallet-send-confirm-onchain.png)
+
+### Variant: wallet-send-confirm-onchain-fast
+
+The `/wallet` variant `send-confirm-onchain-fast` in the Send view the `?visual=send-confirm-onchain-fast` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain fast](images/welcome-wallet-send-confirm-onchain-fast.png)
+
+### Variant: wallet-send-confirm-onchain-slow
+
+The `/wallet` variant `send-confirm-onchain-slow` in the Send view the `?visual=send-confirm-onchain-slow` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain slow](images/welcome-wallet-send-confirm-onchain-slow.png)
+
+### Variant: wallet-send-confirm-onchain-low
+
+The `/wallet` variant `send-confirm-onchain-low` in the Send view the `?visual=send-confirm-onchain-low` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain low](images/welcome-wallet-send-confirm-onchain-low.png)
+
+### Variant: wallet-send-confirm-onchain-renewed
+
+The `/wallet` variant `send-confirm-onchain-renewed` in the Send view the `?visual=send-confirm-onchain-renewed` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain renewed](images/welcome-wallet-send-confirm-onchain-renewed.png)
+
+### Variant: wallet-send-confirm-onchain-renewing
+
+The `/wallet` variant `send-confirm-onchain-renewing` in the Send view the `?visual=send-confirm-onchain-renewing` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain renewing](images/welcome-wallet-send-confirm-onchain-renewing.png)
+
+### Variant: wallet-send-confirm-onchain-sending
+
+The `/wallet` variant `send-confirm-onchain-sending` in the Send view the `?visual=send-confirm-onchain-sending` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send confirm onchain sending](images/welcome-wallet-send-confirm-onchain-sending.png)
+
+### Variant: wallet-send-input-busy
+
+The `/wallet` variant `send-input-busy` in the Send view the `?visual=send-input-busy` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send input busy](images/welcome-wallet-send-input-busy.png)
+
+### Variant: wallet-send-amount-busy
+
+The `/wallet` variant `send-amount-busy` in the Send view the `?visual=send-amount-busy` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send amount busy](images/welcome-wallet-send-amount-busy.png)
+
+### Variant: wallet-send-error
+
+The `/wallet` variant `send-error` in the Send view the `?visual=send-error` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send error](images/welcome-wallet-send-error.png)
+
+### Variant: wallet-send-not-payable
+
+The `/wallet` variant `send-not-payable` in the Send view the `?visual=send-not-payable` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send not payable](images/welcome-wallet-send-not-payable.png)
+
+### Variant: wallet-send-not-found
+
+The `/wallet` variant `send-not-found` in the Send view the `?visual=send-not-found` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send not found](images/welcome-wallet-send-not-found.png)
+
+### Variant: wallet-send-relay-unreachable
+
+The `/wallet` variant `send-relay-unreachable` in the Send view the `?visual=send-relay-unreachable` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send relay unreachable](images/welcome-wallet-send-relay-unreachable.png)
+
+### Variant: wallet-send-comment-long
+
+The `/wallet` variant `send-comment-long` in the Send view the `?visual=send-comment-long` pin opens over the forum home (Playwright builds only): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet send comment long](images/welcome-wallet-send-comment-long.png)
+
+### Variant: wallet-receive-copied
+
+The `/wallet` variant `receive-copied` after **Receive** over the forum home (pin `?visual=balance-ready`): the same view and step as on `/wallet`, with the top-left arrow, without the feed or the bottom buttons.
+
+![21.gifts welcome wallet receive copied](images/welcome-wallet-receive-copied.png)
+
+### Variant: home-from-menu
+
+Signed in. The member opened **Shops** from the Menu (its arrow returns to `/welcome`), then chose Menu **Home**. The forum home shows the wordmark top-left and no arrow. The in-app view history now holds only `/welcome`, so the next screen's arrow returns here. The rest is the default welcome.
+
+![21.gifts welcome after Menu Home](images/welcome-home-from-menu.png)
 
 ### Variant: daily-payout-stopped
 
@@ -544,13 +1395,13 @@ Signed in, no seed yet. The dialog explains that the device will ask for a passk
 
 ### Variant: renew-passkey
 
-After **Continue**. The dialog says the device is showing the passkey prompt. The member confirms that prompt on the device. There is no second button.
+Pinned fixture (`?visual=renew-passkey`, Playwright builds only). After **Continue**. The dialog says the device is showing the passkey prompt. The member confirms that prompt on the device. There is no second button.
 
 ![21.gifts welcome renew passkey](images/welcome-renew-passkey.png)
 
 ### Variant: renew-ok
 
-The passkey was renewed. The dialog says it worked. **OK** closes it and the living room is usable.
+Pinned fixture (`?visual=renew-ok`, Playwright builds only). The passkey was renewed. The dialog says it worked. **OK** closes it and the living room is usable.
 
 ![21.gifts welcome renew ok](images/welcome-renew-ok.png)
 
@@ -562,13 +1413,13 @@ The renewal did not work. **OK** confirms that and closes the dialog. The renew 
 
 ### Variant: renew-failed-prf-unsupported
 
-The renewal did not work because this passkey cannot create a recovery phrase. The dialog says another password manager or another device is needed. **OK** confirms that and closes the dialog. The renew does not start again. The account still has no seed.
+The renewal did not work because the passkey gave no PRF output. The dialog says **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`). **OK** confirms that and closes the dialog. The renew does not start again. The account still has no seed.
 
 ![21.gifts welcome renew failed prf unsupported](images/welcome-renew-failed-prf-unsupported.png)
 
 ### Variant: sunday
 
-Device-local Sunday. The public composer is gone. The sentence **Writing is paused on Sunday.** stands in its place. Notes stay readable.
+Device-local Sunday, with the writer opened from **+**. The composer is gone from the writer. The sentence **Writing is paused on Sunday.** stands in its place. Notes stay readable.
 
 ![21.gifts welcome sunday](images/welcome-sunday.png)
 
@@ -626,6 +1477,12 @@ First visit: the dismissible living-room laws hint box is visible (two laws plus
 
 ![21.gifts welcome laws](images/welcome-laws.png)
 
+### Variant: first-post-free
+
+A member below verified who has never posted a top-level note (their About me note does not count) sees **Your first post is free.** (`forum.firstPostFree`) in muted text under the message composer in the writer, below Post. Post then creates the note directly, with no invoice and no pay sheet, and shows it as after a paid post: the feed switches to All and the composer clears. If the api no longer allows the free post (for example another first post got there first), the same Post opens the normal 1-sat posting fee instead. Verified members never see the line; they already post without a fee.
+
+![21.gifts welcome first post free](images/welcome-first-post-free.png)
+
 ### Variant: moderation
 
 A moderator sees an icon-only Delete post control in the note footer icon row with copy; confirming wraps to the next line. Other roles do not see it. The server independently checks the live role.
@@ -655,6 +1512,11 @@ A failed deletion keeps the post and confirmation visible with an error and retr
 A moderator who expands a note sees an icon-only Delete reaction control on each nested reply. Ordinary members do not. Parent still has Delete post.
 ![21.gifts reply-moderation](images/welcome-reply-moderation.png)
 
+### Variant: reply-own-note
+
+A Basis member expands their own note. The reaction form has the text field and send only: no Amount field, because a member cannot gift themselves. Send posts the reaction unpaid, with no pay card.
+![21.gifts reply-own-note](images/welcome-reply-own-note.png)
+
 ### Variant: reply-delete-confirm
 
 Delete reaction opens inline confirmation: Delete this reaction from 21.gifts? Confirm deletion (check) and Cancel deletion (X) are icon-only. Cancel sends no request. The parent post stays.
@@ -681,7 +1543,7 @@ Click **All** — Bob's unpaid note (`Does anyone have spare sats this week?`) i
 
 ### Variant: goal-50
 
-On **All**: top-level Ada note with `sats: 10500` and `goalSats: 21000`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50** (viewer USD from the gift-day rate). Progress bar at **50%** (orange half-fill). A **Donation** tag sits beside the name. Pressing it explains that a donation is not paid back. The bar does not repeat that sentence. Composer **Send a post** / **Ask for money** pill visible. Gift still not on the post.
+On **All**: top-level Ada note with `sats: 10500` and `goalSats: 21000`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50** (viewer USD from the spot rate). Progress bar at **50%** (orange half-fill). A **Donation** tag sits beside the name. Pressing it explains that a donation is not paid back. The bar does not repeat that sentence. Composer **Send a post** / **Ask for money** pill visible. Gift still not on the post.
 
 ![21.gifts welcome goal 50](images/welcome-goal-50.png)
 
@@ -693,7 +1555,7 @@ On **All**: top-level Ada note with `sats: 21000` and `goalSats: 21000`. The ask
 
 ### Variant: goal-110
 
-On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. The ask is defined in bitcoin, so `ForumGoalBar` names **Ask ₿21'000 · $21.00** (the viewer's USD from the gift-day rate; this fixture stores no snapshot). The note amount is **₿23'100 · $23.10**. Full orange track plus green overflow (10% of track width past the right edge), label **110%**.
+On **All**: top-level Ada note with `sats: 23100` and `goalSats: 21000`. The ask is defined in bitcoin, so `ForumGoalBar` names **Ask ₿21'000 · $21.00** (the viewer's USD from the spot rate; this fixture stores no snapshot). The note amount is **₿23'100 · $23.10**. Full orange track plus green overflow (10% of track width past the right edge), label **110%**.
 
 ![21.gifts welcome goal 110](images/welcome-goal-110.png)
 
@@ -741,9 +1603,39 @@ Same funded credit note as **repay-today**, after **Pay today's repayment** is p
 
 ### Variant: repay-today-invoice
 
-Same note as **repay-today**, after **Pay today's repayment** is pressed. The invoice card is open, with **Pay with Wallet of Satoshi**. The amount form is not shown.
+Same note as **repay-today**, after **Pay today's repayment** is pressed. The invoice card is open with the in-app wallet pay slot; in this build the wallet is not configured, so it says **Your 21.gifts wallet is not available here, so this cannot be paid.** No invoice QR. The amount form is not shown.
 
 ![21.gifts welcome repay today invoice](images/welcome-repay-today-invoice.png)
+
+### Variant: repay-wallet-pay-preparing
+
+Pinned fixture (`?visual=wallet-pay-preparing`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot, with no invoice QR: a spinner and **Checking your wallet…**.
+
+![21.gifts welcome repay wallet pay preparing](images/welcome-repay-wallet-pay-preparing.png)
+
+### Variant: repay-wallet-pay-confirm
+
+Pinned fixture (`?visual=wallet-pay-confirm`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot, with no invoice QR: **Send**, and no fee row for the quoted fee of ₿0.
+
+![21.gifts welcome repay wallet pay confirm](images/welcome-repay-wallet-pay-confirm.png)
+
+### Variant: repay-wallet-pay-paying
+
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot, with no invoice QR: a spinner and **Paying from your wallet…**.
+
+![21.gifts welcome repay wallet pay paying](images/welcome-repay-wallet-pay-paying.png)
+
+### Variant: repay-wallet-pay-insufficient
+
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot, with no invoice QR: the alert that the wallet lacks Bitcoin, then **Still missing:** with the amount plus the known fee minus the balance in ₿ and fiat (the pin shows the full amount), then the member's own 21.gifts address and its Open CryptoPay QR.
+
+![21.gifts welcome repay wallet pay insufficient](images/welcome-repay-wallet-pay-insufficient.png)
+
+### Variant: repay-wallet-pay-unconfirmed
+
+Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only, repayment invoice with a `sparkInvoice`). After **Pay today's repayment**, the repayment card (**Pay ₿700**) shows the in-app wallet slot, with no invoice QR: the neutral not-confirmed-yet sentence.
+
+![21.gifts welcome repay wallet pay unconfirmed](images/welcome-repay-wallet-pay-unconfirmed.png)
 
 ### Variant: ask-credit-amount
 
@@ -1119,7 +2011,7 @@ Ask step 4 of 4, **Daily** pressed, after the post fails.
 
 ### Variant: ask-open
 
-**All**, not Active. Dana's zero-sat **Ask for money** is defined in bitcoin, so the bar shows **₿1'000 · $1.00** (viewer USD from the gift-day rate; this fixture stores no snapshot), photo + caption, `ForumGoalBar` at 0%. A zero-sat ask is absent from Active, so this shot opens **All**.
+**All**, not Active. Dana's zero-sat **Ask for money** is defined in bitcoin, so the bar shows **₿1'000 · $1.00** (viewer USD from the spot rate; this fixture stores no snapshot), photo + caption, `ForumGoalBar` at 0%. A zero-sat ask is absent from Active, so this shot opens **All**.
 
 ![21.gifts welcome ask open](images/welcome-ask-open.png)
 
@@ -1143,7 +2035,7 @@ Active is shown closed; last-visit stamp older than Bob's unpaid note; the count
 
 ### Variant: empty-unpaid
 
-No zero-sat notes remain in the loaded list. **Every loaded message has already received Bitcoin.** appears; the filters and composer remain available. An entirely empty forum still uses the general empty state.
+No zero-sat notes remain in the loaded list. **Every loaded message has already received Bitcoin.** appears; the filters and the **+** remain available. An entirely empty forum still uses the general empty state.
 
 ![21.gifts welcome no remaining zero-sat notes](images/welcome-empty-unpaid.png)
 
@@ -1155,13 +2047,13 @@ Click **Most popular** — paid notes ordered by sats (Carol ₿21, then Ada ₿
 
 ### Variant: empty-paid
 
-Copy **No message has received Bitcoin yet.** Active selected, unpaid notes hidden, composer visible.
+Copy **No message has received Bitcoin yet.** Active selected, unpaid notes hidden, the **+** visible (no composer on the page).
 
 ![21.gifts welcome empty paid](images/welcome-empty-paid.png)
 
 ### Variant: empty
 
-Empty copy **No messages yet — be the first to write one.** plus composer (**Send a post** / **Ask for money** pill, attach + textarea + Post).
+Empty copy **No messages yet — be the first to write one.** plus the **+** (no composer on the page; the **Send a post** / **Ask for money** pill, attach, textarea and Post are in the writer).
 
 ![21.gifts welcome empty](images/welcome-empty.png)
 
@@ -1173,7 +2065,7 @@ Loading copy **Loading…** while the messages fetch is in flight.
 
 ### Variant: error
 
-Load error **Could not load messages. Please try again.** plus **Try again**.
+Load error **Could not load messages. Please try again.** plus **Try again**. Shown only when the page itself cannot be read (a failed request or an invalid envelope). One note that cannot be shown, such as an empty About me note, is left out of the list and does not cause this error in any mode.
 
 ![21.gifts welcome error](images/welcome-error.png)
 
@@ -1197,7 +2089,7 @@ Click **Post** with an empty composer and no photo or video → **Enter a messag
 
 ### Variant: expanded
 
-On **All**, click **Show reactions** on a note — the note's ₿ amount and the reaction-count text also expand — card expands (`aria-expanded`), replies list loads via `fetchReplies`, and the in-card reply composer shows **Write a reaction** plus an **Amount** sats field. Gift-only replies render as **send ₿…** plus the same optional preferred-fiat `·` as notes (a stored string as-is, the gift-day rate when that stored field is null or missing); a reply with text and a gift shows both. Reply authors show the same Founder / Moderator / Initiator / Verified pills as notes (`basis` has none); clicking a pill toggles the same short explanation. Empty reply text and an empty amount invoices 21 sats (pay-sheet default) and opens the pay sheet; a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts; an amount of 0 is billed as 1 sat.
+On **All**, click **Show reactions** on a note — the note's ₿ amount and the reaction-count text also expand — card expands (`aria-expanded`), replies list loads via `fetchReplies`, and the in-card reply composer shows **Write a reaction** plus an **Amount** sats field. Gift-only replies render as **send ₿…** plus the same optional preferred-fiat `·` as notes (a stored string as-is, the spot rate when that stored field is null or missing); a reply with text and a gift shows both. Reply authors show the same Founder / Moderator / Initiator / Verified pills as notes (`basis` has none); clicking a pill toggles the same short explanation. Empty reply text and an empty amount invoices 21 sats (pay-sheet default) and opens the pay sheet; a reply with text and an empty amount is unpaid for a verified member and for every role on their own note (that form has no **Amount** field, an empty reaction there shows `forum.errorEmpty` instead of paying, and the member's own payable reactions show no Gift: a wallet cannot pay itself), otherwise 1 sat to 21.gifts; an amount of 0 is billed as 1 sat.
 
 ![21.gifts welcome expanded](images/welcome-expanded.png)
 
@@ -1257,9 +2149,39 @@ The invoice has been minted. The pay page stands where the reply field was. The 
 
 ### Variant: reaction-pay-sheet
 
-The same page, scrolled so **Close** (`X`), **Pay ₿21**, the QR or the phone **Pay** button, and **Waiting for payment…** are in the window. The preview is on that page. Close stays on this view and is not the top-left back arrow.
+The same page, scrolled so **Close** (`X`), **Pay ₿21**, the in-app wallet pay slot (here **Your 21.gifts wallet is not available here, so this cannot be paid.**), and **Waiting for payment…** are in the window. No invoice QR on any device. The preview is on that page. Close stays on this view and is not the top-left back arrow.
 
 ![21.gifts welcome reaction pay sheet](images/welcome-reaction-pay-sheet.png)
+
+### Variant: reaction-wallet-pay-preparing
+
+Pinned fixture (`?visual=wallet-pay-preparing`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot, with no invoice QR: a spinner and **Checking your wallet…**.
+
+![21.gifts welcome reaction wallet pay preparing](images/welcome-reaction-wallet-pay-preparing.png)
+
+### Variant: reaction-wallet-pay-confirm
+
+Pinned fixture (`?visual=wallet-pay-confirm`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot, with no invoice QR: **Send**, and no fee row for the quoted fee of ₿0.
+
+![21.gifts welcome reaction wallet pay confirm](images/welcome-reaction-wallet-pay-confirm.png)
+
+### Variant: reaction-wallet-pay-paying
+
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot, with no invoice QR: a spinner and **Paying from your wallet…**, with **Waiting for payment…** under it.
+
+![21.gifts welcome reaction wallet pay paying](images/welcome-reaction-wallet-pay-paying.png)
+
+### Variant: reaction-wallet-pay-insufficient
+
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot, with no invoice QR: the alert that the wallet lacks Bitcoin, then **Still missing:** with the amount plus the known fee minus the balance in ₿ and fiat (the pin shows the full amount), then the member's own 21.gifts address and its Open CryptoPay QR.
+
+![21.gifts welcome reaction wallet pay insufficient](images/welcome-reaction-wallet-pay-insufficient.png)
+
+### Variant: reaction-wallet-pay-unconfirmed
+
+Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only, invoice with a `sparkInvoice`). The paid-reaction pay page shows the in-app wallet slot, with no invoice QR: the neutral not-confirmed-yet sentence.
+
+![21.gifts welcome reaction wallet pay unconfirmed](images/welcome-reaction-wallet-pay-unconfirmed.png)
 
 ### Variant: reaction-pay-kept
 
@@ -1284,6 +2206,12 @@ The payment request failed because the note was deleted. The alert says **This n
 The payment request was rate-limited. The alert says **Too many messages. Please wait a moment and try again.** The typed sentence is still in the field.
 
 ![21.gifts welcome reaction rate limit](images/welcome-reaction-rate-limit.png)
+
+### Variant: reaction-author-wallet
+
+The payment request failed because Bob's wallet cannot receive it (the api answers with `code` `cannot_receive`). The alert says **The author's wallet cannot receive this Bitcoin payment**. The typed sentence is still in the field, and no pay sheet is open.
+
+![21.gifts welcome reaction author wallet](images/welcome-reaction-author-wallet.png)
 
 ### Variant: reaction-paid
 
@@ -1343,6 +2271,18 @@ Same German note after POST /translate fails. Alert **Could not translate this n
 
 ![21.gifts welcome translate error](images/welcome-translate-error.png)
 
+### Variant: heart-needs-balance
+
+Same signed-in German note after opening `?visual=heart-needs-balance` (a ready wallet below 1 sat) and clicking Send ₿1. No press and no **+1**; nothing is sent. Copy **A Bitcoin balance is required for this.**
+
+![21.gifts welcome heart needs balance](images/welcome-heart-needs-balance.png)
+
+### Variant: heart-paid
+
+Same signed-in German note after opening `?visual=heart-paid` and clicking Send ₿1. The filled heart and **+1** that every tap shows are held for the shot.
+
+![21.gifts welcome heart paid](images/welcome-heart-paid.png)
+
 ### Variant: note-truncated
 
 Signed-in `/welcome` with one paid note whose body is longer than 560 characters. Collapsed 280-character preview, ellipsis, and **Show more** are visible; the distinctive tail is hidden.
@@ -1393,25 +2333,25 @@ Signed-in member with an unread `moderator_appointed` notification. Labeled **Yo
 
 ### Variant: photo
 
-On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row from Ada with inline image (**Photo from Ada**) and the attach control visible in the composer.
+On **All** (unpaid photo-only notes are hidden on Active): photo-only forum row from Ada with inline image (**Photo from Ada**), and the **+** that opens the writer (no composer on the page).
 
 ![21.gifts welcome photo](images/welcome-photo.png)
 
 ### Variant: photos
 
-On **All**: photo-only forum row from Ada with two stills (**Photo from Ada** twice, `photoCount: 2`) in `ForumPhotoGallery` (horizontal snap row, `data-scroll-x`, 88% peek, `1/2` chip, dots) and the attach control visible in the composer.
+On **All**: photo-only forum row from Ada with two stills (**Photo from Ada** twice, `photoCount: 2`) in `ForumPhotoGallery` (horizontal snap row, `data-scroll-x`, 88% peek, `1/2` chip, dots), and the **+** that opens the writer (no composer on the page).
 
 ![21.gifts welcome photos](images/welcome-photos.png)
 
 ### Variant: photo-and-text
 
-After a successful post of caption **Hello with this photo.** plus a JPEG: the row shows **Photo from Ada**, then that text below the photo; the composer is empty again (attach + textarea + Post).
+After a successful post of caption **Hello with this photo.** plus a JPEG: the row shows **Photo from Ada**, then that text below the photo; the successful post closed the writer and cleared its draft, and the **+** is back.
 
 ![21.gifts welcome photo and text](images/welcome-photo-and-text.png)
 
 ### Variant: photos-and-text
 
-On **All**: forum row from Ada with two stills (**Photo from Ada**) in `ForumPhotoGallery` (horizontal snap row, `data-scroll-x`, 88% peek, `1/2` chip, dots) and caption **Hello with these photos.** below the photos; the composer is empty (attach + textarea + Post).
+On **All**: forum row from Ada with two stills (**Photo from Ada**) in `ForumPhotoGallery` (horizontal snap row, `data-scroll-x`, 88% peek, `1/2` chip, dots) and caption **Hello with these photos.** below the photos; the successful post closed the writer, and the **+** is back.
 
 ![21.gifts welcome photos and text](images/welcome-photos-and-text.png)
 
@@ -1423,9 +2363,33 @@ Typed caption **Caption before attaching a photo.** in the composer; no preview 
 
 ### Variant: keyboard-viewport
 
-Signed-in `/welcome` with the composer focused while `visualViewport.height` is 60% of `innerHeight` and `offsetTop` is 15% (iPhone Safari software-keyboard geometry). The rounded AppShell frame matches that visible height. It does not stay at `innerHeight`, so the page does not scroll under the frame.
+Signed-in `/welcome` with the writer open and its text field focused while `visualViewport.height` is 60% of `innerHeight` and `offsetTop` is 15% (iPhone Safari software-keyboard geometry). The AppShell frame matches that visible height. It does not stay at `innerHeight`, so the page does not scroll under the frame. The writer ends at the frame's bottom edge, so it shrinks with the frame.
 
 ![21.gifts welcome keyboard viewport](images/welcome-keyboard-viewport.png)
+
+### Variant: writer
+
+Signed-in `/welcome` on a touch device after a tap on the **+**: the writer under the header row with the centred title **Send a post**, the **Send a post** / **Ask for money** pill, and the Post composer in its phone shape, the text field **Write a message** on top at full width and focused, and below it **Add a photo or video** and **Add a place** on the left and **Post** on the right. The feed and **Receive** / **Send** are covered; the top-left arrow closes the writer.
+
+![21.gifts welcome writer](images/welcome-writer.png)
+
+### Variant: writer-ask
+
+The writer after a tap on **Ask for money**: the title reads **Ask for money**, and the first Ask step (**How much?**) replaces the Post composer.
+
+![21.gifts welcome writer on Ask for money](images/welcome-writer-ask.png)
+
+### Variant: writer-validation-error
+
+The writer after a tap on **Post** with an empty text field: **Enter a message or add a photo or video** shows under the composer, and the writer stays open.
+
+![21.gifts welcome writer with the empty-post error](images/welcome-writer-validation-error.png)
+
+### Variant: writer-place-open
+
+The writer after a tap on **Add a place**: the place panel opens under the composer (in the test build without a map key it says **The map is not available.**).
+
+![21.gifts welcome writer with the place panel open](images/welcome-writer-place-open.png)
 
 ### Variant: composer-photo
 
@@ -1435,13 +2399,13 @@ JPEG preview (**Selected photo**) and **Remove photo**; textarea empty.
 
 ### Variant: place
 
-One unpaid note on **All** with a place. The card shows a MapPin link **Happyland** to `/map?pin=m-place`.
+One unpaid note on **All** with a place. The card shows a MapPin link **Happyland** to `/shops?pin=m-place#map`.
 
 ![21.gifts welcome place](images/welcome-place.png)
 
 ### Variant: place-coords
 
-One unpaid note on **All** whose place has no label. The card shows a MapPin link **14.60000, 120.98000** to `/map?pin=m-place`. The same link is what a member profile and your own profile show on a top-level note.
+One unpaid note on **All** whose place has no label. The card shows a MapPin link **14.60000, 120.98000** to `/shops?pin=m-place#map`. The same link is what a member profile and your own profile show on a top-level note.
 
 ![21.gifts welcome place coordinates](images/welcome-place-coords.png)
 
@@ -1591,7 +2555,7 @@ POST fails after caption+JPEG → **Could not post your message**; preview and c
 
 ### Variant: menu-open
 
-Open **Menu** top-right → Menu includes **Home** first (Home, Shops, Point of sale, Profile, Grants, Wallet, Living room rules, Habit-Tracker, Trust Chain, Statistics, Notifications, Messages, Contact, optional Install, Log out, then a quiet **Version {version}** line (`app.version`)). Profile is one line (User + Profile; no given or received amounts). Notifications shows an unread count on the right only when `unreadCount` > 0 (Ada’s default shot is 0, so no count). Messages shows a count on the right only when inbox unread > 0; Ada’s default shots are 0 so no number. Ada’s default welcome-menu shot shows Profile with no amounts. Living room rules and Contact each have an icon, optional **Install app** when an install offer exists, Log out, then a quiet **Version {version}** line (`app.version`). Language, theme, and number format live on `/profile`, not in this Menu. The Profile link’s accessible name is Profile. Other accessible names are unchanged. No English / Deutsch / Español / Filipino option rows. No native language select.
+Open **Menu** top-right → Menu starts with the account header (photo or initial, name, @username, balance, Received / Given / Posts), then Home, Balance, Shops, Point of sale, Profile, Grants, Settings, Living room rules, Habit-Tracker, Trust Chain, Statistics, Notifications, Messages, Contact, optional Install, Log out, then a quiet **Version {version}** line (`app.version`)). Profile is one line (User + Profile; no given or received amounts). Notifications shows an unread count on the right only when `unreadCount` > 0 (Ada’s default shot is 0, so no count). Messages shows a count on the right only when inbox unread > 0; Ada’s default shots are 0 so no number. Ada’s default welcome-menu shot shows Profile with no amounts. Living room rules and Contact each have an icon, optional **Install app** when an install offer exists, Log out, then a quiet **Version {version}** line (`app.version`). Language, theme, and number format live on `/profile`, not in this Menu. The Profile link’s accessible name is Profile. Tapping the account header's photo or initial, or its name or @username, also opens `/profile` and closes the Menu (one link, accessible name **Open your profile** followed by the name and @username); the balance in its top-right corner still opens `/wallet`. Other accessible names are unchanged. No English / Deutsch / Español / Filipino option rows. No native language select.
 ![21.gifts welcome menu](images/welcome-menu.png)
 
 ### Variant: menu-lifted
@@ -1602,9 +2566,51 @@ Open **Menu** on a wide frame whose window is too short for the ordinary dropdow
 
 ### Variant: menu-tall-sheet
 
-Open **Menu** on a wide frame shorter than the compact menu even with its top on the window. The wide menu uses the same full-width sheet as a narrow frame. The page underneath is hidden. The sheet does not grow its own scroll; the page scrollport reaches the lower rows.
+Open **Menu** on a wide frame shorter than the compact menu even with its top on the window. The wide menu uses the same full-width sheet as a narrow frame. The page underneath is hidden. The sheet scrolls inside its own border, as on a phone, so the lower rows come into view while the page behind stays put.
 
 ![21.gifts welcome menu tall sheet](images/welcome-menu-tall-sheet.png)
+
+### Variant: menu-header-loading
+
+The same open Menu while the account header's numbers are still on their way: **Received**, **Given**, and **Posts** keep their labels, and each value line shows a grey skeleton bar of the same height as the number that replaces it, so nothing moves when the numbers arrive. The photo slot shows the initial meanwhile.
+
+![21.gifts welcome menu header loading](images/welcome-menu-header-loading.png)
+
+### Variant: menu-header-balance
+
+The open Menu with the wallet open (pin `?visual=balance-ready`): the account header shows the balance **₿21'000** with its fiat small in the top-right corner, a link to `/wallet`.
+
+![21.gifts welcome menu header balance](images/welcome-menu-header-balance.png)
+
+### Variant: menu-header-no-rate
+
+The open Menu with the wallet open (pin `?visual=balance-ready`) while the spot rate cannot be read: the balance **₿21'000** and the **Received** and **Given** totals show only the Bitcoin figure, without a fiat line.
+
+![21.gifts welcome menu header without a rate](images/welcome-menu-header-no-rate.png)
+
+### Variant: menu-header-connecting
+
+The open Menu while the wallet opens (pin `?visual=balance-connecting`): two skeleton bars hold the balance corner (`role="status"`, **Opening your wallet…**).
+
+![21.gifts welcome menu header connecting](images/welcome-menu-header-connecting.png)
+
+### Variant: menu-header-failed
+
+The open Menu when the totals and the post count could not be read: **Received**, **Given**, and **Posts** each show `–`, at the same height as a number.
+
+![21.gifts welcome menu header failed](images/welcome-menu-header-failed.png)
+
+### Variant: menu-header-photo
+
+The open Menu for a member with a profile photo: the round photo replaces the initial at the start of the account header. Together with the name it is one link to `/profile`.
+
+![21.gifts welcome menu header photo](images/welcome-menu-header-photo.png)
+
+### Variant: menu-sheet-end
+
+The open Menu scrolled to its end. On a phone the Menu is a sheet that stops above the bottom of the page frame and scrolls inside its own border, so the last rows (**Log out** and the **Version {version}** line) come into view while the page behind stays put; on a desktop the panel is short enough to show whole.
+
+![21.gifts welcome menu sheet end](images/welcome-menu-sheet-end.png)
 
 ### Variant: menu-unread
 
@@ -1626,43 +2632,109 @@ Staff (moderator) Open **Menu** with `GET /conversations/moderator-group` stubbe
 
 ### Variant: menu-staff
 
-Staff (moderator) in a standalone display, so **Install app** is absent. Open **Menu**. Rows: **Home**, **Shops**, **Point of sale**, **Profile**, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Moderation** with no unread count, **Notifications**, **Messages**, **Contact**, **Log out**, then **Version dev**.
+Staff (moderator) in a standalone display, so **Install app** is absent. Open **Menu**. Rows: **Home**, **Balance**, **Shops**, **Point of sale**, **Profile**, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Moderation** with no unread count, **Notifications**, **Messages**, **Contact**, **Log out**, then **Version dev**.
 
 ![21.gifts welcome menu staff](images/welcome-menu-staff.png)
 
 ### Variant: pay-composer
 
-Empty forum, basis account posts **Hello gifts**. The 1-sat compose invoice stays on the composer (`payHost` `'composer'`), not on a listed note. Desktop shows the Bitcoin payment QR and **Pay with Wallet of Satoshi**. A smartphone shows the same invoice card without a mounted `QrCode`; the wallet button remains. The empty-feed copy stays visible.
+Empty forum, basis account posts **Hello gifts**. The 1-sat compose invoice stays on the composer (`payHost` `'composer'`), not on a listed note. The invoice card shows the in-app wallet pay slot (here **Your 21.gifts wallet is not available here, so this cannot be paid.**, because this build has no wallet configured) on every device, with no invoice QR. The empty-feed copy stays visible.
 
 ![21.gifts welcome pay composer](images/welcome-pay-composer.png)
 
+### Variant: composer-wallet-pay-preparing
+
+Pinned fixture (`?visual=wallet-pay-preparing`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot, with no invoice QR: a spinner and **Checking your wallet…**.
+
+![21.gifts welcome composer wallet pay preparing](images/welcome-composer-wallet-pay-preparing.png)
+
+### Variant: composer-wallet-pay-confirm
+
+Pinned fixture (`?visual=wallet-pay-confirm`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot, with no invoice QR: **Pay ₿1 and post**, without a fiat suffix and with no fee row for the quoted fee of ₿0 (the posting fee of a new post or reply pays and posts in one tap; other pay sheets keep **Send**).
+
+![21.gifts welcome composer wallet pay confirm](images/welcome-composer-wallet-pay-confirm.png)
+
+### Variant: composer-wallet-pay-paying
+
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot, with no invoice QR: a spinner and **Paying from your wallet…**.
+
+![21.gifts welcome composer wallet pay paying](images/welcome-composer-wallet-pay-paying.png)
+
+### Variant: composer-wallet-pay-insufficient
+
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot, with no invoice QR: the alert that the wallet lacks Bitcoin, then **Still missing:** with the amount plus the known fee minus the balance in ₿ and fiat (the pin shows the full amount), then the member's own 21.gifts address and its Open CryptoPay QR.
+
+![21.gifts welcome composer wallet pay insufficient](images/welcome-composer-wallet-pay-insufficient.png)
+
+### Variant: composer-wallet-pay-unconfirmed
+
+Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only, posting-fee invoice with a `sparkInvoice`). After **Post** on a new note, the composer pay slot (**Pay ₿1**) shows the in-app wallet slot, with no invoice QR: the neutral not-confirmed-yet sentence.
+
+![21.gifts welcome composer wallet pay unconfirmed](images/welcome-composer-wallet-pay-unconfirmed.png)
+
 ### Variant: pay-amount
 
-Payable reply after **Show reactions**, Gift opened, amount filled, not submitted. Amount CTA is **Continue** (`forum.payContinue`) on every user-agent. Live equivalent in the preferred fiat (no picker). No error, no payment QR, no wallet **Pay** button yet. The post itself does not show Send Bitcoin.
+Payable reply after **Show reactions**, Gift opened, amount filled, not submitted. Amount CTA is **Continue** (`forum.payContinue`) on every user-agent. Live equivalent in the preferred fiat (no picker). No error and no pay slot yet. The post itself does not show Send Bitcoin.
 
 ![21.gifts welcome pay amount](images/welcome-pay-amount.png)
 
-### Variant: pay-qr
+### Variant: wallet-pay-unavailable
 
-Payable reply, Gift amount submitted. Captured at desktop and mobile. On desktop the invoice card shows the Bitcoin payment QR, a Close (`X`) control, not Back, and a **Pay** button with the Wallet of Satoshi icon. On a smartphone the same invoice card is shown, without a mounted `QrCode`; the wallet **Pay** button remains, with **Waiting for payment…** under it and a Close (`X`) control, not Back. The invoice step shows the sat amount and the default fiat from the latest gift-day rate.
+Payable reply, Gift amount submitted, live (no pin). This build has no wallet configured, so the invoice card shows the amount with the default fiat, a Close (`X`) control, not Back, the sentence **Your 21.gifts wallet is not available here, so this cannot be paid.**, and **Waiting for payment…**. No invoice QR and no button to another wallet app, on desktop and on a smartphone alike.
 
-![21.gifts welcome pay QR](images/welcome-pay-qr.png)
+![21.gifts welcome wallet pay unavailable](images/welcome-wallet-pay-unavailable.png)
 
-### Variant: pay-smartphone
+### Variant: wallet-pay-preparing
 
-Same pay sheet captured at desktop and mobile. On a smartphone user-agent: the same invoice card is shown without a mounted `QrCode`; the **Pay** button with the Wallet of Satoshi icon remains, with **Waiting for payment…** under it and a Close (`X`) control, not Back. The invoice step shows the sat amount and the default fiat from the latest gift-day rate. On desktop this scenario shows the QR invoice card.
+Pinned fixture (`?visual=wallet-pay-preparing`, Playwright builds only). The wallet connects, setup finishes, or the slot reads the fee: spinner and **Checking your wallet…**.
 
-![21.gifts welcome pay smartphone](images/welcome-pay-smartphone.png)
+![21.gifts welcome wallet pay preparing](images/welcome-wallet-pay-preparing.png)
+
+### Variant: wallet-pay-confirm
+
+Pinned fixture (`?visual=wallet-pay-confirm`, Playwright builds only). **Send**, with no fee row for the quoted fee of ₿0 (a fee above ₿0 shows **Fee {amount}** with the default fiat above **Send**). No invoice QR and no button to another wallet app.
+
+![21.gifts welcome wallet pay confirm](images/welcome-wallet-pay-confirm.png)
+
+### Variant: wallet-pay-paying
+
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only). Spinner and **Paying from your wallet…**, with **Waiting for payment…** under it while the existing long-poll waits.
+
+![21.gifts welcome wallet pay paying](images/welcome-wallet-pay-paying.png)
+
+### Variant: wallet-pay-insufficient
+
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only). Alert **Your wallet does not have enough Bitcoin for this payment.**, then **Still missing:** with the amount plus the known fee minus the balance in ₿ and fiat (the pin shows the full amount), then the member's own 21.gifts address and its Open CryptoPay QR to add Bitcoin (shown on a smartphone too, like the `/wallet` QR). While this view shows, the slot reads the synced balance every 4 s, also when the wallet reports no payment; once the balance covers amount and the known fee, the address and QR go at once and the slot prepares again and stops at **Send** (`wallet-pay-confirm`). It never pays without that tap.
+
+![21.gifts welcome wallet pay insufficient](images/welcome-wallet-pay-insufficient.png)
+
+### Variant: wallet-pay-failed
+
+Pinned fixture (`?visual=wallet-pay-failed`, Playwright builds only). The wallet could not connect or could not prepare this payment: alert **Your wallet could not prepare this payment. Please try again.** and a secondary **Try again**, which reconnects or prepares again. No invoice QR and no button to another wallet app.
+
+![21.gifts welcome wallet pay failed](images/welcome-wallet-pay-failed.png)
+
+### Variant: wallet-pay-setup-failed
+
+Pinned fixture (`?visual=wallet-pay-setup-failed`, Playwright builds only). The account still needs wallet verification and its background setup exhausted all quiet retries. In the forum pay sheet, the pay slot shows the alert **Your wallet could not be set up yet.** (`walletSetup.error`) followed by a secondary **Try again** button under it. The sheet stays open; there is no invoice QR, button to another wallet app, or page-covering setup UI.
+
+![21.gifts welcome wallet pay setup failed](images/welcome-wallet-pay-setup-failed.png)
+
+### Variant: wallet-pay-unconfirmed
+
+Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only). 60 seconds after a send (failed, timed out, or sent) without a confirmation that closed the sheet: the neutral sentence **This payment is not confirmed yet. Check your balance again later.** No alert and no retry.
+
+![21.gifts welcome wallet pay unconfirmed](images/welcome-wallet-pay-unconfirmed.png)
 
 ### Variant: pay-author-wallet
 
-Payable reply, Gift amount submitted, but the author's wallet cannot mint a zap invoice. The pay sheet stays on the amount form and shows **The author's wallet cannot receive this Bitcoin payment**. Amount CTA is **Continue** (`forum.payContinue`) on every user-agent. No payment QR and no invoice-step **Pay with Wallet of Satoshi** button.
+Payable reply, Gift amount submitted, but the author's wallet cannot mint a zap invoice. The pay sheet stays on the amount form and shows **The author's wallet cannot receive this Bitcoin payment**. Amount CTA is **Continue** (`forum.payContinue`) on every user-agent. No invoice card and no pay slot.
 
 ![21.gifts welcome pay author wallet](images/welcome-pay-author-wallet.png)
 
 ### Variant: pay-deleted
 
-Payable reply, Gift amount submitted, but the note was deleted. The pay sheet stays on the amount form and shows **This note was deleted.**, with no payment QR and no invoice-step Pay button.
+Payable reply, Gift amount submitted, but the note was deleted. The pay sheet stays on the amount form and shows **This note was deleted.**, with no invoice card and no pay slot.
 
 ![21.gifts welcome pay deleted](images/welcome-pay-deleted.png)
 
@@ -1672,11 +2744,11 @@ Carol's **Verified** tag clicked; the explanation under that card header is visi
 
 ![21.gifts welcome role hint](images/welcome-role-hint.png)
 
-### Variant: overlay-address
+### Variant: overlay-wallet
 
-Named member with living-room rules agreed and no Wallet of Satoshi address. Composer filled, **Post** clicked. `RequirementsOverlay` dialog **Add your Wallet of Satoshi address** with the profile Lightning Address field (`LightningAddressForm variant=profile`). No **Skip**. Close (X) is present.
+Named member with living-room rules agreed whose wallet is not set up (the api lists `lightning-address` as missing). Composer filled, **Post** clicked. `RequirementsOverlay` dialog **Your wallet is not set up** with the sentence **Gifts and posts need your own 21.gifts wallet, and it is not set up yet. Open your wallet to set it up.** and the labeled link **Open your wallet** to `/wallet`. No form and no **Skip**. Close (X) is present.
 
-![21.gifts welcome overlay address](images/welcome-overlay-address.png)
+![21.gifts welcome overlay wallet](images/welcome-overlay-wallet.png)
 
 ### Variant: overlay-username
 
@@ -1686,9 +2758,9 @@ Named member with living-room rules agreed and no username. Composer filled, **P
 
 ### Variant: overlay-introduce
 
-Named member with living-room rules agreed, a Wallet of Satoshi address, and `hasPosted` false. After login on `/welcome`, `IntroduceYourselfOverlay` dialog **Introduce yourself** with body copy and **Write an introduction**. Close (X) is icon-only.
+Named member with living-room rules agreed and `hasPosted` false. After login on `/welcome` (the only screen that shows it), `IntroduceYourselfOverlay` dialog **Introduce yourself** with body copy and **Write an introduction**. Close (X) is icon-only.
 
-- **Actions:** Close dismisses this mount only. **Write an introduction** (`Button` `type="button"` `size="lg"`) dismisses the overlay, focuses the welcome composer (`requestForumCompose` / `FORUM_COMPOSE_EVENT`), and `router.push('/welcome')` only when the path is not already `/welcome`.
+- **Actions:** Close dismisses this mount only. **Write an introduction** (`Button` `type="button"` `size="lg"`) dismisses the overlay, opens the writer and focuses its text field (`requestForumCompose` / `FORUM_COMPOSE_EVENT`). It stays on `/welcome`; the dialog never opens on `/wallet`, the point of sale, the profile, messages, or the setup flow.
 
 ![21.gifts welcome overlay introduce](images/welcome-overlay-introduce.png)
 
@@ -1745,15 +2817,27 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 ## Screen: /shops
 
 - **URL:** `/shops` — signed-in shop listings. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). There is no `route.ts` beside this page.
-- **What the user sees:** Flow `AppShell` (`align="start"`) with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.** Under the lead a pill offers **Post**, **Map**, and **Table**. **Post** is selected and is the list below. `/shops#map` opens **Map** and `/shops#table` opens **Table**. `/shops#post`, no hash, or an unknown hash opens **Post**. Choosing an option writes that hash; **Post** clears it. **Map** is the place list, without a second Map heading. An old `/map` address opens this option and keeps `?pin=`. With a map key, several pins and no matching `?pin=` frame every pin. One pin, or a matching `?pin=`, stays centered on that pin. **Table** has columns **Name**, **Place**, and **Operator**. **Show more** loads the next page. A page with no shop rows still shows **Show more** when another page exists, and does not say there are no shops. If the next page fails, the rows stay and **Try again** reloads it. **Map** can also be empty, loading, or in error, using the place-map copy, still without a second Map heading. There is no Active / No gifts yet / All / Most popular control. On **Post**, a closed **Add a shop** button sits under the pill. It opens five steps: photos, place, text, an optional 21.gifts user, then a summary whose **Post** sends the note. The text step lists people as soon as `@` is typed. There is no **Ask for money** pill. A moderator also sees **Edit shop note** on each shop card, and on a shop pin in **Map** and beside the name in **Table**. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**.
+- **What the user sees:** Flow `AppShell` (`align="start"`) with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right (see **Signed-in header**); open the Menu for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Shops**, lead **Add a shop with photos, a place, text, and an optional 21.gifts user. It appears here and in the forum with a #Shop tag.** Under the lead a closed **Country** select (the same full-width select as the forum view filter) shows **All countries**; its list adds every country that has a shop, named in the UI language with its shop count, such as **Philippines (3)**, sorted by name. The country of a shop is the country its pin lies in, which the api reads from the coordinates, never from the place text; a shop without a pin, or with a pin in the open sea, appears only under **All countries**. Choosing a country shows only that country's shops on every option: **Post** and **Table** load only those shops, and **Map** keeps only those shops' pins and fits the map to them. The choice is in the address (`/shops?country=PH`), so the link can be shared and browser Back and Forward return to the previous choice; a code that names no country shows **All countries**. When the chosen country has no shop left, each option shows its usual empty copy. After a shop is added, or a moderator saves a shop or its pin, the counts reload, and a filtered option reloads its shops, so a new or moved pin lands under the country it now lies in. Under the select a pill offers **Post**, **Map**, and **Table**. **Post** is selected and is the list below. `/shops#map` opens **Map** and `/shops#table` opens **Table**. `/shops#post`, no hash, or an unknown hash opens **Post**. Choosing an option writes that hash; **Post** clears it. **Map** is the place list, without a second Map heading. An old `/map` address opens this option and keeps `?pin=`. With a map key, several pins and no matching `?pin=` frame every pin. One pin, or a matching `?pin=`, stays centered on that pin. **Table** has columns **Name**, **Place**, and **Operator**. A place opens **Map** on this page with that pin selected (`/shops?pin=<id>#map`), under **All countries** so the pin is always on the map (Back returns to the filtered view), and an operator opens that member, both without a page load. Browser Back returns to the **Post** or **Table** view the place was opened from. **Show more** loads the next page. A page with no shop rows still shows **Show more** when another page exists, and does not say there are no shops. If the next page fails, the rows stay and **Try again** reloads it. **Map** can also be empty, loading, or in error, using the place-map copy, still without a second Map heading. There is no Active / No gifts yet / All / Most popular control. On **Post**, a closed **Add a shop** button sits under the pill. It opens five steps: photos, place, text, an optional 21.gifts user, then a summary whose **Post** sends the note. The text step lists people as soon as `@` is typed. There is no **Ask for money** pill. A moderator also sees **Edit shop note** on each shop card, and on a shop pin in **Map** and beside the name in **Table**. The list is every top-level note from `GET /messages?hashtag=21GiftsShop&mode=all` (app proxy `/forum/messages`), newest first, including notes with zero sats. The composer does not show the hashtag; submit appends `#21GiftsShop`. The living-room laws hint is absent. Shop cards show a `#Shop` pill (link `/shops`) and hide the raw token. A moderator footer has **Add an account** beside **Add a place**. A saved account is an `@username` link to `/members/{id}` under the text. When that page is empty, empty copy **No shops yet — add the first one.** immediately. Loading copy: **Loading…**. Error copy plus **Try again**. Every pay sheet on this screen (a gift, a paid reaction, or a paid reply) follows the same in-app wallet rule as the forum pay sheet on `/welcome`: it pays from the in-app wallet only (the `sparkInvoice`, otherwise the `pr`); without a usable wallet it shows the unavailable or failed state, never an invoice QR or a link to another wallet app.
 - **Actions:** Post a shop (text and/or photo or video) and attach or remove an optional place. Expand a note, open Menu including **Shops**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. From the place step of **Add a shop** or **Edit shop note**, that same arrow returns to the previous step and is disabled while the note is sending. The form has no **Back** button. One arrow. The wordmark is not that control.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ShopsViewSwitch`, `ForumLoader`, `ForumBoard`, `PlacesMapScreen`, `ShopTable`.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `SignedInChrome`, `OnboardingGate`, `ShopsScreen`, `ShopsCountryFilter`, `ForumModeSelect`, `ShopsViewSwitch`, `ForumLoader`, `ForumBoard`, `PlacesMapScreen`, `ShopTable`, `WalletPay`, `useWalletPay`, the wallet payment primitive.
 
 ### Variant: default
 
-Heading **Shops**, lead, the **Post** / **Map** / **Table** pill with **Post** selected, **Add a shop** (no living-room composer), one shop note **Cafe Luna** with a `#Shop` pill. A zero-sat shop would still be listed. Laws hint absent. Raw `#21GiftsShop` is not visible.
+Heading **Shops**, lead, the closed **Country** select on **All countries**, the **Post** / **Map** / **Table** pill with **Post** selected, **Add a shop** (no living-room composer), one shop note **Cafe Luna** with a `#Shop` pill. A zero-sat shop would still be listed. Laws hint absent. Raw `#21GiftsShop` is not visible.
 
 ![21.gifts shops](images/shops.png)
+
+### Variant: heart-needs-balance
+
+Shop post feed with **Cafe Luna** after opening `?visual=heart-needs-balance` (a ready wallet below 1 sat) and clicking Send ₿1. No press and no **+1**; nothing is sent. Copy **A Bitcoin balance is required for this.**
+
+![21.gifts shops heart needs balance](images/shops-heart-needs-balance.png)
+
+### Variant: heart-paid
+
+Same Cafe Luna post after opening `?visual=heart-paid` and clicking Send ₿1. The filled heart and **+1** that every tap shows are held for the shot.
+
+![21.gifts shops heart paid](images/shops-heart-paid.png)
 
 ### Variant: mention-suggest
 
@@ -1784,6 +2868,42 @@ Choosing `@ada` from that open list writes `@ada ` into the reaction field and c
 Device-local Sunday. The **Post** / **Map** / **Table** pill stays. **Add a shop** is gone. **Writing is paused on Sunday.** The note **Cafe Luna** stays.
 
 ![21.gifts shops sunday](images/shops-sunday.png)
+
+### Variant: country-open
+
+The closed **Country** select was pressed and its list is open over the **Post** / **Map** / **Table** pill: **All countries** with a check, then **Kenya (1)** and **Philippines (1)**, sorted by name, each with its shop count. **Post** stays selected.
+
+![21.gifts shops country list open](images/shops-country-open.png)
+
+### Variant: country
+
+**Philippines (1)** was chosen from the **Country** list while **Table** was selected. The select shows **Philippines (1)** and the address is `/shops?country=PH#table`. The table lists only the shop in the Philippines, **Sari-sari Manila**; the shop in Kenya is gone.
+
+![21.gifts shops filtered by country](images/shops-country.png)
+
+### Variant: country-empty
+
+A shared link chose a country without shops (`/shops?country=CH#table`). The select shows **Switzerland (0)** and its list also offers **Kenya (1)** and **Philippines (1)**. **Table** shows the usual empty copy **No shops yet — add the first one.**
+
+![21.gifts shops country without shops](images/shops-country-empty.png)
+
+### Variant: country-loading
+
+`/shops?country=PH#table` while the pins for the counts are still loading (or could not be loaded). The select shows **Philippines** without a count; the table already lists only **Sari-sari Manila**.
+
+![21.gifts shops country before the counts load](images/shops-country-loading.png)
+
+### Variant: country-post
+
+`/shops?country=PH` on **Post**. The select shows **Philippines (1)**. The post list shows only the shop in the Philippines, **Sari-sari Manila**; the shop in Kenya is gone. **Add a shop** stays.
+
+![21.gifts shops posts filtered by country](images/shops-country-post.png)
+
+### Variant: country-map
+
+`/shops?country=PH#map` on **Map**. The select shows **Philippines (1)**. The place list keeps only **Ada · Manila**; the pin in Nairobi is gone. No map key, so the frame stays empty.
+
+![21.gifts shops map filtered by country](images/shops-country-map.png)
 
 ### Variant: map
 
@@ -2027,13 +3147,13 @@ Empty copy **No shops yet — add the first one.** Composer still present.
 
 ### Variant: place
 
-One shop note with a place. The card shows a MapPin link **Happyland** to `/map?pin=m-place`. The raw `#21GiftsShop` token stays hidden.
+One shop note with a place. The card shows a MapPin link **Happyland** to `/shops?pin=m-place#map`. The raw `#21GiftsShop` token stays hidden.
 
 ![21.gifts shops place](images/shops-place.png)
 
 ### Variant: place-coords
 
-One shop note whose place has no label. The card shows a MapPin link **14.60000, 120.98000** to `/map?pin=m-place`. The raw `#21GiftsShop` token stays hidden.
+One shop note whose place has no label. The card shows a MapPin link **14.60000, 120.98000** to `/shops?pin=m-place#map`. The raw `#21GiftsShop` token stays hidden.
 
 ![21.gifts shops place coordinates](images/shops-place-coords.png)
 
@@ -2220,9 +3340,9 @@ A moderator session. **Add an account** is open on the Cafe Luna note. Username 
 ## Screen: /rules
 
 - **URL:** `/rules` — public living-room rules. App chrome (semantic tokens; not the dark marketing shell). No auth gate to view; chrome depends on hydrated session.
-- **What the user sees:** Chrome is the page-frame header (wordmark + menu/language inside the rounded sheet). Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three rule cards (kicker **Rule n**, title, body, and a **The test** callout on rules 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and one CTA **Contact 21.gifts** (`/contact`). There is no second back in the document. Unsigned (no session): one top-left arrow that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, wordmark → `/` (the wordmark is not that control), LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (the same arrow; wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
-- **Actions:** Change language (unsigned), or open **Menu** (signed-in). The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. Read the rules. Open contact. There is no second forum CTA. Dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
-- **Calls:** `RulesPageChrome`, `PageChrome`, `AppShell`, `Wordmark`, `ProfileChromeLeft`, `SignedInChrome`, `IntroduceYourselfOverlay`, `RulesPage`, `RulesDocument`, `LanguageSwitcher`.
+- **What the user sees:** Chrome is the page-frame header (wordmark + menu/language inside the rounded sheet). Page heading **Living room rules**, then the lead paragraph with the accent-bordered **The test** callout, three rule cards (kicker **Rule n**, title, body, and a **The test** callout on rules 1 and 2), the Welcome / Allowed / Better not / Forbidden lists as bordered cards with check / minus / cross glyphs (Forbidden has three subheads), the muted **Our house** closing block, and one CTA **Contact 21.gifts** (`/contact`). There is no second back in the document. Unsigned (no session): one top-left arrow that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, wordmark → `/` (the wordmark is not that control), LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (the same arrow; wordmark → `/welcome`) + `SignedInChrome` (Menu with the account header, then **Home** and **Balance**). `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it.
+- **Actions:** Change language (unsigned), or open **Menu** (signed-in). The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. Read the rules. Open contact. There is no second forum CTA.
+- **Calls:** `RulesPageChrome`, `PageChrome`, `AppShell`, `Wordmark`, `ProfileChromeLeft`, `SignedInChrome`, `RulesPage`, `RulesDocument`, `LanguageSwitcher`.
 - **Auth:** None required to view; chrome depends on hydrated session.
 
 ### Variant: default
@@ -2233,16 +3353,16 @@ Full rules body with rule card **Only free donations** visible.
 
 ### Variant: signed-in
 
-Hydrated Ada session: one top-left arrow (previous in-app view, or `/welcome` when this tab has none) + wordmark → `/welcome`. The wordmark is not that control. **Menu** top-right (**Home** first). Rule card **Only free donations** still visible.
+Hydrated Ada session: one top-left arrow (previous in-app view, or `/welcome` when this tab has none) + wordmark → `/welcome`. The wordmark is not that control. **Menu** top-right (account header, then **Home** and **Balance**). Rule card **Only free donations** still visible.
 
 ![21.gifts living room rules signed in](images/rules-signed-in.png)
 
 ## Screen: /habit-tracker
 
-- **URL:** `/habit-tracker` — public habit tracker. Every member's habits, periods, and comments. Signed-out visitors can read it. `OnboardingGate screen="welcome"` with `allowGuest`. HTML `/habit-tracker` is the page, not a GET proxy (Next.js forbids `route.ts` beside this page). JSON is `GET /habits` and `POST /habits`.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` and either **Log in** or Menu, inside the rounded sheet). The page is a server component; `HabitTrackerTopRight` is the client boundary for that corner. Fill `AppShell` (`align="center"`). Heading **Habit-Tracker**. The schedule line says each habit is daily or weekly in the time zone chosen when it was created, a week can be rated from Monday 08:00 in that zone. People are grouped under their `ownerName`. Each habit is the same note card as a living-room note: name, a Daily or Weekly chip, an Archived chip when it has a last period, the public description when one is set, and one row per period (the date, then Achieved, Partially achieved, Not achieved, or Not rated yet). Comments are public and are not forum posts. Internal notes render only for the owner (`Internal notes:` plus the text). A signed-out visitor uses the header **Log in** and gets no second sign-in link, no add form, no rating pill, and no **Send Bitcoin**. A session sees an add form (Name, Description, Internal notes, a Daily | Weekly pill, **Add habit**). On each of their open habits every returned period is that same pill (Achieved, Partially achieved, Not achieved; nothing pressed when that period is not rated yet). A saved rating leaves that choice pressed. An archived habit keeps those period rows, its comments, and **Send Bitcoin** on someone else's comment, and shows the Archived chip, with no rating pill, Edit, or Archive. **Edit** opens Name, Description, and Internal notes. **Save** and **Cancel** are icons; their accessible names are Save and Cancel, and the word Save is not visible. **Archive** opens the same inline confirm as deleting a note: the sentence, then a check named Confirm archive and an X named Cancel archive. A signed-in account sees **Write a comment** and **Post** on each habit. On the device's local Sunday those controls and **Delete comment** are removed and **Writing is paused on Sunday.** stands in their place. Add, the rating pill, Edit, and Archive stay on Sunday. **Send Bitcoin** (the same Gift control as a forum reply) is on someone else's comment and opens the same amount sheet. On Sunday that gift shows **Zapping is paused on Sunday.** Menu row **Habit-Tracker** (`nav.habitTracker`, lucide `ListChecks`, `/habit-tracker`) sits immediately after **Living room rules** for every signed-in account.
-- **Actions:** Read the list. Sign in. Add a habit. Edit name, description, and internal notes. Rate any returned period on an open habit Achieved, Partially achieved, or Not achieved. An archived habit stays read-only for rating, edit, and archive, and keeps its comments and gift. Archive after confirm. A failed save keeps the list and shows **Could not load or save the tracker. Please try again.** with **Try again** above it. A failed edit keeps that form open under the alert. A failed archive keeps the confirmation open under the alert. A failed add keeps the entered form under the alert. A failed comment keeps that draft under the alert. Saving a new habit, saving an edit, posting a comment, and confirming a comment deletion each leave their own result. An initiator sees **Delete comment** before that confirm. **Try again** reloads and does not send that same action again. A different session may send it. **Try again**, and a later load after the session changes, keep that list when the next `GET /habits` also fails. The full-screen error is only when nothing has loaded. Add, comment, delete, and the invoice send `Time-Zone`. Edit, log, and archive do not. Post a comment. Delete a comment when the account is at least initiator, after the same inline confirm. The check is named Confirm deletion and the X is named Cancel deletion. On the device's local Sunday comment, delete, and the gift are paused. Add, rating, Edit, and Archive are not. Open **Send Bitcoin**, enter an amount, press **Continue**, and pay from the same invoice card as a forum reply. **Continue** stays disabled until the gift-day rate request has settled. **Continue** stays disabled and shows a spinner while the invoice request is in flight. A settled request with no usable rate still allows **Continue**, and the fiat line stays absent. An amount that is not a whole number of sats from 1 through 10,000,000 shows `Expected a JSON body with an integer "amountSats"` and does not open the invoice. A payment that cannot be started shows **Could not start the Bitcoin payment**. Too many payments shows **Too many payments. Please wait a moment and try again.** A wallet that cannot receive the payment shows **The author's wallet cannot receive this Bitcoin payment**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `HabitTrackerTopRight`, `HabitTrackerPage`, `MemberHabits`, `HabitComments`, `ForumPaySheet`, `useLatestRateDayState`, `SundayWritingGate`, `SignedInChrome`, `OnboardingGate`, `fetchMemberHabits`, `postMemberHabit`.
+- **URL:** `/habit-tracker` — public habit tracker. Every member's habits, periods, and comments. Signed-out visitors (no stored session) can read it; a held-back stored session gets the login card in place of the list, with neither **Log in** nor Menu top right. `OnboardingGate screen="welcome"` with `allowGuest`. HTML `/habit-tracker` is the page, not a GET proxy (Next.js forbids `route.ts` beside this page). JSON is `GET /habits` and `POST /habits`.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft`, inside the rounded sheet; top right **Log in** without a stored session, Menu with an open wallet, and neither while a session is held back, when the login card replaces the list). The page is a server component; `HabitTrackerTopRight` is the client boundary for that corner. Fill `AppShell` (`align="center"`). Heading **Habit-Tracker**. The schedule line says each habit is daily or weekly in the time zone chosen when it was created, a week can be rated from Monday 08:00 in that zone. People are grouped under their `ownerName`. Each habit is the same note card as a living-room note: name, a Daily or Weekly chip, an Archived chip when it has a last period, the public description when one is set, and one row per period (the date, then Achieved, Partially achieved, Not achieved, or Not rated yet). Comments are public and are not forum posts. Internal notes render only for the owner (`Internal notes:` plus the text). A signed-out visitor uses the header **Log in** and gets no second sign-in link, no add form, no rating pill, and no **Send Bitcoin**. A session sees an add form (Name, Description, Internal notes, a Daily | Weekly pill, **Add habit**). On each of their open habits every returned period is that same pill (Achieved, Partially achieved, Not achieved; nothing pressed when that period is not rated yet). A saved rating leaves that choice pressed. An archived habit keeps those period rows, its comments, and **Send Bitcoin** on someone else's comment, and shows the Archived chip, with no rating pill, Edit, or Archive. **Edit** opens Name, Description, and Internal notes. **Save** and **Cancel** are icons; their accessible names are Save and Cancel, and the word Save is not visible. **Archive** opens the same inline confirm as deleting a note: the sentence, then a check named Confirm archive and an X named Cancel archive. A signed-in account sees **Write a comment** and **Post** on each habit. On the device's local Sunday those controls and **Delete comment** are removed and **Writing is paused on Sunday.** stands in their place. Add, the rating pill, Edit, and Archive stay on Sunday. **Send Bitcoin** (the same Gift control as a forum reply) is on someone else's comment and opens the same amount sheet. On Sunday that gift shows **Zapping is paused on Sunday.** Menu row **Habit-Tracker** (`nav.habitTracker`, lucide `ListChecks`, `/habit-tracker`) sits immediately after **Living room rules** for every signed-in account.
+- **Actions:** Read the list. Sign in. Add a habit. Edit name, description, and internal notes. Rate any returned period on an open habit Achieved, Partially achieved, or Not achieved. An archived habit stays read-only for rating, edit, and archive, and keeps its comments and gift. Archive after confirm. A failed save keeps the list and shows **Could not load or save the tracker. Please try again.** with **Try again** above it. A failed edit keeps that form open under the alert. A failed archive keeps the confirmation open under the alert. A failed add keeps the entered form under the alert. A failed comment keeps that draft under the alert. Saving a new habit, saving an edit, posting a comment, and confirming a comment deletion each leave their own result. An initiator sees **Delete comment** before that confirm. **Try again** reloads and does not send that same action again. A different session may send it. **Try again**, and a later load after the session changes, keep that list when the next `GET /habits` also fails. The full-screen error is only when nothing has loaded. Add, comment, delete, and the invoice send `Time-Zone`. Edit, log, and archive do not. Post a comment. Delete a comment when the account is at least initiator, after the same inline confirm. The check is named Confirm deletion and the X is named Cancel deletion. On the device's local Sunday comment, delete, and the gift are paused. Add, rating, Edit, and Archive are not. Open **Send Bitcoin**, enter an amount, press **Continue**, and pay from the same invoice card as a forum reply. **Continue** stays disabled until the spot rate read has settled. **Continue** stays disabled and shows a spinner while the invoice request is in flight. A settled request with no usable rate still allows **Continue**, and the fiat line stays absent. An amount that is not a whole number of sats from 1 through 10,000,000 shows `Expected a JSON body with an integer "amountSats"` and does not open the invoice. A payment that cannot be started shows **Could not start the Bitcoin payment**. Too many payments shows **Too many payments. Please wait a moment and try again.** A wallet that cannot receive the payment shows **The author's wallet cannot receive this Bitcoin payment**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `HabitTrackerTopRight`, `HabitTrackerPage`, `MemberHabits`, `HabitComments`, `ForumPaySheet`, `useSpotRateState`, `SundayWritingGate`, `SignedInChrome`, `OnboardingGate`, `fetchMemberHabits`, `postMemberHabit`.
 - **Auth:** No bearer required to read the page or `GET /habits`. `POST /habits` needs a bearer. `OnboardingGate screen="welcome"` with `allowGuest`. The page does not pay an invoice.
 
 ### Variant: default
@@ -2313,7 +3433,7 @@ Ada's session on someone else's comment. **Send Bitcoin** is open. **Amount** an
 
 ### Variant: donate-rate-pending
 
-Ada's session on someone else's comment. **Send Bitcoin** is open while the gift-day rate is still loading. The sheet is scrolled so **Continue** is on screen and stays disabled, and no fiat line is shown.
+Ada's session on someone else's comment. **Send Bitcoin** is open while the spot rate is still loading. The sheet is scrolled so **Continue** is on screen and stays disabled, and no fiat line is shown.
 
 ![21.gifts habit tracker donate rate pending](images/habit-tracker-donate-rate-pending.png)
 
@@ -2325,7 +3445,7 @@ Ada's session on someone else's comment. **Send Bitcoin** is open and the amount
 
 ### Variant: donate-invoice
 
-Ada's session after **Continue** on someone else's comment. The card shows **Pay ₿21**, the Bitcoin payment QR code on desktop, and **Pay with Wallet of Satoshi**. The raw invoice is not shown.
+Ada's session after **Continue** on someone else's comment. The card shows **Pay ₿21** and the in-app wallet pay slot; in this build the wallet is not configured, so it says **Your 21.gifts wallet is not available here, so this cannot be paid.** No invoice QR. The raw invoice is not shown.
 
 ![21.gifts habit tracker donate invoice](images/habit-tracker-donate-invoice.png)
 
@@ -2457,10 +3577,10 @@ Ada's session, at least an initiator, after **Confirm deletion**. The comment is
 
 ## Screen: /contact
 
-- **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (`account.setup` null; name and address may be skipped; living-room rules agreement required).
-- **What the user sees:** Fill `AppShell` with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with an icon-only **Send** control (`contact.send` catalog `aria-label`, no visible Send text). A missing name, username, or rules agreement opens `RequirementsOverlay` (no Skip) before the send retries. Lightning Address is not required for contact. A successful send opens the official 21.gifts thread in `/messages`. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
-- **Actions:** Send a message, complete a `RequirementsOverlay` for a missing name, username, or rules agreement, open the rules; the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `ContactPage`, `ContactLoader`, `ContactScreen`, `RequirementsOverlay`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `postContact` (`POST /contact/submit`), `fetchConversations`.
+- **URL:** `/contact` — signed-in in-app contact (the only way to reach 21.gifts). Same onboarding gate as `/welcome` (`account.setup` null; name may be skipped; username and living-room rules agreement required).
+- **What the user sees:** Fill `AppShell` with one top-left arrow (`ProfileChromeLeft`; previous in-app view, or `/welcome` when this tab has none) and wordmark → `/welcome` top-left and one **Menu** top-right (see **Signed-in header**); open the Menu for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Contact**, lead **Write to 21.gifts here — there is no email address. This is the only way to reach us.**, link to **Living room rules**, composer textarea with an icon-only **Send** control (`contact.send` catalog `aria-label`, no visible Send text). A missing name, username, or rules agreement opens `RequirementsOverlay` (no Skip) before the send retries. A wallet is not required for contact. A successful send opens the official 21.gifts thread in `/messages`. `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it.
+- **Actions:** Send a message, complete a `RequirementsOverlay` for a missing name, username, or rules agreement, open the rules; the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `ContactPage`, `ContactLoader`, `ContactScreen`, `RequirementsOverlay`, `SignedInChrome`, `OnboardingGate`, `postContact` (`POST /contact/submit`), `fetchConversations`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -2483,9 +3603,9 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 
 ## Screen: /members/[accountId]
 
-- **Purpose:** Signed-in member identity card (chart, About me inside the card — not a forum post, name, location, public `username@21.gifts`, role pill, copy-profile-link, and clickable post/reply counts from `postCount` / `replyCount`) with on-demand activity feeds below the card. A successful empty series and in-flight activity show `profile.chartEmpty` (**No gifts yet.**); a thrown activity load shows `profile.chartError` (**Could not load gifts.**); the chart never says **Loading…** and has no retry control. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is a moderator and the subject is someone else, staff Trust Chain actions (Verify, Propose, Confirm, or Appoint) and the already-on-chain link sit behind the closed **Moderator functions** disclosure, not always visible. About me is not a `ForumBoard` post; **Translate** (Languages icon) sits on the About me text when `profileMessage.id` is set, and in the footer icon row with react / copy on feed notes and replies via `TranslatableNoteBody` (`controlSlotId`), which portals `NoteTranslate`, when the language differs from the UI locale. The in-card reply composer includes an **Amount** sats field; empty text and an empty amount invoices 21 sats; a reply with text and an empty amount is unpaid for a verified member, otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat. Visible inline photos on the posts feed and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Top-level posts with a positive `goalSats` show `ForumGoalBar` (orange through 100%, in-flow green overflow, uncapped percent), same as `/welcome`. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name, Lightning Address, or rules agreement on a reply opens `RequirementsOverlay` (no Skip). Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. Under that QR a labeled **Shop sticker** button (`profile.shopSticker`, `Button size="sm" variant="secondary"`) opens `ShopStickerOverlay`: a preview of a printable shop-window sticker carrying the same `openCryptoPayQrValue`, and a download as PDF (vector, 134.4 mm), PNG or JPG (3000 px), or SVG. The files are made in the browser (`shopStickerBlob`); nothing is sent to the api.
-- **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even if the Lightning Address is blank; `GET /gifts/stats` for the gift-day rate when a feed amount or ask has no stored string for the visitor's currency, and for unsent previews (a stored string is shown as-is; no FiatPicker on the chart or the feed — member profiles are always signed-in); on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
-- **Actions:** Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/l/` plus the first 8 hex chars of the account id); Message on the card when another member has a `profileMessage`; translate a foreign-language About me text when `profileMessage.id` is set, and a foreign-language feed note or reply (**Translate**, Languages icon, / Show original / Show translation); click **1 post** or **N posts** (`profile.postCount`) or **1 reaction** or **N reactions** (`profile.replyCount`) to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Verified members may post unpaid replies; below verified a text reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`). When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name, Lightning Address, or rules agreement before a reply; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`). Staff viewing another member can open **Verify** (`/members/[accountId]/verify`; it does not post from the card), Propose, Confirm, or Appoint after opening the closed **Moderator functions** disclosure; already-on-chain is a link behind the same disclosure. When a username is set, press **Shop sticker**, pick PDF, PNG, JPG, or SVG, and **Download** the file `21gifts-shop-sticker-<username>.<format>`; a failure shows an alert and the next try clears it. The identity card has no edit. A moderator sees **Edit shop note** on a shop post in the posts feed.
+- **Purpose:** Signed-in member identity card (chart, About me inside the card — not a forum post, name, location, public `username@21.gifts`, role pill, copy-profile-link, and clickable post/reply counts from `postCount` / `replyCount`) with on-demand activity feeds below the card. A successful empty series and in-flight activity show `profile.chartEmpty` (**No gifts yet.**); a thrown activity load shows `profile.chartError` (**Could not load gifts.**); the chart never says **Loading…** and has no retry control. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is a moderator and the subject is someone else, staff Trust Chain actions (Verify, Propose, Confirm, or Appoint) and the already-on-chain link sit behind the closed **Moderator functions** disclosure, not always visible. About me is not a `ForumBoard` post; **Translate** (Languages icon) sits on the About me text when `profileMessage.id` is set, and in the footer icon row with react / copy on feed notes and replies via `TranslatableNoteBody` (`controlSlotId`), which portals `NoteTranslate`, when the language differs from the UI locale. Heart (lucide Heart, `forum.heart` “Send ₿1”) is icon-only in that same footer row after Translate and before React or Gift; it shows on a note or reply that is not deleted, not the viewer's own, and whose author can receive (`payable`), including a signed-out card, and never on the external author profile; a signed-out or read-only tap does nothing; a payable tap vibrates and shows the filled heart before payment; `+1` appears only after the payment succeeds. The in-card reply composer includes an **Amount** sats field; empty text and an empty amount invoices 21 sats; a reply with text and an empty amount is unpaid for a verified member and for every role on their own note (that form has no **Amount** field, an empty reaction there shows `forum.errorEmpty` instead of paying, and the member's own payable reactions show no Gift: a wallet cannot pay itself), otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat. Visible inline photos on the posts feed and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Top-level posts with a positive `goalSats` show `ForumGoalBar` (orange through 100%, in-flow green overflow, uncapped percent), same as `/welcome`. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name or rules agreement on a reply opens `RequirementsOverlay` (no Skip); a missing wallet is explained in the same dialog. `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. Under that QR a labeled **Shop sticker** button (`profile.shopSticker`, `Button size="sm" variant="secondary"`) opens `ShopStickerOverlay`: a preview of a printable shop-window sticker carrying the same `openCryptoPayQrValue`, and a download as PDF (vector, 134.4 mm), PNG or JPG (3000 px), or SVG. The files are made in the browser (`shopStickerBlob`); nothing is sent to the api. Every pay sheet on this screen (a gift, a paid reaction, or a paid reply) follows the same in-app wallet rule as the forum pay sheet on `/welcome`: it pays from the in-app wallet only (the `sparkInvoice`, otherwise the `pr`); without a usable wallet it shows the unavailable or failed state, never an invoice QR or a link to another wallet app.
+- **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even before the member's wallet is verified; `GET /fx/spot` (via `useSpotRate`) for the spot rate when a feed amount or ask has no stored string for the visitor's currency, and for unsent previews (a stored string is shown as-is; no FiatPicker on the chart or the feed — member profiles are always signed-in); on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
+- **Actions:** Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/l/` plus the first 8 hex chars of the account id); Message on the card when another member has a `profileMessage`; translate a foreign-language About me text when `profileMessage.id` is set, and a foreign-language feed note or reply (**Translate**, Languages icon, / Show original / Show translation); click **1 post** or **N posts** (`profile.postCount`) or **1 reaction** or **N reactions** (`profile.replyCount`) to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Verified members may post unpaid replies, and so may every role on their own note (no **Amount** field there); below verified a text reply to someone else's note invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`). When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name or rules agreement before a reply. Staff viewing another member can open **Verify** (`/members/[accountId]/verify`; it does not post from the card), Propose, Confirm, or Appoint after opening the closed **Moderator functions** disclosure; already-on-chain is a link behind the same disclosure. When a username is set, press **Shop sticker**, pick PDF, PNG, JPG, or SVG, and **Download** the file `21gifts-shop-sticker-<username>.<format>`; a failure shows an alert and the next try clears it. The identity card has no edit. A moderator sees **Edit shop note** on a shop post in the posts feed.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
 - **Auth:** Bearer; `OnboardingGate screen="profile"`.
 
@@ -2527,7 +3647,7 @@ Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto
 
 ### Variant: posts-open-goal-110
 
-Identity card; posts pressed; profile note hidden; the listed post has `sats: 23100` and `goalSats: 21000`. The ask is defined in bitcoin, so `ForumGoalBar` names **Ask ₿21'000 · $21.00** and the note amount is **₿23'100 · $23.10** (viewer USD from the gift-day rate). Full orange plus in-flow green overflow and label **110%**, same as `/welcome` `goal-110`.
+Identity card; posts pressed; profile note hidden; the listed post has `sats: 23100` and `goalSats: 21000`. The ask is defined in bitcoin, so `ForumGoalBar` names **Ask ₿21'000 · $21.00** and the note amount is **₿23'100 · $23.10** (viewer USD from the spot rate). Full orange plus in-flow green overflow and label **110%**, same as `/welcome` `goal-110`.
 
 ![21.gifts member posts open with 110 percent goal](images/members-posts-open-goal-110.png)
 
@@ -2569,7 +3689,7 @@ Same funded credit note as **posts-open-repay-today**, after **Pay today's repay
 
 ### Variant: posts-open-repay-today-invoice
 
-Same note as **posts-open-repay-today**, after **Pay today's repayment** is pressed. The invoice card is open, with **Pay with Wallet of Satoshi**. The amount form is not shown.
+Same note as **posts-open-repay-today**, after **Pay today's repayment** is pressed. The invoice card is open with the in-app wallet pay slot; in this build the wallet is not configured, so it says **Your 21.gifts wallet is not available here, so this cannot be paid.** No invoice QR. The amount form is not shown.
 
 ![21.gifts member posts repay today invoice](images/members-posts-open-repay-today-invoice.png)
 
@@ -2599,7 +3719,7 @@ Identity card; replies count pressed; feed shows Loading…; no pinned profile-n
 
 ### Variant: posts-error
 
-Identity card; posts count pressed; feed error `Could not load messages. Please try again.` and Try again; no pinned profile-note card.
+Identity card; posts count pressed; feed error `Could not load messages. Please try again.` and Try again; no pinned profile-note card. Shown only when the list itself cannot be read; one note that cannot be shown (an empty About me note) is left out and the other posts render.
 
 ![21.gifts member posts error](images/members-posts-error.png)
 
@@ -2623,7 +3743,7 @@ Identity card; replies count 3 pressed; one listed reply; muted `Showing the lat
 
 ### Variant: note-null
 
-Member identity card only (`profileMessage: null`, `aboutMe` null); copy-profile-link still on the card; no About me heading; no forum card.
+Member identity card only (`profileMessage: null`, `aboutMe` null); copy-profile-link still on the card; no About me heading; no forum card. A member who saved an empty About me looks the same: a profile note with no text, no media, and 0 sats reads as no note, so the profile does not fail to load.
 
 ![21.gifts member profile without note](images/members-note-null.png)
 
@@ -2645,11 +3765,11 @@ Signed-in visitor viewing their own `/members/:id` card.
 
 ![21.gifts member profile own](images/members-own.png)
 
-### Variant: overlay-address
+### Variant: overlay-wallet
 
-Named visitor with living-room rules agreed and no Wallet of Satoshi address. Posts feed open, listed note expanded, reply filled with the **Amount** field visible, **Post** clicked. `RequirementsOverlay` dialog **Add your Wallet of Satoshi address** with the profile Lightning Address field. No **Skip**. Close (X) is present.
+Named visitor with living-room rules agreed whose wallet is not set up (the api lists `lightning-address` as missing). Posts feed open, listed note expanded, reply filled with the **Amount** field visible, **Post** clicked. `RequirementsOverlay` dialog **Your wallet is not set up** with the sentence that gifts and posts need the member's own 21.gifts wallet and the labeled link **Open your wallet** to `/wallet`. No form and no **Skip**. Close (X) is present.
 
-![21.gifts member overlay address](images/members-overlay-address.png)
+![21.gifts member overlay wallet](images/members-overlay-wallet.png)
 
 ### Variant: overlay-username
 
@@ -2687,6 +3807,18 @@ Same German post after POST /translate fails. Alert **Could not translate this n
 
 ![21.gifts member translate error](images/members-translate-error.png)
 
+### Variant: heart-needs-balance
+
+Same German post in the posts feed after opening `?visual=heart-needs-balance` (a ready wallet below 1 sat) and clicking Send ₿1. No press and no **+1**; nothing is sent. Copy **A Bitcoin balance is required for this.**
+
+![21.gifts member heart needs balance](images/members-heart-needs-balance.png)
+
+### Variant: heart-paid
+
+Same German post after opening `?visual=heart-paid` and clicking Send ₿1. The filled heart and **+1** that every tap shows are held for the shot.
+
+![21.gifts member heart paid](images/members-heart-paid.png)
+
 ### Variant: about-translate
 
 Signed-in `/members/:id` with a German About me. **Translate** is visible under the About me body.
@@ -2719,7 +3851,7 @@ Same German About me after POST /translate fails. Alert **Could not translate th
 
 ### Variant: staff-verify
 
-Signed-in **moderator** viewing another member who is **basis**. Staff card with the closed **Moderator functions** disclosure, the same `details` / `summary` as wallet **Advanced functions** (`data-testid="state-members-staff-verify"`); Verify is not visible until it is opened. The pressed result is **staff-verify-open**.
+Signed-in **moderator** viewing another member who is **basis**. Staff card with the closed **Moderator functions** disclosure, a `details` / `summary` row (`data-testid="state-members-staff-verify"`); Verify is not visible until it is opened. The pressed result is **staff-verify-open**.
 
 ![21.gifts member staff verify](images/members-staff-verify.png)
 
@@ -2875,23 +4007,35 @@ Verify POST in flight. **Yes** disabled with a spinner; **No** disabled. The nam
 
 ## Screen: /pos
 
-- **Purpose:** Signed-in point of sale. With no charge, this page is only the Open CryptoPay QR and **Set an amount**. The keypad is `/pos/amount`. Confirming there returns here. The button is then **Cancel**, with the countdown and the amount in bitcoin and fiat. The saved unit is `account.amountUnit`. What is charged is still whole sats. For five minutes `GET /.well-known/lnurlp/:username` pins min and max to that amount. Cancel or expiry clears the pin. The page keeps the open charge and Cancel until the server returns none. No paid status, because Wallet of Satoshi settles the invoice. Missing username or lightning address links to `/profile`.
-- **Layout:** `AppShell` fill with profile chrome. `Card` `surface={false}`: heading, centered truncated address, Open CryptoPay QR, content-width **Set an amount** when no charge is open, otherwise the open charge (countdown, including 0:00, bitcoin, default fiat when a gift-day rate exists, and **Cancel**). No keypad on this page.
-- **Actions:** **Set an amount** opens `/pos/amount`. **Cancel** clears the charge. Menu row `pos.nav`.
+- **Purpose:** Signed-in point of sale. With no charge, this page is only the Open CryptoPay QR and **Set an amount**. The keypad is `/pos/amount`. Confirming there returns here. The button is then **Cancel**, with the countdown and the amount in bitcoin and fiat. The saved unit is `account.amountUnit`. What is charged is still whole sats. For five minutes `GET /.well-known/lnurlp/:username` pins min and max to that amount. A payer who scans the QR with the in-app wallet (`/wallet`, **Send**) goes straight to confirming that amount, with this member's address as the recipient; there is no amount to type. A payer whose 21.gifts in-app wallet scans the QR (or pastes this address) pays the charge with a Spark invoice the api issues for it, without a fee; any other wallet pays over Lightning. While the charge is open, and for one minute after it ran out, the page asks `GET /pos/charge` every three seconds (a payment the api confirms just after the end still counts); once the api has seen the payment, the charge is `paid` and the page shows **Paid ✓**, the amount in bitcoin and fiat, and **New payment**, without **Cancel**. The api keeps showing a paid charge for one minute. Cancel or expiry clears the pin. The page keeps the open charge and Cancel until the server returns none. The member's own wallet receives the payment. Under the QR and the charge, **History** lists past charges, newest first: **Paid ✓** with the time it was paid, **Expired**, or **Cancelled**, the amount in bitcoin and fiat, and the date and time the charge was created. The list comes with every till answer, so it changes when the open charge is paid, cancelled, or runs out. Without past charges it says **No payments yet.** The api returns at most its newest 20 charges, and the list shows those. A missing username links to `/profile`; with a username but no verified wallet (`sparkWalletVerified`), `pos.needWallet` links to `/wallet` while setup remains pending. While setup is due, the address and QR are hidden because the address is not registered yet. If background setup has exhausted its retries, the inline `walletSetup.error` note and **Try again** replace that link, and the address and QR remain hidden. The api answers a charge with 400 and `code` `wallet_required` when the wallet is not set up, or `cannot_receive` when it cannot receive; the page shows the `pos.needWallet` alert or **Your wallet cannot receive this payment right now. Please try again later.**
+- **Layout:** `AppShell` fill with profile chrome. `Card` `surface={false}`: heading, centered truncated address, Open CryptoPay QR, content-width **Set an amount** when no charge is open, otherwise the open charge (countdown, including 0:00, bitcoin, default fiat when a spot rate exists, and **Cancel**), or the paid charge (**Paid ✓**, bitcoin, default fiat when a spot rate exists, and **New payment**). Below, once the till has loaded, a top border and the **History** section (`PosHistory`): small uppercase heading, then muted rounded rows (status left, bitcoin · fiat right, creation date and time under them), or one centered sentence when empty. No keypad on this page. While wallet verification is pending, the `pos.needWallet` link occupies the message area; after background setup gives up, the setup note with its **Try again** button occupies it instead.
+- **Actions:** **Set an amount** and **New payment** open `/pos/amount`. **Cancel** clears the charge. Menu row `pos.nav`. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none, whether or not a charge was just created: `/pos/amount` does not stay behind as that view, so after Menu → **Point of sale** → **Set an amount** → **Create payment** the arrow and the browser back on `/pos` open `/welcome`. One arrow. The wordmark is not that control.
 - **Auth:** Bearer session via `OnboardingGate screen="profile"`.
 - **Used by:** Route `/pos`.
 
 ### Variant: default
 
-Signed-in Ada with a username and Wallet of Satoshi address, no open charge. Heading **Point of sale**, address `alice@21.gifts`, Open CryptoPay QR, and **Set an amount**. No keypad. Desktop, iPad, and smartphone all show the QR.
+Signed-in Ada with a username and a verified wallet, no open charge and no past charge. Heading **Point of sale**, address `alice@21.gifts`, Open CryptoPay QR, **Set an amount**, and **History** with **No payments yet.** No keypad. Desktop, iPad, and smartphone all show the QR.
 
 ![21.gifts point of sale](images/pos.png)
 
 ### Variant: open
 
-Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, the sat amount, the default fiat under it, and **Cancel** stay up. The amount form is gone. Desktop, iPad, and smartphone all show the Open CryptoPay QR.
+Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, the sat amount, the default fiat under it, and **Cancel** stay up. The amount form is gone. The open charge is not in **History**, which says **No payments yet.** Desktop, iPad, and smartphone all show the Open CryptoPay QR.
 
 ![21.gifts point of sale open](images/pos-open.png)
+
+### Variant: paid
+
+Signed-in Ada whose charge of ₿21 the api has marked paid. **Paid ✓** in green, the sat amount, the default fiat under it, and **New payment** (to `/pos/amount`). No countdown, no **Cancel**, and no **Set an amount**. **History** lists that charge as **Paid ✓ 12:00 PM** with ₿21 and its fiat. Desktop, iPad, and smartphone all show the Open CryptoPay QR.
+
+![21.gifts point of sale paid](images/pos-paid.png)
+
+### Variant: history
+
+Signed-in Ada with no open charge and three past charges, scrolled to **History**: **Paid ✓ 12:00 PM** in green with ₿2’100 and $2.10, then **Expired** with ₿500, then **Cancelled** with ₿42, each with the date and time it was created, newest first. **Set an amount** stays above.
+
+![21.gifts point of sale history](images/pos-history.png)
 
 ### Variant: loading
 
@@ -2919,21 +4063,33 @@ The open charge has already run out (0:00). The sat amount and the default fiat 
 
 ### Variant: need-username
 
-Setup is finished and the username is empty. Link **Set a username first.** No address and no amount form.
+Setup is finished and the username is empty. Link **Set a username first.** No address and no amount form. Under it, **History** with **No payments yet.**
 
 ![21.gifts point of sale need username](images/pos-need-username.png)
 
-### Variant: need-address
+### Variant: need-wallet
 
-Username set, no Wallet of Satoshi address. Link **Set a Wallet of Satoshi address first.** No amount form.
+Username set, wallet not verified (`sparkWalletVerified` is not true) in a build or an account body where the background setup does not apply (as in this fixture), so the address and QR still show. Link **Set up your wallet first.** to `/wallet`. No amount form. Under it, **History** with **No payments yet.**
 
-![21.gifts point of sale need address](images/pos-need-address.png)
+![21.gifts point of sale need wallet](images/pos-need-wallet.png)
+
+### Variant: setup-pending
+
+Pinned fixture (`?visual=setup-pending`, Playwright builds only): the background wallet setup is still due. The till hides the unregistered address and QR and shows **Set up your wallet first.** to `/wallet`. No amount form. Under it, **History** with **No payments yet.**
+
+![21.gifts point of sale setup pending](images/pos-setup-pending.png)
+
+### Variant: setup-failed
+
+Pinned fixture (`?visual=pos-setup-failed`, Playwright builds only). The username is set, the wallet is not verified, and background setup exhausted all quiet retries. The till hides the unregistered address and QR, then shows the alert **Your wallet could not be set up yet.** (`walletSetup.error`) followed by a secondary **Try again** button under it in place of the pending-wallet link. No amount form. Under it, **History** with **No payments yet.**
+
+![21.gifts point of sale setup failed](images/pos-setup-failed.png)
 
 ## Screen: /pos/amount
 
-- **Purpose:** Choose the sat amount for the till. No QR, no address, and no other till action. Confirming creates the charge and returns to `/pos`, which then shows **Cancel**, the countdown, and the amount in bitcoin and fiat. A positive fiat amount while the gift-day request is still loading shows **The {code} exchange rate is still loading.** When the request then settles, that loading alert changes in place without another press and without creating the payment: **No {code} exchange rate yet.** when the currency still cannot be priced, **Enter a whole number.** when the amount is not a safe sat count inside the bounds that button already uses, and the alert goes away when it is. After that request settles, a positive fiat amount when no gift day can price that currency shows **No {code} exchange rate yet.** `{code}` is CHF, EUR, USD, or PHP. An empty bitcoin amount still shows **Enter a whole number.**
-- **Layout:** `AppShell` fill. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. It does not jump to `/pos`. `Card` `surface={false}`: heading **Amount**. While the till request is out, a spinner and no keypad. If that request fails, the alert, **Try again**, and no keypad. Otherwise the keypad and **Create payment**. Bitcoin has no decimal key. Fiat shows the number-format decimal (dot for Swiss and US, comma for German; no cookie means Swiss) and keeps two fraction digits. A member who cannot charge, or who already has an open charge, is sent back to `/pos`.
-- **Actions:** **Create payment**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none.
+- **Purpose:** Choose the sat amount for the till. No QR, no address, and no other till action. Confirming creates the charge and returns to `/pos`, which then shows **Cancel**, the countdown, and the amount in bitcoin and fiat. Opened from `/pos`, that return is a step back in this tab's history (`returnToView`), so this page leaves no entry behind for the arrow or the browser back on `/pos`. Opened any other way (a direct link, after a reload), it replaces itself with `/pos`. A positive fiat amount that the spot rate cannot price in the preferred fiat (typed before that fiat changed to one without a price) shows **No {code} exchange rate yet.** `{code}` is CHF, EUR, USD, or PHP. An empty bitcoin amount still shows **Enter a whole number.**
+- **Layout:** `AppShell` fill. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. It does not jump to `/pos`. `Card` `surface={false}`: heading **Amount**. While the till request is out, a spinner and no keypad. If that request fails, the alert, **Try again**, and no keypad. Otherwise the keypad and **Create payment**. Bitcoin has no decimal key. Fiat shows the number-format decimal (dot for Swiss and US, comma for German; no cookie means Swiss) and keeps two fraction digits. A member who cannot charge, or who already has an open charge, is sent back to `/pos` the same way, once. A charge that is already paid does not send the member back.
+- **Actions:** **Create payment**. The fiat on the switch uses the current spot rate (`GET /fx/spot` through `useSpotRate`); without a price for that fiat it is disabled and the amount is typed in ₿. A fiat amount that still cannot be converted shows **This amount cannot be converted to bitcoin. Enter it in ₿.** instead of **Enter a whole number.** A charge the api answers with `code` `wallet_required` shows the `pos.needWallet` alert, one with `cannot_receive` shows **Your wallet cannot receive this payment right now. Please try again later.**; the keypad stays. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none.
 - **Auth:** Bearer session via `OnboardingGate screen="profile"`.
 - **Used by:** Route `/pos/amount`.
 
@@ -2961,17 +4117,23 @@ The till request failed. Heading **Amount**. Alert **Point of sale is unavailabl
 
 ![21.gifts point of sale bad amount](images/pos-bad-amount.png)
 
-### Variant: rate-loading
+### Variant: fiat
 
-PHP is pressed and the amount is 100. **Create payment** while the gift-day request has not returned. Alert **The PHP exchange rate is still loading.** The keypad stays. No QR.
+Signed-in Ada with CHF and fiat entry. `GET /fx/spot` prices 1 BTC at CHF 80'000. **CHF** is pressed and the keypad shows a decimal key. `68` shows **₿85'000** under the amount: the sats **Create payment** will charge at the current spot rate.
 
-![21.gifts point of sale rate loading](images/pos-rate-loading.png)
+![21.gifts point of sale amount in CHF](images/pos-amount-fiat.png)
 
-### Variant: no-rate
+### Variant: fiat-no-rate
 
-PHP is pressed and the amount is 100. The gift-day request has settled and no day can price PHP. **Create payment** shows **No PHP exchange rate yet.** The keypad stays. No QR.
+Signed-in Ada with CHF and fiat entry, but `GET /fx/spot` has no CHF price. **CHF** is shown disabled and **₿** is pressed, so there is no decimal key. `68` shows **No exchange rate yet** under the amount. **Create payment** charges ₿68. A fiat amount cannot be typed, so it never reaches **Enter a whole number.**
 
-![21.gifts point of sale no rate](images/pos-no-rate.png)
+![21.gifts point of sale amount without a CHF rate](images/pos-amount-fiat-no-rate.png)
+
+### Variant: cannot-convert
+
+Signed-in Ada in CHF with a spot rate. **Create payment** with `9999999999999` CHF: that is more sats than a whole number can hold, so the amount cannot be converted. Alert **This amount cannot be converted to bitcoin. Enter it in ₿.** No charge is sent. The keypad stays. No QR.
+
+![21.gifts point of sale amount that cannot be converted](images/pos-cannot-convert.png)
 
 ### Variant: create-outside
 
@@ -2991,16 +4153,28 @@ PHP is pressed and the amount is 100. The gift-day request has settled and no da
 
 ![21.gifts point of sale create failed](images/pos-create-failed.png)
 
+### Variant: create-wallet-required
+
+**Create payment** with `21`. The till answers 400 with `code` `wallet_required` (the member's wallet is not set up). The `pos.needWallet` alert appears. The keypad stays. No QR.
+
+![21.gifts point of sale create wallet required](images/pos-create-wallet-required.png)
+
+### Variant: create-cannot-receive
+
+**Create payment** with `21`. The till answers 400 with `code` `cannot_receive`. Alert **Your wallet cannot receive this payment right now. Please try again later.** The keypad stays. No QR.
+
+![21.gifts point of sale create cannot receive](images/pos-create-cannot-receive.png)
+
 ## Screen: /profile
 
-- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, a resting header when a profile photo or wide image is stored (round photo and wide image are different pictures, and neither is the About me photo; a missing wide image or profile photo is the button **Add a wide image** or **Add a profile photo**), About me inside the same card (not a forum post; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with attach, preview, and remove in the editor), copy-profile-link on the card, edit name and location (Ort), then the same public facts a visitor sees on `/members/:id` (role pill, funding-program icon, `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed; no Message button and no staff actions), then edit the Wallet of Satoshi address, then Notifications pills (All / Active / Mentions `SegmentedControl tone="neutral"`) and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, the only signed-in FiatPicker, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row. Chrome is the page-frame header (icon-only back + wordmark + Menu inside the rounded sheet). Menu starts with **Home**; the Profile row shows no given or received amounts. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false.
-- **Inputs:** Session account (name + location + Lightning Address + `viewKey` + `aboutMe` + `aboutMeHasPhoto` + living-room rules agreement + optional `notificationLevel`) via `OnboardingGate` / `useAuthStore`; Given + Received from `GET /me/activity` via `useAccountTotals` / `fetchAccountActivity`. Fetch even with a blank Lightning Address. About me save is `PUT /me/about` (`putAboutMe`). The profile photo is `GET`/`PUT` `/pictures/me`. The wide image is `GET`/`PUT` `/banners/me`. Neither slot is filled from the About me photo. Location save is `POST /me/location` (`setLocation`). Notification level save is `POST /me/notification-level` (`postNotificationLevel`).
-- **Actions:** Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile (current), **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; write or edit About me, and from that editor attach or remove each of the three pictures (About me photo, profile photo, and wide image); copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; link or change address; choose All / Active / Mentions on the Notifications `SegmentedControl tone="neutral"` under the address form, and when Push APIs are ready choose On / Off on a second This device `SegmentedControl tone="neutral"` (`aria.push`); choose language on the Language settings row after notifications (`LanguagePreferenceSwitcher`, uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose preferred fiat on the Fiat currency settings row (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker — the only signed-in control that writes the `fiat` cookie); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears under the This device pill; dismiss `IntroduceYourselfOverlay` for this mount (Close) or **Write an introduction** (dismisses, focuses the welcome composer via `requestForumCompose` / `FORUM_COMPOSE_EVENT`; `router.push('/welcome')` only when the path is not already `/welcome`).
+- **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, a resting header when a profile photo or wide image is stored (round photo and wide image are different pictures, and neither is the About me photo; a missing wide image or profile photo is the button **Add a wide image** or **Add a profile photo**), About me inside the same card (not a forum post; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with attach, preview, and remove in the editor), copy-profile-link on the card, edit name and location (Ort), then the same public facts a visitor sees on `/members/:id` (role pill, funding-program icon, `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed; no Message button and no staff actions), then Notifications pills (All / Active / Mentions `SegmentedControl tone="neutral"`), Hearts On / Off under that level (`account.notifyHearts ?? true`), and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (incoming pushes always show an OS banner, including when a 21.gifts tab is focused), choose language (uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino), then appearance (System / Light / Dark), then preferred fiat (`FiatPreferenceSwitcher`, the only signed-in FiatPicker, same pill chrome as Theme, not the compact orange gift picker), then number format (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`) as the last identity-card settings row. Chrome is the page-frame header (icon-only back + wordmark + Menu inside the rounded sheet). Menu starts with the account header, then **Home** and **Balance**; the Profile row shows no given or received amounts. `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it. Every pay sheet on this screen (a gift, a paid reaction, or a paid reply) follows the same in-app wallet rule as the forum pay sheet on `/welcome`: it pays from the in-app wallet only (the `sparkInvoice`, otherwise the `pr`); without a usable wallet it shows the unavailable or failed state, never an invoice QR or a link to another wallet app.
+- **Inputs:** Session account (name + location + `viewKey` + `aboutMe` + `aboutMeHasPhoto` + living-room rules agreement + optional `notificationLevel` + optional `notifyHearts`) via `OnboardingGate` / `useAuthStore`; Given + Received from `GET /me/activity` via `useAccountTotals` / `fetchAccountActivity`. Fetch even before the wallet is verified; refetch when `sparkWalletVerified` turns true. About me save is `PUT /me/about` (`putAboutMe`). The profile photo is `GET`/`PUT` `/pictures/me`. The wide image is `GET`/`PUT` `/banners/me`. Neither slot is filled from the About me photo. Location save is `POST /me/location` (`setLocation`). Notification level save is `POST /me/notification-level` (`postNotificationLevel`). Heart-notification save is `POST /me/heart-notifications` (`postHeartNotifications`).
+- **Actions:** Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile (current), **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; write or edit About me, and from that editor attach or remove each of the three pictures (About me photo, profile photo, and wide image); copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; choose All / Active / Mentions on the Notifications `SegmentedControl tone="neutral"`, choose On / Off on Hearts (`profile.heartNotify.label`), and when Push APIs are ready choose On / Off on a second This device `SegmentedControl tone="neutral"` (`aria.push`); choose language on the Language settings row after notifications (`LanguagePreferenceSwitcher`, uppercase kicker, one-row `SegmentedControl tone="neutral"` same as Theme, endonyms English / Deutsch / Español / Filipino); choose System / Light / Dark (`ThemeSwitcher`, `SegmentedControl tone="neutral"`); choose preferred fiat on the Fiat currency settings row (`FiatPreferenceSwitcher`, same pill chrome as Theme, not the compact orange gift picker — the only signed-in control that writes the `fiat` cookie); choose number format on the last identity-card settings row (`NumberFormatSwitcher`, uppercase kicker, `SegmentedControl tone="neutral"`, samples `10'000.23` / `10,000.23` / `23.000,33`); when the series has data, toggle the activity chart between ₿ and the selected fiat. On iPhone Safari outside standalone, a short install hint (`profile.push.installHint`) appears under the This device pill.
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
 
-Above the heading, **Add a wide image** and **Add a profile photo** when those pictures are not stored. Heading **Profile**, then inside the single `max-w-sm` identity card: no chart FiatPicker. When the series is empty, `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat `SegmentedControl tone="gift"` right; no chart title heading); About me with empty prompt **Tell others who you are.** and **Write your About me** when `aboutMe` is null (not a forum post); icon-only **Copy link to this profile**; name, location (**Location** / **Ort**, unset shows **Not set**), then the public member facts (role pill when the role is verified or above, funding-program icon when `fundingReviewedAt` is a number (pressing it reveals that one sentence), `username@21.gifts`, pay QR and **Shop sticker** when a username is set, including on a smartphone, and **Posts** / **Reactions** count buttons that open the same activity feed as `/members/:id`), then Wallet of Satoshi address fields with icon actions to the right (pencil / check / X / trash), then a Notifications section with a three-stage All / Active / Mentions `SegmentedControl tone="neutral"` and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (selected fill `bg-app-btn`; On / Off visible text), then a Language settings row (uppercase kicker and one-row `SegmentedControl tone="neutral"` same as Theme, English / Deutsch / Español / Filipino), then a Theme settings row (uppercase kicker and `SegmentedControl tone="neutral"` System / Light / Dark), then a Fiat currency settings row (`FiatPreferenceSwitcher`, the only FiatPicker on the card, same pill chrome as Theme, not the compact orange gift picker; CHF|EUR|USD|PHP), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back and wordmark in the page-frame header (the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none); one **Menu** in that same header row (**Home** first; log out, then a quiet **Version {version}** line (`app.version`); the Profile row shows no given or received amounts). Chart never swaps to **Loading…**. A failed activity load is `profile.chartError`.
+Above the heading, **Add a wide image** and **Add a profile photo** when those pictures are not stored. Heading **Profile**, then inside the single `max-w-sm` identity card: no chart FiatPicker. When the series is empty, `profile.chartEmpty` (`role="status"`, **No gifts yet.**) with no axis/SVG / no ₿|fiat scale; otherwise a compact Given/Received chart (legend left, ₿ | selected fiat `SegmentedControl tone="gift"` right; no chart title heading); About me with empty prompt **Tell others who you are.** and **Write your About me** when `aboutMe` is null (not a forum post); icon-only **Copy link to this profile**; name, location (**Location** / **Ort**, unset shows **Not set**), then the public member facts (role pill when the role is verified or above, funding-program icon when `fundingReviewedAt` is a number (pressing it reveals that one sentence), `username@21.gifts`, pay QR and **Shop sticker** when a username is set, including on a smartphone, and **Posts** / **Reactions** count buttons that open the same activity feed as `/members/:id`), then a Notifications section with a three-stage All / Active / Mentions `SegmentedControl tone="neutral"`, Hearts On / Off under that level, and, when Push APIs are ready, a second This device On / Off `SegmentedControl tone="neutral"` (selected fill `bg-app-btn`; On / Off visible text), then a Language settings row (uppercase kicker and one-row `SegmentedControl tone="neutral"` same as Theme, English / Deutsch / Español / Filipino), then a Theme settings row (uppercase kicker and `SegmentedControl tone="neutral"` System / Light / Dark), then a Fiat currency settings row (`FiatPreferenceSwitcher`, the only FiatPicker on the card, same pill chrome as Theme, not the compact orange gift picker; CHF|EUR|USD|PHP), then a Number format settings row (uppercase kicker and `SegmentedControl tone="neutral"` samples `10'000.23` / `10,000.23` / `23.000,33`); no **View key** heading and no visible URL/key text. No second panel below the card. Icon-only back and wordmark in the page-frame header (the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none); one **Menu** in that same header row (account header, then **Home** and **Balance**; log out, then a quiet **Version {version}** line (`app.version`); the Profile row shows no given or received amounts). Chart never swaps to **Loading…**. A failed activity load is `profile.chartError`.
 ![21.gifts profile](images/profile.png)
 
 ### Variant: sunday
@@ -3248,6 +4422,12 @@ Owner editor with `role="alert"` save error after stubbing PUT /me/about to 500,
 Notifications section with `role="alert"` save error after stubbing POST /me/notification-level to 500 and clicking Active. Copy **Could not save notification level.**
 
 ![21.gifts profile notification level error](images/profile-notification-level-error.png)
+
+### Variant: heart-notify-error
+
+Notifications section with `role="alert"` save error after stubbing POST /me/heart-notifications to 500 and clicking Off inside Hearts. Copy **Could not save the heart setting.**
+
+![21.gifts profile heart notify error](images/profile-heart-notify-error.png)
 
 ### Variant: push-enable-error
 
@@ -3536,7 +4716,7 @@ Founder types `@`, picks **@cara**, and spend answers that the person was not fo
 
 ### Variant: no-lightning
 
-Founder types `@`, picks **@cara**, and spend answers that the person has no Lightning address. Alert **This person has no Wallet of Satoshi address.** Needle `This person has no Wallet of Satoshi address.`
+Founder types `@`, picks **@cara**, and spend answers that the person has no Lightning address. Alert **This person's wallet cannot receive Bitcoin payments yet.** Needle `This person's wallet cannot receive Bitcoin payments yet.`
 
 ![21.gifts daily payment amounts no lightning](images/grants-payments-amounts-no-lightning.png)
 
@@ -3557,7 +4737,7 @@ Opening `/profile/apply` lands on the paused applications screen. Public paused 
 
 - **Purpose:** Signed-in applications screen. While applications are paused, a verified account with status `none` or `rejected` whose username is not `joey-rosima`, `vincent`, or `jewel-bacolbas` sees the pause sentence and the link `https://21.gifts/statistics`, with no About-me steps, no questions, and no POST. Pending, trial, and admitted keep their copy for every verified username. A verified account with one of those three names and status `none` or `rejected` sees the apply walk. A basis account named joey-rosima, vincent, or jewel-bacolbas sees **You are not verified yet.** and does not post. Any other basis account whose status is not pending, trial, or admitted sees the pause card. A basis account with one of those statuses sees **You are not verified yet.** and does not post. The apply walk stays in the code. While the switch is on it is shown only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`. When the switch is off, a verified account with status `none` or `rejected` sees it. Pending, trial, and admitted stay status copy. A basis account on that card sees **You are not verified yet.**
 - **Inputs:** Account username and funding status from the auth store. Public paused fixtures do not fetch posts and do not POST apply.
-- **Actions:** Read the paused sentence and open `https://21.gifts/statistics`, unless the signed-in username is `joey-rosima`, `vincent`, or `jewel-bacolbas`, or the funding status is pending, trial, or admitted. A verified account with one of those names and status `none` or `rejected` fills the apply walk. Pending, trial, and admitted read their status. A basis account named joey-rosima, vincent, or jewel-bacolbas reads **You are not verified yet.** and does not post. Any other basis account whose status is not pending, trial, or admitted reads the pause card. A basis account with one of those statuses reads **You are not verified yet.** and does not post. The top-left arrow returns to the previous in-app view or `/welcome`. No second arrow. The wordmark is not that control.
+- **Actions:** Read the paused sentence and open `https://21.gifts/statistics`, unless the signed-in username is `joey-rosima`, `vincent`, or `jewel-bacolbas`, or the funding status is pending, trial, or admitted. A verified account with one of those names and status `none` or `rejected` fills the apply walk. Pending, trial, and admitted read their status. A basis account named joey-rosima, vincent, or jewel-bacolbas reads **You are not verified yet.** and does not post. Any other basis account whose status is not pending, trial, or admitted reads the pause card. A basis account with one of those statuses reads **You are not verified yet.** and does not post. Yes on the truth question posts the application and returns to `/grants`: a step back when this page was opened from `/grants` (`returnToView`), otherwise a replace, so `/grants` does not lead back to this page. The top-left arrow returns to the previous in-app view or `/welcome`. No second arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/apply` (`FundingApplyPage`).
 
 ### Variant: default
@@ -3695,9 +4875,9 @@ No on the first question says When your posts match, you can apply again.
 ## Screen: /messages
 
 - **URL:** `/messages` — signed-in private-message inbox. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right; open it for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Wordmark → `/welcome`. A thread opened from the list returns to the list; it does not always go to `/messages`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Moderators see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text and a tabular-nums lining-nums unread-message count right of the name before the time when the derived count is greater than zero (`inbox.threadUnread` accessible name `{name}, {count} unread`; no visible word Unread); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for the newest 20 messages, oldest-first within the page and a 8000-character composer plus an amount field with the ₿ / fiat switch and the other unit under it (no filter) with ImagePlus attach (JPEG/PNG/WebP max 10, photo-only send, stills in bubbles; the list has no attach): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. A pasted `https://21.gifts/messages/<uuid>` in a bubble unfurls as a nested quoted-note card (`ForumQuotedBody` / `fetchPublicMessage`). The bubble remainder uses conversation translate; nested forum quotes stay forum notes. The conversation list does not offer Translate. Older pages prepend near the oldest bubble. The open thread starts scrolled to the bottom (newest + composer) and stays there while the scroller is within 80px of the bottom, including when older pages prepend and when stills on the loaded page finish. Scrolling up unsticks; further prepends keep the same messages in view. A new newest message re-sticks. An open pay sheet is included in that bottom pin. Returning via the top-left arrow scrolls the conversation list to the top once when that previous view is the list. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Every settled sats amount in an open thread also shows the preferred-fiat suffix stored when the payment was made (a stored string as-is; the gift-day rate when that field is null or missing). Unpaid invoice previews still use the latest gift-day rate. A message whose `giftFor` points at another message renders as a footer inside that message instead of as a separate row. An open thread shows new messages without a reload, about every 5 seconds while the tab is visible, and once when the tab becomes visible again. A hidden tab does not poll.
-- **Actions:** Open a thread, send a reply, attach JPEG/PNG/WebP stills on an open thread, return via the top-left arrow (when the previous view is the list, the list starts at the top), or to the forum when this tab has no earlier view. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here; dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Leave an open thread visible so new messages appear without a reload.
-- **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `ForumQuotedBody`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (`roleAtLeast(role, 'moderator')`, unlisted `?c=` only), `fetchConversationMessagePhoto`, `fetchPublicMessage`, `postConversationMessage`, `prepareForumPhoto`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with `MessagesChromeLeft` + wordmark → `/welcome` top-left and one **Menu** top-right (see **Signed-in header**); open the Menu for **Home**, **Balance**, **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Wordmark → `/welcome`. A thread opened from the list returns to the list; it does not always go to `/messages`. Heading **Messages**. Members see the unfiltered inbound list (all origins) with no `SegmentedControl`. Moderators see **Direct** | **Contact** | **Damus** (default **Direct**, one row) and a list of that origin only. Origin labels on rows stay for everyone. A `moderator_group` row is never listed; the closed staff room lives on `/moderate/group`. Member empty copy is **No private messages yet.** without the control; staff empty stays per-filter (**No private messages yet.** / **No contact messages yet.** / **No Damus messages yet.**) with the control visible. **Loading…** and **Try again** hide the control. Unread inbound rows are semibold with `text-app-fg` last text and a tabular-nums lining-nums unread-message count right of the name before the time when the derived count is greater than zero (`inbox.threadUnread` accessible name `{name}, {count} unread`; no visible word Unread); read inbound last text is a muted left preview; outbound last text is a filled right chip (`You: {text}`); gift-only last messages show the formatted amount. Open a thread (`?c=`) for the newest 20 messages, oldest-first within the page and a 8000-character composer plus an amount field with the ₿ / fiat switch and the other unit under it (no filter) with ImagePlus attach (JPEG/PNG/WebP max 10, photo-only send, stills in bubbles; the list has no attach): incoming bubbles are full-width muted note cards, sent bubbles are filled `app-btn` on the right labelled **You**. A pasted `https://21.gifts/messages/<uuid>` in a bubble unfurls as a nested quoted-note card (`ForumQuotedBody` / `fetchPublicMessage`). The bubble remainder uses conversation translate; nested forum quotes stay forum notes. The conversation list does not offer Translate. Older pages prepend near the oldest bubble. The open thread starts scrolled to the bottom (newest + composer) and stays there while the scroller is within 80px of the bottom, including when older pages prepend and when stills on the loaded page finish. Scrolling up unsticks; further prepends keep the same messages in view. A new newest message re-sticks. An open pay sheet is included in that bottom pin. Returning via the top-left arrow scrolls the conversation list to the top once when that previous view is the list. Opening a thread POSTs `/conversations/:id/read` and refreshes the home-screen badge. The open-thread heading is only the counterpart name + origin caption (no in-card back); the origin label sits under it, not inside the h1. `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it. Every settled sats amount in an open thread also shows the preferred-fiat suffix stored when the payment was made (a stored string as-is; the spot rate when that field is null or missing). Unpaid invoice previews still use the current spot rate. A message whose `giftFor` points at another message renders as a footer inside that message instead of as a separate row. An open thread shows new messages without a reload, about every 5 seconds while the tab is visible, and once when the tab becomes visible again. A hidden tab does not poll. The inbox pay sheet pays from the member's in-app wallet only, like the forum pay sheet on `/welcome` (the `sparkInvoice` when the api issued one, otherwise the payment request); without a usable wallet it says so, and it shows no invoice QR and no button to another wallet app on any device.
+- **Actions:** Open a thread, send a reply, attach JPEG/PNG/WebP stills on an open thread, return via the top-left arrow (when the previous view is the list, the list starts at the top), or to the forum when this tab has no earlier view. Open the counterpart (and incoming author) name to `/members/:id` when `accountId` is present. Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Member-profile Message and `/contact` send land here. Leave an open thread visible so new messages appear without a reload.
+- **Calls:** `AppShell`, `MessagesChromeLeft`, `ProfileChromeLeft`, `MessagesPage`, `InboxLoader`, `InboxScreen`, `ForumQuotedBody`, `SignedInChrome`, `OnboardingGate`, `fetchConversations`, `fetchConversation`, `fetchModeratorGroup` (`roleAtLeast(role, 'moderator')`, unlisted `?c=` only), `fetchConversationMessagePhoto`, `fetchPublicMessage`, `postConversationMessage`, `prepareForumPhoto`, `postConversationInvoice`, `markConversationRead`, `refreshUnreadAppBadge`, `WalletPay`, `useWalletPay`, `payFromWallet`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -3808,11 +4988,47 @@ Open thread. Inbound **Hi** with amount **₿21** under the body. Composer visib
 
 ![21.gifts inbox thread text sats](images/messages-thread-text-sats.png)
 
-### Variant: thread-pay-qr
+### Variant: thread-pay-sheet
 
-Open thread, Amount **21** submitted. Pay sheet open with **Pay with Wallet of Satoshi**. Close (`X`) dismisses the sheet and stays on this thread. It is not the top-left back arrow. The composer amount row is hidden; the sheet states that amount once, as the sat amount plus the default fiat from the latest gift-day rate. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos). Desktop shows the Bitcoin payment QR plus the wallet **Pay** button. A smartphone shows the same sheet without a mounted `QrCode`; **Pay** opens Wallet of Satoshi. **Waiting for payment…** is acceptable while the pay poll hangs.
+Open thread, Amount **21** submitted. Pay sheet open with the in-app wallet pay slot; this build has no wallet configured, so it says **Your 21.gifts wallet is not available here, so this cannot be paid.** Close (`X`) dismisses the sheet and stays on this thread. It is not the top-left back arrow. The composer amount row is hidden; the sheet states that amount once, as the sat amount plus the default fiat from the current spot rate. Composer behind the sheet includes ImagePlus attach. Captured at desktop and mobile (same variant, four combos), identical on both: no invoice QR on any device. **Waiting for payment…** is acceptable while the pay poll hangs.
 
-![21.gifts inbox thread pay QR](images/messages-thread-pay-qr.png)
+![21.gifts inbox thread pay sheet](images/messages-thread-pay-sheet.png)
+
+### Variant: thread-wallet-pay-preparing
+
+Pinned fixture (`?visual=wallet-pay-preparing`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot, with no invoice QR: a spinner and **Checking your wallet…**.
+
+![21.gifts inbox thread wallet pay preparing](images/messages-thread-wallet-pay-preparing.png)
+
+### Variant: thread-wallet-pay-confirm
+
+Pinned fixture (`?visual=wallet-pay-confirm`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot, with no invoice QR: **Send**, and no fee row for the quoted fee of ₿0.
+
+![21.gifts inbox thread wallet pay confirm](images/messages-thread-wallet-pay-confirm.png)
+
+### Variant: thread-wallet-pay-paying
+
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot, with no invoice QR: a spinner and **Paying from your wallet…**, with **Waiting for payment…** under it.
+
+![21.gifts inbox thread wallet pay paying](images/messages-thread-wallet-pay-paying.png)
+
+### Variant: thread-wallet-pay-insufficient
+
+Pinned fixture (`?visual=wallet-pay-insufficient`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot, with no invoice QR: the alert that the wallet lacks Bitcoin, then **Still missing:** with the amount plus the known fee minus the balance in ₿ and fiat (the pin shows the full amount), then the member's own 21.gifts address and its Open CryptoPay QR.
+
+![21.gifts inbox thread wallet pay insufficient](images/messages-thread-wallet-pay-insufficient.png)
+
+### Variant: thread-wallet-pay-unconfirmed
+
+Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only, invoice with a `sparkInvoice`). The inbox pay sheet shows the in-app wallet slot, with no invoice QR: the neutral not-confirmed-yet sentence.
+
+![21.gifts inbox thread wallet pay unconfirmed](images/messages-thread-wallet-pay-unconfirmed.png)
+
+### Variant: thread-wallet-required
+
+Open thread, Amount **21** submitted, and the api answers the invoice with 400 and `code` `wallet_required` because the member's own wallet is not set up. No pay sheet opens; under the composer the wallet-required alert link leads to `/wallet`.
+
+![21.gifts inbox thread wallet required](images/messages-thread-wallet-required.png)
 
 ### Variant: thread-quoted-note
 
@@ -3882,10 +5098,10 @@ Open thread. The incoming message **Hello @ada** stores a profile mark. **View p
 
 ## Screen: /notifications
 
-- **URL:** `/notifications` — signed-in notifications for living-room posts, replies, payments, moderator appointment, and moderator proposal. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`. JSON is `/forum/notifications` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Notifications**, a list of posts, replies, payments, moderator appointment, and moderator proposal (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin` / `{name} proposed a moderator`, or **You are a moderator** without `{name}`; post or reply text or **Photo** / **Photo reaction**; zap amount as stored; appointment or proposal with empty text has no body line; time), empty copy **No notifications yet.**, **Loading…**, or **Try again**. Unread rows (`readAt` absent) are a section headed **Unread** above rows that already have `readAt`, headed **Already seen**. Each section keeps the fetched order, and a section with no rows is omitted. Unread rows are semibold; read rows muted. No composer and no filter. Signed-in chrome may show `IntroduceYourselfOverlay` when `setup` is null and `hasPosted` is false. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
-- **Actions:** Click a `moderator_proposal` row to open `/moderate/proposals` (does **not** mark that notification read). Click a `moderator_appointed` row to open `/welcome` (mark that notification read). Click a `forum_reply` or `forum_mention` row to open `/messages/{replyId}`, and a `forum_post` or `zap` row to open `/messages/{parentId}` (mark that notification read; ids are URI-encoded). The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu** for **Home**, **Shops**, **Point of sale**, Profile, **Grants**, **Wallet**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Dismiss `IntroduceYourselfOverlay` for this mount or follow **Write an introduction** to `/welcome`. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `NotificationsPage`, `NotificationsLoader`, `NotificationsScreen`, `SignedInChrome`, `IntroduceYourselfOverlay`, `OnboardingGate`, `fetchNotifications`, `fetchConversations`, `fetchModeratorGroup`, `markNotificationRead`, `markAllNotificationsRead`.
+- **URL:** `/notifications` — signed-in notifications for living-room posts, replies, payments, moderator appointment, and moderator proposal. A heart row opens `/messages/{parentId}` and is marked read, the same as a zap. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`. JSON is `/forum/notifications` (Next.js forbids `route.ts` beside this page).
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Notifications**, a list of posts, replies, payments, hearts, moderator appointment, and moderator proposal (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin` / `{name} sent you a heart` / `{name} proposed a moderator`, or **You are a moderator** without `{name}`; post or reply text or **Photo** / **Photo reaction**; zap amount as stored; appointment or proposal with empty text has no body line; time), empty copy **No notifications yet.**, **Loading…**, or **Try again**. Unread rows (`readAt` absent) are a section headed **Unread** above rows that already have `readAt`, headed **Already seen**. Each section keeps the fetched order, and a section with no rows is omitted. Unread rows are semibold; read rows muted. No composer and no filter. `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
+- **Actions:** Click a `moderator_proposal` row to open `/moderate/proposals` (does **not** mark that notification read). Click a `moderator_appointed` row to open `/welcome` (mark that notification read). Click a `forum_reply` or `forum_mention` row to open `/messages/{replyId}`, and a `forum_post`, `zap`, or `heart` row to open `/messages/{parentId}` (mark that notification read; ids are URI-encoded). The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `NotificationsPage`, `NotificationsLoader`, `NotificationsScreen`, `SignedInChrome`, `OnboardingGate`, `fetchNotifications`, `fetchConversations`, `fetchModeratorGroup`, `markNotificationRead`, `markAllNotificationsRead`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
@@ -3921,7 +5137,7 @@ Unread `moderator_proposal` row (actor **Bob**, copy **Bob proposed a moderator*
 ## Screen: /statistics
 
 - **URL:** `/statistics` — people-count and shop-activity charts for every visitor, signed-in or not. `OnboardingGate screen="welcome"` with `allowGuest`. A signed-out visitor is not sent to `/login`. Incomplete signed-in setup still is. HTML `/statistics` is the chart page, not a GET proxy (Next.js forbids `route.ts` beside this page). JSON is `GET /gifts/stats`. Not a second moderation hub. No daily funding goal on this page.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and either **Log in** or Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Statistics**. Signed-out top-right is **Log in**, not Menu. A session still shows Menu. Both see the **People paid** panel: yesterday's person count, the measurement paragraph, and the **People by UTC day** chart (lighter bar is today, no goal line). Both also see an **Active shops** panel under it: one explainer and the **Shops by UTC day** chart. The shop chart has no goal line and no link. The people panel is always open. No **Tap to close**. No Goal, percent, progress bar, or goal line. No Hidden notes, Open proposals, Moderators chat group, or Handbook controls. When `roleAtLeast(role, 'moderator')` and yesterday's person count is a number, a closed **Moderator functions** disclosure (`StaffFunctions`, catalog `staff.functions`) sits between the people chart and the shop panel; opening it shows **Show payout per person** (`moderate.payouts.link`) to `/moderate/payouts`. Basis and verified never see **Moderator functions**. A signed-out visitor never sees **Moderator functions**. Menu row **Statistics** (`nav.statistics`, lucide `BarChart3`, `/statistics`) for a signed-in account, immediately after Trust Chain. Menu row **Moderation** stays staff-only immediately after Statistics.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and **Log in** without a stored session, Menu with an open wallet, or neither while a session is held back, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Statistics**. Signed-out top-right is **Log in**, not Menu. Only an active session whose wallet is open shows Menu. A held-back stored session gets the login card in place of the page, with neither **Log in** nor Menu top right. Signed-out visitors and members see the **People paid** panel: yesterday's person count, the measurement paragraph, and the **People by UTC day** chart (lighter bar is today, no goal line). Both also see an **Active shops** panel under it: one explainer and the **Shops by UTC day** chart. The shop chart has no goal line and no link. The people panel is always open. No **Tap to close**. No Goal, percent, progress bar, or goal line. No Hidden notes, Open proposals, Moderators chat group, or Handbook controls. When `roleAtLeast(role, 'moderator')` and yesterday's person count is a number, a closed **Moderator functions** disclosure (`StaffFunctions`, catalog `staff.functions`) sits between the people chart and the shop panel; opening it shows **Show payout per person** (`moderate.payouts.link`) to `/moderate/payouts`. Basis and verified never see **Moderator functions**. A signed-out visitor never sees **Moderator functions**. Menu row **Statistics** (`nav.statistics`, lucide `BarChart3`, `/statistics`) for a signed-in account, immediately after Trust Chain. Menu row **Moderation** stays staff-only immediately after Statistics.
 - **Actions:** The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Signed-out visitors open **Log in**. A session opens **Menu**. No note list on this page. The shop chart has no drill-down. Staff may open **Moderator functions** then **Show payout per person**.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `StatisticsPage`, `StatisticsScreen`, `PeopleCountChart`, `ShopActivityChart`, `StaffFunctions`, `SignedInChrome`, `OnboardingGate`, `fetchGiftStats`, `fetchShopActivity`.
 - **Auth:** No bearer required to read the page. Fetch `GET /gifts/stats` and `GET /shops/activity` with or without a session. `OnboardingGate screen="welcome"` with `allowGuest`. Each request fails on its own. Closed **Moderator functions** only when `roleAtLeast(role, 'moderator')` and yesterday's count is a number.
@@ -4272,8 +5488,8 @@ Staff (founder) list fetch failed. Copy **Could not load open applications. Plea
 ## Screen: /grants/applications/[accountId]
 
 - **URL:** `/grants/applications/[accountId]` — signed-in staff grant-application review. Same onboarding gate as `/moderate`. JSON is `/funding/applications/:accountId`.
-- **What the user sees:** Fill `AppShell` (`align="center"`) with one top-left arrow (`ProfileChromeLeft`) that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, plus wordmark → `/welcome`. The wordmark is not that control. One **Menu** sits top-right. No in-card back. Heading **Grant application**. Staff see the applicant name, then two questions and the living-room posts (Languages **Translate** on the post text; the applicant name stays plain; each post keeps its own time). The first question asks whether the profile posts match the core principles and links to `https://21.gifts/about`. **Yes** opens the truth question. **Yes** there admits. **No** on either question rejects, while the grant is open. There is no separate application time. Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
-- **Actions:** The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control (wordmark → `/welcome`). Staff **Yes** on the truth question posts admit; **No** posts reject. Try again. Open Menu.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with one top-left arrow (`ProfileChromeLeft`) that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, plus wordmark → `/welcome`. The wordmark is not that control. One **Menu** sits top-right. No in-card back. Heading **Grant application**. Staff see the applicant name, then two questions and the living-room posts (Languages **Translate** on the post text; the applicant name stays plain; each post keeps its own time). The first question asks whether the profile posts match the core principles and links to `/about`. **Yes** opens the truth question. **Yes** there admits. **No** on either question rejects, while the grant is open. There is no separate application time. Empty posts / Loading… / error+Try again. Failed decision: **Could not update this member. Please try again.** Non-staff: heading + forbidden copy, no fetch.
+- **Actions:** The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control (wordmark → `/welcome`). Staff **Yes** on the truth question posts admit; **No** posts reject. Either decision returns to `/grants/applications`: a step back when this page was opened from the queue (`returnToView`), otherwise a replace, so the queue does not lead back to the decided application. Try again. Open Menu.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `FundingApplicationDetailPage`, `FundingApplicationDetailScreen`, `SignedInChrome`, `OnboardingGate`, `fetchFundingApplication`, `postFundingAdmit`, `postFundingReject`.
 - **Auth:** Bearer; review only for founder|moderator.
 
@@ -4364,7 +5580,7 @@ Staff (founder) Reject POST in flight. **No** disabled with a spinner; applicati
 ## Screen: /moderate/group
 
 - **URL:** `/moderate/group` — signed-in closed moderator group thread. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate/group` is the group page, not a GET proxy. JSON is `/conversations/moderator-group` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Fill `AppShell` (`align="center"`) with one top-left arrow (`ProfileChromeLeft`) that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, plus wordmark → `/welcome`. The wordmark is not that control. One **Menu** sits top-right. No in-card back. Heading **Moderators chat group**. Moderators fetch the singleton group then the newest 20-message page and reuse `InboxScreen` (no origin filter; no in-card back). The loaded heading is the catalog label **Moderators chat group** (never the api row name); the composer has **Add a photo** (JPEG/PNG/WebP, up to 10) and no **Amount** field (no gifts). A pasted `https://21.gifts/messages/<uuid>` unfurls as a nested quoted-note card. The bubble remainder uses conversation translate; nested forum quotes stay forum notes. There is no conversation list. The loaded staff-room thread starts scrolled to the bottom (newest + composer) and stays there while the scroller is within 80px of the bottom, including when older pages prepend and when stills on the loaded page finish. Scrolling up unsticks; further prepends keep the same messages in view. A new newest message re-sticks. Older pages prepend near the oldest bubble. After a successful group+thread load, opening the room POSTs `/conversations/:id/read` (same as opening an inbox thread), bumps the badge epoch, and refreshes the home-screen badge with staff-room unread 0. Other signed-in visitors see heading **Moderators chat group** plus **This room is for moderators.** and do not fetch. Loading **Loading…**. Error **Try again**. Empty thread: composer visible, no messages. A thread message that another message's `giftFor` points at shows that gift attached under it as a compact `role="note"` line (name, ₿ amount, preferred-fiat suffix, time) instead of as its own bubble. Every sats amount in the thread (gift-only, text+sats, and the nested line) shows the same preferred-fiat suffix the forum already shows, (a stored string as-is; the gift-day rate when that field is null or missing). The open room shows new messages without a reload, about every 5 seconds while the tab is visible, and once when the tab becomes visible again. A hidden tab does not poll.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with one top-left arrow (`ProfileChromeLeft`) that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, plus wordmark → `/welcome`. The wordmark is not that control. One **Menu** sits top-right. No in-card back. Heading **Moderators chat group**. Moderators fetch the singleton group then the newest 20-message page and reuse `InboxScreen` (no origin filter; no in-card back). The loaded heading is the catalog label **Moderators chat group** (never the api row name); the composer has **Add a photo** (JPEG/PNG/WebP, up to 10) and no **Amount** field (no gifts). A pasted `https://21.gifts/messages/<uuid>` unfurls as a nested quoted-note card. The bubble remainder uses conversation translate; nested forum quotes stay forum notes. There is no conversation list. The loaded staff-room thread starts scrolled to the bottom (newest + composer) and stays there while the scroller is within 80px of the bottom, including when older pages prepend and when stills on the loaded page finish. Scrolling up unsticks; further prepends keep the same messages in view. A new newest message re-sticks. Older pages prepend near the oldest bubble. After a successful group+thread load, opening the room POSTs `/conversations/:id/read` (same as opening an inbox thread), bumps the badge epoch, and refreshes the home-screen badge with staff-room unread 0. Other signed-in visitors see heading **Moderators chat group** plus **This room is for moderators.** and do not fetch. Loading **Loading…**. Error **Try again**. Empty thread: composer visible, no messages. A thread message that another message's `giftFor` points at shows that gift attached under it as a compact `role="note"` line (name, ₿ amount, preferred-fiat suffix, time) instead of as its own bubble. Every sats amount in the thread (gift-only, text+sats, and the nested line) shows the same preferred-fiat suffix the forum already shows, (a stored string as-is; the spot rate when that field is null or missing). The open room shows new messages without a reload, about every 5 seconds while the tab is visible, and once when the tab becomes visible again. A hidden tab does not poll.
 - **Actions:** The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control (wordmark → `/welcome`). Open **Menu**. Moderators attach photos, send a reply (text and/or photos), and **Try again** on fetch error. After a successful group+thread load, opening the room POSTs `/conversations/:id/read` (same as opening an inbox thread), bumps the badge epoch, and refreshes the home-screen badge with staff-room unread 0. Leave the room open so new messages appear without a reload.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratorGroupPage`, `ModeratorGroupScreen`, `InboxScreen`, `ForumQuotedBody`, `SignedInChrome`, `OnboardingGate`, `fetchModeratorGroup`, the newest 20-message page via `fetchConversation`, `fetchConversationMessagePhoto`, `fetchPublicMessage`, `postConversationMessage`, `prepareForumPhoto`, `markConversationRead`, `refreshUnreadAppBadge`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Thread only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch.
@@ -4531,16 +5747,16 @@ Signed-in basis account. Copy **This page is for moderators.** No chapters.
 
 ## Screen: /messages/[id]
 
-- **Purpose:** Public HTML thread by forum message UUID. Unsigned visitors see a read-only thread. A top-level note with a positive `goalSats` shows `ForumGoalBar` (orange through 100%, green overflow; not on replies). Signed-in (hydrated session and account): same per-note actions as `/welcome` (React on the root note, copy link on the root note and on every reply, Gift on a payable nested reply, expand/replies + reply composer, staff delete, **Edit shop note** on a top-level shop note when the viewer is a moderator, author link when `accountId`). A founder or moderator opening a soft-hidden note (root or highlighted reply) sees the note plus `forum.hiddenNotice` (who hid it and when) instead of `view.missing`; React/Gift/Delete/reply composer are omitted on that card. A compose-fee reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note) even though the top-level composer is hidden; extra gifts and Gift-open stay on the card (`payHost: card`). Still no `OnboardingGate`, no top-level composer, no envelope, no FiatPicker, no feed filters. Auto-expand when signed in. Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): `ProfileChromeLeft` with wordmark → `/` and one arrow to the previous in-app view, or `/welcome` when this tab has none, plus light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (the same arrow; wordmark → `/welcome`) + `SignedInChrome` (Menu with **Home** first). Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (a stored string as-is; a null or missing field uses the gift-day rate). A posted goal bar uses the frozen snapshot when that string exists, otherwise the gift-day rate. The pay sheet and an unpaid invoice preview still use the gift-day rate. Signed-in: **Translate** (Languages icon) sits in the footer icon row with react / copy. Unsigned `PublicThreadCard` stacks Translate under the body (no footer row). **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale.
+- **Purpose:** Public HTML thread by forum message UUID. Unsigned visitors see a read-only thread. A top-level note with a positive `goalSats` shows `ForumGoalBar` (orange through 100%, green overflow; not on replies). Signed-in (hydrated session and account): same per-note actions as `/welcome` (React on the root note, copy link on the root note and on every reply, Gift on a payable nested reply, expand/replies + reply composer, staff delete, **Edit shop note** on a top-level shop note when the viewer is a moderator, author link when `accountId`). On the signed-in thread only, Heart (lucide Heart, `forum.heart` “Send ₿1”) is icon-only in the card footer after Translate and before React or Gift; it shows on a note or reply that is not deleted, not the viewer's own, and whose author can receive (`payable`), including a signed-out card, and never on the external author profile; a read-only tap does nothing; a payable tap vibrates and shows the filled heart before payment; `+1` appears only after the payment succeeds. A founder or moderator opening a soft-hidden note (root or highlighted reply) sees the note plus `forum.hiddenNotice` (who hid it and when) instead of `view.missing`; React/Gift/Delete/reply composer are omitted on that card. A reply to the viewer's own note is posted unpaid, with no **Amount** field and no Gift on their own reactions. A compose-fee reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note) even though the top-level composer is hidden; extra gifts and Gift-open stay on the card (`payHost: card`). Still no `OnboardingGate`, no top-level composer, no envelope, no FiatPicker, no feed filters. Auto-expand when signed in. Fill `AppShell` (`align="center"`) via `PublicMessageChrome`. No auth gate to view; chrome depends on hydrated session. Unsigned (no session): `ProfileChromeLeft` with wordmark → `/` and one arrow to the previous in-app view, or `/welcome` when this tab has none, plus light LanguageSwitcher. Hydrated session: `ProfileChromeLeft` (the same arrow; wordmark → `/welcome`) + `SignedInChrome` (Menu with the account header, then **Home** and **Balance**). Amounts are `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (a stored string as-is; a null or missing field uses the spot rate). A posted goal bar uses the frozen snapshot when that string exists, otherwise the spot rate. The pay sheet and an unpaid invoice preview still use the spot rate. Signed-in: **Translate** (Languages icon) sits in the footer icon row with react / copy. Unsigned `PublicThreadCard` stacks Translate under the body (no footer row). **Show original** / **Show translation** stay the same Languages icon, with no visible text. Offered when the note language differs from the UI locale. Every pay sheet on this screen (a gift, a paid reaction, or a paid reply) follows the same in-app wallet rule as the forum pay sheet on `/welcome`: it pays from the in-app wallet only (the `sparkInvoice`, otherwise the `pr`); without a usable wallet it shows the unavailable or failed state, never an invoice QR or a link to another wallet app.
 - **Inputs:** Dynamic route `id` (UUID). After hydrate: any session loads `GET /forum/messages/:id` (`fetchForumMessage`) and Bearer replies (a hidden note is still 404 for a non-moderator). No session uses `GET /public-messages/:id` and public replies. A `via === 'nostr'` name links to `/messages/[id]/author`; any other unsigned name stays text. A session shows the member link for a 21.gifts author (`accountId` wins over `via`) on the note, a reaction, a quote name (the rest of the quote still opens the note), and the same on hidden notes and the pin list. A signed-in name with no account and `via === 'nostr'` opens `/messages/[id]/author`. The public note video has its own fullscreen button, including a narrow portrait clip. If the opened note has `parentId`, a second GET loads that parent, then its replies. Opening a reply UUID shows the parent post and all live replies; opening a parent UUID shows that post and all live replies. Opening a hidden reply UUID as staff still shows the parent, live replies, AND the opened hidden reply (merged if Bearer replies omit it). Both URLs stay valid (no redirect). Signed-in also auto-expands via Bearer `GET /forum/messages/:id/replies`. Optional photo via `fetchPublicMessagePhoto` or signed-in `fetchMessagePhoto` (via `PublicMessageThread`) → blob URL. Invalid UUID → missing without a fetch. A replies 404 after a successful parent GET is an error, not empty. Server `generateMetadata` loads api `GET /messages/:id` (via `loadPublicMessageForOg`) and sets Open Graph / Twitter tags. Unsigned/non-staff hidden ids stay `view.missing`.
 - **Actions:** Change language (unsigned), or open **Menu** (signed-in). The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Unsigned **Log in** → `/login` (`login.submit`) below the thread. Signed-in visitors have no second back link below the thread, plus the per-note actions above (React on the root note, copy link on the root note and on every reply, Gift on a payable nested reply, expand/replies + reply composer, staff delete, **Edit shop note** on a top-level shop note when the viewer is a moderator, author link when `accountId`). A compose-fee reply invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`); extra gifts stay on the card (`payHost: card`). On fetch error, **Try again**. States reuse `view.missing` / `view.error`+retry / `forum.loading`.
 
 - **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Shared links copied from the forum board.
-- **Calls:** `PublicMessagePage`, `PublicMessageChrome`, `PublicMessageLoader`, `PublicThreadCard`, `PublicMessageThread`, `ForumGoalBar`, `forumGoalPercent`, `ForumQuotedBody`, `NoteTranslate`, `LanguageSwitcher`.
+- **Calls:** `PublicMessagePage`, `PublicMessageChrome`, `PublicMessageLoader`, `PublicThreadCard`, `PublicMessageThread`, `ForumGoalBar`, `forumGoalPercent`, `ForumQuotedBody`, `NoteTranslate`, `LanguageSwitcher`, `WalletPay`, `useWalletPay`, the wallet payment primitive.
 
 ### Variant: default
 
-Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (otherwise the gift-day rate; no ` · —` when that rate is unusable), optional photo or clip-aspect `<video>`. Auth CTA below the card.
+Valid known UUID. Thread may be parent-only when replies are empty. Card with author name, timestamp, text (`Hello from Ada`), sats via `formatBitcoin` plus optional preferred-fiat `·` `formatFiatDisplay` of the amount stored when the payment was made (otherwise the spot rate; no ` · —` when that rate is unusable), optional photo or clip-aspect `<video>`. Auth CTA below the card.
 
 ![21.gifts public message](images/messages-id.png)
 
@@ -4558,7 +5774,7 @@ Choosing `@ada` from that open list writes `@ada ` into the reaction field and c
 
 ### Variant: place
 
-Unsigned permalink of Ada's note **Hello from Ada** with a place. The card shows a MapPin link **Happyland** to `/map?pin=<id>`.
+Unsigned permalink of Ada's note **Hello from Ada** with a place. The card shows a MapPin link **Happyland** to `/shops?pin=<id>#map`.
 
 ![21.gifts public message place](images/messages-id-place.png)
 
@@ -4570,7 +5786,7 @@ Unsigned permalink of the same note with no place label. The MapPin link reads *
 
 ### Variant: goal-110
 
-Unsigned permalink of a top-level Ada note with `sats: 23100` and `goalSats: 21000`. The ask is defined in bitcoin, so `ForumGoalBar` names **Ask ₿21'000 · $21.00** and the note amount is **₿23'100 · $23.10** (viewer USD from the gift-day rate). Full orange track plus green overflow (10% of track width past the right edge), label **110%**. Auth CTA below the card. No composer Ask.
+Unsigned permalink of a top-level Ada note with `sats: 23100` and `goalSats: 21000`. The ask is defined in bitcoin, so `ForumGoalBar` names **Ask ₿21'000 · $21.00** and the note amount is **₿23'100 · $23.10** (viewer USD from the spot rate). Full orange track plus green overflow (10% of track width past the right edge), label **110%**. Auth CTA below the card. No composer Ask.
 
 ![21.gifts public message goal 110](images/messages-id-goal-110.png)
 
@@ -4624,7 +5840,7 @@ Same public note after **Play**. The play button is gone. The fullscreen button 
 
 ### Variant: signed-in
 
-Hydrated Ada session: one top-left arrow (previous in-app view, or `/welcome` when this tab has none) + wordmark → `/welcome`. The wordmark is not that control. **Menu** top-right (**Home** first). Thread card **Hello from Ada**, React, copy link, and **Write a reaction** (auto-expanded). Posts do not show Gift or an envelope.
+Hydrated Ada session: one top-left arrow (previous in-app view, or `/welcome` when this tab has none) + wordmark → `/welcome`. The wordmark is not that control. **Menu** top-right (account header, then **Home** and **Balance**). Thread card **Hello from Ada**, React, copy link, and **Write a reaction** (auto-expanded). No heart, because this note's author cannot receive (`payable` false). Posts do not show Gift or an envelope.
 
 ![21.gifts public message signed in](images/messages-id-signed-in.png)
 
@@ -4723,6 +5939,18 @@ After **Show original**: the Languages icon is named **Show translation** and ha
 After POST /translate 502: **Could not translate this note. Please try again.**
 
 ![21.gifts public message translate error](images/messages-id-translate-error.png)
+
+### Variant: heart-needs-balance
+
+Same signed-in public thread after opening `?visual=heart-needs-balance` (a ready wallet below 1 sat) and clicking Send ₿1. No press and no **+1**; nothing is sent. Copy **A Bitcoin balance is required for this.**
+
+![21.gifts public message heart needs balance](images/messages-id-heart-needs-balance.png)
+
+### Variant: heart-paid
+
+Same signed-in public thread after opening `?visual=heart-paid` and clicking Send ₿1. The filled heart and **+1** that every tap shows are held for the shot.
+
+![21.gifts public message heart paid](images/messages-id-heart-paid.png)
 
 ### Variant: thread
 
@@ -4953,13 +6181,13 @@ After a failed translation of that reaction. The feed shows `Could not translate
 ## Screen: /view/[viewKey]
 
 - **Purpose:** Public read-only copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with FiatPicker only while `useHydrateSession().ready && session === null`, CHF|EUR|USD|PHP, `shell="app"`; unsigned empty = picker + `profile.chartEmpty` with no SVG / no ₿|fiat scale; signed-in empty = `profile.chartEmpty` alone; a failed activity load is `profile.chartError`; populated ₿ | selected fiat; About me inside the identity card — not a forum post; Languages **Translate** when `aboutMessageId` is set; with the photo when `aboutMeHasPhoto` — name + location + public `username@21.gifts` (`view.noGiftsAddress` when unset)) without edit/Message/back/menu/logout. Copy-profile-link on the card. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR.
-- **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); Given + Received from `GET /view-key/:viewKey/activity` (`fetchViewActivity`). Fetch even when address is blank; activity failure keeps the card and the chart shows `profile.chartError`. Identity still `GET /view-key/:viewKey`.
-- **Actions:** The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Change language (`HomeWordmark` beside that arrow: `/` when unsigned, `/welcome` when a session is hydrated; light language switcher top-right). Copy the profile link on the card (`profile.copyLink` **Copy link to this profile** → the current view URL). On profile fetch error, **Try again**. Unsigned empty series shows FiatPicker + `profile.chartEmpty`; signed-in empty is `profile.chartEmpty` alone. A failed activity load is `profile.chartError`. A filled series can switch scale between ₿ and the selected fiat. When unsigned, pick CHF|EUR|USD|PHP on the chart FiatPicker. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. No edit/Message/back/menu/logout on the card.
+- **Inputs:** Dynamic route `viewKey` (must be 64 lowercase hex). Profile from same-origin `GET /view-key/:viewKey` (`fetchViewProfile`); Given + Received from `GET /view-key/:viewKey/activity` (`fetchViewActivity`). Fetch even when the profile has no wallet yet; activity failure keeps the card and the chart shows `profile.chartError`. Identity still `GET /view-key/:viewKey`.
+- **Actions:** The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Change language (`HomeWordmark` beside that arrow: `/` when unsigned, `/welcome` when a session is hydrated; light language switcher top-right). Copy the profile link on the card (`profile.copyLink` **Copy link to this profile** → the current view URL). On profile fetch error, **Try again**. Unsigned empty series shows FiatPicker + `profile.chartEmpty`; signed-in empty is `profile.chartEmpty` alone. A failed activity load is `profile.chartError`. A filled series can switch scale between ₿ and the selected fiat. When unsigned, pick CHF|EUR|USD|PHP on the chart FiatPicker. When the card is ready and `hasPasskey` is false in a real browser: yellow banner under the card via `ViewProfileClaim` with **Action required, the account must be activated** and **Activate** — including when another 21.gifts account is already signed in. **Activate** clears that session (if any) then starts `register(viewKey)`. In Telegram or another in-app browser, the shared escape card (**Open this page in your browser**, **Open in browser**, **Copy link**) appears on mount instead of the banner. Hidden when the profile already has a passkey. After a successful claim → `/setup/rules`. No edit/Message/back/menu/logout on the card. After **Log in instead** on an already-claimed profile, a spinner shows while that login runs, and a failed or unknown attempt keeps the claim alert and **Try again**, also over a held-back session. Once the login succeeds it opens the wallet: the shared login card (`WalletLoginCard`) stands in place until it is open, and stays with its no-PRF or error alert while that session is held back.
 - **Used by:** Route `/view/[viewKey]` (`ViewProfilePage`).
 
 ### Variant: default
 
-Valid known key. Heading **Profile**, FiatPicker only while unsigned; empty series shows FiatPicker + `profile.chartEmpty` when unsigned (**No gifts yet.**, no legend/SVG / no ₿|fiat scale; never **Loading…** on the chart) and `profile.chartEmpty` alone when signed in (a failed activity load is `profile.chartError`), About me inside the card when `aboutMe` is a string (not a forum post), icon-only **Copy link to this profile**, name, location, and Wallet of Satoshi address field labels, yellow **Action required, the account must be activated** / **Activate** banner under the card when unclaimed (even if signed in), no visible view-key URL/text. The card has no back control; the page header has the one top-left arrow.
+Valid known key. Heading **Profile**, FiatPicker only while unsigned; empty series shows FiatPicker + `profile.chartEmpty` when unsigned (**No gifts yet.**, no legend/SVG / no ₿|fiat scale; never **Loading…** on the chart) and `profile.chartEmpty` alone when signed in (a failed activity load is `profile.chartError`), About me inside the card when `aboutMe` is a string (not a forum post), icon-only **Copy link to this profile**, name, location, and 21.gifts address, yellow **Action required, the account must be activated** / **Activate** banner under the card when unclaimed (even if signed in), no visible view-key URL/text. The card has no back control; the page header has the one top-left arrow.
 
 ![21.gifts public view profile](images/view-viewKey.png)
 
@@ -5028,6 +6256,12 @@ Profile fetch failed. Copy **Could not load this profile. Please try again.** an
 Valid known key whose profile already has a passkey (`hasPasskey: true`). Same read-only card as default, no yellow activation banner, no **Activate** button.
 
 ![21.gifts public view claimed](images/view-claimed.png)
+
+### Variant: claim-prf-unsupported
+
+Unclaimed profile after **Activate** on a phone or browser whose new passkey gives no PRF output. Under the card, the alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) instead of **Could not set up a passkey. Please try again.**, then **Try again**. The profile stays unclaimed. On iOS below 18 the old-iOS sentence takes precedence, so the phone pictures of this variant use an iPhone on iOS 18.
+
+![21.gifts public view claim prf unsupported](images/view-claim-prf-unsupported.png)
 
 ### Variant: in-app
 

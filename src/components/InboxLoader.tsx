@@ -4,9 +4,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { InboxScreen, type InboxFormError, type InboxInvoice } from '@/components/InboxScreen';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
 import {
+  CannotReceiveError,
   CONVERSATION_LIVE_POLL_MS,
   fetchConversation,
   fetchConversationMessagePhoto,
@@ -15,6 +16,7 @@ import {
   markConversationRead,
   postConversationInvoice,
   postConversationMessage,
+  WalletRequiredError,
 } from '@/lib/api';
 import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 import {
@@ -49,17 +51,15 @@ function isRateLimitError(err: unknown): boolean {
 }
 
 /**
- * True when a thrown value is the api author's-wallet rejection for payments.
+ * True when a thrown value is the api answer that the receiving wallet
+ * cannot take this payment: a {@link CannotReceiveError}, recognised by the
+ * api's `code` only.
  *
  * @param err - Caught rejection.
- * @returns Whether the message looks like an author's-wallet error.
+ * @returns Whether the receiver's wallet refused the payment.
  */
 function isAuthorWalletError(err: unknown): boolean {
-  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
-  if (!(err instanceof Error)) {
-    return false;
-  }
-  return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
+  return err instanceof CannotReceiveError;
 }
 
 /**
@@ -125,7 +125,7 @@ export function InboxLoader(): ReactElement | null {
   const { fiat } = useFiatPreference();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const openId = searchParams.get('c');
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [error, setError] = useState(false);
@@ -703,11 +703,13 @@ export function InboxLoader(): ReactElement | null {
         } catch (err) {
           if (openIdRef.current === conversationId) {
             setFormError(
-              isRateLimitError(err)
-                ? 'rateLimit'
-                : isAuthorWalletError(err)
-                  ? 'authorWallet'
-                  : 'request',
+              err instanceof WalletRequiredError
+                ? 'walletRequired'
+                : isRateLimitError(err)
+                  ? 'rateLimit'
+                  : isAuthorWalletError(err)
+                    ? 'authorWallet'
+                    : 'request',
             );
           }
           setPosting(false);
@@ -718,7 +720,11 @@ export function InboxLoader(): ReactElement | null {
         if (openIdRef.current !== conversationId) {
           return;
         }
-        setInvoice({ pr: minted.pr, amountSats: minted.amountSats });
+        setInvoice({
+          pr: minted.pr,
+          amountSats: minted.amountSats,
+          sparkInvoice: minted.sparkInvoice,
+        });
         setPayWaiting(true);
         const controller = new AbortController();
         /* v8 ignore next -- no in-flight poll on first mint */

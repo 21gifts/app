@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { IntroduceYourselfOverlay } from '@/components/IntroduceYourselfOverlay';
 import {
   FORUM_COMPOSE_EVENT,
@@ -7,19 +7,6 @@ import {
   consumeSkipIntroduceOverlay,
 } from '@/lib/forum-feed';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
-
-const push = vi.fn();
-const navigation = vi.hoisted(() => ({ pathname: '/welcome' }));
-
-vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof push } => ({ push }),
-  usePathname: (): string => navigation.pathname,
-}));
-
-beforeEach(() => {
-  navigation.pathname = '/welcome';
-  push.mockClear();
-});
 
 afterEach(() => {
   cleanup();
@@ -39,7 +26,7 @@ describe('IntroduceYourselfOverlay', () => {
     expect(screen.queryByRole('link', { name: 'Write an introduction' })).toBeNull();
   });
 
-  it('dismisses and requests compose without navigating when already on /welcome', () => {
+  it('dismisses and requests compose on Write an introduction', () => {
     const onDismiss = vi.fn();
     const listener = vi.fn();
     window.addEventListener(FORUM_COMPOSE_EVENT, listener);
@@ -47,20 +34,7 @@ describe('IntroduceYourselfOverlay', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Write an introduction' }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(push).not.toHaveBeenCalled();
-    window.removeEventListener(FORUM_COMPOSE_EVENT, listener);
-  });
-
-  it('dismisses, requests compose, and pushes /welcome from another path', () => {
-    navigation.pathname = '/profile';
-    const onDismiss = vi.fn();
-    const listener = vi.fn();
-    window.addEventListener(FORUM_COMPOSE_EVENT, listener);
-    renderWithLocale(<IntroduceYourselfOverlay onDismiss={onDismiss} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Write an introduction' }));
-    expect(onDismiss).toHaveBeenCalledTimes(1);
-    expect(listener).toHaveBeenCalledTimes(1);
-    expect(push).toHaveBeenCalledWith('/welcome');
+    expect(consumePendingForumCompose()).toBe(true);
     window.removeEventListener(FORUM_COMPOSE_EVENT, listener);
   });
 
@@ -74,7 +48,6 @@ describe('IntroduceYourselfOverlay', () => {
     fireEvent.click(close);
     expect(onDismiss).toHaveBeenCalled();
     expect(listener).not.toHaveBeenCalled();
-    expect(push).not.toHaveBeenCalled();
     window.removeEventListener(FORUM_COMPOSE_EVENT, listener);
   });
 });

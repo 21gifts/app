@@ -24,7 +24,7 @@ function hasLocation(location: string | null | undefined): boolean {
  * profile card.
  *
  * Reads the current account and session token from the auth store and merges
- * only `location` into that account so a concurrent name or address write is
+ * only `location` into that account so a concurrent name write is
  * not overwritten. Renders nothing when no account — or, defensively, no
  * session token — is present. Empty after trim is a valid save and clears.
  *
