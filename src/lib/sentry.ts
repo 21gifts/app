@@ -432,7 +432,8 @@ function originOf(url: string): string | null {
  */
 function isForeignSpan(span: TransactionSpan, pageOrigin: string | null): boolean {
   const data = span.data;
-  if (data['url.same_origin'] === false) {
+  // Resource spans flag the origin (`url.same_origin` is the older name).
+  if (data['http.request.same_origin'] === false || data['url.same_origin'] === false) {
     return true;
   }
   return [data['url.full'], data['http.url'], data['url'], span.description].some((value) => {

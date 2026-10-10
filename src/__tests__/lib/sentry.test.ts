@@ -310,12 +310,25 @@ describe('beforeSendTransaction scrubber', () => {
         span('chain', { description: 'GET https://chain.example/api/address/x' }),
         span('http-url', { data: { 'http.url': 'http://app.example:8080/x' } }),
         span('url', { data: { url: 'https://cdn.example/a.js' } }),
-        span('resource', { description: '/_next/a.js', data: { 'url.same_origin': false } }),
+        span('resource', {
+          description: '/_next/a.js',
+          data: { 'http.request.same_origin': false },
+        }),
+        span('older', { description: '/_next/b.js', data: { 'url.same_origin': false } }),
+        span('own-resource', {
+          description: '/_next/c.js',
+          data: { 'http.request.same_origin': true },
+        }),
         span('broken', { description: 'GET https://[bad/x' }),
         span('number', { data: { 'url.full': 7 } }),
       ],
     });
-    expect(scrubbed.spans?.map((item) => item.span_id)).toEqual(['own', 'relative', 'number']);
+    expect(scrubbed.spans?.map((item) => item.span_id)).toEqual([
+      'own',
+      'relative',
+      'own-resource',
+      'number',
+    ]);
   });
 
   it('drops every span with an absolute URL when the page origin is unknown', () => {
