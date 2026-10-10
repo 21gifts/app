@@ -965,8 +965,7 @@ What a trace holds:
   receive invoice; the api issues it, and that request is a fetch span.
 - Wallet steps start their own transaction in the page's trace, so a slow
   connect does not stretch the page load, and all steps of a page share its
-  sampling decision. The rate alone decides (`tracesSampler`): the server's
-  trace meta tags say "not sampled", and a page load does not inherit that.
+  sampling decision.
 - Traces are sent whole (`traceLifecycle: 'static'`), so every span passes
   `beforeSendTransaction`. INP is left out: the SDK sends it as a standalone
   span, which would bypass that scrubber.
@@ -980,8 +979,10 @@ Privacy rules (this app holds wallets):
   feedback widget.
 - With a DSN set, `withSentryConfig` makes each server-rendered page carry
   `sentry-trace` and `baggage` meta tags: a random trace id, the release, the
-  environment, and the DSN's public key, so a browser error links to its
-  server request. They hold no personal data and are absent without a DSN.
+  environment, and the DSN's public key. They hold no personal data and are
+  absent without a DSN. The server samples no traces, so they say "not
+  sampled"; `src/instrumentation-client.ts` removes them before the browser
+  starts, so each page load starts its own trace at the configured rate.
 - No personal data: no user, IP address, cookies, request bodies, query
   strings, or stack-frame local variables (`dataCollection`, the SDK 11
   successor of `sendDefaultPii: false`). Never call `setUser` with a name or
@@ -990,8 +991,9 @@ Privacy rules (this app holds wallets):
   `src/lib/sentry.ts`) runs in the browser and on the server. It replaces
   12–24-word recovery-phrase runs in any letter case;
   `lnbc…`/`lntb…`/`lnurl…` strings and BOLT12 `lno1…`/`lni1…` strings;
-  `spark1…`/`sparkrt1…` addresses; Bitcoin base-chain addresses (bech32
-  `bc1…`/`tb1…`/`bcrt1…`, and mixed-case base58 with a digit); Lightning and
+  `spark1…`/`sparkrt1…`/`sp1…`/`sprt1…`/`spt1…` addresses; Bitcoin base-chain
+  addresses (bech32 `bc1…`/`tb1…`/`bcrt1…`, and mixed-case base58 with a
+  digit); Lightning and
   e-mail addresses (`name@host.tld`); hex strings of 64+ digits; raw byte
   arrays (typed arrays such as `Uint8Array`); bearer tokens and
   `Authorization` headers; the stored session token (`21gifts.session`); URL

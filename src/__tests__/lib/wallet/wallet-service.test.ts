@@ -2299,6 +2299,7 @@ describe('wallet trace spans', () => {
 
   it.each([
     ['a Spark invoice', { type: 'input' as const, input: 'spark1qqqq' }, 'spark', 'spark'],
+    ['a Spark address', { type: 'input' as const, input: 'sp1pqqqq' }, 'spark', 'spark'],
     [
       'a Lightning request',
       { type: 'input' as const, input: 'lnbc1qqqq' },

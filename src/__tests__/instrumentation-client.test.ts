@@ -73,6 +73,22 @@ describe('instrumentation-client', () => {
     ]);
   });
 
+  it.each([
+    ['removes', 'https://key@errors.example/1', 0],
+    ['keeps', '', 2],
+  ])('%s the server trace meta tags with DSN %j', async (_verb, dsn, left) => {
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', dsn);
+    vi.stubEnv('NEXT_PUBLIC_APP_VERSION', '7');
+    document.head.innerHTML =
+      '<meta name="sentry-trace" content="a-b-0"><meta name="baggage" content="sentry-sampled=false"><meta name="description" content="x">';
+    await import('@/instrumentation-client');
+    expect(
+      document.querySelectorAll('meta[name="sentry-trace"], meta[name="baggage"]'),
+    ).toHaveLength(left);
+    expect(document.querySelector('meta[name="description"]')).not.toBeNull();
+    document.head.innerHTML = '';
+  });
+
   it('hands App Router navigations to the SDK', async () => {
     vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', '');
     const { onRouterTransitionStart } = await import('@/instrumentation-client');

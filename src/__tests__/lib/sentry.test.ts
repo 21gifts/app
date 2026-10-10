@@ -149,22 +149,13 @@ describe('sentryOptions', () => {
     ['1', '1', 1],
   ])('reads a browser sample rate that is %s', (_label, value, rate) => {
     vi.stubEnv('NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE', value);
-    const options = on('browser');
-    expect(options.tracesSampleRate).toBe(rate);
-    expect(options.tracesSampler()).toBe(rate);
-  });
-
-  it('lets the rate decide even when the page says its server trace was not sampled', () => {
-    vi.stubEnv('NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE', '0.5');
-    const sampler = on('browser').tracesSampler as (context: { parentSampled: boolean }) => number;
-    expect(sampler({ parentSampled: false })).toBe(0.5);
+    expect(on('browser').tracesSampleRate).toBe(rate);
   });
 
   it('samples no server traces, whatever rate is set', () => {
     vi.stubEnv('NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE', '1');
     const options = on('server');
     expect(options.tracesSampleRate).toBe(0);
-    expect(options.tracesSampler()).toBe(0);
     expect(options.traceLifecycle).toBe('static');
   });
 });
@@ -495,6 +486,16 @@ describe('beforeSend scrubber', () => {
 
   it('keeps the lnurlp path segment of a lightning address URL', () => {
     expect(scrubText('GET /.well-known/lnurlp/alice')).toBe('GET /.well-known/lnurlp/alice');
+  });
+
+  it('redacts Spark addresses in both forms', () => {
+    expect(scrubText('to sp1pgss9qcmgpdh4xzhtn8w5thj4f4nedwjdkkyc9fy7cue9tn6vymhqsfvlvx')).toBe(
+      'to [Filtered]',
+    );
+    expect(
+      scrubText('to sparkrt1pgssyuuuhnrrdjswal5c3s3rafw9w3y5dd4cjy3duxlf7hjzkp0rqx6dj6mrhu'),
+    ).toBe('to [Filtered]');
+    expect(scrubText('sp1 short')).toBe('sp1 short');
   });
 
   it('redacts base-chain addresses but not trace ids', () => {

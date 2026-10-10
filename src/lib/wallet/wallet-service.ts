@@ -794,7 +794,7 @@ function payRoute(request: WalletPayRequest): NonNullable<WalletSpanAttributes['
   if (request.type === 'lnurl') {
     return 'lightning';
   }
-  if (/^spark/i.test(request.input)) {
+  if (/^(?:spark|sp(?:rt|t)?1)/i.test(request.input)) {
     return 'spark';
   }
   return /^(?:lightning:)?ln/i.test(request.input) ? 'lightning' : 'onchain';
