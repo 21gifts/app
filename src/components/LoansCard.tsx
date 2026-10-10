@@ -86,7 +86,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
     <section
       aria-label={title}
       className={`w-full rounded-2xl border bg-app-card-muted p-4 ${border}${
-        place === 'welcome' ? ' mt-4' : ''
+        place === 'welcome' ? ' mt-4' : ' -mt-2 max-w-xl'
       }`}
     >
       <div>

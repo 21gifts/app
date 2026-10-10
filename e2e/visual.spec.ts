@@ -3622,6 +3622,34 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-unavailable');
   });
 
+  test('state /loans/repay connecting', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-connecting',
+      text: 'Checking your wallet…',
+    });
+    await shotScreen(page, 'state-loans-repay-connecting');
+  });
+
+  test('state /loans/repay setup-failed', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-setup-failed',
+      text: 'Your wallet could not be set up yet.',
+    });
+    await shotScreen(page, 'state-loans-repay-setup-failed');
+  });
+
+  test('state /loans/repay loading', async ({ page }) => {
+    await seedLoanMember(page);
+    await page.route('**/me/loans', () => new Promise(() => undefined));
+    await page.goto('/loans/repay');
+    await expect(page.getByText('Loading your loans…')).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-loading');
+  });
+
   test('state /loans/repay multi', async ({ page }) => {
     await loanShot(page, {
       loans: [loanA, loanB],

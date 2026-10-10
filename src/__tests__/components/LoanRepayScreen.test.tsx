@@ -293,9 +293,13 @@ describe('LoanRepayScreen', () => {
     show({ sundayRest: false, loans: [phpLoan] });
     expect(screen.getByText('₱30.00 · ₿536')).toBeTruthy();
     expect(screen.getByText('$0.54')).toBeTruthy();
-    expect(screen.getByText(/waits for a lender/)).toBeTruthy();
+    const waitingNotice = screen.getByText(/waits for a lender/).parentElement;
+    expect(waitingNotice?.querySelector('svg')?.getAttribute('class')).toContain(
+      'text-app-notice-fg',
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
-    await screen.findByText('No wallet yet · waits');
+    const waitingRow = (await screen.findByText('No wallet yet · waits')).closest('li');
+    expect(waitingRow?.querySelector('svg')?.getAttribute('class')).toContain('text-app-notice-fg');
     expect(screen.getByText(/₱10.00 · ₿200 · \$0.20/)).toBeTruthy();
   });
 
@@ -383,6 +387,15 @@ describe('LoanRepayScreen', () => {
     useAuthStore.setState({ session: 'token', account: {} as never });
     show({ sundayRest: false, loans: [loan()] }, repay({ balanceSats: 600, topUpOpen: true }));
     expect(screen.queryByTestId('own-address')).toBeNull();
+  });
+
+  it('shows the fee shortfall and top-up without send-now when the amount fits', () => {
+    const state = repay({ balanceSats: 1_000, missingSats: 25 });
+    show({ sundayRest: false, loans: [loan()] }, state);
+    expect(screen.getByText('Not enough in your wallet')).toBeTruthy();
+    expect(screen.getByText(/Still missing ₿25 · \$0.03/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Top up your wallet' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Send ₿/ })).toBeNull();
   });
 
   it('shows all waiting without Send and falls back to summary people without ledgers', () => {

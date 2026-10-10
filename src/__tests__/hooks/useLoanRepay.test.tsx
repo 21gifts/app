@@ -10,7 +10,6 @@ import {
   type RepaymentBill,
 } from '@/lib/api';
 import { getE2eNow } from '@/lib/config';
-import { logInteraction } from '@/lib/interaction-log';
 import {
   payFromWallet,
   refreshWallet,
@@ -28,7 +27,6 @@ vi.mock('@/lib/wallet/wallet-service', () => ({
   payFromWallet: vi.fn(),
   refreshWallet: vi.fn(),
 }));
-vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 vi.mock('@/lib/config', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/config')>()),
   getE2eNow: vi.fn(() => null),
@@ -138,7 +136,6 @@ beforeEach(() => {
   vi.mocked(postRepaymentDue).mockReset();
   vi.mocked(payFromWallet).mockReset();
   vi.mocked(refreshWallet).mockReset().mockResolvedValue(undefined);
-  vi.mocked(logInteraction).mockReset();
   vi.mocked(getE2eNow).mockReset().mockReturnValue(null);
 });
 
@@ -403,8 +400,6 @@ describe('useLoanRepay preparation', () => {
       feeSats: 8,
       topUpOpen: false,
     });
-    expect(logInteraction).toHaveBeenCalledTimes(4);
-    expect(logInteraction).toHaveBeenCalledWith('payment_sent', { amountSats: 500 }, 'token');
     await act(async () => {
       await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
     });
@@ -440,6 +435,8 @@ describe('useLoanRepay preparation', () => {
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('idle'));
     expect(result.current.missingSats).toBe(200);
+    act(() => setWallet('ready', 800));
+    expect(result.current.missingSats).toBeNull();
   });
 
   it('treats a null store balance as zero while preparing', async () => {
@@ -554,42 +551,38 @@ describe('useLoanRepay send and settlement', () => {
     expect(result.current.sentSats).toBe(0);
   });
 
-  it.each([true, false])(
-    'records an inactive failed send only when its late result is %s',
-    async (wasSent) => {
-      let resolveSend!: (result: WalletSendResult) => void;
-      let resolveLate!: (sent: boolean) => void;
-      const sentLate = new Promise<boolean>((resolve) => {
-        resolveLate = resolve;
-      });
-      vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [bill('Bruno')], waiting: [] });
-      vi.mocked(payFromWallet).mockResolvedValue(
-        confirmed(
-          500,
-          () =>
-            new Promise<WalletSendResult>((resolve) => {
-              resolveSend = resolve;
-            }),
-        ),
-      );
-      const { result } = renderHook(() => useLoanRepay({ reload: vi.fn() }));
-      act(() => result.current.pay([loan()]));
-      await waitFor(() => expect(resolveSend).toBeTypeOf('function'));
-      await act(async () => {
-        useAuthStore.setState({ session: 'other' });
-      });
-      await act(async () => {
-        resolveSend({ kind: 'failed', sentLate });
-      });
-      await act(async () => {
-        resolveLate(wasSent);
-      });
-      expect(result.current.phase).toBe('idle');
-      expect(logInteraction).toHaveBeenCalledTimes(wasSent ? 1 : 0);
-    },
-  );
+  it.each([true, false])('ignores an inactive failed send with late result %s', async (wasSent) => {
+    let resolveSend!: (result: WalletSendResult) => void;
+    let resolveLate!: (sent: boolean) => void;
+    const sentLate = new Promise<boolean>((resolve) => {
+      resolveLate = resolve;
+    });
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [bill('Bruno')], waiting: [] });
+    vi.mocked(payFromWallet).mockResolvedValue(
+      confirmed(
+        500,
+        () =>
+          new Promise<WalletSendResult>((resolve) => {
+            resolveSend = resolve;
+          }),
+      ),
+    );
+    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn() }));
+    act(() => result.current.pay([loan()]));
+    await waitFor(() => expect(resolveSend).toBeTypeOf('function'));
+    await act(async () => {
+      useAuthStore.setState({ session: 'other' });
+    });
+    await act(async () => {
+      resolveSend({ kind: 'failed', sentLate });
+    });
+    await act(async () => {
+      resolveLate(wasSent);
+    });
+    expect(result.current.phase).toBe('idle');
+  });
 
-  it('counts a late send only after it resolves true, then settles as failed', async () => {
+  it('blocks retry while a late send is pending, then counts true and settles as repaid', async () => {
     vi.useFakeTimers();
     let resolveLate!: (sent: boolean) => void;
     const sentLate = new Promise<boolean>((resolve) => {
@@ -603,7 +596,9 @@ describe('useLoanRepay send and settlement', () => {
     const { result } = renderHook(() => useLoanRepay({ reload }));
     act(() => result.current.pay([loan()]));
     await act(async () => undefined);
-    expect(result.current).toMatchObject({ phase: 'failed', sentSats: 0 });
+    expect(result.current).toMatchObject({ phase: 'waiting', sentSats: 0 });
+    act(() => result.current.pay([loan('retry')]));
+    expect(postRepaymentDue).toHaveBeenCalledTimes(1);
     await act(async () => {
       resolveLate(true);
     });
@@ -611,7 +606,7 @@ describe('useLoanRepay send and settlement', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
     });
-    expect(result.current.phase).toBe('failed');
+    expect(result.current.phase).toBe('repaid');
   });
 
   it('does not count a late send that resolves false', async () => {
@@ -627,7 +622,7 @@ describe('useLoanRepay send and settlement', () => {
     );
     const { result } = renderHook(() => useLoanRepay({ reload: vi.fn() }));
     act(() => result.current.pay([loan()]));
-    await waitFor(() => expect(result.current.phase).toBe('failed'));
+    await waitFor(() => expect(result.current.phase).toBe('waiting'));
     await act(async () => {
       resolveLate(false);
     });
@@ -645,7 +640,7 @@ describe('useLoanRepay send and settlement', () => {
     );
     const { result } = renderHook(() => useLoanRepay({ reload: vi.fn() }));
     act(() => result.current.pay([loan()]));
-    await waitFor(() => expect(result.current.phase).toBe('failed'));
+    await waitFor(() => expect(result.current.phase).toBe('waiting'));
     await act(async () => {
       useAuthStore.setState({ session: 'other' });
     });
@@ -653,7 +648,6 @@ describe('useLoanRepay send and settlement', () => {
       resolveLate(true);
     });
     expect(result.current).toMatchObject({ phase: 'idle', sentSats: 0 });
-    expect(logInteraction).toHaveBeenCalledTimes(1);
   });
 
   it('times out a late send that resolves after the confirmation window', async () => {
@@ -666,10 +660,10 @@ describe('useLoanRepay send and settlement', () => {
     vi.mocked(payFromWallet).mockResolvedValue(
       confirmed(500, async () => ({ kind: 'failed', sentLate })),
     );
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn() }));
+    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
     act(() => result.current.pay([loan()]));
     await act(async () => undefined);
-    expect(result.current.phase).toBe('failed');
+    expect(result.current.phase).toBe('waiting');
     await act(async () => {
       await vi.advanceTimersByTimeAsync(WALLET_PAY_CONFIRM_WAIT_MS + 1);
       resolveLate(true);
@@ -701,6 +695,7 @@ describe('useLoanRepay send and settlement', () => {
     await act(async () => {
       resolveLate(false);
     });
+    expect(result.current).toMatchObject({ phase: 'waiting', sentSats: 50 });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
     });
@@ -810,6 +805,8 @@ describe('useLoanRepay send and settlement', () => {
 describe('useLoanRepay visual pins', () => {
   const pins = [
     ['repay-ready', 'idle', 21_000],
+    ['repay-connecting', 'connecting', null],
+    ['repay-setup-failed', 'setupFailed', null],
     ['repay-short', 'idle', 600],
     ['repay-topup', 'idle', 600],
     ['repay-sending', 'sending', 21_000],

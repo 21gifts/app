@@ -887,6 +887,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'connecting',
+    image: 'loans-repay-connecting.png',
+    visual: 'state-loans-repay-connecting',
+    needle: 'state /loans/repay connecting',
+  },
+  {
+    route: '/loans/repay',
+    id: 'setup-failed',
+    image: 'loans-repay-setup-failed.png',
+    visual: 'state-loans-repay-setup-failed',
+    needle: 'state /loans/repay setup-failed',
+  },
+  {
+    route: '/loans/repay',
+    id: 'loading',
+    image: 'loans-repay-loading.png',
+    visual: 'state-loans-repay-loading',
+    needle: 'state /loans/repay loading',
+  },
+  {
+    route: '/loans/repay',
     id: 'multi',
     image: 'loans-repay-multi.png',
     visual: 'state-loans-repay-multi',

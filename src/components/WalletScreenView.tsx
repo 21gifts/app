@@ -201,9 +201,7 @@ export function WalletScreenView({
       </Card>
       {walletReady ? (
         <>
-          <div className="-mt-2 w-full max-w-xl">
-            <LoansCard place="wallet" />
-          </div>
+          <LoansCard place="wallet" />
           <WalletHistory />
         </>
       ) : null}
