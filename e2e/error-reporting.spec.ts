@@ -97,7 +97,7 @@ test('Function: forwardSentryEnvelope — POST /monitoring is 404 while reportin
   expect(await res.text()).toBe('');
 });
 
-test('Function: getSentryTracesSampleRate — the unset rate of the test build sends no trace and no trace header', async ({
+test('Function: getSentryTracesSampleRate — with an empty rate and no DSN, the test build sends no trace and no trace header', async ({
   page,
 }) => {
   const posts = recordTunnelPosts(page);
