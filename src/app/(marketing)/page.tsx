@@ -22,7 +22,11 @@ import { getRequestLocale } from '@/lib/request-locale';
 import { localizedPublicPath } from '@/lib/public-locale-path';
 import { translate } from '@/lib/translate';
 
-/** English search preview for the marketing home. Canonical follows the language URL. */
+/**
+ * English metadata for the marketing home. Canonical and hreflang follow the language URL.
+ *
+ * @returns Next.js metadata for this page.
+ */
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
   return marketingMetadata(
@@ -102,7 +106,7 @@ export default async function Home(): Promise<ReactElement> {
               aria-hidden="true"
               className="absolute -inset-3 rounded-[2rem] border border-paper/10"
             />
-            <div className="relative overflow-hidden rounded-[1.5rem] border border-paper/15 bg-paper text-ink shadow-[0_32px_80px_rgba(0,0,0,0.3)] [color-scheme:light]">
+            <div className="relative overflow-hidden rounded-3xl border border-paper/15 bg-paper text-ink shadow-[0_32px_80px_rgba(0,0,0,0.3)] [color-scheme:light]">
               <div className="flex items-center justify-between border-b border-ink/10 px-6 py-4 sm:px-8">
                 <span className="text-sm font-bold tracking-tight">21.gifts</span>
                 <span className="rounded-full bg-accent/15 px-3 py-1 text-xs font-semibold">

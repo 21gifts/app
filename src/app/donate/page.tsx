@@ -11,7 +11,11 @@ import { marketingMetadata } from '@/lib/marketing-metadata';
 import { translate } from '@/lib/translate';
 import { localizedPublicPath } from '@/lib/public-locale-path';
 
-/** English search preview for `/donate`. Canonical follows the language URL. */
+/**
+ * English metadata for `/donate`. Canonical and hreflang follow the language URL.
+ *
+ * @returns Next.js metadata for this page.
+ */
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
   return marketingMetadata(

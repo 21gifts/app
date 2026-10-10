@@ -6,7 +6,11 @@ import { marketingMetadata } from '@/lib/marketing-metadata';
 import { getRequestLocale } from '@/lib/request-locale';
 import { translate } from '@/lib/translate';
 
-/** English search preview for `/about`. Canonical follows the language URL. */
+/**
+ * English metadata for `/about`. Canonical and hreflang follow the language URL.
+ *
+ * @returns Next.js metadata for this page.
+ */
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
   return marketingMetadata(
