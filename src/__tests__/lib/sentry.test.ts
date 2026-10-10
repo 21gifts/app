@@ -78,7 +78,7 @@ describe('sentryOptions', () => {
     expect(sentryOptions('browser')).toBeNull();
   });
 
-  it('is on with a DSN: errors only, no personal data, release from the app version', () => {
+  it('is on with a DSN: errors and sampled browser traces, no personal data, release from the app version', () => {
     const options = on('browser');
     expect(options).toMatchObject({
       dsn: DSN,
