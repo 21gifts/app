@@ -4468,6 +4468,13 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Interaction log:** A heart the SDK reports as sent is recorded as `heart_sent` with the message id and `amountSats` 1, under the session of the click, next to the `payment_sent` that `payFromWallet` records; a send the app stopped waiting for is recorded once its `sentLate` resolves `true`.
 - **Used by:** `useHeartTip`.
 
+## Function: endHeartPlusOne
+
+- **Purpose:** Drops the +1 after the 700 ms press window. The heart stays filled only while this session's extra is greater than 0. A view map with no row for the id is returned unchanged.
+- **Inputs:** The current per-id heart view map, and the message id whose +1 ends.
+- **Returns / side effects:** The next view map. No storage write and no payment.
+- **Used by:** `useHeartTip`.
+
 ## Function: useHeartTip
 
 - **Purpose:** Per-`messageId` heart machine for the three callers. A tap on a signed-in, writable board vibrates and shows the filled heart with **+1** at once, before any request, for `HEART_TIP_PLUS_ONE_MS` (700 ms, the length of the `+1` animation); `sendHeartTip` pays in the background. After 700 ms only the **+1** leaves; the fill and the count remain. Session hearts not yet in the server `heartCount` are `extra`. A second tap sends another heart and counts up; there is no undo. A heart that is not sent rolls back that tap's `extra`; it is also reported. The one exception is a wallet snapshot that is ready with less than 1 sat (or the `heart-needs-balance` pin): then there is no vibrate, no new fill, and no **+1**, only the `role="alert"` line `forum.heartNeedsBalance` under the heart, and nothing is sent. A signed-out or read-only tap does nothing.

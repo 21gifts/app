@@ -7,6 +7,7 @@ import { getE2eNow } from '@/lib/config';
 import {
   HEART_TIP_PLUS_ONE_MS,
   HEART_TIP_UNSETTLED_MS,
+  endHeartPlusOne,
   sendHeartTip,
   useHeartTip,
 } from '@/lib/heart-tip';
@@ -851,6 +852,33 @@ async function clickHeart(
   });
 }
 
+describe('endHeartPlusOne', () => {
+  it('returns the same object when the id has no row', () => {
+    const prev = { m2: { pressed: true, plusOne: true, needsBalance: false } };
+    expect(endHeartPlusOne(prev, 'm1')).toBe(prev);
+  });
+
+  it('ends plusOne and clears pressed when extra is missing', () => {
+    const prev = {
+      m1: { pressed: true, plusOne: true, needsBalance: true },
+      m2: { pressed: true, plusOne: false, needsBalance: false, extra: 1 },
+    };
+    expect(endHeartPlusOne(prev, 'm1')).toEqual({
+      m1: { pressed: false, plusOne: false, needsBalance: true },
+      m2: { pressed: true, plusOne: false, needsBalance: false, extra: 1 },
+    });
+  });
+
+  it('ends plusOne and stays pressed when extra is 2', () => {
+    const prev = {
+      m1: { pressed: true, plusOne: true, needsBalance: true, extra: 2 },
+    };
+    expect(endHeartPlusOne(prev, 'm1')).toEqual({
+      m1: { pressed: true, plusOne: false, needsBalance: true, extra: 2 },
+    });
+  });
+});
+
 describe('useHeartTip', () => {
   beforeEach(() => {
     useAuthStore.setState({ session: 'sess', account: HEART_ACCOUNT });
@@ -1229,5 +1257,106 @@ describe('useHeartTip', () => {
       needsBalance: false,
       extra: 1,
     });
+  });
+
+  it('does not throw or restore a heart from invalid JSON in storage', () => {
+    sessionStorage.setItem('21gifts.heart.sent', '{');
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    expect(result.current.heartTipViews['m1']).toBeUndefined();
+  });
+
+  it('does not restore a heart from stored null', () => {
+    sessionStorage.setItem('21gifts.heart.sent', 'null');
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    expect(result.current.heartTipViews['m1']).toBeUndefined();
+  });
+
+  it('does not restore a heart from a stored array', () => {
+    sessionStorage.setItem('21gifts.heart.sent', '[]');
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    expect(result.current.heartTipViews['m1']).toBeUndefined();
+  });
+
+  it('does not restore a heart from a stored string', () => {
+    sessionStorage.setItem('21gifts.heart.sent', '"x"');
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    expect(result.current.heartTipViews['m1']).toBeUndefined();
+  });
+
+  it('restores only a valid stored extra row', () => {
+    sessionStorage.setItem(
+      '21gifts.heart.sent',
+      JSON.stringify({
+        a: null,
+        b: 'nope',
+        c: { base: -1, extra: 1 },
+        d: { base: 1, extra: -1 },
+        e: { base: 1, extra: 0 },
+        f: { base: 1.5, extra: 1 },
+        m1: { base: 2, extra: 3 },
+      }),
+    );
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    expect(result.current.heartTipViews).toEqual({
+      m1: { pressed: true, plusOne: false, needsBalance: false, extra: 3 },
+    });
+  });
+
+  it('still pays when sessionStorage is missing', async () => {
+    vi.stubGlobal('sessionStorage', undefined);
+    try {
+      const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+      await clickHeart(result);
+      expect(postMessageInvoice).toHaveBeenCalled();
+      expect(result.current.heartTipViews['m1']?.extra).toBe(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('still pays when setItem throws', async () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    try {
+      const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+      await clickHeart(result);
+      expect(postMessageInvoice).toHaveBeenCalled();
+      expect(result.current.heartTipViews['m1']?.extra).toBe(1);
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
+  it('stores the server heartCount as base on the first click', async () => {
+    const { result } = renderHook(() => useHeartTip({ readOnly: false, heartCounts: { m1: 4 } }));
+    await clickHeart(result);
+    expect(JSON.parse(String(sessionStorage.getItem('21gifts.heart.sent')))).toEqual({
+      m1: { base: 4, extra: 1 },
+    });
+  });
+
+  it('keeps a session heart filled when a later tap has no balance', async () => {
+    const { result } = renderHook(() => useHeartTip({ readOnly: false, heartCounts: { m1: 4 } }));
+    await clickHeart(result);
+    useWalletStore.setState({ status: 'ready', balanceSats: 0, identityPubkey: null });
+    await clickHeart(result);
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: true,
+      plusOne: false,
+      needsBalance: true,
+      extra: 1,
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not write storage when heartCounts grow without a stored row', () => {
+    const { rerender } = renderHook(
+      ({ heartCounts }: { heartCounts: Readonly<Record<string, number>> }) =>
+        useHeartTip({ readOnly: false, heartCounts }),
+      { initialProps: { heartCounts: { other: 1 } } },
+    );
+    rerender({ heartCounts: { other: 2 } });
+    expect(sessionStorage.getItem('21gifts.heart.sent')).toBeNull();
   });
 });

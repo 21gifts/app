@@ -605,9 +605,9 @@ function reconcileHeartCounts(
   const map = sentRef.current;
   let changed = false;
   for (const id of ids) {
-    const server = counts[id];
+    const server = counts[id] as number;
     const entry = map[id];
-    if (server === undefined || entry === undefined) {
+    if (entry === undefined) {
       continue;
     }
     if (server >= entry.base + entry.extra) {
@@ -616,13 +616,8 @@ function reconcileHeartCounts(
       changed = true;
     } else if (server > entry.base && server < entry.base + entry.extra) {
       const nextExtra = entry.extra - (server - entry.base);
-      if (nextExtra <= 0) {
-        delete map[id];
-        extraById.set(id, 0);
-      } else {
-        map[id] = { base: server, extra: nextExtra };
-        extraById.set(id, nextExtra);
-      }
+      map[id] = { base: server, extra: nextExtra };
+      extraById.set(id, nextExtra);
       changed = true;
     }
   }
@@ -641,11 +636,10 @@ function reconcileHeartCounts(
     if (force) {
       for (const [id, entry] of Object.entries(map)) {
         if (entry.extra > 0 && extraById.get(id) === undefined) {
-          const current = prev[id];
           write(id, {
             pressed: true,
             plusOne: false,
-            needsBalance: current !== undefined && current.needsBalance,
+            needsBalance: false,
             extra: entry.extra,
           });
         }
@@ -663,6 +657,29 @@ function reconcileHeartCounts(
     }
     return next ?? prev;
   });
+}
+
+/**
+ * Ends the +1 on one heart. A missing row is returned unchanged.
+ * `pressed` stays only while this session still has `extra`.
+ *
+ * @param prev - Current per-id views.
+ * @param messageId - Note whose +1 ends.
+ * @returns The next view map.
+ */
+export function endHeartPlusOne(
+  prev: Readonly<Record<string, HeartTipView>>,
+  messageId: string,
+): Record<string, HeartTipView> {
+  const current = prev[messageId];
+  if (current === undefined) {
+    return prev;
+  }
+  const extra = current.extra ?? 0;
+  return {
+    ...prev,
+    [messageId]: { ...current, plusOne: false, pressed: extra > 0 },
+  };
 }
 
 /**
@@ -799,17 +816,7 @@ export function useHeartTip(options: {
       if (visualPin() !== 'heart-paid') {
         const timer = setTimeout(() => {
           timersRef.current.delete(messageId);
-          setHeartTipViews((prev) => {
-            const current = prev[messageId];
-            if (current === undefined) {
-              return prev;
-            }
-            const extra = current.extra ?? 0;
-            return {
-              ...prev,
-              [messageId]: { ...current, plusOne: false, pressed: extra > 0 },
-            };
-          });
+          setHeartTipViews((prev) => endHeartPlusOne(prev, messageId));
         }, HEART_TIP_PLUS_ONE_MS);
         timersRef.current.set(messageId, timer);
       }
@@ -820,8 +827,8 @@ export function useHeartTip(options: {
         const sent = sentRef.current;
         const entry = sent[messageId];
         if (entry !== undefined) {
-          const nextExtra = entry.extra < 1 ? 0 : entry.extra - 1;
-          if (nextExtra === 0) {
+          const nextExtra = entry.extra - 1;
+          if (nextExtra <= 0) {
             delete sent[messageId];
           } else {
             sent[messageId] = { base: entry.base, extra: nextExtra };
