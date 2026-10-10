@@ -911,6 +911,49 @@ describe('toWalletPayment', () => {
     ).toEqual({ invoice: 'spark1y' });
   });
 
+  it('reads a gift memo as purpose gift and uses its hash when none is set', () => {
+    const mixedHash = 'aB'.repeat(32);
+    expect(
+      toWalletPayment({
+        ...base,
+        details: {
+          type: 'spark',
+          invoiceDetails: { description: `zap:${mixedHash}`, invoice: 'spark1z' },
+        },
+      }).info,
+    ).toEqual({
+      purpose: 'gift',
+      invoice: 'spark1z',
+      paymentHash: mixedHash.toLowerCase(),
+    });
+    expect(
+      toWalletPayment({
+        ...base,
+        details: {
+          type: 'spark',
+          invoiceDetails: { description: `zap:${mixedHash}`, invoice: 'spark1z' },
+          htlcDetails: { paymentHash: 'cc'.repeat(32) },
+        },
+      }).info,
+    ).toEqual({
+      purpose: 'gift',
+      invoice: 'spark1z',
+      paymentHash: 'cc'.repeat(32),
+    });
+  });
+
+  it('reads a shop memo as purpose shop without a payment hash', () => {
+    expect(
+      toWalletPayment({
+        ...base,
+        details: {
+          type: 'spark',
+          invoiceDetails: { description: 'pos:chg_abc', invoice: 'spark1p' },
+        },
+      }).info,
+    ).toEqual({ purpose: 'shop', invoice: 'spark1p' });
+  });
+
   it('reads the transaction of a deposit and a withdrawal', () => {
     expect(
       toWalletPayment({ ...base, details: { type: 'deposit', txId: 'tx1', vout: 0 } }).info,
@@ -1096,6 +1139,25 @@ describe('toWalletReportPayment', () => {
       paymentHash: PAYMENT_HASH,
       destination: null,
     });
+  });
+
+  it('copies a gift memo onto the report payment', () => {
+    const hash = 'ab'.repeat(32);
+    expect(
+      toWalletReportPayment({
+        id: 'p3',
+        paymentType: 'send',
+        status: 'completed',
+        amount: 1,
+        fees: 0,
+        timestamp: 0,
+        method: 'spark',
+        details: {
+          type: 'spark',
+          invoiceDetails: { invoice: 'spark1z', description: `zap:${hash}` },
+        },
+      }).description,
+    ).toBe(`zap:${hash}`);
   });
 
   it('maps base-chain deposits and withdrawals to onchain with the transaction id', () => {

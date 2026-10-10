@@ -7,9 +7,8 @@ export type PaymentTitle = { text: string } | { key: MessageKey };
 
 /**
  * What a payment is called in the list and on its screen: a gift on a post
- * (a zap), the paid
- * Lightning address, the invoice description, the on-chain direction, or just
- * Received / Sent.
+ * (a zap), a gift, a shop payment, the paid Lightning address, the invoice
+ * description, the on-chain direction, or just Received / Sent.
  *
  * @param payment - The payment.
  * @returns Literal text, or a message key to translate.
@@ -17,6 +16,15 @@ export type PaymentTitle = { text: string } | { key: MessageKey };
 export function paymentTitle(payment: WalletPayment): PaymentTitle {
   if (payment.info.zap !== undefined) {
     return { key: 'wallet.payment.giftOnPost' };
+  }
+  if (payment.info.purpose === 'gift' && payment.direction === 'received') {
+    return { key: 'wallet.payment.giftOnPost' };
+  }
+  if (payment.info.purpose === 'gift' && payment.direction === 'sent') {
+    return { key: 'wallet.payment.gift' };
+  }
+  if (payment.info.purpose === 'shop') {
+    return { key: 'wallet.payment.shop' };
   }
   if (payment.info.lnAddress !== undefined) {
     return { text: payment.info.lnAddress };
