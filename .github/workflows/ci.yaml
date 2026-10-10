@@ -101,8 +101,7 @@ jobs:
   visual:
     name: Visual (${{ matrix.project }})
     runs-on: ubuntu-latest
-    # A large pixel diff must finish and upload screenshots; ten minutes cancelled the dark jobs.
-    timeout-minutes: 20
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
