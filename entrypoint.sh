@@ -16,7 +16,8 @@
 # Optional placeholders are the exception: the variables in OPTIONAL_VARS may
 # be unset or empty, so their placeholder is substituted with an empty string
 # and the container starts. The app reads that empty string as unset: no
-# donation address, no error reporting, or the default environment name.
+# donation address, no error reporting, the default environment name, or the
+# default trace sample rate.
 #
 # Substitution happens in place, so it applies once per container lifetime;
 # recreate the container (do not restart it with different env) to change
@@ -27,7 +28,7 @@ set -eu
 SEARCH_PATHS='/app/.next /app/server.js'
 
 # Variables whose placeholder may be substituted with an empty string.
-OPTIONAL_VARS='NEXT_PUBLIC_PLATFORM_USERNAME NEXT_PUBLIC_SENTRY_DSN NEXT_PUBLIC_SENTRY_ENVIRONMENT'
+OPTIONAL_VARS='NEXT_PUBLIC_PLATFORM_USERNAME NEXT_PUBLIC_SENTRY_DSN NEXT_PUBLIC_SENTRY_ENVIRONMENT NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE'
 
 is_optional() {
   case " ${OPTIONAL_VARS} " in

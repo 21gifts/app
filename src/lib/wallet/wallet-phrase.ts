@@ -5,6 +5,7 @@ import {
   mnemonicFromPrfFirst,
   obtainPrfFirstFromGet,
 } from '@/lib/prf-mnemonic';
+import { traceWallet } from '@/lib/sentry';
 import {
   peekSessionPhrase,
   rememberSessionPhrase,
@@ -194,8 +195,13 @@ async function runUnlockCeremony(): Promise<WalletUnlockResult> {
     ) {
       return seedAnswered.result;
     }
-    const prfFirst = await obtainPrfFirstFromGet(
-      Uint8Array.from(base64UrlToBytes(account.passkeyCredentialId)),
+    const credentialId = Uint8Array.from(base64UrlToBytes(account.passkeyCredentialId));
+    const prfFirst = await traceWallet(
+      'wallet.passkey',
+      () => obtainPrfFirstFromGet(credentialId),
+      {
+        prompt: 'unlock',
+      },
     );
     if (prfFirst === null) {
       return 'noPrf';

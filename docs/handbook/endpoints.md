@@ -72,8 +72,8 @@
 
 ## Endpoint: POST /monitoring
 
-- **Purpose:** Same-origin tunnel for browser error reports (`forwardSentryEnvelope`). Forwards the envelope to the project of `NEXT_PUBLIC_SENTRY_DSN`, and to nothing else.
-- **Errors:** 404 while error reporting is off (no DSN), 413 above 1 MiB, 400 when the envelope names another host or project or its header is missing or broken, 502 when the Sentry server cannot be reached; otherwise the upstream status.
+- **Purpose:** Same-origin tunnel for browser error reports and sampled performance transactions (`forwardSentryEnvelope`). Forwards the envelope to the project of `NEXT_PUBLIC_SENTRY_DSN`, and to nothing else.
+- **Errors:** 404 while error reporting is off (no DSN), 413 above 1 MiB, 400 when the envelope names another host or project, its header is missing or broken, it has no item, or an item is anything but an error or a transaction; 502 when the Sentry server cannot be reached; otherwise the upstream status.
 - **Used by:** The browser SDK (`sentryOptions('browser')`).
 - **Auth:** Public. No session; the visitor's IP address, cookies, and headers are not forwarded.
 

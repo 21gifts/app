@@ -7,6 +7,7 @@ import {
   unlockWalletPhrase,
 } from '@/lib/wallet/wallet-phrase';
 import { mnemonicFromPrfFirst, obtainPrfFirstFromGet } from '@/lib/prf-mnemonic';
+import { traceWallet } from '@/lib/sentry';
 import { clearSessionPhrase, peekSessionPhrase, rememberSessionPhrase } from '@/lib/tab-phrase';
 import { base64UrlToBytes } from '@/lib/webauthn-browser';
 import { useAuthStore } from '@/stores/auth-store';
@@ -19,6 +20,10 @@ vi.mock('@/lib/prf-mnemonic', async (importOriginal) => {
     mnemonicFromPrfFirst: vi.fn(actual.mnemonicFromPrfFirst),
   };
 });
+
+vi.mock('@/lib/sentry', () => ({
+  traceWallet: vi.fn((_name: string, work: () => Promise<unknown>) => work()),
+}));
 
 const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
 const CREDENTIAL_ID = 'cred';
@@ -361,6 +366,16 @@ describe('unlockWalletPhrase', () => {
     const expected = await mnemonicFromPrfFirst(Uint8Array.from(PRF));
     await expect(unlockWalletPhrase()).resolves.toBe('unlocked');
     expect(peekSessionPhrase()).toBe(expected);
+  });
+
+  it('times the unlock passkey prompt as a wallet span without its PRF output', async () => {
+    vi.mocked(traceWallet).mockClear();
+    await expect(unlockWalletPhrase()).resolves.toBe('unlocked');
+    expect(traceWallet).toHaveBeenCalledTimes(1);
+    expect(traceWallet).toHaveBeenCalledWith('wallet.passkey', expect.any(Function), {
+      prompt: 'unlock',
+    });
+    await expect(vi.mocked(traceWallet).mock.results[0]?.value).resolves.toBe(PRF);
   });
 
   it('returns cancelled on NotAllowedError', async () => {
