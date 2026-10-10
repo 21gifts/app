@@ -12,6 +12,11 @@ import { sentryOptions } from '@/lib/sentry';
  */
 const options = sentryOptions('browser');
 if (options !== null) {
+  // The server samples no traces, so its trace meta tags say "not sampled".
+  // Without them each page load starts its own trace at the configured rate.
+  for (const meta of document.querySelectorAll('meta[name="sentry-trace"], meta[name="baggage"]')) {
+    meta.remove();
+  }
   init({
     ...options,
     integrations: (defaults) => [
