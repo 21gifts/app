@@ -383,6 +383,7 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByTestId('own-address')).toBeNull();
     expect(screen.getByText(/Still missing ₿700 · \$0.70/)).toBeTruthy();
     expect(screen.getByRole('status').textContent).toBe('Waiting for your top-up…');
+    expect(screen.queryByRole('button', { name: /now to/ })).toBeNull();
     cleanup();
     useAuthStore.setState({ session: 'token', account: {} as never });
     show({ sundayRest: false, loans: [loan()] }, repay({ balanceSats: 600, topUpOpen: true }));

@@ -3732,6 +3732,18 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-short');
   });
 
+  test('state /loans/repay fee-gap', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-fee-gap',
+      text: 'Not enough in your wallet',
+    });
+    await expect(page.getByRole('button', { name: /now to/i })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /now to/i })).toHaveCount(0);
+    await shotScreen(page, 'state-loans-repay-fee-gap');
+  });
+
   test('state /loans/repay topup', async ({ page }) => {
     await loanShot(page, {
       loans: [loanA],

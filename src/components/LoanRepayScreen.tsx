@@ -337,7 +337,6 @@ export function LoanRepayScreen(): ReactElement {
   const fittingSats = fitting.reduce((sum, share) => sum + (share.sats as number), 0);
   const fittingNames = [...new Set(fitting.map((share) => share.name))].join(', ');
   const hasMissingSats = repay.missingSats !== null && repay.missingSats > 0;
-  const feeGap = balanceSats !== null && balanceSats >= payable && hasMissingSats;
   const rememberAndPay = (limitSats?: number): void => {
     setPaidLoans(loans.loans);
     setSendingSats(limitSats === undefined ? payable : fittingSats);
@@ -380,7 +379,7 @@ export function LoanRepayScreen(): ReactElement {
             </div>
           )}
         </div>
-        {!feeGap && fitting.length > 0 ? (
+        {repay.missingSats === null && fitting.length > 0 ? (
           <button
             type="button"
             className="text-sm font-medium text-app-fg underline underline-offset-2"
