@@ -48,10 +48,15 @@ type Ledger = {
   repayments: { username: string | null; status: string; sats: number | null }[];
 };
 
+const TERM_DAYS = 4;
+const GOAL_PHP = '0.30';
+const GOAL_SATS = 30;
+const SHARE_COUNT = TERM_DAYS * 3;
+
 const GIVER_PAIRS = [
-  { php: '5.50', sats: 550 },
-  { php: '2.20', sats: 220 },
-  { php: '1.10', sats: 110 },
+  { php: '0.20', sats: 20 },
+  { php: '0.08', sats: 8 },
+  { php: '0.04', sats: 4 },
 ];
 
 function readUi(): LoanUi {
@@ -69,8 +74,8 @@ function readUi(): LoanUi {
     .sort()
     .join(',');
   if (
-    parsed.goalAmount !== '8.68' ||
-    parsed.termDays !== 110 ||
+    parsed.goalAmount !== GOAL_PHP ||
+    parsed.termDays !== TERM_DAYS ||
     parsed.givers.length !== 3 ||
     names.size !== 3 ||
     names.has(parsed.borrower.username) ||
@@ -198,15 +203,15 @@ async function createCredit(page: Page, ui: LoanUi): Promise<string> {
     goalTermDays?: number;
   };
   expect(sent.goalCurrency).toBe('PHP');
-  expect(sent.goalAmount).toBe('8.68');
+  expect(sent.goalAmount).toBe(GOAL_PHP);
   expect(sent.goalRepayable).toBe(true);
-  expect(sent.goalTermDays).toBe(110);
+  expect(sent.goalTermDays).toBe(TERM_DAYS);
   const created = (await response.json()) as { id?: string; goalSats?: number };
   if (typeof created.id !== 'string' || !/^[0-9a-f-]{36}$/i.test(created.id)) {
     throw new Error('credit response has no id');
   }
-  if (created.goalSats !== 868) {
-    throw new Error('credit goal is not 868 sats');
+  if (created.goalSats !== GOAL_SATS) {
+    throw new Error(`credit goal is not ${GOAL_SATS} sats`);
   }
   return created.id;
 }
@@ -266,13 +271,13 @@ async function repayAll(page: Page, messageId: string, ui: LoanUi): Promise<void
   let stalled = 0;
   for (;;) {
     const ledger = await readLedger(page, messageId);
-    if (ledger.next === null && ledger.daysPaid === 110) {
+    if (ledger.next === null && ledger.daysPaid === TERM_DAYS) {
       return;
     }
     if (ledger.next === null) {
       stalled += 1;
       if (stalled > 5) {
-        throw new Error(`repayment stopped at ${ledger.daysPaid} of 110 days`);
+        throw new Error(`repayment stopped at ${ledger.daysPaid} of ${TERM_DAYS} days`);
       }
       await page.waitForTimeout(2_000);
       continue;
@@ -358,10 +363,10 @@ test('a borrower takes a credit, three people give, and every share is paid back
   await repayAll(home, messageId, ui);
   await home.getByRole('button', { name: 'Who gave and who is paid back' }).click();
   const paidBack = home.getByRole('region', { name: 'Paid back' });
-  await expect(paidBack.getByText('Paid', { exact: true })).toHaveCount(330);
+  await expect(paidBack.getByText('Paid', { exact: true })).toHaveCount(SHARE_COUNT);
   const ledger = await readLedger(home, messageId);
-  expect(ledger.daysPaid).toBe(110);
-  expect(ledger.termDays).toBe(110);
+  expect(ledger.daysPaid).toBe(TERM_DAYS);
+  expect(ledger.termDays).toBe(TERM_DAYS);
   const given = home.getByRole('region', { name: 'Given' });
   for (const giver of ui.givers) {
     await expect(given.getByText(`@${giver.username}`)).toBeVisible();
@@ -372,9 +377,9 @@ test('a borrower takes a credit, three people give, and every share is paid back
       (line) =>
         line.username === giver.username &&
         line.status === 'paid' &&
-        line.sats === giver.sats / 110,
+        line.sats === giver.sats / TERM_DAYS,
     );
-    expect(paid).toHaveLength(110);
+    expect(paid).toHaveLength(TERM_DAYS);
   }
   await expect(home.getByRole('button', { name: "Pay today's repayment" })).toBeVisible();
 });
