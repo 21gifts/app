@@ -164,7 +164,7 @@ describe('public language middleware', () => {
     expect(response.cookies.set).not.toHaveBeenCalled();
   });
 
-  it('does not store a cookie when a document request is also a prefetch', () => {
+  it('stores a cookie when a document request is a prerender', () => {
     const response = middleware(
       requestFor('https://21.gifts/es', {
         'sec-fetch-dest': 'document',
@@ -177,6 +177,27 @@ describe('public language middleware', () => {
     ];
     expect(destination.pathname).toBe('/');
     expect(options.request.headers.get('x-21gifts-public-locale')).toBe('es');
+    expect(response.cookies.set).toHaveBeenCalledWith('locale', 'es', {
+      path: '/',
+      maxAge: 31536000,
+      sameSite: 'lax',
+      secure: true,
+    });
+  });
+
+  it('does not store a cookie for a document prefetch that is not a prerender', () => {
+    const response = middleware(
+      requestFor('https://21.gifts/de/about', {
+        'sec-fetch-dest': 'document',
+        'sec-purpose': 'prefetch',
+      }),
+    ) as unknown as { cookies: { set: ReturnType<typeof vi.fn> } };
+    const [destination, options] = responses.rewrite.mock.lastCall as unknown as [
+      URL,
+      { request: { headers: Headers } },
+    ];
+    expect(destination.pathname).toBe('/about');
+    expect(options.request.headers.get('x-21gifts-public-locale')).toBe('de');
     expect(response.cookies.set).not.toHaveBeenCalled();
   });
 

@@ -11,8 +11,8 @@ export const DEFAULT_LOCALE: Locale = 'en';
  * Cookie name for the visitor's language.
  *
  * Written by the language switcher, the profile, account sync, and middleware
- * when the browser opens a language URL as a page. Prefetches and in-app
- * navigations do not set it.
+ * when the browser opens a language URL as a page, including a prerender.
+ * Prefetches that are not prerenders, and in-app navigations, do not set it.
  */
 export const LOCALE_COOKIE = 'locale';
 

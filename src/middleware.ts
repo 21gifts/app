@@ -14,11 +14,12 @@ function requestIsHttps(request: NextRequest): boolean {
   return first === 'https';
 }
 
-/** True when the browser opens this request as a page, not a prefetch or in-app fetch. */
+/** True when this opens as a page, including prerender, not a prefetch or in-app fetch. */
 function opensDocument(request: NextRequest): boolean {
   const purpose = request.headers.get('purpose') ?? '';
   const secPurpose = request.headers.get('sec-purpose') ?? '';
-  if (`${purpose} ${secPurpose}`.toLowerCase().includes('prefetch')) return false;
+  const hinted = `${purpose} ${secPurpose}`.toLowerCase();
+  if (hinted.includes('prefetch') && !hinted.includes('prerender')) return false;
   const dest = request.headers.get('sec-fetch-dest');
   return dest === null || dest === 'document';
 }
@@ -30,10 +31,12 @@ function opensDocument(request: NextRequest): boolean {
  * is rewritten onto the existing page. The locale is passed as the
  * `x-21gifts-public-locale` request header. The `locale` cookie is set when
  * the browser opens that language URL as a page (`sec-fetch-dest` is
- * `document`, or the header is absent). Prefetches do not set it: `purpose`
- * or `sec-purpose` contains `prefetch` (any case). In-app navigations do not
- * set it either: `sec-fetch-dest` is present and is not `document`. The
- * rewrite and `x-21gifts-public-locale` stay the same in every case. `/map`
+ * `document`, or the header is absent), including a prerender (`purpose` or
+ * `sec-purpose` contains `prerender`, any case). A prefetch that is not a
+ * prerender does not set it: `purpose` or `sec-purpose` contains `prefetch`
+ * and not `prerender` (any case). In-app navigations do not set it either:
+ * `sec-fetch-dest` is present and is not `document`. The rewrite and
+ * `x-21gifts-public-locale` stay the same in every case. `/map`
  * keeps its query string and redirects to `/shops#map`. Other paths, including
  * `/de/login`, are left untouched and do not write the cookie.
  *
