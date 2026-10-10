@@ -30,10 +30,15 @@ export interface SegmentedControlProps<T extends string> {
   onChange: (value: T) => void;
   /** Accessible name for the group. */
   ariaLabel: string;
-  /** Gift (compact ₿|USD) or neutral (full-width forum pills). */
+  /** Gift (compact ₿|USD) or neutral (forum pills). */
   tone: SegmentedControlTone;
   /** Gift on marketing-dark. Default `app`. Ignored for `neutral`. */
   shell?: SegmentedControlShell;
+  /**
+   * Neutral track spans the row when true. False hugs the option labels so
+   * the pill can sit beside a row label. Default true. Ignored for `gift`.
+   */
+  fullWidth?: boolean;
   /** Extra classes on the group. */
   className?: string;
 }
@@ -93,16 +98,19 @@ export function SegmentedControl<T extends string>({
   ariaLabel,
   tone,
   shell = 'app',
+  fullWidth = true,
   className,
 }: SegmentedControlProps<T>): ReactElement {
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
 
   if (tone === 'neutral') {
+    const track = fullWidth ? 'flex w-full' : 'inline-flex w-auto shrink-0';
+    const optionWidth = fullWidth ? 'flex-1' : 'flex-none';
     return (
       <div
         role="group"
         aria-label={ariaLabel}
-        className={`flex w-full rounded-full border border-app-border bg-app-card-muted p-1${extra}`}
+        className={`${track} rounded-full border border-app-border bg-app-card-muted p-1${extra}`}
       >
         {options.map((opt) => {
           const selected = value === opt.value;
@@ -114,7 +122,7 @@ export function SegmentedControl<T extends string>({
               aria-label={optionBadgeAriaLabel(opt.badge, opt.badgeAriaLabel)}
               disabled={opt.disabled === true}
               onClick={() => onChange(opt.value)}
-              className={`flex-1 rounded-full px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
+              className={`${optionWidth} rounded-full px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${
                 selected ? 'bg-app-btn text-app-btn-fg' : 'text-app-muted'
               }`}
             >

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ROLE_ORDER } from '@/lib/roles';
 
 /** Notification stages stored on the signed-in account. */
-export const NOTIFICATION_LEVELS = ['all', 'active', 'mentions'] as const;
+export const NOTIFICATION_LEVELS = ['all', 'active', 'mentions', 'messages', 'none'] as const;
 
 /** One of {@link NOTIFICATION_LEVELS}. */
 export type NotificationLevel = (typeof NOTIFICATION_LEVELS)[number];
@@ -132,7 +132,7 @@ export const accountSchema = z.object({
    * In-app and Web Push filter. Optional so current develop api bodies still
    * parse; missing means {@link accountNotificationLevel} returns `all`.
    */
-  notificationLevel: z.enum(['all', 'active', 'mentions']).optional(),
+  notificationLevel: z.enum(NOTIFICATION_LEVELS).optional(),
   /**
    * True when the owner wants a notification for each received heart. Optional
    * so older api bodies still parse; missing means true in the UI.
@@ -225,7 +225,7 @@ export type Account = z.infer<typeof accountSchema>;
  * Notification stage stored on an account, defaulting to `all` when omitted.
  *
  * @param account - Parsed {@link Account} (field may be missing).
- * @returns `all`, `active`, or `mentions`.
+ * @returns `all`, `active`, `mentions`, `messages`, or `none`.
  */
 export function accountNotificationLevel(account: Account): NotificationLevel {
   return account.notificationLevel ?? 'all';

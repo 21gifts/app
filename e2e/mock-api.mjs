@@ -2164,11 +2164,21 @@ const server = http.createServer(async (req, res) => {
     try {
       parsed = JSON.parse(rawBody);
     } catch {
-      json(res, 400, { error: 'Expected a JSON body with a level of all, active, or mentions' });
+      json(res, 400, {
+        error: 'Expected a JSON body with a level of all, active, mentions, messages, or none',
+      });
       return;
     }
-    if (parsed?.level !== 'all' && parsed?.level !== 'active' && parsed?.level !== 'mentions') {
-      json(res, 400, { error: 'Expected a JSON body with a level of all, active, or mentions' });
+    if (
+      parsed?.level !== 'all' &&
+      parsed?.level !== 'active' &&
+      parsed?.level !== 'mentions' &&
+      parsed?.level !== 'messages' &&
+      parsed?.level !== 'none'
+    ) {
+      json(res, 400, {
+        error: 'Expected a JSON body with a level of all, active, mentions, messages, or none',
+      });
       return;
     }
     account.notificationLevel = parsed.level;
