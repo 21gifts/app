@@ -270,7 +270,7 @@ export interface ForumBoardProps {
   payBusy: boolean;
   /** Pay-sheet validation or request failure. */
   payError: ForumPayError;
-  /** Issued invoice for QR / wallet link, or `null`. */
+  /** Issued invoice for the in-app wallet pay slot, or `null`. */
   payInvoice: ForumPayInvoice | null;
   /**
    * Submitted reaction text shown on {@link ForumReplyPayPage}, or `null`
@@ -286,10 +286,8 @@ export interface ForumBoardProps {
    * the viewer's own notes hides the reply amount field and the gift button.
    */
   viewerAccountId?: string | null;
-  /** Requests today's repayment invoice for the author's own funded credit. */
-  onRepay?: (messageId: string) => void;
-  /** Failure of today's repayment, shown without the gift amount form. */
-  repayNotice?: { messageId: string; error: Exclude<ForumPayError, null> | null } | null;
+  /** Shows **Repay your loan** (a link to `/loans/repay`) on the viewer's own funded credit. */
+  repayLink?: boolean;
   /** Updates the pay amount draft. */
   onPayDraftChange: (value: string) => void;
   /** Unit the pay field is actually showing. */
@@ -742,8 +740,7 @@ export function ForumBoard({
   payWaiting,
   onPayOpen,
   viewerAccountId = null,
-  onRepay,
-  repayNotice = null,
+  repayLink = false,
   onPayDraftChange,
   onPayUnitChange,
   onPaySubmit,
@@ -1463,7 +1460,7 @@ export function ForumBoard({
                       <Reply aria-hidden="true" className="h-4 w-4 shrink-0" />
                     </IconButton>
                   ) : null}
-                  {onRepay !== undefined &&
+                  {repayLink === true &&
                   viewerAccountId !== null &&
                   message.accountId === viewerAccountId &&
                   message.parentId === undefined &&
@@ -1471,30 +1468,13 @@ export function ForumBoard({
                   typeof message.goalSats === 'number' &&
                   message.sats >= message.goalSats &&
                   message.deletedAt === undefined ? (
-                    <SundayWritingGate notice="zap">
-                      <button
-                        type="button"
-                        className="text-xs font-medium text-app-fg underline"
-                        disabled={payBusy || payInvoice?.messageId === message.id}
-                        onClick={(event) => {
-                          stopCardToggle(event);
-                          onRepay(message.id);
-                        }}
-                      >
-                        {t('forum.repayToday')}
-                      </button>
-                    </SundayWritingGate>
-                  ) : null}
-                  {repayNotice?.messageId === message.id && repayNotice.error !== null ? (
-                    <p role="alert" className="text-xs text-app-danger">
-                      {t(
-                        repayNotice.error === 'rateLimit'
-                          ? 'forum.payErrorRateLimit'
-                          : repayNotice.error === 'authorWallet'
-                            ? 'forum.payErrorAuthorWallet'
-                            : 'forum.payErrorRequest',
-                      )}
-                    </p>
+                    <Link
+                      href="/loans/repay"
+                      className="text-xs font-medium text-app-fg underline"
+                      onClick={stopCardToggle}
+                    >
+                      {t('forum.repayOpen')}
+                    </Link>
                   ) : null}
                   {message.parentId !== undefined &&
                   message.payable &&

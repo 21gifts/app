@@ -3176,7 +3176,7 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status').textContent).toContain('not paid back');
   });
 
-  it("disables Pay today's repayment while that note's invoice is open", () => {
+  it("shows the loan repayment link only for the viewer's own funded live credit", () => {
     const funded = {
       ...SAMPLE,
       accountId: 'acc-ada',
@@ -3184,9 +3184,10 @@ describe('ForumBoard', () => {
       goalSats: 21000,
       goalRepayable: true as const,
     };
-    const board = (invoice: ForumBoardProps['payInvoice']) => (
+    const onToggleExpand = vi.fn();
+    const board = (message: ForumMessage, showRepayLink = true) => (
       <ForumBoard
-        messages={[funded]}
+        messages={[message]}
         error={false}
         loading={false}
         posting={false}
@@ -3196,22 +3197,26 @@ describe('ForumBoard', () => {
         onRetry={() => undefined}
         formError={null}
         {...idleProps}
-        payInvoice={invoice}
         viewerAccountId="acc-ada"
-        onRepay={() => undefined}
+        repayLink={showRepayLink}
+        onToggleExpand={onToggleExpand}
         {...modeProps('all')}
       />
     );
-    const { rerender } = renderWithLocale(
-      board({ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }),
-    );
-    const repayButton = (): HTMLButtonElement =>
-      screen.getByRole('button', { name: "Pay today's repayment" }) as HTMLButtonElement;
-    expect(repayButton().disabled).toBe(true);
-    rerender(board(null));
-    expect(repayButton().disabled).toBe(false);
-    rerender(board({ messageId: 'm-other', pr: 'lnbc21n1other', amountSats: 21 }));
-    expect(repayButton().disabled).toBe(false);
+    const { rerender } = renderWithLocale(board(funded));
+    const link = screen.getByRole('link', { name: 'Repay your loan' });
+    expect(link.getAttribute('href')).toBe('/loans/repay');
+    fireEvent.click(link);
+    expect(onToggleExpand).not.toHaveBeenCalled();
+
+    rerender(board(funded, false));
+    expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
+    rerender(board({ ...funded, accountId: 'acc-bob' }));
+    expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
+    rerender(board({ ...funded, sats: 20999 }));
+    expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
+    rerender(board({ ...funded, deletedAt: '2026-08-29T15:00:00.000Z' }));
+    expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
   });
 
   it('shows a #Shop pill on a top-level shop note and hides the raw hashtag', () => {

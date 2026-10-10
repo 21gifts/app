@@ -1,5 +1,5 @@
-import { cleanup, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ButtonLink } from '@/components/ui/ButtonLink';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -98,5 +98,25 @@ describe('ButtonLink', () => {
     const className = screen.getByRole('link', { name: 'Wallet' }).className;
     expect(className).toContain('min-h-11 gap-1 px-1.5 py-1 text-xs sm:gap-1.5 sm:px-3 sm:text-sm');
     expect(className).not.toContain('gap-2');
+  });
+
+  it('passes onClick to internal and external links', () => {
+    const clicked = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ButtonLink href="/loans/repay" onClick={clicked}>
+        Send
+      </ButtonLink>,
+    );
+    fireEvent.click(screen.getByRole('link', { name: 'Send' }));
+    expect(clicked).toHaveBeenCalledTimes(1);
+    rerender(
+      <ButtonLink href="https://21.gifts" onClick={clicked}>
+        Website
+      </ButtonLink>,
+    );
+    const website = screen.getByRole('link', { name: 'Website' });
+    website.addEventListener('click', (event) => event.preventDefault());
+    fireEvent.click(website);
+    expect(clicked).toHaveBeenCalledTimes(2);
   });
 });

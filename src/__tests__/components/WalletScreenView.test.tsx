@@ -58,6 +58,9 @@ vi.mock('@/components/QrScanner', () => ({
 vi.mock('@/components/WalletHistory', () => ({
   WalletHistory: () => <section aria-label="Payments history stub" />,
 }));
+vi.mock('@/components/LoansCard', () => ({
+  LoansCard: ({ place }: { place: string }) => <section aria-label={`Loans ${place}`} />,
+}));
 
 const RATE_DAY: FiatRateDay = {
   sats: 100_000_000,
@@ -217,11 +220,14 @@ describe('WalletScreenView', () => {
         <WalletScreenView {...ENTRY_PROPS} wallet={walletResult(status)} />,
       );
       expect(screen.queryByRole('region', { name: 'Payments history stub' })).toBeNull();
+      expect(screen.queryByRole('region', { name: 'Loans wallet' })).toBeNull();
       view.unmount();
     }
     renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult('ready')} />);
     const history = screen.getByRole('region', { name: 'Payments history stub' });
-    expect(follows(screen.getByRole('region', { name: 'Balance' }), history)).toBe(true);
+    const loans = screen.getByRole('region', { name: 'Loans wallet' });
+    expect(follows(screen.getByRole('region', { name: 'Balance' }), loans)).toBe(true);
+    expect(follows(loans, history)).toBe(true);
     expect(follows(history, screen.getByRole('button', { name: 'Receive' }))).toBe(true);
     expect(follows(history, screen.getByRole('button', { name: 'Send' }))).toBe(true);
   });

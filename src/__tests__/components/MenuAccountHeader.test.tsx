@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MenuAccountHeader } from '@/components/MenuAccountHeader';
 import { useSpotRate } from '@/hooks/useSpotRate';
+import { useMyLoans } from '@/hooks/useMyLoans';
 import { useWallet, type UseWalletResult } from '@/hooks/useWallet';
 import { fetchAccountActivity, fetchMember, fetchProfilePhoto } from '@/lib/api';
 import type { Account, AccountActivity, MemberProfile } from '@/lib/api-types';
@@ -37,6 +38,7 @@ vi.mock('next/link', () => ({
 
 vi.mock('@/hooks/useWallet', () => ({ useWallet: vi.fn() }));
 vi.mock('@/hooks/useSpotRate', () => ({ useSpotRate: vi.fn() }));
+vi.mock('@/hooks/useMyLoans', () => ({ useMyLoans: vi.fn() }));
 vi.mock('@/lib/api', () => ({
   fetchAccountActivity: vi.fn(),
   fetchMember: vi.fn(),
@@ -94,6 +96,7 @@ function statRow(): HTMLElement {
 beforeEach(() => {
   vi.mocked(useWallet).mockReturnValue(walletWith('disabled'));
   vi.mocked(useSpotRate).mockReturnValue(RATE_DAY);
+  vi.mocked(useMyLoans).mockReturnValue({ loans: null, reload: vi.fn() });
   vi.mocked(fetchAccountActivity).mockReset().mockResolvedValue(ACTIVITY);
   vi.mocked(fetchMember).mockReset().mockResolvedValue(MEMBER);
   vi.mocked(fetchProfilePhoto).mockReset().mockRejectedValue(new Error('none'));
@@ -110,6 +113,75 @@ afterEach(() => {
 });
 
 describe('MenuAccountHeader', () => {
+  it('shows a payable loan row and closes the Menu from Send', () => {
+    const onNavigate = vi.fn();
+    signIn();
+    vi.mocked(useMyLoans).mockReturnValue({
+      loans: {
+        sundayRest: false,
+        loans: [
+          {
+            due: {
+              payableSats: 1_000,
+              payablePeople: 1,
+              waitingSats: 0,
+              waitingPeople: 0,
+              behindDays: 2,
+              payableAmount: null,
+              waitingAmount: null,
+              lastPayment: false,
+            },
+            fundedAt: '2026-10-01',
+            goalSats: 10_000,
+            sats: 10_000,
+            next: null,
+          } as never,
+        ],
+      },
+      reload: vi.fn(),
+    });
+    renderWithLocale(<MenuAccountHeader onNavigate={onNavigate} tight={false} open />);
+    expect(screen.getByText("You're behind on your loan")).toBeTruthy();
+    expect(screen.getByText("₿1'000").textContent).toBe("₿1'000 · $1.00");
+    const send = screen.getByRole('link', { name: 'Send' });
+    expect(send.getAttribute('href')).toBe('/loans/repay');
+    fireEvent.click(send);
+    expect(onNavigate).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the ordinary due label and foreground amount without a spot rate', () => {
+    signIn();
+    vi.mocked(useSpotRate).mockReturnValue(null);
+    vi.mocked(useMyLoans).mockReturnValue({
+      loans: {
+        sundayRest: false,
+        loans: [
+          {
+            due: {
+              payableSats: 1_000,
+              payablePeople: 1,
+              waitingSats: 0,
+              waitingPeople: 0,
+              behindDays: 0,
+              payableAmount: null,
+              waitingAmount: null,
+              lastPayment: false,
+            },
+            fundedAt: '2026-10-01',
+            goalSats: 10_000,
+            sats: 10_000,
+            next: null,
+          } as never,
+        ],
+      },
+      reload: vi.fn(),
+    });
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    expect(screen.getByText('Loan repayment due today').className).toContain('text-app-muted');
+    expect(screen.getByText("₿1'000").className).toContain('text-app-fg');
+    expect(screen.getByText("₿1'000").textContent).toBe("₿1'000");
+  });
+
   it('renders nothing when signed out', () => {
     const { container } = renderWithLocale(
       <MenuAccountHeader onNavigate={vi.fn()} tight={false} open />,
