@@ -25,6 +25,7 @@ import {
   proxyGiftsStatsGet,
   proxyFxSpotGet,
   proxyMeActivityGet,
+  proxyMeLoansGet,
   proxyMeGet,
   proxyPosDelete,
   proxyPosGet,
@@ -73,6 +74,7 @@ import {
   proxyMessagesHiddenGet,
   proxyMessagesPlacesGet,
   proxyMessagesInvoicePost,
+  proxyMessagesRepaymentDuePost,
   proxyMessagesPhotoGet,
   proxyMessagesPost,
   proxyMessagesRepliesGet,
@@ -324,6 +326,12 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyMeActivityGet(new Request('http://localhost/me/activity'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/activity');
+  });
+
+  it('proxyMeLoansGet hits /me/loans', async () => {
+    const fetchMock = stubApi();
+    await proxyMeLoansGet(new Request('http://localhost/me/loans'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/loans');
   });
 
   it('proxyMeNamePost hits POST /me/name', async () => {
@@ -879,6 +887,15 @@ describe('api proxy wrappers', () => {
       'm1',
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/invoice');
+  });
+
+  it('proxyMessagesRepaymentDuePost hits POST /messages/:id/repayment/due', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesRepaymentDuePost(
+      new Request('http://localhost/messages/m1/repayment/due', { method: 'POST' }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment/due');
   });
 
   it('proxyViewGet hits /view/:viewKey (encoded)', async () => {

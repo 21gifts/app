@@ -141,6 +141,16 @@ export async function proxyMeActivityGet(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies GET /me/loans to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMeLoansGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/loans');
+}
+
+/**
  * Proxies POST /me/name to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).
@@ -1086,6 +1096,20 @@ export async function proxyMessagesRepaymentPost(
   messageId: string,
 ): Promise<Response> {
   return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/repayment`);
+}
+
+/**
+ * Proxies POST /messages/:id/repayment/due to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param messageId - Credit note id.
+ * @returns The upstream response.
+ */
+export async function proxyMessagesRepaymentDuePost(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/repayment/due`);
 }
 
 /**
