@@ -70,10 +70,11 @@ const nextConfig: NextConfig = {
  * Error reporting build step. Nothing Sentry-specific is configured here: the
  * DSN and environment come from the container at start (see `src/lib/sentry.ts`).
  * No source maps are uploaded and no release is created, so the build needs no
- * token and makes no network calls. Tracing code is tree-shaken, and both the
- * server-side auto-wrapping and the build-time instrumentation of server
- * dependencies are off; `onRequestError` in `src/instrumentation.ts` reports
- * request errors. The SDK's `tunnelRoute` is not used because it only
+ * token and makes no network calls. Tracing code stays in the bundle for the
+ * browser's sampled performance traces (`src/lib/sentry.ts`); the server
+ * samples none. Both the server-side auto-wrapping and the build-time
+ * instrumentation of server dependencies are off; `onRequestError` in
+ * `src/instrumentation.ts` reports request errors. The SDK's `tunnelRoute` is not used because it only
  * rewrites to sentry.io hosts; `/monitoring` is the app's own tunnel.
  */
 export default withSentryConfig(nextConfig, {
@@ -86,6 +87,6 @@ export default withSentryConfig(nextConfig, {
     autoInstrumentServerFunctions: false,
     autoInstrumentMiddleware: false,
     autoInstrumentAppDirectory: false,
-    treeshake: { removeDebugLogging: true, removeTracing: true },
+    treeshake: { removeDebugLogging: true, removeTracing: false },
   },
 });

@@ -35,6 +35,9 @@
 #                         turns error reporting off.
 #   NEXT_PUBLIC_SENTRY_ENVIRONMENT — error-reporting environment name (e.g. staging).
 #                         Optional placeholder: empty or unset uses the SDK default.
+#   NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE — share (0 to 1) of browser traces sent while
+#                         error reporting is on. Optional placeholder: empty, unset, or
+#                         invalid uses 0.1.
 #
 # entrypoint.sh refuses to start when a placeholder's variable is unset or
 # empty, except for the optional ones above, which it substitutes with an
@@ -58,6 +61,7 @@ ENV NEXT_PUBLIC_BREEZ_API_KEY=$NEXT_PUBLIC_BREEZ_API_KEY
 ENV NEXT_PUBLIC_PLATFORM_USERNAME=__NEXT_PUBLIC_PLATFORM_USERNAME__
 ENV NEXT_PUBLIC_SENTRY_DSN=__NEXT_PUBLIC_SENTRY_DSN__
 ENV NEXT_PUBLIC_SENTRY_ENVIRONMENT=__NEXT_PUBLIC_SENTRY_ENVIRONMENT__
+ENV NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=__NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE__
 RUN npm run build
 
 FROM node:22-alpine AS runtime

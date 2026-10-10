@@ -27,6 +27,11 @@ const mocks = vi.hoisted(() => ({
   settlePhraseDerivations: vi.fn(),
 }));
 
+// The setup flow is under test, not its trace spans: they only run the step.
+vi.mock('@/lib/sentry', () => ({
+  traceWallet: (_name: string, work: () => Promise<unknown>) => work(),
+}));
+
 vi.mock('@breeztech/breez-sdk-spark/ssr', () => ({
   default: () => {
     throw new Error('real SDK must not load');

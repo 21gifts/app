@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { installNoPrfWebAuthn } from './no-prf';
 
 /**
  * Error reporting in the Playwright build: `playwright.config.ts` sets
@@ -24,6 +25,24 @@ function recordTunnelPosts(page: Page): string[] {
     }
   });
   return posts;
+}
+
+/**
+ * Record every request that carries a trace header (`sentry-trace` or
+ * `baggage`). Tracing never adds them, so the list stays empty.
+ *
+ * @param page - Page under test.
+ * @returns The recorded request URLs (live array).
+ */
+function recordTraceHeaders(page: Page): string[] {
+  const traced: string[] = [];
+  page.on('request', (request) => {
+    const headers = request.headers();
+    if ('sentry-trace' in headers || 'baggage' in headers) {
+      traced.push(request.url());
+    }
+  });
+  return traced;
 }
 
 /**
@@ -76,6 +95,69 @@ test('Function: forwardSentryEnvelope — POST /monitoring is 404 while reportin
   });
   expect(res.status()).toBe(404);
   expect(await res.text()).toBe('');
+});
+
+test('Function: getSentryTracesSampleRate — the unset rate of the test build sends no trace and no trace header', async ({
+  page,
+}) => {
+  const posts = recordTunnelPosts(page);
+  const traced = recordTraceHeaders(page);
+  await page.goto('/welcome');
+  await page.waitForLoadState('networkidle');
+  await page.goto('/login');
+  await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  expect(posts).toEqual([]);
+  expect(traced).toEqual([]);
+});
+
+test('Function: traceWallet — the login passkey prompt runs unchanged while tracing is off', async ({
+  page,
+}) => {
+  await installNoPrfWebAuthn(page);
+  await page.addInitScript(() => {
+    const credentials = navigator.credentials;
+    const get = credentials.get.bind(credentials);
+    const counted = window as unknown as { passkeyPrompts: number };
+    counted.passkeyPrompts = 0;
+    Object.defineProperty(navigator, 'credentials', {
+      configurable: true,
+      value: {
+        create: credentials.create.bind(credentials),
+        get: (options?: CredentialRequestOptions) => {
+          counted.passkeyPrompts += 1;
+          return get(options);
+        },
+      },
+    });
+  });
+  const posts = recordTunnelPosts(page);
+  const traced = recordTraceHeaders(page);
+  await page.goto('/login');
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Do you already have an account?' }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => (window as unknown as { passkeyPrompts: number }).passkeyPrompts),
+  ).toBe(1);
+  await page.waitForLoadState('networkidle');
+  expect(posts).toEqual([]);
+  expect(traced).toEqual([]);
+});
+
+test('Function: onRouterTransitionStart — a client-side navigation sends no trace while reporting is off', async ({
+  page,
+}) => {
+  const posts = recordTunnelPosts(page);
+  const traced = recordTraceHeaders(page);
+  await page.goto('/legal');
+  await page.waitForLoadState('networkidle');
+  await page.locator('a[href="/terms"]').first().click();
+  await expect(page).toHaveURL(/\/terms$/);
+  await page.waitForLoadState('networkidle');
+  expect(posts).toEqual([]);
+  expect(traced).toEqual([]);
 });
 
 test('Function: register — the server starts with error reporting off', async ({ request }) => {
