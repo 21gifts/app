@@ -24,5 +24,9 @@ if (options !== null) {
 /**
  * Next.js hook called when an App Router navigation starts. Starts the
  * navigation transaction while tracing is on, and does nothing otherwise.
+ *
+ * @param href - Target of the navigation.
+ * @param navigationType - `push`, `replace`, or `traverse`.
+ * @returns Nothing.
  */
 export const onRouterTransitionStart = captureRouterTransitionStart;

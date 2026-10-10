@@ -1002,6 +1002,11 @@ Privacy rules (this app holds wallets):
   as `/pl/`). Of the request it keeps method, path, User-Agent, and Referer.
   Console breadcrumbs are dropped; `fetch`/`xhr` breadcrumbs keep method,
   path, and status only.
+- A transaction carries no span that reaches another origin than the page
+  (the wallet asking a receiver's Lightning address server or a chain
+  explorer would name the receiver or an address), no web-vital element
+  descriptor (`lcp.element`, `lcp.url`, `lcp.id`, `cls.source.N`), and no
+  breadcrumbs (a click label can spell a typed amount).
 - Span names and attributes are fixed words. Never put an amount, invoice,
   address, Spark key, recovery word, PRF output, or token in one;
   `traceWallet` only accepts the names and attributes listed above.
