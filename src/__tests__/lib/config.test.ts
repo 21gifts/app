@@ -1,12 +1,23 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it } from 'vitest';
-import { getApiUrl, getAppVersion, getE2eNow } from '@/lib/config';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  getApiUrl,
+  getAppVersion,
+  getBreezApiKey,
+  getE2eNow,
+  getPlatformUsername,
+  getSentryDsn,
+  getSentryEnvironment,
+} from '@/lib/config';
 
 const ORIGINAL = process.env.NEXT_PUBLIC_API_URL;
 const ORIGINAL_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
 const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
+const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+const ORIGINAL_PLATFORM_USERNAME = process.env.NEXT_PUBLIC_PLATFORM_USERNAME;
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   if (ORIGINAL === undefined) {
     delete process.env.NEXT_PUBLIC_API_URL;
   } else {
@@ -21,6 +32,16 @@ afterEach(() => {
     delete process.env.NEXT_PUBLIC_E2E_NOW;
   } else {
     process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  }
+  if (ORIGINAL_BREEZ === undefined) {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  } else {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = ORIGINAL_BREEZ;
+  }
+  if (ORIGINAL_PLATFORM_USERNAME === undefined) {
+    delete process.env.NEXT_PUBLIC_PLATFORM_USERNAME;
+  } else {
+    process.env.NEXT_PUBLIC_PLATFORM_USERNAME = ORIGINAL_PLATFORM_USERNAME;
   }
 });
 
@@ -82,5 +103,74 @@ describe('getE2eNow', () => {
   it('returns null when empty', () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '';
     expect(getE2eNow()).toBeNull();
+  });
+});
+
+describe('getBreezApiKey', () => {
+  it('returns the configured value', () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    expect(getBreezApiKey()).toBe('test-breez-api-key');
+  });
+
+  it('returns null when unset', () => {
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    expect(getBreezApiKey()).toBeNull();
+  });
+
+  it('returns null when empty', () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = '';
+    expect(getBreezApiKey()).toBeNull();
+  });
+});
+
+describe('getPlatformUsername', () => {
+  it('returns the configured value', () => {
+    process.env.NEXT_PUBLIC_PLATFORM_USERNAME = '21gifts';
+    expect(getPlatformUsername()).toBe('21gifts');
+  });
+
+  it('trims surrounding whitespace', () => {
+    process.env.NEXT_PUBLIC_PLATFORM_USERNAME = '  21gifts  ';
+    expect(getPlatformUsername()).toBe('21gifts');
+  });
+
+  it('returns null when unset', () => {
+    delete process.env.NEXT_PUBLIC_PLATFORM_USERNAME;
+    expect(getPlatformUsername()).toBeNull();
+  });
+
+  it('returns null when empty', () => {
+    process.env.NEXT_PUBLIC_PLATFORM_USERNAME = '';
+    expect(getPlatformUsername()).toBeNull();
+  });
+
+  it('returns null when blank', () => {
+    process.env.NEXT_PUBLIC_PLATFORM_USERNAME = '   ';
+    expect(getPlatformUsername()).toBeNull();
+  });
+});
+
+describe.each([
+  ['getSentryDsn', getSentryDsn, 'NEXT_PUBLIC_SENTRY_DSN', 'https://key@errors.example/7'],
+  ['getSentryEnvironment', getSentryEnvironment, 'NEXT_PUBLIC_SENTRY_ENVIRONMENT', 'staging'],
+] as const)('%s', (_name, read, variable, value) => {
+  it('returns the configured value, trimmed', () => {
+    vi.stubEnv(variable, `  ${value}  `);
+    expect(read()).toBe(value);
+  });
+
+  it('returns null when unset', () => {
+    vi.stubEnv(variable, undefined);
+    expect(read()).toBeNull();
+  });
+
+  it('returns null for the empty string entrypoint.sh substitutes', () => {
+    vi.stubEnv(variable, '');
+    expect(read()).toBeNull();
+  });
+
+  it('returns null when blank', () => {
+    vi.stubEnv(variable, '   ');
+    expect(read()).toBeNull();
   });
 });

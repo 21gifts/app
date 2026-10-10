@@ -6,6 +6,7 @@ import {
   ArrowUp,
   Check,
   Gift,
+  Heart,
   ImagePlus,
   Link2,
   Loader2,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { flushSync } from 'react-dom';
 import {
   useEffect,
   useLayoutEffect,
@@ -32,8 +34,8 @@ import {
   type ForumPayError,
   type ForumPayInvoice,
 } from '@/components/ForumPaySheet';
-import { SundayWritingGate } from '@/components/SundayWritingGate';
-import { useAppShellScroller } from '@/components/AppShell';
+import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGate';
+import { AppShellOverlay, useAppShellScroller } from '@/components/AppShell';
 import {
   ForumAskWizard,
   type ForumAskCadence,
@@ -54,6 +56,7 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { ForumModeSelect } from '@/components/ForumModeSelect';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { Button, IconButton, SegmentedControl } from '@/components/ui';
+import { Scrollport } from '@/components/ui/Scrollport';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
   type AmountUnit,
@@ -75,16 +78,16 @@ import {
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
 import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
+import { isOwnNote } from '@/lib/roles';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
+import type { HeartTipView } from '@/lib/heart-tip';
 import type { MessageKey } from '@/lib/messages';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
-import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
 
 export type { ForumPayError, ForumPayInvoice } from '@/components/ForumPaySheet';
-
 /** Top-level compose mode: messenger post or Ask wizard. */
 export type ForumComposeIntent = 'post' | 'ask';
 
@@ -102,8 +105,11 @@ export type ForumFormError =
   | 'ask'
   | null;
 
-/** Reply composer validation; `amount` is the paid-reply sats field. */
-export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted';
+/**
+ * Reply composer validation; `amount` is the paid-reply sats field and
+ * `authorWallet` means the note author's wallet cannot take the paid reply.
+ */
+export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted' | 'authorWallet';
 
 /** Loaded still URLs for one note, in gallery order. Missing slots are skipped. */
 function editStillUrls(
@@ -147,6 +153,21 @@ function forumTaggedRole(role: string): ForumTaggedRole | null {
 }
 
 const COPY_RESET_MS = 1200;
+
+/** The forum home's writer: whether it is open, and how it opens and closes. */
+export interface ForumWriter {
+  /** True while the writer covers the frame under the header row. */
+  open: boolean;
+  /** Opens the writer (the **+** button, or a compose request while it is closed). */
+  onOpen: () => void;
+  /** Closes the writer; drafts stay. `ForumLoader` calls it after a successful post. */
+  onClose: () => void;
+  /**
+   * Told whether a form in the feed is open: a post's reaction form, a gift
+   * sheet, or a reaction's pay slot on the page. `false` again once none is.
+   */
+  onFeedForm?: (open: boolean) => void;
+}
 
 /** Props for {@link ForumBoard}. */
 export interface ForumBoardProps {
@@ -218,6 +239,11 @@ export interface ForumBoardProps {
   /** New-post composer `maxLength`. Default {@link FORUM_MESSAGE_MAX_LENGTH}. */
   composerMaxLength?: number;
   /**
+   * When true, the message composer says under Post that this member's first
+   * post is free. Default false.
+   */
+  firstPostFree?: boolean;
+  /**
    * When true, the shops feed shows Add a shop instead of the message composer.
    * Default false.
    */
@@ -254,7 +280,10 @@ export interface ForumBoardProps {
   payWaiting: boolean;
   /** Opens the pay sheet for a payable message. */
   onPayOpen: (messageId: string) => void;
-  /** Signed-in account id, used to show repayment only on the author's credit. */
+  /**
+   * Signed-in account id. Shows repayment only on the author's credit, and on
+   * the viewer's own notes hides the reply amount field and the gift button.
+   */
   viewerAccountId?: string | null;
   /** Requests today's repayment invoice for the author's own funded credit. */
   onRepay?: (messageId: string) => void;
@@ -269,9 +298,9 @@ export interface ForumBoardProps {
   /** Closes the pay sheet and clears invoice state. */
   onPayCancel: () => void;
   /**
-   * Latest gift-day totals for unsent previews (pay sheet, unpaid invoice).
+   * Current spot rate for unsent previews (pay sheet, unpaid invoice).
    * Settled ₿ amounts use the fiat stored on the row. Omit or `null` when
-   * stats have not loaded — previews stay ₿-only.
+   * the spot rate has not loaded — previews stay ₿-only.
    */
   rateDay?: FiatRateDay | null;
   /** Selected feed mode. Default in the loader is Active. */
@@ -280,8 +309,11 @@ export interface ForumBoardProps {
   onModeChange: (mode: ForumFeedMode) => void;
   /** When false, omit the Active / No gifts yet / All / Most popular control and show every loaded row (same as mode all). Default true. */
   modeSelector?: boolean;
-  /** Optional ref attached near the end of the visible feed for loader pagination. */
-  nearEndRef?: (node: HTMLLIElement | null) => void;
+  /**
+   * Optional ref attached near the end of the visible feed for loader pagination,
+   * or to the empty-feed line when the loaded page kept no row.
+   */
+  nearEndRef?: (node: HTMLElement | null) => void;
   /**
    * Unseen zero-sat notes since the last No gifts yet visit. Chip is shown
    * only when this is \> 0 and unpaid is not selected. Default 0.
@@ -335,6 +367,13 @@ export interface ForumBoardProps {
   replyFormError: ForumReplyFormError;
   /** When true, hide the new-note composer (profile note card). */
   composerHidden?: boolean;
+  /**
+   * Forum home only: the composer lives in the writer instead of on the page.
+   * While `open`, the writer covers the frame under the header row; closed,
+   * the page shows no composer. Omit for the inline composer of every other
+   * board.
+   */
+  writer?: ForumWriter;
   /** Signed-out living room: no composer, reaction form, pay, or delete. Mode stays. */
   readOnly?: boolean;
   /** Remove a moderated post or nested reply after a successful server deletion. */
@@ -378,6 +417,23 @@ export interface ForumBoardProps {
   shopNoteEdit?: boolean;
   /** Apply a saved shop-note body to the listed row. */
   onShopNoteUpdated?: (message: ForumMessage) => void;
+  /**
+   * Signed-in account id, used to hide the 1-sat heart on the viewer's own
+   * note. Default null. Only {@link ForumHeartControl} reads it.
+   */
+  heartViewerId?: string | null;
+  /**
+   * Sends a 1-sat heart. Omit to hide the heart on every note, as on a board
+   * that cannot pay one.
+   */
+  onHeartTip?: (messageId: string) => void;
+  /** Per-message heart visuals from `useHeartTip`. Default none. */
+  heartTipViews?: Readonly<Record<string, HeartTipView>>;
+  /**
+   * Runs once per shop-note save: after a complete save, or after a partly
+   * written one when its editor closes or unmounts.
+   */
+  onShopNoteSaved?: () => void;
 }
 
 const MODE_LABEL_KEY: Record<
@@ -412,6 +468,83 @@ function fallbackCopy(text: string): boolean {
   }
   ta.remove();
   return ok;
+}
+
+/**
+ * 1-sat heart in a note or reply action row. Hidden on a deleted note, on the
+ * viewer's own note, on a note whose author cannot receive (`payable` false),
+ * and on a board without a heart handler. Click stops the card from expanding.
+ *
+ * @param props - Message id, author id, deleted stamp, payable, heartViewerId, visual state, click.
+ * @returns The heart control, or `null` when it must not show.
+ */
+function ForumHeartControl({
+  messageId,
+  accountId,
+  deletedAt,
+  payable,
+  heartViewerId,
+  view,
+  onHeartTip,
+}: {
+  messageId: string;
+  accountId: string | undefined;
+  deletedAt: string | undefined;
+  payable: boolean;
+  heartViewerId: string | null;
+  view: HeartTipView | undefined;
+  onHeartTip: ((id: string) => void) | undefined;
+}): ReactElement | null {
+  const { t } = useTranslations();
+  if (
+    onHeartTip === undefined ||
+    !payable ||
+    deletedAt !== undefined ||
+    heartViewerId === accountId
+  ) {
+    return null;
+  }
+  const pressed = view !== undefined && view.pressed;
+  const plusOne = view !== undefined && view.plusOne;
+  const filled = pressed || plusOne;
+  const needsBalance = view !== undefined && view.needsBalance;
+  return (
+    <>
+      <span className="relative inline-flex">
+        <IconButton
+          type="button"
+          size="sm"
+          variant="ghost"
+          aria-label={t('forum.heart')}
+          title={t('forum.heart')}
+          className={filled ? 'scale-110 text-app-accent' : undefined}
+          onClick={(event) => {
+            event.stopPropagation();
+            onHeartTip(messageId);
+          }}
+        >
+          <Heart
+            aria-hidden="true"
+            className="h-4 w-4 shrink-0"
+            fill={filled ? 'currentColor' : 'none'}
+          />
+        </IconButton>
+        {plusOne ? (
+          <span
+            className="forum-heart-plus-one absolute inset-x-0 -top-3 text-center text-xs font-semibold text-app-accent"
+            aria-hidden="true"
+          >
+            +1
+          </span>
+        ) : null}
+      </span>
+      {needsBalance ? (
+        <p role="alert" className="text-xs text-app-danger">
+          {t('forum.heartNeedsBalance')}
+        </p>
+      ) : null}
+    </>
+  );
 }
 
 /**
@@ -482,11 +615,16 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * and the two lines share a left rule. The amounts are not added),
  * copy-link control, `ForumGoalBar` on a top-level note
  * with `goalSats`, React control on posts (`forum.react`, lucide Reply;
- * expands the reply composer; omitted when `deletedAt` is set), payable-reply
+ * expands the reply composer; omitted when `deletedAt` is set), a 1-sat heart
+ * (`forum.heart`, lucide Heart) on a non-deleted post and a non-deleted reply
+ * when `onHeartTip` is set, `payable` is true, and `heartViewerId !== accountId`
+ * (shown signed-out; omitted on the viewer's own note), payable-reply
  * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
  * never on posts; omitted when `deletedAt` is set), optional shop-note
  * pencil when `shopNoteEdit` and `onShopNoteUpdated` are set (top-level
- * notes; the control hides non-shop text), optional shops staff
+ * notes; the control hides non-shop text; `onShopNoteSaved` runs once per
+ * save: after a whole save, or after a partly written one when its editor closes
+ * or unmounts, at the latest once a running save settles), optional shops staff
  * place editor after copy and before staff Delete when `shopPlaceEdit` and
  * `onShopPlaceUpdated` are set, then the shops account editor when
  * `shopAccountEdit` and `onShopAccountUpdated` are set (top-level notes only),
@@ -500,8 +638,33 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * language marks it read; pills are sticky in the AppShell scroller under the
  * frame header (`top-2`, or `top-14` for New posts when both show).
  * Optional `permalinkTargetId` rings the matching nested reply only; optional
- * `nearEndRef` attaches to the note about eight rows from the visible end.
+ * `nearEndRef` attaches to the note about eight rows from the visible end, or
+ * to the empty-feed line when no row is loaded, so a page whose notes were all
+ * dropped still leads on to the next page.
  * Shop notes show `#Shop` linking to `/shops` and hide `#21GiftsShop`; optional `emptyKey`.
+ * With `writer` (the forum home) the page shows no composer. While the writer
+ * is open, an {@link AppShellOverlay} layer covers the frame under the header
+ * row (frame background, rounded bottom corners, its own scrollport): a
+ * centred title (`forum.composePost` or `forum.composeAsk`, per the switch),
+ * the Post / Ask pill, then the composer as on every other board (or the Ask
+ * wizard), the composer pay slot (`payHost` `composer`: the posting fee, or the
+ * 1-sat fee of a text reaction), and the composer's errors. That pay slot stays
+ * where it opened: in the writer when it opened there (a posting fee; it waits
+ * there while the writer is closed), on the page above the feed when it opened
+ * with the writer closed (a text reaction's fee), so closing or opening the
+ * writer never moves or remounts it. Opening it focuses the text field in the same task, so a tap
+ * brings up the keyboard. A compose request opens it first (or focuses its
+ * field when it is already open). On a touch device its Post composer shows
+ * the text field on top at full width and photo, place and send on one row
+ * below it. The writer is marked `data-writing-composer` for
+ * {@link useAppHeight}, and pull-to-refresh is off while it is open. While the
+ * Menu is open as a sheet (`html[data-menu-sheet='1']`) the writer steps aside,
+ * so the sheet in the page scrollport shows; it comes back when the Menu closes.
+ * The writer's `onFeedForm` hears whether a form in the feed is open: an
+ * expanded post's reaction form (signed in, post not deleted), a gift sheet,
+ * or a text reaction's pay slot on the page; it hears `false` once none is,
+ * on the device's local Sunday (`useLocalSunday`: those forms are hidden
+ * then), and when the board unmounts.
  *
  * @param props - Messages payload plus loading/error/composer (including
  * `askDraft` / compose intent / Ask wizard) /pay/mode/photo/video/laws/thread/permalink/truncate state.
@@ -540,6 +703,7 @@ export function ForumBoard({
   onRetry,
   formError,
   composerMaxLength = FORUM_MESSAGE_MAX_LENGTH,
+  firstPostFree = false,
   shopComposer = false,
   shopUsername = '',
   onShopUsernameChange,
@@ -590,6 +754,7 @@ export function ForumBoard({
   replyPosting,
   replyFormError,
   composerHidden = false,
+  writer,
   readOnly = false,
   onDeleted,
   permalinkTargetId = null,
@@ -602,6 +767,10 @@ export function ForumBoard({
   onShopAccountUpdated,
   shopNoteEdit = false,
   onShopNoteUpdated,
+  heartViewerId = null,
+  onHeartTip,
+  heartTipViews,
+  onShopNoteSaved,
 }: ForumBoardProps): ReactElement {
   const hideCompose = composerHidden || readOnly;
   const { t, locale } = useTranslations();
@@ -612,6 +781,19 @@ export function ForumBoard({
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const postComposerShown =
+    !hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer;
+  const writerOpen = writer !== undefined && writer.open;
+  const writerRef = useRef(writer);
+  writerRef.current = writer;
+  const writerOpenRef = useRef(writerOpen);
+  writerOpenRef.current = writerOpen;
+  // In the same task as the tap that opened the writer, so the keyboard comes up.
+  useLayoutEffect(() => {
+    if (writerOpen) {
+      composerRef.current?.focus({ preventScroll: true });
+    }
+  }, [writerOpen]);
   const replyComposerRef = useRef<HTMLTextAreaElement>(null);
   const scrollerRef = useRef<HTMLElement | null>(scroller);
   scrollerRef.current = scroller;
@@ -668,7 +850,6 @@ export function ForumBoard({
       observer.disconnect();
     };
   }, [expandedId, repliesLoading, scroller, shownReplies, payMessageId, payInvoice]);
-  const [showPaymentQr, setShowPaymentQr] = useState(false);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deadVideoIds, setDeadVideoIds] = useState<ReadonlySet<string>>(() => new Set());
@@ -706,7 +887,7 @@ export function ForumBoard({
     };
 
     const onTouchStart = (event: TouchEvent): void => {
-      if (refreshingRef.current || loadingRef.current) {
+      if (refreshingRef.current || loadingRef.current || writerOpenRef.current) {
         return;
       }
       if (pageScrollTop() >= 8) {
@@ -776,10 +957,6 @@ export function ForumBoard({
   }, [onRefresh, scroller]);
 
   useEffect(() => {
-    setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
-  }, []);
-
-  useEffect(() => {
     copyMounted.current = true;
     return () => {
       copyMounted.current = false;
@@ -797,18 +974,35 @@ export function ForumBoard({
       }
       el.focus({ preventScroll: true });
       const port = scrollerRef.current;
-      if (port !== null) {
+      if (port !== null && port.contains(el)) {
         revealInScrollport(port, el);
       }
       return true;
     };
     const onCompose = (): void => {
+      const home = writerRef.current;
+      if (home !== undefined) {
+        if (writerOpenRef.current) {
+          // Already open (on Ask for money there is no text field to focus).
+          tryFocusComposer();
+        } else {
+          // Synchronously, so the writer's field takes the focus inside the request's tap.
+          flushSync(home.onOpen);
+        }
+        consumePendingForumCompose();
+        return;
+      }
       if (tryFocusComposer()) {
         consumePendingForumCompose();
       }
     };
     window.addEventListener(FORUM_COMPOSE_EVENT, onCompose);
-    if (composerRef.current !== null && consumePendingForumCompose()) {
+    const home = writerRef.current;
+    if (home !== undefined) {
+      if (consumePendingForumCompose()) {
+        home.onOpen();
+      }
+    } else if (composerRef.current !== null && consumePendingForumCompose()) {
       tryFocusComposer();
     }
     return () => {
@@ -892,7 +1086,14 @@ export function ForumBoard({
   } else if (error && messages === null) {
     middle = errorBlock;
   } else if (messages !== null && messages.length === 0) {
-    middle = <p className="text-center text-sm text-app-muted">{t(emptyKey)}</p>;
+    middle = (
+      <p
+        {...(nearEndRef !== undefined ? { ref: nearEndRef } : {})}
+        className="text-center text-sm text-app-muted"
+      >
+        {t(emptyKey)}
+      </p>
+    );
   } else if (messages !== null && visible !== null && visible.length === 0) {
     middle = (
       <p className="text-center text-sm text-app-muted">
@@ -934,6 +1135,7 @@ export function ForumBoard({
                   preview: replyPayPreview,
                   amountSats: payInvoice.amountSats,
                   pr: payInvoice.pr,
+                  sparkInvoice: payInvoice.sparkInvoice,
                 }
               : null;
           const reactionPayPage = reactionPay !== null;
@@ -1127,7 +1329,7 @@ export function ForumBoard({
                 ) : null}
                 {message.parentId === undefined && message.place !== undefined ? (
                   <Link
-                    href={`/map?pin=${encodeURIComponent(message.id)}`}
+                    href={`/shops?pin=${encodeURIComponent(message.id)}#map`}
                     className="mt-2 inline-flex items-center gap-1 text-sm text-app-fg underline"
                     onClick={stopCardToggle}
                   >
@@ -1198,6 +1400,15 @@ export function ForumBoard({
                 </div>
                 <div className="ml-auto flex flex-wrap items-center gap-5">
                   <div id={`note-translate-${message.id}`} className="contents" />
+                  <ForumHeartControl
+                    messageId={message.id}
+                    accountId={message.accountId}
+                    deletedAt={message.deletedAt}
+                    payable={message.payable}
+                    heartViewerId={heartViewerId}
+                    view={heartTipViews === undefined ? undefined : heartTipViews[message.id]}
+                    onHeartTip={onHeartTip}
+                  />
                   {/* Signed-out forum is readOnly and still shows React. The author feed sets both flags. */}
                   {message.parentId === undefined &&
                   message.deletedAt === undefined &&
@@ -1261,7 +1472,8 @@ export function ForumBoard({
                   {message.parentId !== undefined &&
                   message.payable &&
                   message.deletedAt === undefined &&
-                  !readOnly ? (
+                  !readOnly &&
+                  !isOwnNote(viewerAccountId, message.accountId) ? (
                     <SundayWritingGate notice="zap">
                       <IconButton
                         type="button"
@@ -1302,6 +1514,7 @@ export function ForumBoard({
                     <ShopNoteEditControl
                       message={message}
                       onUpdated={onShopNoteUpdated}
+                      {...(onShopNoteSaved !== undefined ? { onSaved: onShopNoteSaved } : {})}
                       existingPhotos={editStillUrls(message.id, photoCount, photoUrls)}
                       {...(videoSrc !== undefined ? { existingVideoUrl: videoSrc } : {})}
                     />
@@ -1338,7 +1551,6 @@ export function ForumBoard({
                     onPaySubmit={onPaySubmit}
                     onPayCancel={onPayCancel}
                     rateDay={rateDay}
-                    showPaymentQr={showPaymentQr}
                     onInteract={stopCardToggle}
                   />
                 </SundayWritingGate>
@@ -1517,7 +1729,21 @@ export function ForumBoard({
                             />
                             <div className="mt-2 flex flex-wrap items-center gap-5">
                               <div id={`note-translate-${reply.id}`} className="contents" />
-                              {reply.deletedAt === undefined && reply.payable && !readOnly ? (
+                              <ForumHeartControl
+                                messageId={reply.id}
+                                accountId={reply.accountId}
+                                deletedAt={reply.deletedAt}
+                                payable={reply.payable}
+                                heartViewerId={heartViewerId}
+                                view={
+                                  heartTipViews === undefined ? undefined : heartTipViews[reply.id]
+                                }
+                                onHeartTip={onHeartTip}
+                              />
+                              {reply.deletedAt === undefined &&
+                              reply.payable &&
+                              !readOnly &&
+                              !isOwnNote(viewerAccountId, reply.accountId) ? (
                                 <SundayWritingGate notice="zap">
                                   <IconButton
                                     type="button"
@@ -1574,7 +1800,6 @@ export function ForumBoard({
                                   onPaySubmit={onPaySubmit}
                                   onPayCancel={onPayCancel}
                                   rateDay={rateDay}
-                                  showPaymentQr={showPaymentQr}
                                   onInteract={stopCardToggle}
                                 />
                               </SundayWritingGate>
@@ -1591,9 +1816,8 @@ export function ForumBoard({
                           preview={reactionPay.preview}
                           amountSats={reactionPay.amountSats}
                           pr={reactionPay.pr}
+                          sparkInvoice={reactionPay.sparkInvoice}
                           payWaiting={payWaiting}
-                          payBusy={payBusy}
-                          showPaymentQr={showPaymentQr}
                           rateDay={rateDay}
                           onCancel={onPayCancel}
                         />
@@ -1601,25 +1825,28 @@ export function ForumBoard({
                     ) : (
                       <SundayWritingGate>
                         <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
-                          <AmountEntry
-                            id="forum-reply-amount"
-                            layout="inline"
-                            label={t('forum.replyAmountLabel')}
-                            placeholder={t('forum.payAmountPlaceholder')}
-                            value={replyAmountDraft}
-                            disabled={
-                              replyPayLocked ||
-                              replyPosting ||
-                              repliesLoading ||
-                              repliesError ||
-                              replies === null
-                            }
-                            rateDay={rateDay}
-                            onValueChange={(next) => onReplyAmountDraftChange?.(next)}
-                            {...(onReplyUnitChange === undefined
-                              ? {}
-                              : { onUnitChange: onReplyUnitChange })}
-                          />
+                          {/* On your own note the reply is free: no amount to gift yourself. */}
+                          {isOwnNote(viewerAccountId, message.accountId) ? null : (
+                            <AmountEntry
+                              id="forum-reply-amount"
+                              layout="inline"
+                              label={t('forum.replyAmountLabel')}
+                              placeholder={t('forum.payAmountPlaceholder')}
+                              value={replyAmountDraft}
+                              disabled={
+                                replyPayLocked ||
+                                replyPosting ||
+                                repliesLoading ||
+                                repliesError ||
+                                replies === null
+                              }
+                              rateDay={rateDay}
+                              onValueChange={(next) => onReplyAmountDraftChange?.(next)}
+                              {...(onReplyUnitChange === undefined
+                                ? {}
+                                : { onUnitChange: onReplyUnitChange })}
+                            />
+                          )}
                           <div className="flex items-center gap-2">
                             <MentionTextarea
                               textareaRef={replyComposerRef}
@@ -1692,6 +1919,11 @@ export function ForumBoard({
                               {t('forum.errorNoteDeleted')}
                             </p>
                           ) : null}
+                          {replyFormError === 'authorWallet' ? (
+                            <p role="alert" className="text-center text-sm text-app-danger">
+                              {t('forum.payErrorAuthorWallet')}
+                            </p>
+                          ) : null}
                         </form>
                       </SundayWritingGate>
                     )
@@ -1708,101 +1940,72 @@ export function ForumBoard({
   }
 
   const showRefreshStatus = refreshing === true || pullArmed;
-
-  return (
-    <div
-      ref={rootRef}
-      className="flex w-full min-w-0 flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6"
-    >
-      {moderatorAppointedAvailable ? (
-        <div className="pointer-events-none sticky top-2 z-30 mx-auto w-fit">
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            className="pointer-events-auto shadow-lg"
-            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
-            onClick={onShowModeratorAppointed}
-          >
-            {t('forum.moderatorAppointed')}
-          </Button>
-        </div>
-      ) : null}
-      {newPostsAvailable ? (
-        <div
-          className={
-            moderatorAppointedAvailable
-              ? 'pointer-events-none sticky top-14 z-30 mx-auto w-fit'
-              : 'pointer-events-none sticky top-2 z-30 mx-auto w-fit'
-          }
-        >
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            className="pointer-events-auto shadow-lg"
-            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
-            onClick={onShowNewPosts}
-          >
-            {t('forum.newPosts')}
-          </Button>
-        </div>
-      ) : null}
-      {showRefreshStatus ? (
-        <div
-          role="status"
-          aria-live="polite"
-          aria-label={t('forum.refreshing')}
-          className="sr-only"
+  const phoneShape =
+    writer === undefined ? '' : ' pointer-coarse:order-first pointer-coarse:basis-full';
+  const composerPay = payInvoice !== null && payHost === 'composer';
+  // The forum home keeps an open composer pay slot where it opened (in the writer for a posting
+  // fee, on the page for a text reaction's fee), so closing the writer never moves or remounts it.
+  // Keyed to the invoice itself: a second fee (a reaction's while a posting fee waits) is placed anew.
+  const composerInvoice = composerPay ? payInvoice.pr : null;
+  const [payPlace, setPayPlace] = useState<{ invoice: string; inWriter: boolean } | null>(null);
+  if (composerInvoice === null ? payPlace !== null : payPlace?.invoice !== composerInvoice) {
+    setPayPlace(
+      composerInvoice === null ? null : { invoice: composerInvoice, inWriter: writerOpen },
+    );
+  }
+  const payInWriter =
+    composerInvoice !== null &&
+    (payPlace !== null && payPlace.invoice === composerInvoice ? payPlace.inWriter : writerOpen);
+  const loosePay =
+    payInvoice !== null &&
+    payHost !== 'composer' &&
+    payHost !== 'card' &&
+    payMessageId !== null &&
+    !(visible !== null && visible.some((row) => row.id === payMessageId)) &&
+    !(replies !== null && replies.some((row) => row.id === payMessageId));
+  // The forum home moves its own controls aside while a form in the feed is open. On the local
+  // Sunday every one of these forms is hidden behind SundayWritingGate, so none is open.
+  const sunday = useLocalSunday();
+  const feedFormOpen =
+    !sunday &&
+    ((!readOnly &&
+      visible !== null &&
+      visible.some((row) => row.id === expandedId && row.deletedAt === undefined)) ||
+      (payMessageId !== null && payHost !== 'composer') ||
+      (composerPay && !payInWriter));
+  const onFeedForm = writer === undefined ? undefined : writer.onFeedForm;
+  useEffect(() => {
+    if (onFeedForm === undefined) {
+      return;
+    }
+    onFeedForm(feedFormOpen);
+    return () => {
+      onFeedForm(false);
+    };
+  }, [onFeedForm, feedFormOpen]);
+  const paySheet =
+    payInvoice === null ? null : (
+      <SundayWritingGate notice="zap">
+        <ForumPaySheet
+          messageId={payInvoice.messageId}
+          payDraft={payDraft}
+          payBusy={payBusy}
+          payError={payError}
+          payInvoice={payInvoice}
+          payWaiting={payWaiting}
+          onPayDraftChange={onPayDraftChange}
+          {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
+          onPaySubmit={onPaySubmit}
+          onPayCancel={onPayCancel}
+          rateDay={rateDay}
+          onInteract={(event) => {
+            event.stopPropagation();
+          }}
         />
-      ) : null}
-      {lawsVisible ? (
-        <div className="relative rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 pr-10">
-          <IconButton
-            type="button"
-            size="sm"
-            variant="ghost"
-            aria-label={t('forum.lawsDismiss')}
-            onClick={onDismissLaws}
-            className="absolute right-2 top-2"
-          >
-            <X aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-center text-sm text-app-fg">{t('forum.laws1')}</p>
-            <p className="text-center text-sm text-app-fg">{t('forum.laws2')}</p>
-            <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium">
-              <Link href="/rules" className="text-app-fg underline underline-offset-2">
-                {t('forum.rulesLink')}
-              </Link>
-              <Link href="/contact" className="text-app-fg underline underline-offset-2">
-                {t('forum.contactLink')}
-              </Link>
-            </nav>
-          </div>
-        </div>
-      ) : null}
-
-      {modeSelector && !composerHidden ? (
-        <ForumModeSelect
-          value={mode}
-          options={FORUM_FEED_MODES.map((next) => {
-            const label = t(MODE_LABEL_KEY[next]);
-            if (next !== 'unpaid' || mode === 'unpaid' || unpaidNewCount <= 0) {
-              return { value: next, label };
-            }
-            return {
-              value: next,
-              label,
-              badge: unpaidNewCount,
-              badgeAriaLabel: t('forum.modeUnpaidNew', { count: unpaidNewCount }),
-            };
-          })}
-          onChange={onModeChange}
-          ariaLabel={t('forum.modeLabel')}
-        />
-      ) : null}
-
+      </SundayWritingGate>
+    );
+  const composeParts = (
+    <>
       {!hideCompose && allowAsk ? (
         <SegmentedControl
           value={composeIntent}
@@ -1872,10 +2075,16 @@ export function ForumBoard({
           />
         </SundayWritingGate>
       ) : null}
-      {!hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer ? (
+      {postComposerShown ? (
         <SundayWritingGate>
           <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
+            <div
+              className={
+                writer !== undefined
+                  ? 'flex items-center gap-2 pointer-coarse:flex-wrap'
+                  : 'flex items-center gap-2'
+              }
+            >
               <IconButton
                 type="button"
                 size="lg"
@@ -1909,8 +2118,8 @@ export function ForumBoard({
                 maxLength={composerMaxLength}
                 rows={2}
                 disabled={posting}
-                wrapperClassName="relative min-w-0 flex-1"
-                className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
+                wrapperClassName={`relative min-w-0 flex-1${phoneShape}`}
+                className={`min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50${phoneShape}`}
               />
               <IconButton
                 type="submit"
@@ -1918,6 +2127,7 @@ export function ForumBoard({
                 variant="primary"
                 disabled={posting}
                 aria-label={t('forum.post')}
+                {...(writer === undefined ? {} : { className: 'pointer-coarse:ml-auto' })}
               >
                 {posting ? (
                   <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
@@ -1926,6 +2136,9 @@ export function ForumBoard({
                 )}
               </IconButton>
             </div>
+            {firstPostFree ? (
+              <p className="text-center text-sm text-app-muted">{t('forum.firstPostFree')}</p>
+            ) : null}
             {videoDraft !== null ? (
               <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
                 <video
@@ -1998,32 +2211,7 @@ export function ForumBoard({
         </SundayWritingGate>
       ) : null}
 
-      {payInvoice !== null &&
-      (payHost === 'composer' ||
-        (payHost !== 'card' &&
-          payMessageId !== null &&
-          !(visible !== null && visible.some((row) => row.id === payMessageId)) &&
-          !(replies !== null && replies.some((row) => row.id === payMessageId)))) ? (
-        <SundayWritingGate notice="zap">
-          <ForumPaySheet
-            messageId={payInvoice.messageId}
-            payDraft={payDraft}
-            payBusy={payBusy}
-            payError={payError}
-            payInvoice={payInvoice}
-            payWaiting={payWaiting}
-            onPayDraftChange={onPayDraftChange}
-            {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
-            onPaySubmit={onPaySubmit}
-            onPayCancel={onPayCancel}
-            rateDay={rateDay}
-            showPaymentQr={showPaymentQr}
-            onInteract={(event) => {
-              event.stopPropagation();
-            }}
-          />
-        </SundayWritingGate>
-      ) : null}
+      {(writer === undefined ? composerPay || loosePay : payInWriter) ? paySheet : null}
 
       <div className="sunday-write-field">
         {!hideCompose && formError === 'empty' ? (
@@ -2067,6 +2255,125 @@ export function ForumBoard({
           </p>
         ) : null}
       </div>
+    </>
+  );
+  const composeSection =
+    writer === undefined ? (
+      composeParts
+    ) : writerOpen ? (
+      <AppShellOverlay>
+        <Scrollport className="absolute inset-0 z-30 rounded-b-3xl bg-app-card [html[data-menu-sheet='1']_&]:hidden">
+          <div data-writing-composer="" className="flex flex-col gap-4 px-5 pt-6 pb-6">
+            <h2 className="text-center text-base font-semibold text-app-fg">
+              {composeIntent === 'ask' ? t('forum.composeAsk') : t('forum.composePost')}
+            </h2>
+            {composeParts}
+          </div>
+        </Scrollport>
+      </AppShellOverlay>
+    ) : null;
+
+  return (
+    <div
+      ref={rootRef}
+      className="flex w-full min-w-0 flex-col gap-4 overscroll-y-contain border-t border-app-border pt-6"
+    >
+      {moderatorAppointedAvailable ? (
+        <div className="pointer-events-none sticky top-2 z-30 mx-auto w-fit">
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            className="pointer-events-auto shadow-lg"
+            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
+            onClick={onShowModeratorAppointed}
+          >
+            {t('forum.moderatorAppointed')}
+          </Button>
+        </div>
+      ) : null}
+      {newPostsAvailable ? (
+        <div
+          className={
+            moderatorAppointedAvailable
+              ? 'pointer-events-none sticky top-14 z-30 mx-auto w-fit'
+              : 'pointer-events-none sticky top-2 z-30 mx-auto w-fit'
+          }
+        >
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            className="pointer-events-auto shadow-lg"
+            icon={<ArrowUp aria-hidden="true" className="h-4 w-4" />}
+            onClick={onShowNewPosts}
+          >
+            {t('forum.newPosts')}
+          </Button>
+        </div>
+      ) : null}
+      {showRefreshStatus ? (
+        <div
+          role="status"
+          aria-live="polite"
+          aria-label={t('forum.refreshing')}
+          className="sr-only"
+        />
+      ) : null}
+      {lawsVisible ? (
+        <div
+          data-laws-card=""
+          className="relative rounded-2xl border border-app-border bg-app-card-muted px-12 py-5"
+        >
+          <div className="absolute right-3 top-3">
+            <IconButton
+              type="button"
+              size="sm"
+              variant="ghost"
+              aria-label={t('forum.lawsDismiss')}
+              onClick={onDismissLaws}
+            >
+              <X aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-center text-sm text-app-fg">{t('forum.laws1')}</p>
+            <p className="text-center text-sm text-app-fg">{t('forum.laws2')}</p>
+            <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium">
+              <Link href="/rules" className="text-app-fg underline underline-offset-2">
+                {t('forum.rulesLink')}
+              </Link>
+              <Link href="/contact" className="text-app-fg underline underline-offset-2">
+                {t('forum.contactLink')}
+              </Link>
+            </nav>
+          </div>
+        </div>
+      ) : null}
+
+      {modeSelector && !composerHidden ? (
+        <ForumModeSelect
+          value={mode}
+          options={FORUM_FEED_MODES.map((next) => {
+            const label = t(MODE_LABEL_KEY[next]);
+            if (next !== 'unpaid' || mode === 'unpaid' || unpaidNewCount <= 0) {
+              return { value: next, label };
+            }
+            return {
+              value: next,
+              label,
+              badge: unpaidNewCount,
+              badgeAriaLabel: t('forum.modeUnpaidNew', { count: unpaidNewCount }),
+            };
+          })}
+          onChange={onModeChange}
+          ariaLabel={t('forum.modeLabel')}
+        />
+      ) : null}
+
+      {composeSection}
+
+      {writer !== undefined && (loosePay || (composerPay && !payInWriter)) ? paySheet : null}
 
       {middle}
       {error && messages !== null ? errorBlock : null}

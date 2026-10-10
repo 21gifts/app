@@ -10,10 +10,28 @@ test('landing shows the 21.gifts wordmark', async ({ page }) => {
 test('landing shows the project donate address', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Donate to this project' })).toBeVisible();
-  await expect(page.getByRole('link', { name: '21gifts@walletofsatoshi.com' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: '21gifts@21.gifts' })).toHaveAttribute(
     'href',
-    'lightning:21gifts@walletofsatoshi.com',
+    'lightning:21gifts@21.gifts',
   );
+});
+
+test('Function: projectDonateAddress — the landing donate link is the platform account on this host', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const project = page.locator('#project');
+  await expect(project.getByRole('link', { name: '21gifts@21.gifts' })).toHaveAttribute(
+    'href',
+    'lightning:21gifts@21.gifts',
+  );
+});
+
+test('Function: getPlatformUsername — the build platform username names the donate address', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.locator('#project').getByRole('link', { name: /^21gifts@/ })).toBeVisible();
 });
 
 test('Happyland follows how it works and hides unverified claims', async ({ page }) => {

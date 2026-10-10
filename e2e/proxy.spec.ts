@@ -30,6 +30,8 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.get('/l/[code]')).status()).toBe(404);
   expect((await request.post('/messages/[id]/invoice')).status()).toBeGreaterThanOrEqual(400);
   expect((await request.post('/contact/submit')).status()).toBe(401);
+  expect((await request.post('/lnurl/pay-request')).status()).toBe(401);
+  expect((await request.post('/lnurl/invoice')).status()).toBe(401);
   expect((await request.get('/conversations')).status()).toBe(401);
   expect((await request.post('/conversations')).status()).toBe(401);
   expect((await request.get('/conversations/[id]')).status()).toBeGreaterThanOrEqual(400);
@@ -65,18 +67,17 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/me/username')).status()).toBe(401);
   expect((await request.post('/me/location')).status()).toBe(401);
   expect((await request.post('/me/notification-level')).status()).toBe(401);
+  expect((await request.post('/me/heart-notifications')).status()).toBe(401);
   expect((await request.post('/me/amount-unit')).status()).toBe(401);
   expect((await request.post('/me/locale')).status()).toBe(401);
   expect((await request.post('/me/fiat')).status()).toBe(401);
   expect((await request.put('/me/about')).status()).toBe(401);
   expect((await request.get('/me/about/photo')).status()).toBe(401);
   expect((await request.post('/me/rules-agreement')).status()).toBe(401);
-  expect((await request.post('/me/lightning-address')).status()).toBe(401);
-  expect((await request.delete('/me/lightning-address')).status()).toBe(401);
-  expect((await request.get('/lightning-address')).status()).toBe(400);
   expect((await request.get('/gifts/stats')).status()).toBe(200);
   expect((await request.get('/habits')).status()).toBe(200);
   expect((await request.post('/habits')).status()).toBe(401);
+  expect((await request.get('/fx/spot')).status()).toBe(200);
   expect((await request.get('/me/activity')).status()).toBe(401);
   expect(
     (await request.get('/forum/members/[accountId]/activity')).status(),

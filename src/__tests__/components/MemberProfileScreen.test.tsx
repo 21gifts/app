@@ -4,9 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import {
   agreeToRules,
+  CannotReceiveError,
   fetchComposeTarget,
   NoteDeletedError,
-  fetchGiftStats,
+  fetchFxSpot,
   fetchMember,
   fetchMemberPosts,
   fetchShopNoteEdits,
@@ -22,11 +23,12 @@ import {
   postMessage,
   postMessageInvoice,
   postRepaymentInvoice,
-  setLightningAddress,
   setName,
+  WalletRequiredError,
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
+  memberProfileSchema,
   type Account,
   type ForumMessage,
   type MemberProfile,
@@ -35,7 +37,21 @@ import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
-import { walletOfSatoshiHref } from '@/lib/wos-deep-link';
+import { payFromWallet } from '@/lib/wallet/wallet-service';
+import {
+  SPARK_INVOICE,
+  confirmResult,
+  resetWallet,
+  setWalletUsable,
+} from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
+  return { ...actual, payFromWallet: vi.fn() };
+});
+
+/** Status line of an open pay sheet while the in-app wallet is unavailable in tests. */
+const PAY_UNAVAILABLE = 'Your 21.gifts wallet is not available here, so this cannot be paid.';
 
 const push = vi.fn();
 const refresh = vi.fn();
@@ -68,6 +84,18 @@ vi.mock('@/lib/api', () => ({
       this.name = 'NoteDeletedError';
     }
   },
+  CannotReceiveError: class CannotReceiveError extends Error {
+    constructor() {
+      super('cannot_receive');
+      this.name = 'CannotReceiveError';
+    }
+  },
+  WalletRequiredError: class WalletRequiredError extends Error {
+    constructor() {
+      super('wallet_required');
+      this.name = 'WalletRequiredError';
+    }
+  },
   fetchComposeTarget: vi.fn(),
   fetchPublicMessage: vi.fn(),
   dismissForumLaws: vi.fn(),
@@ -80,14 +108,15 @@ vi.mock('@/lib/api', () => ({
   agreeToRules: vi.fn(),
   setName: vi.fn(),
   setLocation: vi.fn(),
-  setLightningAddress: vi.fn(),
   skipSetup: vi.fn(),
   fetchMember: vi.fn(),
   postTrustVerify: vi.fn(),
   postTrustPropose: vi.fn(),
   postTrustConfirm: vi.fn(),
   postTrustAppoint: vi.fn(),
-  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchShopNoteEdits: vi.fn(),
   setMessageShopText: vi.fn(),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
@@ -126,7 +155,7 @@ const profile: MemberProfile = {
   username: 'carol',
   location: null,
   role: 'verified',
-  lightningAddress: 'carol@walletofsatoshi.com',
+  lightningAddress: null,
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
   aboutMeHasPhoto: false,
@@ -208,7 +237,7 @@ const account: Account = {
   role: 'basis',
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: true,
   createdAt: 1,
@@ -322,6 +351,9 @@ function fillPaidReply(text: string, amount = '1'): void {
 }
 
 beforeEach(() => {
+  vi.mocked(fetchFxSpot)
+    .mockReset()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
   hydrateReady = true;
   vi.clearAllMocks();
   push.mockClear();
@@ -340,7 +372,11 @@ beforeEach(() => {
     unread: false,
   });
   vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
-  vi.mocked(fetchComposeTarget).mockResolvedValue({ messageId: 'fee-note', sats: 0 });
+  vi.mocked(fetchComposeTarget).mockResolvedValue({
+    messageId: 'fee-note',
+    sats: 0,
+    firstPostFree: false,
+  });
   vi.mocked(fetchPublicMessage).mockResolvedValue(null);
   vi.mocked(postMessage).mockResolvedValue({
     ...note,
@@ -392,8 +428,8 @@ const NO_RATE_SHOWN = {
 };
 
 describe('MemberProfileScreen', () => {
-  it('keeps member notes ₿-only when gift stats fail', async () => {
-    vi.mocked(fetchGiftStats).mockRejectedValueOnce(new Error('stats down'));
+  it('keeps member notes ₿-only when the spot rate fails', async () => {
+    vi.mocked(fetchFxSpot).mockRejectedValueOnce(new Error('spot down'));
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, profileMessage: note }}
@@ -1081,6 +1117,33 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('shows the empty About me state when the profile note is an empty About me', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const parsed = memberProfileSchema.parse({
+      ...profile,
+      aboutMe: '',
+      profileMessage: {
+        id: '33333333-3333-4333-8333-333333333333',
+        accountId: profile.id,
+        name: 'Carol',
+        text: '',
+        createdAt: '2026-08-01T10:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: false,
+      },
+    });
+    warn.mockRestore();
+    expect(parsed.profileMessage).toBeNull();
+    renderWithLocale(<MemberProfileScreen profile={parsed} received={[]} donated={[]} />);
+    expect(screen.getByText('carol@21.gifts')).toBeTruthy();
+    expect(screen.queryByText('About me')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Message' })).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Copy link to this profile' })).toBeTruthy();
+    });
+  });
+
   it('copies the member profile URL without showing it', async () => {
     const writeText = stubClipboard(() => Promise.resolve());
     renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
@@ -1128,7 +1191,7 @@ describe('MemberProfileScreen', () => {
         id: profile.id,
         role: 'verified',
         name: 'Carol',
-        lightningAddress: 'carol@walletofsatoshi.com',
+        lightningAddress: null,
       },
     });
     renderWithLocale(
@@ -1215,7 +1278,7 @@ describe('MemberProfileScreen', () => {
       );
     });
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+      expect(screen.getByText(PAY_UNAVAILABLE)).toBeTruthy();
     });
   });
 
@@ -1240,53 +1303,7 @@ describe('MemberProfileScreen', () => {
     });
   });
 
-  it('requests the invoice on iPhone Continue without assigning the wallet href', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
-    });
-    const assign = vi.fn();
-    const locationStub = { assign, href: 'http://localhost/' };
-    vi.stubGlobal('location', locationStub);
-    renderWithLocale(
-      <MemberProfileScreen
-        profile={{ ...profile, profileMessage: note }}
-        received={[]}
-        donated={[]}
-      />,
-    );
-    const replyCard = await expandAndClickReplyGift();
-    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith(
-        'sess',
-        PAYABLE_NESTED.id,
-        21,
-        undefined,
-        NO_RATE_SHOWN,
-      );
-    });
-    expect(assign).not.toHaveBeenCalled();
-    expect(locationStub.href).toBe('http://localhost/');
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
-    });
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' }));
-    expect(assign).not.toHaveBeenCalled();
-    expect(locationStub.href).toBe(walletOfSatoshiHref('lnbc1'));
-    vi.unstubAllGlobals();
-  });
-
-  it('does not assign Wallet of Satoshi after cancelling an in-flight iPhone pay', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
-    });
-    const assign = vi.fn();
-    vi.stubGlobal('location', { assign, href: 'http://localhost/' });
+  it('does not open the wallet sheet after cancelling an in-flight pay', async () => {
     let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
     vi.mocked(postMessageInvoice).mockReturnValue(
       new Promise((resolve) => {
@@ -1307,18 +1324,10 @@ describe('MemberProfileScreen', () => {
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
-    expect(assign).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeNull();
-    vi.unstubAllGlobals();
+    expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
   });
 
-  it('does not show a pay error after cancelling an in-flight iPhone pay that fails', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
-    });
-    const assign = vi.fn();
-    vi.stubGlobal('location', { assign, href: 'http://localhost/' });
+  it('does not show a pay error after cancelling an in-flight pay that fails', async () => {
     let rejectInvoice!: (reason: Error) => void;
     vi.mocked(postMessageInvoice).mockReturnValue(
       new Promise((_, reject) => {
@@ -1339,18 +1348,10 @@ describe('MemberProfileScreen', () => {
     await act(async () => {
       rejectInvoice(new Error('fail'));
     });
-    expect(assign).not.toHaveBeenCalled();
     expect(screen.queryByRole('alert')).toBeNull();
-    vi.unstubAllGlobals();
   });
 
-  it('does not assign Wallet of Satoshi after unmounting during an in-flight iPhone pay', async () => {
-    Object.defineProperty(navigator, 'userAgent', {
-      configurable: true,
-      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
-    });
-    const assign = vi.fn();
-    vi.stubGlobal('location', { assign, href: 'http://localhost/' });
+  it('drops an invoice that arrives after unmounting during an in-flight pay', async () => {
     let resolveInvoice!: (value: { pr: string; amountSats: number }) => void;
     vi.mocked(postMessageInvoice).mockReturnValue(
       new Promise((resolve) => {
@@ -1371,8 +1372,7 @@ describe('MemberProfileScreen', () => {
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
-    expect(assign).not.toHaveBeenCalled();
-    vi.unstubAllGlobals();
+    expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
   });
 
   it('loads replies when the profile note is expanded', async () => {
@@ -1640,7 +1640,7 @@ describe('MemberProfileScreen', () => {
     expect(within(reopened).queryByRole('button', { name: 'Close' })).toBeNull();
   });
 
-  it('shows pay author-wallet copy when Gift Continue is rejected', async () => {
+  it('treats the author-wallet text without a code as a generic pay failure', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(
       new Error("The author's wallet cannot receive this Bitcoin payment"),
     );
@@ -1654,9 +1654,49 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
+  });
+
+  it('shows pay author-wallet copy when Gift Continue gets a cannot-receive answer', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CannotReceiveError());
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe(
       "The author's wallet cannot receive this Bitcoin payment",
     );
+  });
+
+  it('opens the wallet overlay instead of a pay error when Gift Continue needs a wallet', async () => {
+    vi.mocked(postMessageInvoice)
+      .mockRejectedValueOnce(new Error('Too many payments'))
+      .mockRejectedValueOnce(new WalletRequiredError());
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Too many payments. Please wait a moment and try again.',
+    );
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Your wallet is not set up' });
+    expect(
+      within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
+    ).toBe('/wallet');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(postMessageInvoice).toHaveBeenCalledTimes(2);
   });
 
   it('shows pay rate-limit copy when Gift Continue is limited', async () => {
@@ -1893,7 +1933,7 @@ describe('MemberProfileScreen', () => {
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
     expect(fetchPublicMessage).not.toHaveBeenCalled();
   });
 
@@ -1957,7 +1997,7 @@ describe('MemberProfileScreen', () => {
     });
     fireEvent.click(within(firstReplyCard).getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
-      expect(screen.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeTruthy();
+      expect(screen.getByText(PAY_UNAVAILABLE)).toBeTruthy();
     });
     expandCard('Hello from my profile note.');
     await screen.findByText('Second payable reply.');
@@ -1973,7 +2013,7 @@ describe('MemberProfileScreen', () => {
     });
     expect(within(secondReplyCard).getByLabelText('Amount')).toBeTruthy();
     expect((within(secondReplyCard).getByLabelText('Amount') as HTMLInputElement).value).toBe('7');
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
   });
 
   it('drops a late paid-reply invoice after Gift is opened', async () => {
@@ -1999,7 +2039,7 @@ describe('MemberProfileScreen', () => {
     await act(async () => {
       resolveInvoice({ pr: 'lnbc1', amountSats: 21 });
     });
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
     expect(fetchPublicMessage).not.toHaveBeenCalled();
     expect(within(replyCard).getByRole('button', { name: 'Continue' })).toBeTruthy();
   });
@@ -2415,6 +2455,26 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('opens the wallet overlay when a paid reply invoice requires a wallet', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new WalletRequiredError());
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '1');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Your wallet is not set up' });
+    expect(
+      within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
+    ).toBe('/wallet');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply', NO_RATE_SHOWN);
+  });
+
   it('opens the overlay when a compose-pay invoice is missing a name', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['name']));
     renderWithLocale(
@@ -2445,6 +2505,26 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeTruthy();
     });
+  });
+
+  it('opens the wallet overlay when a compose-pay invoice requires a wallet', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new WalletRequiredError());
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Your wallet is not set up' });
+    expect(
+      within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
+    ).toBe('/wallet');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(fetchComposeTarget).toHaveBeenCalledWith('sess');
   });
 
   it('keeps the generic request copy when the compose-target invoice is gone', async () => {
@@ -2515,6 +2595,23 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('keeps the generic reply error when the platform fee wallet cannot receive', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CannotReceiveError());
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
+  });
+
   it('shows a request error when a compose-pay overlay retry is still missing requirements', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new MissingRequirementsError(['name']));
     vi.mocked(setName).mockResolvedValue({
@@ -2566,15 +2663,11 @@ describe('MemberProfileScreen', () => {
     });
     expect(postMessage).not.toHaveBeenCalled();
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeTruthy();
+      expect(screen.getByText(PAY_UNAVAILABLE)).toBeTruthy();
     });
     const parentCard = document.querySelector(`[data-message-id="${note.id}"]`);
     expect(parentCard).not.toBeNull();
-    expect(
-      within(parentCard as HTMLElement).queryByRole('button', {
-        name: 'Pay with Wallet of Satoshi',
-      }),
-    ).toBeNull();
+    expect(within(parentCard as HTMLElement).queryByText(PAY_UNAVAILABLE)).toBeNull();
   });
 
   it('raises the parent reply count after a compose-pay reply confirms', async () => {
@@ -2622,6 +2715,47 @@ describe('MemberProfileScreen', () => {
       expect(screen.getByText('reply')).toBeTruthy();
       expect(screen.getAllByText('1 reaction').length).toBeGreaterThan(0);
     });
+  });
+
+  it('closes the compose-pay sheet and shows the reply when the first own-reply count failed', async () => {
+    const paidReply = {
+      ...note,
+      id: 'r-new',
+      parentId: note.id,
+      name: 'Ada',
+      accountId: account.id,
+      text: 'reply',
+      sats: 0,
+      payable: false,
+      replyCount: 0,
+    };
+    vi.mocked(fetchReplies)
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'))
+      .mockResolvedValue([paidReply]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({
+      ...note,
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      sats: 1,
+    });
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByText('reply')).toBeTruthy();
+      expect(screen.getAllByText('1 reaction').length).toBeGreaterThan(0);
+    });
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
   });
 
   it('tries an unpaid reply when someone else’s note omits accountId', async () => {
@@ -2876,6 +3010,28 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('maps a reply invoice the author wallet cannot receive onto the author-wallet error', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CannotReceiveError());
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '1');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    const form = screen.getByLabelText('Your reaction').closest('form')!;
+    await waitFor(() => {
+      expect(within(form).getByRole('alert').textContent).toBe(
+        "The author's wallet cannot receive this Bitcoin payment",
+      );
+    });
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.queryByText('Could not post your message')).toBeNull();
+  });
+
   it('maps an over-long invoice comment onto the reply length error', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new Error('Text must be 1–8000 characters'));
     renderWithLocale(
@@ -2995,6 +3151,64 @@ describe('MemberProfileScreen', () => {
         NO_RATE_SHOWN,
       );
     });
+  });
+
+  it('posts a basis reply to the own profile note without an amount field or invoice', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, id: profile.id } });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    expect(document.getElementById('forum-reply-amount')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(fetchComposeTarget).not.toHaveBeenCalled();
+  });
+
+  it('shows the request error instead of a fee when the api refuses an own profile-note reply', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, id: profile.id } });
+    vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
+    expect(fetchComposeTarget).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('asks for text instead of paying when an own profile-note reply is empty', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, id: profile.id } });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    });
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
   it('lets a founder reply without paying', async () => {
@@ -3130,10 +3344,10 @@ describe('MemberProfileScreen', () => {
     expect(postMessage).not.toHaveBeenCalled();
   });
 
-  it('opens the requirements overlay when a reply is missing a lightning-address', async () => {
+  it('opens the wallet step of the requirements overlay when a reply is missing a lightning-address', async () => {
     useAuthStore.setState({
       session: 'sess',
-      account: { ...account, lightningAddress: null, missing: ['lightning-address'] },
+      account: { ...account, missing: ['lightning-address'] },
     });
     renderWithLocale(
       <MemberProfileScreen
@@ -3145,21 +3359,21 @@ describe('MemberProfileScreen', () => {
     await expandNote();
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(screen.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' })).toBeTruthy();
+    const dialog = screen.getByRole('dialog', { name: 'Your wallet is not set up' });
+    expect(
+      within(dialog).getByText(
+        'Gifts and posts need your own 21.gifts wallet, and it is not set up yet. Open your wallet to set it up.',
+      ),
+    ).toBeTruthy();
+    expect(within(dialog).queryByRole('textbox')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
     expect(postMessage).not.toHaveBeenCalled();
   });
 
-  it('retries the reply after the lightning-address overlay is satisfied', async () => {
+  it('does not invoice the reply when the wallet overlay is closed', async () => {
     useAuthStore.setState({
       session: 'sess',
-      account: { ...account, lightningAddress: null, missing: ['lightning-address'] },
-    });
-    vi.mocked(setLightningAddress).mockResolvedValue({
-      ...account,
-      lightningAddress: 'alice@walletofsatoshi.com',
-      missing: [],
-      setup: null,
+      account: { ...account, missing: ['lightning-address'] },
     });
     renderWithLocale(
       <MemberProfileScreen
@@ -3171,13 +3385,10 @@ describe('MemberProfileScreen', () => {
     await expandNote();
     fillPaidReply('reply', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    fireEvent.change(screen.getByLabelText('Wallet of Satoshi address'), {
-      target: { value: 'alice@walletofsatoshi.com' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Link address' }));
-    await waitFor(() => {
-      expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply', NO_RATE_SHOWN);
-    });
+    const dialog = screen.getByRole('dialog', { name: 'Your wallet is not set up' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
   it('dismisses the reply overlay without posting', async () => {
@@ -4304,9 +4515,7 @@ describe('MemberProfileScreen', () => {
     expect((await screen.findByRole('alert')).textContent).toBe(
       'Too many payments. Please wait a moment and try again.',
     );
-    repayMock.mockRejectedValueOnce(
-      new Error("The author's wallet cannot receive this Bitcoin payment"),
-    );
+    repayMock.mockRejectedValueOnce(new CannotReceiveError());
     fireEvent.click(screen.getByRole('button', { name: "Pay today's repayment" }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe(
@@ -4376,5 +4585,145 @@ describe('MemberProfileScreen', () => {
       rejectOld(new Error('late'));
       await Promise.resolve();
     });
+  });
+});
+
+describe('MemberProfileScreen in-app wallet pay', () => {
+  function walletReady(amountSats = 21): void {
+    setWalletUsable('ready');
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult(undefined, amountSats));
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc1',
+      amountSats,
+      sparkInvoice: SPARK_INVOICE,
+    });
+  }
+
+  afterEach(resetWallet);
+
+  it('pays Gift on a reply from the wallet when the api issues a sparkInvoice', async () => {
+    walletReady();
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+
+  it('pays a paid reaction from the wallet when the api issues a sparkInvoice', async () => {
+    walletReady();
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '21');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+
+  it('pays the posting fee for a reply from the wallet', async () => {
+    walletReady(1);
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('button', { name: /^Pay ₿\S+ and post/ })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+});
+
+describe('MemberProfileScreen in-app wallet pay', () => {
+  beforeEach(() => {
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult());
+    setWalletUsable('ready');
+  });
+
+  afterEach(resetWallet);
+
+  it('pays a Gift from the wallet when the api issues a sparkInvoice', async () => {
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc1',
+      amountSats: 21,
+      sparkInvoice: SPARK_INVOICE,
+    });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+
+  it('pays a paid reply from the wallet when the api issues a sparkInvoice', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 1));
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc1',
+      amountSats: 1,
+      sparkInvoice: SPARK_INVOICE,
+    });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '1');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply', NO_RATE_SHOWN);
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+
+  it('pays the compose fee from the wallet when the api issues a sparkInvoice', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 1));
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc1',
+      amountSats: 1,
+      sparkInvoice: SPARK_INVOICE,
+    });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect(await screen.findByRole('button', { name: /^Pay ₿\S+ and post/ })).toBeTruthy();
+    expect(postMessageInvoice).toHaveBeenCalledWith(
+      'sess',
+      'fee-note',
+      1,
+      `inReplyTo:${note.id}\nreply`,
+      NO_RATE_SHOWN,
+    );
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 });

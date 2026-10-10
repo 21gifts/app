@@ -3,8 +3,8 @@ import { encodeLnurl } from '@/lib/lnurl';
 /**
  * Public `username@21.gifts` address shown on profiles.
  *
- * Settlement stays on the linked Wallet of Satoshi address; this string is
- * the LUD-16 handle wallets resolve at `/.well-known/lnurlp/:username`.
+ * It is the member's only address: payments to it settle in the member's own
+ * in-app wallet. Wallets resolve it at `/.well-known/lnurlp/:username`.
  */
 
 /**

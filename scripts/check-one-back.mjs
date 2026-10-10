@@ -114,8 +114,8 @@ for (const file of files) {
   if (rel === 'src/components/MarketingHeader.tsx' && !source.includes('<ProfileChromeLeft')) {
     failures.push(`${rel}: the marketing header must use ProfileChromeLeft`);
   }
-  if (rel === 'src/app/welcome/page.tsx' && !source.includes('hideWithoutHistory')) {
-    failures.push(`${rel}: /welcome must hide the arrow only when this tab has no earlier view`);
+  if (rel === 'src/app/welcome/page.tsx' && !source.includes('hideHistoryArrow')) {
+    failures.push(`${rel}: /welcome must not show the history arrow`);
   }
 }
 

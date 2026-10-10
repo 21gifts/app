@@ -447,44 +447,12 @@ describe('CreditLedger', () => {
       'fetch',
       vi.fn(async (input: RequestInfo) => {
         const url = String(input);
-        if (url.includes('/gifts/stats')) {
+        if (url.includes('/fx/spot')) {
           return new Response(
             JSON.stringify({
-              totalSats: 100_000_000,
-              totalBtc: '1.00000000',
-              totalUsd: '100000.00',
-              totalChf: '80000.00',
-              totalEur: '90000.00',
-              totalPhp: '5600000.00',
-              giftCount: 1,
-              recipientCount: 1,
-              firstPaidAt: '2026-09-26T00:00:00.000Z',
-              lastPaidAt: '2026-09-26T00:00:00.000Z',
-              spendOverTime: [
-                {
-                  day: '2026-09-26',
-                  sats: 100_000_000,
-                  cumulativeSats: 100_000_000,
-                  btc: '1.00000000',
-                  cumulativeBtc: '1.00000000',
-                  usd: '100000.00',
-                  cumulativeUsd: '100000.00',
-                  chf: '80000.00',
-                  cumulativeChf: '80000.00',
-                  eur: '90000.00',
-                  cumulativeEur: '90000.00',
-                  php: '5600000.00',
-                  cumulativePhp: '5600000.00',
-                },
-              ],
-              byRecipient: [],
-              byMonth: [],
-              fx: {
-                quote: 'BTC-USD',
-                dayBasis: 'utc',
-                source: 'coinbase-exchange-daily-close',
-                quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
-              },
+              asOf: '2026-09-26T00:00:00.000Z',
+              source: 'test',
+              rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
             }),
             { status: 200 },
           );

@@ -14,6 +14,8 @@ import { setAccountLocale } from '@/lib/api';
 import { LOCALES, LOCALE_COOKIE, type Locale } from '@/lib/locale';
 import { bumpLocaleGeneration, localeGeneration } from '@/lib/preference-generation';
 import { loadSession } from '@/lib/session-storage';
+import { peekSessionPhrase } from '@/lib/tab-phrase';
+import { isWalletOpen } from '@/lib/wallet/wallet-open';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -67,6 +69,8 @@ function localeAt(index: number): Locale {
 
 /**
  * Writes the locale cookie and refreshes when `next` differs from `current`.
+ * Also saves it on the account for a stored session, unless that session is
+ * held back until its wallet is open or a login is still opening its wallet.
  *
  * @param next - Locale the visitor chose.
  * @param current - Locale currently active in the tree.
@@ -76,7 +80,11 @@ async function persistLocale(next: Locale, current: Locale, refresh: () => void)
   if (next === current) {
     return;
   }
-  const session = loadSession();
+  // A session held back until its wallet is open, or a login whose wallet is
+  // still opening, counts as signed out: only the cookie changes.
+  const { lockedSession, account } = useAuthStore.getState();
+  const opening = account !== null && !isWalletOpen(account, peekSessionPhrase() !== null);
+  const session = lockedSession === null && !opening ? loadSession() : null;
   if (session !== null) {
     const generation = bumpLocaleGeneration();
     try {

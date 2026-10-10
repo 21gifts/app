@@ -27,12 +27,16 @@ describe('parseMissingRequirements', () => {
 });
 
 describe('nextPostRequirement', () => {
-  it('prefers rules, then name, then lightning-address', () => {
+  it('prefers rules, then name, then username, then the wallet', () => {
     expect(nextPostRequirement(['name', 'rules', 'lightning-address'])).toBe('rules');
     expect(nextPostRequirement(['name', 'lightning-address'])).toBe('name');
     expect(nextPostRequirement(['username', 'lightning-address'])).toBe('username');
-    expect(nextPostRequirement(['lightning-address'])).toBe('lightning-address');
+    expect(nextPostRequirement(['lightning-address'])).toBe('wallet');
     expect(nextPostRequirement([])).toBeNull();
+  });
+
+  it('ignores the api wallet key', () => {
+    expect(nextPostRequirement(['wallet'])).toBeNull();
   });
 });
 

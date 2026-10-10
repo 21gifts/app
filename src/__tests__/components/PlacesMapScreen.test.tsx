@@ -4,6 +4,9 @@ import { PlacesMapScreen } from '@/components/PlacesMapScreen';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import type { ForumPlaceRow } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
+import { logInteraction } from '@/lib/interaction-log';
+
+vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 
 vi.mock('@/lib/api', () => ({
   fetchPlaces: vi.fn(),
@@ -101,13 +104,29 @@ describe('PlacesMapScreen', () => {
     expect(fetchPlacesMock).not.toHaveBeenCalled();
   });
 
+  it('records an opened shop pin once, and no other pin', async () => {
+    vi.mocked(logInteraction).mockClear();
+    window.history.replaceState(null, '', '/map?pin=m-pin');
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([{ ...ROW, shop: true }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    renderWithLocale(<PlacesMapScreen />);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    // The record is a passive effect, which can run after the link is found.
+    await waitFor(() => {
+      expect(vi.mocked(logInteraction).mock.calls).toEqual([['shop_opened', { placeId: 'm-pin' }]]);
+    });
+  });
+
   it('lists pins, coordinates, and the selected pin', async () => {
+    vi.mocked(logInteraction).mockClear();
     window.history.replaceState(null, '', '/map?pin=m-pin');
     useAuthStore.setState({ session: 'tok' });
     fetchPlacesMock.mockResolvedValue([ROW, { ...ROW, id: 'm-2', label: null, lat: 1, lng: 2 }]);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
     const view = renderWithLocale(<PlacesMapScreen />);
     expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    expect(logInteraction).not.toHaveBeenCalledWith('shop_opened', expect.anything());
     expect(screen.getByRole('link', { name: 'Ada · Happyland' }).className).toContain('min-w-0');
     expect(screen.getByRole('link', { name: 'Ada · Happyland' }).className).toContain('max-w-full');
     expect(screen.getByRole('link', { name: 'Ada · Happyland' }).className).toContain(
@@ -188,6 +207,85 @@ describe('PlacesMapScreen', () => {
       expect(Marker).toHaveBeenCalled();
     });
     expect(map.setCenter).toHaveBeenCalledWith({ lat: 14.6, lng: 120.98 });
+  });
+
+  it('keeps only the pins of the chosen country and fits the map to them', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    const manila = { ...ROW, id: 'm-ph-1', shop: true, countryCode: 'PH' };
+    const cebu = {
+      ...ROW,
+      id: 'm-ph-2',
+      label: 'Cebu',
+      lat: 10.3,
+      lng: 123.9,
+      shop: true,
+      countryCode: 'PH',
+    };
+    const kenya = { ...SECOND_ROW, shop: true, countryCode: 'KE' };
+    const sea = { ...ROW, id: 'm-sea', label: 'Boat', lat: 30, lng: -40, countryCode: null };
+    // A forum note pinned in Manila that is not a shop is not one of the country's shops.
+    const note = {
+      ...ROW,
+      id: 'm-note',
+      label: 'Plaza',
+      lat: 14.59,
+      lng: 120.97,
+      countryCode: 'PH',
+    };
+    fetchPlacesMock.mockResolvedValue([manila, cebu, kenya, sea, note]);
+    const maps = installGoogleMaps(4);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    const view = renderWithLocale(<PlacesMapScreen embedded country="PH" />);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ada · Cebu' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Ada · Machakos' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Ada · Boat' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Ada · Plaza' })).toBeNull();
+    await waitFor(() => {
+      expect(maps.map.fitBounds).toHaveBeenCalledWith(maps.bounds, 32);
+    });
+    expect(maps.points).toEqual([
+      { lat: 14.6, lng: 120.98 },
+      { lat: 10.3, lng: 123.9 },
+    ]);
+    expect(maps.Marker).toHaveBeenCalledTimes(2);
+    maps.Marker.mockClear();
+    view.rerender(<PlacesMapScreen embedded country="KE" />);
+    expect(await screen.findByRole('link', { name: 'Ada · Machakos' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Ada · Happyland' })).toBeNull();
+    await waitFor(() => {
+      expect(maps.Marker).toHaveBeenCalledTimes(1);
+    });
+    expect(maps.map.setCenter).toHaveBeenCalledWith({ lat: -1.95, lng: 37.84 });
+    view.rerender(<PlacesMapScreen embedded country="CH" />);
+    expect(await screen.findByText('No places yet.')).toBeTruthy();
+    view.rerender(<PlacesMapScreen embedded />);
+    expect(await screen.findByRole('link', { name: 'Ada · Boat' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Ada · Plaza' })).toBeTruthy();
+  });
+
+  it('loads the Maps script once and keeps the newer map when the country changes before it loads', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchPlacesMock.mockResolvedValue([
+      { ...ROW, shop: true, countryCode: 'PH' },
+      { ...SECOND_ROW, shop: true, countryCode: 'KE' },
+    ]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
+    const view = renderWithLocale(<PlacesMapScreen embedded country="PH" />);
+    await screen.findByRole('link', { name: 'Ada · Happyland' });
+    view.rerender(<PlacesMapScreen embedded country="KE" />);
+    await screen.findByRole('link', { name: 'Ada · Machakos' });
+    const scripts = document.querySelectorAll('script[data-google-maps="1"]');
+    expect(scripts).toHaveLength(1);
+    const maps = installGoogleMaps(4);
+    (scripts[0] as HTMLScriptElement).onload?.(new Event('load'));
+    await waitFor(() => {
+      expect(maps.Map).toHaveBeenCalledTimes(1);
+    });
+    // Only the Kenya draw runs; the superseded Philippines draw leaves the frame alone.
+    expect(maps.map.setCenter).toHaveBeenCalledWith({ lat: -1.95, lng: 37.84 });
+    expect(screen.getByTestId('places-map').childElementCount).toBe(0);
+    expect(maps.Marker).toHaveBeenCalledTimes(1);
   });
 
   it('frames every pin when several places have no matching query', async () => {
@@ -498,6 +596,49 @@ describe('PlacesMapScreen', () => {
     expect(screen.queryByRole('heading', { name: 'Map' })).toBeNull();
   });
 
+  it('opens the pin editor without a change callback', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc',
+        linkingKey: '02',
+        role: 'moderator',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      } as Account,
+    });
+    fetchPlacesMock.mockResolvedValue([{ ...ROW, shop: true }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(fetchForumMessage).mockResolvedValueOnce({
+      id: 'm-pin',
+      name: 'Ada',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 5,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    renderWithLocale(<PlacesMapScreen />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+  });
+
   it('edits a shop pin and refuses a missing, plain, or failed note', async () => {
     const moderator = {
       id: 'acc',
@@ -549,7 +690,8 @@ describe('PlacesMapScreen', () => {
       text: 'Cafe Sol\n\n#21GiftsShop',
       place: { lat: 3, lng: 4, label: 'Stall' },
     });
-    renderWithLocale(<PlacesMapScreen />);
+    const shopsChanged = vi.fn();
+    renderWithLocale(<PlacesMapScreen onShopsChanged={shopsChanged} />);
     expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
     useAuthStore.setState({ session: 'tok', account: { ...moderator, role: 'basis' } });
@@ -615,5 +757,6 @@ describe('PlacesMapScreen', () => {
     await waitFor(() => {
       expect(screen.queryAllByRole('button', { name: 'Edit shop note' })).toHaveLength(0);
     });
+    expect(shopsChanged).toHaveBeenCalled();
   });
 });

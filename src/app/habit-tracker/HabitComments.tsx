@@ -30,7 +30,6 @@ type HabitCommentsProps = {
   payInvoice: ForumPayInvoice | null;
   rateDay: FiatRateDay | null;
   ratePending: boolean;
-  showPaymentQr: boolean;
   onPayOpen: (commentId: string) => void;
   onPayDraftChange: (value: string) => void;
   onPayUnitChange: (unit: AmountUnit) => void;
@@ -72,7 +71,6 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
     payInvoice,
     rateDay,
     ratePending,
-    showPaymentQr,
     onPayOpen,
     onPayDraftChange,
     onPayUnitChange,
@@ -169,7 +167,6 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
                       onPayCancel={onPayCancel}
                       rateDay={rateDay}
                       ratePending={ratePending}
-                      showPaymentQr={showPaymentQr}
                       onInteract={() => undefined}
                     />
                   </SundayWritingGate>

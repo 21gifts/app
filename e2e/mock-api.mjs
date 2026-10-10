@@ -30,6 +30,10 @@ const conversationPhotos = new Map();
 const aboutMePhotos = new Map();
 /** @type {Map<string, { hash: string, text: string }>} keyed `${messageId}\0${target}` */
 const messageTranslations = new Map();
+/** accountId → wallet data reports received (`POST /me/wallet/report`). */
+const walletReports = new Map();
+/** accountId → interaction events received (`POST /me/events`). */
+const interactionEvents = new Map();
 
 /** Same order as `ROLE_ORDER` in `src/lib/roles.ts`: a named role means that role or higher. */
 const ROLE_ORDER = ['basis', 'verified', 'moderator', 'initiator', 'founder'];
@@ -116,8 +120,12 @@ function hasUsername(account) {
   return account.username !== null && String(account.username).trim() !== '';
 }
 
-function hasLightningAddress(account) {
-  return account.lightningAddress !== null && String(account.lightningAddress).trim() !== '';
+/**
+ * True when the member can receive gifts: their own in-app wallet is
+ * verified. The api reports the gap as the `lightning-address` key.
+ */
+function canReceive(account) {
+  return account.sparkWalletVerified === true;
 }
 
 function hasRules(account) {
@@ -169,44 +177,29 @@ function refreshMissing(account) {
   const missing = [];
   if (!hasName(account)) missing.push('name');
   if (!hasUsername(account)) missing.push('username');
-  if (!hasLightningAddress(account)) missing.push('lightning-address');
+  if (!canReceive(account)) missing.push('lightning-address');
   if (!hasRules(account)) missing.push('rules');
   account.missing = missing;
 }
 
 /**
- * Advance `setup` only when the current step is satisfied.
+ * Advance `setup` only when the current step is satisfied. There is no
+ * address step: a member receives on their own in-app wallet, so the setup
+ * runs name, username, rules. A member who cannot receive yet keeps the
+ * `lightning-address` key in `missing`, which gates forum posts.
  *
  * @param {object} account
  */
 function afterFieldWrite(account) {
   refreshMissing(account);
-  if (account.setup === 'wallet') {
-    account.setup = hasName(account)
-      ? hasUsername(account)
-        ? hasLightningAddress(account)
-          ? hasRules(account)
-            ? null
-            : 'rules'
-          : 'lightning-address'
-        : 'username'
-      : 'name';
+  const afterUsername = hasRules(account) ? null : 'rules';
+  const afterName = hasUsername(account) ? afterUsername : 'username';
+  if (account.setup === 'wallet' || account.setup === 'lightning-address') {
+    account.setup = hasName(account) ? afterName : 'name';
   } else if (account.setup === 'name' && hasName(account)) {
-    account.setup = hasUsername(account)
-      ? hasLightningAddress(account)
-        ? hasRules(account)
-          ? null
-          : 'rules'
-        : 'lightning-address'
-      : 'username';
+    account.setup = afterName;
   } else if (account.setup === 'username' && hasUsername(account)) {
-    account.setup = hasLightningAddress(account)
-      ? hasRules(account)
-        ? null
-        : 'rules'
-      : 'lightning-address';
-  } else if (account.setup === 'lightning-address' && hasLightningAddress(account)) {
-    account.setup = hasRules(account) ? null : 'rules';
+    account.setup = afterUsername;
   } else if (account.setup === 'rules' && hasRules(account)) {
     account.setup = null;
   }
@@ -244,7 +237,7 @@ const E2E_MEMBER_PROFILE = {
   username: 'carol',
   location: 'Zug',
   role: 'verified',
-  lightningAddress: 'carol@walletofsatoshi.com',
+  lightningAddress: null,
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
   aboutMeHasPhoto: false,
@@ -304,6 +297,61 @@ const E2E_MEMBER_REPLIES = [
     replyCount: 0,
     parentId: '55555555-5555-4555-8555-555555555555',
   },
+];
+
+/**
+ * Canned member whose About me was saved empty: the profile note has no text,
+ * no photo, no video, and 0 sats, so the app's note schema cannot show it.
+ */
+const E2E_EMPTY_ABOUT_MEMBER_ID = '77777777-7777-4777-8777-777777777777';
+const E2E_EMPTY_ABOUT_NOTE = {
+  id: '88888888-8888-4888-8888-888888888888',
+  accountId: E2E_EMPTY_ABOUT_MEMBER_ID,
+  name: 'Dana',
+  text: '',
+  createdAt: '2026-10-05T09:00:00.000Z',
+  sats: 0,
+  amountUsd: null,
+  amountChf: null,
+  amountEur: null,
+  amountPhp: null,
+  payable: true,
+  hasPhoto: false,
+  hasVideo: false,
+  videoContentType: null,
+  role: 'basis',
+  replyCount: 0,
+};
+const E2E_EMPTY_ABOUT_PROFILE = {
+  id: E2E_EMPTY_ABOUT_MEMBER_ID,
+  name: 'Dana',
+  username: 'dana',
+  location: null,
+  role: 'basis',
+  lightningAddress: null,
+  createdAt: '2026-02-01T12:00:00.000Z',
+  aboutMe: '',
+  aboutMeHasPhoto: false,
+  profileMessage: E2E_EMPTY_ABOUT_NOTE,
+  postCount: 2,
+  replyCount: 0,
+};
+const E2E_EMPTY_ABOUT_POSTS = [
+  {
+    id: '99999999-9999-4999-8999-999999999999',
+    accountId: E2E_EMPTY_ABOUT_MEMBER_ID,
+    name: 'Dana',
+    text: 'A post from Dana.',
+    createdAt: '2026-10-05T10:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+  },
+  E2E_EMPTY_ABOUT_NOTE,
 ];
 
 /** True when a forum POST needs name, username, rules, or lightning-address. */
@@ -670,7 +718,11 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    json(res, 200, { messageId: COMPOSE_TARGET.id, sats: COMPOSE_TARGET.sats });
+    json(res, 200, {
+      messageId: COMPOSE_TARGET.id,
+      sats: COMPOSE_TARGET.sats,
+      firstPostFree: false,
+    });
     return;
   }
 
@@ -809,7 +861,130 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Expected a JSON body with a positive "sats" integer' });
       return;
     }
-    json(res, 200, { pr: `lnbc${sats}n1test`, amountSats: sats });
+    // A heart is paid only through a fee-free Spark invoice.
+    json(res, 200, {
+      pr: `lnbc${sats}n1test`,
+      amountSats: sats,
+      ...(parsed?.heart === true ? { sparkInvoice: `sparkrt1heart${invoiceMatch[1]}` } : {}),
+    });
+    return;
+  }
+
+  // Public pay link of the shop `shop`: a pending charge of 7'000 sats, and a
+  // Spark invoice only for exactly that amount.
+  if (method === 'GET' && pathName === '/pay/shop') {
+    json(res, 200, {
+      name: 'Shop',
+      username: 'shop',
+      minSats: 7_000,
+      maxSats: 7_000,
+      charge: {
+        id: 'pos-shop',
+        amountSats: 7_000,
+        status: 'pending',
+        createdAt: new Date(Date.now() - 60_000).toISOString(),
+        expiresAt: new Date(Date.now() + 240_000).toISOString(),
+        paidAt: null,
+      },
+    });
+    return;
+  }
+  if (method === 'POST' && pathName === '/pay/shop/invoice') {
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      parsed = null;
+    }
+    const amountSats = parsed?.amountSats;
+    if (typeof amountSats !== 'number' || !Number.isSafeInteger(amountSats) || amountSats < 1) {
+      json(res, 400, { error: 'Invalid amount' });
+      return;
+    }
+    json(res, 200, {
+      pr: 'lnbc70u1shopcharge',
+      amountSats,
+      sparkInvoice: amountSats === 7_000 ? 'sparkrt1shopcharge' : null,
+    });
+    return;
+  }
+
+  // Member `alice` without an open charge: a Spark invoice for any amount,
+  // carrying the trimmed message, so the in-app wallet pays without a fee.
+  if (method === 'POST' && pathName === '/pay/alice/invoice') {
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      parsed = null;
+    }
+    const amountSats = parsed?.amountSats;
+    if (typeof amountSats !== 'number' || !Number.isSafeInteger(amountSats) || amountSats < 1) {
+      json(res, 400, { error: 'Invalid amount' });
+      return;
+    }
+    const comment = typeof parsed?.comment === 'string' ? parsed.comment.trim() : '';
+    json(res, 200, {
+      pr: `lnbc${amountSats}n1alice`,
+      amountSats,
+      sparkInvoice: `sparkrt1alice${amountSats}${comment === '' ? '' : `-${encodeURIComponent(comment)}`}`,
+    });
+    return;
+  }
+
+  if (method === 'POST' && (pathName === '/lnurl/pay-request' || pathName === '/lnurl/invoice')) {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      parsed = null;
+    }
+    const target = typeof parsed?.target === 'string' ? parsed.target.trim() : '';
+    // Fixed outside receivers: bob@example.com pays 1–100'000 sats with a 10-character comment.
+    if (target === 'missing@example.com') {
+      json(res, 404, { error: 'Address not found' });
+      return;
+    }
+    if (target === 'down@example.com') {
+      json(res, 502, { error: 'Address could not be reached' });
+      return;
+    }
+    if (target !== 'bob@example.com') {
+      json(res, 400, { error: 'Not a payable address' });
+      return;
+    }
+    const payRequest = {
+      target,
+      minSendableMsat: 1_000,
+      maxSendableMsat: 100_000_000,
+      commentAllowed: 10,
+      description: 'Pay bob',
+      domain: 'example.com',
+    };
+    if (pathName === '/lnurl/pay-request') {
+      json(res, 200, payRequest);
+      return;
+    }
+    const amountMsat = parsed.amountMsat;
+    if (
+      !Number.isInteger(amountMsat) ||
+      amountMsat < payRequest.minSendableMsat ||
+      amountMsat > payRequest.maxSendableMsat
+    ) {
+      json(res, 400, { error: 'Amount out of range' });
+      return;
+    }
+    if (typeof parsed.comment === 'string' && parsed.comment.length > payRequest.commentAllowed) {
+      json(res, 400, { error: 'Comment too long' });
+      return;
+    }
+    // BOLT11 pico (p) is 0.1 msat, so this invoice encodes exactly amountMsat.
+    json(res, 200, { pr: `lnbc${amountMsat * 10}p1mockrelay` });
     return;
   }
 
@@ -1508,6 +1683,10 @@ const server = http.createServer(async (req, res) => {
       json(res, 200, { messages: E2E_MEMBER_POSTS });
       return;
     }
+    if (id === E2E_EMPTY_ABOUT_MEMBER_ID) {
+      json(res, 200, { messages: E2E_EMPTY_ABOUT_POSTS });
+      return;
+    }
     if (id === account.id) {
       json(res, 200, { messages: [] });
       return;
@@ -1556,6 +1735,10 @@ const server = http.createServer(async (req, res) => {
     const id = decodeURIComponent(membersMatch[1]);
     if (id === E2E_MEMBER_ID) {
       json(res, 200, E2E_MEMBER_PROFILE);
+      return;
+    }
+    if (id === E2E_EMPTY_ABOUT_MEMBER_ID) {
+      json(res, 200, E2E_EMPTY_ABOUT_PROFILE);
       return;
     }
     if (id === account.id) {
@@ -1943,7 +2126,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (method === 'POST' && pathName === '/me/lightning-address') {
+  if (method === 'POST' && pathName === '/me/heart-notifications') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
     if (!account) {
@@ -1954,35 +2137,14 @@ const server = http.createServer(async (req, res) => {
     try {
       parsed = JSON.parse(rawBody);
     } catch {
-      json(res, 400, { error: 'Expected a JSON body with an "address" string' });
+      json(res, 400, { error: 'Expected a JSON body with an enabled boolean' });
       return;
     }
-    if (typeof parsed?.address !== 'string') {
-      json(res, 400, { error: 'Expected a JSON body with an "address" string' });
+    if (typeof parsed?.enabled !== 'boolean') {
+      json(res, 400, { error: 'Expected a JSON body with an enabled boolean' });
       return;
     }
-    const trimmed = parsed.address.trim();
-    if (!/^[^@]+@[^@]+$/.test(trimmed) || trimmed.length > 255) {
-      json(res, 400, { error: 'Not a valid Lightning Address (expected name@domain)' });
-      return;
-    }
-    account.lightningAddress = trimmed;
-    account.lightningAddressVerified = false;
-    afterFieldWrite(account);
-    json(res, 200, account);
-    return;
-  }
-
-  if (method === 'DELETE' && pathName === '/me/lightning-address') {
-    const token = bearer(req);
-    const account = token === null ? undefined : byToken.get(token);
-    if (!account) {
-      json(res, 401, { error: 'Unauthorized' });
-      return;
-    }
-    account.lightningAddress = null;
-    account.lightningAddressVerified = false;
-    afterFieldWrite(account);
+    account.notifyHearts = parsed.enabled;
     json(res, 200, account);
     return;
   }
@@ -2074,6 +2236,13 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/fx/spot') {
+    // No quote by default, the api's answer before its first price; specs that
+    // need a rate answer this route themselves (e2e/fx-spot.ts).
+    json(res, 200, { asOf: null, source: null, rates: {} });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/shops/activity') {
     const endMs = Date.parse(`${new Date(Date.now()).toISOString().slice(0, 10)}T00:00:00.000Z`);
     const days = Array.from({ length: 30 }, (_, i) => ({
@@ -2081,6 +2250,20 @@ const server = http.createServer(async (req, res) => {
       shopCount: 0,
     }));
     json(res, 200, { days });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/e2e/wallet-verified') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    account.sparkPubkey = `02${'ab'.repeat(32)}`;
+    account.sparkWalletVerified = true;
+    afterFieldWrite(account);
+    json(res, 200, account);
     return;
   }
 
@@ -2106,7 +2289,6 @@ const server = http.createServer(async (req, res) => {
       username = `ada${hex(randomBytes(8))}`;
     } while (usernameTaken(username, ''));
     account.username = username;
-    account.lightningAddress = 'ada@walletofsatoshi.com';
     account.rulesAgreedAt = Date.now();
     account.forumLawsDismissed = true;
     afterFieldWrite(account);
@@ -2337,6 +2519,114 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'PUT' && pathName === '/me/wallet') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (account.sparkWalletVerified === true) {
+      json(res, 409, { error: 'Wallet already verified' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      parsed = null;
+    }
+    if (
+      typeof parsed?.sparkPubkey !== 'string' ||
+      !/^0[23][0-9a-f]{64}$/.test(parsed.sparkPubkey)
+    ) {
+      json(res, 400, { error: 'Expected a JSON body with a "sparkPubkey" string' });
+      return;
+    }
+    account.sparkPubkey = parsed.sparkPubkey;
+    account.sparkWalletVerified = false;
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/wallet/report') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid JSON' });
+      return;
+    }
+    if (
+      typeof body?.balanceSats !== 'number' ||
+      body.balanceSats < 0 ||
+      typeof body.syncedAt !== 'string' ||
+      !Array.isArray(body.payments) ||
+      body.payments.length > 200
+    ) {
+      json(res, 400, { error: 'Invalid report' });
+      return;
+    }
+    const rows = walletReports.get(account.id) ?? [];
+    rows.push(body);
+    walletReports.set(account.id, rows);
+    json(res, 200, {
+      acknowledgedIds: body.payments
+        .map((payment) => payment?.id)
+        .filter((id) => typeof id === 'string'),
+    });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/events') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid JSON' });
+      return;
+    }
+    if (!Array.isArray(body?.events) || body.events.length > 50) {
+      json(res, 400, { error: 'Invalid events' });
+      return;
+    }
+    const rows = interactionEvents.get(account.id) ?? [];
+    rows.push(...body.events);
+    interactionEvents.set(account.id, rows);
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (method === 'GET' && (pathName === '/e2e/events' || pathName === '/e2e/wallet-reports')) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(
+      res,
+      200,
+      pathName === '/e2e/events'
+        ? { events: interactionEvents.get(account.id) ?? [] }
+        : { reports: walletReports.get(account.id) ?? [] },
+    );
+    return;
+  }
+
   if (method === 'POST' && pathName === '/me/wallet-backup-seen') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
@@ -2521,23 +2811,6 @@ const server = http.createServer(async (req, res) => {
     account.walletRequired = true;
     account.passkeyRenewClosed = false;
     json(res, 200, account);
-    return;
-  }
-
-  if (method === 'GET' && pathName === '/lightning-address') {
-    const raw = url.searchParams.get('address') ?? '';
-    if (!/^[^@]+@[^@]+$/.test(raw)) {
-      json(res, 400, { error: 'Not a valid Lightning Address (expected name@domain)' });
-      return;
-    }
-    const address = raw.toLowerCase();
-    const highMin = address.startsWith('highmin@');
-    json(res, 200, {
-      address,
-      callback: 'https://ln.example.com/pay',
-      minSendable: highMin ? 100_000 : 1000,
-      maxSendable: 1_000_000_000,
-    });
     return;
   }
 

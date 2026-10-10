@@ -36,14 +36,22 @@ export default function LegalPage(): ReactElement {
           .
         </p>
         <p>Legal form: non-profit project (entity in formation).</p>
+        <p>
+          Using 21.gifts is governed by the{' '}
+          <Link className="text-accent underline underline-offset-2" href="/terms">
+            Terms of Use
+          </Link>
+          .
+        </p>
       </section>
 
       <section className="mt-16 space-y-4">
         <h2 className="text-3xl font-semibold">Privacy Policy</h2>
         <h3 className="text-xl font-semibold">Overview</h3>
         <p>
-          21.gifts (&quot;we&quot;, &quot;us&quot;) operates the website at 21.gifts. We do not run
-          advertising, sell data, or track visitors. This page explains what data is involved.
+          21.gifts (&quot;we&quot;, &quot;us&quot;) operates the website at 21.gifts. The website
+          does not run advertising and does not load analytics scripts. This page explains what data
+          is involved.
         </p>
         <h3 className="text-lg font-semibold">Data on this website</h3>
         <p className="text-paper/70">
@@ -72,9 +80,22 @@ export default function LegalPage(): ReactElement {
         </p>
         <h3 className="text-lg font-semibold">Data in the app</h3>
         <p className="text-paper/70">
-          The application on this same origin lets you log in and uses Wallet of Satoshi to receive
-          Bitcoin. It does not hold funds. Bitcoin payments go directly from the donor&apos;s Wallet
-          of Satoshi to the receiver&apos;s Wallet of Satoshi address.
+          The application on this same origin lets you log in and gives you your own Bitcoin wallet
+          in the app, which only you can open. It does not hold funds. Bitcoin payments go directly
+          from the giver&apos;s wallet to the receiver&apos;s wallet. The application stores, with
+          your account, the wallet details that let payments to your 21.gifts address reach that
+          wallet. Your 12 recovery words open your Bitcoin in any compatible wallet, also if
+          21.gifts stops running; your 21.gifts address works only while 21.gifts runs.
+        </p>
+        <h3 className="text-lg font-semibold">Wallet and payment data</h3>
+        <p className="text-paper/70">
+          21.gifts sees the balance and the complete transaction history of the wallet in the app.
+          How 21.gifts uses this data, who in the team may see it, and which statements derived from
+          it 21.gifts may publish is set out in the section{' '}
+          <Link className="text-accent underline underline-offset-2" href="/terms#wallet-and-data">
+            Wallet and data
+          </Link>{' '}
+          of the Terms of Use.
         </p>
         <h3 className="text-lg font-semibold">Contact</h3>
         <p className="text-paper/70">
