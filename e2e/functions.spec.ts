@@ -4,6 +4,7 @@ import jsQR from 'jsqr';
 import { PNG } from 'pngjs';
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import { openCryptoPayQrValue } from '../src/lib/gifts-address';
+import { fulfillSpot, SPOT_RATES, spotRatesFromStats } from './fx-spot';
 import {
   buildShopStickerPdf,
   buildShopStickerSvg,
@@ -42,7 +43,7 @@ test.beforeEach(async ({ page }) => {
         username: 'alice',
         location: null,
         role: 'basis',
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: null,
         profileMessage: null,
@@ -64,6 +65,7 @@ test('Function: readJpegTakenAt — a jpeg with Exif sends its capture time', as
     }
     return /\/messages\/?$/.test(new URL(req.url()).pathname);
   });
+  await openHomeWriter(page);
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/taken-at.jpg');
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Post', exact: true }).click();
@@ -281,7 +283,7 @@ const walletAssignByPage = new WeakMap<Page, string>();
 
 async function stubWalletLocationAssign(page: Page): Promise<void> {
   const record = (href: string): void => {
-    if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
+    if (href.startsWith('lightning:')) {
       walletAssignByPage.set(page, href);
     }
   };
@@ -295,7 +297,7 @@ async function stubWalletLocationAssign(page: Page): Promise<void> {
     const recordHref = (window as unknown as { __recordWalletAssign?: (href: string) => void })
       .__recordWalletAssign;
     const capture = (href: string): boolean => {
-      if (href.startsWith('walletofsatoshi:') || href.startsWith('intent:')) {
+      if (href.startsWith('lightning:')) {
         (window as unknown as { __recordedWalletHref?: string }).__recordedWalletHref = href;
         recordHref?.(href);
         return true;
@@ -368,20 +370,63 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await stubWalletLocationAssign(page);
   await stubPayableNote(page);
   await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
+  await markWalletVerified(page);
   await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
   const replyCard = page.locator('[data-reply-id="r-pay"]');
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
   await replyCard.getByLabel('Amount').fill('21');
   await submitPayAmount(page);
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(page.getByText('Pay ₿21')).toBeVisible();
 }
 
-async function stubGiftStats(page: Page, body: unknown): Promise<void> {
+/** The 21.gifts wallet sentence a Playwright build (no wallet key) shows in a pay sheet. */
+const WALLET_UNAVAILABLE = 'Your 21.gifts wallet is not available here, so this cannot be paid.';
+
+/** Public pay link for `ada` whose invoice POST answers {@link PAY_INVOICE}. */
+async function stubPayLinkInvoice(page: Page): Promise<void> {
+  await page.route(
+    (url) => new URL(url).pathname.startsWith('/pay/'),
+    async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ pr: PAY_INVOICE, amountSats: 21 }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada Lovelace',
+          username: 'ada',
+          minSats: 1,
+          maxSats: 100000,
+        }),
+      });
+    },
+  );
+}
+
+/** Opens the public pay link and asks for a 21 sat invoice. */
+async function openPayLinkInvoice(page: Page): Promise<void> {
+  await stubWalletLocationAssign(page);
+  await stubPayLinkInvoice(page);
+  await page.goto(`/pl?lightning=${encodeURIComponent(PAY_LINK_LNURL)}`);
+  await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
+}
+
+const PAY_LINK_LNURL =
+  'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+
+async function stubGiftStats(page: Page, body: object): Promise<void> {
   await page.route(/\/gifts\/stats(?:\?|$)/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -389,6 +434,7 @@ async function stubGiftStats(page: Page, body: unknown): Promise<void> {
       body: JSON.stringify(body),
     });
   });
+  await fulfillSpot(page, spotRatesFromStats(body as Parameters<typeof spotRatesFromStats>[0]));
 }
 
 const EMPTY_ACTIVITY = {
@@ -434,7 +480,7 @@ async function seedAdaSession(
         role,
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -458,7 +504,7 @@ async function seedAdaSession(
         role,
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -511,7 +557,7 @@ async function confirmNewAccount(page: Page): Promise<string> {
   );
   await page.getByRole('textbox', { name: 'Name' }).fill(handle);
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   return handle;
 }
 
@@ -520,7 +566,7 @@ async function signInViaStub(page: Page, _request: APIRequestContext): Promise<s
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   const handle = await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   return handle;
 }
@@ -529,7 +575,7 @@ async function saveOnboardingUsername(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/setup\/username/);
   await page.getByRole('textbox').fill(`ada${Date.now().toString(36)}`);
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
 }
 
 async function installFakeWebAuthn(page: Page): Promise<void> {
@@ -610,13 +656,13 @@ async function signInWithPasskeyThenAgain(page: Page): Promise<void> {
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   await openSignedInMenu(page);
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
   await page.getByRole('button', { name: 'Log in' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 }
 
@@ -761,7 +807,7 @@ test('Function: fetchExternalAuthorProfile — the page shows the address from t
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -836,7 +882,7 @@ test('Function: ExternalAuthorProfile — card shows the address, npub, and icon
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -1304,7 +1350,7 @@ test('Function: markNotificationsReadForMessage — opening a signed-in message 
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -1396,7 +1442,7 @@ test('Function: pushTagForNotification — clicking a forum reply closes only th
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -1506,7 +1552,7 @@ test('Function: currentPushEndpoint — clicking a row POSTs read with the push 
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -1613,7 +1659,7 @@ test('Function: closeLocalPushNotifications — clicking a row closes only the m
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -1732,7 +1778,7 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -1792,7 +1838,7 @@ test('Function: prepareForumPhoto — attach control is visible on welcome', asy
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -1812,6 +1858,7 @@ test('Function: prepareForumPhoto — attach control is visible on welcome', asy
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
 });
 
@@ -1829,7 +1876,7 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -1849,6 +1896,7 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   const input = page.locator('input[type="file"]');
   await expect(input).toHaveAttribute('accept', /image\/jpeg/);
   await expect(input).toHaveAttribute('accept', /image\/png/);
@@ -1857,13 +1905,11 @@ test('Function: isForumPhotoFile — attach control accepts jpeg png webp', asyn
 
 test('Function: fetchMessages — welcome shows the empty forum', async ({ page, request }) => {
   const handle = await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page.getByRole('heading', { name: `Welcome, ${handle}` })).toBeVisible();
   await expect(page.getByText('Loading…')).toHaveCount(0);
   await expect(page.getByText('Could not load messages. Please try again.')).toHaveCount(0);
-  await expect(page.getByLabel('Your message')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
 });
 
 test('Function: postMessage — posting from the composer shows the row', async ({
@@ -1872,6 +1918,7 @@ test('Function: postMessage — posting from the composer shows the row', async 
 }) => {
   await reachWelcomeVerified(page, request);
   const body = `Hello from Ada ${Date.now()}`;
+  await openHomeWriter(page);
   await page.getByLabel('Your message').fill(body);
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   await expect(page.getByText(body)).toBeVisible();
@@ -1882,8 +1929,6 @@ test('Function: postContact — sending from contact shows the official thread',
   request,
 }) => {
   await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await page.goto('/contact');
   const body = `Contact note ${Date.now()}`;
@@ -1893,13 +1938,33 @@ test('Function: postContact — sending from contact shows the official thread',
   await expect(page.getByText(body)).toBeVisible();
 });
 
+/**
+ * Marks the signed-in stub account's own in-app wallet as verified, so the
+ * api no longer answers that the member cannot receive, then reloads.
+ */
+async function markWalletVerified(page: Page): Promise<void> {
+  const token = await page.evaluate(() => window.localStorage.getItem('21gifts.session'));
+  expect(token).toBeTruthy();
+  const res = await page.request.post('http://127.0.0.1:3001/e2e/wallet-verified', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(res.status()).toBe(200);
+  await page.reload();
+}
+
+/** Opens the forum home writer from the floating + (the composer is not on the page). */
+async function openHomeWriter(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Write a post' }).click();
+  await expect(page.locator('[data-writing-composer]')).toBeVisible();
+}
+
 async function reachWelcome(page: Page, request: APIRequestContext): Promise<string> {
   const handle = await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
-  await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+  await markWalletVerified(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
   return handle;
 }
 
@@ -1916,7 +1981,7 @@ async function reachWelcomeVerified(page: Page, request: APIRequestContext): Pro
   });
   await page.reload();
   await expect(page).toHaveURL(/\/welcome/);
-  await expect(page.getByRole('button', { name: 'Add a photo or video' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
   return handle;
 }
 
@@ -1972,6 +2037,7 @@ test('Function: prepareForumPhoto — attaching a jpeg shows a preview then post
   request,
 }) => {
   const handle = await reachWelcomeVerified(page, request);
+  await openHomeWriter(page);
   await attachTinyJpeg(page);
   await postAndExpectPhotoRow(page, handle);
 });
@@ -1981,6 +2047,7 @@ test('Function: isForumPhotoFile — photo-only post does not require text', asy
   request,
 }) => {
   const handle = await reachWelcomeVerified(page, request);
+  await openHomeWriter(page);
   await attachTinyJpeg(page);
   await expect(page.getByLabel('Your message')).toHaveValue('');
   await postAndExpectPhotoRow(page, handle);
@@ -1989,6 +2056,7 @@ test('Function: isForumPhotoFile — photo-only post does not require text', asy
 test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page, request }) => {
   const handle = await reachWelcomeVerified(page, request);
   const caption = `Caption ${Date.now()}`;
+  await openHomeWriter(page);
   await page.getByLabel('Your message').fill(caption);
   await attachTinyJpeg(page);
   await postAndExpectPhotoRow(page, handle, caption);
@@ -2033,12 +2101,14 @@ test('Function: ForumPhotoGallery — two stills peek the next photo', async ({ 
 
 test('Function: ForumBoard — empty post without a photo is rejected', async ({ page, request }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   await expect(page.getByText('Enter a message or add a photo or video')).toBeVisible();
 });
 
 test('Function: ForumLoader — remove photo clears the preview', async ({ page, request }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
   await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   await page.getByRole('button', { name: 'Remove photo' }).click();
@@ -2201,7 +2271,7 @@ test('Function: fetchViewAboutMePhoto — public view shows the About me photo',
 test('Function: fetchMe — reload hydrates the signed-in view', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.reload();
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -2235,7 +2305,6 @@ test('Function: NameForm — Skip is absent on the rules setup screen', async ({
   await signInUnnamed(page, request);
   await page.getByRole('button', { name: 'Skip' }).click();
   await saveOnboardingUsername(page);
-  await page.getByRole('button', { name: 'Skip' }).click();
   await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
@@ -2247,10 +2316,6 @@ test('Function: proxyMembersGet — GET /forum/members/:id returns a canned prof
   await request.post('/me/name', {
     headers: { authorization: `Bearer ${token}` },
     data: { name: 'Ada' },
-  });
-  await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'alice@walletofsatoshi.com' },
   });
   await request.post('/me/rules-agreement', { headers: { authorization: `Bearer ${token}` } });
   const res = await request.get('/forum/members/22222222-2222-4222-8222-222222222222', {
@@ -2296,6 +2361,64 @@ test('Function: fetchMemberPosts — member posts open from the count', async ({
   await page.goto('/members/22222222-2222-4222-8222-222222222222');
   await page.getByRole('button', { name: '2 posts' }).click();
   await expect(page.getByText('Second post from Carol.')).toBeVisible();
+});
+
+test('Function: fetchMember — an empty About me note leaves the profile and its other posts', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/members/77777777-7777-4777-8777-777777777777');
+  await expect(page.getByText('dana@21.gifts')).toBeVisible();
+  await expect(page.getByText('Could not load this profile. Please try again.')).toHaveCount(0);
+  await expect(page.getByText('About me')).toHaveCount(0);
+  await page.getByRole('button', { name: '2 posts' }).click();
+  await expect(page.getByText('A post from Dana.')).toBeVisible();
+  await expect(page.getByText('Could not load messages. Please try again.')).toHaveCount(0);
+});
+
+test('Function: fetchMessages — one empty note on the All page leaves the other notes', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  const served: string[][] = [];
+  await page.route(/\/forum\/messages\?/, async (route) => {
+    const requested = new URL(route.request().url());
+    const url = new URL(
+      '/forum/members/77777777-7777-4777-8777-777777777777/posts',
+      route.request().url(),
+    );
+    const fetched = await route
+      .fetch({ url: url.toString() })
+      .then(async (response) => ({
+        response,
+        body: (await response.json()) as { messages: { text: string }[] },
+      }))
+      .catch(() => null);
+    if (fetched === null) {
+      // The reload below cancels a feed request the old page still had in
+      // flight; its response is disposed and nothing is left to answer.
+      return;
+    }
+    const { response, body } = fetched;
+    // Page 1 holds only the empty About me note; its cursor leads to the fixture page.
+    const json =
+      requested.searchParams.get('cursor') === 'after-empty'
+        ? { messages: body.messages }
+        : { messages: body.messages.filter((row) => row.text === ''), nextCursor: 'after-empty' };
+    served.push(json.messages.map((row) => row.text));
+    await route.fulfill({ response, json });
+  });
+  await page.reload();
+  const view = page.getByRole('combobox', { name: 'Forum view' });
+  await view.click();
+  await page.getByRole('option', { name: 'All', exact: true }).click();
+  await expect(view).toContainText('All');
+  await expect(page.getByText('A post from Dana.')).toBeVisible();
+  await expect(page.getByText('Could not load messages. Please try again.')).toHaveCount(0);
+  expect(served).toContainEqual(['']);
+  expect(served).toContainEqual(['A post from Dana.', '']);
 });
 
 test('Function: fetchMemberReplies — member replies open from the count', async ({
@@ -2358,8 +2481,6 @@ test('Function: RequirementsOverlay — contact post without a name opens the ov
   await signInUnnamed(page, request);
   await page.getByRole('button', { name: 'Skip' }).click();
   await saveOnboardingUsername(page);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.goto('/contact');
@@ -2369,19 +2490,24 @@ test('Function: RequirementsOverlay — contact post without a name opens the ov
   await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
 
-test('Function: RequirementsOverlay — forum post without a lightning-address opens the overlay', async ({
+test('Function: RequirementsOverlay — forum post without a set-up wallet explains the wallet', async ({
   page,
   request,
 }) => {
   await signInViaStub(page, request);
-  await page.getByRole('button', { name: 'Skip' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
+  await openHomeWriter(page);
   await page.getByLabel('Your message').fill('Hello');
   await page.getByRole('button', { name: 'Post', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Your wallet is not set up' });
+  await expect(dialog).toBeVisible();
   await expect(
-    page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
+    dialog.getByText(
+      'Gifts and posts need your own 21.gifts wallet, and it is not set up yet. Open your wallet to set it up.',
+    ),
   ).toBeVisible();
+  await expect(dialog.getByRole('textbox')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
 
@@ -2401,7 +2527,7 @@ test('Function: IntroduceYourselfOverlay — signed-in member without a post see
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -2432,7 +2558,7 @@ test('Function: IntroduceYourselfOverlay — signed-in member without a post see
   await expect(page.getByLabel('Your message')).toBeFocused();
 });
 
-test('Function: requestForumCompose — Write an introduction focuses the welcome composer', async ({
+test('Function: requestForumCompose — Write an introduction opens the writer with its field focused', async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -2448,7 +2574,7 @@ test('Function: requestForumCompose — Write an introduction focuses the welcom
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -2477,9 +2603,8 @@ test('Function: requestForumCompose — Write an introduction focuses the welcom
   await expect(page.getByLabel('Your message')).toBeFocused();
 });
 
-test('Function: consumeSkipIntroduceOverlay — CTA from profile lands on welcome without the dialog', async ({
-  page,
-}) => {
+/** A finished member who has not posted yet; the forum list and the till are empty. */
+async function stubMemberWithoutPost(page: Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -2492,8 +2617,9 @@ test('Function: consumeSkipIntroduceOverlay — CTA from profile lands on welcom
         linkingKey: null,
         role: 'basis',
         name: 'Ada',
+        username: 'ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -2507,7 +2633,7 @@ test('Function: consumeSkipIntroduceOverlay — CTA from profile lands on welcom
     });
   });
   await page.route(/\/messages(?:\?|$)/, async (route) => {
-    if (route.request().method() !== 'GET') {
+    if (route.request().method() !== 'GET' || route.request().resourceType() === 'document') {
       await route.continue();
       return;
     }
@@ -2517,57 +2643,65 @@ test('Function: consumeSkipIntroduceOverlay — CTA from profile lands on welcom
       body: JSON.stringify({ messages: [] }),
     });
   });
-  await page.goto('/profile');
-  await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toBeVisible();
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+}
+
+test('Function: consumeSkipIntroduceOverlay — after Write an introduction the next screen uses the skip, and the forum asks again', async ({
+  page,
+}) => {
+  await stubMemberWithoutPost(page);
+  await page.goto('/welcome');
+  const intro = page.getByRole('dialog', { name: 'Introduce yourself' });
+  await expect(intro).toBeVisible();
   await page.getByRole('button', { name: 'Write an introduction' }).click();
+  await expect(intro).toHaveCount(0);
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.getByRole('link', { name: 'Balance', exact: true }).click();
+  await expect(page).toHaveURL(/\/wallet$/);
+  await expect(intro).toHaveCount(0);
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
   await expect(page).toHaveURL(/\/welcome$/);
-  await expect(page.getByRole('dialog', { name: 'Introduce yourself' })).toHaveCount(0);
+  await expect(intro).toBeVisible();
 });
 
-test('Function: consumePendingForumCompose — CTA from profile focuses the welcome composer after navigation', async ({
+test('Function: consumePendingForumCompose — Write an introduction on the forum focuses the composer', async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: 1_700_000_001,
-        viewKey: 'a'.repeat(64),
-        aboutMe: null,
-        setup: null,
-        missing: [],
-        hasPosted: false,
-      }),
-    });
-  });
-  await page.route(/\/messages(?:\?|$)/, async (route) => {
-    if (route.request().method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ messages: [] }),
-    });
-  });
-  await page.goto('/profile');
+  await stubMemberWithoutPost(page);
+  await page.goto('/welcome');
   await page.getByRole('button', { name: 'Write an introduction' }).click();
   await expect(page).toHaveURL(/\/welcome$/);
   await expect(page.getByLabel('Your message')).toBeFocused();
+});
+
+test('introduce dialog never covers the wallet, its Send and Receive, or the profile after onboarding', async ({
+  page,
+}) => {
+  await stubMemberWithoutPost(page);
+  const intro = page.getByRole('dialog', { name: 'Introduce yourself' });
+  await page.goto('/wallet');
+  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Receive' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Receive' }).click();
+  await expect(page.getByText('ada@21.gifts')).toBeVisible();
+  await expect(intro).toHaveCount(0);
+  await page.goto('/wallet/phrase');
+  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+  await expect(intro).toHaveCount(0);
+  await page.goto('/profile');
+  await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+  await expect(intro).toHaveCount(0);
+  await page.goto('/messages');
+  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+  await expect(intro).toHaveCount(0);
+  await page.goto('/welcome');
+  await expect(intro).toBeVisible();
 });
 
 test('Function: MemberProfileScreen — public card shows About me, copy-profile-link, and Message', async ({
@@ -2609,7 +2743,7 @@ test('Function: MemberProfileScreen — public card shows About me, copy-profile
         name: 'Carol',
         location: null,
         role: 'verified',
-        lightningAddress: 'carol@walletofsatoshi.com',
+        lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: 'Hello from Carol.',
         profileMessage: {
@@ -2646,7 +2780,7 @@ test('Function: MemberProfileScreen — public card shows About me, copy-profile
   await expect(page.getByLabel('Your reaction')).toHaveCount(0);
 });
 
-test('Function: MemberProfileScreen — reply without a lightning-address opens the overlay from the posts feed', async ({
+test('Function: MemberProfileScreen — reply without a set-up wallet opens the wallet overlay from the posts feed', async ({
   page,
 }) => {
   const memberId = '22222222-2222-4222-8222-222222222222';
@@ -2685,7 +2819,7 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
         name: 'Carol',
         location: null,
         role: 'verified',
-        lightningAddress: 'carol@walletofsatoshi.com',
+        lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: 'Hello from Carol.',
         profileMessage: {
@@ -2749,13 +2883,11 @@ test('Function: MemberProfileScreen — reply without a lightning-address opens 
   await expect(page.getByLabel('Your reaction')).toBeVisible();
   await page.getByLabel('Your reaction').fill('Hello');
   await page.getByRole('button', { name: 'Post', exact: true }).click();
-  await expect(
-    page.getByRole('dialog', { name: 'Add your Wallet of Satoshi address' }),
-  ).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Your wallet is not set up' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
 });
 
-test('Function: nextPostRequirement — rules before name before lightning-address for forum overlay order', async ({
+test('Function: nextPostRequirement — rules come right after the username, with no address step', async ({
   page,
   request,
 }) => {
@@ -2763,21 +2895,19 @@ test('Function: nextPostRequirement — rules before name before lightning-addre
   await expect(page).toHaveURL(/\/setup\/name/);
   await page.getByRole('button', { name: 'Skip' }).click();
   await saveOnboardingUsername(page);
-  await page.getByRole('button', { name: 'Skip' }).click();
   await expect(page).toHaveURL(/\/setup\/rules/);
   const chapter = `1 of ${RULES_CHAPTER_IDS.length}`;
   await expect(page.getByText(chapter, { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
-test('Function: nextContactRequirement — contact still opens name overlay without requiring lightning-address', async ({
+test('Function: nextContactRequirement — contact still opens the name overlay without requiring a wallet', async ({
   page,
   request,
 }) => {
   await signInUnnamed(page, request);
   await page.getByRole('button', { name: 'Skip' }).click();
   await saveOnboardingUsername(page);
-  await page.getByRole('button', { name: 'Skip' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await page.goto('/contact');
@@ -2882,6 +3012,12 @@ test('Function: proxyMeNotificationLevelPost — POST /me/notification-level wit
   expect((await request.post('/me/notification-level')).status()).toBe(401);
 });
 
+test('Function: proxyMeHeartNotificationsPost — POST /me/heart-notifications without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/me/heart-notifications')).status()).toBe(401);
+});
+
 test('Function: proxyMeAmountUnitPost — POST /me/amount-unit without bearer is 401', async ({
   request,
 }) => {
@@ -2940,7 +3076,7 @@ test('Function: AccountPreferenceSync — an empty account stores the screen lan
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3015,8 +3151,6 @@ test('Function: proxyMeRulesAgreementPost — POST /me/rules-agreement sets agre
 
 test('Function: dismissForumLaws — welcome laws hint dismisses', async ({ page, request }) => {
   await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await expect(
@@ -3037,8 +3171,6 @@ test('Function: agreeToRules — signed-in rules screen records agreement', asyn
   request,
 }) => {
   const handle = await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page.getByRole('heading', { name: `Welcome, ${handle}` })).toBeVisible();
 });
@@ -3057,7 +3189,7 @@ test('Function: RulesSetup — agree button is visible on the rules screen', asy
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3087,7 +3219,7 @@ test('Function: RulesDocument — onboarding first chapter is the lead', async (
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3122,7 +3254,7 @@ test('Function: RulesSetupPage — rules setup heading is visible', async ({ pag
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3138,9 +3270,7 @@ test('Function: RulesSetupPage — rules setup heading is visible', async ({ pag
   await expect(page.getByRole('heading', { name: 'Living room rules' })).toBeVisible();
 });
 
-test('Function: hasAgreedToRules — name and address without agreement stay on rules', async ({
-  page,
-}) => {
+test('Function: hasAgreedToRules — a name without agreement stays on rules', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -3154,7 +3284,7 @@ test('Function: hasAgreedToRules — name and address without agreement stay on 
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3171,114 +3301,27 @@ test('Function: hasAgreedToRules — name and address without agreement stay on 
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
+/** After the name step the next screen is rules (no address step) and `/me` has the name. */
+async function expectSavedName(page: Page, name: string): Promise<void> {
+  await expect(page).toHaveURL(/\/setup\/rules/);
+  const token = await page.evaluate(() => window.localStorage.getItem('21gifts.session'));
+  const me = await page.request.get('/me', { headers: { authorization: `Bearer ${token}` } });
+  expect(((await me.json()) as { name: string | null }).name).toBe(name);
+}
+
 test('Function: NameForm — signed-in form saves a display name', async ({ page, request }) => {
   await signInUnnamed(page, request);
   await expect(page.getByText(/Add your name so people know who you are/i)).toBeVisible();
   await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('Ada')).toBeVisible();
+  await expectSavedName(page, 'Ada');
 });
 
 test('Function: setName — signed-in form saves a display name', async ({ page, request }) => {
   await signInUnnamed(page, request);
   await page.getByRole('textbox', { name: 'Name' }).fill('Ada');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('Ada')).toBeVisible();
-});
-
-test('Function: POST — POST /me/lightning-address links an address', async ({ request }) => {
-  const token = await loginHttp(request);
-  const res = await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'alice@walletofsatoshi.com' },
-  });
-  expect(res.status()).toBe(200);
-  expect(((await res.json()) as { lightningAddress: string }).lightningAddress).toBe(
-    'alice@walletofsatoshi.com',
-  );
-});
-
-test('Function: proxyMeLightningAddressPost — POST links an address', async ({ request }) => {
-  const token = await loginHttp(request);
-  const res = await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'alice@walletofsatoshi.com' },
-  });
-  expect(res.status()).toBe(200);
-  const bad = await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'not-an-address' },
-  });
-  expect(bad.status()).toBe(400);
-});
-
-test('Function: setLightningAddress — signed-in form links a Wallet of Satoshi address', async ({
-  page,
-  request,
-}) => {
-  const handle = await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await agreeToLivingRoomRules(page);
-  await expect(page.getByRole('heading', { name: `Welcome, ${handle}` })).toBeVisible();
-});
-
-test('Function: DELETE — DELETE /me/lightning-address clears the address', async ({ request }) => {
-  const token = await loginHttp(request);
-  await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'alice@walletofsatoshi.com' },
-  });
-  const res = await request.delete('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-  });
-  expect(res.status()).toBe(200);
-  expect(((await res.json()) as { lightningAddress: string | null }).lightningAddress).toBeNull();
-});
-
-test('Function: proxyMeLightningAddressDelete — DELETE clears the address', async ({ request }) => {
-  const token = await loginHttp(request);
-  await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'alice@walletofsatoshi.com' },
-  });
-  const res = await request.delete('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-  });
-  expect(res.status()).toBe(200);
-  expect(((await res.json()) as { lightningAddress: string | null }).lightningAddress).toBeNull();
-});
-
-test('Function: unlinkLightningAddress — DELETE /me/lightning-address clears the address', async ({
-  request,
-}) => {
-  const token = await loginHttp(request);
-  await request.post('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-    data: { address: 'alice@walletofsatoshi.com' },
-  });
-  const res = await request.delete('/me/lightning-address', {
-    headers: { authorization: `Bearer ${token}` },
-  });
-  expect(res.status()).toBe(200);
-  expect(((await res.json()) as { lightningAddress: string | null }).lightningAddress).toBeNull();
-});
-
-test('Function: proxyLightningAddressGet — GET resolves a Wallet of Satoshi address', async ({
-  request,
-}) => {
-  const res = await request.get('/lightning-address?address=alice@walletofsatoshi.com');
-  expect(res.status()).toBe(200);
-  const body = (await res.json()) as { callback: string; address: string };
-  expect(body.address).toBe('alice@walletofsatoshi.com');
-  expect(body.callback).toBe('https://ln.example.com/pay');
-});
-
-test('Function: resolveLightningAddress — GET /lightning-address still resolves', async ({
-  request,
-}) => {
-  const res = await request.get('/lightning-address?address=alice@walletofsatoshi.com');
-  expect(res.status()).toBe(200);
+  await expectSavedName(page, 'Ada');
 });
 
 test('Function: RootLayout — landing renders', async ({ page }) => {
@@ -3290,9 +3333,9 @@ test('Function: Home — landing renders the pitch', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Donate to this project' })).toBeVisible();
-  await expect(page.getByRole('link', { name: '21gifts@walletofsatoshi.com' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: '21gifts@21.gifts' })).toHaveAttribute(
     'href',
-    'lightning:21gifts@walletofsatoshi.com',
+    'lightning:21gifts@21.gifts',
   );
 });
 
@@ -3435,12 +3478,14 @@ test('Function: topicPath — welcome chapter heading is visible', async ({ page
   await expect(page.getByRole('heading', { level: 2, name: '/welcome' })).toBeVisible();
 });
 
-test('Function: topicVariant — pay-qr contents link is visible', async ({ page }) => {
+test('Function: topicVariant — wallet-pay-unavailable contents link is visible', async ({
+  page,
+}) => {
   await page.goto('/handbook/screens');
   await expect(
     page
       .getByRole('navigation', { name: 'Contents' })
-      .getByRole('link', { name: 'pay-qr', exact: true }),
+      .getByRole('link', { name: 'wallet-pay-unavailable', exact: true }),
   ).toBeVisible();
 });
 
@@ -3480,11 +3525,15 @@ test('Function: topicAnchor — hash targets the root-default card', async ({ pa
   await expect(page.locator('#root-default')).toBeVisible();
 });
 
-test('Function: parseScreenVariantDescriptions — pay-qr description is visible', async ({
+test('Function: parseScreenVariantDescriptions — wallet-pay-unavailable description is visible', async ({
   page,
 }) => {
   await page.goto('/handbook/screens');
-  await expect(page.getByText(/invoice card shows the Bitcoin payment QR/)).toBeVisible();
+  await expect(
+    page.getByText(
+      /No invoice QR and no button to another wallet app, on desktop and on a smartphone alike/,
+    ),
+  ).toBeVisible();
 });
 
 test('Function: screenVariantDescription — German screen cards follow the locale cookie', async ({
@@ -3537,7 +3586,7 @@ test('Function: NotificationsPage — notifications heading is visible', async (
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3574,7 +3623,7 @@ test('Function: NotificationsLoader — empty notifications copy is visible', as
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3611,7 +3660,7 @@ test('Function: NotificationsScreen — empty notifications copy is visible', as
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3648,7 +3697,7 @@ test('Function: fetchNotifications — empty notifications copy is visible', asy
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3695,7 +3744,7 @@ test('Function: markNotificationRead — clicking a row POSTs read', async ({ pa
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3748,7 +3797,7 @@ test('Function: markAllNotificationsRead — list fetch POSTs read-all', async (
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3797,7 +3846,7 @@ test('Function: MessagesPage — inbox heading is visible', async ({ page }) => 
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3834,7 +3883,7 @@ test('Function: InboxLoader — empty inbox copy is visible', async ({ page }) =
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3871,7 +3920,7 @@ test('Function: InboxScreen — empty inbox copy is visible', async ({ page }) =
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3908,7 +3957,7 @@ test('Function: fetchConversations — empty inbox copy is visible', async ({ pa
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -3945,7 +3994,7 @@ test('Function: fetchConversation — thread body is visible', async ({ page }) 
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -4014,7 +4063,7 @@ test('Function: postConversationInvoice — amount field is visible on a thread'
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -4145,7 +4194,7 @@ test('Function: MessagesChromeLeft — cold open thread is Back to the forum', a
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -4223,7 +4272,7 @@ test('Function: MessagesChromeLeft — list chrome back goes to the forum', asyn
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -4397,6 +4446,32 @@ test('Function: goToPreviousView opens the shops view from notifications', async
   expect(new URL(page.url()).origin).toBe(origin);
 });
 
+test('Function: takeStepBack — after the arrow, the browser back continues to the view before', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await page.goto('/welcome');
+  const origin = new URL(page.url()).origin;
+  await openSignedInMenu(page);
+  await page.locator('#signed-in-menu').getByRole('link', { name: 'Shops', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/shops`);
+  await openSignedInMenu(page);
+  await page
+    .locator('#signed-in-menu')
+    .getByRole('link', { name: 'Notifications', exact: true })
+    .click();
+  await expect(page).toHaveURL(`${origin}/notifications`);
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/shops`);
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
+  await page.goBack();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+});
+
 test('Function: previousViewPath is the shops href on the back link', async ({ page }) => {
   await seedAdaSession(page);
   await routeForumLists(page);
@@ -4408,16 +4483,35 @@ test('Function: previousViewPath is the shops href on the back link', async ({ p
   );
 });
 
-test('Function: resetViewHistory leaves a fresh shops visit on the forum back', async ({
+test('Function: resetViewHistory clears the back history when the Menu opens Home', async ({
   page,
 }) => {
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
-  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+  await page.goto('/notifications');
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveAttribute(
     'href',
-    '/welcome',
+    '/shops',
   );
+  const origin = new URL(page.url()).origin;
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.locator('#signed-in-menu').getByRole('link', { name: 'Home', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem('21gifts.viewHistory')))
+    .toBe(JSON.stringify({ stack: ['/welcome'], cursor: 0 }));
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await page.locator('#signed-in-menu').getByRole('link', { name: 'Shops', exact: true }).click();
+  await expect(page).toHaveURL(`${origin}/shops`);
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveAttribute('href', '/welcome');
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
 });
 
 test('Function: ChromeBackProvider shows no back arrow on welcome', async ({ page }) => {
@@ -4429,18 +4523,18 @@ test('Function: ChromeBackProvider shows no back arrow on welcome', async ({ pag
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
 });
 
-test('Function: previousViewPath is shops when welcome follows shops', async ({ page }) => {
+test('Function: ProfileChromeLeft shows no back arrow on welcome after shops', async ({ page }) => {
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-  const back = page.getByRole('link', { name: 'Back', exact: true });
-  await expect(back).toHaveCount(1);
-  await expect(back).toHaveAttribute('href', '/shops');
-  const origin = new URL(page.url()).origin;
-  await back.click();
-  await expect(page).toHaveURL(`${origin}/shops`);
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem('21gifts.viewHistory')))
+    .toBe(JSON.stringify({ stack: ['/shops', '/welcome'], cursor: 1 }));
+  await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
 });
 
 test('Function: useChromeBack shows one chrome Back on the ask step', async ({ page }) => {
@@ -4448,6 +4542,7 @@ test('Function: useChromeBack shows one chrome Back on the ask step', async ({ p
   await routeForumLists(page);
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await page.getByLabel('Ask').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -4472,7 +4567,7 @@ test('Function: postConversationMessage — composer is visible on a thread', as
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -4541,7 +4636,7 @@ test('Function: openConversation — Message is on another member profile', asyn
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -4562,7 +4657,7 @@ test('Function: openConversation — Message is on another member profile', asyn
         name: 'Carol',
         location: null,
         role: 'verified',
-        lightningAddress: 'carol@walletofsatoshi.com',
+        lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: 'Hello from Carol.',
         profileMessage: {
@@ -4643,10 +4738,11 @@ test('Function: DonatePage — send-help explainer renders', async ({ page }) =>
   await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
 });
 
-test('Function: LoginCard — a single Log in button is visible', async ({ page }) => {
+test('Function: LoginCard — Log in and Open a new account are visible', async ({ page }) => {
   await page.goto('/login');
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
 });
 
 test('Function: LoginCard — choice heading is reachable', async ({ page }) => {
@@ -5051,10 +5147,66 @@ test('Function: openInSystemBrowser — Open in browser is shown in Telegram Web
   // Do not assert navigation.
 });
 
-test('Function: QrCode — pay sheet shows the invoice QR', async ({ page, request }) => {
-  await openPayInvoice(page, request);
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toBeVisible();
+test('Function: QrCode — the public pay link shows the invoice QR on a desktop', async ({
+  page,
+}) => {
+  await openPayLinkInvoice(page);
+  await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
   expect(await recordedWalletAssign(page)).toBeUndefined();
+});
+
+test('Function: WalletPay — the forum pay sheet is wallet-only, with no invoice QR or wallet app link', async ({
+  page,
+  request,
+}) => {
+  await openPayInvoice(page, request);
+  const sheet = page.locator('[data-pay-sheet]');
+  await expect(sheet.getByRole('status')).toHaveText(WALLET_UNAVAILABLE);
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+  expect(await recordedWalletAssign(page)).toBeUndefined();
+});
+
+test('Function: ForumPaySheet — the amount form keeps its controls clear of the Close hit area', async ({
+  page,
+  request,
+}) => {
+  await stubWalletLocationAssign(page);
+  await stubPayableNote(page);
+  await signInViaStub(page, request);
+  await agreeToLivingRoomRules(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await markWalletVerified(page);
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  const sheet = replyCard.locator('[data-pay-sheet]');
+  const close = sheet.getByRole('button', { name: 'Close' });
+  await expect(close).toBeVisible();
+  const sheetBox = await sheet.boundingBox();
+  const closeBox = await close.boundingBox();
+  if (sheetBox === null || closeBox === null) {
+    throw new Error('pay sheet is not laid out');
+  }
+  expect(closeBox.x - sheetBox.x).toBeGreaterThanOrEqual(12);
+  expect(closeBox.x - sheetBox.x).toBeLessThanOrEqual(14);
+  expect(closeBox.y - sheetBox.y).toBeGreaterThanOrEqual(12);
+  expect(closeBox.y - sheetBox.y).toBeLessThanOrEqual(14);
+  // The 24px X has a 44px hit area around its centre.
+  const hitRight = closeBox.x + closeBox.width / 2 + 22;
+  const hitBottom = closeBox.y + closeBox.height / 2 + 22;
+  const controls = sheet.locator('input, button:not([aria-label="Close"]), [role="radio"]');
+  const count = await controls.count();
+  expect(count).toBeGreaterThan(0);
+  for (let i = 0; i < count; i += 1) {
+    const box = await controls.nth(i).boundingBox();
+    if (box === null) {
+      continue;
+    }
+    expect(box.x >= hitRight || box.y >= hitBottom).toBe(true);
+  }
 });
 
 const REACTION_PAY_ANSWER = 'This is my answer';
@@ -5167,13 +5319,14 @@ test('Function: ForumReplyPayPage — paid reaction replaces the reply composer'
   await expect(payPage).toBeVisible();
   await expect(payPage.getByText(REACTION_PAY_ANSWER)).toBeVisible();
   await expect(payPage.getByText('Waiting for payment…')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
+  await expect(payPage.getByText(WALLET_UNAVAILABLE)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
   await expect(page.getByLabel('Your reaction')).toHaveCount(0);
 });
 
-test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the wallet button', async ({
+test('Function: isSmartphoneUserAgent — an iPhone pay link has no invoice QR, only the Pay link', async ({
   page,
-  request,
 }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'userAgent', {
@@ -5181,61 +5334,27 @@ test('Function: isSmartphoneUserAgent — iPhone pay sheet has no QR, only the w
         'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
     });
   });
-  await openPayInvoice(page, request);
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-  await expect(page.getByText('Pay ₿21')).toBeVisible();
+  await openPayLinkInvoice(page);
+  await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveText(
+    'Pay',
+  );
   expect(await recordedWalletAssign(page)).toBeUndefined();
 });
 
-test('Function: uppercaseLnurl — pay sheet uses an uppercase lightning href', async ({
+test('Function: isSmartphoneUserAgent — a desktop pay link shows the invoice QR', async ({
   page,
-  request,
 }) => {
-  await openPayInvoice(page, request);
-  await page.getByRole('button', { name: 'Pay with Wallet of Satoshi' }).click();
-  const href = await recordedWalletAssign(page);
-  expect(href?.startsWith('walletofsatoshi:lightning:LNBC')).toBe(true);
+  await openPayLinkInvoice(page);
+  await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
 });
 
-test('Function: walletOfSatoshiHref — pay sheet opens Wallet of Satoshi', async ({
+test('Function: lightningHref — the pay link Pay button opens lightning:<invoice>', async ({
   page,
-  request,
 }) => {
-  await openPayInvoice(page, request);
-  await expect(page.getByRole('button', { name: 'Pay with Wallet of Satoshi' })).toBeVisible();
-});
-
-test('Function: isAndroidUserAgent — Android pay sheet uses an Intent href', async ({
-  page,
-  request,
-}) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'userAgent', {
-      get: () =>
-        'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-    });
-  });
-  await openPayInvoice(page, request);
-  await page.getByRole('button', { name: 'Pay with Wallet of Satoshi' }).click();
-  const href = await recordedWalletAssign(page);
-  expect(href?.startsWith('intent:lightning:')).toBe(true);
-});
-
-test('Function: walletOfSatoshiIntentHref — Android pay sheet pins the WoS package', async ({
-  page,
-  request,
-}) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'userAgent', {
-      get: () =>
-        'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
-    });
-  });
-  await openPayInvoice(page, request);
-  await page.getByRole('button', { name: 'Pay with Wallet of Satoshi' }).click();
-  const href = await recordedWalletAssign(page);
-  expect(href?.includes('com.livingroomofsatoshi.wallet')).toBe(true);
+  await openPayLinkInvoice(page);
+  await page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }).click();
+  await expect.poll(() => recordedWalletAssign(page)).toBe(`lightning:${PAY_INVOICE}`);
 });
 
 test('Function: useAuthStore — live login reaches the signed-in view', async ({
@@ -5243,7 +5362,7 @@ test('Function: useAuthStore — live login reaches the signed-in view', async (
   request,
 }) => {
   await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -5256,17 +5375,8 @@ test('Function: saveSession — live login persists the session token', async ({
 test('Function: loadSession — reload keeps the signed-in view', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.reload();
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
-});
-
-test('Function: LightningAddressForm — link reaches welcome', async ({ page, request }) => {
-  const handle = await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await agreeToLivingRoomRules(page);
-  await expect(page.getByRole('heading', { name: `Welcome, ${handle}` })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Unlink' })).toHaveCount(0);
 });
 
 test('Function: clearSession — log out returns to the start action', async ({ page, request }) => {
@@ -5280,8 +5390,6 @@ test('Function: clearSession — log out returns to the start action', async ({ 
 test('Function: ForumBoard — welcome forum is the pay surface', async ({ page, request }) => {
   await stubPayableNote(page);
   await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await chooseForumView(page, 'All');
@@ -5322,8 +5430,6 @@ test('Function: RulesDocument — only free donations rule is visible', async ({
 test('Function: ForumLoader — welcome forum is the pay surface', async ({ page, request }) => {
   await stubPayableNote(page);
   await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
   await chooseForumView(page, 'All');
@@ -5348,6 +5454,7 @@ test('Function: fetchComposeTarget — a basis welcome post invoices 21.gifts', 
   request,
 }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   await page.getByLabel('Your message').fill('Hello gifts');
   const compose = page.waitForRequest(
     (req) => req.method() === 'GET' && new URL(req.url()).pathname === '/messages/compose-target',
@@ -5359,10 +5466,112 @@ test('Function: fetchComposeTarget — a basis welcome post invoices 21.gifts', 
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   await compose;
   await invoice;
+  await expect(page.getByText(WALLET_UNAVAILABLE)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+});
+
+async function stubFirstPostFree(page: Page): Promise<void> {
+  await page.route('**/messages/compose-target', async (route) => {
+    const res = await route.fetch();
+    const body = (await res.json()) as Record<string, unknown>;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...body, firstPostFree: true }),
+    });
+  });
+}
+
+test('Function: fetchComposeTarget — a free first post is created without an invoice', async ({
+  page,
+  request,
+}) => {
+  await stubFirstPostFree(page);
+  let invoiced = false;
+  page.on('request', (req) => {
+    if (
+      req.method() === 'POST' &&
+      /\/messages\/[^/]+\/invoice$/.test(new URL(req.url()).pathname)
+    ) {
+      invoiced = true;
+    }
+  });
+  await reachWelcome(page, request);
+  await openHomeWriter(page);
+  await expect(page.getByText('Your first post is free.')).toBeVisible();
+  await page.getByLabel('Your message').fill('My first note is free');
+  const created = page.waitForResponse(
+    (res) => res.request().method() === 'POST' && new URL(res.url()).pathname === '/forum/messages',
+  );
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  expect((await created).status()).toBe(200);
+  await expect(page.getByText('My first note is free')).toBeVisible();
+  // A successful post closes the writer; reopened, its field is empty.
+  await openHomeWriter(page);
+  await expect(page.getByLabel('Your message')).toHaveValue('');
+  await expect(page.getByText('Your first post is free.')).toHaveCount(0);
+  await expect(page.getByText(WALLET_UNAVAILABLE)).toHaveCount(0);
+  expect(invoiced).toBe(false);
+});
+
+test('Function: PostFeeRequiredError — a refused free first post asks for the posting fee', async ({
+  page,
+  request,
+}) => {
+  await stubFirstPostFree(page);
+  await page.route('**/forum/messages', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 403,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'A post needs a Bitcoin payment' }),
+    });
+  });
+  await reachWelcome(page, request);
+  await openHomeWriter(page);
+  await expect(page.getByText('Your first post is free.')).toBeVisible();
+  await page.getByLabel('Your message').fill('Hello gifts');
+  const invoice = page.waitForRequest(
+    (req) =>
+      req.method() === 'POST' && /\/messages\/[^/]+\/invoice$/.test(new URL(req.url()).pathname),
+  );
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  await invoice;
+  await expect(page.getByText(WALLET_UNAVAILABLE)).toBeVisible();
+  await expect(page.getByText('Your first post is free.')).toHaveCount(0);
 });
 
 test('Function: postMessageInvoice — pay sheet requests an invoice', async ({ page, request }) => {
   await openPayInvoice(page, request);
+});
+
+test("Function: CannotReceiveError — a cannot_receive forum invoice says the author's wallet cannot receive", async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await page.route('**/messages/r-pay/invoice', async (route) => {
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Cannot receive', code: 'cannot_receive' }),
+    });
+  });
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await replyCard.getByLabel('Amount').fill('21');
+  await submitPayAmount(page);
+  await expect(
+    page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+  ).toBeVisible();
+  await expect(page.getByText('Pay ₿21')).toHaveCount(0);
 });
 
 test('Function: NoteDeletedError — deleted reply invoice shows the note-deleted alert', async ({
@@ -5381,10 +5590,9 @@ test('Function: shownFiatForSats — pay sheet sends the shown amounts', async (
   await stubWalletLocationAssign(page);
   await stubPayableNote(page);
   await signInViaStub(page, request);
-  await page.getByLabel('Wallet of Satoshi address').fill('alice@walletofsatoshi.com');
-  await page.getByRole('button', { name: 'Continue' }).click();
   await agreeToLivingRoomRules(page);
   await expect(page).toHaveURL(/\/welcome/);
+  await markWalletVerified(page);
   await chooseForumView(page, 'All');
   await page.getByRole('button', { name: 'Show reactions' }).click();
   const replyCard = page.locator('[data-reply-id="r-pay"]');
@@ -5456,6 +5664,12 @@ test('Function: proxyGiftsStatsGet — GET /gifts/stats is empty', async ({ requ
   const res = await request.get('/gifts/stats');
   expect(res.status()).toBe(200);
   expect(((await res.json()) as { giftCount: number }).giftCount).toBe(0);
+});
+
+test('Function: proxyFxSpotGet — GET /fx/spot has no rate on the stub', async ({ request }) => {
+  const res = await request.get('/fx/spot');
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { rates: Record<string, string> }).rates).toEqual({});
 });
 
 test('Function: fetchPostStats — stats page shows notes and replies as posts', async ({ page }) => {
@@ -5658,7 +5872,7 @@ test('Function: satsToFiatAmount — a note without stored fiat shows the viewer
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -5694,6 +5908,7 @@ test('Function: satsToFiatAmount — a note without stored fiat shows the viewer
   await chooseForumView(page, 'All');
   await expect(page.getByText('₿21')).toBeVisible();
   await expect(page.getByText('$0.02')).toBeVisible();
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await page.getByLabel('Ask').fill('21');
   await expect(page.getByText('$0.02').first()).toBeVisible();
@@ -5715,7 +5930,7 @@ test('Function: formatDefinedGoalAmount — a peso ask shows the typed amount on
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -5777,7 +5992,7 @@ test('Function: fiatPrefix — francs keep the code and pesos use the sign', asy
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -5852,7 +6067,7 @@ test('Function: forumFiatGoalPercent — a fiat ask percent uses the payment sum
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -5894,7 +6109,7 @@ test('Function: forumFiatGoalPercent — a fiat ask percent uses the payment sum
   await expect(page.getByText('$1.50')).toBeVisible();
 });
 
-test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 sats', async ({
+test('Function: spotRateDay — pay sheet shows a live USD equivalent for 21 sats', async ({
   page,
 }) => {
   await stubGiftStats(page, POPULATED_STATS);
@@ -5911,7 +6126,7 @@ test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 s
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -5976,51 +6191,11 @@ test('Function: latestRateDay — pay sheet shows a live USD equivalent for 21 s
   await expect(page.getByText('$0.02').first()).toBeVisible();
 });
 
-test('Function: latestRateDayFor — peso till uses the last day that has PHP', async ({ page }) => {
-  await seedAdaSession(page);
-  await page.context().addCookies([{ name: 'fiat', value: 'PHP', url: 'http://localhost:3000' }]);
-  await stubGiftStats(page, {
-    ...EMPTY_STATS,
-    totalSats: 100_001_000,
-    totalBtc: '1.00001000',
-    totalUsd: '100010.00',
-    totalPhp: '5600000.00',
-    giftCount: 2,
-    firstPaidAt: '2026-10-07T00:00:00.000Z',
-    lastPaidAt: '2026-10-08T00:08:00.000Z',
-    spendOverTime: [
-      {
-        day: '2026-10-07',
-        sats: 100_000_000,
-        cumulativeSats: 100_000_000,
-        btc: '1.00000000',
-        cumulativeBtc: '1.00000000',
-        usd: '100000.00',
-        cumulativeUsd: '100000.00',
-        chf: '80000.00',
-        cumulativeChf: '80000.00',
-        eur: '90000.00',
-        cumulativeEur: '90000.00',
-        php: '5600000.00',
-        cumulativePhp: '5600000.00',
-      },
-      {
-        day: '2026-10-08',
-        sats: 1000,
-        cumulativeSats: 100_001_000,
-        btc: '0.00001000',
-        cumulativeBtc: '1.00001000',
-        usd: '10.00',
-        cumulativeUsd: '100010.00',
-        chf: null,
-        cumulativeChf: null,
-        eur: null,
-        cumulativeEur: null,
-        php: null,
-        cumulativePhp: null,
-      },
-    ],
-  });
+test('Function: spotRateDay — the peso till prices PHP while the other codes have no price', async ({
+  page,
+}) => {
+  await fulfillSpot(page, { PHP: '5600000.00' });
+  const till = await seedChfTill(page);
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -6032,7 +6207,7 @@ test('Function: latestRateDayFor — peso till uses the last day that has PHP', 
         name: 'Ada',
         username: 'alice',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -6041,51 +6216,25 @@ test('Function: latestRateDayFor — peso till uses the last day that has PHP', 
         aboutMe: null,
         setup: null,
         missing: [],
-      }),
-    });
-  });
-  await page.route(/\/me\/amount-unit$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        username: 'alice',
-        location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: 1_700_000_001,
-        viewKey: 'a'.repeat(64),
-        aboutMe: null,
-        setup: null,
-        missing: [],
+        sparkWalletVerified: true,
+        fiat: 'PHP',
         amountUnit: 'fiat',
       }),
     });
   });
-  await page.route(/\/pos\/charge$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ charge: null, history: [] }),
-    });
-  });
+  await page.context().addCookies([{ name: 'fiat', value: 'PHP', url: 'http://localhost:3000' }]);
   await page.goto('/pos/amount');
   const php = page
     .getByRole('group', { name: 'Bitcoin or fiat' })
     .getByRole('button', { name: 'PHP' });
-  await php.click();
   await expect(php).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '1', exact: true }).click();
   await page.getByRole('button', { name: '0', exact: true }).click();
   await page.getByRole('button', { name: '0', exact: true }).click();
   await expect(page.getByText("\u20BF1'786")).toBeVisible();
-  await expect(page.getByText('Enter a whole number.')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page).toHaveURL(/\/pos$/);
+  expect(till.created).toEqual([1786]);
 });
 
 test('Function: formatFiatTick — populated stats draw the USD chart', async ({ page }) => {
@@ -6202,7 +6351,7 @@ test('Function: startPasskeyRegistration — create passkey reaches the signed-i
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -6220,7 +6369,7 @@ test('Function: finishPasskeyRegistration — create passkey reaches the signed-
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -6259,7 +6408,7 @@ test('Function: usePasskeyLogin — create passkey reaches the signed-in view', 
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   const handle = await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
   const token = await page.evaluate(() => window.localStorage.getItem('21gifts.session'));
@@ -6282,7 +6431,7 @@ test('Function: creationOptionsFromJSON — create passkey reaches the signed-in
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -6291,7 +6440,7 @@ test('Function: credentialToJSON — create passkey reaches the signed-in view',
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -6300,7 +6449,7 @@ test('Function: base64UrlToBytes — create passkey reaches the signed-in view',
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -6309,7 +6458,7 @@ test('Function: bytesToBase64Url — create passkey reaches the signed-in view',
   await page.goto('/login');
   await page.getByRole('button', { name: 'Log in' }).click();
   await confirmNewAccount(page);
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
 });
 
@@ -6411,7 +6560,7 @@ test('Function: useFiatPreference — welcome feed has no fiat switcher', async 
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -6976,70 +7125,6 @@ test('Function: NameSetup — name screen heading is visible', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'Your name' })).toBeVisible();
 });
 
-test('Function: AddressSetupPage — address screen heading is visible', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        location: null,
-        lightningAddress: null,
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: null,
-        viewKey: 'a'.repeat(64),
-        aboutMe: null,
-        setup: 'lightning-address',
-        missing: ['lightning-address', 'rules'],
-      }),
-    });
-  });
-  await page.goto('/setup/address');
-  await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
-});
-
-test('Function: AddressSetup — address screen heading is visible', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        location: null,
-        lightningAddress: null,
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: null,
-        viewKey: 'a'.repeat(64),
-        aboutMe: null,
-        setup: 'lightning-address',
-        missing: ['lightning-address', 'rules'],
-      }),
-    });
-  });
-  await page.goto('/setup/address');
-  await expect(page.getByRole('heading', { name: 'Your Wallet of Satoshi address' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
-  await expect(page.locator('#signed-in-menu')).toBeHidden();
-  await openSignedInMenu(page);
-  await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
-});
-
 test('Function: WelcomePage — welcome heading is visible', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -7054,7 +7139,7 @@ test('Function: WelcomePage — welcome heading is visible', async ({ page }) =>
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -7091,7 +7176,7 @@ test('Function: WelcomeScreen — welcome heading is visible', async ({ page }) 
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -7130,7 +7215,7 @@ test('Function: noteKinds — a credit, a donation, and a shop each get their ta
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -7223,7 +7308,7 @@ test('Function: MessageKindTags — pressing Loan explains the credit', async ({
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -7282,7 +7367,7 @@ test('Function: ForumBoard — forum heading is visible', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -7319,7 +7404,7 @@ test('Function: revealReplyForm — expanded reply stays inside the shell', asyn
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -7389,7 +7474,7 @@ test('Function: revealPaySheet — paying a reaction keeps the note on screen', 
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -7501,7 +7586,7 @@ test('Function: ForumAskWizard — welcome loads', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -7522,6 +7607,7 @@ test('Function: ForumAskWizard — welcome loads', async ({ page }) => {
   });
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await expect(page.getByText('How much?')).toBeVisible();
 });
@@ -7540,7 +7626,7 @@ test('Function: parseForumAskAmount — welcome loads', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -7561,6 +7647,7 @@ test('Function: parseForumAskAmount — welcome loads', async ({ page }) => {
   });
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await expect(page.getByText('How much?')).toBeVisible();
   await page.getByLabel('Ask').fill('0');
@@ -7583,7 +7670,7 @@ test('Function: ForumGoalBar — welcome loads', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -7634,7 +7721,7 @@ test('Function: forumGoalPercent — welcome loads', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -7685,7 +7772,7 @@ test('Function: ContactPage — contact heading is visible', async ({ page }) =>
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -7715,7 +7802,7 @@ test('Function: ContactScreen — contact lead is visible', async ({ page }) => 
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -7749,7 +7836,7 @@ test('Function: ContactLoader — Send button is visible', async ({ page }) => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -7779,7 +7866,7 @@ test('Function: ForumLoader — empty forum copy is visible', async ({ page }) =
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -7818,7 +7905,7 @@ test('Function: ForumLoader — becoming visible again refetches the forum list'
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -8085,7 +8172,7 @@ test('Function: formatForumTime — message timestamp is visible', async ({ page
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -8140,7 +8227,7 @@ test.describe('welcome clock uses the browser local timezone', () => {
           role: 'basis',
           name: 'Ada',
           location: null,
-          lightningAddress: 'alice@walletofsatoshi.com',
+          lightningAddress: null,
           lightningAddressVerified: false,
           forumLawsDismissed: false,
           createdAt: 1,
@@ -8208,7 +8295,7 @@ test('Function: visibleForumMessages — Active, All, and Most popular filter th
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -8317,7 +8404,7 @@ async function seedWelcomeWithUnpaidCount(page: Page): Promise<void> {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -8429,65 +8516,15 @@ test('Function: saveUnpaidSeenAt — opening No gifts yet clears the unpaid coun
   );
 });
 
-test('Function: OnboardingGate — login sends a new account to the address screen', async ({
+test('Function: OnboardingGate — login sends a new account to the rules screen', async ({
   page,
   request,
 }) => {
   await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/address/);
-});
-
-test('Function: OnboardingGate — name and address without agreement go to rules', async ({
-  page,
-}) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
-        name: 'Ada',
-        location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
-        lightningAddressVerified: false,
-        forumLawsDismissed: false,
-        createdAt: 1,
-        rulesAgreedAt: null,
-        viewKey: 'a'.repeat(64),
-        aboutMe: null,
-        setup: 'rules',
-        missing: ['rules'],
-      }),
-    });
-  });
-  await page.goto('/welcome');
   await expect(page).toHaveURL(/\/setup\/rules/);
 });
 
-test('Function: nextOnboardingPath — login sends a new account to the address screen', async ({
-  page,
-  request,
-}) => {
-  await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/address/);
-});
-
-test('Function: hasDisplayName — login sends a new account to the address screen', async ({
-  page,
-  request,
-}) => {
-  await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/address/);
-});
-
-test('Function: hasLightningAddress — named account without address stays on address screen', async ({
-  page,
-}) => {
+test('Function: OnboardingGate — a name without agreement goes to rules', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -8508,19 +8545,68 @@ test('Function: hasLightningAddress — named account without address stays on a
         rulesAgreedAt: null,
         viewKey: 'a'.repeat(64),
         aboutMe: null,
+        setup: 'rules',
+        missing: ['rules'],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page).toHaveURL(/\/setup\/rules/);
+});
+
+test('Function: nextOnboardingPath — login sends a new account to the rules screen', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await expect(page).toHaveURL(/\/setup\/rules/);
+});
+
+test('Function: hasDisplayName — login sends a new account to the rules screen', async ({
+  page,
+  request,
+}) => {
+  await signInViaStub(page, request);
+  await expect(page).toHaveURL(/\/setup\/rules/);
+});
+
+test('Function: nextOnboardingPath — the api lightning-address step opens rules, with no address screen', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: null,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
         setup: 'lightning-address',
         missing: ['lightning-address', 'rules'],
       }),
     });
   });
-  await page.goto('/setup/address');
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await page.goto('/welcome');
+  await expect(page).toHaveURL(/\/setup\/rules/);
 });
 
-test('Function: useHydrateSession — reload keeps the address screen', async ({ page, request }) => {
+test('Function: useHydrateSession — reload keeps the rules screen', async ({ page, request }) => {
   await signInViaStub(page, request);
   await page.reload();
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
 });
 
 test('Function: LogoutButton — log out returns to login', async ({ page, request }) => {
@@ -8628,7 +8714,7 @@ test('Function: resyncPushSubscription — signed-in chrome still shows Menu', a
 
 test('Function: SignedInChrome — Menu reveals Profile and log out', async ({ page, request }) => {
   await signInViaStub(page, request);
-  await expect(page).toHaveURL(/\/setup\/address/);
+  await expect(page).toHaveURL(/\/setup\/rules/);
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
   await expect(page.locator('#signed-in-menu')).toBeHidden();
   await openSignedInMenu(page);
@@ -8700,7 +8786,7 @@ test('Function: PosTill — wallet links to the till instead of mounting it', as
         name: 'Ada',
         username: 'ada',
         location: null,
-        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -8720,7 +8806,8 @@ test('Function: PosTill — wallet links to the till instead of mounting it', as
     });
   });
   await page.goto('/wallet');
-  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Wallet' })).toBeAttached();
+  await page.getByRole('button', { name: 'Receive' }).click();
   await expect(page.getByText('ada@21.gifts')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveAttribute('href', '/pos');
   await expect(page.getByRole('heading', { name: 'Point of sale' })).toHaveCount(0);
@@ -8849,7 +8936,7 @@ test('Function: PosScreen — till heading is visible', async ({ page }) => {
         name: 'Ada',
         username: 'alice',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -8858,6 +8945,7 @@ test('Function: PosScreen — till heading is visible', async ({ page }) => {
         aboutMe: null,
         setup: null,
         missing: [],
+        sparkWalletVerified: true,
       }),
     });
   });
@@ -8885,7 +8973,7 @@ test('Function: fetchPosState — till shows the amount form', async ({ page }) 
         name: 'Ada',
         username: 'alice',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -8894,6 +8982,7 @@ test('Function: fetchPosState — till shows the amount form', async ({ page }) 
         aboutMe: null,
         setup: null,
         missing: [],
+        sparkWalletVerified: true,
       }),
     });
   });
@@ -8923,7 +9012,7 @@ test('Function: createPosCharge — create opens the charge', async ({ page }) =
         name: 'Ada',
         username: 'alice',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -8932,6 +9021,7 @@ test('Function: createPosCharge — create opens the charge', async ({ page }) =
         aboutMe: null,
         setup: null,
         missing: [],
+        sparkWalletVerified: true,
       }),
     });
   });
@@ -8981,6 +9071,169 @@ test('Function: createPosCharge — create opens the charge', async ({ page }) =
   await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
 });
 
+/** Signed-in till with a verified wallet: `POST /pos/charge` opens a charge that later reads return. */
+async function routeChargeableTill(page: Page): Promise<void> {
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        sparkWalletVerified: true,
+      }),
+    });
+  });
+  let charge: Record<string, unknown> | null = null;
+  await page.route(/\/pos\/charge$/, async (route) => {
+    if (route.request().method() === 'POST') {
+      charge = {
+        id: 'pos-e2e',
+        amountSats: 21,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 120_000).toISOString(),
+      };
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge, history: charge === null ? [] : [charge] }),
+    });
+  });
+}
+
+/** Menu → Point of sale → Set an amount → ₿21 → Create payment, from the forum home. */
+async function createChargeFromMenu(page: Page, origin: string): Promise<void> {
+  await openSignedInMenu(page);
+  await page
+    .locator('#signed-in-menu')
+    .getByRole('link', { name: 'Point of sale', exact: true })
+    .click();
+  await expect(page).toHaveURL(`${origin}/pos`);
+  await page.getByRole('link', { name: 'Set an amount' }).click();
+  await expect(page).toHaveURL(`${origin}/pos/amount`);
+  await page.getByRole('button', { name: '2', exact: true }).click();
+  await page.getByRole('button', { name: '1', exact: true }).click();
+  await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page).toHaveURL(`${origin}/pos`);
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+}
+
+test('Function: returnToView — after a charge, the till arrow opens the forum', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await routeChargeableTill(page);
+  await page.goto('/welcome');
+  const origin = new URL(page.url()).origin;
+  await createChargeFromMenu(page, origin);
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveAttribute('href', '/welcome');
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+});
+
+test('Function: PosAmount — after a charge, the browser back on the till opens the forum', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await routeChargeableTill(page);
+  await page.goto('/welcome');
+  const origin = new URL(page.url()).origin;
+  await createChargeFromMenu(page, origin);
+  await page.goBack();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+});
+
+test('Function: PosAmount — the amount arrow returns to the till, whose arrow opens the forum', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await routeChargeableTill(page);
+  await page.goto('/welcome');
+  const origin = new URL(page.url()).origin;
+  await openSignedInMenu(page);
+  await page
+    .locator('#signed-in-menu')
+    .getByRole('link', { name: 'Point of sale', exact: true })
+    .click();
+  await page.getByRole('link', { name: 'Set an amount' }).click();
+  await expect(page).toHaveURL(`${origin}/pos/amount`);
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveAttribute('href', '/pos');
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/pos`);
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+  await expect(back).toHaveAttribute('href', '/welcome');
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+});
+
+test('Function: returnToView — a reloaded amount page replaces itself, and the till arrow opens the forum', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeForumLists(page);
+  await routeChargeableTill(page);
+  await page.goto('/welcome');
+  const origin = new URL(page.url()).origin;
+  await openSignedInMenu(page);
+  await page
+    .locator('#signed-in-menu')
+    .getByRole('link', { name: 'Point of sale', exact: true })
+    .click();
+  await page.getByRole('link', { name: 'Set an amount' }).click();
+  await expect(page).toHaveURL(`${origin}/pos/amount`);
+  await page.reload();
+  await page.getByRole('button', { name: '2', exact: true }).click();
+  await page.getByRole('button', { name: '1', exact: true }).click();
+  await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page).toHaveURL(`${origin}/pos`);
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  const back = page.getByRole('link', { name: 'Back', exact: true });
+  await expect(back).toHaveAttribute('href', '/welcome');
+  await back.click();
+  await expect(page).toHaveURL(`${origin}/welcome`);
+});
+
+test('Function: PosTill — a direct load of the till has the arrow to the forum', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeChargeableTill(page);
+  await page.goto('/pos');
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
+    'href',
+    '/welcome',
+  );
+});
+
 test('Function: cancelPosCharge — cancel returns the amount form', async ({ page }) => {
   await seedAdaSession(page);
   const open = {
@@ -9002,7 +9255,7 @@ test('Function: cancelPosCharge — cancel returns the amount form', async ({ pa
         name: 'Ada',
         username: 'alice',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -9011,6 +9264,7 @@ test('Function: cancelPosCharge — cancel returns the amount form', async ({ pa
         aboutMe: null,
         setup: null,
         missing: [],
+        sparkWalletVerified: true,
       }),
     });
   });
@@ -9037,6 +9291,111 @@ test('Function: cancelPosCharge — cancel returns the amount form', async ({ pa
   await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
 });
 
+/** Signs Ada in for the till: CHF, fiat entry, a verified wallet, and charges recorded. */
+async function seedChfTill(page: Page): Promise<{ created: number[] }> {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        sparkWalletVerified: true,
+        fiat: 'CHF',
+        amountUnit: 'fiat',
+      }),
+    });
+  });
+  const created: number[] = [];
+  await page.route(/\/pos\/charge$/, async (route) => {
+    if (route.request().method() === 'POST') {
+      const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+      created.push(amountSats);
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          charge: {
+            id: 'pos-chf',
+            amountSats,
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+          },
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  return { created };
+}
+
+test('Function: useSpotRate — the till in CHF charges the sats of the spot rate', async ({
+  page,
+}) => {
+  await fulfillSpot(page, SPOT_RATES);
+  const till = await seedChfTill(page);
+  await page.goto('/pos/amount');
+  const unit = page.getByRole('group', { name: 'Bitcoin or fiat' });
+  await expect(unit.getByRole('button', { name: 'CHF' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: '6', exact: true }).click();
+  await page.getByRole('button', { name: '8', exact: true }).click();
+  await expect(page.getByText("₿85'000")).toBeVisible();
+  await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page).toHaveURL(/\/pos$/);
+  expect(till.created).toEqual([85_000]);
+});
+
+test('Function: AmountEntry — without a CHF rate the till disables CHF and charges ₿', async ({
+  page,
+}) => {
+  await fulfillSpot(page, { USD: '100000.00' });
+  const till = await seedChfTill(page);
+  await page.goto('/pos/amount');
+  const unit = page.getByRole('group', { name: 'Bitcoin or fiat' });
+  await expect(unit.getByRole('button', { name: 'CHF' })).toBeDisabled();
+  await expect(unit.getByRole('button', { name: '₿' })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: '6', exact: true }).click();
+  await page.getByRole('button', { name: '8', exact: true }).click();
+  await expect(page.getByText('No exchange rate yet')).toBeVisible();
+  await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page).toHaveURL(/\/pos$/);
+  await expect(page.getByText('Enter a whole number.')).toHaveCount(0);
+  expect(till.created).toEqual([68]);
+});
+
+test('Function: fetchFxSpot — the till asks GET /fx/spot for the current price', async ({
+  page,
+}) => {
+  await seedChfTill(page);
+  const spot = page.waitForResponse((res) => new URL(res.url()).pathname === '/fx/spot');
+  await page.goto('/pos/amount');
+  const body = (await (await spot).json()) as { rates: Record<string, string> };
+  expect(body.rates).toEqual({});
+  await expect(
+    page.getByRole('group', { name: 'Bitcoin or fiat' }).getByRole('button', { name: 'CHF' }),
+  ).toBeDisabled();
+});
+
 test('Function: PosAmount — amount page has the keypad and no QR', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/me$/, async (route) => {
@@ -9050,7 +9409,7 @@ test('Function: PosAmount — amount page has the keypad and no QR', async ({ pa
         name: 'Ada',
         username: 'alice',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -9059,6 +9418,7 @@ test('Function: PosAmount — amount page has the keypad and no QR', async ({ pa
         aboutMe: null,
         setup: null,
         missing: [],
+        sparkWalletVerified: true,
       }),
     });
   });
@@ -9075,6 +9435,115 @@ test('Function: PosAmount — amount page has the keypad and no QR', async ({ pa
   await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toHaveCount(0);
 });
 
+const POS_ACCOUNT = {
+  id: 'acc_e2e',
+  linkingKey: null,
+  role: 'basis',
+  name: 'Ada',
+  username: 'alice',
+  location: null,
+  lightningAddress: null,
+  lightningAddressVerified: false,
+  forumLawsDismissed: false,
+  createdAt: 1,
+  rulesAgreedAt: 1_700_000_001,
+  viewKey: 'a'.repeat(64),
+  aboutMe: null,
+  setup: null,
+  missing: [],
+};
+
+/** Signed-in till whose `POST /pos/charge` answers 400 with `code` (or no code when `null`). */
+async function openPosAmountAnswering(page: Page, code: string | null): Promise<void> {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...POS_ACCOUNT, sparkWalletVerified: true }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify(
+          code === null ? { error: 'Wallet answer' } : { error: 'Wallet answer', code },
+        ),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/pos/amount');
+  await page.getByRole('button', { name: '2', exact: true }).click();
+  await page.getByRole('button', { name: '1', exact: true }).click();
+  await page.getByRole('button', { name: 'Create payment' }).click();
+}
+
+test('Function: PosTill — a username without a verified wallet links to the wallet setup', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...POS_ACCOUNT, sparkWalletVerified: false }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await page.goto('/pos');
+  await expect(page.getByRole('link', { name: 'Set up your wallet first.' })).toHaveAttribute(
+    'href',
+    '/wallet',
+  );
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toHaveCount(0);
+});
+
+test('Function: WalletRequiredError — a wallet_required charge answer asks to set up the wallet', async ({
+  page,
+}) => {
+  await openPosAmountAnswering(page, 'wallet_required');
+  await expect(page.getByText('Set up your wallet first.')).toBeVisible();
+});
+
+test('Function: CannotReceiveError — a cannot_receive charge answer says the wallet cannot receive', async ({
+  page,
+}) => {
+  await openPosAmountAnswering(page, 'cannot_receive');
+  await expect(
+    page.getByText('Your wallet cannot receive this payment right now. Please try again later.'),
+  ).toBeVisible();
+});
+
+test('Function: throwIfWalletAnswer — a 400 is decided by its code, not by its status', async ({
+  page,
+}) => {
+  await openPosAmountAnswering(page, 'wallet_required');
+  await expect(page.getByText('Set up your wallet first.')).toBeVisible();
+  await expect(page.getByText('Point of sale is unavailable.')).toHaveCount(0);
+});
+
+test('Function: throwIfWalletAnswer — a 400 without a wallet code stays the generic error', async ({
+  page,
+}) => {
+  await openPosAmountAnswering(page, null);
+  await expect(page.getByText('Point of sale is unavailable.')).toBeVisible();
+  await expect(page.getByText('Set up your wallet first.')).toHaveCount(0);
+});
+
 test('Function: resetPosTillWriteForTests — till heading is visible', async ({ page }) => {
   await page.goto('/pos');
   await expect(page).toHaveURL(/\/(pos|login)/);
@@ -9083,6 +9552,223 @@ test('Function: resetPosTillWriteForTests — till heading is visible', async ({
 test('Function: PosAmountPage — amount heading is visible', async ({ page }) => {
   await page.goto('/pos/amount');
   await expect(page).toHaveURL(/\/(pos\/amount|login)/);
+});
+
+test('Function: fetchShopChargeInvoice — GET /pay/shop shows the open charge and POST /pay/shop/invoice its Spark invoice', async ({
+  request,
+}) => {
+  const profile = await request.get('/pay/shop');
+  expect(profile.status()).toBe(200);
+  const body = (await profile.json()) as { charge: { amountSats: number; status: string } };
+  expect(body.charge).toMatchObject({ amountSats: 7_000, status: 'pending' });
+  const charge = await request.post('/pay/shop/invoice', { data: { amountSats: 7_000 } });
+  expect(charge.status()).toBe(200);
+  expect(await charge.json()).toEqual({
+    pr: 'lnbc70u1shopcharge',
+    amountSats: 7_000,
+    sparkInvoice: 'sparkrt1shopcharge',
+  });
+  const other = await request.post('/pay/shop/invoice', { data: { amountSats: 21 } });
+  expect(await other.json()).toMatchObject({ amountSats: 21, sparkInvoice: null });
+});
+
+test('Function: fetchMemberSparkInvoice — POST /pay/alice/invoice issues a Spark invoice for the amount entered without a charge', async ({
+  request,
+}) => {
+  const withMessage = await request.post('/pay/alice/invoice', {
+    data: { amountSats: 2_100, comment: 'Thanks' },
+  });
+  expect(withMessage.status()).toBe(200);
+  expect(await withMessage.json()).toEqual({
+    pr: 'lnbc2100n1alice',
+    amountSats: 2_100,
+    sparkInvoice: 'sparkrt1alice2100-Thanks',
+  });
+  const plain = await request.post('/pay/alice/invoice', { data: { amountSats: 21 } });
+  expect(await plain.json()).toMatchObject({ amountSats: 21, sparkInvoice: 'sparkrt1alice21' });
+  const refused = await request.post('/pay/alice/invoice', { data: { amountSats: 0 } });
+  expect(refused.status()).toBe(400);
+});
+
+test('Function: PosTill — an open charge turns into Paid ✓ and New payment opens the keypad', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        sparkWalletVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  const open = {
+    id: 'pos-e2e',
+    amountSats: 21,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+  };
+  let loads = 0;
+  await page.route(/\/pos\/charge$/, async (route) => {
+    loads += 1;
+    const charge =
+      loads === 1 ? open : { ...open, status: 'paid', paidAt: new Date().toISOString() };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge, history: [charge] }),
+    });
+  });
+  await page.goto('/pos');
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: 'Paid ✓' })).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+  await page.getByRole('link', { name: 'New payment' }).click();
+  await expect(page).toHaveURL(/\/pos\/amount$/);
+  await expect(page.getByRole('button', { name: 'Create payment' })).toBeVisible();
+});
+
+test('Function: PosHistory — the till list gains the charge once it is paid', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        sparkWalletVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  const earlier = {
+    id: 'pos-earlier',
+    amountSats: 500,
+    status: 'expired',
+    createdAt: '2026-09-19T08:30:00.000Z',
+    expiresAt: '2026-09-19T08:35:00.000Z',
+    paidAt: null,
+  };
+  const open = {
+    id: 'pos-e2e',
+    amountSats: 21,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+  };
+  let loads = 0;
+  await page.route(/\/pos\/charge$/, async (route) => {
+    loads += 1;
+    const charge =
+      loads === 1 ? open : { ...open, status: 'paid', paidAt: new Date().toISOString() };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge, history: [charge, earlier] }),
+    });
+  });
+  await page.goto('/pos');
+  const history = page.getByRole('region', { name: 'History' });
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  await expect(history.getByRole('listitem')).toHaveCount(1);
+  await expect(history.getByText('Expired')).toBeVisible();
+  await expect(history.getByText(/^Paid ✓ /)).toBeVisible({ timeout: 10_000 });
+  await expect(history.getByRole('listitem')).toHaveCount(2);
+  await expect(history.getByRole('listitem').first()).toContainText('₿21');
+});
+
+test('Function: PosHistory — Cancel puts the charge in the list as Cancelled', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        sparkWalletVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  const open = {
+    id: 'pos-e2e',
+    amountSats: 21,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+  };
+  let cancelled = false;
+  await page.route(/\/pos\/charge$/, async (route) => {
+    if (route.request().method() === 'DELETE') {
+      cancelled = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+      return;
+    }
+    const body = cancelled
+      ? { charge: null, history: [{ ...open, status: 'cancelled' }] }
+      : { charge: open, history: [open] };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+  await page.goto('/pos');
+  const history = page.getByRole('region', { name: 'History' });
+  await expect(history.getByText('No payments yet.')).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+  await expect(history.getByText('Cancelled')).toBeVisible();
+  await expect(history.getByText('₿21')).toBeVisible();
+  await expect(history.getByText('No payments yet.')).toHaveCount(0);
 });
 
 test('Function: proxyPosGet — GET /pos/charge without bearer is 401', async ({ request }) => {
@@ -9149,7 +9835,7 @@ test('Function: HomeWordmark — signed-in donate wordmark goes to welcome', asy
   await expect(page).toHaveURL(/\/welcome/);
 });
 
-test('Function: SegmentedControl — welcome composer shows Send a post', async ({ page }) => {
+test('Function: SegmentedControl — the welcome writer shows Send a post', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
@@ -9159,6 +9845,7 @@ test('Function: SegmentedControl — welcome composer shows Send a post', async 
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.getByRole('group', { name: 'Compose' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Send a post' })).toBeVisible();
 });
@@ -9190,7 +9877,7 @@ test('Function: ForumModeSelect — welcome forum view is a dropdown', async ({ 
   await expect(view).toContainText('Most popular');
 });
 
-test('Function: IconButton — welcome composer shows the Post icon control', async ({ page }) => {
+test('Function: IconButton — the welcome writer shows the Post icon control', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
@@ -9200,6 +9887,7 @@ test('Function: IconButton — welcome composer shows the Post icon control', as
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.getByRole('button', { name: 'Post', exact: true })).toBeVisible();
 });
 
@@ -9442,7 +10130,7 @@ test('Function: AppShellTopLeft — rules setup shows the wordmark', async ({ pa
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'ada@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: true,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -9509,7 +10197,7 @@ test('Function: resolveAppHeight — short keyboard visualViewport sizes the pag
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -9529,6 +10217,7 @@ test('Function: resolveAppHeight — short keyboard visualViewport sizes the pag
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.getByLabel('Your message').focus();
   const measured = await page.evaluate(() => {
     const inner = window.innerHeight;
@@ -9883,6 +10572,67 @@ test('Function: PublicMessageThread — signed-in permalink shows Copy link to t
   await expect(page.getByRole('button', { name: 'Copy link to this note' })).toBeVisible();
 });
 
+test('Function: useActiveSession — an open signed-in session loads the permalink with the bearer route', async ({
+  page,
+}) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  const signedNote = {
+    id,
+    name: 'Ada',
+    text: 'Hello from Ada',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+    role: 'basis',
+    replyCount: 0,
+    accountId: 'acc_e2e',
+  };
+  await seedAdaSession(page);
+  await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/public-messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/public-messages/${id}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(signedNote),
+    });
+  });
+  await page.route(`**/forum/messages/${id}`, async (route) => {
+    if (route.request().url().includes('/replies')) {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(signedNote),
+    });
+  });
+  const signedRequests: string[] = [];
+  page.on('request', (req) => {
+    if (req.url().endsWith(`/forum/messages/${id}`)) {
+      signedRequests.push(req.url());
+    }
+  });
+  await page.goto(`/messages/${id}`);
+  await expect(page.getByRole('button', { name: 'Copy link to this note' })).toBeVisible();
+  // Playwright builds count the wallet as open, so the session is active.
+  expect(signedRequests.length).toBeGreaterThan(0);
+});
+
 test('Function: generateMetadata — public note HTML includes og:title', async ({ request }) => {
   const res = await request.get('/messages/11111111-1111-4111-8111-111111111111');
   expect(await res.text()).toContain('property="og:title"');
@@ -9985,7 +10735,7 @@ test('Function: fetchForumMessage — staff hidden note loads via the bearer fet
         role: 'moderator',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1_700_000_000,
@@ -10234,6 +10984,133 @@ test('Function: isReplyPaymentExempt — a founder posts a reaction without an i
   expect(invoiceRequests).toBe(0);
 });
 
+async function routeOwnReplyForum(
+  page: import('@playwright/test').Page,
+  note: { id: string } & Record<string, unknown>,
+): Promise<{ replyBodies: unknown[]; invoiceUrls: string[]; invoiceBodies: unknown[] }> {
+  const seen = {
+    replyBodies: [] as unknown[],
+    invoiceUrls: [] as string[],
+    invoiceBodies: [] as unknown[],
+  };
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON() as { text: string };
+      seen.replyBodies.push(body);
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          message: {
+            ...note,
+            id: 'r-own',
+            name: 'Ada',
+            text: body.text,
+            sats: 0,
+            payable: false,
+            role: 'basis',
+          },
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [note] }),
+    });
+  });
+  await page.route(`**/forum/messages/${note.id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route('**/messages/compose-target', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messageId: 'compose-fee', sats: 0, firstPostFree: false }),
+    });
+  });
+  await page.route(/\/messages\/[^/]+\/invoice$/, async (route) => {
+    seen.invoiceUrls.push(new URL(route.request().url()).pathname);
+    seen.invoiceBodies.push(route.request().postDataJSON());
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: 'lnbc10n1pexample', amountSats: 1 }),
+    });
+  });
+  return seen;
+}
+
+test('Function: isOwnNote — a Basis member replies to their own post without paying', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'basis');
+  const note = {
+    id: 'm-own',
+    accountId: 'acc_e2e',
+    name: 'Ada',
+    text: 'Hello from Ada',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+  };
+  const seen = await routeOwnReplyForum(page, note);
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const composer = page.getByPlaceholder('Write a reaction');
+  await expect(composer).toBeVisible();
+  await expect(page.locator('#forum-reply-amount')).toHaveCount(0);
+  await composer.fill('A note to my own post');
+  await composer.locator('xpath=ancestor::form').getByRole('button', { name: 'Post' }).click();
+  await expect
+    .poll(() => seen.replyBodies)
+    .toEqual([{ text: 'A note to my own post', inReplyTo: 'm-own' }]);
+  await expect(page.getByText('A note to my own post')).toBeVisible();
+  await expect(page.getByRole('button', { name: /and post/ })).toHaveCount(0);
+  expect(seen.invoiceUrls).toEqual([]);
+});
+
+test('Function: isOwnNote — a Basis reply to someone else still pays 1 sat', async ({ page }) => {
+  await seedAdaSession(page, 'basis');
+  const note = {
+    id: 'm-bob',
+    accountId: 'acc_bob',
+    name: 'Bob',
+    text: 'Hello from Bob',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+  };
+  const seen = await routeOwnReplyForum(page, note);
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const composer = page.getByPlaceholder('Write a reaction');
+  await expect(composer).toBeVisible();
+  await expect(page.locator('#forum-reply-amount')).toBeVisible();
+  await composer.fill('Hi Bob');
+  await composer.locator('xpath=ancestor::form').getByRole('button', { name: 'Post' }).click();
+  await expect.poll(() => seen.invoiceUrls).toEqual(['/messages/compose-fee/invoice']);
+  expect(seen.invoiceBodies[0]).toMatchObject({ sats: 1, text: 'inReplyTo:m-bob\nHi Bob' });
+  expect(seen.replyBodies).toEqual([]);
+});
+
 test('Function: ViewProfilePage — public view heading is visible', async ({ page }) => {
   const key = 'a'.repeat(64);
   await page.route(new RegExp(`/view-key/${key}$`), async (route) => {
@@ -10243,7 +11120,7 @@ test('Function: ViewProfilePage — public view heading is visible', async ({ pa
       body: JSON.stringify({
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         createdAt: 1,
         hasPasskey: false,
@@ -10285,7 +11162,7 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
       body: JSON.stringify({
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         createdAt: 1,
         hasPasskey: false,
@@ -10306,10 +11183,7 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
   await expect(page.getByText('Copy link to this profile')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Edit Wallet of Satoshi address' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Remove Wallet of Satoshi address' })).toHaveCount(
-    0,
-  );
+  await expect(page.getByRole('button', { name: 'Edit', exact: true })).toHaveCount(0);
 });
 
 test('Function: ViewProfileClaim — public view shows the passkey claim control', async ({
@@ -10323,7 +11197,7 @@ test('Function: ViewProfileClaim — public view shows the passkey claim control
       body: JSON.stringify({
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         createdAt: 1,
         hasPasskey: false,
@@ -10354,7 +11228,7 @@ test('Function: fetchViewProfile — public view card loads via the client fetch
       body: JSON.stringify({
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         createdAt: 1,
         hasPasskey: false,
@@ -10390,7 +11264,7 @@ test('Function: fetchAccountActivity — profile chart shows received sats and t
   await page.goto('/profile');
   await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Profile', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /Received ₿/ })).toHaveCount(0);
 });
 test('Function: fetchMemberActivity — member card shows empty activity copy', async ({
@@ -10413,7 +11287,7 @@ test('Function: fetchViewActivity — public view card shows empty activity copy
       body: JSON.stringify({
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         createdAt: 1,
         hasPasskey: false,
@@ -10460,7 +11334,7 @@ test('Function: useAccountTotals — profile chart reads /me/activity and the me
   await page.goto('/profile');
   await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
   await openSignedInMenu(page);
-  await expect(page.getByRole('link', { name: 'Profile' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Profile', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /Received ₿/ })).toHaveCount(0);
 });
 
@@ -10817,6 +11691,16 @@ test('Function: postPushSubscription — POST /me/push-subscriptions with bearer
   expect(((await res.json()) as { endpoint: string }).endpoint).toBe('https://push.example/e2e');
 });
 
+test('Function: POST — POST /me/name without bearer is 401', async ({ request }) => {
+  expect((await request.post('/me/name', { data: { name: 'Ada' } })).status()).toBe(401);
+});
+
+test('Function: DELETE — DELETE /me/push-subscriptions without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.delete('/me/push-subscriptions')).status()).toBe(401);
+});
+
 test('Function: proxyMePushSubscriptionsDelete — DELETE /me/push-subscriptions without bearer is 401', async ({
   request,
 }) => {
@@ -10861,6 +11745,286 @@ test('Function: postNotificationLevel — profile shows All Active Mentions', as
     'aria-pressed',
     'true',
   );
+});
+
+test('Function: postHeartNotifications — profile Hearts Off posts the switch', async ({
+  page,
+  request,
+}) => {
+  await reachWelcome(page, request);
+  await page.goto('/profile');
+  const intro = page.getByRole('dialog', { name: 'Introduce yourself' });
+  if (await intro.isVisible()) {
+    await page.getByRole('button', { name: 'Close' }).click();
+  }
+  const hearts = page.getByRole('group', { name: 'Hearts' });
+  await expect(hearts.getByRole('button', { name: 'On' })).toHaveAttribute('aria-pressed', 'true');
+  const posted = page.waitForResponse((response) => {
+    if (response.request().method() !== 'POST') {
+      return false;
+    }
+    return new URL(response.url()).pathname === '/me/heart-notifications';
+  });
+  await hearts.getByRole('button', { name: 'Off' }).click();
+  expect((await posted).status()).toBe(200);
+  await expect(hearts.getByRole('button', { name: 'Off' })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Function: sendHeartTip — signed-out heart does not mint', async ({ page }) => {
+  await page.route(/\/forum\/messages/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '44444444-4444-4444-8444-444444444444',
+            accountId: 'acc-ada',
+            name: 'Ada',
+            text: 'Hello from the active list.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toBeVisible();
+  await expect(page.getByText('Hello from the active list.')).toBeVisible();
+  let invoiced = false;
+  page.on('request', (req) => {
+    if (req.method() === 'POST' && req.url().includes('/invoice')) {
+      invoiced = true;
+    }
+  });
+  await page.getByRole('button', { name: 'Send ₿1' }).first().click();
+  expect(invoiced).toBe(false);
+  await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByText('A Bitcoin balance is required for this.', { exact: true }),
+  ).toHaveCount(0);
+  await expect(page).toHaveURL(/\/welcome/);
+});
+
+test('Function: useHeartTip — signed-out board shows the heart', async ({ page }) => {
+  await page.route(/\/forum\/messages/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '44444444-4444-4444-8444-444444444444',
+            accountId: 'acc-ada',
+            name: 'Ada',
+            text: 'Hello from the active list.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toBeVisible();
+  await expect(page.getByText('Hello from the active list.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send ₿1' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Send ₿1' }).first().click();
+  await expect(page).toHaveURL(/\/welcome/);
+  await expect(page.getByRole('button', { name: 'Send ₿1' }).first()).toBeVisible();
+  await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+});
+
+/**
+ * Serves one forum note on `/welcome` for a heart test.
+ *
+ * @param page - Playwright page.
+ * @param payable - Whether the note's author can receive.
+ */
+async function routeHeartNote(page: Page, payable: boolean): Promise<void> {
+  await page.route(/\/forum\/messages/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '44444444-4444-4444-8444-444444444444',
+            accountId: 'acc-bob',
+            name: 'Bob',
+            text: 'Hello from the heart list.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: '{"spendOverTime":[]}',
+    });
+  });
+}
+
+test('Function: useHeartTip — the +1 shows on the tap while the payment is still running', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeHeartNote(page, true);
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let answered = false;
+  await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+    await held;
+    answered = true;
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'HEART_UNAVAILABLE' }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Hello from the heart list.')).toBeVisible();
+  const invoiced = page.waitForRequest(/\/messages\/[^/]+\/invoice/);
+  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  await expect(page.getByText('+1', { exact: true })).toBeVisible({ timeout: 100 });
+  await invoiced;
+  expect(answered).toBe(false);
+  release();
+  await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+  await expect(
+    page.locator('li', { hasText: 'Hello from the heart list.' }).getByRole('alert'),
+  ).toHaveCount(0);
+});
+
+test('Function: sendHeartTip — a 503 HEART_UNAVAILABLE shows no sentence under the heart', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeHeartNote(page, true);
+  await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'HEART_UNAVAILABLE' }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Hello from the heart list.')).toBeVisible();
+  const answered = page.waitForResponse(/\/messages\/[^/]+\/invoice/);
+  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  await expect(page.getByText('+1', { exact: true })).toBeVisible();
+  await answered;
+  await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+  await expect(
+    page.locator('li', { hasText: 'Hello from the heart list.' }).getByRole('alert'),
+  ).toHaveCount(0);
+});
+
+test('Function: sendHeartTip — an invoice without a Spark invoice is not paid', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeHeartNote(page, true);
+  let heartBody: unknown = null;
+  await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+    heartBody = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: 'lnbc1n1heart', amountSats: 1 }),
+    });
+  });
+  await page.goto('/welcome');
+  const answered = page.waitForResponse(/\/messages\/[^/]+\/invoice/);
+  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  await answered;
+  expect(heartBody).toEqual({ sats: 1, heart: true });
+  await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+  await expect(
+    page.locator('li', { hasText: 'Hello from the heart list.' }).getByRole('alert'),
+  ).toHaveCount(0);
+});
+
+test('Function: ForumBoard — no heart on a note whose author cannot receive', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeHeartNote(page, false);
+  await page.goto('/welcome');
+  await expect(page.getByText('Hello from the heart list.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'React' }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+});
+
+test('Function: ExternalAuthorProfile — the read-only feed shows no heart', async ({ page }) => {
+  await page.route('**/external-profile', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ name: 'Robin', npub: 'npub1example', postCount: 1, replyCount: 0 }),
+    });
+  });
+  await page.route('**/external-posts', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '55555555-5555-4555-8555-555555555555',
+            name: 'Robin',
+            via: 'nostr',
+            text: 'Robin wrote a payable note',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: true,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages/11111111-1111-4111-8111-111111111111/author?name=Robin');
+  await page.getByRole('button', { name: '1 post' }).click();
+  await expect(page.getByText('Robin wrote a payable note')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
 });
 
 test('Function: accountNotificationLevel — profile selects All when the field is omitted', async ({
@@ -10945,6 +12109,7 @@ test('Function: OPTIONS — NIP-05 preflight is allowed', async ({ request }) =>
 test('Function: isForumVideoFile — composer accept includes mp4', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/mp4/);
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
   await expect.poll(async () => page.locator('form video').count(), { timeout: 15_000 }).toBe(1);
@@ -10952,26 +12117,31 @@ test('Function: isForumVideoFile — composer accept includes mp4', async ({ pag
 test('Function: prepareForumVideo — composer accept includes webm', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/webm/);
 });
 test('Function: postMessageVideo — composer accept includes quicktime', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/quicktime/);
 });
 test('Function: forumVideoSrc — composer accept includes mov', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /\.mov/);
 });
 test('Function: isForumVideoFile — composer accept includes m4v', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /video\/x-m4v/);
 });
 test('Function: prepareForumVideo — composer accept includes m4v extension', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await expect(page.locator('input[type="file"]')).toHaveAttribute('accept', /\.m4v/);
 });
 
@@ -11024,6 +12194,7 @@ test('Function: prepareForumVideo — attaching an mp4 shows a preview', async (
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
   await expect.poll(async () => page.locator('form video').count(), { timeout: 15_000 }).toBe(1);
 });
@@ -11044,6 +12215,7 @@ test('Function: postMessageVideo — posting a prepared clip sends multipart vid
     await route.fallback();
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
   await expect
     .poll(
@@ -11435,7 +12607,7 @@ test('Function: MemberTrustActions — ordinary members have no verify action', 
         name: 'Ada',
         location: null,
         role: 'basis',
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         profileMessage: null,
         postCount: 0,
@@ -11468,7 +12640,7 @@ test('Function: StaffFunctions — moderator actions stay closed until opened', 
         name: 'Ada',
         location: null,
         role: 'basis',
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         createdAt: '2026-01-15T12:00:00.000Z',
         profileMessage: null,
         postCount: 0,
@@ -11905,7 +13077,7 @@ test('Function: ForumQuotedBody — welcome reply shows the nested post', async 
         role: 'founder',
         name: 'Cyrill',
         location: null,
-        lightningAddress: 'cyrill@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1_700_000_000,
@@ -12037,7 +13209,7 @@ async function seedWelcomeLinkNote(page: Page, text: string): Promise<void> {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,
@@ -12312,7 +13484,7 @@ test('Function: parseForumAskAmountInUnit — fiat ask converts inside the range
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -12326,6 +13498,7 @@ test('Function: parseForumAskAmountInUnit — fiat ask converts inside the range
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await expect(page.getByText('How much?')).toBeVisible();
   const usd = page
@@ -12359,7 +13532,7 @@ test('Function: setAmountUnit — the ask switch saves fiat on the account', asy
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
@@ -12373,6 +13546,7 @@ test('Function: setAmountUnit — the ask switch saves fiat on the account', asy
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await expect(page.getByText('How much?')).toBeVisible();
   const saved = page.waitForRequest(
@@ -12479,6 +13653,7 @@ async function openCreditAmount(page: Page): Promise<void> {
     });
   });
   await page.goto('/welcome');
+  await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await page.getByRole('button', { name: 'Credit' }).click();
   await page.getByLabel('Ask').fill('21000');
@@ -12555,6 +13730,54 @@ test('Function: getRepayment — GET /messages/[id]/repayment answers without a 
   expect(response.status()).toBeGreaterThanOrEqual(200);
 });
 
+test("Function: postRepaymentInvoice — today's repayment opens the wallet-only pay slot", async ({
+  page,
+}) => {
+  await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc21n1repay', amountSats: 700 }),
+      });
+      return;
+    }
+    await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+  });
+  await seedAdaSession(page);
+  await stubGiftStats(page, POPULATED_STATS);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-goal-credit',
+            accountId: 'acc_e2e',
+            name: 'Ada',
+            text: 'Need help with a train ticket',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 21000,
+            goalSats: 21000,
+            goalRepayable: true,
+            goalTermDays: 30,
+            payable: true,
+            hasPhoto: false,
+            role: 'basis',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: "Pay today's repayment" }).click();
+  await expect(page.getByText(WALLET_UNAVAILABLE)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
+});
+
 test('Function: postRepaymentInvoice — POST /messages/[id]/repayment without bearer is denied', async ({
   request,
 }) => {
@@ -12581,6 +13804,7 @@ test('Function: CreditLedger — a credit note lists who gave and who is paid ba
       }),
     });
   });
+  await fulfillSpot(page);
   await page.route(`**/public-messages/${id}`, async (route) => {
     await route.fulfill({
       status: 200,
@@ -12818,7 +14042,7 @@ async function openWideImageCrop(page: Page, puts: unknown[]): Promise<void> {
         name: 'Ada',
         username: 'alice',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1_700_000_000,
@@ -12940,6 +14164,7 @@ test('Function: proxyForumMentionsGet — GET /forum/mentions without bearer is 
 
 test('Function: activeMention — @ in the composer opens People', async ({ page, request }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   const box = page.getByRole('textbox', { name: 'Your message' });
   await box.fill('@');
   await expect(page.getByRole('listbox', { name: 'People' })).toBeVisible();
@@ -12951,6 +14176,7 @@ test('Function: MentionTextarea — choosing a person inserts the handle', async
   request,
 }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   const box = page.getByRole('textbox', { name: 'Your message' });
   await box.fill('@');
   await page.getByRole('option', { name: '@ada', exact: true }).click();
@@ -12959,6 +14185,7 @@ test('Function: MentionTextarea — choosing a person inserts the handle', async
 
 test('Function: searchMentionAccounts — @as keeps only that prefix', async ({ page, request }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   const box = page.getByRole('textbox', { name: 'Your message' });
   await box.fill('@as');
   await expect(page.getByRole('option', { name: '@ashton' })).toBeVisible();
@@ -12970,6 +14197,7 @@ test('Function: remapClosedMentionStarts — earlier text keeps that @ closed', 
   request,
 }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   const box = page.getByRole('textbox', { name: 'Your message' });
   const people = page.getByRole('listbox', { name: 'People' });
   await box.fill('hi @');
@@ -13073,4 +14301,66 @@ test('Function: ReplyDirectionAmounts — sent and received stay apart', async (
   await expect(page.getByText("sent \u20BF21'000")).toBeVisible();
   await expect(page.getByText('received \u20BF100')).toBeVisible();
   await expect(page.getByText("\u20BF21'100")).toHaveCount(0);
+});
+
+test('Function: proxyLnurlPayRequestPost — POST /lnurl/pay-request returns the bounds', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/lnurl/pay-request', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { target: 'bob@example.com' },
+  });
+  expect(res.status()).toBe(200);
+  expect(await res.json()).toMatchObject({
+    target: 'bob@example.com',
+    minSendableMsat: 1_000,
+    commentAllowed: 10,
+  });
+});
+
+test('Function: proxyLnurlInvoicePost — POST /lnurl/invoice returns the invoice', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const res = await request.post('/lnurl/invoice', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { target: 'bob@example.com', amountMsat: 21_000 },
+  });
+  expect(res.status()).toBe(200);
+  // 21'000 msat is 210'000 pico-bitcoin (BOLT11 multiplier p).
+  expect(((await res.json()) as { pr: string }).pr).toBe('lnbc210000p1mockrelay');
+});
+
+test('Function: postLnurlPayRequest — refusals carry the contract error texts', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const headers = { authorization: `Bearer ${token}` };
+  for (const [target, status, error] of [
+    ['bob@21.gifts', 400, 'Not a payable address'],
+    ['missing@example.com', 404, 'Address not found'],
+    ['down@example.com', 502, 'Address could not be reached'],
+  ] as const) {
+    const res = await request.post('/lnurl/pay-request', { headers, data: { target } });
+    expect(res.status()).toBe(status);
+    expect(await res.json()).toEqual({ error });
+  }
+});
+
+test('Function: postLnurlInvoice — amount and comment refusals', async ({ request }) => {
+  const token = await loginHttp(request);
+  const headers = { authorization: `Bearer ${token}` };
+  const range = await request.post('/lnurl/invoice', {
+    headers,
+    data: { target: 'bob@example.com', amountMsat: 500 },
+  });
+  expect(range.status()).toBe(400);
+  expect(await range.json()).toEqual({ error: 'Amount out of range' });
+  const comment = await request.post('/lnurl/invoice', {
+    headers,
+    data: { target: 'bob@example.com', amountMsat: 21_000, comment: 'far too long a message' },
+  });
+  expect(comment.status()).toBe(400);
+  expect(await comment.json()).toEqual({ error: 'Comment too long' });
 });

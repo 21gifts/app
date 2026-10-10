@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, type ReactElement } from 'react';
 import { FiatPicker } from '@/components/FiatPicker';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -322,15 +323,16 @@ function CumulativeOverTimeChart(
         const hitX = i === 0 ? padL : (xAt(i - 1) + cx) / 2;
         const hitEnd = i === n - 1 ? padL + innerW : (cx + xAt(i + 1)) / 2;
         return (
-          <a
+          <Link
             key={`${ariaLabel}-day-${point.day}`}
             href={`/stats/${point.day}`}
+            prefetch={false}
             aria-label={point.day}
             className="cursor-pointer"
           >
             <rect x={hitX} y={padT} width={hitEnd - hitX} height={innerH} fill="transparent" />
             <circle cx={cx} cy={cy} r={3.5} className="fill-accent" pointerEvents="none" />
-          </a>
+          </Link>
         );
       })}
       {xIdx.map((i, tickIndex) => {

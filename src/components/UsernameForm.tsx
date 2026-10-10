@@ -15,6 +15,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * @param props - `onboarding` shows the field at the top and **Continue** in
  *   `AppShellFooter`; `overlay` keeps **Continue** in the form. There is no Skip.
  *   Defaults to `onboarding`. Optional `onSaved` after a successful POST.
+ *   Once the account's wallet is verified (`sparkWalletVerified`), the field
+ *   shows the current username, field and **Continue** are disabled, and a
+ *   line says why.
  * @returns The username field and Continue control.
  */
 export function UsernameForm({
@@ -24,15 +27,20 @@ export function UsernameForm({
   const { t } = useTranslations();
   const session = useAuthStore((state) => state.session);
   const setAccount = useAuthStore((state) => state.setAccount);
+  const frozenUsername = useAuthStore((state) =>
+    state.account?.sparkWalletVerified === true ? (state.account.username ?? '') : null,
+  );
+  const frozen = frozenUsername !== null;
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<'empty' | 'invalid' | 'taken' | 'request' | null>(null);
   const formId = useId();
   const fieldId = useId();
+  const frozenId = useId();
 
   const onSubmit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
-    if (session === null) {
+    if (session === null || frozen) {
       return;
     }
     const value = draft.trim().toLowerCase();
@@ -73,7 +81,7 @@ export function UsernameForm({
       type="submit"
       form={variant === 'onboarding' ? formId : undefined}
       size="lg"
-      disabled={busy}
+      disabled={busy || frozen}
       icon={busy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
     >
       {t('setup.continue')}
@@ -91,15 +99,21 @@ export function UsernameForm({
         autoComplete="username"
         autoCorrect="off"
         spellCheck={false}
-        value={draft}
+        value={frozenUsername ?? draft}
         onChange={(event) => {
           setDraft(event.target.value);
           setError(null);
         }}
-        disabled={busy}
+        disabled={busy || frozen}
+        aria-describedby={frozen ? frozenId : undefined}
         className="w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 font-mono text-base text-app-fg transition focus-visible:border-app-fg disabled:opacity-50"
         aria-invalid={error !== null}
       />
+      {frozen ? (
+        <p id={frozenId} className="text-center text-sm text-app-muted">
+          {t('setup.usernameFrozen')}
+        </p>
+      ) : null}
       {error !== null ? (
         <p role="alert" className="text-center text-sm text-app-danger">
           {t(

@@ -6,6 +6,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
 import { postPasskeyRenewAck } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
+import { getE2eNow } from '@/lib/config';
 import { renewPasskey } from '@/lib/passkey-renew';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -13,13 +14,18 @@ import { useAuthStore } from '@/stores/auth-store';
 type RenewStep = 'explain' | 'passkey' | 'success' | 'failed';
 
 /**
- * Screenshot fixture for one guided step. Live ceremonies ignore this.
+ * Screenshot fixture for one guided step (`?visual=renew-passkey`,
+ * `?visual=renew-ok`), honoured only in a Playwright build (`getE2eNow()`
+ * set). Live ceremonies and production builds ignore it.
  *
  * @returns The forced step, or `null` for the real flow.
  */
 function fixtureStep(): RenewStep | null {
   /* v8 ignore next 3 -- client screenshots always have window */
   if (typeof window === 'undefined') {
+    return null;
+  }
+  if (getE2eNow() === null) {
     return null;
   }
   const visual = new URLSearchParams(window.location.search).get('visual');
@@ -130,7 +136,7 @@ export function PasskeyRenewNotice(): ReactElement | null {
         ? t('passkeyRenew.successBody')
         : step === 'failed'
           ? account?.passkeyRenewPrfUnsupported === true
-            ? t('passkeyRenew.prfUnsupported')
+            ? t('wallet.prfUnsupported')
             : t('passkeyRenew.failedBody')
           : t('passkeyRenew.explain');
   let action: ReactNode;

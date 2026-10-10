@@ -7,7 +7,6 @@ import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { FiatPreferenceSwitcher } from '@/components/FiatPreferenceSwitcher';
 import { LanguagePreferenceSwitcher } from '@/components/LanguagePreferenceSwitcher';
-import { LightningAddressForm } from '@/components/LightningAddressForm';
 import { LocationForm } from '@/components/LocationForm';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -30,6 +29,7 @@ import {
 } from '@/lib/api';
 import type { MemberProfile } from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -338,8 +338,8 @@ function profileWithoutStaffTag(profile: MemberProfile): MemberProfile {
 /**
  * Signed-in profile card with compact activity chart, About me, name, location,
  * the same public gifts facts as the member card (`MemberProfileScreen`
- * `factsOnly`), and address forms,
- * PushToggle (All/Active/Mentions always; This device On/Off when Push APIs
+ * `factsOnly`), PushToggle (All/Active/Mentions always; Hearts On/Off under
+ * the level; This device On/Off when Push APIs
  * are ready), LanguagePreferenceSwitcher, ThemeSwitcher,
  * FiatPreferenceSwitcher, and NumberFormatSwitcher.
  *
@@ -393,7 +393,7 @@ export function ProfileScreen(): ReactElement {
           return;
         }
         if (err instanceof MissingRequirementsError) {
-          router.replace('/setup/rules');
+          returnToView('/setup/rules', router);
           return;
         }
         setMemberStatus('error');
@@ -402,7 +402,7 @@ export function ProfileScreen(): ReactElement {
     return () => {
       cancelled = true;
     };
-    /* router.replace is used on 409; next/navigation's identity is not stable */
+    /* returnToView(…, router) is used on 409; next/navigation's identity is not stable */
   }, [session, accountId, memberAttempt]);
 
   return (
@@ -477,7 +477,7 @@ export function ProfileScreen(): ReactElement {
               }
               if (err instanceof MissingRequirementsError) {
                 if (err.missing.includes('rules')) {
-                  router.replace('/setup/rules');
+                  returnToView('/setup/rules', router);
                   return;
                 }
                 throw err;
@@ -511,7 +511,6 @@ export function ProfileScreen(): ReactElement {
           </Button>
         </div>
       ) : null}
-      <LightningAddressForm variant="profile" />
       <PushToggle />
       <LanguagePreferenceSwitcher />
       <ThemeSwitcher />

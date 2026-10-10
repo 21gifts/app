@@ -5,6 +5,37 @@ import { useEffect } from 'react';
 import { resolveAppHeight, resolveAppOffsetTop } from '@/lib/app-height';
 import { revealInScrollport } from '@/lib/reveal-in-scrollport';
 
+/** Input types that take no typed text, so focusing them opens no keyboard. */
+const NON_TYPING_INPUTS = new Set([
+  'button',
+  'checkbox',
+  'color',
+  'file',
+  'hidden',
+  'image',
+  'radio',
+  'range',
+  'reset',
+  'submit',
+]);
+
+/** Longest hold of the full height after leaving the writing composer, in ms. */
+const HOLD_MS = 1000;
+
+/** Whether focus on this node opens the on-screen keyboard. */
+function isTypingField(node: EventTarget | null): boolean {
+  return (
+    node instanceof HTMLTextAreaElement ||
+    (node instanceof HTMLInputElement && !NON_TYPING_INPUTS.has(node.type)) ||
+    (node instanceof HTMLElement && node.isContentEditable)
+  );
+}
+
+/** Whether the node is inside the forum home writer (`data-writing-composer`). */
+function inWritingComposer(node: EventTarget | null): boolean {
+  return node instanceof Element && node.closest('[data-writing-composer]') !== null;
+}
+
 function revealFocusedField(): void {
   const active = document.activeElement;
   if (!(
@@ -26,25 +57,71 @@ function revealFocusedField(): void {
  * viewport resize or scroll, and on focus via `requestAnimationFrame`, the
  * focused input, textarea, or select is revealed inside the active scrollport.
  *
+ * One exception, for the forum home writer only (`[data-writing-composer]`,
+ * the layer that holds its composer): iOS reports the taller viewport only
+ * after the keyboard has slid away. When the focus leaves the writer and no
+ * other text field takes it (closing the writer blurs its field first), the
+ * height measured when the focus came into the writer from no text field
+ * (kept while a hold is still on), and offset 0, are written at once and
+ * held until the viewport reports that height, another text field takes the
+ * focus, the width or orientation changes, or one second has passed.
+ * Entering the writer from another text field measures nothing, so leaving
+ * it afterwards holds nothing. Every other field keeps the plain behaviour.
+ *
  * @returns void. Writes both custom properties, then reveals the focused field.
  */
 export function useAppHeight(): void {
   useEffect(() => {
     const viewport = window.visualViewport;
     let focusFrame: number | null = null;
+    // Height measured when the focus came into the writing composer from no field, at this width.
+    let restingHeight: number | null = null;
+    let restingWidth = 0;
+    let heldHeight: number | null = null;
+    let holdTimer: number | null = null;
+
+    const releaseHold = (): void => {
+      heldHeight = null;
+      if (holdTimer !== null) window.clearTimeout(holdTimer);
+      holdTimer = null;
+    };
 
     const writeViewport = (reveal = true): void => {
       const height = resolveAppHeight(window.innerHeight, viewport);
       if (height === null) return;
-      const offsetTop = resolveAppOffsetTop(viewport);
+      let offsetTop = resolveAppOffsetTop(viewport);
       if (offsetTop === null) return;
+      let shown = height;
+      if (heldHeight !== null && height < heldHeight && window.innerWidth === restingWidth) {
+        shown = heldHeight;
+        offsetTop = 0;
+      } else {
+        releaseHold();
+      }
 
-      document.documentElement.style.setProperty('--app-height', `${height}px`);
+      document.documentElement.style.setProperty('--app-height', `${shown}px`);
       document.documentElement.style.setProperty('--app-offset-top', `${offsetTop}px`);
       if (reveal) revealFocusedField();
     };
 
-    const handleFocusIn = (): void => {
+    const handleFocusIn = (event: FocusEvent): void => {
+      // Back into the composer while the keyboard is still closing: the held height stays the full one.
+      const held = window.innerWidth === restingWidth ? heldHeight : null;
+      // A control that opens no keyboard (a focused button) keeps the hold; a text field ends it.
+      if (isTypingField(event.target)) releaseHold();
+      // Focus moving inside the composer keeps what its entry measured.
+      if (inWritingComposer(event.target) && !inWritingComposer(event.relatedTarget)) {
+        // A new entry forgets the last one. From another text field the keyboard is already
+        // up, and while pinch-zoomed nothing can be read: then nothing is measured.
+        restingHeight = null;
+        const height = isTypingField(event.relatedTarget)
+          ? null
+          : resolveAppHeight(window.innerHeight, viewport);
+        if (height !== null) {
+          restingHeight = held === null ? height : Math.max(held, height);
+          restingWidth = window.innerWidth;
+        }
+      }
       writeViewport(false);
       if (focusFrame !== null) cancelAnimationFrame(focusFrame);
       focusFrame = requestAnimationFrame(() => {
@@ -52,13 +129,31 @@ export function useAppHeight(): void {
         revealFocusedField();
       });
     };
-    const handleFocusOut = (): void => writeViewport(false);
+    const handleFocusOut = (event: FocusEvent): void => {
+      if (
+        restingHeight !== null &&
+        restingWidth === window.innerWidth &&
+        inWritingComposer(event.target) &&
+        !inWritingComposer(event.relatedTarget) &&
+        !isTypingField(event.relatedTarget)
+      ) {
+        releaseHold();
+        heldHeight = restingHeight;
+        holdTimer = window.setTimeout(() => {
+          holdTimer = null;
+          heldHeight = null;
+          writeViewport(false);
+        }, HOLD_MS);
+      }
+      writeViewport(false);
+    };
 
     writeViewport(false);
     const handleWindowResize = (): void => {
       writeViewport(true);
     };
     const handleOrientationChange = (): void => {
+      releaseHold();
       writeViewport(true);
     };
     const handleViewportResize = (): void => {
@@ -83,6 +178,7 @@ export function useAppHeight(): void {
       viewport?.removeEventListener('resize', handleViewportResize);
       viewport?.removeEventListener('scroll', handleViewportScroll);
       if (focusFrame !== null) cancelAnimationFrame(focusFrame);
+      releaseHold();
     };
   }, []);
 }

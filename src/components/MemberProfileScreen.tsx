@@ -19,8 +19,8 @@ import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
 import { Button, Card, IconButton } from '@/components/ui';
 import {
+  CannotReceiveError,
   fetchComposeTarget,
-  fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
   fetchMessagePhoto,
@@ -28,11 +28,12 @@ import {
   fetchPublicMessagePhoto,
   fetchReplies,
   markNotificationsReadForMessage,
-  openConversation,
   NoteDeletedError,
+  openConversation,
   postMessage,
   postMessageInvoice,
   postRepaymentInvoice,
+  WalletRequiredError,
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
@@ -44,19 +45,16 @@ import {
 import type { MessageKey } from '@/lib/messages';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { useHeartTip } from '@/lib/heart-tip';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shopStickerLangFromLocation } from '@/lib/shop-sticker';
 import { shortResourceUrl } from '@/lib/short-link';
-import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import {
-  latestRateDayFor,
-  paySatsFromDraft,
-  replySatsFromDraft,
-  shownFiatForSats,
-  type FiatRateDay,
-} from '@/lib/stats-money';
+import { useSpotRate } from '@/hooks/useSpotRate';
+import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Delay between pay polls (ms). */
@@ -94,17 +92,15 @@ function isRateLimitError(err: unknown): boolean {
 }
 
 /**
- * True when the author's wallet rejected the zap invoice.
+ * True when a thrown value is the api answer that the receiving wallet
+ * cannot take this payment: a {@link CannotReceiveError}, recognised by the
+ * api's `code` only.
  *
  * @param err - Caught rejection.
- * @returns Whether the message looks like an author's-wallet error.
+ * @returns Whether the receiver's wallet refused the payment.
  */
 function isAuthorWalletError(err: unknown): boolean {
-  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
-  if (!(err instanceof Error)) {
-    return false;
-  }
-  return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
+  return err instanceof CannotReceiveError;
 }
 
 /** Roles that show a clickable tag beside the author name. */
@@ -239,6 +235,7 @@ export function MemberProfileScreen({
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const { onHeartTip, heartTipViews } = useHeartTip({ readOnly: session === null });
   const { fiat } = useFiatPreference();
   const amountUnit = account?.amountUnit ?? 'btc';
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
@@ -271,7 +268,7 @@ export function MemberProfileScreen({
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
-    'name' | 'username' | 'rules' | 'lightning-address' | null
+    'name' | 'username' | 'rules' | 'wallet' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const startRepaymentRef = useRef<(messageId: string) => void>(() => undefined);
@@ -306,10 +303,9 @@ export function MemberProfileScreen({
     setStickerOpen(true);
   }, [qr, address]);
 
-  const [rateSeries, setRateSeries] = useState<readonly FiatRateDay[] | null>(null);
-  const rateDay = rateSeries === null ? null : latestRateDayFor(rateSeries, fiat);
-  const rateDayRef = useRef(rateDay);
-  rateDayRef.current = rateDay;
+  const rateDay = useSpotRate();
+  /** The rate the last reply amount was read with, so a retry stores fiat from that same rate. */
+  const replyRateRef = useRef(rateDay);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
@@ -336,24 +332,6 @@ export function MemberProfileScreen({
     .map(({ id, count }) => `${id}:${count}`)
     .sort()
     .join('\0');
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetchGiftStats()
-      .then((stats) => {
-        if (!cancelled) {
-          setRateSeries(stats.spendOverTime);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRateSeries([]);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (session === null || photoIdsKey === '') {
@@ -457,7 +435,7 @@ export function MemberProfileScreen({
       }
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
-        router.replace('/setup/rules');
+        returnToView('/setup/rules', router);
         return;
       }
       if (loadGen.current === gen) {
@@ -543,11 +521,10 @@ export function MemberProfileScreen({
       if (composePay) {
         try {
           baselineOwn = await countOwn();
-          /* v8 ignore start -- a failed baseline count is retried after sats rise */
         } catch {
+          // Without a baseline, any own row with this text after the sats rise is the new one.
           baselineOwn = null;
         }
-        /* v8 ignore stop */
       }
       for (;;) {
         try {
@@ -569,9 +546,7 @@ export function MemberProfileScreen({
             let ownContent = !composePay;
             if (composePay) {
               try {
-                if (baselineOwn !== null) {
-                  ownContent = (await countOwn()) > baselineOwn;
-                }
+                ownContent = (await countOwn()) > (baselineOwn ?? 0);
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
               } catch {
                 ownContent = false;
@@ -766,6 +741,7 @@ export function MemberProfileScreen({
     trimmed: string,
     parentId: string,
     isRetry: boolean,
+    ownNote = false,
   ): Promise<void> => {
     setReplyPosting(true);
     setReplyFormError(null);
@@ -810,7 +786,7 @@ export function MemberProfileScreen({
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
-          pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
+          pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true, ownNote);
           return;
         }
         if (expandedIdRef.current === parentId) {
@@ -819,6 +795,11 @@ export function MemberProfileScreen({
         return;
       }
       if (isReplyPaymentError(err)) {
+        // A reply on your own note is never paid; the api owes it unpaid.
+        if (ownNote) {
+          setReplyFormError('request');
+          return;
+        }
         await runComposePay(token, trimmed, parentId, 1, isRetry);
         return;
       }
@@ -860,7 +841,7 @@ export function MemberProfileScreen({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(sats, rateDayRef.current),
+        shownFiatForSats(sats, replyRateRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -872,6 +853,8 @@ export function MemberProfileScreen({
         messageId: target.messageId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
+        postsOnPay: true,
       });
       setPayHost('composer');
       setReplyDraft('');
@@ -886,6 +869,10 @@ export function MemberProfileScreen({
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runComposePay(token, trimmed, parentId, sats, true);
@@ -923,14 +910,14 @@ export function MemberProfileScreen({
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             )
           : await postMessageInvoice(
               token,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(sats, replyRateRef.current),
             );
       if (generation !== payPollGeneration.current) {
         return;
@@ -941,6 +928,7 @@ export function MemberProfileScreen({
         messageId: parentId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('card');
       setReplyDraft('');
@@ -950,6 +938,10 @@ export function MemberProfileScreen({
       startPayPoll(parentId, baselineSats);
     } catch (err) {
       if (generation !== payPollGeneration.current) {
+        return;
+      }
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
         return;
       }
       if (err instanceof MissingRequirementsError) {
@@ -970,7 +962,9 @@ export function MemberProfileScreen({
           ? 'tooLong'
           : isRateLimitError(err)
             ? 'rateLimit'
-            : 'request',
+            : isAuthorWalletError(err)
+              ? 'authorWallet'
+              : 'request',
       );
     } finally {
       setReplyPosting(false);
@@ -1055,6 +1049,8 @@ export function MemberProfileScreen({
       return;
     }
     const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+    // The fiat stored with the invoice uses the same rate as these sats, also on a retry.
+    const payRate = rateDay;
     if (sats === 'invalid') {
       setPayError('amount');
       return;
@@ -1080,7 +1076,7 @@ export function MemberProfileScreen({
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, rateDayRef.current),
+            shownFiatForSats(sats, payRate),
           );
           if (generation !== payPollGeneration.current) {
             return null;
@@ -1089,6 +1085,7 @@ export function MemberProfileScreen({
             messageId,
             pr: invoice.pr,
             amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
           };
           setPayInvoice(minted);
           setPayBusy(false);
@@ -1111,6 +1108,11 @@ export function MemberProfileScreen({
           }
           if (err instanceof NoteDeletedError) {
             setPayError('deleted');
+            return null;
+          }
+          if (err instanceof WalletRequiredError) {
+            setPayError(null);
+            setOverlayRequirement('wallet');
             return null;
           }
           setPayError(
@@ -1199,13 +1201,23 @@ export function MemberProfileScreen({
       return;
     }
     const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
+    replyRateRef.current = rateDay;
     const token = session;
     const parentId = expandedId;
     const parentRow = posts?.find((message) => message.id === parentId);
     const parentAccountId = parentRow?.accountId;
+    const own = isOwnNote(account?.id, parentAccountId);
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
     const continueReply = (isRetry: boolean): Promise<void> => {
+      // Your own note shows no amount field: the reply is posted without a payment.
+      if (own) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return runReplyPost(token, trimmed, parentId, isRetry, true);
+      }
       if (parsed === 'invalid') {
         setReplyFormError('amount');
         return Promise.resolve();
@@ -1311,6 +1323,9 @@ export function MemberProfileScreen({
     replyFormError,
     onReplyPost: handleReplyPost,
     onRetryReplies: handleRetryReplies,
+    heartViewerId: account?.id ?? null,
+    onHeartTip,
+    heartTipViews,
   };
 
   const activityMessages = activity === 'posts' ? (posts ?? []) : (activityReplies ?? []);

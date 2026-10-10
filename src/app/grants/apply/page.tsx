@@ -19,7 +19,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  * those statuses sees "You are not verified yet." and does not post.
  * The chrome back returns to the previous in-app view (the card has no back
  * control).
- * Requires name + address + living-room rules agreement via
+ * Requires name + username + living-room rules agreement via
  * {@link OnboardingGate} `screen="profile"`.
  *
  * @returns The paused card, the apply walk for a verified roster account with

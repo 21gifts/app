@@ -14,7 +14,7 @@ import {
   fetchPublicMessagePhoto,
   fetchShortLink,
 } from '@/lib/api';
-import { useAuthStore } from '@/stores/auth-store';
+import { useActiveSession } from '@/hooks/useActiveSession';
 import type { ForumMessage } from '@/lib/api-types';
 import { splitForumMessageQuotes, splitShortLinks } from '@/lib/forum-quote';
 import { formatForumTime } from '@/lib/forum-time';
@@ -100,7 +100,7 @@ function QuotedForumNote({
   const handleActivate = (event: { stopPropagation: () => void }): void => {
     onActivate?.(event);
   };
-  const session = useAuthStore((state) => state.session);
+  const session = useActiveSession();
   const memberAuthor =
     session !== null && typeof note.accountId === 'string' && note.accountId !== '';
   const quoteLabel =
@@ -318,7 +318,7 @@ export function ForumQuotedBody({
     return ids;
   }, [quoteIds, shortHits]);
 
-  const session = useAuthStore((state) => state.session);
+  const session = useActiveSession();
   const [fetchedNotes, setFetchedNotes] = useState<ForumMessage[]>([]);
   const missingKey = candidateIds
     .filter((id) => findKnownNote(knownNotes, id) === undefined)

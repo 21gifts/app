@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   createContext,
   Suspense,
@@ -16,11 +16,19 @@ import {
 } from 'react';
 import { recordCurrentView } from '@/lib/view-history';
 
-/** Top-left chrome override while an in-page wizard step can go back. */
+/**
+ * Top-left chrome override while an in-page step can go back: an ask or shop
+ * wizard step, or a wallet Receive or Send view over `/welcome`.
+ */
 export type ChromeBackOverride = {
-  labelKey: 'forum.askBack' | 'shops.back';
+  labelKey: 'forum.askBack' | 'shops.back' | 'nav.back';
   onClick: () => void;
   disabled?: boolean;
+  /**
+   * A view laid over the page (a wallet view on `/welcome`): it wins over the
+   * page's own steps, however often those register again behind it.
+   */
+  over?: boolean;
 };
 
 type ChromeBackSlot = {
@@ -31,25 +39,29 @@ type ChromeBackSlot = {
 type ChromeBackContextValue = {
   override: ChromeBackOverride | null;
   setSlot: (id: string, next: ChromeBackOverride | null) => void;
+  /** Client-side browser back step (`router.back()`), or `null` without the root. */
+  stepBack: (() => void) | null;
 };
 
 const ChromeBackContext = createContext<ChromeBackContextValue>({
   override: null,
   setSlot: (): void => undefined,
+  stepBack: null,
 });
 
 /**
- * Read the chrome back override. Without a provider, `override` is `null` and
- * `setOverride` is a no-op.
+ * Read the chrome back override. Without a provider, `override` is `null`,
+ * `setOverride` is a no-op, and `stepBack` is `null`.
  *
- * @returns The current override and a setter.
+ * @returns The current override, a setter, and the root's client-side back step.
  */
 export function useChromeBack(): {
   override: ChromeBackOverride | null;
   setOverride: (next: ChromeBackOverride | null) => void;
+  stepBack: (() => void) | null;
 } {
   const id = useId();
-  const { override, setSlot } = useContext(ChromeBackContext);
+  const { override, setSlot, stepBack } = useContext(ChromeBackContext);
   const setOverride = useCallback(
     (next: ChromeBackOverride | null): void => {
       setSlot(id, next);
@@ -61,16 +73,25 @@ export function useChromeBack(): {
       setSlot(id, null);
     };
   }, [id, setSlot]);
-  return { override, setOverride };
+  return { override, setOverride, stepBack };
 }
 
 /**
- * Holds the top-left chrome back override for in-page steps (ask or shop wizard).
+ * Holds the top-left chrome back override for in-page steps (ask or shop
+ * wizard, or a wallet view over `/welcome`). The latest registration wins,
+ * except that the latest one marked `over` beats every page step.
  *
- * @param props - Tree that may register an override.
+ * @param props - Tree that may register an override, and the optional
+ * client-side back step the top-left arrow takes when `takeStepBack` claims it.
  * @returns The provider.
  */
-export function ChromeBackProvider({ children }: { children: ReactNode }): ReactElement {
+export function ChromeBackProvider({
+  children,
+  stepBack = null,
+}: {
+  children: ReactNode;
+  stepBack?: (() => void) | null;
+}): ReactElement {
   const [slots, setSlots] = useState<readonly ChromeBackSlot[]>([]);
   const setSlot = useCallback((id: string, next: ChromeBackOverride | null): void => {
     setSlots((current) => {
@@ -81,9 +102,12 @@ export function ChromeBackProvider({ children }: { children: ReactNode }): React
       return [...without, { id, override: next }];
     });
   }, []);
-  const last = slots[slots.length - 1];
-  const override = last === undefined ? null : last.override;
-  const value = useMemo((): ChromeBackContextValue => ({ override, setSlot }), [override, setSlot]);
+  const top = slots.findLast((slot) => slot.override.over === true) ?? slots[slots.length - 1];
+  const override = top === undefined ? null : top.override;
+  const value = useMemo(
+    (): ChromeBackContextValue => ({ override, setSlot, stepBack }),
+    [override, setSlot, stepBack],
+  );
   return <ChromeBackContext.Provider value={value}>{children}</ChromeBackContext.Provider>;
 }
 
@@ -172,18 +196,23 @@ function RecordQuery({ onRecorded }: { onRecorded: () => void }): null {
 }
 
 /**
- * Root recorder for the in-app view stack, plus the chrome back override.
+ * Root recorder for the in-app view stack, plus the chrome back override and
+ * the client-side back step (`router.back()`) the top-left arrow uses.
  *
  * @param props - App tree under the layout providers.
  * @returns Children wrapped with the chrome-back provider and the recorder.
  */
 export function ViewHistoryRoot({ children }: { children: ReactNode }): ReactElement {
+  const router = useRouter();
   const [, setTick] = useState(0);
   const onRecorded = useCallback((): void => {
     setTick((current) => current + 1);
   }, []);
+  const stepBack = useCallback((): void => {
+    router.back();
+  }, [router]);
   return (
-    <ChromeBackProvider>
+    <ChromeBackProvider stepBack={stepBack}>
       <RecordLocation onRecorded={onRecorded} />
       <Suspense fallback={null}>
         <RecordQuery onRecorded={onRecorded} />

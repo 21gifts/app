@@ -19,7 +19,8 @@ export interface QrCodeProps {
  *
  * Wrapped in an `img`-role element carrying an accessible name, so assistive
  * technology announces it as a single image rather than a wall of SVG paths.
- * Callers may mount this on a smartphone. A specific invoice must not: the forum pay sheet, the inbox pay sheet, and the public pay link.
+ * Callers may mount this on a smartphone. A specific invoice must not: the public pay link
+ * shows its invoice QR only off a smartphone, and member pay sheets show no invoice QR at all.
  *
  * @param props - See {@link QrCodeProps}.
  * @returns The QR image element.

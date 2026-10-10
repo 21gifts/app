@@ -18,10 +18,27 @@
 # signed-in Menu. It is the deploy run number, not an entrypoint.sh
 # placeholder, and is not substituted at container start.
 #
+# NEXT_PUBLIC_BREEZ_API_KEY is a second build-arg (no default), passed only by
+# the staging deploy and baked at `next build`. It is not an entrypoint.sh
+# placeholder; an unset or empty value still builds.
+#
 # Current NEXT_PUBLIC_* variables:
 #   NEXT_PUBLIC_API_URL — upstream 21.gifts api (browser talks same-origin)
 #                         DEV: https://dev-api.21.gifts / PRD: https://api.21.gifts
 #   NEXT_PUBLIC_APP_VERSION — decimal deploy run number of this image (from ARG APP_VERSION), or `dev`
+#   NEXT_PUBLIC_BREEZ_API_KEY — Breez SDK key, a build-arg baked at `next build`
+#                               (staging deploy only); empty when unset
+#   NEXT_PUBLIC_PLATFORM_USERNAME — username of the 21.gifts platform account; the landing
+#                         page shows its wallet address for donations to the project.
+#                         Optional placeholder: empty or unset hides that address.
+#   NEXT_PUBLIC_SENTRY_DSN — error-reporting DSN. Optional placeholder: empty or unset
+#                         turns error reporting off.
+#   NEXT_PUBLIC_SENTRY_ENVIRONMENT — error-reporting environment name (e.g. staging).
+#                         Optional placeholder: empty or unset uses the SDK default.
+#
+# entrypoint.sh refuses to start when a placeholder's variable is unset or
+# empty, except for the optional ones above, which it substitutes with an
+# empty string.
 
 FROM node:22-alpine AS deps
 WORKDIR /app
@@ -36,6 +53,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_API_URL=__NEXT_PUBLIC_API_URL__
 ARG APP_VERSION=dev
 ENV NEXT_PUBLIC_APP_VERSION=$APP_VERSION
+ARG NEXT_PUBLIC_BREEZ_API_KEY
+ENV NEXT_PUBLIC_BREEZ_API_KEY=$NEXT_PUBLIC_BREEZ_API_KEY
+ENV NEXT_PUBLIC_PLATFORM_USERNAME=__NEXT_PUBLIC_PLATFORM_USERNAME__
+ENV NEXT_PUBLIC_SENTRY_DSN=__NEXT_PUBLIC_SENTRY_DSN__
+ENV NEXT_PUBLIC_SENTRY_ENVIRONMENT=__NEXT_PUBLIC_SENTRY_ENVIRONMENT__
 RUN npm run build
 
 FROM node:22-alpine AS runtime

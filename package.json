@@ -23,6 +23,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
+    "e2e:loan": "playwright test -c playwright.loan.config.ts",
     "e2e:behavior": "playwright test --project=chromium",
     "e2e:visual": "playwright test e2e/visual.spec.ts",
     "e2e:update-snapshots": "playwright test e2e/visual.spec.ts --update-snapshots",
@@ -32,7 +33,10 @@
     "screenshot:check": "node scripts/check-screenshots.mjs"
   },
   "dependencies": {
+    "@breeztech/breez-sdk-spark": "0.26.0",
     "@scure/bip39": "^1.6.0",
+    "@sentry/nextjs": "^11.4.0",
+    "jsqr": "^1.4.0",
     "lucide-react": "^0.469.0",
     "next": "^15.3.0",
     "qrcode": "^1.5.4",
@@ -59,7 +63,6 @@
     "eslint-config-next": "^15.3.0",
     "eslint-plugin-tsdoc": "^0.4.0",
     "jsdom": "^25.0.1",
-    "jsqr": "^1.4.0",
     "opentype.js": "^1.3.4",
     "pngjs": "^7.0.0",
     "prettier": "^3.4.2",
@@ -69,6 +72,6 @@
     "vitest": "^2.1.8"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   }
 }

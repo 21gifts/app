@@ -1,11 +1,12 @@
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { useContext, useState, type ReactElement } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   AppShell,
   AppShellContext,
   AppShellFooter,
   AppShellHeader,
+  AppShellOverlay,
   AppShellTopLeft,
   useAppShellScroller,
 } from '@/components/AppShell';
@@ -14,7 +15,35 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { useAuthStore } from '@/stores/auth-store';
 import type { Account } from '@/lib/api-types';
 
+vi.mock('next/navigation', () => ({
+  useRouter: (): { replace: () => void } => ({ replace: () => undefined }),
+}));
+
 afterEach(cleanup);
+
+/** Account that must set up its in-app wallet when the Breez key is set. */
+const WALLET_SETUP_ACCOUNT = {
+  id: 'acc',
+  linkingKey: null,
+  role: 'basis',
+  name: 'Ada',
+  username: 'ada',
+  location: null,
+  lightningAddress: null,
+  lightningAddressVerified: false,
+  forumLawsDismissed: false,
+  createdAt: 1,
+  rulesAgreedAt: 1,
+  viewKey: 'a'.repeat(64),
+  aboutMe: null,
+  aboutMeHasPhoto: false,
+  setup: null,
+  missing: [],
+  walletRequired: true,
+  passkeyCredentialId: 'AQID',
+  sparkPubkey: null,
+  sparkWalletVerified: false,
+} as Account;
 
 /** Footer whose children are new JSX every parent render — used to catch slot update loops. */
 function FlakyFooter(): ReactElement {
@@ -75,6 +104,28 @@ describe('AppShell', () => {
     useAuthStore.setState({ session: null, account: null });
   });
 
+  it('does not render a blocking dialog for an account that needs wallet setup', () => {
+    const original = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-key';
+    try {
+      useAuthStore.setState({ session: 'tok', account: WALLET_SETUP_ACCOUNT });
+      renderWithLocale(
+        <AppShell mode="fill">
+          <p>Body</p>
+        </AppShell>,
+      );
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(screen.getByText('Body')).toBeTruthy();
+    } finally {
+      if (original === undefined) {
+        delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+      } else {
+        process.env.NEXT_PUBLIC_BREEZ_API_KEY = original;
+      }
+      useAuthStore.setState({ session: null, account: null });
+    }
+  });
+
   it('fill renders footer as a sibling of the inner scroller', () => {
     const { container } = renderWithLocale(
       <AppShell mode="fill">
@@ -90,7 +141,7 @@ describe('AppShell', () => {
     const main = container.querySelector('main');
     expect(main?.className).toContain('h-[var(--app-height)]');
     expect(main?.className).not.toContain('overflow-hidden');
-    expect(main?.className).toContain('py-4');
+    expect(main?.className).toContain('px-3 max-[359px]:px-2 py-2');
     expect(main?.className).not.toContain('min-h-screen');
     expect(main?.className).not.toContain('h-svh');
 
@@ -108,6 +159,22 @@ describe('AppShell', () => {
     expect(scroller?.className).toContain('min-h-0');
     expect(footer).toBeTruthy();
     expect(footer?.previousElementSibling).toBe(scroller);
+    // Unset --footer-collapse: the same 1.25rem as pb-5.
+    expect(footer?.className).toContain(
+      'px-5 pb-[calc(1.25rem-0.5rem*var(--footer-collapse,0))] empty:hidden',
+    );
+    const body = main?.querySelector('[data-app-body]');
+    expect(body?.className).toBe('group/body relative flex min-h-0 w-full flex-1 flex-col');
+    expect(body?.parentElement).toBe(frame);
+    expect(body?.previousElementSibling).toBe(main?.querySelector('[data-app-chrome]'));
+    expect(body?.contains(header as Node)).toBe(true);
+    expect(body?.contains(footer as Node)).toBe(true);
+    expect(header?.className).toContain('px-5');
+    expect(main?.querySelector('[data-app-chrome]')?.className).toContain(
+      'px-5 pt-4 pb-1 max-[359px]:px-3',
+    );
+    expect(main?.querySelector('[data-menu-sheet-host]')?.className).toBe('px-5');
+    expect(main?.querySelector('[data-scroll-page]')?.className).toContain('px-5 py-4');
     expect(scroller?.contains(footer as Node)).toBe(false);
     expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Title' })).toBeTruthy();
@@ -156,7 +223,7 @@ describe('AppShell', () => {
       const main = container.querySelector('main');
       expect(main?.className).toContain('h-[var(--app-height)]');
       expect(main?.className).not.toContain('overflow-hidden');
-      expect(main?.className).toContain('py-4');
+      expect(main?.className).toContain('py-2');
       expect(main?.className).not.toContain('justify-center');
       const frame = main?.querySelector(':scope > section');
       expect(frame?.className).toContain('rounded-3xl');
@@ -425,5 +492,56 @@ describe('AppShell', () => {
         Object.defineProperty(HTMLElement.prototype, 'clientWidth', widthDescriptor);
       }
     }
+  });
+});
+
+describe('AppShellOverlay', () => {
+  it('portals a layer into the frame body after the footer, and renders nothing before the host', () => {
+    const { container } = renderWithLocale(
+      <AppShell mode="fill">
+        <p>Body</p>
+        <AppShellOverlay>
+          <div data-testid="layer">Layer</div>
+        </AppShellOverlay>
+      </AppShell>,
+    );
+    const body = container.querySelector('[data-app-body]')!;
+    const layer = screen.getByTestId('layer');
+    const host = layer.parentElement!;
+    expect(host.className).toBe('contents');
+    expect(host.parentElement).toBe(body);
+    expect(host.previousElementSibling?.tagName).toBe('FOOTER');
+    expect(container.querySelector('[data-scrollport]')?.contains(layer)).toBe(false);
+    expect(container.querySelector('[data-app-chrome]')?.contains(layer)).toBe(false);
+  });
+
+  it('renders inline without an AppShell', () => {
+    renderWithLocale(
+      <div data-testid="outside">
+        <AppShellOverlay>
+          <span>Inline</span>
+        </AppShellOverlay>
+      </div>,
+    );
+    expect(screen.getByText('Inline').parentElement).toBe(screen.getByTestId('outside'));
+  });
+
+  it('renders nothing until the overlay host is known', () => {
+    function Probe(): ReactElement {
+      const ctx = useContext(AppShellContext)!;
+      return (
+        <AppShellContext.Provider value={{ ...ctx, overlayEl: null }}>
+          <AppShellOverlay>
+            <span>Hidden layer</span>
+          </AppShellOverlay>
+        </AppShellContext.Provider>
+      );
+    }
+    renderWithLocale(
+      <AppShell mode="fill">
+        <Probe />
+      </AppShell>,
+    );
+    expect(screen.queryByText('Hidden layer')).toBeNull();
   });
 });

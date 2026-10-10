@@ -7,12 +7,17 @@ import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+const walletOpen = vi.hoisted(() => ({ value: true }));
 const replace = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: (): { replace: typeof replace } => ({ replace }),
 }));
 vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
+vi.mock('@/hooks/useWalletOpen', () => ({ useWalletOpen: () => walletOpen.value }));
+vi.mock('@/components/WalletLoginCard', () => ({
+  WalletLoginCard: () => <p>wallet-login-card</p>,
+}));
 vi.mock('@/lib/session-storage', () => ({
   loadSession: vi.fn(),
   saveSession: vi.fn(),
@@ -49,15 +54,15 @@ const named = {
   missing: ['lightning-address', 'rules'] as ('name' | 'lightning-address' | 'rules')[],
 };
 
-const namedAddress = {
+const namedUsername = {
   ...named,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  username: 'ada',
   setup: 'rules' as const,
   missing: ['rules'] as ('name' | 'lightning-address' | 'rules')[],
 };
 
 const complete = {
-  ...namedAddress,
+  ...namedUsername,
   rulesAgreedAt: 1_700_000_001,
   setup: null,
   missing: [] as ('name' | 'lightning-address' | 'rules')[],
@@ -65,6 +70,7 @@ const complete = {
 
 beforeEach(() => {
   replace.mockClear();
+  walletOpen.value = true;
   vi.mocked(loadSession).mockReturnValue(null);
   vi.mocked(usePasskeyLogin).mockReturnValue({
     status: 'idle',
@@ -77,7 +83,7 @@ beforeEach(() => {
     error: null,
     nameError: null,
   });
-  useAuthStore.setState({ session: null, account: null });
+  useAuthStore.setState({ session: null, account: null, lockedSession: null });
 });
 
 afterEach(() => {
@@ -93,6 +99,70 @@ describe('OnboardingGate', () => {
     );
     expect(screen.getByText('login-ui')).toBeTruthy();
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('shows the wallet login on the login screen for a held-back session', () => {
+    useAuthStore.setState({ lockedSession: 'stored' });
+    renderWithLocale(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
+    expect(screen.getByText('wallet-login-card')).toBeTruthy();
+    expect(screen.queryByText('login-ui')).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('keeps a fresh login on the login screen until its wallet is open, then sends it on', () => {
+    walletOpen.value = false;
+    useAuthStore.setState({ session: 'tok', account });
+    const view = renderWithLocale(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
+    expect(screen.getByText('wallet-login-card')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+    walletOpen.value = true;
+    view.rerender(
+      <OnboardingGate screen="login">
+        <p>login-ui</p>
+      </OnboardingGate>,
+    );
+    expect(replace).toHaveBeenCalledWith('/setup/name');
+  });
+
+  it('shows the wallet login on a signed-in screen for a held-back session without redirecting', () => {
+    useAuthStore.setState({ lockedSession: 'stored' });
+    renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    expect(screen.getByText('wallet-login-card')).toBeTruthy();
+    expect(screen.queryByText('profile-ui')).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('shows the wallet login for an account whose phrase is not open, then shows children', () => {
+    walletOpen.value = false;
+    useAuthStore.setState({ session: 'tok', account: complete });
+    const view = renderWithLocale(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    expect(screen.getByText('wallet-login-card')).toBeTruthy();
+    expect(replace).not.toHaveBeenCalled();
+
+    walletOpen.value = true;
+    view.rerender(
+      <OnboardingGate screen="profile">
+        <p>profile-ui</p>
+      </OnboardingGate>,
+    );
+    expect(screen.getByText('profile-ui')).toBeTruthy();
+    expect(screen.queryByText('wallet-login-card')).toBeNull();
   });
 
   it('sends a signed-in visitor from login to the name screen', () => {
@@ -231,6 +301,18 @@ describe('OnboardingGate', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
+  it('shows the wallet login, not the guest welcome view, when a stored session is held back', () => {
+    useAuthStore.setState({ lockedSession: 'stored' });
+    renderWithLocale(
+      <OnboardingGate screen="welcome" allowGuest>
+        <p>welcome-ui</p>
+      </OnboardingGate>,
+    );
+    expect(screen.getByText('wallet-login-card')).toBeTruthy();
+    expect(screen.queryByText('welcome-ui')).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
+  });
+
   it('still sends a logged-out visitor from a welcome-gated shop to login', () => {
     renderWithLocale(
       <OnboardingGate screen="welcome">
@@ -252,7 +334,7 @@ describe('OnboardingGate', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('sends a named account from the name screen to the address screen', async () => {
+  it('sends a named account from the name screen to the username screen', async () => {
     useAuthStore.setState({ session: 'tok', account: named });
     renderWithLocale(
       <OnboardingGate screen="name">
@@ -260,40 +342,39 @@ describe('OnboardingGate', () => {
       </OnboardingGate>,
     );
     await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith('/setup/address');
+      expect(replace).toHaveBeenCalledWith('/setup/username');
     });
   });
 
-  it('renders address children when the account has a name and no address', async () => {
+  it('renders username children when the account has a name and no username', async () => {
     useAuthStore.setState({ session: 'tok', account: named });
     renderWithLocale(
-      <OnboardingGate screen="address">
-        <p>address-ui</p>
+      <OnboardingGate screen="username">
+        <p>username-ui</p>
       </OnboardingGate>,
     );
-    expect(await screen.findByText('address-ui')).toBeTruthy();
+    expect(await screen.findByText('username-ui')).toBeTruthy();
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('sends name+address without agreement from the address screen to rules', async () => {
-    useAuthStore.setState({
-      session: 'tok',
-      account: namedAddress,
-    });
+  it('sends a named account with a username from the username screen to rules, without an address step', async () => {
+    useAuthStore.setState({ session: 'tok', account: { ...named, username: 'ada' } });
     renderWithLocale(
-      <OnboardingGate screen="address">
-        <p>address-ui</p>
+      <OnboardingGate screen="username">
+        <p>username-ui</p>
       </OnboardingGate>,
     );
     await waitFor(() => {
       expect(replace).toHaveBeenCalledWith('/setup/rules');
     });
+    expect(replace).not.toHaveBeenCalledWith('/setup/address');
+    expect(screen.queryByText('username-ui')).toBeNull();
   });
 
-  it('sends name+address without agreement from welcome to rules', async () => {
+  it('sends name+username without agreement from welcome to rules', async () => {
     useAuthStore.setState({
       session: 'tok',
-      account: namedAddress,
+      account: namedUsername,
     });
     renderWithLocale(
       <OnboardingGate screen="welcome">
@@ -305,10 +386,10 @@ describe('OnboardingGate', () => {
     });
   });
 
-  it('sends name+address without agreement from profile to rules', async () => {
+  it('sends name+username without agreement from profile to rules', async () => {
     useAuthStore.setState({
       session: 'tok',
-      account: namedAddress,
+      account: namedUsername,
     });
     renderWithLocale(
       <OnboardingGate screen="profile">
@@ -320,10 +401,10 @@ describe('OnboardingGate', () => {
     });
   });
 
-  it('renders rules children when name and address are saved but agreement is missing', async () => {
+  it('renders rules children when name and username are saved but agreement is missing', async () => {
     useAuthStore.setState({
       session: 'tok',
-      account: namedAddress,
+      account: namedUsername,
     });
     renderWithLocale(
       <OnboardingGate screen="rules">
@@ -334,7 +415,7 @@ describe('OnboardingGate', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('renders welcome children when name, address, and agreement are saved', async () => {
+  it('renders welcome children when name, username, and agreement are saved', async () => {
     useAuthStore.setState({ session: 'tok', account: complete });
     renderWithLocale(
       <OnboardingGate screen="welcome">
@@ -345,7 +426,7 @@ describe('OnboardingGate', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('renders profile children when name, address, and agreement are saved', async () => {
+  it('renders profile children when name, username, and agreement are saved', async () => {
     useAuthStore.setState({ session: 'tok', account: complete });
     renderWithLocale(
       <OnboardingGate screen="profile">
@@ -365,7 +446,7 @@ describe('OnboardingGate', () => {
     expect(replace).toHaveBeenCalledWith('/login');
   });
 
-  it('sends a named account without an address from profile to the address screen', async () => {
+  it('sends a named account without a username from profile to the username screen', async () => {
     useAuthStore.setState({ session: 'tok', account: named });
     renderWithLocale(
       <OnboardingGate screen="profile">
@@ -373,7 +454,7 @@ describe('OnboardingGate', () => {
       </OnboardingGate>,
     );
     await waitFor(() => {
-      expect(replace).toHaveBeenCalledWith('/setup/address');
+      expect(replace).toHaveBeenCalledWith('/setup/username');
     });
   });
 

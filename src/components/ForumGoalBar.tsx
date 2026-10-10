@@ -97,12 +97,12 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * plus the defined fiat when the ask was defined in fiat, `formatBitcoin(goalSats)`,
  * and the visitor's default fiat unless the ask was defined in that same fiat.
  * The visitor figure is the frozen snapshot when that string exists, otherwise
- * the gift-day rate. Lengths use
+ * the current spot rate. Lengths use
  * SVG `width` / `x` / `viewBox` attributes, not React `style`.
  *
  * @param sats - Collected sats on the note.
  * @param goalSats - Whole-sat goal; `<= 0` → `null`.
- * @param rateDay - Latest gift-day totals. Fills the visitor's fiat when no
+ * @param rateDay - Current spot rate. Fills the visitor's fiat when no
  *   snapshot string is stored.
  * @param goalCurrency - Ask definition code when the api sent one.
  * @param goalAmount - Typed definition string when the api sent one.

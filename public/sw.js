@@ -231,7 +231,10 @@ self.addEventListener('notificationclick', (event) => {
                     };
                   });
             return ack.then((ok) => {
+              // An answered page opened the path with its client-side router.
+              // Navigating it again would load a new document and lock the wallet.
               const canNavigate =
+                !ok &&
                 clientUrl !== null &&
                 clientUrl.href !== href &&
                 typeof client.navigate === 'function';

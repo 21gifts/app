@@ -564,7 +564,7 @@ export function PlaceField(props: {
           placedBox !== null ? (
             createPortal(
               <div
-                className="fixed z-20 flex items-start gap-3 overflow-clip rounded-2xl border border-app-border bg-app-card-muted p-3"
+                className="fixed z-30 flex items-start gap-3 overflow-clip rounded-2xl border border-app-border bg-app-card-muted p-3"
                 style={placedBoxStyle(placedBox, false)}
               >
                 {previewBody}
@@ -572,7 +572,7 @@ export function PlaceField(props: {
               document.body,
             )
           ) : (
-            <div className="absolute left-0 top-full z-20 mt-2 flex w-64 items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+            <div className="absolute left-0 top-full z-30 mt-2 flex w-64 items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
               {previewBody}
             </div>
           )
