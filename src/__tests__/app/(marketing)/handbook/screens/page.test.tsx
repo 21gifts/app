@@ -75,7 +75,7 @@ describe('HandbookScreensPage', () => {
     vi.mocked(getRequestLocale).mockResolvedValueOnce('de');
     renderWithLocale(await HandbookScreensPage(), 'de');
     expect(screen.getByRole('heading', { name: 'Screens' })).toBeTruthy();
-    expect(screen.getAllByText(/Heutige Rate zahlen/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Kredit zurückzahlen/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/So funktioniert's/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Desktop\/wide layout/)).toBeNull();
   });
@@ -92,6 +92,6 @@ describe('HandbookScreensPage', () => {
     const root = document.getElementById('root-default');
     expect(root?.textContent).toContain('/ default');
     expect(screen.queryByText(/Desktop-\/Breitdarstellung/)).toBeNull();
-    expect(screen.queryByText(/Heutige Rate zahlen/)).toBeNull();
+    expect(screen.queryByText(/Kredit zurückzahlen/)).toBeNull();
   });
 });

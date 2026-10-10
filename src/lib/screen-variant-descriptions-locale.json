@@ -10,14 +10,9 @@
     "fil": "Sa Lahat: pangunahing tala ni Ada na may sats: 10500, goalSats: 21000, goalRepayable: true, at goalTermDays: 30. Ang hiling ay nakasaad sa bitcoin, kaya ipinapakita ng bar ang Hiling ₿21'000 · $21.00 at ang halaga ng tala ₿10'500 · $10.50. Isang tatak na Pautang sa tabi ng pangalan ang nagpapaliwanag ng utang kapag pinindot. Sa ilalim ng hiling: Ibabalik bawat araw: ₿700 · $0.70 bawat araw sa loob ng 30 araw. Bar ng pag-usad sa 50%. Wala sa kard na ito ang listahan ng bawat araw. Binubuksan ng Listahan ng ibabalik ang /messages/<id>/repayment-list. Nakikita ang pildoras ng manunulat Mag-post / Humingi ng pera."
   },
   "/welcome:repay-today": {
-    "de": "Bei Alle: Adas eigener voller Kredit (accountId stimmt mit dem angemeldeten Konto überein, sats entspricht goalSats). Heutige Rate zahlen ist sichtbar. Rückzahlungsliste ist ein Link. Die Tagesliste steht nicht auf dieser Karte.",
-    "es": "En Todos: el crédito lleno propio de Ada (accountId coincide con la cuenta con sesión iniciada, sats es igual a goalSats). Pagar la cuota de hoy está visible. Lista de devolución es un enlace. La lista por días no está en esta tarjeta.",
-    "fil": "Sa Lahat: sariling punong utang ni Ada (tugma ang accountId sa account na naka-log in, sats ay katumbas ng goalSats). Nakikita ang Bayaran ang hulog ngayon. Ang Listahan ng ibabalik ay isang link. Wala sa kard na ito ang listahan ng bawat araw."
-  },
-  "/welcome:repay-today-invoice": {
-    "de": "Dieselbe Notiz wie repay-today, nachdem Heutige Rate zahlen gedrückt wurde. Die Rechnungskarte ist offen, mit dem Zahlungsplatz der In-App-Wallet; in diesem Build ist die Wallet nicht konfiguriert, daher steht dort Ihre 21.gifts-Wallet ist hier nicht verfügbar, darum kann dies nicht bezahlt werden. Kein Rechnungs-QR. Das Betragsformular wird nicht angezeigt.",
-    "es": "La misma nota que repay-today, después de pulsar Pagar la cuota de hoy. La tarjeta de factura está abierta con el espacio de pago de la wallet de la app; en este build la wallet no está configurada, así que dice Tu wallet de 21.gifts no está disponible aquí, así que esto no se puede pagar. Sin QR de factura. El formulario de importe no se muestra.",
-    "fil": "Parehong tala tulad ng repay-today, pagkatapos pindutin ang Bayaran ang hulog ngayon. Bukas ang kahon ng resibo na may puwesto ng bayad ng in-app wallet; sa build na ito hindi naka-configure ang wallet, kaya sinasabi nito ang Hindi available dito ang 21.gifts wallet mo, kaya hindi ito mababayaran. Walang QR ng resibo. Hindi ipinapakita ang pormularyo ng halaga."
+    "de": "Bei Alle: Adas eigener vollständig finanzierter Kredit zeigt den Link Kredit zurückzahlen. Er öffnet /loans/repay. Rückzahlungsliste bleibt ein Link; die Tagesliste steht nicht auf der Karte.",
+    "es": "En Todos: el préstamo propio de Ada totalmente financiado muestra el enlace Devolver tu préstamo. Abre /loans/repay. Lista de devolución sigue siendo un enlace; la lista por días no está en la tarjeta.",
+    "fil": "Sa Lahat: ipinapakita ng sariling utang ni Ada na buo na ang pondo ang ugnay na Bayaran ang iyong utang. Binubuksan nito ang /loans/repay. Nananatiling ugnay ang Listahan ng ibabalik; wala sa kard ang listahan ng bawat araw."
   },
   "/shops:loading": {
     "de": "Wird geladen…",
@@ -713,6 +708,11 @@
     "de": "Bestehendes Mitglied, Wallet nicht konfiguriert (Playwright-Builds) und noch ohne Wiederherstellungssatz. Die Startansicht hat keinen Guthaben-Bereich und enthält nur den kleinen Link Wallet sichern zum Wiederherstellungseintrag in /settings; Empfangen und Senden sind beide aktiviert, unten unter der weichen Ausblendung, Empfangen links, darunter nichts.",
     "es": "Miembro existente con la wallet sin configurar (builds de Playwright) y aún sin frase de recuperación. La vista de inicio no tiene región de saldo y solo contiene el pequeño enlace Haz una copia de seguridad de tu wallet a la entrada de recuperación de /settings; Recibir y Enviar están ambos habilitados abajo bajo el degradado suave, Recibir a la izquierda, sin nada debajo.",
     "fil": "Umiiral na miyembro na hindi naka-configure ang wallet (Playwright builds) at wala pang recovery phrase. Walang bahagi ng balanse ang home view at tanging ang maliit na link na I-back up ang iyong wallet papunta sa recovery entry ng /settings ang laman nito; parehong naka-enable ang Tanggapin at Ipadala sa ibaba sa ilalim ng malambot na fade, ang Tanggapin sa kaliwa, at walang anuman sa ilalim nila."
+  },
+  "/wallet:loans": {
+    "de": "Die bereite Wallet zeigt Guthaben ₿21'000 · $21.00. Zwischen Guthaben und Zahlungen steht die neutrale Karte Dein Kredit mit Vollständig finanziert., Anfragen ₿30'000 · $30.00 und 100 %, Heute fällig ₿800 · $0.80 und Senden sowie der gedämpften Zeile ₿200 · $0.20 wartet · eine kreditgebende Person hat noch keine Wallet. Kredit anzeigen ist geschlossen.",
+    "es": "La wallet lista muestra Saldo ₿21'000 · $21.00. Entre Saldo y Pagos está la tarjeta neutral Tu préstamo con Totalmente financiado., Pedir ₿30'000 · $30.00 y 100 %, Vence hoy ₿800 · $0.80 y Enviar, además de la línea atenuada ₿200 · $0.20 espera · un prestamista aún no tiene wallet. Ver préstamo está cerrado.",
+    "fil": "Ipinapakita ng handang wallet ang Balanse ₿21'000 · $21.00. Sa pagitan ng Balanse at Mga bayad ay ang neutral na kard na Ang iyong utang na may Buo na ang pondo., Hiling ₿30'000 · $30.00 at 100%, Bayaran ngayon ₿800 · $0.80 at Ipadala, pati ang mahinang linyang ₿200 · $0.20 ang naghihintay · wala pang wallet ang isang nagpautang. Sarado ang Ipakita ang utang."
   },
   "/setup/rules:forbidden": {
     "de": "Überschrift Verboten, gedämpfte Einleitung und die drei verbotenen Gruppen (rote Kreuz-Glyphen).",
@@ -2060,19 +2060,9 @@
     "fil": "/shops?pin=m-pin#map na may susi ng mapa. Napili ang Mapa. Ang ibabaw ng pansamantalang mapa ay nasa kuwadro. Ada · Happyland ay bahagyang makapal. Walang pangalawang ulo na Mapa."
   },
   "/members/[accountId]:posts-open-repay-today": {
-    "de": "Identitätskarte des angemeldeten Mitglieds; Beiträge gedrückt; der aufgeführte Beitrag ist ihr eigener voller Kredit (accountId stimmt mit dem angemeldeten Konto überein, sats entspricht goalSats). Heutige Rate zahlen ist sichtbar. Rückzahlungsliste ist ein Link. Die Tagesliste steht nicht auf dieser Karte.",
-    "es": "Tarjeta de identidad del miembro con sesión iniciada; Publicaciones pulsado; la publicación listada es su propio crédito lleno (accountId coincide con la cuenta con sesión iniciada, sats es igual a goalSats). Pagar la cuota de hoy está visible. Lista de devolución es un enlace. La lista por días no está en esta tarjeta.",
-    "fil": "Kard ng pagkakakilanlan ng naka-log-in na miyembro; naka-pindot ang Mga tala; ang nakalistang tala ay sarili niyang punong utang (tugma ang accountId sa account na naka-log in, sats ay katumbas ng goalSats). Nakikita ang Bayaran ang hulog ngayon. Ang Listahan ng ibabalik ay isang link. Wala sa kard na ito ang listahan ng bawat araw."
-  },
-  "/members/[accountId]:posts-open-repay-today-error": {
-    "de": "Dieselbe finanzierte Kredit-Notiz wie posts-open-repay-today, nachdem Heutige Rate zahlen gedrückt wurde. Der POST ist fehlgeschlagen, und der Hinweis Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen ist sichtbar. Es gibt keinen Rechnungs-QR.",
-    "es": "La misma nota de crédito financiado que posts-open-repay-today, después de pulsar Pagar la cuota de hoy. El POST falló, y la alerta La wallet del autor no puede recibir este pago en Bitcoin es visible. No hay código QR de factura.",
-    "fil": "Parehong tala ng pondong utang tulad ng posts-open-repay-today, pagkatapos pindutin ang Bayaran ang hulog ngayon. Nabigo ang POST, at nakikita ang alerto Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito. Walang QR ng resibo."
-  },
-  "/members/[accountId]:posts-open-repay-today-invoice": {
-    "de": "Dieselbe Notiz wie posts-open-repay-today, nachdem Heutige Rate zahlen gedrückt wurde. Die Rechnungskarte ist offen, mit dem Zahlungsbereich der In-App-Wallet; in diesem Build ist die Wallet nicht konfiguriert, darum steht dort Ihre 21.gifts-Wallet ist hier nicht verfügbar, darum kann dies nicht bezahlt werden. Kein Rechnungs-QR. Das Betragsformular wird nicht angezeigt.",
-    "es": "La misma nota que posts-open-repay-today, después de pulsar Pagar la cuota de hoy. La tarjeta de factura está abierta con el espacio de pago de la wallet de la app; en esta compilación la wallet no está configurada, así que dice Tu wallet de 21.gifts no está disponible aquí, así que esto no se puede pagar. Sin QR de factura. El formulario de importe no se muestra.",
-    "fil": "Parehong tala tulad ng posts-open-repay-today, pagkatapos pindutin ang Bayaran ang hulog ngayon. Bukas ang kahon ng resibo na may puwang ng bayad ng in-app wallet; sa build na ito hindi naka-configure ang wallet, kaya sinasabi nito ang Hindi available dito ang 21.gifts wallet mo, kaya hindi ito mababayaran. Walang QR ng resibo. Hindi ipinapakita ang pormularyo ng halaga."
+    "de": "Identitätskarte des angemeldeten Mitglieds; Beiträge ist gedrückt. Der aufgeführte eigene, vollständig finanzierte Kredit zeigt den Link Kredit zurückzahlen, der /loans/repay öffnet. Rückzahlungsliste bleibt ein Link; die Tagesliste steht nicht auf der Karte.",
+    "es": "Tarjeta de identidad del miembro con sesión iniciada; Publicaciones está pulsado. Su préstamo propio totalmente financiado muestra el enlace Devolver tu préstamo, que abre /loans/repay. Lista de devolución sigue siendo un enlace; la lista por días no está en la tarjeta.",
+    "fil": "Kard ng pagkakakilanlan ng naka-log-in na miyembro; nakapindot ang Mga tala. Ipinapakita ng sarili niyang utang na buo na ang pondo ang ugnay na Bayaran ang iyong utang, na nagbubukas ng /loans/repay. Nananatiling ugnay ang Listahan ng ibabalik; wala sa kard ang listahan ng bawat araw."
   },
   "/welcome:all": {
     "de": "Klick Alle — Bobs unbezahlte Notiz (Does anyone have spare sats this week?) ist sichtbar mit Ada und Carol; Listenreihenfolge neueste zuerst (Ada, Carol, Bob).",
@@ -2728,11 +2718,6 @@
     "de": "Eine Moderatorsitzung. Ort bearbeiten ist ohne Kartenschlüssel geöffnet, und Ort entfernen wurde gedrückt. Das Speichern ist fehlgeschlagen, daher ist der Hinweis Der Ort konnte nicht gespeichert werden. Bitte erneut versuchen. sichtbar und Ort entfernen bleibt.",
     "es": "Una sesión de moderador. Editar lugar está abierto sin clave de mapa, y se pulsó Quitar lugar. El guardado falló, así que la alerta No se pudo guardar el lugar. Inténtalo de nuevo. es visible y Quitar lugar permanece.",
     "fil": "Isang sesyon ng moderator. Bukas ang I-edit ang lugar nang walang susi ng mapa, at pinindot ang Alisin ang lugar. Nabigo ang pag-save, kaya nakikita ang alerto Hindi ma-save ang lugar. Pakisubukan muli. at nananatili ang Alisin ang lugar."
-  },
-  "/welcome:repay-today-error": {
-    "de": "Dieselbe finanzierte Kredit-Notiz wie repay-today, nachdem Heutige Rate zahlen gedrückt wurde. Der POST ist fehlgeschlagen, und der Hinweis Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen ist sichtbar. Es gibt keinen Rechnungs-QR.",
-    "es": "La misma nota de crédito financiado que repay-today, después de pulsar Pagar la cuota de hoy. El POST falló, y la alerta La wallet del autor no puede recibir este pago en Bitcoin es visible. No hay código QR de factura.",
-    "fil": "Parehong tala ng pondong utang tulad ng repay-today, pagkatapos pindutin ang Bayaran ang hulog ngayon. Nabigo ang POST, at nakikita ang alerto Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito. Walang QR ng resibo."
   },
   "/grants:applications-error": {
     "de": "Moderator auf /grants, wenn das Laden der offenen Bewerbungen fehlschlägt. Text Offene Bewerbungen konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Schaltfläche Erneut versuchen. Kein Link zur Warteschlange. Nadel state-grants-applications-error.",
@@ -3624,6 +3609,51 @@
     "es": "Icono de regalo con un símbolo Bitcoin integrado, Hola, Ada, sin la pista de las leyes del salón (forumLawsDismissed), Activo seleccionado. Notas Pagado de más nuevas a más antiguas (Ada ₿5 luego Carol ₿21); la nota impagada de Bob no se ve. Sin área de redacción en la página: el + (Escribir una publicación) flota abajo a la derecha; el área de redacción contiene Enviar un post / Pedir dinero y el cuadro de redacción. Reaccionar (forum.react) en cada nota de primer nivel. Los posts no muestran Enviar Bitcoin; Regalo aparece en una respuesta pagable después de Mostrar reacciones. Pastillas Fundador / Moderador / Iniciador / Verificado junto al nombre cuando el rol es uno de esos cuatro; basis no tiene pastilla (Carol está verificada, Ada es moderadora; Bob es basis y está oculto en Activo). Un menú arriba a la derecha (ver Encabezado con sesión iniciada); al abrir el menú aparecen Inicio, Saldo, Tiendas, Caja, Perfil, Beca, Ajustes, Reglas del salón, Habit-Tracker, Cadena de confianza, Estadísticas, Notificaciones, Bandeja, Contacto, opcional Instalar app, y Cerrar sesión.",
     "fil": "Icon ng regalo na may pinagsamang sagisag ng Bitcoin, Welcome, Ada, nang walang hint ng mga batas sa living room (forumLawsDismissed), nakapili ang Aktibo. Mga talang Nabayaran mula sa pinakabago (Ada ₿5 tapos Carol ₿21); hindi nakikita ang hindi pa nabayarang tala ni Bob. Walang kahon ng pagsulat sa pahina: lumulutang sa kanang ibaba ang + (Sumulat ng post); nasa lugar ng pagsulat ang Mag-post / Humingi ng pera at ang kahon ng pagsulat. Tumugon (forum.react) sa bawat pangunahing tala. Ang mga post ay hindi nagpapakita ng Magpadala ng Bitcoin; lumilitaw ang Regalo sa isang masisingil na sagot pagkatapos ng Ipakita ang mga reaksyon. Mga pildoras Tagapagtatag / Tagapamagitan / Tagapagsimula / Beripikado sa tabi ng pangalan kapag ang tungkulin ay isa sa apat na iyon; walang pildoras ang basis (beripikado si Carol, tagapamagitan si Ada; si Bob ay basis at nakatago sa Aktibo). Isang Menu sa itaas-kanan (tingnan ang Header kapag naka-sign in); sa pagbukas ng Menu ay Home, Balanse, Mga Tindahan, Point of sale, Profile, Grant, Mga setting, Mga patakaran sa living room, Habit-Tracker, Trust Chain, Mga istatistika, Mga abiso, Mga mensahe, Contact, opsyonal I-install ang app, at Mag-log out."
   },
+  "/welcome:loans-collecting": {
+    "de": "Unter Willkommen, Ada zeigt die neutrale Karte Dein Kredit: Noch nicht vollständig finanziert. und einen ForumGoalBar mit Anfragen ₿30'000 · $30.00 und 60 %. Es gibt keine Fälligkeitszeile; Kredit anzeigen ist geschlossen.",
+    "es": "Bajo Hola, Ada, la tarjeta neutral Tu préstamo muestra Aún no está totalmente financiado. y un ForumGoalBar con Pedir ₿30'000 · $30.00 y 60 %. No hay fila de vencimiento; Ver préstamo está cerrado.",
+    "fil": "Sa ilalim ng Welcome, Ada, ipinapakita ng neutral na kard na Ang iyong utang ang Hindi pa buo ang pondo. at isang ForumGoalBar na may Hiling ₿30'000 · $30.00 at 60%. Walang hilera ng bayaran; sarado ang Ipakita ang utang."
+  },
+  "/welcome:loans-due": {
+    "de": "Unter Willkommen, Ada sagt die geschlossene neutrale Karte Dein Kredit und Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 %, Heute fällig, ₿1'000 · $1.00 und Senden. Kredit anzeigen bleibt geschlossen.",
+    "es": "Bajo Hola, Ada, la tarjeta neutral cerrada dice Tu préstamo y Totalmente financiado., y muestra Pedir ₿30'000 · $30.00 con 100 %, Vence hoy, ₿1'000 · $1.00 y Enviar. Ver préstamo sigue cerrado.",
+    "fil": "Sa ilalim ng Welcome, Ada, sinasabi ng saradong neutral na kard ang Ang iyong utang at Buo na ang pondo., at ipinapakita ang Hiling ₿30'000 · $30.00 na may 100%, Bayaran ngayon, ₿1'000 · $1.00 at Ipadala. Sarado pa rin ang Ipakita ang utang."
+  },
+  "/welcome:loans-behind": {
+    "de": "Die Karte Dein Kredit sagt Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 % und hat die Gefahrenkontur. Die Fälligkeitszeile zeigt rot Sie sind 2 Tage im Rückstand, ₿3'000 · $3.00 und Senden; Kredit anzeigen bleibt geschlossen.",
+    "es": "La tarjeta Tu préstamo dice Totalmente financiado., muestra Pedir ₿30'000 · $30.00 con 100 % y tiene el contorno de peligro. La fila muestra en rojo Llevas 2 días de retraso, ₿3'000 · $3.00 y Enviar; Ver préstamo sigue cerrado.",
+    "fil": "Sinasabi ng kard na Ang iyong utang ang Buo na ang pondo., ipinapakita ang Hiling ₿30'000 · $30.00 na may 100%, at may danger outline. Ipinapakita ng hilera sa pula ang Huli ka nang 2 araw, ₿3'000 · $3.00 at Ipadala; sarado pa rin ang Ipakita ang utang."
+  },
+  "/welcome:loans-nothing-due": {
+    "de": "Die Karte Dein Kredit sagt Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 % und hat die Erfolgskontur. Die Zeile zeigt Heute ist nichts fällig und Nächste Zahlung: morgen, ₿1'000 · $1.00 mit Pfeil; es gibt kein Senden und Kredit anzeigen bleibt geschlossen.",
+    "es": "La tarjeta Tu préstamo dice Totalmente financiado., muestra Pedir ₿30'000 · $30.00 con 100 % y tiene el contorno de éxito. La fila muestra No vence nada hoy y Siguiente: mañana, ₿1'000 · $1.00 con flecha; no hay Enviar y Ver préstamo sigue cerrado.",
+    "fil": "Sinasabi ng kard na Ang iyong utang ang Buo na ang pondo., ipinapakita ang Hiling ₿30'000 · $30.00 na may 100%, at may success outline. Ipinapakita ng hilera ang Walang babayaran ngayon at Susunod: bukas, ₿1'000 · $1.00 na may palaso; walang Ipadala at sarado pa rin ang Ipakita ang utang."
+  },
+  "/welcome:loans-sunday": {
+    "de": "Die Karte Dein Kredit sagt Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 %, hat eine neutrale Kontur und zeigt Sonntags gibt es keine Rückzahlungen. Es gibt weder Betrag noch Senden; Kredit anzeigen ist geschlossen.",
+    "es": "La tarjeta Tu préstamo dice Totalmente financiado., muestra Pedir ₿30'000 · $30.00 con 100 %, tiene un contorno neutral y muestra Los domingos no hay devoluciones. No hay importe ni Enviar; Ver préstamo está cerrado.",
+    "fil": "Sinasabi ng kard na Ang iyong utang ang Buo na ang pondo., ipinapakita ang Hiling ₿30'000 · $30.00 na may 100%, may neutral na outline, at ipinapakita ang Walang pagbabayad ng utang tuwing Linggo. Walang halaga o Ipadala; sarado ang Ipakita ang utang."
+  },
+  "/welcome:loans-multi": {
+    "de": "Die geschlossene Karte Deine Kredite (2) zeigt 1 von 2 vollständig finanziert. Der gemeinsame Balken zeigt Anfragen ₿42'000 · $42.00 und 71 %. Nur der finanzierte PHP-Kredit ist fällig: Heute fällig, ₿1'200 · $1.20 und Senden. Kredite anzeigen ist geschlossen.",
+    "es": "La tarjeta cerrada Tus préstamos (2) muestra 1 de 2 totalmente financiados. La barra combinada muestra Pedir ₿42'000 · $42.00 y 71 %. Solo vence el préstamo en PHP financiado: Vence hoy, ₿1'200 · $1.20 y Enviar. Ver préstamos está cerrado.",
+    "fil": "Ipinapakita ng saradong kard na Ang iyong mga utang (2) ang 1 sa 2 ang buo na ang pondo. Ipinapakita ng pinagsamang bar ang Hiling ₿42'000 · $42.00 at 71%. Ang napondohang PHP na utang lamang ang dapat bayaran: Bayaran ngayon, ₿1'200 · $1.20 at Ipadala. Sarado ang Ipakita ang mga utang."
+  },
+  "/welcome:loans-multi-open": {
+    "de": "Die Karte mit mehreren Krediten nach Kredite anzeigen. Unter dem gemeinsamen 71-%-Balken und Heute fällig ₿1'200 · $1.20 verlinkt die Liste den Nähmaschinen-Text mit 60 % und den Schulbücher-Text mit 100 %; Kredite ausblenden ist sichtbar.",
+    "es": "La tarjeta de varios préstamos tras Ver préstamos. Bajo la barra combinada del 71 % y Vence hoy ₿1'200 · $1.20, la lista enlaza el texto de la máquina de coser con 60 % y el de los libros escolares con 100 %; Ocultar préstamos está visible.",
+    "fil": "Ang kard ng maraming utang pagkatapos ng Ipakita ang mga utang. Sa ilalim ng pinagsamang 71% na bar at Bayaran ngayon ₿1'200 · $1.20, inuugnay ng listahan ang teksto ng makinang panahi na may 60% at ang teksto ng mga aklat na may 100%; nakikita ang Itago ang mga utang."
+  },
+  "/welcome:menu-loan-due": {
+    "de": "Das geöffnete Menu zeigt unter Erhalten / Gegeben / Beiträge die Zeile Kreditrückzahlung heute fällig, ₿1'000 · $1.00 und Senden. Senden schliesst das Menu und öffnet /loans/repay.",
+    "es": "El Menú abierto muestra bajo Recibido / Donado / Publicaciones la fila La devolución del préstamo vence hoy, ₿1'000 · $1.00 y Enviar. Enviar cierra el Menú y abre /loans/repay.",
+    "fil": "Ipinapakita ng bukas na Menu sa ilalim ng Natanggap / Ibinigay / Mga post ang hilerang Bayaran ngayon ang utang, ₿1'000 · $1.00 at Ipadala. Isinasara ng Ipadala ang Menu at binubuksan ang /loans/repay."
+  },
+  "/welcome:menu-loan-behind": {
+    "de": "Das geöffnete Menu zeigt unter Erhalten / Gegeben / Beiträge die rote Zeile Sie sind mit Ihrem Kredit im Rückstand, ₿3'000 · $3.00 und Senden.",
+    "es": "El Menú abierto muestra bajo Recibido / Donado / Publicaciones la fila roja Llevas retraso en tu préstamo, ₿3'000 · $3.00 y Enviar.",
+    "fil": "Ipinapakita ng bukas na Menu sa ilalim ng Natanggap / Ibinigay / Mga post ang pulang hilerang Huli ka sa pagbabayad ng utang mo, ₿3'000 · $3.00 at Ipadala."
+  },
   "/welcome:software-developer": {
     "de": "Eine Autorenzeile im Willkommensforum. Neben dem Namen steht ein statisches Label Software-Entwickler (ein span, keine Schaltfläche und keine Rolle), nach einer vorhandenen Rollenpille. Der Rest entspricht dem kleinsten Willkommensbildschirm mit einer Notiz.",
     "es": "Una fila de autor en el foro de bienvenida. Junto al nombre, una etiqueta estática Desarrollador de software (un span, no un botón y no un rol) va después de cualquier píldora de rol. El resto coincide con la pantalla de bienvenida más pequeña de una sola nota.",
@@ -4444,31 +4474,6 @@
     "es": "Un miembro por debajo de verificado que nunca ha publicado una nota de primer nivel (su nota Sobre mí no cuenta) ve Tu primer post es gratis. (forum.firstPostFree) en texto atenuado bajo el compositor de mensajes en el área de redacción, debajo de Publicar. Publicar crea entonces la nota directamente, sin factura y sin hoja de pago, y la muestra como tras una publicación pagada: el feed cambia a Todos y el compositor se vacía. Si la api ya no permite la publicación gratuita (por ejemplo, porque otra primera publicación llegó antes), el mismo Publicar abre en su lugar la tarifa normal de publicación de 1 sat. Los miembros verificados nunca ven la línea; ya publican sin tarifa.",
     "fil": "Ang miyembrong mas mababa sa verified na hindi pa kailanman nag-post ng tala sa nangungunang antas (hindi binibilang ang tala niyang Tungkol sa akin) ay nakakakita ng Libre ang una mong post. (forum.firstPostFree) sa malabong teksto sa ilalim ng kahon ng pagsulat ng mensahe sa lugar ng pagsulat, sa ibaba ng I-post. Pagkatapos, direktang ginagawa ng I-post ang tala, walang resibo at walang sheet ng bayad, at ipinapakita ito gaya ng pagkatapos ng bayad na post: lumilipat ang feed sa Lahat at nalilinis ang kahon ng pagsulat. Kung hindi na pinapayagan ng api ang libreng post (halimbawa, nauna ang ibang unang post), binubuksan ng parehong I-post ang karaniwang 1-sat na bayad sa pag-post. Hindi kailanman nakikita ng mga verified na miyembro ang linya; nagpo-post na sila nang walang bayad."
   },
-  "/welcome:repay-wallet-pay-preparing": {
-    "de": "Fixierte Fixture (?visual=wallet-pay-preparing, nur Playwright-Builds, Rückzahlungsrechnung mit einer sparkInvoice). Nach Heutige Rate zahlen zeigt die Rückzahlungskarte (₿700 zahlen) den Platz der In-App-Wallet, ohne Rechnungs-QR: ein Spinner und Wallet wird geprüft….",
-    "es": "Fixture fijado (?visual=wallet-pay-preparing, solo en builds de Playwright, factura de devolución con un sparkInvoice). Después de Pagar la cuota de hoy, la tarjeta de devolución (Pagar ₿700) muestra el espacio de la wallet de la app, sin QR de factura: un indicador giratorio y Revisando tu wallet….",
-    "fil": "Naka-pin na fixture (?visual=wallet-pay-preparing, sa mga Playwright build lang, resibo ng pagbabayad-utang na may sparkInvoice). Pagkatapos ng Bayaran ang hulog ngayon, ipinapakita ng kard ng pagbabayad-utang (Magbayad ng ₿700) ang puwesto ng in-app wallet, walang QR ng resibo: isang umiikot na pananda at Tinitingnan ang wallet mo…."
-  },
-  "/welcome:repay-wallet-pay-confirm": {
-    "de": "Fixierte Fixture (?visual=wallet-pay-confirm, nur Playwright-Builds, Rückzahlungsrechnung mit einer sparkInvoice). Nach Heutige Rate zahlen zeigt die Rückzahlungskarte (₿700 zahlen) den Platz der In-App-Wallet, ohne Rechnungs-QR: Senden, ohne Gebührenzeile für die angegebene Gebühr von ₿0.",
-    "es": "Fixture fijado (?visual=wallet-pay-confirm, solo en builds de Playwright, factura de devolución con un sparkInvoice). Después de Pagar la cuota de hoy, la tarjeta de devolución (Pagar ₿700) muestra el espacio de la wallet de la app, sin QR de factura: Enviar, sin fila de comisión para la comisión indicada de ₿0.",
-    "fil": "Naka-pin na fixture (?visual=wallet-pay-confirm, sa mga Playwright build lang, resibo ng pagbabayad-utang na may sparkInvoice). Pagkatapos ng Bayaran ang hulog ngayon, ipinapakita ng kard ng pagbabayad-utang (Magbayad ng ₿700) ang puwesto ng in-app wallet, walang QR ng resibo: Ipadala, nang walang hilera ng bayad sa serbisyo para sa sinabing bayad na ₿0."
-  },
-  "/welcome:repay-wallet-pay-paying": {
-    "de": "Fixierte Fixture (?visual=wallet-pay-paying, nur Playwright-Builds, Rückzahlungsrechnung mit einer sparkInvoice). Nach Heutige Rate zahlen zeigt die Rückzahlungskarte (₿700 zahlen) den Platz der In-App-Wallet, ohne Rechnungs-QR: ein Spinner und Zahlung aus Ihrer Wallet läuft….",
-    "es": "Fixture fijado (?visual=wallet-pay-paying, solo en builds de Playwright, factura de devolución con un sparkInvoice). Después de Pagar la cuota de hoy, la tarjeta de devolución (Pagar ₿700) muestra el espacio de la wallet de la app, sin QR de factura: un indicador giratorio y Pagando desde tu wallet….",
-    "fil": "Naka-pin na fixture (?visual=wallet-pay-paying, sa mga Playwright build lang, resibo ng pagbabayad-utang na may sparkInvoice). Pagkatapos ng Bayaran ang hulog ngayon, ipinapakita ng kard ng pagbabayad-utang (Magbayad ng ₿700) ang puwesto ng in-app wallet, walang QR ng resibo: isang umiikot na pananda at Nagbabayad mula sa wallet mo…."
-  },
-  "/welcome:repay-wallet-pay-insufficient": {
-    "de": "Fixierte Fixture (?visual=wallet-pay-insufficient, nur Playwright-Builds, Rückzahlungsrechnung mit einer sparkInvoice). Nach Heutige Rate zahlen zeigt die Rückzahlungskarte (₿700 zahlen) den Platz der In-App-Wallet, ohne Rechnungs-QR: der Hinweis, dass der Wallet Bitcoin fehlt, dann Es fehlen noch mit dem Betrag plus der bekannten Gebühr minus dem Guthaben in ₿ und Fiat (der Pin zeigt den vollen Betrag), dann die eigene 21.gifts-Adresse des Mitglieds und ihr Open-CryptoPay-QR.",
-    "es": "Fixture fijado (?visual=wallet-pay-insufficient, solo en builds de Playwright, factura de devolución con un sparkInvoice). Después de Pagar la cuota de hoy, la tarjeta de devolución (Pagar ₿700) muestra el espacio de la wallet de la app, sin QR de factura: la alerta de que a la wallet le falta Bitcoin, luego Faltan todavía con el importe más la comisión conocida menos el saldo en ₿ y fiat (el pin muestra el importe completo), luego la propia dirección de 21.gifts del miembro y su QR de Open CryptoPay.",
-    "fil": "Naka-pin na fixture (?visual=wallet-pay-insufficient, sa mga Playwright build lang, resibo ng pagbabayad-utang na may sparkInvoice). Pagkatapos ng Bayaran ang hulog ngayon, ipinapakita ng kard ng pagbabayad-utang (Magbayad ng ₿700) ang puwesto ng in-app wallet, walang QR ng resibo: ang alerto na kulang ang Bitcoin sa wallet, tapos Kulang pa ng kasama ang halaga dagdag ang alam na bayad sa serbisyo bawas ang balanse sa ₿ at fiat (ipinapakita ng pin ang buong halaga), tapos ang sariling 21.gifts address ng miyembro at ang QR ng Open CryptoPay nito."
-  },
-  "/welcome:repay-wallet-pay-unconfirmed": {
-    "de": "Fixierte Fixture (?visual=wallet-pay-unconfirmed, nur Playwright-Builds, Rückzahlungsrechnung mit einer sparkInvoice). Nach Heutige Rate zahlen zeigt die Rückzahlungskarte (₿700 zahlen) den Platz der In-App-Wallet, ohne Rechnungs-QR: der neutrale Satz, dass die Zahlung noch nicht bestätigt ist.",
-    "es": "Fixture fijado (?visual=wallet-pay-unconfirmed, solo en builds de Playwright, factura de devolución con un sparkInvoice). Después de Pagar la cuota de hoy, la tarjeta de devolución (Pagar ₿700) muestra el espacio de la wallet de la app, sin QR de factura: la frase neutral de que el pago aún no está confirmado.",
-    "fil": "Naka-pin na fixture (?visual=wallet-pay-unconfirmed, sa mga Playwright build lang, resibo ng pagbabayad-utang na may sparkInvoice). Pagkatapos ng Bayaran ang hulog ngayon, ipinapakita ng kard ng pagbabayad-utang (Magbayad ng ₿700) ang puwesto ng in-app wallet, walang QR ng resibo: ang neutral na pangungusap na hindi pa kumpirmado ang bayad."
-  },
   "/welcome:reaction-wallet-pay-preparing": {
     "de": "Fixierte Fixture (?visual=wallet-pay-preparing, nur Playwright-Builds, Rechnung mit einer sparkInvoice). Die Zahlungsseite der bezahlten Reaktion zeigt den Platz der In-App-Wallet, ohne Rechnungs-QR: ein Spinner und Wallet wird geprüft….",
     "es": "Fixture fijado (?visual=wallet-pay-preparing, solo en builds de Playwright, factura con un sparkInvoice). La página de pago de la reacción pagada muestra el espacio de la wallet de la app, sin QR de factura: un indicador giratorio y Revisando tu wallet….",
@@ -4748,6 +4753,131 @@
     "de": "Dasselbe, wenn die Einrichtung der Wallet im Hintergrund aufgegeben hat (Pin ?visual=balance-setup-failed): Das Guthaben zeigt Ihre Wallet konnte noch nicht eingerichtet werden. (walletSetup.error) mit einem sekundären Erneut versuchen darunter.",
     "es": "Lo mismo cuando la configuración de la wallet en segundo plano se dio por vencida (pin ?visual=balance-setup-failed): el saldo muestra Tu wallet aún no se pudo configurar. (walletSetup.error) con un Intentar de nuevo secundario debajo.",
     "fil": "Pareho kapag sumuko na ang background setup ng wallet (pin ?visual=balance-setup-failed): ipinapakita ng balanse ang Hindi pa ma-set up ang wallet mo. (walletSetup.error) na may secondary na Subukan ulit sa ilalim nito."
+  },
+  "/loans/repay:default": {
+    "de": "Kredit A ist zahlungsbereit: Heute fällig, ₿1'000 mit $1.00 darunter, an 3 Personen, geschlossenes Wer wird bezahlt?, Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿1'000 · $1.00 senden. Ihr Kredit zeigt den Nähmaschinen-Text, ₿30'000 · $30.00 · 30 Tage · ₿1'000 · $1.00 pro Tag, ₿11'000 · $11.00 von ₿30'000 · $30.00 zurückgezahlt, Tag 12 von 30 und Rückzahlungsliste.",
+    "es": "El préstamo A está listo para pagar: Vence hoy, ₿1'000 con $1.00 debajo, para 3 personas, Quién recibe el pago cerrado, Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿1'000 · $1.00. Tu préstamo muestra el texto de la máquina de coser, ₿30'000 · $30.00 · 30 días · ₿1'000 · $1.00 al día, Devuelto ₿11'000 · $11.00 de ₿30'000 · $30.00, Día 12 de 30 y Lista de devolución.",
+    "fil": "Handang bayaran ang utang A: Bayaran ngayon, ₿1'000 na may $1.00 sa ilalim, sa 3 tao, saradong Sino ang babayaran, Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿1'000 · $1.00. Ipinapakita ng Ang utang mo ang teksto ng makinang panahi, ₿30'000 · $30.00 · 30 araw · ₿1'000 · $1.00 bawat araw, Nabayaran ang ₿11'000 · $11.00 sa ₿30'000 · $30.00, Araw 12 sa 30 at Listahan ng ibabalik."
+  },
+  "/loans/repay:who-open": {
+    "de": "Der Standardzustand mit geöffnetem Wer wird bezahlt?: Bruno ₿500 · $0.50, Carla ₿300 · $0.30 und Diego ₿200 · $0.20. Der Gesamtbetrag bleibt ₿1'000 · $1.00 und die Schaltfläche zum Senden bleibt sichtbar.",
+    "es": "El estado predeterminado con Quién recibe el pago abierto: Bruno ₿500 · $0.50, Carla ₿300 · $0.30 y Diego ₿200 · $0.20. El total sigue en ₿1'000 · $1.00 y el control Enviar permanece visible.",
+    "fil": "Ang default na estado na bukas ang Sino ang babayaran: Bruno ₿500 · $0.50, Carla ₿300 · $0.30, at Diego ₿200 · $0.20. Nananatiling ₿1'000 · $1.00 ang kabuuan at nakikita pa ang Ipadala."
+  },
+  "/loans/repay:unavailable": {
+    "de": "Kredit A zeigt Heute fällig, ₿1'000 · $1.00, an 3 Personen und den Kreditfortschritt. Statt Wallet-Guthaben und Senden steht Ihre 21.gifts-Wallet ist hier nicht verfügbar, darum kann dies nicht bezahlt werden.",
+    "es": "El préstamo A muestra Vence hoy, ₿1'000 · $1.00, para 3 personas y el progreso del préstamo. En lugar del saldo y Enviar dice Tu wallet de 21.gifts no está disponible aquí, así que esto no se puede pagar.",
+    "fil": "Ipinapakita ng utang A ang Bayaran ngayon, ₿1'000 · $1.00, sa 3 tao, at pag-usad ng utang. Sa halip ng balanse at Ipadala ay Hindi available dito ang 21.gifts wallet mo, kaya hindi ito mababayaran."
+  },
+  "/loans/repay:multi": {
+    "de": "Zwei Kredite sind zusammengefasst: Heute fällig, ₿2'200 mit $2.20 darunter, an 5 Personen · 2 Kredite, Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿2'200 · $2.20 senden. Ihre Kredite enthält den Nähmaschinen- und den Schulbücher-Kredit; letzterer zeigt ₱300.00 · 10 Tage · ₱30.00 pro Tag, ₿4'800 · $4.80 von ₿12'000 · $12.00 zurückgezahlt und Tag 5 von 10.",
+    "es": "Se combinan dos préstamos: Vence hoy, ₿2'200 con $2.20 debajo, para 5 personas · 2 préstamos, Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿2'200 · $2.20. Tus préstamos contiene el préstamo de la máquina de coser y el de libros escolares; este último muestra ₱300.00 · 10 días · ₱30.00 al día, Devuelto ₿4'800 · $4.80 de ₿12'000 · $12.00 y Día 5 de 10.",
+    "fil": "Pinagsama ang dalawang utang: Bayaran ngayon, ₿2'200 na may $2.20 sa ilalim, sa 5 tao · 2 utang, Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿2'200 · $2.20. Nasa Ang mga utang mo ang utang para sa makinang panahi at aklat; ipinapakita ng ikalawa ang ₱300.00 · 10 araw · ₱30.00 bawat araw, Nabayaran ang ₿4'800 · $4.80 sa ₿12'000 · $12.00 at Araw 5 sa 10."
+  },
+  "/loans/repay:multi-who-open": {
+    "de": "Der Zustand mit zwei Krediten und geöffnetem Wer wird bezahlt?. Unter dem Nähmaschinen-Kredit stehen Bruno ₿500 · $0.50, Carla ₿300 · $0.30 und Diego ₿200 · $0.20; unter dem Schulbücher-Kredit Elena ₱18.00 · ₿720 · $0.72 und Farid ₱12.00 · ₿480 · $0.48.",
+    "es": "El estado de dos préstamos con Quién recibe el pago abierto. Bajo el préstamo de la máquina de coser aparecen Bruno ₿500 · $0.50, Carla ₿300 · $0.30 y Diego ₿200 · $0.20; bajo el de libros escolares, Elena ₱18.00 · ₿720 · $0.72 y Farid ₱12.00 · ₿480 · $0.48.",
+    "fil": "Ang estado ng dalawang utang na bukas ang Sino ang babayaran. Sa ilalim ng utang para sa makinang panahi ay Bruno ₿500 · $0.50, Carla ₿300 · $0.30, at Diego ₿200 · $0.20; sa ilalim ng aklat ay Elena ₱18.00 · ₿720 · $0.72 at Farid ₱12.00 · ₿480 · $0.48."
+  },
+  "/loans/repay:fiat": {
+    "de": "Nur der PHP-Kredit: Heute fällig, gross ₱30.00 · ₿1'200, darunter $1.20, an 2 Personen, Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿1'200 · $1.20 senden. Der Plan ist ₱300.00 · 10 Tage · ₱30.00 pro Tag; die Zeile lautet ₿4'800 · $4.80 von ₿12'000 · $12.00 zurückgezahlt.",
+    "es": "Solo el préstamo en PHP: Vence hoy, en grande ₱30.00 · ₿1'200, debajo $1.20, para 2 personas, Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿1'200 · $1.20. El plan es ₱300.00 · 10 días · ₱30.00 al día; la línea dice Devuelto ₿4'800 · $4.80 de ₿12'000 · $12.00.",
+    "fil": "Ang PHP na utang lamang: Bayaran ngayon, malaking ₱30.00 · ₿1'200, $1.20 sa ilalim, sa 2 tao, Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿1'200 · $1.20. Ang plano ay ₱300.00 · 10 araw · ₱30.00 bawat araw; Nabayaran ang ₿4'800 · $4.80 sa ₿12'000 · $12.00 ang linya."
+  },
+  "/loans/repay:behind": {
+    "de": "Kredit A ist überfällig. Die Überschrift in der Gefahrenfarbe lautet Sie sind 2 Tage im Rückstand, mit ₿3'000 · $3.00, an 3 Personen und ₿3'000 · $3.00 senden. Die Empfängerliste würde die Anteile vom 5. Okt., 6. Okt. und heute zeigen.",
+    "es": "El préstamo A está atrasado. El título en color de peligro dice Llevas 2 días de retraso, con ₿3'000 · $3.00, para 3 personas y Enviar ₿3'000 · $3.00. La lista de destinatarios mostraría las partes del 5 de oct., 6 de oct. y hoy.",
+    "fil": "Huli ang utang A. Ang danger na pamagat ay Huli ka nang 2 araw, may ₿3'000 · $3.00, sa 3 tao, at Ipadala ang ₿3'000 · $3.00. Ipapakita ng listahan ang mga bahagi noong Okt. 5, Okt. 6, at ngayon."
+  },
+  "/loans/repay:waiting": {
+    "de": "Diego kann noch nicht empfangen. Die Karte zeigt Heute fällig, ₿800 · $0.80, an 2 Personen und den Hinweis ₿200 · $0.20 wartet auf eine kreditgebende Person, die ihre Wallet noch nicht eingerichtet hat. Sie können den Betrag senden, sobald das geschehen ist. Die Schaltfläche lautet ₿800 · $0.80 senden.",
+    "es": "Diego aún no puede recibir. La tarjeta muestra Vence hoy, ₿800 · $0.80, para 2 personas y el aviso ₿200 · $0.20 espera a un prestamista que aún no ha configurado su wallet. Podrás enviarlo cuando lo haga. El botón dice Enviar ₿800 · $0.80.",
+    "fil": "Hindi pa makakatanggap si Diego. Ipinapakita ng kard ang Bayaran ngayon, ₿800 · $0.80, sa 2 tao, at ang paalalang Naghihintay ang ₿200 · $0.20 sa isang nagpautang na hindi pa naka-set up ang wallet. Maipapadala mo ito kapag na-set up na nila. Ang pindutan ay Ipadala ang ₿800 · $0.80."
+  },
+  "/loans/repay:waiting-who-open": {
+    "de": "Der Wartezustand mit geöffnetem Wer wird bezahlt?: Bruno ₿500 · $0.50 und Carla ₿300 · $0.30 sind normale Zeilen; Diego ₿200 · $0.20 ist in der Hinweisfarbe mit Warnung und Noch keine Wallet · wartet hervorgehoben.",
+    "es": "El estado de espera con Quién recibe el pago abierto: Bruno ₿500 · $0.50 y Carla ₿300 · $0.30 son filas normales; Diego ₿200 · $0.20 está resaltado en el color de aviso con una advertencia y Aún no tiene wallet · espera.",
+    "fil": "Ang naghihintay na estado na bukas ang Sino ang babayaran: karaniwang hilera sina Bruno ₿500 · $0.50 at Carla ₿300 · $0.30; naka-highlight si Diego ₿200 · $0.20 sa notice color na may babala at Wala pang wallet · naghihintay."
+  },
+  "/loans/repay:waiting-all": {
+    "de": "Alle drei kreditgebenden Personen sind nicht verfügbar. Angezeigt werden ₿1'000 · $1.00, an 0 Personen und Ihre kreditgebenden Personen haben ihre Wallets noch nicht eingerichtet. Die heutige Zahlung wartet, bis das geschehen ist. Es gibt weder Wallet-Zeile noch Senden.",
+    "es": "Los tres prestamistas no están disponibles. Se muestran ₿1'000 · $1.00, para 0 personas y Tus prestamistas aún no han configurado sus wallets. El pago de hoy espera hasta que lo hagan. No hay línea de wallet ni Enviar.",
+    "fil": "Hindi available ang tatlong nagpautang. Makikita ang ₿1'000 · $1.00, sa 0 tao, at Hindi pa naka-set up ang mga wallet ng mga nagpautang sa iyo. Maghihintay ang bayad ngayon hanggang ma-set up nila ang mga ito. Walang hilera ng wallet o Ipadala."
+  },
+  "/loans/repay:short": {
+    "de": "Fällig bleiben ₿1'000 · $1.00, aber die Wallet enthält nur ₿600 · $0.60. Der Rahmen sagt Nicht genug in Ihrer Wallet und Ihre Wallet enthält ₿600 · $0.60. Es fehlen noch ₿400 · $0.40., mit Wallet aufladen. Darunter bietet ₿500 · $0.50 jetzt an Bruno senden, den Rest nach dem Aufladen Ihrer Wallet den ältesten passenden Anteil an.",
+    "es": "Siguen venciendo ₿1'000 · $1.00, pero la wallet solo tiene ₿600 · $0.60. El cuadro dice No hay suficiente en tu wallet y Tu wallet tiene ₿600 · $0.60. Aún faltan ₿400 · $0.40., con Recargar tu wallet. Debajo, Enviar ahora ₿500 · $0.50 a Bruno, el resto después de tu recarga ofrece la parte más antigua que cabe.",
+    "fil": "₿1'000 · $1.00 pa rin ang dapat bayaran, pero ₿600 · $0.60 lang ang wallet. Sinasabi ng kahon ang Kulang ang laman ng wallet mo at May ₿600 · $0.60 ang wallet mo. Kulang pa ng ₿400 · $0.40., na may Dagdagan ang laman ng wallet mo. Sa ilalim, iniaalok ng Ipadala ngayon ang ₿500 · $0.50 kay Bruno, ang natitira pagkatapos mong magdagdag ang pinakamatandang kasya na bahagi."
+  },
+  "/loans/repay:topup": {
+    "de": "Der Zustand mit zu wenig Guthaben nach Wallet aufladen. Der Rahmen behält ₿600 · $0.60 und ₿400 · $0.40 und zeigt dann Um Bitcoin hinzuzufügen, senden Sie es an Ihre Adresse:, Adas 21.gifts-Adresse, den Open-CryptoPay-QR, Kopieren und Ihre Aufladung wird erwartet…. Der Link für ₿500 · $0.50 an Bruno bleibt darunter.",
+    "es": "El estado de saldo insuficiente tras Recargar tu wallet. El cuadro conserva ₿600 · $0.60 y ₿400 · $0.40 y luego muestra Para añadir Bitcoin, envíalo a tu dirección:, la dirección de 21.gifts de Ada, su QR de Open CryptoPay, Copiar y Esperando tu recarga…. El enlace de ₿500 · $0.50 para Bruno sigue debajo.",
+    "fil": "Ang kulang-na-balanse na estado pagkatapos ng Dagdagan ang laman ng wallet mo. Nananatili sa kahon ang ₿600 · $0.60 at ₿400 · $0.40, tapos ang Para magdagdag ng Bitcoin, ipadala ito sa address mo:, 21.gifts address ni Ada, Open CryptoPay QR nito, Kopyahin, at Hinihintay ang pagdagdag mo…. Nasa ilalim pa ang ugnay para sa ₿500 · $0.50 kay Bruno."
+  },
+  "/loans/repay:sending": {
+    "de": "Nach dem einmaligen Senden behält die Karte ₿1'000 · $1.00 und ersetzt die Wallet-Steuerung durch einen Spinner und ₿1'000 · $1.00 werden gesendet…. Es gibt keinen Bestätigungsschritt.",
+    "es": "Después de Enviar una vez, la tarjeta conserva ₿1'000 · $1.00 y sustituye los controles de wallet por un indicador giratorio y Enviando ₿1'000 · $1.00…. No hay paso de confirmación.",
+    "fil": "Pagkatapos ng isang tap sa Ipadala, nananatili sa kard ang ₿1'000 · $1.00 at pinapalitan ang mga kontrol ng wallet ng spinner at Ipinapadala ang ₿1'000 · $1.00…. Walang hakbang ng kumpirmasyon."
+  },
+  "/loans/repay:partial": {
+    "de": "Brunos Anteil ₿500 · $0.50 wurde gesendet; Carla und Diego bleiben. Heute noch fällig zeigt ₿500 · $0.50. Vor Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿500 · $0.50 senden steht ₿500 · $0.50 an Bruno gesendet.",
+    "es": "Se envió la parte de Bruno, ₿500 · $0.50; quedan Carla y Diego. Aún vence hoy muestra ₿500 · $0.50. Antes de Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿500 · $0.50 aparece Enviado ₿500 · $0.50 a Bruno.",
+    "fil": "Naipadala ang bahagi ni Bruno na ₿500 · $0.50; natitira sina Carla at Diego. Ipinapakita ng May babayaran pa ngayon ang ₿500 · $0.50. Bago ang Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿500 · $0.50 ay Naipadala ang ₿500 · $0.50 kay Bruno."
+  },
+  "/loans/repay:repaid": {
+    "de": "Die heutigen Anteile sind beglichen; der Kredit zeigt ₿12'000 · $12.00 von ₿30'000 · $30.00 zurückgezahlt. Der Pin repay-repaid zeigt grün ₿1'000 · $1.00 zurückgezahlt und Nächste Zahlung: morgen, ₿1'000 · $1.00 an 3 Personen über dem aktualisierten Balken.",
+    "es": "Las partes de hoy están pagadas; el préstamo muestra Devuelto ₿12'000 · $12.00 de ₿30'000 · $30.00. El pin repay-repaid muestra en verde Devuelto ₿1'000 · $1.00 y Siguiente: mañana, ₿1'000 · $1.00 para 3 personas sobre la barra actualizada.",
+    "fil": "Bayad na ang mga bahagi ngayon; ipinapakita ng utang ang Nabayaran ang ₿12'000 · $12.00 sa ₿30'000 · $30.00. Ipinapakita ng pin na repay-repaid sa berde ang Nabayaran ang ₿1'000 · $1.00 at Susunod: bukas, ₿1'000 · $1.00 sa 3 tao sa ibabaw ng na-update na bar."
+  },
+  "/loans/repay:last-due": {
+    "de": "Kredit A ist am letzten Tag: Heute fällig · letzte Zahlung, ₿1'000 · $1.00, an 3 Personen und ₿1'000 · $1.00 senden. Der Kredit zeigt ₿29'000 · $29.00 von ₿30'000 · $30.00 zurückgezahlt und Tag 30 von 30.",
+    "es": "El préstamo A está en su último día: Vence hoy · último pago, ₿1'000 · $1.00, para 3 personas y Enviar ₿1'000 · $1.00. El préstamo muestra Devuelto ₿29'000 · $29.00 de ₿30'000 · $30.00 y Día 30 de 30.",
+    "fil": "Nasa huling araw ang utang A: Bayaran ngayon · huling bayad, ₿1'000 · $1.00, sa 3 tao, at Ipadala ang ₿1'000 · $1.00. Ipinapakita ng utang ang Nabayaran ang ₿29'000 · $29.00 sa ₿30'000 · $30.00 at Araw 30 sa 30."
+  },
+  "/loans/repay:last": {
+    "de": "Der Abschluss der letzten Zahlung ist eine grüne Karte: Das war Ihre letzte Zahlung und Ihr Kredit ist vollständig zurückgezahlt. Alle haben ihre ₿30'000 · $30.00 zurückbekommen. Vielen Dank! Der abgeschlossene Nähmaschinen-Kredit darunter zeigt ₿30'000 · $30.00 von ₿30'000 · $30.00 zurückgezahlt, Tag 30 von 30 und einen vollen Fortschrittsbalken.",
+    "es": "La finalización del último pago es una tarjeta verde: Ese fue tu último pago y Tu préstamo está totalmente devuelto. Todos recuperaron sus ₿30'000 · $30.00. ¡Gracias! El préstamo terminado de la máquina de coser muestra debajo Devuelto ₿30'000 · $30.00 de ₿30'000 · $30.00, Día 30 de 30 y una barra de progreso completa.",
+    "fil": "Berdeng kard ang pagkumpleto ng huling bayad: Iyon na ang huli mong bayad at Buo nang nabayaran ang utang mo. Naibalik sa lahat ang kanilang ₿30'000 · $30.00. Salamat! Ipinapakita sa ilalim ng natapos na utang para sa makinang panahi ang Nabayaran ang ₿30'000 · $30.00 sa ₿30'000 · $30.00, Araw 30 sa 30, at punong bar ng pag-usad."
+  },
+  "/loans/repay:last-multi": {
+    "de": "Nach einem Lauf mit der letzten Zahlung für Kredit A bleiben zwei Kredite aufgeführt. Der Pin repay-repaid-multi lässt die grüne Karte ₿2'200 · $2.20 zurückgezahlt und Das war die letzte Zahlung für „I need a small loan to buy a second-hand sewing machine for…“ sagen. Dieser Kredit ist vollständig zurückgezahlt. Alle haben ihre ₿30'000 · $30.00 zurückbekommen. Vielen Dank! Kredit A zeigt ₿30'000 · $30.00 von ₿30'000 · $30.00 zurückgezahlt, Tag 30 von 30 und einen vollen Fortschrittsbalken. Kredit B zeigt ₿6'000 · $6.00 von ₿12'000 · $12.00 zurückgezahlt, Tag 5 von 10; Nächste Zahlung bleibt morgen, ₿1'200 · $1.20 an 2 Personen.",
+    "es": "Después de una ejecución que incluye el último pago del préstamo A siguen listados dos préstamos. El pin repay-repaid-multi hace que la tarjeta verde diga Devuelto ₿2'200 · $2.20 y Ese fue el último pago de «I need a small loan to buy a second-hand sewing machine for…». Está totalmente devuelto. Todos recuperaron sus ₿30'000 · $30.00. ¡Gracias! El préstamo A muestra Devuelto ₿30'000 · $30.00 de ₿30'000 · $30.00, Día 30 de 30 y una barra de progreso completa. El préstamo B muestra Devuelto ₿6'000 · $6.00 de ₿12'000 · $12.00, Día 5 de 10; Siguiente permanece mañana, ₿1'200 · $1.20 para 2 personas.",
+    "fil": "Pagkatapos ng takbong kasama ang huling bayad sa utang A, nakalista pa rin ang dalawang utang. Sa pin na repay-repaid-multi, sinasabi ng berdeng kard ang Nabayaran ang ₿2'200 · $2.20 at Iyon ang huling bayad para sa “I need a small loan to buy a second-hand sewing machine for…”. Buo na itong nabayaran. Naibalik sa lahat ang kanilang ₿30'000 · $30.00. Salamat! Ipinapakita ng utang A ang Nabayaran ang ₿30'000 · $30.00 sa ₿30'000 · $30.00, Araw 30 sa 30, at punong bar ng pag-usad. Ipinapakita ng utang B ang Nabayaran ang ₿6'000 · $6.00 sa ₿12'000 · $12.00, Araw 5 sa 10; nananatiling bukas ang Susunod, ₿1'200 · $1.20 sa 2 tao."
+  },
+  "/loans/repay:nothing-due": {
+    "de": "Die Karte mit Erfolgskontur sagt Heute ist nichts fällig und Nächste Zahlung: morgen, ₿1'000 · $1.00 an 3 Personen. Es gibt kein Senden. Kredit A zeigt darunter ₿12'000 · $12.00 von ₿30'000 · $30.00 zurückgezahlt.",
+    "es": "La tarjeta con contorno de éxito dice No vence nada hoy y Siguiente: mañana, ₿1'000 · $1.00 para 3 personas. No hay Enviar. Debajo, el préstamo A muestra Devuelto ₿12'000 · $12.00 de ₿30'000 · $30.00.",
+    "fil": "Sinasabi ng kard na may success outline ang Walang babayaran ngayon at Susunod: bukas, ₿1'000 · $1.00 sa 3 tao. Walang Ipadala. Ipinapakita sa ilalim ng utang A ang Nabayaran ang ₿12'000 · $12.00 sa ₿30'000 · $30.00."
+  },
+  "/loans/repay:sunday": {
+    "de": "Die Fälligkeitskarte enthält nur Sonntags gibt es keine Rückzahlungen. Es gibt weder Betrag noch Senden; Ihr Kredit und sein Rückzahlungsbalken bleiben darunter.",
+    "es": "La tarjeta de vencimiento solo contiene Los domingos no hay devoluciones. No hay importe ni Enviar; Tu préstamo y su barra de devolución permanecen debajo.",
+    "fil": "Walang laman ang due card maliban sa Walang pagbabayad ng utang tuwing Linggo. Walang halaga o Ipadala; nananatili sa ilalim ang Ang utang mo at bar ng pagbabayad nito."
+  },
+  "/loans/repay:unconfirmed": {
+    "de": "Kredit A zeigt weiter Heute fällig, ₿1'000 · $1.00 und an 3 Personen. Statt der Wallet-Steuerung steht neutral Diese Zahlung ist noch nicht bestätigt. Prüfen Sie Ihr Guthaben später erneut.",
+    "es": "El préstamo A sigue mostrando Vence hoy, ₿1'000 · $1.00 y para 3 personas. En lugar de los controles de wallet aparece neutral Este pago aún no está confirmado. Comprueba de nuevo tu saldo más tarde.",
+    "fil": "Ipinapakita pa rin ng utang A ang Bayaran ngayon, ₿1'000 · $1.00, at sa 3 tao. Sa halip ng mga kontrol ng wallet ay ang neutral na Hindi pa kumpirmado ang bayad na ito. Tingnan ulit ang balanse mo mamaya."
+  },
+  "/loans/repay:failed": {
+    "de": "Die Fälligkeitskarte behält ₿1'000 · $1.00 und zeigt rot Die Bitcoin-Zahlung konnte nicht gestartet werden. Darunter kehren Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿1'000 · $1.00 senden zurück.",
+    "es": "La tarjeta conserva ₿1'000 · $1.00 y muestra en rojo No se pudo iniciar el pago de Bitcoin. Debajo vuelven Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿1'000 · $1.00.",
+    "fil": "Nananatili sa due card ang ₿1'000 · $1.00 at ipinapakita sa pula ang Hindi masimulan ang Bitcoin payment. Bumabalik sa ilalim ang Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿1'000 · $1.00."
+  },
+  "/loans/repay:collecting": {
+    "de": "Während Kredit A noch sammelt, gibt es keine Fälligkeitskarte. Ihr Kredit zeigt den Nähmaschinen-Text, ₿30'000 · $30.00 · 30 Tage · ₿1'000 · $1.00 pro Tag, Noch nicht vollständig finanziert. und Rückzahlungsliste; dieser Bildschirm zeigt keinen Finanzierungsbalken.",
+    "es": "Mientras el préstamo A aún recauda, no hay tarjeta de vencimiento. Tu préstamo muestra el texto de la máquina de coser, ₿30'000 · $30.00 · 30 días · ₿1'000 · $1.00 al día, Aún no está totalmente financiado. y Lista de devolución; esta pantalla no muestra una barra de financiación.",
+    "fil": "Habang nangangalap pa ang utang A, walang due card. Ipinapakita ng Ang utang mo ang teksto ng makinang panahi, ₿30'000 · $30.00 · 30 araw · ₿1'000 · $1.00 bawat araw, Hindi pa buo ang pondo., at Listahan ng ibabalik; walang funding bar sa screen na ito."
+  },
+  "/loans/repay:none": {
+    "de": "Ohne einen sammelnden oder zurückzuzahlenden Kredit zeigt der Bildschirm unter der angemeldeten Kopfzeile nur Sie haben keinen Kredit zurückzuzahlen.",
+    "es": "Sin préstamos en recaudación o devolución, la pantalla solo muestra No tienes ningún préstamo que devolver. bajo el encabezado con sesión iniciada.",
+    "fil": "Kapag walang nangangalap o binabayarang utang, Wala kang utang na kailangang bayaran. lamang ang ipinapakita sa ilalim ng signed-in header."
+  },
+  "/loans/repay:load-error": {
+    "de": "Wenn /me/loans fehlschlägt, zeigt der Bildschirm den roten Hinweis Ihre Kredite konnten nicht geladen werden. und die sekundäre Schaltfläche Erneut versuchen.",
+    "es": "Cuando falla /me/loans, la pantalla muestra la alerta roja No se pudieron cargar tus préstamos. y el botón secundario Intentar de nuevo.",
+    "fil": "Kapag nabigo ang /me/loans, ipinapakita ng screen ang pulang alertong Hindi ma-load ang mga utang mo. at ang secondary na pindutang Subukan ulit."
   },
   "/welcome:wallet-setup-pending": {
     "de": "Angemeldet, während die Einrichtung der Wallet im Hintergrund noch aussteht (Playwright-Pin ?visual=setup-pending): Empfangen und Senden sind unten auf der Forum-Startseite beide aktiviert; ein Schritt, der die offene Wallet braucht, wartet in der Ansicht darauf. Kein Dialog.",

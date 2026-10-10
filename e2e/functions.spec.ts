@@ -24,6 +24,7 @@ import {
   replySatsFromDraft,
 } from '../src/lib/stats-money';
 import { fitBoxInFrame, pageFrameProblems } from '../src/lib/page-frame';
+import { fulfillLedger, fulfillMyLoans, ledgerA, loanA, loanWith, myLoans } from './loan-fixtures';
 
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
@@ -479,6 +480,7 @@ async function seedAdaSession(
         linkingKey: null,
         role,
         name: 'Ada',
+        username: 'alice',
         location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
@@ -503,6 +505,7 @@ async function seedAdaSession(
         linkingKey: null,
         role,
         name: 'Ada',
+        username: 'alice',
         location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
@@ -13745,66 +13748,130 @@ test('Function: proxyMessagesRepaymentPost — POST /messages/[id]/repayment wit
   expect(response.status()).toBe(401);
 });
 
+test('Function: proxyMeLoansGet — GET /me/loans without bearer is 401', async ({ request }) => {
+  const response = await request.get('/me/loans');
+  expect(response.status()).toBe(401);
+});
+
+test('Function: getMyLoans — the welcome loans card renders the routed body', async ({ page }) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, AMOUNT_RATE_STATS);
+  await fulfillMyLoans(page, myLoans([loanA]));
+  await page.goto('/welcome');
+  const card = page.getByRole('region', { name: 'Your loan' });
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('Due today');
+});
+
+test('Function: proxyMessagesRepaymentDuePost — POST /messages/[id]/repayment/due without bearer is 401', async ({
+  request,
+}) => {
+  const response = await request.post('/messages/[id]/repayment/due');
+  expect(response.status()).toBe(401);
+});
+
+test('Function: postRepaymentDue — POST /messages/[id]/repayment/due answers empty lists', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const response = await request.post('/messages/[id]/repayment/due', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(response.status()).toBe(200);
+  expect(await response.json()).toEqual({ bills: [], waiting: [] });
+});
+
+async function openLoanUi(
+  page: Page,
+  pathname: string,
+  body = myLoans([loanA]),
+  withLedger = true,
+): Promise<void> {
+  await seedAdaSession(page);
+  await stubGiftStats(page, AMOUNT_RATE_STATS);
+  await page.clock.install({ time: new Date('2026-10-07T10:00:00.000Z') });
+  await fulfillMyLoans(page, body);
+  if (withLedger) {
+    await fulfillLedger(page, 'loan-a', ledgerA);
+  }
+  await page.goto(pathname);
+}
+
+test('Function: summarizeLoans — the welcome card shows the combined behind state', async ({
+  page,
+}) => {
+  const behind = loanWith(loanA, {
+    due: { payableSats: 3_000, payablePeople: 3, behindDays: 2 },
+  });
+  await openLoanUi(page, '/welcome', myLoans([behind]), false);
+  await expect(page.getByText("You're 2 days behind")).toBeVisible();
+});
+
+test('Function: dueShares — Who gets paid lists every due lender', async ({ page }) => {
+  await openLoanUi(page, '/loans/repay?visual=repay-ready');
+  await page.getByRole('button', { name: 'Who gets paid' }).click();
+  for (const name of ['Bruno', 'Carla', 'Diego']) {
+    await expect(page.getByText(name, { exact: true })).toBeVisible();
+  }
+});
+
+test('Function: fittingPrefix — a short wallet offers the ordered fitting prefix', async ({
+  page,
+}) => {
+  await openLoanUi(page, '/loans/repay?visual=repay-short');
+  await expect(
+    page.getByRole('button', {
+      name: 'Send ₿500 · $0.50 now to Bruno, the rest after your top-up',
+    }),
+  ).toBeVisible();
+});
+
+test('Function: useMyLoans — the welcome card appears from the routed body', async ({ page }) => {
+  await openLoanUi(page, '/welcome', myLoans([loanA]), false);
+  await expect(page.getByRole('region', { name: 'Your loan' })).toBeVisible();
+});
+
+test('Function: useLoanRepay — wallet availability and sending pins reach the screen', async ({
+  page,
+}) => {
+  await openLoanUi(page, '/loans/repay');
+  await expect(page.getByText(WALLET_UNAVAILABLE)).toBeVisible();
+  await page.goto('/loans/repay?visual=repay-sending');
+  await expect(page.getByText("Sending ₿1'000 · $1.00…")).toBeVisible();
+});
+
+test('Function: LoansCard — the welcome screen renders the loan card', async ({ page }) => {
+  await openLoanUi(page, '/welcome', myLoans([loanA]), false);
+  await expect(page.getByRole('region', { name: 'Your loan' })).toContainText("₿1'000");
+});
+
+test('Function: LoanRepayScreen — the repayment screen renders its due heading', async ({
+  page,
+}) => {
+  await openLoanUi(page, '/loans/repay?visual=repay-ready');
+  await expect(page.getByText('Due today')).toBeVisible();
+  await expect(page.getByText("₿1'000").first()).toBeVisible();
+});
+
+test('Function: LoanRepayPage — /loans/repay mounts the repayment page', async ({ page }) => {
+  await openLoanUi(page, '/loans/repay?visual=repay-ready');
+  await expect(page.getByRole('heading', { name: 'Loan repayment' })).toBeAttached();
+  await expect(page.getByRole('region', { name: 'Your loan' })).toBeVisible();
+});
+
+test("Function: WalletOwnAddress — top-up shows the member's address and Copy", async ({
+  page,
+}) => {
+  await openLoanUi(page, '/loans/repay?visual=repay-topup');
+  await expect(page.getByText('alice@21.gifts')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible();
+});
+
 test('Function: getRepayment — GET /messages/[id]/repayment answers without a session', async ({
   request,
 }) => {
   const response = await request.get('/messages/11111111-1111-4111-8111-111111111111/repayment');
   expect(response.status()).toBeGreaterThanOrEqual(200);
-});
-
-test("Function: postRepaymentInvoice — today's repayment opens the wallet-only pay slot", async ({
-  page,
-}) => {
-  await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
-    if (route.request().method() === 'POST') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ pr: 'lnbc21n1repay', amountSats: 700 }),
-      });
-      return;
-    }
-    await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
-  });
-  await seedAdaSession(page);
-  await stubGiftStats(page, POPULATED_STATS);
-  await page.route(/\/messages(?:\?|$)/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        messages: [
-          {
-            id: 'm-goal-credit',
-            accountId: 'acc_e2e',
-            name: 'Ada',
-            text: 'Need help with a train ticket',
-            createdAt: '2026-08-28T12:00:00.000Z',
-            sats: 21000,
-            goalSats: 21000,
-            goalRepayable: true,
-            goalTermDays: 30,
-            payable: true,
-            hasPhoto: false,
-            role: 'basis',
-          },
-        ],
-      }),
-    });
-  });
-  await page.goto('/welcome');
-  await chooseForumView(page, 'All');
-  await page.getByRole('button', { name: "Pay today's repayment" }).click();
-  await expect(page.getByText(WALLET_UNAVAILABLE)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
-  await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-});
-
-test('Function: postRepaymentInvoice — POST /messages/[id]/repayment without bearer is denied', async ({
-  request,
-}) => {
-  const response = await request.post('/messages/11111111-1111-4111-8111-111111111111/repayment');
-  expect(response.status()).toBe(401);
 });
 
 test('Function: CreditLedger — a credit note lists who gave and who is paid back', async ({
