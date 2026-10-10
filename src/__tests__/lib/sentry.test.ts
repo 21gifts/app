@@ -1,12 +1,18 @@
 // @vitest-environment node
-import type { Breadcrumb, ErrorEvent } from '@sentry/nextjs';
+import { startSpan, type Breadcrumb, type ErrorEvent, type Event } from '@sentry/nextjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   forwardSentryEnvelope,
   SENTRY_TUNNEL_PATH,
   sentryOptions,
+  traceWallet,
   type SentryInitOptions,
 } from '@/lib/sentry';
+
+vi.mock('@sentry/nextjs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@sentry/nextjs')>();
+  return { ...actual, startSpan: vi.fn(actual.startSpan) };
+});
 
 const DSN = 'https://publickey@errors.example/42';
 const PHRASE =
@@ -79,7 +85,8 @@ describe('sentryOptions', () => {
       release: '123',
       environment: 'staging',
       tunnel: SENTRY_TUNNEL_PATH,
-      tracesSampleRate: 0,
+      tracesSampleRate: 0.1,
+      traceLifecycle: 'static',
       tracePropagationTargets: [],
       sendClientReports: false,
       includeLocalVariables: false,
@@ -103,7 +110,7 @@ describe('sentryOptions', () => {
     expect(on()).not.toHaveProperty('environment');
   });
 
-  it('drops session, tracing, local-variable, and console integrations', () => {
+  it('drops session, local-variable, and console integrations and keeps browser tracing', () => {
     const names = [
       'BrowserSession',
       'BrowserTracing',
@@ -116,7 +123,184 @@ describe('sentryOptions', () => {
       'Breadcrumbs',
     ];
     const kept = on().integrations(names.map((name) => ({ name })));
-    expect(kept.map((item) => item.name)).toEqual(['GlobalHandlers', 'Breadcrumbs']);
+    expect(kept.map((item) => item.name)).toEqual([
+      'BrowserTracing',
+      'GlobalHandlers',
+      'Breadcrumbs',
+    ]);
+  });
+
+  it('adds trace headers to no request, in the browser or on the server', () => {
+    expect(on('browser').tracePropagationTargets).toEqual([]);
+    expect(on('server').tracePropagationTargets).toEqual([]);
+  });
+
+  it('samples 10% of browser traces when no rate is set', () => {
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE', undefined);
+    expect(on('browser').tracesSampleRate).toBe(0.1);
+  });
+
+  it.each([
+    ['empty', '', 0.1],
+    ['not a number', 'often', 0.1],
+    ['above 1', '2', 0.1],
+    ['0.25', '0.25', 0.25],
+    ['0', '0', 0],
+    ['1', '1', 1],
+  ])('reads a browser sample rate that is %s', (_label, value, rate) => {
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE', value);
+    const options = on('browser');
+    expect(options.tracesSampleRate).toBe(rate);
+    expect(options.tracesSampler()).toBe(rate);
+  });
+
+  it('lets the rate decide even when the page says its server trace was not sampled', () => {
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE', '0.5');
+    const sampler = on('browser').tracesSampler as (context: { parentSampled: boolean }) => number;
+    expect(sampler({ parentSampled: false })).toBe(0.5);
+  });
+
+  it('samples no server traces, whatever rate is set', () => {
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE', '1');
+    const options = on('server');
+    expect(options.tracesSampleRate).toBe(0);
+    expect(options.tracesSampler()).toBe(0);
+    expect(options.traceLifecycle).toBe('static');
+  });
+});
+
+describe('beforeSendTransaction scrubber', () => {
+  /**
+   * Scrub one transaction through `beforeSendTransaction`.
+   *
+   * @param event - Transaction fields besides `type`.
+   * @returns The scrubbed transaction.
+   */
+  function scrubTransaction(event: Event): Event {
+    return on().beforeSendTransaction({ ...event, type: 'transaction' });
+  }
+
+  it('removes the query string and fragment from the transaction name', () => {
+    expect(scrubTransaction({ transaction: `/pl/?lightning=${INVOICE}#top` }).transaction).toBe(
+      '/pl/',
+    );
+  });
+
+  it('removes queries and fragments from span descriptions and span URLs', () => {
+    const scrubbed = scrubTransaction({
+      transaction: '/pl/',
+      spans: [
+        {
+          span_id: '1',
+          trace_id: 'a'.repeat(32),
+          start_timestamp: 1,
+          status: 'ok',
+          description: 'GET /pl/?lightning=LNURL1DP68GURN8GHJ7MRWW4EXCTNXD9SHG6NPVCHXXMMD',
+          data: {
+            url: 'https://app.example/pl/?lightning=x#frag',
+            'http.url': 'https://app.example/gifts?after=7',
+            'url.full': '/wallet/payment?id=p1',
+            'http.query': '?lightning=x',
+            'url.query': 'id=p1',
+            'http.fragment': '#frag',
+            'http.response.status_code': 200,
+          },
+        },
+      ],
+    });
+    expect(scrubbed.spans?.[0]?.description).toBe('GET /pl/');
+    expect(scrubbed.spans?.[0]?.data).toEqual({
+      url: 'https://app.example/pl/',
+      'http.url': 'https://app.example/gifts',
+      'url.full': '/wallet/payment',
+      'http.query': '[Filtered]',
+      'url.query': '[Filtered]',
+      'http.fragment': '[Filtered]',
+      'http.response.status_code': 200,
+    });
+  });
+
+  it('redacts secrets and secret-bearing keys anywhere in a transaction', () => {
+    const scrubbed = scrubTransaction({
+      transaction: 'wallet.send',
+      user: { id: 'acc_1', username: 'ada' },
+      request: {
+        url: 'https://app.example/wallet?id=1',
+        query_string: 'id=1',
+        cookies: { session: 'x' },
+        headers: { Authorization: 'Bearer abc', 'User-Agent': 'phone' },
+      },
+      contexts: {
+        trace: {
+          trace_id: 'a'.repeat(32),
+          span_id: 'b'.repeat(16),
+          data: { invoice: INVOICE, token: 'secret', route: 'spark', note: PHRASE, key: HEX64 },
+        },
+      },
+      spans: [
+        {
+          span_id: '2',
+          trace_id: 'a'.repeat(32),
+          start_timestamp: 1,
+          status: 'ok',
+          description: `pay ${INVOICE}`,
+          data: { mnemonic: PHRASE, prf: 'bytes', bytes: new Uint8Array([1]) as unknown as string },
+        },
+      ],
+      measurements: { lcp: { value: 1200, unit: 'millisecond' } },
+    });
+    expect(scrubbed).not.toHaveProperty('user');
+    expect(scrubbed.request).toEqual({
+      url: 'https://app.example/wallet',
+      headers: { 'User-Agent': 'phone' },
+    });
+    expect(scrubbed.contexts?.trace?.data).toEqual({
+      invoice: '[Filtered]',
+      token: '[Filtered]',
+      route: 'spark',
+      note: '[Filtered]',
+      key: '[Filtered]',
+    });
+    expect(scrubbed.contexts?.trace?.trace_id).toBe('a'.repeat(32));
+    expect(scrubbed.spans?.[0]?.description).toBe('pay [Filtered]');
+    expect(scrubbed.spans?.[0]?.data).toEqual({
+      mnemonic: '[Filtered]',
+      prf: '[Filtered]',
+      bytes: '[Filtered]',
+    });
+    expect(scrubbed.measurements).toEqual({ lcp: { value: 1200, unit: 'millisecond' } });
+  });
+});
+
+describe('traceWallet', () => {
+  beforeEach(() => {
+    vi.mocked(startSpan).mockClear();
+  });
+
+  it('starts a wallet span of its own with a fixed name and no attributes by default', async () => {
+    await expect(traceWallet('wallet.connect', async () => 'connected')).resolves.toBe('connected');
+    expect(startSpan).toHaveBeenCalledWith(
+      { name: 'wallet.connect', op: 'wallet', attributes: {}, parentSpan: null },
+      expect.any(Function),
+    );
+  });
+
+  it('passes the fixed route or prompt attribute on', async () => {
+    await traceWallet('wallet.send', async () => undefined, { route: 'spark' });
+    await traceWallet('wallet.passkey', async () => undefined, { prompt: 'login' });
+    expect(vi.mocked(startSpan).mock.calls.map(([options]) => options.attributes)).toEqual([
+      { route: 'spark' },
+      { prompt: 'login' },
+    ]);
+  });
+
+  it('passes a rejection on unchanged', async () => {
+    const error = new Error('connect failed');
+    await expect(
+      traceWallet('wallet.connect', async () => {
+        throw error;
+      }),
+    ).rejects.toBe(error);
   });
 });
 
@@ -440,13 +624,69 @@ describe('forwardSentryEnvelope', () => {
     expect((await forwardSentryEnvelope(request)).status).toBe(400);
   });
 
-  it('forwards an envelope that is a header line only', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
+  it.each([
+    ['without a newline', ''],
+    ['followed by blank lines', '\n\n'],
+  ])('refuses an envelope that is a header line only, %s', async (_label, rest) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
     const request = new Request('http://localhost/monitoring', {
       method: 'POST',
-      body: JSON.stringify({ dsn: DSN }),
+      body: `${JSON.stringify({ dsn: DSN })}${rest}`,
     });
+    expect((await forwardSentryEnvelope(request)).status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  /**
+   * POST of an envelope with the configured DSN and these lines after its header.
+   *
+   * @param lines - Item headers and payloads.
+   * @returns POST request to the tunnel.
+   */
+  function items(...lines: string[]): Request {
+    return new Request('http://localhost/monitoring', {
+      method: 'POST',
+      body: [JSON.stringify({ dsn: DSN }), ...lines].join('\n'),
+    });
+  }
+
+  it.each([
+    ['a transaction', items('{"type":"transaction"}', '{"spans":[]}')],
+    ['an error and a transaction', items('{"type":"event"}', '{}', '{"type":"transaction"}', '{}')],
+    ['an item with a length', items('{"type":"transaction","length":2}', '{}', '')],
+    ['a length that ends the envelope', items('{"type":"event","length":2}', '{}')],
+    ['an item without a payload', items('{"type":"event"}')],
+  ])('forwards an envelope with %s', async (_label, request) => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
     expect((await forwardSentryEnvelope(request)).status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['a session', items('{"type":"session"}', '{}')],
+    ['a client report', items('{"type":"client_report"}', '{}')],
+    ['a standalone span', items('{"type":"span"}', '{}')],
+    ['a replay', items('{"type":"replay_event"}', '{}')],
+    ['a profile', items('{"type":"profile"}', '{}')],
+    ['a log', items('{"type":"log"}', '{}')],
+    ['feedback', items('{"type":"feedback"}', '{}')],
+    [
+      'an attachment after an error',
+      items('{"type":"event"}', '{}', '{"type":"attachment","length":1}', 'x'),
+    ],
+    ['an item header that is not JSON', items('not json', '{}')],
+    ['an item header without a type', items('{"length":2}', '{}')],
+    ['an item header that is null', items('null', '{}')],
+    ['a length past the end', items('{"type":"event","length":99}', '{}')],
+    ['a negative length', items('{"type":"event","length":-1}', '{}')],
+    ['a fractional length', items('{"type":"event","length":1.5}', '{}')],
+  ])('refuses an envelope with %s', async (_label, request) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    expect((await forwardSentryEnvelope(request)).status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('refuses an envelope larger than 1 MiB', async () => {

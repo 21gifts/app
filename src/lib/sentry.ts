@@ -1,22 +1,38 @@
-import type { Breadcrumb, ErrorEvent } from '@sentry/nextjs';
-import { getAppVersion, getSentryDsn, getSentryEnvironment } from '@/lib/config';
+import { startSpan, type Breadcrumb, type ErrorEvent, type Event } from '@sentry/nextjs';
+import {
+  getAppVersion,
+  getSentryDsn,
+  getSentryEnvironment,
+  getSentryTracesSampleRate,
+} from '@/lib/config';
 
 /**
- * Error reporting (Sentry): init options, the privacy scrubber, and the
- * same-origin tunnel.
+ * Error reporting (Sentry): init options, the privacy scrubber, the wallet
+ * span helper, and the same-origin tunnel.
  *
  * Everything comes from the environment (`getSentryDsn`,
- * `getSentryEnvironment`, `getAppVersion`). Without a valid DSN,
- * {@link sentryOptions} returns `null`, the init files never call `init`, and
- * {@link forwardSentryEnvelope} answers 404. Errors only: no tracing,
- * sessions, replay, profiling, or feedback.
+ * `getSentryEnvironment`, `getSentryTracesSampleRate`, `getAppVersion`).
+ * Without a valid DSN, {@link sentryOptions} returns `null`, the init files
+ * never call `init`, {@link traceWallet} only runs its work, and
+ * {@link forwardSentryEnvelope} answers 404. Errors, plus sampled performance
+ * traces from the browser; the server sends errors only. No sessions, replay,
+ * profiling, logs, or feedback.
  */
 
-/** Same-origin path the browser posts its error envelopes to. */
+/** Same-origin path the browser posts its envelopes to. */
 export const SENTRY_TUNNEL_PATH = '/monitoring';
 
-/** Largest envelope the tunnel forwards (errors only, no attachments). */
+/**
+ * Largest envelope the tunnel forwards: one error or one transaction, no
+ * attachments. The Sentry server accepts no larger event either.
+ */
 const MAX_ENVELOPE_BYTES = 1024 * 1024;
+
+/** Envelope item types the tunnel forwards: errors and transactions. */
+const FORWARDED_ITEM_TYPES = new Set(['event', 'transaction']);
+
+/** Share of browser traces sent when `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` is unset or invalid. */
+const DEFAULT_TRACES_SAMPLE_RATE = 0.1;
 
 /** Replacement for every removed value. */
 const FILTERED = '[Filtered]';
@@ -27,7 +43,6 @@ const MAX_DEPTH = 12;
 /** Default integrations that send more than errors, or more than we allow. */
 const DROPPED_INTEGRATIONS = new Set([
   'BrowserSession',
-  'BrowserTracing',
   'ProcessSession',
   'LocalVariablesAsync',
   'Console',
@@ -50,6 +65,8 @@ const SENSITIVE_KEY_PARTS = [
   'password',
   'authorization',
   'cookie',
+  'query',
+  'fragment',
 ];
 
 /** Request headers kept on an event. Everything else is dropped. */
@@ -82,6 +99,34 @@ const REDACTIONS: ReadonlyArray<readonly [RegExp, string]> = [
   [/((?:\b[a-z][a-z0-9+.-]*:\/\/|\/)[^\s?#"'<>]*)[?#][^\s"'<>]*/gi, '$1'],
 ];
 
+/**
+ * Fixed names of the wallet steps that get their own trace span. A name never
+ * carries member data.
+ */
+export type WalletSpanName =
+  | 'wallet.sdk.load'
+  | 'wallet.connect'
+  | 'wallet.sync.first'
+  | 'wallet.balance'
+  | 'wallet.prepare'
+  | 'wallet.send'
+  | 'wallet.address.register'
+  | 'wallet.passkey';
+
+/**
+ * The only attributes a wallet span carries: fixed words, never an amount,
+ * invoice, address, key, phrase, PRF output, or token.
+ */
+export type WalletSpanAttributes = {
+  /** How a payment travels. */
+  route?: 'spark' | 'lightning' | 'onchain';
+  /** Which passkey prompt opened the wallet. */
+  prompt?: 'login' | 'unlock';
+};
+
+/** A transaction event, as `beforeSendTransaction` receives it. */
+type TransactionEvent = Event & { type: 'transaction' };
+
 /** The parts of a DSN the SDK and the tunnel need. */
 interface SentryDsn {
   /** `host[:port]` of the Sentry server. */
@@ -98,7 +143,9 @@ export interface SentryInitOptions {
   release: string;
   environment?: string;
   tunnel?: string;
-  tracesSampleRate: 0;
+  tracesSampleRate: number;
+  tracesSampler: () => number;
+  traceLifecycle: 'static';
   tracePropagationTargets: string[];
   sendClientReports: false;
   includeLocalVariables: false;
@@ -117,6 +164,7 @@ export interface SentryInitOptions {
   };
   integrations: <T extends { name: string }>(defaults: T[]) => T[];
   beforeSend: (event: ErrorEvent) => ErrorEvent;
+  beforeSendTransaction: (event: TransactionEvent) => TransactionEvent;
   beforeBreadcrumb: (breadcrumb: Breadcrumb) => Breadcrumb | null;
 }
 
@@ -279,6 +327,9 @@ function scrubBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb | null {
   return scrubValue(breadcrumb, 0) as Breadcrumb;
 }
 
+/** Request block of an error or transaction event. */
+type EventRequest = NonNullable<ErrorEvent['request']>;
+
 /**
  * Request block of an event reduced to method, URL path, and two headers.
  * Cookies, body, query string, and env are dropped.
@@ -286,10 +337,8 @@ function scrubBreadcrumb(breadcrumb: Breadcrumb): Breadcrumb | null {
  * @param request - The event request block.
  * @returns The reduced block.
  */
-function scrubRequest(
-  request: NonNullable<ErrorEvent['request']>,
-): NonNullable<ErrorEvent['request']> {
-  const reduced: NonNullable<ErrorEvent['request']> = {};
+function scrubRequest(request: EventRequest): EventRequest {
+  const reduced: EventRequest = {};
   if (request.method !== undefined) {
     reduced.method = request.method;
   }
@@ -307,15 +356,17 @@ function scrubRequest(
 }
 
 /**
- * Event filter: user and request details are reduced, stack frame variables
- * are removed, breadcrumbs are filtered again, and every remaining string is
- * scrubbed.
+ * Event filter for errors and transactions: user and request details are
+ * reduced, stack frame variables are removed, breadcrumbs are filtered again,
+ * and every remaining string is scrubbed. In a transaction that covers its
+ * name, span descriptions, and span data, so URLs there lose their query
+ * string and fragment.
  *
- * @param event - Error event about to be sent.
+ * @param event - Error or transaction event about to be sent.
  * @returns The scrubbed event.
  */
-function scrubEvent(event: ErrorEvent): ErrorEvent {
-  const copy: ErrorEvent = { ...event };
+function scrubEvent<T extends ErrorEvent | TransactionEvent>(event: T): T {
+  const copy: T = { ...event };
   delete copy.user;
   if (copy.request !== undefined) {
     copy.request = scrubRequest(copy.request);
@@ -330,7 +381,7 @@ function scrubEvent(event: ErrorEvent): ErrorEvent {
       delete frame.vars;
     }
   }
-  return scrubValue(copy, 0) as ErrorEvent;
+  return scrubValue(copy, 0) as T;
 }
 
 /**
@@ -338,7 +389,10 @@ function scrubEvent(event: ErrorEvent): ErrorEvent {
  *
  * Off when `NEXT_PUBLIC_SENTRY_DSN` is unset, empty, or not a DSN. The browser
  * posts through {@link SENTRY_TUNNEL_PATH}; the server and edge runtimes send
- * directly. Release is the app version.
+ * directly. Release is the app version. The browser sends the share
+ * `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` (default 0.1) of its page loads,
+ * navigations, and wallet steps as transactions; the server sends none. No
+ * request carries trace headers.
  *
  * @param runtime - `browser`, or `server` for the Node.js and edge runtimes.
  * @returns Options for `Sentry.init`, or `null`.
@@ -348,10 +402,17 @@ export function sentryOptions(runtime: 'browser' | 'server'): SentryInitOptions 
   if (parseSentryDsn(dsn) === null) {
     return null;
   }
+  const tracesSampleRate =
+    runtime === 'browser' ? (getSentryTracesSampleRate() ?? DEFAULT_TRACES_SAMPLE_RATE) : 0;
   const options: SentryInitOptions = {
     dsn: dsn as string,
     release: getAppVersion(),
-    tracesSampleRate: 0,
+    tracesSampleRate,
+    // The page's trace meta tags come from the server, which samples nothing.
+    // The rate alone decides, so a page load does not inherit that "no".
+    tracesSampler: () => tracesSampleRate,
+    // Whole transactions, so `beforeSendTransaction` sees every span before it is sent.
+    traceLifecycle: 'static',
     tracePropagationTargets: [],
     sendClientReports: false,
     includeLocalVariables: false,
@@ -370,6 +431,7 @@ export function sentryOptions(runtime: 'browser' | 'server'): SentryInitOptions 
     },
     integrations: (defaults) => defaults.filter((item) => !DROPPED_INTEGRATIONS.has(item.name)),
     beforeSend: scrubEvent,
+    beforeSendTransaction: scrubEvent,
     beforeBreadcrumb: scrubBreadcrumb,
   };
   const environment = getSentryEnvironment();
@@ -380,6 +442,85 @@ export function sentryOptions(runtime: 'browser' | 'server'): SentryInitOptions 
     options.tunnel = SENTRY_TUNNEL_PATH;
   }
   return options;
+}
+
+/**
+ * Time one wallet step as its own trace span (its own transaction, in the
+ * page's trace), so a slow step on a phone shows up without stretching the
+ * page load around it. The name and attributes are fixed words only. Without
+ * error reporting, or when the trace is not sampled, it only runs `work`. A
+ * rejection marks the span as failed and is passed on unchanged.
+ *
+ * @param name - Which wallet step this is.
+ * @param work - The step.
+ * @param attributes - Fixed words that tell routes or prompts apart.
+ * @returns What `work` resolves to.
+ * @throws What `work` rejects with.
+ */
+export function traceWallet<T>(
+  name: WalletSpanName,
+  work: () => Promise<T>,
+  attributes: WalletSpanAttributes = {},
+): Promise<T> {
+  return startSpan({ name, op: 'wallet', attributes, parentSpan: null }, work);
+}
+
+/**
+ * Types of the items after an envelope's header line. An item header with a
+ * `length` is followed by that many payload bytes; otherwise the payload ends
+ * at the next newline.
+ *
+ * @param envelope - Raw envelope bytes.
+ * @returns The item types in order, or `null` when an item header is broken.
+ */
+function envelopeItemTypes(envelope: Uint8Array): string[] | null {
+  const types: string[] = [];
+  const headerEnd = envelope.indexOf(0x0a);
+  let offset = headerEnd < 0 ? envelope.length : headerEnd + 1;
+  while (offset < envelope.length) {
+    const lineEnd = envelope.indexOf(0x0a, offset);
+    const end = lineEnd < 0 ? envelope.length : lineEnd;
+    const line = envelope.subarray(offset, end);
+    offset = end + 1;
+    if (line.length === 0) {
+      continue;
+    }
+    let header: unknown;
+    try {
+      header = JSON.parse(new TextDecoder().decode(line));
+    } catch {
+      return null;
+    }
+    const { type, length } = (header ?? {}) as { type?: unknown; length?: unknown };
+    if (typeof type !== 'string') {
+      return null;
+    }
+    types.push(type);
+    if (typeof length === 'number') {
+      if (!Number.isInteger(length) || length < 0 || offset + length > envelope.length) {
+        return null;
+      }
+      offset += length + 1;
+    } else {
+      const payloadEnd = envelope.indexOf(0x0a, offset);
+      offset = payloadEnd < 0 ? envelope.length : payloadEnd + 1;
+    }
+  }
+  return types;
+}
+
+/**
+ * Whether the tunnel may forward an envelope: at least one item, and only
+ * errors and transactions.
+ *
+ * @param envelope - Raw envelope bytes.
+ * @returns `true` when every item is an error or a transaction.
+ */
+function forwardsItems(envelope: Uint8Array): boolean {
+  const types = envelopeItemTypes(envelope);
+  return (
+    types !== null && types.length > 0 && types.every((type) => FORWARDED_ITEM_TYPES.has(type))
+  );
 }
 
 /**
@@ -443,13 +584,14 @@ async function readCappedBody(request: Request): Promise<Uint8Array<ArrayBuffer>
  * project, so reports are not lost to content blockers.
  *
  * Forwards only when the envelope header names the configured DSN's host and
- * project; nothing else can be relayed. The visitor's IP address, cookies, and
- * headers are not passed on.
+ * project and every item is an error or a transaction; nothing else can be
+ * relayed. The visitor's IP address, cookies, and headers are not passed on.
  *
  * @param request - Incoming envelope POST.
  * @returns 404 when error reporting is off, 413 when larger than 1 MiB (by
  * `Content-Length`, or while reading, before the whole body is buffered), 400 when the
- * envelope names another DSN, 502 when the Sentry server cannot be reached,
+ * envelope names another DSN, has no item, or has an item that is neither an
+ * error nor a transaction, 502 when the Sentry server cannot be reached,
  * otherwise the upstream status with an empty body.
  */
 export async function forwardSentryEnvelope(request: Request): Promise<Response> {
@@ -465,7 +607,12 @@ export async function forwardSentryEnvelope(request: Request): Promise<Response>
     return new Response(null, { status: 413 });
   }
   const named = envelopeDsn(body);
-  if (named === null || named.host !== target.host || named.projectId !== target.projectId) {
+  if (
+    named === null ||
+    named.host !== target.host ||
+    named.projectId !== target.projectId ||
+    !forwardsItems(body)
+  ) {
     return new Response(null, { status: 400 });
   }
   try {

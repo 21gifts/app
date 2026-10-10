@@ -8,6 +8,7 @@ import {
   getPlatformUsername,
   getSentryDsn,
   getSentryEnvironment,
+  getSentryTracesSampleRate,
 } from '@/lib/config';
 
 const ORIGINAL = process.env.NEXT_PUBLIC_API_URL;
@@ -172,5 +173,38 @@ describe.each([
   it('returns null when blank', () => {
     vi.stubEnv(variable, '   ');
     expect(read()).toBeNull();
+  });
+});
+
+describe('getSentryTracesSampleRate', () => {
+  it.each([
+    ['0', 0],
+    ['1', 1],
+    ['0.25', 0.25],
+    ['.5', 0.5],
+    ['1.000', 1],
+    ['  0.1  ', 0.1],
+  ])('reads %j as %d', (value, rate) => {
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE', value);
+    expect(getSentryTracesSampleRate()).toBe(rate);
+  });
+
+  it('returns null when unset', () => {
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE', undefined);
+    expect(getSentryTracesSampleRate()).toBeNull();
+  });
+
+  it.each([
+    ['the empty string entrypoint.sh substitutes', ''],
+    ['a blank value', '   '],
+    ['a rate above 1', '1.5'],
+    ['a negative rate', '-0.1'],
+    ['an exponent', '1e-2'],
+    ['a percentage', '10%'],
+    ['text', 'abc'],
+    ['an unsubstituted placeholder', '__NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE__'],
+  ])('returns null for %s', (_label, value) => {
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE', value);
+    expect(getSentryTracesSampleRate()).toBeNull();
   });
 });

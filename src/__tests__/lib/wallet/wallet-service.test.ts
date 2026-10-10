@@ -23,9 +23,13 @@ import type {
   WalletTarget,
 } from '@/lib/wallet/wallet-sdk';
 import { logInteraction } from '@/lib/interaction-log';
+import { traceWallet } from '@/lib/sentry';
 import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
+vi.mock('@/lib/sentry', () => ({
+  traceWallet: vi.fn((_name: string, work: () => Promise<unknown>) => work()),
+}));
 import { useWalletStore } from '@/stores/wallet-store';
 
 const MNEMONIC =
@@ -1050,6 +1054,21 @@ const ONCHAIN_TARGET: WalletTarget = {
   recipient: 'bc1q',
 };
 
+/**
+ * Wait until the next `getInfo` call reads after the wallet has synced. The
+ * connect read already made a synced call, so this waits for a new one.
+ *
+ * @param getInfo - The connection's `getInfo` mock.
+ * @returns Resolves once that call was made.
+ */
+async function waitForSyncedRead(getInfo: ReturnType<typeof vi.fn>): Promise<void> {
+  const before = getInfo.mock.calls.length;
+  await vi.waitFor(() => {
+    expect(getInfo.mock.calls.length).toBeGreaterThan(before);
+  });
+  expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
+}
+
 async function connectPaying(options: {
   balanceSats?: number;
   parse?: WalletConnection['parse'];
@@ -1153,9 +1172,7 @@ describe('payFromWallet', () => {
         }),
     );
     const overtaken = payFromWallet({ type: 'input', input: 'a' });
-    await vi.waitFor(() => {
-      expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
-    });
+    await waitForSyncedRead(getInfo);
     getInfo.mockResolvedValueOnce({ balanceSats: 30_000, identityPubkey: IDENTITY });
     await refreshWallet();
     finish({ balanceSats: 50, identityPubkey: IDENTITY });
@@ -1169,9 +1186,7 @@ describe('payFromWallet', () => {
         }),
     );
     const pending = payFromWallet({ type: 'input', input: 'a' });
-    await vi.waitFor(() => {
-      expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
-    });
+    await waitForSyncedRead(getInfo);
     const payFinish = finish;
     getInfo.mockImplementationOnce(
       () =>
@@ -1193,9 +1208,7 @@ describe('payFromWallet', () => {
         }),
     );
     const dropped = payFromWallet({ type: 'input', input: 'a' });
-    await vi.waitFor(() => {
-      expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
-    });
+    await waitForSyncedRead(getInfo);
     await disconnectWallet();
     finish({ balanceSats: 50, identityPubkey: IDENTITY });
     await expect(dropped).resolves.toEqual({ kind: 'failed' });
@@ -1614,5 +1627,111 @@ describe('parseWalletInput', () => {
     await disconnectWallet();
     settle.reject(new Error('fetch failed'));
     await expect(failed).resolves.toEqual({ kind: 'unlock' });
+  });
+});
+
+describe('wallet trace spans', () => {
+  /**
+   * Span names and attributes recorded since the last clear.
+   *
+   * @returns `[name, attributes]` per span, in start order.
+   */
+  function spans(): Array<[string, unknown]> {
+    return vi.mocked(traceWallet).mock.calls.map(([name, , attributes]) => [name, attributes]);
+  }
+
+  beforeEach(() => {
+    vi.mocked(traceWallet).mockClear();
+  });
+
+  it('times the SDK load, the connect, and the first synced read of a start', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    expect(spans()).toEqual([
+      ['wallet.sdk.load', undefined],
+      ['wallet.connect', undefined],
+      ['wallet.sync.first', undefined],
+    ]);
+    expect(connection.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
+  });
+
+  it('times a balance read and an address registration', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    vi.mocked(traceWallet).mockClear();
+    await refreshWallet();
+    await registerWalletAddress('ada');
+    expect(spans()).toEqual([
+      ['wallet.balance', undefined],
+      ['wallet.address.register', undefined],
+    ]);
+    expect(connection.registerAddress).toHaveBeenCalledWith('ada');
+  });
+
+  it.each([
+    ['a Spark invoice', { type: 'input' as const, input: 'spark1qqqq' }, 'spark', 'spark'],
+    [
+      'a Lightning request',
+      { type: 'input' as const, input: 'lnbc1qqqq' },
+      'lightning',
+      'lightning',
+    ],
+    [
+      'a lightning: link',
+      { type: 'input' as const, input: 'LIGHTNING:LNBC1QQQQ' },
+      'lightning',
+      'lightning',
+    ],
+    [
+      'an LNURL receiver',
+      { type: 'lnurl' as const, request: { details: {} }, amountSats: 2_100 },
+      'lightning',
+      'lightning',
+    ],
+    [
+      'a URI the SDK pays over Lightning',
+      { type: 'input' as const, input: 'bitcoin:bc1q?lightning=lnbc1' },
+      'onchain',
+      'lightning',
+    ],
+  ])(
+    'times prepare and send of %s with its route only',
+    async (_label, request, prepareRoute, sendRoute) => {
+      await connectPaying({});
+      vi.mocked(traceWallet).mockClear();
+      const result = await payFromWallet(request);
+      if (result.kind !== 'confirm') {
+        throw new Error('expected confirm');
+      }
+      await result.send();
+      expect(spans().filter(([name]) => name !== 'wallet.balance')).toEqual([
+        ['wallet.prepare', { route: prepareRoute }],
+        ['wallet.send', { route: sendRoute }],
+      ]);
+    },
+  );
+
+  it('marks a send to a base-chain address as onchain', async () => {
+    const quote = { fees: { fast: 3, medium: 2, slow: 1 }, expiresAtMs: Date.now() + 600_000 };
+    await connectPaying({
+      prepare: async () => ({
+        amountSats: 1_000,
+        feeSats: 2,
+        onchain: quote,
+        send: async () => undefined,
+      }),
+    });
+    vi.mocked(traceWallet).mockClear();
+    const result = await payFromWallet({ type: 'input', input: 'bc1q', amountSats: 1_000 });
+    if (result.kind !== 'confirm') {
+      throw new Error('expected confirm');
+    }
+    await result.send('slow');
+    expect(spans().filter(([name]) => name !== 'wallet.balance')).toEqual([
+      ['wallet.prepare', { route: 'onchain' }],
+      ['wallet.send', { route: 'onchain' }],
+    ]);
   });
 });

@@ -53,7 +53,7 @@ app/
 ├── src/
 │   ├── middleware.ts            # /map redirects to /shops#map and keeps the query string
 │   ├── instrumentation.ts       # Server/edge error reporting start (off without a DSN) + onRequestError
-│   ├── instrumentation-client.ts # Browser error reporting start (off without a DSN)
+│   ├── instrumentation-client.ts # Browser error reporting + sampled tracing start (off without a DSN), onRouterTransitionStart
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: negotiated html lang, metadata, globals.css
 │   │   ├── (marketing)/         # Dark landing `/`, `/about`, `/legal`, `/terms`, `/handbook`, `/handbook/{screens,functions,endpoints}`, `/stats`
@@ -204,7 +204,7 @@ app/
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   ├── global-error.tsx     # Last-resort error boundary: reports the error, shows the Next.js error page
 │   │   ├── monitoring/
-│   │   │   └── route.ts         # POST /monitoring — same-origin error-report tunnel (404 without a DSN)
+│   │   │   └── route.ts         # POST /monitoring — same-origin error and transaction tunnel (404 without a DSN)
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
 │   ├── components/
@@ -321,7 +321,7 @@ app/
 │   │   └── useWalletPayment.ts  # One payment by id for /wallet/payment, re-read after each sync
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)
-│   │   ├── sentry.ts            # Error reporting: init options, privacy scrubber, tunnel forwarder
+│   │   ├── sentry.ts            # Error reporting + browser tracing: init options, privacy scrubber, traceWallet, tunnel forwarder
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
@@ -481,8 +481,8 @@ update stuff
 - Every `NEXT_PUBLIC_*` variable is read through `src/lib/config.ts` — never
   `process.env` directly in components. Required accessors throw on missing
   values; explicitly optional ones (`getE2eNow`, `getBreezApiKey`,
-  `getPlatformUsername`, `getSentryDsn`, `getSentryEnvironment`) return
-  `null`. No silent fallbacks.
+  `getPlatformUsername`, `getSentryDsn`, `getSentryEnvironment`,
+  `getSentryTracesSampleRate`) return `null`. No silent fallbacks.
 - **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can. The one named exception is `canEditDailyPayoutRoster` in `src/lib/roles.ts`, because initiator and moderator share rank 2, so a rank check cannot exclude moderators. It is true only for initiator and founder. No further equality checks.
 
 ### Styling
@@ -879,16 +879,17 @@ values into the bundles, so the image is built with literal placeholders
 values at container start. The container refuses to start if a required
 variable is unset or empty. The optional variables (`OPTIONAL_VARS` in
 `entrypoint.sh`) are substituted with an empty string instead, and the app
-reads that empty string as unset: no donation address, no error reporting, or
-the SDK's default environment name (table below). Each deployment sets them in
+reads that empty string as unset: no donation address, no error reporting, the
+SDK's default environment name, or the default trace sample rate (table below). Each deployment sets them in
 its container environment.
 
-| Variable                         | Required | Unset or empty                             |
-| -------------------------------- | -------- | ------------------------------------------ |
-| `NEXT_PUBLIC_API_URL`            | yes      | container refuses to start                 |
-| `NEXT_PUBLIC_PLATFORM_USERNAME`  | no       | landing page shows no donation             |
-| `NEXT_PUBLIC_SENTRY_DSN`         | no       | error reporting off                        |
-| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | no       | reports use the SDK default (`production`) |
+| Variable                                | Required | Unset or empty                               |
+| --------------------------------------- | -------- | -------------------------------------------- |
+| `NEXT_PUBLIC_API_URL`                   | yes      | container refuses to start                   |
+| `NEXT_PUBLIC_PLATFORM_USERNAME`         | no       | landing page shows no donation               |
+| `NEXT_PUBLIC_SENTRY_DSN`                | no       | error reporting off                          |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT`        | no       | reports use the SDK default (`production`)   |
+| `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | no       | 0.1 of browser traces (also when not 0 to 1) |
 
 | Variable              | DEV                        | STAGING                        | PRD                    |
 | --------------------- | -------------------------- | ------------------------------ | ---------------------- |
@@ -919,25 +920,50 @@ Unset or empty hides the donation section. Playwright builds set it to
 
 Browser and server errors go to the team's Sentry project through
 `@sentry/nextjs` (`src/instrumentation.ts`, `src/instrumentation-client.ts`,
-`src/app/global-error.tsx`, `src/lib/sentry.ts`). Nothing Sentry-specific is
-in the repository; each deployment sets two optional variables:
+`src/app/global-error.tsx`, `src/lib/sentry.ts`). The browser also sends a
+sample of performance traces, to show where the app is slow for members: page
+loads, navigations, its fetch calls, and the in-app wallet's steps. Nothing
+Sentry-specific is in the repository; each deployment sets three optional
+variables:
 
-| Variable                         | Meaning                                                |
-| -------------------------------- | ------------------------------------------------------ |
-| `NEXT_PUBLIC_SENTRY_DSN`         | Project DSN. **Empty or unset = error reporting off.** |
-| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | Environment name on each report, e.g. `staging`.       |
+| Variable                                | Meaning                                                                                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SENTRY_DSN`                | Project DSN. **Empty or unset = error reporting and tracing off.**                                            |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT`        | Environment name on each report, e.g. `staging`.                                                              |
+| `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | Share of browser traces sent, a number from 0 to 1 (e.g. `0.25`). Empty, unset, or anything else means `0.1`. |
 
-Both are optional `entrypoint.sh` placeholders, read by the browser and by the
-server through `src/lib/config.ts`. The release is `NEXT_PUBLIC_APP_VERSION`.
+All three are optional `entrypoint.sh` placeholders, read through
+`src/lib/config.ts`. The release is `NEXT_PUBLIC_APP_VERSION`.
 Without a DSN nothing starts: no SDK init, no network traffic, and
 `POST /monitoring` answers 404. Local development, unit tests, and Playwright
-(which sets both empty) run with error reporting off. Source maps are not
+(which sets all three empty) run with error reporting off. Source maps are not
 uploaded and the build needs no token.
+
+What a trace holds:
+
+- Page loads and App Router navigations (`onRouterTransitionStart`), with
+  their fetch spans, resource timings, and the LCP and CLS web vitals.
+- One transaction per wallet step, timed with `traceWallet` (`op: wallet`):
+  `wallet.sdk.load`, `wallet.connect`, `wallet.sync.first`, `wallet.balance`,
+  `wallet.prepare`, `wallet.send`, `wallet.address.register`, and
+  `wallet.passkey`. The only attributes are `route` (`spark`, `lightning`, or
+  `onchain`) and `prompt` (`login` or `unlock`). The browser never creates a
+  receive invoice; the api issues it, and that request is a fetch span.
+- Wallet steps start their own transaction in the page's trace, so a slow
+  connect does not stretch the page load, and all steps of a page share its
+  sampling decision. The rate alone decides (`tracesSampler`): the server's
+  trace meta tags say "not sampled", and a page load does not inherit that.
+- Traces are sent whole (`traceLifecycle: 'static'`), so every span passes
+  `beforeSendTransaction`. INP is left out: the SDK sends it as a standalone
+  span, which would bypass that scrubber.
 
 Privacy rules (this app holds wallets):
 
-- Errors only: `tracesSampleRate: 0`, no trace headers on outgoing requests,
-  no sessions, no Session Replay, no profiling, no feedback widget.
+- The server sends errors only (`tracesSampleRate: 0`). No trace headers on
+  any outgoing request (`tracePropagationTargets: []`), so the api and its
+  CORS and proxy allow-lists see no `sentry-trace` or `baggage` header. No
+  sessions, no Session Replay, no profiling, no console or log capture, no
+  feedback widget.
 - With a DSN set, `withSentryConfig` makes each server-rendered page carry
   `sentry-trace` and `baggage` meta tags: a random trace id, the release, the
   environment, and the DSN's public key, so a browser error links to its
@@ -946,24 +972,31 @@ Privacy rules (this app holds wallets):
   strings, or stack-frame local variables (`dataCollection`, the SDK 11
   successor of `sendDefaultPii: false`). Never call `setUser` with a name or
   username.
-- One scrubber (`beforeSend` / `beforeBreadcrumb` in `src/lib/sentry.ts`) runs
-  in the browser and on the server. It replaces 12–24-word recovery-phrase
-  runs in any letter case; `lnbc…`/`lntb…`/`lnurl…` strings;
-  `spark1…`/`sparkrt1…` addresses; hex strings of 64+ digits; raw byte arrays
-  (typed arrays such as `Uint8Array`); bearer tokens and `Authorization`
-  headers; the stored session token (`21gifts.session`); URL query strings and
-  fragments (the path stays); and every value under keys such as `mnemonic`,
-  `phrase`, `words`, `seed`, `token`, `secret`, `prf`, `invoice`, or `pr`. Of
-  the request it keeps method, path, User-Agent, and Referer. Console
-  breadcrumbs are dropped; `fetch`/`xhr` breadcrumbs keep method, path, and
-  status only.
+- One scrubber (`beforeSend` / `beforeSendTransaction` / `beforeBreadcrumb` in
+  `src/lib/sentry.ts`) runs in the browser and on the server. It replaces
+  12–24-word recovery-phrase runs in any letter case;
+  `lnbc…`/`lntb…`/`lnurl…` strings; `spark1…`/`sparkrt1…` addresses; hex
+  strings of 64+ digits; raw byte arrays (typed arrays such as `Uint8Array`);
+  bearer tokens and `Authorization` headers; the stored session token
+  (`21gifts.session`); URL query strings and fragments (the path stays); and
+  every value under keys such as `mnemonic`, `phrase`, `words`, `seed`,
+  `token`, `secret`, `prf`, `invoice`, `pr`, `query`, or `fragment`. In a
+  transaction that covers its name, every span description, and all span
+  data (`/pl/?lightning=…` is sent as `/pl/`). Of the request it keeps
+  method, path, User-Agent, and Referer. Console breadcrumbs are dropped;
+  `fetch`/`xhr` breadcrumbs keep method, path, and status only.
+- Span names and attributes are fixed words. Never put an amount, invoice,
+  address, Spark key, recovery word, PRF output, or token in one;
+  `traceWallet` only accepts the names and attributes listed above.
 - Browser reports go to the app's own origin, `POST /monitoring`, which
-  forwards them only to the configured DSN's host and project and does not
-  pass on the visitor's IP address, cookies, or headers. The SDK's
-  `tunnelRoute` option is not used: it only rewrites to sentry.io hosts.
+  forwards them only to the configured DSN's host and project, only when
+  every item is an error or a transaction, and only up to 1 MiB (the largest
+  event the Sentry server accepts). It does not pass on the visitor's IP
+  address, cookies, or headers. The SDK's `tunnelRoute` option is not used: it
+  only rewrites to sentry.io hosts.
 
-Any new code that sends data to the error reporter must go through this
-scrubber.
+Any new code that sends data to the error reporter, or adds a span, must go
+through this scrubber and through `traceWallet` or the SDK's automatic spans.
 
 ## Wallet data and interaction log
 
@@ -993,7 +1026,8 @@ either. The report payment is built field by field
 (`toWalletReportPayment`) and never copies an SDK object; event props drop
 secret-named keys and secret-shaped values. A change that widens either
 payload adds a unit test proving the new field cannot carry one of these. No
-third-party analytics; error reporting stays errors-only.
+third-party analytics; error reporting sends errors and sampled browser
+performance traces, both through its scrubber.
 
 ## CI / CD
 
