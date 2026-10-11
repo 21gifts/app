@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card } from '@/components/ui';
@@ -92,7 +93,8 @@ export interface NotificationsScreenProps {
  * payments, hearts, moderator appointment, and moderator proposal. There is no
  * composer, no thread view, and no filter. Unread rows (`readAt === null`)
  * are a section above rows that already have `readAt`, each section keeping
- * API order; an empty section is omitted.
+ * API order; an empty section is omitted. Under the list (in every state) a
+ * **Notification settings** link opens `/settings#notifications`.
  *
  * @param props - List state from {@link NotificationsLoader}.
  * @returns The notifications page column.
@@ -186,6 +188,9 @@ export function NotificationsScreen({
   return (
     <Card maxWidth="xl" surface={false}>
       {body}
+      <Link href="/settings#notifications" className="text-center text-sm text-app-muted underline">
+        {t('settings.notificationSettings')}
+      </Link>
     </Card>
   );
 }

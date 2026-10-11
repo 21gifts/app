@@ -2,6 +2,7 @@
 
 import type { ReactElement } from 'react';
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { AppShellTopLeft } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -14,6 +15,7 @@ import type { UseWalletResult } from '@/hooks/useWallet';
 import { useWalletPanel } from '@/hooks/useWalletPanel';
 import type { UseWalletPhraseResult } from '@/hooks/useWalletPhrase';
 import type { UseWalletSendResult } from '@/hooks/useWalletSend';
+import { useAuthStore } from '@/stores/auth-store';
 
 /** Which wallet body to render. `entry` is `/wallet`. `phrase` is `/wallet/phrase`. */
 export type WalletSurface = 'entry' | 'phrase';
@@ -43,7 +45,9 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
  * Sent line shows, or a send alert is up, and Done returns home. Back first
  * closes the manual-entry sheet or an open send step (or is held while a send
  * is in flight), then returns from Send or Receive to home. The 12 words and
- * recovery errors render only on `/wallet/phrase`.
+ * recovery errors render only on `/wallet/phrase`. While the account has no
+ * recovery phrase yet (no `passkeyCredentialId`), home adds a small **Back up
+ * your wallet** link to the recovery entry of `/settings` (`#recovery`).
  *
  * @param props - Phrase state, surface, and optional wallet balance and send state.
  * @returns The card, and the one-step Back registered through `AppShellTopLeft`.
@@ -62,6 +66,10 @@ export function WalletScreenView({
   send,
 }: WalletScreenViewProps): ReactElement {
   const { t } = useTranslations();
+  const needsBackup = useAuthStore((state) => {
+    const credentialId = state.account?.passkeyCredentialId;
+    return state.account !== null && (typeof credentialId !== 'string' || credentialId === '');
+  });
   const busy = status === 'busy';
   const showGrid = view === 'phrase' && words.length === 12;
   const walletReady = wallet?.status === 'ready';
@@ -184,6 +192,11 @@ export function WalletScreenView({
             />
           </div>
         )}
+        {needsBackup ? (
+          <Link href="/settings#recovery" className="text-center text-sm text-app-muted underline">
+            {t('wallet.backupLink')}
+          </Link>
+        ) : null}
       </Card>
       {walletReady ? <WalletHistory /> : null}
       <WalletFooterActions

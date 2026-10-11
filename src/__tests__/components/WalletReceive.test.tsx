@@ -74,11 +74,11 @@ describe('WalletReceive', () => {
     expect(setup.retry).toHaveBeenCalledTimes(1);
   });
 
-  it('links to the profile when the account has no username yet', () => {
+  it('links to the Settings address row when the account has no username yet', () => {
     setAccount(null);
     renderReceive();
     expect(screen.getByRole('link', { name: 'Set a username first.' }).getAttribute('href')).toBe(
-      '/profile',
+      '/settings#address',
     );
     expect(screen.queryByRole('button', { name: 'Copy' })).toBeNull();
   });

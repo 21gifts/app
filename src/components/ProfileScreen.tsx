@@ -5,15 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ChangeEvent, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
-import { FiatPreferenceSwitcher } from '@/components/FiatPreferenceSwitcher';
-import { LanguagePreferenceSwitcher } from '@/components/LanguagePreferenceSwitcher';
 import { LocationForm } from '@/components/LocationForm';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import { useTranslations } from '@/components/LocaleProvider';
 import { NameForm } from '@/components/NameForm';
-import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
-import { PushToggle } from '@/components/PushToggle';
-import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { WideImageCropper } from '@/components/WideImageCropper';
 import { Button, Card } from '@/components/ui';
 import { useAccountTotals } from '@/hooks/useAccountTotals';
@@ -336,17 +331,15 @@ function profileWithoutStaffTag(profile: MemberProfile): MemberProfile {
 }
 
 /**
- * Signed-in profile card with compact activity chart, About me, name, location,
+ * Signed-in profile card with identity only: photo and wide image, compact
+ * activity chart, About me (with the copy-profile-link), name, location, and
  * the same public gifts facts as the member card (`MemberProfileScreen`
- * `factsOnly`), PushToggle (All/Active/Mentions always; Hearts On/Off under
- * the level; This device On/Off when Push APIs
- * are ready), LanguagePreferenceSwitcher, ThemeSwitcher,
- * FiatPreferenceSwitcher, and NumberFormatSwitcher.
+ * `factsOnly`). Preferences and account actions live on `/settings`.
  *
  * Never shows `forum.loading` for the chart. Empty chart is `profile.chartEmpty`
  * without a chart FiatPicker (including while activity is in flight); a failed
- * activity fetch shows `profile.chartError`. The only FiatPicker on the card is
- * {@link FiatPreferenceSwitcher}. The signed-in menu Profile row shows no amounts.
+ * activity fetch shows `profile.chartError`. The card has no FiatPicker. The
+ * signed-in menu Profile row shows no amounts.
  *
  * @returns The identity card.
  */
@@ -511,11 +504,6 @@ export function ProfileScreen(): ReactElement {
           </Button>
         </div>
       ) : null}
-      <PushToggle />
-      <LanguagePreferenceSwitcher />
-      <ThemeSwitcher />
-      <FiatPreferenceSwitcher />
-      <NumberFormatSwitcher />
     </Card>
   );
 }

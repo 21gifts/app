@@ -491,7 +491,7 @@ export function PosTill(): ReactElement {
       ) : null}
       {till.needsUsername ? (
         <p className="text-center text-sm text-app-fg">
-          <Link href="/profile" className="underline">
+          <Link href="/settings#address" className="underline">
             {t('pos.needUsername')}
           </Link>
         </p>

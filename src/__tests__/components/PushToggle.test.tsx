@@ -176,7 +176,8 @@ describe('PushToggle', () => {
     const device = await screen.findByRole('group', { name: 'This device' });
     const offButton = within(device).getByRole('button', { name: 'Off' });
     const onButton = within(device).getByRole('button', { name: 'On' });
-    expect(screen.getByText('Notifications')).toBeTruthy();
+    expect(screen.getByText('Notification level')).toBeTruthy();
+    expect(screen.queryByText('Notifications')).toBeNull();
     expect(offButton.textContent).toBe('Off');
     expect(onButton.textContent).toBe('On');
     expect(offButton.getAttribute('aria-pressed')).toBe('true');

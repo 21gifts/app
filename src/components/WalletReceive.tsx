@@ -15,7 +15,8 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Receive view of the wallet (on `/wallet` and over `/welcome`): the 21.gifts
  * address with a Copy control, its Open CryptoPay QR, and a link to `/pos` to
- * set an amount. Without a username it links to `/profile` instead. The view
+ * set an amount. Without a username it links to the address row of `/settings`
+ * (`/settings#address`) instead. The view
  * opens also while the wallet's one-time setup still runs: until the address
  * is registered, **Opening your wallet…** stands where the address goes, and
  * a setup that gave up shows the inline setup note with **Try again**.
@@ -98,7 +99,7 @@ export function WalletReceive(): ReactElement {
         </div>
       ) : account !== null ? (
         <p className="text-center text-sm text-app-fg">
-          <Link href="/profile" className="underline">
+          <Link href="/settings#address" className="underline">
             {t('pos.needUsername')}
           </Link>
         </p>

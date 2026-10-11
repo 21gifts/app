@@ -6,13 +6,13 @@ import {
   type NumberFormatStyle,
 } from '@/lib/number-format';
 
-/** Supported preferred-fiat codes (switchers on Profile, the activity chart, `/stats`, and `/stats/[day]`; forum and the pay sheet display the code). */
+/** Supported preferred-fiat codes (switchers on Settings, the activity chart, `/stats`, and `/stats/[day]`; forum and the pay sheet display the code). */
 export const FIAT_CODES = ['CHF', 'EUR', 'USD', 'PHP'] as const;
 
 /** One of {@link FIAT_CODES}. */
 export type FiatCode = (typeof FIAT_CODES)[number];
 
-/** Cookie written when the visitor picks a fiat on Profile, the activity chart, `/stats`, or `/stats/[day]`. */
+/** Cookie written when the visitor picks a fiat on Settings, the activity chart, `/stats`, or `/stats/[day]`. */
 export const FIAT_COOKIE = 'fiat';
 
 /**
