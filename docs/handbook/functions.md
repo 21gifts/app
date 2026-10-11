@@ -4973,7 +4973,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Presents Father Severin's account of Happyland after Why on the public homepage.
 - **Input:** Receives the marketing page locale and reads the place portrait and observations from the shared English, German, Spanish or Filipino catalog.
-- **Output:** Renders a place portrait, four photographs from the original 21.gifts Happyland page in balanced frames, an unlinked source paragraph, and three observations.
+- **Output:** Renders four photographs from the existing 21.gifts Happyland page, one place portrait and three photographs in equal frames, an unlinked source paragraph, and three observations.
 
 ## Function: fiatDraftForSats
 

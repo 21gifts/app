@@ -6,7 +6,7 @@ import { getCatalog } from '@/lib/messages';
 /**
  * Present the sourced Happyland account with photographs from the original site.
  * @param props - The locale selected for the marketing page.
- * @returns A place portrait, four photographs and three observations.
+ * @returns Four photographs (one place portrait and three photographs in equal frames), an unlinked source paragraph, and three observations.
  */
 export function HappylandSection({ locale }: { locale: Locale }): ReactElement {
   const messages = getCatalog(locale);
