@@ -5343,7 +5343,7 @@ test('Function: RulesPageChrome — unsigned rules keeps public chrome', async (
   await page.goto('/rules');
   await expect(page.getByRole('link', { name: '21.gifts', exact: true })).toHaveAttribute(
     'href',
-    '/',
+    '/en',
   );
   await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(0);
 });

@@ -5,6 +5,7 @@ import { RulesPageChrome } from '@/components/RulesPageChrome';
 import { getCatalog } from '@/lib/messages';
 import { getRequestLocale } from '@/lib/request-locale';
 import { marketingMetadata } from '@/lib/marketing-metadata';
+import { localizedPublicPath } from '@/lib/public-locale-path';
 import { translate } from '@/lib/translate';
 
 /**
@@ -31,7 +32,7 @@ export default async function RulesPage(): Promise<ReactElement> {
   const locale = await getRequestLocale();
   const messages = getCatalog(locale);
   return (
-    <RulesPageChrome>
+    <RulesPageChrome homeHref={localizedPublicPath(locale, '/')}>
       <h1 className="text-center text-3xl font-semibold tracking-tight text-app-fg sm:text-4xl">
         {translate(messages, 'rules.heading')}
       </h1>

@@ -57,6 +57,7 @@ describe('RulesPage', () => {
     renderWithLocale(await RulesPage());
     expect(screen.getByRole('heading', { name: 'Living room rules', level: 1 })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Only free donations' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/en');
   });
 
   it('renders the language switcher', async () => {
