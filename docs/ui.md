@@ -118,10 +118,8 @@ Live tokens from `src/app/globals.css` `@theme` and `html.dark`.
 
 | Step | Utilities       | Use                                                                               |
 | ---- | --------------- | --------------------------------------------------------------------------------- |
-| 45   | `text-ink/45`   | Why card numbers                                                                  |
-| 50   | `text-ink/50`   | Preview arrows, How step numbers                                                  |
-| 55   | `text-ink/55`   | Kickers and labels on the light panels                                            |
-| 60   | `text-ink/60`   | Discovery card arrows                                                             |
+| 50   | `text-ink/50`   | Preview arrow icons only                                                          |
+| 60   | `text-ink/60`   | Kickers, labels, How and Why numbers, and discovery arrows                        |
 | 65   | `text-ink/65`   | How lead and step bodies, discovery bodies, Why bodies                            |
 | 10   | `border-ink/10` | Preview header and quote, How cards, discovery rule and cards, Why rule and cards |
 | 20   | `border-ink/20` | Preview step connectors                                                           |
@@ -206,7 +204,7 @@ flowchart TD
 
 **QR plates.** Always `bg-app-qr-bg` (`#ffffff`) + `border-app-border`. Dark theme does **not** invert the QR. Module color `app-qr-fg` (`#000000`). Quiet zone: `p-4` on a 232px module grid (`QR_SIZE = 232`). QR is shown on a smartphone. A specific invoice omits it (`isSmartphoneUserAgent`, not viewport): the forum-post pay sheet, the inbox pay sheet, and the public pay link, the same card as desktop, without a mounted `QrCode`.
 
-**Contrast (WCAG 2.2 AA)** against current tokens.
+**Contrast (WCAG 2.2 AA)** against current tokens. Text on the light home panels uses `text-ink/60` or `text-ink/65` (at least 4.5:1 on white, `#faf9f7`, and `#f5f2ec`). `text-ink/50` is only the preview arrow icons.
 
 | Pair                                     | Ratio (approx.) | AA body (4.5:1) | Notes                                                                                                        |
 | ---------------------------------------- | --------------- | --------------- | ------------------------------------------------------------------------------------------------------------ |
@@ -221,6 +219,8 @@ flowchart TD
 | Accent on paper                          | ~2.3:1          | **Fail**        | Never orange _text_ on light paper. Orange is fill + `text-ink`, chart paint, or the decorative THE TEST bar |
 | `text-ink` on accent fill                | ~8.6:1          | Pass            | Accent buttons                                                                                               |
 | Given `#525252` on white                 | ~7.0:1          | Pass            | Legend + series                                                                                              |
+| `text-ink/60` on paper, card, why        | 5.097–5.278:1   | Pass            | Home text on white, `#faf9f7`, and `#f5f2ec`. `/45`, `/50`, and `/55` are not used for that text.            |
+| `text-ink/50` arrows on `#faf9f7`        | 3.690:1         | Non-text 3:1    | Preview ArrowDown icons only. Non-text contrast is 3:1, so this step is not body text.                       |
 
 Destructive alerts: `role="alert"` + `text-app-danger`. Do not use `text-red-600` on new surfaces.
 
@@ -276,7 +276,7 @@ If anyone uses `display: 'swap'`, `shotScreen` **must** `await page.evaluate(() 
 | **h2**          | 20      | 1.25         | 600    | 1.3                    | 0                              | 28em                                               | `text-xl font-semibold`                                                                                                    | Marketing step titles, legal Imprint H2, handbook H2. `/legal` Privacy Policy is an h2 at `text-3xl` so the page keeps one outline h1 (Legal Notice)                     |
 | **h3**          | 18      | 1.125        | 600    | 1.35                   | 0                              | 28em                                               | `text-lg font-semibold`                                                                                                    | Marketing why-grid titles, legal H3. `/legal` Overview is an h3 at `text-xl font-semibold` as the first subsection under Privacy Policy                                  |
 | **kicker**      | 14      | 0.875        | 500    | 1.3                    | 0.1em (`tracking-widest`)      | —                                                  | `text-sm font-medium tracking-widest uppercase text-accent`                                                                | **Marketing shell only:** `HOW IT WORKS`, stats `TOTAL SPEND OVER TIME`. Not `/rules`                                                                                    |
-| **home-kicker** | 12      | 0.75         | 700    | calc(1 / 0.75)         | 0.2em (`tracking-home-kicker`) | —                                                  | `text-xs font-bold tracking-home-kicker uppercase`                                                                         | Home kickers on How, the discovery label, Why, Happyland, Project, and FAQ. Light panels use `text-ink/55`; dark panels use `text-accent`.                               |
+| **home-kicker** | 12      | 0.75         | 700    | calc(1 / 0.75)         | 0.2em (`tracking-home-kicker`) | —                                                  | `text-xs font-bold tracking-home-kicker uppercase`                                                                         | Home kickers on How, the discovery label, Why, Happyland, Project, and FAQ. Light panels use `text-ink/60`; dark panels use `text-accent`.                               |
 | **home-title**  | 30 / 36 | 1.875 / 2.25 | 600    | 1.25 (`leading-tight`) | -0.025em (`tracking-tight`)    | 42rem on How                                       | `text-3xl leading-tight font-semibold tracking-tight sm:text-4xl`                                                          | Home section titles on How, Why, Project, and FAQ. Discovery omits `leading-tight`. Happyland is `text-4xl sm:text-6xl` with `leading-home-title`.                       |
 | **overline**    | 12      | 0.75         | 500    | 1.3                    | 0.1em                          | —                                                  | `text-xs font-medium tracking-widest uppercase text-app-subtle`                                                            | `NAME`, `WALLET OF SATOSHI ADDRESS`, `THE TEST`, `RULE n` (app; **not** `text-accent`)                                                                                   |
 | **body**        | 16      | 1            | 400    | 1.5                    | 0                              | 36em (`max-w-2xl` ~42rem for marketing lead is OK) | `text-base leading-normal`                                                                                                 | App body. Marketing lead is **body-lg**. Form control text (inputs/textareas) uses body / `text-base` because iOS auto-zooms below 16px. **body-sm** keeps field labels. |
@@ -570,7 +570,7 @@ flowchart LR
 
 **Set.** `lucide-react` only. No second icon pack. Drawn exceptions: favicon “21”, `public/wos-icon.png` (Wallet of Satoshi, 20×20 PNG in the pay CTA), the welcome gift-and-Bitcoin SVG, the shop-sticker storefront on every valid pay link, `public/bitcoin-symbol.svg` (Bitcoin symbol in the homepage hero diagram and social preview, `src/app/(marketing)/page.tsx`), and handbook images.
 
-**Stroke.** Default lucide 2px. At 16px glyph use stroke 2; at 20–24px use stroke 1.75 if the glyph looks heavy on goldens after Outfit — otherwise leave default. Do not mix fills.
+**Stroke.** Default lucide 2px. At 16px glyph use stroke 2; at 20–24px use stroke 1.75 if the glyph looks heavy on goldens after Outfit — otherwise leave default. Do not mix fills. **Home page exception.** On `/` the drawn weights stay as they are. Preview `MessageCircle` and `UserRound` at 20px (`h-5 w-5`) use `strokeWidth={1.6}`. Preview wallet-strip `Wallet` and `UserRound`, and the discovery-path `Wallet` and `UserRound`, at 24px (`h-6 w-6`) use `strokeWidth={1.5}`. The How-step `Search`, `MessageCircle`, and `Wallet` use `stroke-home-step`, the same 1.6 (`--stroke-width-home-step`). These stay at the default 2: the hero `ArrowRight` (`h-4 w-4`), both preview `ArrowDown` icons (`h-4 w-4`), the preview `Reply` (`h-5 w-5`), the wallet-strip `ArrowRight` (`h-4 w-4`), the How receive `ArrowUpRight` (`h-4 w-4`), and the three discovery `ArrowUpRight` icons (`h-5 w-5`). `HappylandSection` sets no `strokeWidth` and no `stroke-*` class.
 
 **Sizes (glyph, not hit target).**
 

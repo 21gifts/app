@@ -114,7 +114,7 @@ export default async function Home(): Promise<ReactElement> {
                 </span>
               </div>
               <div className="px-6 pt-7 pb-6 sm:px-8 sm:pt-8">
-                <p className="text-xs font-semibold tracking-home-preview text-ink/55 uppercase">
+                <p className="text-xs font-semibold tracking-home-preview text-ink/60 uppercase">
                   {t('home.previewKicker')}
                 </p>
                 <h2 className="mt-3 text-2xl leading-tight font-semibold tracking-tight sm:text-home-preview">
@@ -206,7 +206,7 @@ export default async function Home(): Promise<ReactElement> {
         <div className="mx-auto max-w-[1100px]">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div>
-              <p className="text-xs font-bold tracking-home-kicker text-ink/55 uppercase">
+              <p className="text-xs font-bold tracking-home-kicker text-ink/60 uppercase">
                 {t('home.howKicker')}
               </p>
               <h2 className="mt-3 max-w-2xl text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">
@@ -245,7 +245,7 @@ export default async function Home(): Promise<ReactElement> {
                 className="rounded-2xl border border-ink/10 bg-home-card p-6 sm:p-7"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-ink/50">{t(num)}</span>
+                  <span className="text-sm font-semibold text-ink/60">{t(num)}</span>
                   <Icon aria-hidden="true" className="h-6 w-6 stroke-home-step" />
                 </div>
                 <h3 className="mt-8 text-xl font-semibold tracking-tight">{t(title)}</h3>
@@ -270,7 +270,7 @@ export default async function Home(): Promise<ReactElement> {
 
       <section className="border-t border-ink/10 bg-paper px-5 py-16 text-ink scheme-light sm:py-20">
         <div className="mx-auto max-w-[1100px]">
-          <p className="text-xs font-bold tracking-home-kicker text-ink/55 uppercase">21.gifts</p>
+          <p className="text-xs font-bold tracking-home-kicker text-ink/60 uppercase">21.gifts</p>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
             {t('home.discoverTitle')}
           </h2>
@@ -288,7 +288,7 @@ export default async function Home(): Promise<ReactElement> {
                 </span>
               </div>
               <div className="p-6">
-                <span className="text-xs font-semibold tracking-home-label text-ink/55 uppercase">
+                <span className="text-xs font-semibold tracking-home-label text-ink/60 uppercase">
                   {t('home.discoverStoryKicker')}
                 </span>
                 <div className="mt-2 flex items-start justify-between gap-3">
@@ -315,7 +315,7 @@ export default async function Home(): Promise<ReactElement> {
                 />
               </div>
               <div className="p-6">
-                <span className="text-xs font-semibold tracking-home-label text-ink/55 uppercase">
+                <span className="text-xs font-semibold tracking-home-label text-ink/60 uppercase">
                   {t('home.discoverBitcoinKicker')}
                 </span>
                 <div className="mt-2 flex items-start justify-between gap-3">
@@ -355,7 +355,7 @@ export default async function Home(): Promise<ReactElement> {
                 </div>
               </div>
               <div className="p-6">
-                <span className="text-xs font-semibold tracking-home-label text-ink/55 uppercase">
+                <span className="text-xs font-semibold tracking-home-label text-ink/60 uppercase">
                   {t('home.discoverTrustKicker')}
                 </span>
                 <div className="mt-2 flex items-start justify-between gap-3">
@@ -377,7 +377,7 @@ export default async function Home(): Promise<ReactElement> {
       >
         <div className="mx-auto grid max-w-[1100px] gap-8 md:grid-cols-home-split md:gap-16">
           <div>
-            <p className="text-xs font-bold tracking-home-kicker text-ink/55 uppercase">
+            <p className="text-xs font-bold tracking-home-kicker text-ink/60 uppercase">
               {t('home.whyKicker')}
             </p>
             <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">
@@ -394,7 +394,7 @@ export default async function Home(): Promise<ReactElement> {
               ] as const
             ).map(({ num, title, body }) => (
               <article key={title} className="rounded-2xl border border-ink/10 bg-paper p-6">
-                <span className="text-xs font-semibold text-ink/45">{t(num)}</span>
+                <span className="text-xs font-semibold text-ink/60">{t(num)}</span>
                 <h3 className="mt-6 text-lg font-semibold">{t(title)}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-ink/65">{t(body)}</p>
               </article>
