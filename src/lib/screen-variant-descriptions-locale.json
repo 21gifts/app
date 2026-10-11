@@ -4810,9 +4810,14 @@
     "fil": "Ang PHP na utang lamang: Bayaran ngayon, malaking ₱30.00 · ₿1'200, $1.20 sa ilalim, sa 2 tao, Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿1'200 · $1.20. Ang plano ay ₱300.00 · 10 araw · ₱30.00 bawat araw; Nabayaran ang ₿4'800 · $4.80 sa ₿12'000 · $12.00 ang linya."
   },
   "/loans/repay:behind": {
-    "de": "Kredit A ist überfällig. Die Überschrift in der Gefahrenfarbe lautet Sie sind 2 Tage im Rückstand, mit ₿3'000 · $3.00, an 3 Personen und ₿3'000 · $3.00 senden. Die Empfängerliste würde die Anteile vom 5. Okt., 6. Okt. und heute zeigen.",
-    "es": "El préstamo A está atrasado. El título en color de peligro dice Llevas 2 días de retraso, con ₿3'000 · $3.00, para 3 personas y Enviar ₿3'000 · $3.00. La lista de destinatarios mostraría las partes del 5 de oct., 6 de oct. y hoy.",
-    "fil": "Huli ang utang A. Ang danger na pamagat ay Huli ka nang 2 araw, may ₿3'000 · $3.00, sa 3 tao, at Ipadala ang ₿3'000 · $3.00. Ipapakita ng listahan ang mga bahagi noong Okt. 5, Okt. 6, at ngayon."
+    "de": "Kredit A ist überfällig. Die Überschrift in der Gefahrenfarbe lautet Sie sind 2 Tage im Rückstand, mit ₿3'000 · $3.00, an 3 Personen und ₿3'000 · $3.00 senden. Wer wird bezahlt? ist geschlossen (siehe behind-who-open).",
+    "es": "El préstamo A está atrasado. El título en color de peligro dice Llevas 2 días de retraso, con ₿3'000 · $3.00, para 3 personas y Enviar ₿3'000 · $3.00. Quién recibe el pago está cerrado (véase behind-who-open).",
+    "fil": "Huli ang utang A. Ang danger na pamagat ay Huli ka nang 2 araw, may ₿3'000 · $3.00, sa 3 tao, at Ipadala ang ₿3'000 · $3.00. Sarado ang Sino ang babayaran (tingnan ang behind-who-open)."
+  },
+  "/loans/repay:behind-who-open": {
+    "de": "Die überfällige Fälligkeitskarte mit geöffnetem Wer wird bezahlt?. Die Überschrift in der Gefahrenfarbe lautet Sie sind 2 Tage im Rückstand, mit ₿3'000 und $3.00, an 3 Personen und ₿3'000 · $3.00 senden. Die Liste zeigt Bruno · 5. Okt. ₿500 · $0.50, Carla · 5. Okt. ₿300 · $0.30, Diego · 5. Okt. ₿200 · $0.20, Bruno · 6. Okt. ₿500 · $0.50, Carla · 6. Okt. ₿300 · $0.30, Diego · 6. Okt. ₿200 · $0.20, dann die heutigen Bruno ₿500 · $0.50, Carla ₿300 · $0.30 und Diego ₿200 · $0.20.",
+    "es": "La caja de vencimiento atrasada con Quién recibe el pago abierto. El título en color de peligro dice Llevas 2 días de retraso, con ₿3'000 y $3.00, para 3 personas y Enviar ₿3'000 · $3.00. La lista muestra Bruno · 5 oct ₿500 · $0.50, Carla · 5 oct ₿300 · $0.30, Diego · 5 oct ₿200 · $0.20, Bruno · 6 oct ₿500 · $0.50, Carla · 6 oct ₿300 · $0.30, Diego · 6 oct ₿200 · $0.20, y los de hoy Bruno ₿500 · $0.50, Carla ₿300 · $0.30 y Diego ₿200 · $0.20.",
+    "fil": "Ang hulíng estado na bukas ang Sino ang babayaran. Ang danger na pamagat ay Huli ka nang 2 araw, may ₿3'000 at $3.00, sa 3 tao, at Ipadala ang ₿3'000 · $3.00. Ipinapakita ng listahan sina Bruno · Okt 5 ₿500 · $0.50, Carla · Okt 5 ₿300 · $0.30, Diego · Okt 5 ₿200 · $0.20, Bruno · Okt 6 ₿500 · $0.50, Carla · Okt 6 ₿300 · $0.30, Diego · Okt 6 ₿200 · $0.20, tapos ang ngayon nina Bruno ₿500 · $0.50, Carla ₿300 · $0.30, at Diego ₿200 · $0.20."
   },
   "/loans/repay:waiting": {
     "de": "Diego kann noch nicht empfangen. Die Karte zeigt Heute fällig, ₿800 · $0.80, an 2 Personen und den Hinweis ₿200 · $0.20 wartet auf eine kreditgebende Person, die ihre Wallet noch nicht eingerichtet hat. Sie können den Betrag senden, sobald das geschehen ist. Die Schaltfläche lautet ₿800 · $0.80 senden.",

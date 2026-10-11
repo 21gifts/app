@@ -744,6 +744,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:behind-who-open",
+    "label": "/loans/repay behind-who-open",
+    "visual": "state-loans-repay-behind-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:waiting",
     "label": "/loans/repay waiting",
     "visual": "state-loans-repay-waiting",

@@ -3709,6 +3709,18 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-behind');
   });
 
+  test('state /loans/repay behind-who-open', async ({ page }) => {
+    await loanShot(page, {
+      loans: [behindLoan],
+      ledgers: { 'loan-a': behindLedger },
+      visual: 'repay-ready',
+      text: "You're 2 days behind",
+      pressWho: true,
+    });
+    await expect(page.getByText('Oct 5').first()).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-behind-who-open');
+  });
+
   test('state /loans/repay waiting', async ({ page }) => {
     await loanShot(page, {
       loans: [waitingLoan],
