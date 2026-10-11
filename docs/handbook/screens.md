@@ -733,17 +733,35 @@ Loan A still shows **Due today**, **₿1'000** and **$1.00**, **to 3 people**, a
 
 ![21.gifts loans repay unavailable wallet](images/loans-repay-unavailable.png)
 
+### Variant: unavailable-who-open
+
+The unavailable-wallet state with **Who gets paid** open. Loan A still shows **Due today**, **₿1'000** and **$1.00**, **to 3 people**, and the loan progress. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**. In place of wallet balance and Send, it says **Your 21.gifts wallet is not available here, so this cannot be paid.**
+
+![21.gifts loans repay unavailable who open](images/loans-repay-unavailable-who-open.png)
+
 ### Variant: connecting
 
 Loan A still shows its due amount, recipients, and progress. The wallet is not ready, so the pay area has a spinner and **Checking your wallet…** instead of balance and Send controls.
 
 ![21.gifts loans repay connecting wallet](images/loans-repay-connecting.png)
 
+### Variant: connecting-who-open
+
+The connecting-wallet state with **Who gets paid** open. Loan A still shows its due amount, recipients, and progress. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**. The pay area has a spinner and **Checking your wallet…** instead of balance and Send controls.
+
+![21.gifts loans repay connecting who open](images/loans-repay-connecting-who-open.png)
+
 ### Variant: setup-failed
 
 Loan A still shows its due amount, recipients, and progress. The pay area says **Your wallet could not be set up yet.** and offers **Try again**.
 
 ![21.gifts loans repay wallet setup failed](images/loans-repay-setup-failed.png)
+
+### Variant: setup-failed-who-open
+
+The wallet-setup-failed state with **Who gets paid** open. Loan A still shows its due amount, recipients, and progress. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**. The pay area says **Your wallet could not be set up yet.** and offers **Try again**.
+
+![21.gifts loans repay setup failed who open](images/loans-repay-setup-failed-who-open.png)
 
 ### Variant: loading
 
@@ -768,6 +786,12 @@ The two-loan state with **Who gets paid** open. Rows are grouped under each loan
 The PHP loan alone leads with its own currency: **Due today**, large **₱30.00 · ₿1'200**, then **$1.20**, **to 2 people**, **From your wallet · ₿21'000 · $21.00**, and **Send ₿1'200 · $1.20**. Its plan is **₱300.00 · 10 days · ₱30.00 per day** and its repaid line is **₿4'800 · $4.80 of ₿12'000 · $12.00**.
 
 ![21.gifts loans repay fiat-defined loan](images/loans-repay-fiat.png)
+
+### Variant: fiat-who-open
+
+The PHP loan with **Who gets paid** open. The box still leads with **Due today**, large **₱30.00 · ₿1'200**, then **$1.20**, **to 2 people**, **From your wallet · ₿21'000 · $21.00**, and **Send ₿1'200 · $1.20**. The list shows Elena **₱18.00 · ₿720 · $0.72** and Farid **₱12.00 · ₿480 · $0.48**.
+
+![21.gifts loans repay fiat who open](images/loans-repay-fiat-who-open.png)
 
 ### Variant: behind
 
@@ -811,11 +835,23 @@ The due amount remains **₿1'000 · $1.00**, but the wallet has only **₿600 �
 
 ![21.gifts loans repay short balance](images/loans-repay-short.png)
 
+### Variant: short-who-open
+
+The short-balance state with **Who gets paid** open. The due amount remains **₿1'000 · $1.00**, the wallet has only **₿600 · $0.60**, and the bordered box still says **Not enough in your wallet** and **Your wallet has ₿600 · $0.60. Still missing ₿400 · $0.40.**, with **Top up your wallet** and **Send ₿500 · $0.50 now to Bruno, the rest after your top-up**. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**.
+
+![21.gifts loans repay short who open](images/loans-repay-short-who-open.png)
+
 ### Variant: fee-gap
 
 The wallet covers Loan A's due amount but not its fee. The bordered box says **Not enough in your wallet** and **Your wallet has ₿1'000 · $1.00. Still missing ₿25 · $0.03.**, with **Top up your wallet**. There is no Send control and no send-now link.
 
 ![21.gifts loans repay fee gap](images/loans-repay-fee-gap.png)
+
+### Variant: fee-gap-who-open
+
+The fee-only gap with **Who gets paid** open. The bordered box still says **Not enough in your wallet** and **Your wallet has ₿1'000 · $1.00. Still missing ₿25 · $0.03.**, with **Top up your wallet**. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**. There is no Send control and no send-now link.
+
+![21.gifts loans repay fee gap who open](images/loans-repay-fee-gap-who-open.png)
 
 ### Variant: fee-gap-topup
 
@@ -823,11 +859,23 @@ The same fee-only gap after **Top up your wallet** is pressed. The box keeps **Y
 
 ![21.gifts loans repay fee gap top-up](images/loans-repay-fee-gap-topup.png)
 
+### Variant: fee-gap-topup-who-open
+
+The fee-only gap after **Top up your wallet** is pressed, with **Who gets paid** open. The box keeps **Your wallet has ₿1'000 · $1.00. Still missing ₿25 · $0.03.**, then shows **To add Bitcoin, send it to your address:**, Ada's 21.gifts address, exactly one Open CryptoPay QR, an icon-only **Copy**, and **Waiting for your top-up…**. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**. There is still no Send control or send-now link.
+
+![21.gifts loans repay fee gap topup who open](images/loans-repay-fee-gap-topup-who-open.png)
+
 ### Variant: fee-gap-topup-copied
 
 The fee-only top-up after its icon-only **Copy** is pressed. The box still shows **Your wallet has ₿1'000 · $1.00. Still missing ₿25 · $0.03.**, Ada's address, exactly one Open CryptoPay QR, and **Waiting for your top-up…**; the copy icon is a green check with accessible name **Copied**, with no visible Copy or Copied text. There is no Send control or send-now link.
 
 ![21.gifts loans repay copied fee gap top-up](images/loans-repay-fee-gap-topup-copied.png)
+
+### Variant: fee-gap-topup-copied-who-open
+
+The fee-only top-up after its icon-only **Copy** is pressed, with **Who gets paid** open. The box still shows **Your wallet has ₿1'000 · $1.00. Still missing ₿25 · $0.03.**, Ada's address, exactly one Open CryptoPay QR, and **Waiting for your top-up…**; the copy icon is a green check with accessible name **Copied**, with no visible Copy or Copied text. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**. There is no Send control or send-now link.
+
+![21.gifts loans repay fee gap topup copied who open](images/loans-repay-fee-gap-topup-copied-who-open.png)
 
 ### Variant: topup
 
@@ -835,11 +883,23 @@ The short-balance state after **Top up your wallet** is pressed. The box keeps *
 
 ![21.gifts loans repay wallet top-up](images/loans-repay-topup.png)
 
+### Variant: topup-who-open
+
+The short-balance state after **Top up your wallet** is pressed, with **Who gets paid** open. The box keeps **₿600 · $0.60** and **₿400 · $0.40**, then shows **To add Bitcoin, send it to your address:**, Ada's 21.gifts address, its Open CryptoPay QR, an icon-only **Copy**, and **Waiting for your top-up…**. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**. The **Send ₿500 · $0.50 now to Bruno…** link remains below.
+
+![21.gifts loans repay topup who open](images/loans-repay-topup-who-open.png)
+
 ### Variant: topup-copied
 
 The short-balance top-up after its icon-only **Copy** is pressed. The box still shows **Your wallet has ₿600 · $0.60. Still missing ₿400 · $0.40.**, Ada's address, its Open CryptoPay QR, and **Waiting for your top-up…**; the copy icon is a green check with accessible name **Copied**, with no visible Copy or Copied text. The **Send ₿500 · $0.50 now to Bruno…** link remains below.
 
 ![21.gifts loans repay copied wallet top-up](images/loans-repay-topup-copied.png)
+
+### Variant: topup-copied-who-open
+
+The short-balance top-up after its icon-only **Copy** is pressed, with **Who gets paid** open. The box still shows **Your wallet has ₿600 · $0.60. Still missing ₿400 · $0.40.**, Ada's address, its Open CryptoPay QR, and **Waiting for your top-up…**; the copy icon is a green check with accessible name **Copied**, with no visible Copy or Copied text. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**. The **Send ₿500 · $0.50 now to Bruno…** link remains below.
+
+![21.gifts loans repay topup copied who open](images/loans-repay-topup-copied-who-open.png)
 
 ### Variant: sending
 
@@ -847,11 +907,23 @@ After the one-tap Send action, the due box keeps **₿1'000 · $1.00** and repla
 
 ![21.gifts loans repay sending](images/loans-repay-sending.png)
 
+### Variant: sending-who-open
+
+The sending state with **Who gets paid** open. The due box keeps **₿1'000 · $1.00** and replaces the wallet controls with a spinner and **Sending ₿1'000 · $1.00…**. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**. There is no confirmation step.
+
+![21.gifts loans repay sending who open](images/loans-repay-sending-who-open.png)
+
 ### Variant: partial
 
 Bruno's **₿500 · $0.50** share was sent and Carla plus Diego remain. The heading is **Still due today**, the amount is **₿500** with **$0.50**, and the box says **Sent ₿500 · $0.50 to Bruno** before **From your wallet · ₿21'000 · $21.00** and **Send ₿500 · $0.50**.
 
 ![21.gifts loans repay partial payment](images/loans-repay-partial.png)
+
+### Variant: partial-who-open
+
+The partial-payment state with **Who gets paid** open. Bruno's **₿500 · $0.50** share was sent and Carla plus Diego remain. The heading is **Still due today**, the amount is **₿500** with **$0.50**, and the box says **Sent ₿500 · $0.50 to Bruno** before **From your wallet · ₿21'000 · $21.00** and **Send ₿500 · $0.50**. The list shows Carla **₿300 · $0.30** and Diego **₿200 · $0.20**.
+
+![21.gifts loans repay partial who open](images/loans-repay-partial-who-open.png)
 
 ### Variant: repaid
 
@@ -864,6 +936,12 @@ Today's shares are settled and the loan has **Repaid ₿12'000 · $12.00 of ₿3
 Loan A is on its final day: **Due today · last payment**, **₿1'000** with **$1.00**, **to 3 people**, and **Send ₿1'000 · $1.00**. The loan shows **Repaid ₿29'000 · $29.00 of ₿30'000 · $30.00** and **Day 30 of 30**.
 
 ![21.gifts loans repay last payment due](images/loans-repay-last-due.png)
+
+### Variant: last-due-who-open
+
+The last-payment-due state with **Who gets paid** open. Loan A is on its final day: **Due today · last payment**, **₿1'000** with **$1.00**, **to 3 people**, and **Send ₿1'000 · $1.00**. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**. The loan shows **Repaid ₿29'000 · $29.00 of ₿30'000 · $30.00** and **Day 30 of 30**.
+
+![21.gifts loans repay last due who open](images/loans-repay-last-due-who-open.png)
 
 ### Variant: last
 
@@ -895,11 +973,23 @@ Loan A still shows **Due today**, **₿1'000 · $1.00**, and **to 3 people**. In
 
 ![21.gifts loans repay unconfirmed](images/loans-repay-unconfirmed.png)
 
+### Variant: unconfirmed-who-open
+
+The unconfirmed-send state with **Who gets paid** open. Loan A still shows **Due today**, **₿1'000 · $1.00**, and **to 3 people**. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**. Instead of the wallet controls, the neutral status says **This payment is not confirmed yet. Check your balance again later.**
+
+![21.gifts loans repay unconfirmed who open](images/loans-repay-unconfirmed-who-open.png)
+
 ### Variant: failed
 
 The due box keeps **₿1'000 · $1.00** and shows the red alert **Could not start the Bitcoin payment**. The ready controls return below it: **From your wallet · ₿21'000 · $21.00** and **Send ₿1'000 · $1.00**.
 
 ![21.gifts loans repay failed](images/loans-repay-failed.png)
+
+### Variant: failed-who-open
+
+The failed-send state with **Who gets paid** open. The due box keeps **₿1'000 · $1.00** and shows the red alert **Could not start the Bitcoin payment**. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**. The ready controls return below it: **From your wallet · ₿21'000 · $21.00** and **Send ₿1'000 · $1.00**.
+
+![21.gifts loans repay failed who open](images/loans-repay-failed-who-open.png)
 
 ### Variant: collecting
 
@@ -1305,6 +1395,12 @@ Under **Welcome, Ada**, a neutral **Your loan** card shows **Not fully funded ye
 
 ![21.gifts welcome collecting loan](images/welcome-loans-collecting.png)
 
+### Variant: loans-collecting-open
+
+The collecting card after **Show loan** is pressed. It keeps **Not fully funded yet.** and **Ask ₿30'000 · $30.00** with **60%**, then shows the linked loan text **I need a small loan to buy a second-hand sewing machine for my repair stall.** with **60%**; the toggle now says **Hide loan**. There is no due row.
+
+![21.gifts welcome collecting loan open](images/welcome-loans-collecting-open.png)
+
 ### Variant: loans-due
 
 The collapsed neutral **Your loan** card says **Fully funded.**, then shows **Ask ₿30'000 · $30.00** with **100%**, **Due today**, **₿1'000 · $1.00**, and **Send**. **Show loan** remains closed.
@@ -1323,17 +1419,35 @@ The **Your loan** card says **Fully funded.**, shows **Ask ₿30'000 · $30.00**
 
 ![21.gifts welcome loan behind](images/welcome-loans-behind.png)
 
+### Variant: loans-behind-open
+
+The behind card after **Show loan** is pressed. It keeps **Fully funded.**, **Ask ₿30'000 · $30.00** with **100%**, the danger outline, **You're 2 days behind** in red, **₿3'000 · $3.00**, and **Send**, then shows the linked loan text **I need a small loan to buy a second-hand sewing machine for my repair stall.** with **100%**; the toggle now says **Hide loan**.
+
+![21.gifts welcome loan behind open](images/welcome-loans-behind-open.png)
+
 ### Variant: loans-nothing-due
 
 The **Your loan** card says **Fully funded.**, shows **Ask ₿30'000 · $30.00** with **100%**, and has a success outline. Its row shows a green check with **Nothing due today**, then **Next: tomorrow, ₿1'000 · $1.00**, plus the right-arrow link to repayment details. There is no Send button; **Show loan** remains closed.
 
 ![21.gifts welcome loan nothing due](images/welcome-loans-nothing-due.png)
 
+### Variant: loans-nothing-due-open
+
+The nothing-due card after **Show loan** is pressed. It keeps **Fully funded.**, **Ask ₿30'000 · $30.00** with **100%**, the success outline, a green check with **Nothing due today**, **Next: tomorrow, ₿1'000 · $1.00**, and the right-arrow link. There is no Send button. The list shows the linked loan text **I need a small loan to buy a second-hand sewing machine for my repair stall.** with **100%**; the toggle now says **Hide loan**.
+
+![21.gifts welcome loan nothing due open](images/welcome-loans-nothing-due-open.png)
+
 ### Variant: loans-sunday
 
 The **Your loan** card says **Fully funded.**, shows **Ask ₿30'000 · $30.00** with **100%**, has a neutral outline, and says **No repayments on Sundays**. There is no amount or Send control; **Show loan** is closed.
 
 ![21.gifts welcome loan Sunday](images/welcome-loans-sunday.png)
+
+### Variant: loans-sunday-open
+
+The Sunday card after **Show loan** is pressed. It keeps **Fully funded.**, **Ask ₿30'000 · $30.00** with **100%**, the neutral outline, and **No repayments on Sundays**. There is no amount or Send control. The list shows the linked loan text **I need a small loan to buy a second-hand sewing machine for my repair stall.** with **100%**; the toggle now says **Hide loan**.
+
+![21.gifts welcome loan Sunday open](images/welcome-loans-sunday-open.png)
 
 ### Variant: loans-multi
 

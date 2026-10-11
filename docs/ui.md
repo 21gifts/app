@@ -1102,7 +1102,7 @@ Fill `AppShell` `align="start"` with `topRight={<SignedInChrome />}` and a fallb
 
 Author names with `accountId` open `/members/[accountId]`.
 
-Handbook states: loans-collecting, loans-due, loans-open, loans-behind, loans-nothing-due, loans-sunday, loans-multi, loans-multi-open, menu-loan-due, menu-loan-behind, repay-today, writer, writer-ask, writer-validation-error, writer-place-open, wallet-buttons, wallet-buttons-slim, reaction-open, place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords, shop-edit, shop-edit-open, shop-edit-place, shop-edit-text, shop-edit-user, shop-edit-summary.
+Handbook states: loans-collecting, loans-collecting-open, loans-due, loans-open, loans-behind, loans-behind-open, loans-nothing-due, loans-nothing-due-open, loans-sunday, loans-sunday-open, loans-multi, loans-multi-open, menu-loan-due, menu-loan-behind, repay-today, writer, writer-ask, writer-validation-error, writer-place-open, wallet-buttons, wallet-buttons-slim, reaction-open, place, place-coords, composer-place, composer-place-map, composer-place-pending, composer-place-confirm, composer-place-unlabeled, composer-place-set, composer-place-set-coords, shop-edit, shop-edit-open, shop-edit-place, shop-edit-text, shop-edit-user, shop-edit-summary.
 
 ### `/wallet`
 
@@ -1136,7 +1136,7 @@ The pay area is a centred `mt-4 flex flex-col gap-3`. Connecting uses `Loader2 h
 
 The loan list is `flex flex-col gap-3`, introduced by the uppercase muted **Your loan(s)** label. Multiple entries add `rounded-xl border border-app-border p-3`; each has a two-line-clamped semibold text, muted tabular plan, then a `text-xs` row for **Repaid …** and **Day n of N** over an 8px SVG bar (`fill-app-border` track, `fill-app-success` progress). Collecting replaces the bar with muted **Not fully funded yet.** **Repayment list** is an underlined `text-xs font-medium` link. Initial loading stays in the same `max-w-xl` column with `Loader2` and **Loading your loans…**. Empty and load-error states use that column too; load error uses `text-app-danger` plus secondary **Try again**. With loaded loans, wallet `connecting` uses the pay-area spinner and **Checking your wallet…**; `setupFailed` uses `WalletSetupNote` with **Your wallet could not be set up yet.** and **Try again**.
 
-Handbook states: default, who-open, unavailable, connecting, setup-failed, loading, multi, multi-who-open, fiat, behind, behind-who-open, waiting, waiting-who-open, waiting-all, waiting-all-who-open, short, fee-gap, fee-gap-topup, fee-gap-topup-copied, topup, topup-copied, sending, partial, repaid, last-due, last, last-multi, nothing-due, sunday, unconfirmed, failed, collecting, none, load-error.
+Handbook states: default, who-open, unavailable, unavailable-who-open, connecting, connecting-who-open, setup-failed, setup-failed-who-open, loading, multi, multi-who-open, fiat, fiat-who-open, behind, behind-who-open, waiting, waiting-who-open, waiting-all, waiting-all-who-open, short, short-who-open, fee-gap, fee-gap-who-open, fee-gap-topup, fee-gap-topup-who-open, fee-gap-topup-copied, fee-gap-topup-copied-who-open, topup, topup-who-open, topup-copied, topup-copied-who-open, sending, sending-who-open, partial, partial-who-open, repaid, last-due, last-due-who-open, last, last-multi, nothing-due, sunday, unconfirmed, unconfirmed-who-open, failed, failed-who-open, collecting, none, load-error.
 
 ### `/welcome` wallet footer and views
 

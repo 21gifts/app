@@ -409,6 +409,35 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByTestId('own-address')).toBeNull();
   });
 
+  it('caps the send-now set at 60 shares of one loan', async () => {
+    const state = repay({ balanceSats: 6_500 });
+    const dueRow = ledger().repayments[0]!;
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        repayments: Array.from({ length: 61 }, (_, index) => ({
+          ...dueRow,
+          dayIndex: index,
+          accountId: `giver-${index}`,
+          name: 'Bruno',
+          sats: 100,
+        })),
+      }),
+    );
+    show(
+      {
+        sundayRest: false,
+        loans: [loan({ due: { ...loan().due, payableSats: 7_000, payablePeople: 61 } })],
+      },
+      state,
+    );
+    const sendNow = await screen.findByRole('button', { name: /now to/ });
+    fireEvent.click(sendNow);
+    expect(state.pay).toHaveBeenCalledWith(
+      expect.any(Array),
+      new Set(Array.from({ length: 60 }, (_, index) => `loan-1:${index}:giver-${index}`)),
+    );
+  });
+
   it('hides send-now when a loan repayment list has not loaded', async () => {
     vi.mocked(getRepayment).mockImplementation(async (id) =>
       id === 'loan-1'

@@ -702,15 +702,33 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:unavailable-who-open",
+    "label": "/loans/repay unavailable-who-open",
+    "visual": "state-loans-repay-unavailable-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:connecting",
     "label": "/loans/repay connecting",
     "visual": "state-loans-repay-connecting",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:connecting-who-open",
+    "label": "/loans/repay connecting-who-open",
+    "visual": "state-loans-repay-connecting-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:setup-failed",
     "label": "/loans/repay setup-failed",
     "visual": "state-loans-repay-setup-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:setup-failed-who-open",
+    "label": "/loans/repay setup-failed-who-open",
+    "visual": "state-loans-repay-setup-failed-who-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -735,6 +753,12 @@
     "id": "/loans/repay:fiat",
     "label": "/loans/repay fiat",
     "visual": "state-loans-repay-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:fiat-who-open",
+    "label": "/loans/repay fiat-who-open",
+    "visual": "state-loans-repay-fiat-who-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -780,9 +804,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:short-who-open",
+    "label": "/loans/repay short-who-open",
+    "visual": "state-loans-repay-short-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:fee-gap",
     "label": "/loans/repay fee-gap",
     "visual": "state-loans-repay-fee-gap",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:fee-gap-who-open",
+    "label": "/loans/repay fee-gap-who-open",
+    "visual": "state-loans-repay-fee-gap-who-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -792,9 +828,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:fee-gap-topup-who-open",
+    "label": "/loans/repay fee-gap-topup-who-open",
+    "visual": "state-loans-repay-fee-gap-topup-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:fee-gap-topup-copied",
     "label": "/loans/repay fee-gap-topup-copied",
     "visual": "state-loans-repay-fee-gap-topup-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:fee-gap-topup-copied-who-open",
+    "label": "/loans/repay fee-gap-topup-copied-who-open",
+    "visual": "state-loans-repay-fee-gap-topup-copied-who-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -804,9 +852,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:topup-who-open",
+    "label": "/loans/repay topup-who-open",
+    "visual": "state-loans-repay-topup-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:topup-copied",
     "label": "/loans/repay topup-copied",
     "visual": "state-loans-repay-topup-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:topup-copied-who-open",
+    "label": "/loans/repay topup-copied-who-open",
+    "visual": "state-loans-repay-topup-copied-who-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -816,9 +876,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:sending-who-open",
+    "label": "/loans/repay sending-who-open",
+    "visual": "state-loans-repay-sending-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:partial",
     "label": "/loans/repay partial",
     "visual": "state-loans-repay-partial",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:partial-who-open",
+    "label": "/loans/repay partial-who-open",
+    "visual": "state-loans-repay-partial-who-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -831,6 +903,12 @@
     "id": "/loans/repay:last-due",
     "label": "/loans/repay last-due",
     "visual": "state-loans-repay-last-due",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:last-due-who-open",
+    "label": "/loans/repay last-due-who-open",
+    "visual": "state-loans-repay-last-due-who-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -864,9 +942,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:unconfirmed-who-open",
+    "label": "/loans/repay unconfirmed-who-open",
+    "visual": "state-loans-repay-unconfirmed-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:failed",
     "label": "/loans/repay failed",
     "visual": "state-loans-repay-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:failed-who-open",
+    "label": "/loans/repay failed-who-open",
+    "visual": "state-loans-repay-failed-who-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1632,6 +1722,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:loans-collecting-open",
+    "label": "/welcome loans-collecting-open",
+    "visual": "state-welcome-loans-collecting-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:loans-due",
     "label": "/welcome loans-due",
     "visual": "state-welcome-loans-due",
@@ -1650,15 +1746,33 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:loans-behind-open",
+    "label": "/welcome loans-behind-open",
+    "visual": "state-welcome-loans-behind-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:loans-nothing-due",
     "label": "/welcome loans-nothing-due",
     "visual": "state-welcome-loans-nothing-due",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:loans-nothing-due-open",
+    "label": "/welcome loans-nothing-due-open",
+    "visual": "state-welcome-loans-nothing-due-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:loans-sunday",
     "label": "/welcome loans-sunday",
     "visual": "state-welcome-loans-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-sunday-open",
+    "label": "/welcome loans-sunday-open",
+    "visual": "state-welcome-loans-sunday-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

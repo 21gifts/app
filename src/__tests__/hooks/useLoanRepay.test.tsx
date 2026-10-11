@@ -621,6 +621,23 @@ describe('useLoanRepay preparation', () => {
     expect(result.current.missingSats).toBeNull();
   });
 
+  it('sends nothing when a named unreserved share is missing from /due', async () => {
+    const present = bill('Present', 500);
+    const absent = bill('Absent', 400, 1);
+    vi.mocked(postRepaymentDue).mockResolvedValue({
+      bills: [present],
+      waiting: [],
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
+    const reload = vi.fn(async (): Promise<MyLoans> => body([loan()]));
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+    act(() => result.current.pay([loan()], shareKeys('m1', present, absent)));
+    await waitFor(() => expect(result.current.phase).toBe('idle'));
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(result.current.missingSats).toBeNull();
+  });
+
   it('pays every named share in the set', async () => {
     vi.useFakeTimers();
     const firstBill = bill('LimitKeepA', 500);

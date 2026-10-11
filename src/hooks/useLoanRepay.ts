@@ -77,15 +77,17 @@ export interface LoanRepayResult {
    * link passes the named shares). The named shares are taken from all due shares;
    * shares of the set another run already holds are skipped. Only that named set is
    * prepared. The whole set is sent, or nothing: an `insufficient` prepare in the set,
-   * or a total that does not fit the current balance, sends nothing. When the set is
+   * or a total that does not fit the current balance, sends nothing. The send-now link
+   * names at most 60 shares per loan (one due request's limit); if any named share is
+   * missing from the due answer, nothing is sent and the screen reloads. When the set is
    * given and none of those shares are still due, the run reloads, then ends
    * `unconfirmed` if one of the named shares is held by another run, `repaid` if
    * nothing is due any more, otherwise `idle`.
    *
    * @param loans - Current loans body in list order.
    * @param onlyShares - Optional exact share keys to pay; only those named shares are
-   *   prepared. An insufficient prepare in the set, or fees that do not fit the
-   *   balance, send nothing.
+   *   prepared. An insufficient prepare in the set, fees that do not fit the
+   *   balance, or a named share missing from the due answer, send nothing.
    */
   pay: (loans: readonly MyLoan[], onlyShares?: ReadonlySet<string>) => void;
   /** True while a `repay-*` visual pin, including its fixed sent totals, applies. */
@@ -235,8 +237,10 @@ const reservedShares = new Set<string>();
  * ends unconfirmed. When `onlyShares` is given and none of those shares are
  * still due, the run reloads, then ends `unconfirmed` if one of the named
  * shares is held by another run, `repaid` if nothing is due any more, otherwise
- * `idle`. A share another run is sending is skipped; if that leaves nothing
- * sent the run ends unconfirmed.
+ * `idle`. The send-now link names at most 60 shares per loan (one due request's
+ * limit); if any named share is missing from the due answer, nothing is sent
+ * and the screen reloads. A share another run is sending is skipped; if that
+ * leaves nothing sent the run ends unconfirmed.
  * A skipped share still counts toward the settlement of its loan; a reserved
  * share already counted in the fresh baseline is not required again.
  * Every prepare or send that does not pay (also `insufficient`, and a prepared
@@ -418,15 +422,16 @@ export function useLoanRepay(options: {
             );
           }
         }
-        if (
-          bills.length === 0 &&
-          (named.length > 0 || ordered.length === 0 || onlyShares !== undefined)
-        ) {
+        const dueKeys = new Set(ordered.map((bill) => shareKey(bill)));
+        const namedMissing =
+          onlyShares !== undefined &&
+          [...onlyShares].some((key) => !reservedShares.has(key) && !dueKeys.has(key));
+        if (namedMissing || bills.length === 0) {
           await options.reload();
           if (!active()) {
             return;
           }
-          if (skipped) {
+          if (!namedMissing && skipped) {
             setLivePhase('unconfirmed');
             return;
           }
