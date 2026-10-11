@@ -281,7 +281,7 @@ describe('FundingApplyScreen', () => {
     expect(screen.getByRole('link', { name: 'About 21.gifts' }).getAttribute('href')).toBe(
       'https://21.gifts/about',
     );
-    expect(screen.queryByText('Giving is a duty')).toBeNull();
+    expect(screen.queryByText('Giving is part of faith')).toBeNull();
     expect(screen.getByText('Living-room note.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     expect(

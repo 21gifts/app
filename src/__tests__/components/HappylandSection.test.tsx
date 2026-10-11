@@ -13,15 +13,23 @@ describe('HappylandSection', () => {
       render(<HappylandSection locale={locale} />);
       const section = screen.getByRole('region', { name: messages['happyland.title'] });
       expect(section.id).toBe('happyland');
-      expect(
-        within(section).getByRole('img', { name: messages['happyland.photoAlt'] }),
-      ).toBeTruthy();
+      const portrait = within(section).getByRole('img', {
+        name: messages['happyland.photoAlt'],
+      });
+      expect(decodeURIComponent(portrait.getAttribute('src') ?? '')).toContain(
+        '/happyland/food-stall.webp',
+      );
       expect(within(section).getByText(messages['happyland.photoCaption'])).toBeTruthy();
-      for (const key of ['street', 'home', 'household'] as const) {
-        expect(
-          within(section).getByRole('img', { name: messages[`happyland.${key}Alt`] }),
-        ).toBeTruthy();
-        expect(within(section).getByText(messages[`happyland.${key}Caption`])).toBeTruthy();
+      for (const photo of [
+        { key: 'street', src: '/happyland/main-street.webp' },
+        { key: 'home', src: '/happyland/home.webp' },
+        { key: 'household', src: '/happyland/household.webp' },
+      ] as const) {
+        const image = within(section).getByRole('img', {
+          name: messages[`happyland.${photo.key}Alt`],
+        });
+        expect(decodeURIComponent(image.getAttribute('src') ?? '')).toContain(photo.src);
+        expect(within(section).getByText(messages[`happyland.${photo.key}Caption`])).toBeTruthy();
       }
       expect(within(section).getAllByRole('img')).toHaveLength(4);
       expect(within(section).getAllByRole('heading', { level: 3 })).toHaveLength(3);

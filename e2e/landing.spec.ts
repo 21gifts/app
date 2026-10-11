@@ -88,8 +88,18 @@ test('Happyland uses the original people photographs with equal gallery frames',
   await page.goto('/');
   const section = page.locator('#happyland');
   await expect(section.locator('img')).toHaveCount(4);
-  for (const photo of ['food-stall', 'main-street', 'home', 'household']) {
+  const photos = ['food-stall', 'main-street', 'home', 'household'] as const;
+  for (const photo of photos) {
     expect((await page.request.get(`/happyland/${photo}.webp`)).status()).toBe(200);
+  }
+  const sources = await section
+    .locator('img')
+    .evaluateAll((images) =>
+      images.map((image) => decodeURIComponent((image as HTMLImageElement).currentSrc)),
+    );
+  expect(sources).toHaveLength(4);
+  for (const [index, photo] of photos.entries()) {
+    expect(sources[index] ?? '').toContain(`/happyland/${photo}.webp`);
   }
   const galleryImages = section.locator('figure img');
   const frames = await galleryImages.evaluateAll((images) =>
@@ -146,7 +156,7 @@ for (const locale of ['en', 'de', 'es', 'fil'] as const) {
 }
 
 for (const width of [375, 1280]) {
-  test(`Happyland navigation returns from About to the photo essay at ${width}px`, async ({
+  test(`Happyland navigation returns from About to the Happyland section at ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 812 });
