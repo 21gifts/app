@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, ChevronDown, Globe } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   useEffect,
   useRef,
@@ -81,18 +81,33 @@ function writeLocaleCookie(next: Locale): void {
 }
 
 /**
- * Rewrites the locale cookie when the browser restores a public language page
- * from the back/forward cache. That restore does not run middleware, so the
- * cookie can still name a language chosen later. Does not navigate or refresh.
+ * True when the signed-in account has a saved language.
  *
- * @param event - Browser `pageshow` event.
+ * That language is authoritative. A missing account, or an account whose
+ * locale is absent, is not a saved language.
+ *
+ * @returns Whether the auth store holds a string locale.
  */
-function syncLocaleCookieOnPageShow(event: Event): void {
-  if (!(event instanceof PageTransitionEvent) || !event.persisted) {
+function hasSavedAccountLocale(): boolean {
+  const locale = useAuthStore.getState().account?.locale;
+  return typeof locale === 'string';
+}
+
+/**
+ * Writes the locale cookie to the language of the active public URL.
+ *
+ * Shared by back/forward restore and in-app navigation. A prefetch does not
+ * call this. Does nothing when the path has no language, the cookie already
+ * matches, or the account has a saved language.
+ *
+ * @param pathname - Path of the page that is actually showing.
+ */
+function syncLocaleCookieToActivePath(pathname: string): void {
+  const localized = parseLocalizedPublicPath(pathname);
+  if (localized === null) {
     return;
   }
-  const localized = parseLocalizedPublicPath(globalThis.location.pathname);
-  if (localized === null) {
+  if (hasSavedAccountLocale()) {
     return;
   }
   const match = document.cookie.match(new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`));
@@ -100,6 +115,21 @@ function syncLocaleCookieOnPageShow(event: Event): void {
     return;
   }
   writeLocaleCookie(localized.locale);
+}
+
+/**
+ * Rewrites the locale cookie when the browser restores a public language page
+ * from the back/forward cache. That restore does not run middleware, so the
+ * cookie can still name a language chosen later. Does not navigate or refresh.
+ * An account with a saved language is left unchanged.
+ *
+ * @param event - Browser `pageshow` event.
+ */
+function syncLocaleCookieOnPageShow(event: Event): void {
+  if (!(event instanceof PageTransitionEvent) || !event.persisted) {
+    return;
+  }
+  syncLocaleCookieToActivePath(globalThis.location.pathname);
 }
 
 /**
@@ -170,6 +200,7 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
   const { tone } = props;
   const { locale, t } = useTranslations();
   const router = useRouter();
+  const pathname = usePathname();
   const label = t('language.label');
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -182,6 +213,10 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
       globalThis.removeEventListener('pageshow', syncLocaleCookieOnPageShow);
     };
   }, []);
+
+  useEffect(() => {
+    syncLocaleCookieToActivePath(pathname);
+  }, [pathname]);
 
   useEffect(() => {
     if (!open) {

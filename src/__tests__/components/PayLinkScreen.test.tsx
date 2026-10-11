@@ -13,6 +13,7 @@ vi.mock('next/link', () => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: (href: string) => void } => ({ push: vi.fn() }),
+  usePathname: (): string => '/',
 }));
 
 const ADA = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
