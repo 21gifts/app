@@ -449,7 +449,7 @@ flowchart TB
 | Point of sale        | `Banknote`                    | `/pos`                                                                    |
 | Profile              | `User`                        | `/profile`                                                                |
 | Grants               | `HandCoins`                   | `/grants` — grant status, apply, and the staff queue                      |
-| Settings             | `Settings`                    | `/settings` — Wallet section: Recovery phrase, or Add recovery phrase     |
+| Settings             | `Settings`                    | `/settings` — Wallet, Display, Notifications, Account, About & legal      |
 | Living room rules    | `ScrollText`                  | `/rules`                                                                  |
 | Habit-Tracker        | `ListChecks`                  | `/habit-tracker`                                                          |
 | Trust Chain          | `Share2`                      | `/trust-chain`                                                            |
