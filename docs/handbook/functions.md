@@ -1266,14 +1266,14 @@ Ask composer on `/welcome`. A donation is four steps and the counter reads **{st
 - **Purpose:** Smallest units of a typed credit. Bitcoin is whole sats. Fiat is cents.
 - **Inputs:** Amount draft and whether that draft is bitcoin.
 - **Returns / side effects:** Non-negative bigint, or `null` when the draft is not that shape. No I/O.
-- **Used by:** `ForumAskWizard`, `ForumGoalBar`.
+- **Used by:** `ForumAskWizard`, `ForumGoalBar`, `LoanRepayScreen`.
 
 ## Function: splitCreditPlan
 
 - **Purpose:** Split a credit into equal daily units. Any remainder is added to the last day so the days sum to the debt.
 - **Inputs:** Total sats or cents, and a day count from 1 to 3650.
 - **Returns / side effects:** `{ perDay, last, days, remainder }`, or `null` when the day count is outside that range. No I/O.
-- **Used by:** `ForumAskWizard`, `ForumGoalBar`.
+- **Used by:** `ForumAskWizard`, `ForumGoalBar`, `LoanRepayScreen`.
 
 ## Function: ForumGoalBar
 
@@ -1282,7 +1282,7 @@ SVG progress bar for a top-level forum note. One SVG: orange fill in user units 
 - **Purpose:** Show collected-versus-goal progress on a top-level note that has a positive `goalSats`. BTC and legacy use `forumGoalPercent(sats, goalSats)`; a fiat Ask uses `forumFiatGoalPercent` of the payment snapshot (`null` collected is 0%, not sats). Orange through 100%, green overflow, uncapped label. The amount line pairs currencies when a visitor figure exists: defined fiat plus bitcoin when the ask is in the visitor's fiat; otherwise bitcoin plus the visitor's fiat (snapshot, or the spot rate when the snapshot is missing and a rate is loaded). If neither a snapshot string nor a loaded rate exists, a bitcoin ask stays bitcoin. A third fiat is shown only when the definition currency is a different fiat. A repayable ask shows a **Loan** tag beside the author. Any other ask shows a **Donation** tag. Pressing the tag explains it. The bar does not repeat that sentence. A shop note keeps the **#Shop** link.
 - **Inputs:** `sats` (collected), `goalSats` (whole-sat counterpart), optional `goalCurrency` / `goalAmount` / goal snapshots / payment snapshots, optional `rateDay`, optional `preview`, optional `goalRepayable`, optional `goalTermDays`, optional `messageId` (posted credit; omitted in the wizard), optional `ledgerCollapsed` (feed and profile show a **Repayment list** link to `/messages/<id>/repayment-list` and do not mount `CreditLedger`; the open note leaves it false and renders `CreditLedger` with `list="summary"`). Non-positive or non-finite `goalSats` yields `null`.
 - **Returns / side effects:** The bar, or `null`. A posted credit with `messageId` and `ledgerCollapsed` false loads the public ledger (`CreditLedger` summary), which fetches `GET /messages/:id/repayment`. When `ledgerCollapsed` is true the bar shows only the **Repayment list** link and does not fetch. No other network.
-- **Used by:** `ForumBoard` (top-level notes only), `PublicMessageLoader`, and `ForumAskWizard` (preview at 0 collected).
+- **Used by:** `ForumBoard` (top-level notes only), `PublicMessageLoader`, `ForumAskWizard` (preview at 0 collected), and `LoansCard`.
 
 ## Function: forumGoalPercent
 
@@ -2488,7 +2488,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** The current price of 1 BTC for every amount that is entered or converted live: the amount field (₿ ↔ fiat), the point of sale, gift and reaction amounts, the wallet and payment fiat suffixes, and the fiat stored with a new payment. Fetches `GET /fx/spot` via `fetchFxSpot` on mount and again every five minutes (`SPOT_REFRESH_MS`) while mounted, and resolves `spotRateDay` of its rates. An answer with a usable price replaces the rate. An answer without any price (the api has no quote) and a failed request keep the last rate, as the api keeps its last good quote. A refresh does not start while the previous request is still open. Never throws into the caller. Drops answers after unmount. There is no fallback to a gift day: the statistics pages keep each day's own rate from `GET /gifts/stats`, and nothing else uses it.
 - **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the hook returns `null`, also after a rate was loaded.
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchFxSpot` on mount and on the refresh timer while enabled; clears the timer on unmount.
-- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`, `MenuAccountHeader`, `WalletBalance`, `WalletHistory`, `WalletSend`, `CreditLedger`, `ExternalAuthorProfile`, `MemberProfileScreen`, `PublicMessageLoader`, `PublicMessageThread`.
+- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill`, `PosAmount`, `MenuAccountHeader`, `WalletBalance`, `WalletHistory`, `WalletSend`, `CreditLedger`, `ExternalAuthorProfile`, `MemberProfileScreen`, `PublicMessageLoader`, `PublicMessageThread`, `LoansCard`, `LoanRepayScreen`.
 
 ## Function: shownFiatForSats
 
@@ -5706,8 +5706,8 @@ The class exists so the composer can tell a refused free first post from any oth
 ## Function: useLoanRepay
 
 - **Purpose:** Runs one-tap repayment of every payable bill across the member's loans through the in-app wallet, sequentially and in oldest-first order. A share (`messageId`, repayment day, recipient) is reserved from the start of its send and is skipped by any other run, including when `/due` later returns a new invoice for that share; a send that did not go out releases it. When only reserved shares are due the run ends unconfirmed. A share another run is sending is skipped; if that leaves nothing sent the run ends unconfirmed. A skipped share still counts toward the settlement of its loan.
-- **Inputs:** A `reload` function from `useMyLoans`; `pay` receives the current loans and an optional amount-only satoshi limit (the "send now" prefix). Fees of that prefix must also fit the current balance, or nothing is sent.
-- **Returns / side effects:** Returns wallet phase and balance, sent amount and recipient names, fees, shortage and error state, top-up controls, `pay`, and whether a screenshot-only visual pin applies. It requests bills sequentially, then reloads loans for a fresh `repaidSats` baseline before prepare (a loan missing from that body keeps the tap-time value; a null body uses the tap-time loans; the empty-due branch already reloads and does not load again). It drops any share reserved from the start of its send (a send that did not go out releases it; a reserved share is skipped by any other run), prepares and sends the rest sequentially, polls settlement every four seconds, stops after the wallet confirmation wait, polls balance while top-up is open, and ignores pinned actions. A share another run is sending is skipped; if that leaves nothing sent the run ends unconfirmed. A skipped share still counts toward the settlement of its loan. When every due share is reserved, it reloads and ends unconfirmed without sending.
+- **Inputs:** A `reload` function from `useMyLoans`; `pay` receives the current loans and an optional amount-only satoshi limit (the "send now" prefix). Only the named prefix is prepared. The whole prefix is sent, or nothing: an insufficient prepare in the prefix, or fees that do not fit the current balance, send nothing.
+- **Returns / side effects:** Returns wallet phase and balance, sent amount and recipient names, fees, shortage and error state, top-up controls, `pay`, and whether a screenshot-only visual pin applies. It requests bills sequentially, then reloads loans for a fresh `repaidSats` baseline before prepare (a loan missing from that body keeps the tap-time value; a null body uses the tap-time loans; the empty-due branch already reloads and does not load again). It drops any share reserved from the start of its send (a send that did not go out releases it; a reserved share is skipped by any other run), prepares the remaining bills (only the named prefix when a limit is set) and sends that whole set sequentially (an insufficient prepare in the set, or a known total above the current balance, sends nothing), polls settlement every four seconds, stops after the wallet confirmation wait, polls balance while top-up is open, and ignores pinned actions. A share another run is sending is skipped; if that leaves nothing sent the run ends unconfirmed. A skipped share still counts toward the settlement of its loan. When every due share is reserved, it reloads and ends unconfirmed without sending.
 - **Failure report:** Every prepare or send that does not pay (also `insufficient`, and a prepared amount other than the bill, as `amount_mismatch`) is reported with `reportPaymentFailure` under the flow `repay`; a send also after the screen closed, a prepare only while its run is current.
 - **Used by:** The pay portion of `/loans/repay`.
 
