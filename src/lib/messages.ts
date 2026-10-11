@@ -106,7 +106,7 @@ const en = {
   'home.headline1': 'Help people',
   'home.headline2': 'with Bitcoin',
   'home.lead':
-    "In the forum, people share what they're going through. Sign in and read their posts. If you want to support someone, simply react to a post and enter the amount you want to donate. The satoshis are then sent directly from you to the person and arrive within seconds.",
+    "In the forum, people share what they're going through. Sign in and read their posts. If you want to support someone, simply react to a post and enter the amount you want to donate. The Bitcoin is then sent directly from you to the person and arrives within seconds.",
   'home.ctaAsk': 'Ask for help',
   'home.ctaSend': 'Send help',
   'home.howKicker': 'Donate Bitcoin',
@@ -1289,7 +1289,7 @@ const de = {
   'home.headline1': 'Hilf Menschen',
   'home.headline2': 'mit Bitcoin',
   'home.lead':
-    'Im Wohnzimmer erzählen Menschen, was sie beschäftigt. Melde dich an und lies ihre Beiträge. Wenn du jemanden unterstützen möchtest, kannst du einfach auf einen Beitrag reagieren und die Summe angeben, die du spenden möchtest. Die Satoshis werden dann direkt von dir an die Person gesendet und sind innerhalb von Sekunden vor Ort.',
+    'Im Wohnzimmer erzählen Menschen, was sie beschäftigt. Melde dich an und lies ihre Beiträge. Wenn du jemanden unterstützen möchtest, kannst du einfach auf einen Beitrag reagieren und die Summe angeben, die du spenden möchtest. Die Bitcoin werden dann direkt von dir an die Person gesendet und sind innerhalb von Sekunden vor Ort.',
   'home.ctaAsk': 'Selbst um Hilfe bitten',
   'home.ctaSend': 'Sende Hilfe',
   'home.howKicker': 'Bitcoin spenden',
@@ -2506,7 +2506,7 @@ const es = {
   'home.headline1': 'Ayuda a otras personas',
   'home.headline2': 'con Bitcoin',
   'home.lead':
-    'En el foro, la gente cuenta lo que está viviendo. Inicia sesión y lee sus publicaciones. Si quieres apoyar a alguien, simplemente reacciona a una publicación e indica la cantidad que quieres donar. Los satoshis se envían directamente de ti a esa persona y llegan en segundos.',
+    'En el foro, la gente cuenta lo que está viviendo. Inicia sesión y lee sus publicaciones. Si quieres apoyar a alguien, simplemente reacciona a una publicación e indica la cantidad que quieres donar. Los Bitcoin se envían directamente de ti a esa persona y llegan en segundos.',
   'home.ctaAsk': 'Pedir ayuda',
   'home.ctaSend': 'Envía ayuda',
   'home.howKicker': 'Dona Bitcoin',
@@ -3698,7 +3698,7 @@ const fil = {
   'home.headline1': 'Tumulong sa kapwa',
   'home.headline2': 'gamit ang Bitcoin',
   'home.lead':
-    'Sa forum, ikinukuwento ng mga tao ang pinagdaraanan nila. Mag-log in at basahin ang mga post nila. Kung gusto mong tumulong sa isang tao, mag-react lang sa isang post at ilagay ang halagang gusto mong i-donate. Direktang ipapadala mula sa iyo ang satoshis sa taong iyon at darating ito sa loob ng ilang segundo.',
+    'Sa forum, ikinukuwento ng mga tao ang pinagdaraanan nila. Mag-log in at basahin ang mga post nila. Kung gusto mong tumulong sa isang tao, mag-react lang sa isang post at ilagay ang halagang gusto mong i-donate. Direktang ipapadala mula sa iyo ang Bitcoin sa taong iyon at darating ito sa loob ng ilang segundo.',
   'home.ctaAsk': 'Humiling ng tulong',
   'home.ctaSend': 'Magpadala ng tulong',
   'home.howKicker': 'Mag-donate ng Bitcoin',

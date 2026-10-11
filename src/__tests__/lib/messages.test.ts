@@ -76,7 +76,7 @@ describe('getCatalog', () => {
           continue;
         }
         const withoutProduct = value.replaceAll('Wallet of Satoshi', '');
-        expect(withoutProduct, `${locale}.${key}`).not.toMatch(/\b[Ss]ats?\b/);
+        expect(withoutProduct, `${locale}.${key}`).not.toMatch(/\b(?:sats?|satoshis?)\b/i);
       }
     }
   });
