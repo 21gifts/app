@@ -202,6 +202,35 @@ describe('WalletTour', () => {
     ]);
   });
 
+  it('treats a target that lies wholly outside the window as gone', async () => {
+    addTarget('balance');
+    const receive = addTarget('receive');
+    addTarget('menu');
+    renderWithLocale(<WalletTour blocked={false} />);
+    expect(screen.getByText('1 of 3')).toBeTruthy();
+    // Scrolled out to the right: no overlap with the 390 px wide window.
+    receive.getBoundingClientRect = () =>
+      ({ top: 700, bottom: 756, left: 400, right: 560, width: 160, height: 56 }) as DOMRect;
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await vi.waitFor(() => expect(screen.getByText('3 of 3')).toBeTruthy());
+    expect(screen.getByRole('heading', { name: 'Everything else' })).toBeTruthy();
+    for (const box of [
+      { top: 100, bottom: 140, left: -200, right: -10 },
+      { top: -90, bottom: -10, left: 20, right: 180 },
+      { top: 900, bottom: 950, left: 20, right: 180 },
+    ]) {
+      cleanup();
+      document.body.innerHTML = '';
+      useAuthStore.setState({ account: { ...account, walletIntroSeen: false } });
+      const outside = addTarget('balance');
+      outside.getBoundingClientRect = () =>
+        ({ ...box, width: box.right - box.left, height: box.bottom - box.top }) as DOMRect;
+      addTarget('menu');
+      renderWithLocale(<WalletTour blocked={false} />);
+      expect(screen.getByText('1 of 1')).toBeTruthy();
+    }
+  });
+
   it('leaves out a step whose target is missing or has no box at the start', () => {
     const hidden = document.createElement('a');
     hidden.setAttribute('data-wallet-tour', 'balance');
