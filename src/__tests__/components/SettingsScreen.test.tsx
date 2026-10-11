@@ -73,6 +73,7 @@ afterEach(() => {
   vi.useRealTimers();
   vi.mocked(saveAmountUnit).mockClear();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+  Reflect.deleteProperty(navigator, 'clipboard');
   window.history.replaceState(null, '', '/');
   useAuthStore.setState({ session: null, account: null });
 });
