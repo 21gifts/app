@@ -6,7 +6,8 @@ import { SettingsScreen } from '@/components/SettingsScreen';
 import { SignedInChrome } from '@/components/SignedInChrome';
 
 /**
- * `/settings` — signed-in settings, with the recovery-phrase entry.
+ * `/settings` — signed-in preferences and account actions: Wallet, Display,
+ * Notifications, Account, and About & legal.
  *
  * Requires name + username + living-room rules agreement via {@link OnboardingGate}
  * `screen="profile"`.
