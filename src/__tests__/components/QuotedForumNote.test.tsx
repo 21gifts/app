@@ -86,6 +86,8 @@ const quotedNote: ForumMessage = {
   videoContentType: null,
   role: 'founder',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const parentNote: ForumMessage = {
@@ -101,6 +103,8 @@ const parentNote: ForumMessage = {
   videoContentType: null,
   role: 'verified',
   replyCount: 1,
+  heartCount: 0,
+  hearted: false,
 };
 
 beforeEach(() => {

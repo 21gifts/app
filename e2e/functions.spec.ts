@@ -11935,6 +11935,24 @@ test('Function: useHeartTip — the +1 shows on the tap while the payment is sti
   ).toHaveCount(0);
 });
 
+test('Function: endHeartPlusOne — the +1 leaves after the press window', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeHeartNote(page, true);
+  await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'HEART_UNAVAILABLE' }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Hello from the heart list.')).toBeVisible();
+  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  await expect(page.getByText('+1', { exact: true })).toBeVisible();
+  await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeVisible();
+});
+
 test('Function: sendHeartTip — a 503 HEART_UNAVAILABLE shows no sentence under the heart', async ({
   page,
 }) => {

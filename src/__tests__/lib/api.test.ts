@@ -398,6 +398,8 @@ describe('fetchMemberPosts', () => {
     videoContentType: null,
     role: 'verified' as const,
     replyCount: 0,
+    heartCount: 0,
+    hearted: false,
   };
 
   it('returns the validated post list', async () => {
@@ -490,6 +492,8 @@ describe('fetchMemberReplies', () => {
     videoContentType: null,
     role: 'verified' as const,
     replyCount: 0,
+    heartCount: 0,
+    hearted: false,
   };
 
   it('returns the validated reply list', async () => {
@@ -1551,6 +1555,8 @@ const forumMessage = {
   videoContentType: null,
   role: 'basis' as const,
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 /** An empty About me note: no text, no media, no sats. */
@@ -1691,6 +1697,8 @@ describe('fetchMessages', () => {
           hasVideo: false,
           videoContentType: null,
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
           photoCount: 0,
         },
       ],

@@ -108,6 +108,8 @@ const SAMPLE: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const MULTILINE: ForumMessage = {
@@ -123,6 +125,8 @@ const MULTILINE: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const FIVE_SATS: ForumMessage = {
@@ -138,6 +142,8 @@ const FIVE_SATS: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const PHOTO: ForumPhotoPayload = {
@@ -1529,6 +1535,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         error={false}
@@ -1577,6 +1585,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         error={false}
@@ -1662,6 +1672,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         error={false}
@@ -1699,6 +1711,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         error={false}
@@ -1762,6 +1776,8 @@ describe('ForumBoard', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     renderWithLocale(
       <ForumBoard
@@ -3718,6 +3734,8 @@ describe('ForumBoard', () => {
       videoContentType: null,
       role: 'founder',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     vi.mocked(fetchPublicMessage).mockImplementation(async (id: string) => {
       if (id.toLowerCase() === 'd8cd22dd-d5c4-46a8-82ed-38b4d2f551ec') {
@@ -3741,6 +3759,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'verified',
             replyCount: 1,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         error={false}
@@ -3768,6 +3788,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'founder',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -3801,6 +3823,8 @@ describe('ForumBoard', () => {
           videoContentType: null,
           role: 'founder',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         };
       }
       return null;
@@ -3853,6 +3877,8 @@ describe('ForumBoard', () => {
           videoContentType: null,
           role: 'founder',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         };
       }
       return null;
@@ -4528,6 +4554,8 @@ describe('ForumBoard', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     renderWithLocale(
       <ForumBoard
@@ -4601,6 +4629,8 @@ describe('ForumBoard', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     const { rerender } = renderWithLocale(
       <ForumBoard
@@ -5064,6 +5094,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5124,6 +5156,8 @@ describe('ForumBoard', () => {
               videoContentType: null,
               role: 'basis',
               replyCount: 0,
+              heartCount: 0,
+              hearted: false,
             },
           ]}
           {...modeProps('all')}
@@ -5194,6 +5228,8 @@ describe('ForumBoard', () => {
               videoContentType: null,
               role: 'basis',
               replyCount: 0,
+              heartCount: 0,
+              hearted: false,
             },
           ]}
           {...modeProps('all')}
@@ -5252,6 +5288,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5294,6 +5332,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5353,6 +5393,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         onDeleted={() => undefined}
@@ -5393,6 +5435,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         onDeleted={() => undefined}
@@ -5436,6 +5480,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5656,6 +5702,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5692,6 +5740,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5736,6 +5786,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5781,6 +5833,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5825,6 +5879,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5865,6 +5921,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5912,6 +5970,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5958,6 +6018,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -5998,6 +6060,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -6036,6 +6100,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -6073,6 +6139,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -6110,6 +6178,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -6154,6 +6224,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -6943,6 +7015,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         onDeleted={() => undefined}
@@ -7007,6 +7081,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -7256,6 +7332,8 @@ describe('ForumBoard', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     renderWithLocale(
       <ForumBoard
@@ -7297,6 +7375,8 @@ describe('ForumBoard', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     const { rerender } = renderWithLocale(
       <ForumBoard
@@ -7386,6 +7466,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         {...modeProps('all')}
@@ -7446,6 +7528,8 @@ describe('ForumBoard', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
         ]}
         onDeleted={() => undefined}
@@ -8122,6 +8206,242 @@ describe('ForumBoard in-app wallet pay', () => {
     );
     expect(screen.getByText(SAMPLE.text)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+  });
+
+  it('shows the server heart count to the right of the icon', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada', heartCount: 4 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onHeartTip={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const heart = screen.getByRole('button', { name: 'Send ₿1' });
+    expect(heart.parentElement?.nextElementSibling?.textContent).toBe('4');
+  });
+
+  it('fills the icon when hearted without a view', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada', hearted: true }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onHeartTip={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const heart = screen.getByRole('button', { name: 'Send ₿1' });
+    expect(heart.querySelector('svg')?.getAttribute('fill')).toBe('currentColor');
+    expect(heart.className.split(' ')).toContain('text-app-accent');
+    expect(heart.className.split(' ')).not.toContain('scale-110');
+  });
+
+  it('adds extra onto the server heart count', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada', heartCount: 4 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onHeartTip={() => undefined}
+        heartTipViews={{
+          m1: { pressed: true, plusOne: false, needsBalance: false, extra: 2 },
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    const heart = screen.getByRole('button', { name: 'Send ₿1' });
+    expect(heart.parentElement?.nextElementSibling?.textContent).toBe('6');
+  });
+
+  it('shows +1 when plusOne and keeps the button labelled Send ₿1', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onHeartTip={() => undefined}
+        heartTipViews={{
+          m1: { pressed: true, plusOne: true, needsBalance: false, extra: 1 },
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('+1')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Send ₿1' })).toBeTruthy();
+    expect(screen.queryByText('Send ₿1')).toBeNull();
+  });
+
+  it('shows the count 0 when heartCount is 0 and there is no extra', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onHeartTip={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    const heart = screen.getByRole('button', { name: 'Send ₿1' });
+    expect(heart.parentElement?.nextElementSibling?.textContent).toBe('0');
+  });
+
+  it('hides the heart and the count without onHeartTip, on the own note, when not payable, and when deleted', () => {
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada', heartCount: 4 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.queryByText('4')).toBeNull();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[{ ...SAMPLE, accountId: 'acc-ada', heartCount: 4 }]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            heartViewerId="acc-ada"
+            onHeartTip={() => undefined}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.queryByText('4')).toBeNull();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[{ ...SAMPLE, accountId: 'acc-ada', payable: false, heartCount: 4 }]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            onHeartTip={() => undefined}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.queryByText('4')).toBeNull();
+
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          <ForumBoard
+            messages={[
+              {
+                ...SAMPLE,
+                accountId: 'acc-ada',
+                deletedAt: '2026-08-29T15:00:00.000Z',
+                heartCount: 4,
+              },
+            ]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            onHeartTip={() => undefined}
+            {...modeProps('all')}
+          />
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.queryByText('4')).toBeNull();
+  });
+
+  it('scales only while plusOne; hearted without plusOne is filled and accent', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada', hearted: true }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        onHeartTip={() => undefined}
+        heartTipViews={{
+          m1: { pressed: true, plusOne: true, needsBalance: false, extra: 1 },
+        }}
+        {...modeProps('all')}
+      />,
+    );
+    const withPlusOne = screen.getByRole('button', { name: 'Send ₿1' });
+    expect(withPlusOne.className.split(' ')).toContain('scale-110');
+    expect(withPlusOne.className.split(' ')).toContain('text-app-accent');
   });
 });
 

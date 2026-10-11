@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { flushSync } from 'react-dom';
 import { useAppShellScroller } from '@/components/AppShell';
 import type { ForumAskCadence, ForumAskObligation } from '@/components/ForumAskWizard';
@@ -381,7 +381,6 @@ export function ForumLoader({
   writerRef.current = writer;
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
-  const { onHeartTip, heartTipViews } = useHeartTip({ readOnly: session === null });
   const { fiat } = useFiatPreference();
   const amountUnit = account?.amountUnit ?? 'btc';
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
@@ -514,6 +513,31 @@ export function ForumLoader({
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const repliesRef = useRef(replies);
   repliesRef.current = replies;
+  const heartCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const listed =
+      messages === null
+        ? null
+        : feed === 'shops'
+          ? messages.filter((row) => isShopNote(row.text))
+          : messages;
+    if (listed !== null) {
+      for (const message of listed) {
+        counts[message.id] = message.heartCount;
+      }
+    }
+    const boardReplies = expandedId === null ? null : replies;
+    if (boardReplies !== null) {
+      for (const message of boardReplies) {
+        counts[message.id] = message.heartCount;
+      }
+    }
+    return counts;
+  }, [messages, feed, expandedId, replies]);
+  const { onHeartTip, heartTipViews } = useHeartTip({
+    readOnly: session === null,
+    heartCounts,
+  });
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [repliesError, setRepliesError] = useState(false);
   const [repliesAttempt, setRepliesAttempt] = useState(0);

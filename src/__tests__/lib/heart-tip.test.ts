@@ -7,6 +7,7 @@ import { getE2eNow } from '@/lib/config';
 import {
   HEART_TIP_PLUS_ONE_MS,
   HEART_TIP_UNSETTLED_MS,
+  endHeartPlusOne,
   sendHeartTip,
   useHeartTip,
 } from '@/lib/heart-tip';
@@ -109,6 +110,7 @@ const BASE = {
 
 beforeEach(() => {
   window.history.replaceState({}, '', '/');
+  sessionStorage.removeItem('21gifts.heart.sent');
   vi.mocked(getE2eNow).mockReset().mockReturnValue(null);
   vi.mocked(postMessageInvoice).mockReset();
   vi.mocked(payFromWallet).mockReset();
@@ -906,6 +908,33 @@ async function clickHeart(
   });
 }
 
+describe('endHeartPlusOne', () => {
+  it('returns the same object when the id has no row', () => {
+    const prev = { m2: { pressed: true, plusOne: true, needsBalance: false } };
+    expect(endHeartPlusOne(prev, 'm1')).toBe(prev);
+  });
+
+  it('ends plusOne and clears pressed when extra is missing', () => {
+    const prev = {
+      m1: { pressed: true, plusOne: true, needsBalance: true },
+      m2: { pressed: true, plusOne: false, needsBalance: false, extra: 1 },
+    };
+    expect(endHeartPlusOne(prev, 'm1')).toEqual({
+      m1: { pressed: false, plusOne: false, needsBalance: true },
+      m2: { pressed: true, plusOne: false, needsBalance: false, extra: 1 },
+    });
+  });
+
+  it('ends plusOne and stays pressed when extra is 2', () => {
+    const prev = {
+      m1: { pressed: true, plusOne: true, needsBalance: true, extra: 2 },
+    };
+    expect(endHeartPlusOne(prev, 'm1')).toEqual({
+      m1: { pressed: true, plusOne: false, needsBalance: true, extra: 2 },
+    });
+  });
+});
+
 describe('useHeartTip', () => {
   beforeEach(() => {
     useAuthStore.setState({ session: 'sess', account: HEART_ACCOUNT });
@@ -946,6 +975,7 @@ describe('useHeartTip', () => {
       pressed: true,
       plusOne: true,
       needsBalance: false,
+      extra: 1,
     });
     expect(payFromWallet).not.toHaveBeenCalled();
     await vi.waitFor(() => {
@@ -967,7 +997,7 @@ describe('useHeartTip', () => {
     );
   });
 
-  it('clears the press and +1 after HEART_TIP_PLUS_ONE_MS from the tap', async () => {
+  it('clears only plusOne after HEART_TIP_PLUS_ONE_MS from the tap', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const { result } = renderHook(() => useHeartTip({ readOnly: false }));
     await clickHeart(result);
@@ -975,6 +1005,7 @@ describe('useHeartTip', () => {
       pressed: true,
       plusOne: true,
       needsBalance: false,
+      extra: 1,
     });
     act(() => {
       vi.advanceTimersByTime(HEART_TIP_PLUS_ONE_MS - 1);
@@ -983,7 +1014,12 @@ describe('useHeartTip', () => {
     act(() => {
       vi.advanceTimersByTime(1);
     });
-    expect(result.current.heartTipViews['m1']).toBeUndefined();
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: true,
+      plusOne: false,
+      needsBalance: false,
+      extra: 1,
+    });
   });
 
   it('shows nothing more when the heart fails, and reports it', async () => {
@@ -1002,11 +1038,17 @@ describe('useHeartTip', () => {
       pressed: true,
       plusOne: true,
       needsBalance: false,
+      extra: 0,
     });
     act(() => {
       vi.advanceTimersByTime(HEART_TIP_PLUS_ONE_MS);
     });
-    expect(result.current.heartTipViews['h-fail']).toBeUndefined();
+    expect(result.current.heartTipViews['h-fail']).toEqual({
+      pressed: false,
+      plusOne: false,
+      needsBalance: false,
+      extra: 0,
+    });
   });
 
   it('shows the press and +1 on a Sunday tap and reports it without invoicing', async () => {
@@ -1018,6 +1060,7 @@ describe('useHeartTip', () => {
         pressed: true,
         plusOne: true,
         needsBalance: false,
+        extra: 0,
       });
       expect(postMessageInvoice).not.toHaveBeenCalled();
       expect(captureMessage).toHaveBeenCalledWith(
@@ -1040,6 +1083,7 @@ describe('useHeartTip', () => {
       pressed: false,
       plusOne: false,
       needsBalance: true,
+      extra: 0,
     });
     expect(vibrate).not.toHaveBeenCalled();
     expect(postMessageInvoice).not.toHaveBeenCalled();
@@ -1061,6 +1105,7 @@ describe('useHeartTip', () => {
       pressed: true,
       plusOne: true,
       needsBalance: false,
+      extra: 1,
     });
   });
 
@@ -1073,6 +1118,7 @@ describe('useHeartTip', () => {
       pressed: false,
       plusOne: false,
       needsBalance: true,
+      extra: 0,
     });
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
@@ -1091,6 +1137,7 @@ describe('useHeartTip', () => {
       pressed: true,
       plusOne: true,
       needsBalance: false,
+      extra: 1,
     });
   });
 
@@ -1102,6 +1149,7 @@ describe('useHeartTip', () => {
       pressed: true,
       plusOne: true,
       needsBalance: false,
+      extra: 1,
     });
     expect(logInteraction).toHaveBeenCalledTimes(1);
   });
@@ -1121,6 +1169,7 @@ describe('useHeartTip', () => {
       pressed: true,
       plusOne: true,
       needsBalance: false,
+      extra: 1,
     });
     expect(postMessageInvoice).toHaveBeenCalledTimes(1);
     expect(captureMessage).toHaveBeenCalledWith(
@@ -1146,7 +1195,12 @@ describe('useHeartTip', () => {
     act(() => {
       vi.advanceTimersByTime(HEART_TIP_PLUS_ONE_MS);
     });
-    expect(result.current.heartTipViews['m1']).toBeUndefined();
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: true,
+      plusOne: false,
+      needsBalance: false,
+      extra: 2,
+    });
   });
 
   it('does not throw when unmounted during the plusOne window', async () => {
@@ -1185,6 +1239,7 @@ describe('useHeartTip', () => {
       pressed: true,
       plusOne: true,
       needsBalance: false,
+      extra: 0,
     });
     expect(postMessageInvoice).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenCalledTimes(1);
@@ -1213,6 +1268,155 @@ describe('useHeartTip', () => {
     expect(vibrate).not.toHaveBeenCalled();
     expect(result.current.heartTipViews['m1']).toBeUndefined();
     expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('keeps a paid heart filled when a later tap fails', async () => {
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    await clickHeart(result);
+    expect(result.current.heartTipViews['m1']?.extra).toBe(1);
+    vi.mocked(postMessageInvoice).mockRejectedValueOnce(new Error('HEART_UNAVAILABLE'));
+    await clickHeart(result);
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: true,
+      plusOne: true,
+      needsBalance: false,
+      extra: 1,
+    });
+  });
+
+  it('reconciles stored extras against heartCounts by value, not object identity', () => {
+    sessionStorage.setItem('21gifts.heart.sent', JSON.stringify({ m1: { base: 3, extra: 2 } }));
+    const { result, rerender } = renderHook(
+      ({ heartCounts }: { heartCounts: Readonly<Record<string, number>> }) =>
+        useHeartTip({ readOnly: false, heartCounts }),
+      { initialProps: { heartCounts: { m1: 4 } } },
+    );
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: true,
+      plusOne: false,
+      needsBalance: false,
+      extra: 1,
+    });
+    expect(JSON.parse(String(sessionStorage.getItem('21gifts.heart.sent')))).toEqual({
+      m1: { base: 4, extra: 1 },
+    });
+    rerender({ heartCounts: { m1: 4 } });
+    expect(result.current.heartTipViews['m1']?.extra).toBe(1);
+    rerender({ heartCounts: { m1: 5 } });
+    expect(result.current.heartTipViews['m1']?.extra).toBe(0);
+    expect(JSON.parse(String(sessionStorage.getItem('21gifts.heart.sent')))).toEqual({});
+  });
+
+  it('keeps extra on reload when the server count still equals base', () => {
+    sessionStorage.setItem('21gifts.heart.sent', JSON.stringify({ m1: { base: 3, extra: 1 } }));
+    const { result } = renderHook(() => useHeartTip({ readOnly: false, heartCounts: { m1: 3 } }));
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: true,
+      plusOne: false,
+      needsBalance: false,
+      extra: 1,
+    });
+  });
+
+  it('does not throw or restore a heart from invalid JSON in storage', () => {
+    sessionStorage.setItem('21gifts.heart.sent', '{');
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    expect(result.current.heartTipViews['m1']).toBeUndefined();
+  });
+
+  it('does not restore a heart from stored null', () => {
+    sessionStorage.setItem('21gifts.heart.sent', 'null');
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    expect(result.current.heartTipViews['m1']).toBeUndefined();
+  });
+
+  it('does not restore a heart from a stored array', () => {
+    sessionStorage.setItem('21gifts.heart.sent', '[]');
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    expect(result.current.heartTipViews['m1']).toBeUndefined();
+  });
+
+  it('does not restore a heart from a stored string', () => {
+    sessionStorage.setItem('21gifts.heart.sent', '"x"');
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    expect(result.current.heartTipViews['m1']).toBeUndefined();
+  });
+
+  it('restores only a valid stored extra row', () => {
+    sessionStorage.setItem(
+      '21gifts.heart.sent',
+      JSON.stringify({
+        a: null,
+        b: 'nope',
+        c: { base: -1, extra: 1 },
+        d: { base: 1, extra: -1 },
+        e: { base: 1, extra: 0 },
+        f: { base: 1.5, extra: 1 },
+        m1: { base: 2, extra: 3 },
+      }),
+    );
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    expect(result.current.heartTipViews).toEqual({
+      m1: { pressed: true, plusOne: false, needsBalance: false, extra: 3 },
+    });
+  });
+
+  it('still pays when sessionStorage is missing', async () => {
+    vi.stubGlobal('sessionStorage', undefined);
+    try {
+      const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+      await clickHeart(result);
+      expect(postMessageInvoice).toHaveBeenCalled();
+      expect(result.current.heartTipViews['m1']?.extra).toBe(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('still pays when setItem throws', async () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    try {
+      const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+      await clickHeart(result);
+      expect(postMessageInvoice).toHaveBeenCalled();
+      expect(result.current.heartTipViews['m1']?.extra).toBe(1);
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
+  it('stores the server heartCount as base on the first click', async () => {
+    const { result } = renderHook(() => useHeartTip({ readOnly: false, heartCounts: { m1: 4 } }));
+    await clickHeart(result);
+    expect(JSON.parse(String(sessionStorage.getItem('21gifts.heart.sent')))).toEqual({
+      m1: { base: 4, extra: 1 },
+    });
+  });
+
+  it('keeps a session heart filled when a later tap has no balance', async () => {
+    const { result } = renderHook(() => useHeartTip({ readOnly: false, heartCounts: { m1: 4 } }));
+    await clickHeart(result);
+    useWalletStore.setState({ status: 'ready', balanceSats: 0, identityPubkey: null });
+    await clickHeart(result);
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: true,
+      plusOne: false,
+      needsBalance: true,
+      extra: 1,
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not write storage when heartCounts grow without a stored row', () => {
+    const { rerender } = renderHook(
+      ({ heartCounts }: { heartCounts: Readonly<Record<string, number>> }) =>
+        useHeartTip({ readOnly: false, heartCounts }),
+      { initialProps: { heartCounts: { other: 1 } } },
+    );
+    rerender({ heartCounts: { other: 2 } });
+    expect(sessionStorage.getItem('21gifts.heart.sent')).toBeNull();
   });
 });
 

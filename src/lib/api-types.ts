@@ -662,6 +662,9 @@ export type ForumPlaceRow = ForumPlacePin & {
  * `role` is optional with default `basis` so a rolling api deploy without the
  * field still parses and the board stays lit.
  * `replyCount` defaults to 0 so mixed deploys without the field still parse.
+ * `heartCount` is the server count of hearts sent on this note; omitted payloads
+ * parse as 0. `hearted` is true when the signed-in viewer already sent a heart
+ * on this note; omitted payloads parse as false.
  * `accountId` is the author's account id when the api includes it; omitted on mixed/old payloads.
  * `via` is present only on replies from a Nostr user with no 21.gifts account; any other `via` value fails the parse.
  * `parentId` is the parent note id on a reply; omitted on top-level notes.
@@ -727,6 +730,10 @@ export const forumMessageSchema = z
       .default(null),
     role: z.enum(ROLE_ORDER).optional().default('basis'),
     replyCount: z.number().int().nonnegative().default(0),
+    /** Hearts sent on this note. Older payloads parse as 0. */
+    heartCount: z.number().int().nonnegative().default(0),
+    /** True when the signed-in viewer already sent a heart on this note. Older payloads parse as false. */
+    hearted: z.boolean().default(false),
     via: z.literal('nostr').optional(),
     deletedAt: z.string().datetime({ offset: true }).optional(),
     deletedBy: z
