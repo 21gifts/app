@@ -1,8 +1,14 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ForumPaySheet, type ForumPayError } from '@/components/ForumPaySheet';
+import { useWalletPay } from '@/hooks/useWalletPay';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import type { FiatRateDay } from '@/lib/stats-money';
+
+vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
+  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
+});
 
 const DAY: FiatRateDay = {
   sats: 100_000_000,
@@ -47,6 +53,30 @@ function sheet(
 describe('ForumPaySheet', () => {
   afterEach(() => {
     cleanup();
+  });
+
+  it.each([
+    ['a gift', {}, 'gift'],
+    ['a posting fee', { postsOnPay: true }, 'post_fee'],
+    ["today's repayment", { flow: 'repay' as const }, 'repay'],
+  ])('pays %s under its flow', (_label, extra, flow) => {
+    renderWithLocale(
+      <ForumPaySheet
+        messageId="c-1"
+        payDraft="21"
+        payBusy={false}
+        payError={null}
+        payInvoice={{ messageId: 'c-1', pr: 'lnbc1', amountSats: 21, ...extra }}
+        payWaiting={false}
+        onPayDraftChange={vi.fn()}
+        onPayUnitChange={vi.fn()}
+        onPaySubmit={vi.fn()}
+        onPayCancel={vi.fn()}
+        rateDay={DAY}
+        onInteract={vi.fn()}
+      />,
+    );
+    expect(vi.mocked(useWalletPay).mock.calls.at(-1)?.[3]).toBe(flow);
   });
 
   it('shows the amount form and submits the draft', () => {

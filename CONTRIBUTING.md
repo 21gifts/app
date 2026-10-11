@@ -343,6 +343,7 @@ app/
 │   │   │   ├── payment-display.ts # Payment title, message, and screen link for the list and /wallet/payment
 │   │   │   ├── payment-fixtures.ts # Synthetic SDK payments for the history-rows pin (invariants unit-tested)
 │   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
+│   │   │   ├── payment-failure.ts # reportPaymentFailure: payment_failed event + `Payment failed` error report
 │   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
 │   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR; ?lang=Kikamba (no PDF library)
@@ -948,8 +949,10 @@ Privacy rules (this app holds wallets):
   username.
 - One scrubber (`beforeSend` / `beforeBreadcrumb` in `src/lib/sentry.ts`) runs
   in the browser and on the server. It replaces 12–24-word recovery-phrase
-  runs in any letter case; `lnbc…`/`lntb…`/`lnurl…` strings;
-  `spark1…`/`sparkrt1…` addresses; hex strings of 64+ digits; raw byte arrays
+  runs in any letter case; `lnbc…`/`lntb…`/`lnurl…` strings and BOLT12
+  `lno1…`/`lni1…` strings; `spark1…`/`sparkrt1…` addresses; Bitcoin base-chain
+  addresses (bech32 `bc1…`/`tb1…`/`bcrt1…`, and mixed-case base58); Lightning
+  and e-mail addresses (`name@host.tld`); hex strings of 64+ digits; raw byte arrays
   (typed arrays such as `Uint8Array`); bearer tokens and `Authorization`
   headers; the stored session token (`21gifts.session`); URL query strings and
   fragments (the path stays); and every value under keys such as `mnemonic`,
@@ -982,6 +985,18 @@ only for a signed-in member and both through same-origin proxies:
   batches of at most 50 every ten seconds, when the page is hidden, and on
   log out (`logout`, sent with the session it was recorded under before the
   session is cleared). Visitors without a session are not recorded.
+  `payment_failed` (every wallet payment that did not go out: `stage`,
+  `reason`, `method`, `flow`, `amountSats`) and `wallet_open_failed`
+  (`reason` `timeout` or `error`) go out in batches of their own, so an api
+  that does not accept those names yet cannot drop another event with them.
+
+A payment that did not go out, and a wallet that did not open, are also sent
+to error reporting (`Payment failed`, one issue per stage and reason, and
+`Wallet did not open`, one per reason), errors-only like every other report.
+Member state (too little balance, an amount below the minimum, no wallet
+connection) and hearts (`Heart not sent`) are not sent as `Payment failed`.
+Reason, stage, method, and flow are short codes; an SDK error message goes
+only into `extra`, through the scrubber above.
 
 **Hard requirement:** neither report, nor any other request, log, or error
 report, ever carries the recovery phrase, the seed, PRF output, a preimage, or

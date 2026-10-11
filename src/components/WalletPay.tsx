@@ -13,6 +13,7 @@ import { useWalletPay } from '@/hooks/useWalletPay';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
+import type { PayFlow } from '@/lib/wallet/payment-failure';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Props for {@link WalletPay}. */
@@ -25,6 +26,8 @@ export interface WalletPayProps {
   amountSats: number;
   /** Current spot rate for the fiat line of a fee above ₿0 and of the missing amount, or `null`. */
   rateDay: FiatRateDay | null;
+  /** Feature whose sheet this is: named on the report of a payment that did not go out. */
+  flow: PayFlow;
   /**
    * True on the posting fee: paying also posts the note, so the confirm button
    * says **Pay {amount} and post** instead of **Send**.
@@ -85,7 +88,8 @@ function OwnAddress({ username }: { username: string }): ReactElement | null {
  * it is done, and a setup that gave up shows the inline setup note with
  * **Try again**. Without a wallet the member can use here it says so, and a
  * failed prepare offers **Try again**. It never shows an invoice QR or hands
- * the payment to another wallet.
+ * the payment to another wallet. A payment that did not go out is reported
+ * under `flow`.
  *
  * @param props - Requests, shown amount, and spot rate.
  * @returns The pay slot.
@@ -95,12 +99,18 @@ export function WalletPay({
   pr,
   amountSats,
   rateDay,
+  flow,
   postsOnPay = false,
 }: WalletPayProps): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
-  const { view, feeSats, missingSats, pay, retry } = useWalletPay(sparkInvoice, pr, amountSats);
+  const { view, feeSats, missingSats, pay, retry } = useWalletPay(
+    sparkInvoice,
+    pr,
+    amountSats,
+    flow,
+  );
   const username = useAuthStore((state) => state.account?.username ?? null);
   const hasAddress = giftsLightningAddress(username) !== null;
 

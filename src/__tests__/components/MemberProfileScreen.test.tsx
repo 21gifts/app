@@ -36,6 +36,7 @@ import {
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
+import { useWalletPay } from '@/hooks/useWalletPay';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
 import {
@@ -44,6 +45,11 @@ import {
   resetWallet,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
+  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
+});
 
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
@@ -4463,6 +4469,7 @@ describe('MemberProfileScreen', () => {
           .disabled,
       ).toBe(true);
     });
+    expect(vi.mocked(useWalletPay).mock.calls.at(-1)?.[3]).toBe('repay');
   });
 
   it("does not show Pay today's repayment on another member's funded credit", async () => {

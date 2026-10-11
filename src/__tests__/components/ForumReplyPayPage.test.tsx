@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
+import { useWalletPay } from '@/hooks/useWalletPay';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import {
@@ -9,6 +10,11 @@ import {
   resetWallet,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
+  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
+});
 
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
@@ -26,6 +32,20 @@ const RATE_DAY = {
 afterEach(cleanup);
 
 describe('ForumReplyPayPage', () => {
+  it('pays as a paid reaction', () => {
+    renderWithLocale(
+      <ForumReplyPayPage
+        preview=""
+        amountSats={21}
+        pr="lnbc21n1example"
+        payWaiting={false}
+        rateDay={RATE_DAY}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(vi.mocked(useWalletPay).mock.calls.at(-1)?.[3]).toBe('reaction');
+  });
+
   it('shows the preview, fiat suffix, wallet slot, waiting line, and Close', () => {
     const onCancel = vi.fn();
     renderWithLocale(
