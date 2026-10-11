@@ -2424,7 +2424,9 @@ test.describe('screen baselines', () => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=wallet-received');
     await expect(page.getByText('You received ₿500')).toBeVisible();
-    await expect(page.getByText('$0.50 · from bruno@21.gifts')).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: 'You received ₿500' })).toContainText(
+      '$0.50',
+    );
     await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500 · $0.50');
     await shotScreen(page, 'state-wallet-received');
   });
@@ -2456,6 +2458,21 @@ test.describe('screen baselines', () => {
     await expect(sheet.getByText('ada@21.gifts')).toBeVisible();
     await expect(sheet.getByRole('button', { name: 'Copy my address' })).toBeVisible();
     await shotScreen(page, 'state-wallet-move-address');
+  });
+
+  test('wallet move-address-copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await seedWalletSend(page);
+    await page.clock.install();
+    await page.goto('/wallet?move=1&visual=balance-ready');
+    await page.getByRole('button', { name: 'Start' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Send to your 21.gifts address' });
+    await expect(sheet.getByText('ada@21.gifts')).toBeVisible();
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    await sheet.getByRole('button', { name: 'Copy my address' }).click();
+    await expect(sheet.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-move-address-copied');
   });
 
   test('wallet move-waiting', async ({ page }) => {
