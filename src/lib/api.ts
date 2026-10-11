@@ -910,7 +910,7 @@ export async function markWalletIntroSeen(sessionToken: string): Promise<Account
  * Sets the signed-in account notification level.
  *
  * @param session - A bearer token from a completed challenge.
- * @param level - `all`, `active`, `mentions`, `messages`, or `none`.
+ * @param level - `all`, `active`, `mentions`, or `none`.
  * @returns The updated {@link Account}.
  * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
  * validation.

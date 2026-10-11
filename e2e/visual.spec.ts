@@ -30144,7 +30144,10 @@ test.describe('settings states', () => {
       });
     });
     await openSettings(page);
-    await page.getByRole('button', { name: 'Active' }).click();
+    await page
+      .getByRole('group', { name: 'Living room' })
+      .getByRole('button', { name: 'Off', exact: true })
+      .click();
     await expect(page.getByText('Could not save notification level.')).toBeVisible();
     await shotScreen(page, 'state-settings-notification-level-error');
   });
@@ -30169,7 +30172,7 @@ test.describe('settings states', () => {
     await seedSettingsAccount(page);
     await openSettings(page);
     await page
-      .getByRole('group', { name: 'This device' })
+      .getByRole('group', { name: 'Notifications' })
       .getByRole('button', { name: 'On' })
       .click();
     await expect(page.getByText('Notifications are not available in this browser.')).toBeVisible();

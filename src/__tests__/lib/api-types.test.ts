@@ -1615,7 +1615,7 @@ describe('accountSchema', () => {
     expect(accountSchema.parse({ ...account, notifyHearts: false }).notifyHearts).toBe(false);
   });
 
-  it('accepts all, active, mentions, messages, and none notification levels', () => {
+  it('accepts all, active, mentions, and none notification levels', () => {
     expect(accountSchema.parse({ ...account, notificationLevel: 'all' }).notificationLevel).toBe(
       'all',
     );
@@ -1625,9 +1625,6 @@ describe('accountSchema', () => {
     expect(
       accountSchema.parse({ ...account, notificationLevel: 'mentions' }).notificationLevel,
     ).toBe('mentions');
-    expect(
-      accountSchema.parse({ ...account, notificationLevel: 'messages' }).notificationLevel,
-    ).toBe('messages');
     expect(accountSchema.parse({ ...account, notificationLevel: 'none' }).notificationLevel).toBe(
       'none',
     );
@@ -1635,6 +1632,7 @@ describe('accountSchema', () => {
 
   it('rejects a garbage notificationLevel', () => {
     expect(() => accountSchema.parse({ ...account, notificationLevel: 'nope' })).toThrow();
+    expect(() => accountSchema.parse({ ...account, notificationLevel: 'messages' })).toThrow();
     expect(() => accountSchema.parse({ ...account, notificationLevel: 1 })).toThrow();
   });
 

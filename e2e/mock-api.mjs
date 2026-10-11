@@ -2165,7 +2165,7 @@ const server = http.createServer(async (req, res) => {
       parsed = JSON.parse(rawBody);
     } catch {
       json(res, 400, {
-        error: 'Expected a JSON body with a level of all, active, mentions, messages, or none',
+        error: 'Expected a JSON body with a level of all, active, mentions, or none',
       });
       return;
     }
@@ -2173,11 +2173,10 @@ const server = http.createServer(async (req, res) => {
       parsed?.level !== 'all' &&
       parsed?.level !== 'active' &&
       parsed?.level !== 'mentions' &&
-      parsed?.level !== 'messages' &&
       parsed?.level !== 'none'
     ) {
       json(res, 400, {
-        error: 'Expected a JSON body with a level of all, active, mentions, messages, or none',
+        error: 'Expected a JSON body with a level of all, active, mentions, or none',
       });
       return;
     }

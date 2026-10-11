@@ -11972,7 +11972,7 @@ test('Function: deletePushSubscription — DELETE /me/push-subscriptions with be
   expect(((await res.json()) as { ok: boolean }).ok).toBe(true);
 });
 
-test('Function: postNotificationLevel — settings shows All Active Mentions', async ({
+test('Function: postNotificationLevel — settings Off on Living room posts the level', async ({
   page,
   request,
 }) => {
@@ -11982,19 +11982,19 @@ test('Function: postNotificationLevel — settings shows All Active Mentions', a
   if (await intro.isVisible()) {
     await page.getByRole('button', { name: 'Close' }).click();
   }
-  await expect(page.getByRole('group', { name: 'Notification level' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'All' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Active' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Mentions' })).toBeVisible();
+  const room = page.getByRole('group', { name: 'Living room' });
+  await expect(room.getByRole('button', { name: 'All', exact: true })).toBeVisible();
+  await expect(room.getByRole('button', { name: 'Only to me', exact: true })).toBeVisible();
+  await expect(room.getByRole('button', { name: 'Off', exact: true })).toBeVisible();
   const posted = page.waitForResponse((response) => {
     if (response.request().method() !== 'POST') {
       return false;
     }
     return new URL(response.url()).pathname === '/me/notification-level';
   });
-  await page.getByRole('button', { name: 'Active' }).click();
+  await room.getByRole('button', { name: 'Off', exact: true }).click();
   expect((await posted).status()).toBe(200);
-  await expect(page.getByRole('button', { name: 'Active' })).toHaveAttribute(
+  await expect(room.getByRole('button', { name: 'Off', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
@@ -12303,13 +12303,17 @@ test('Function: accountNotificationLevel — settings selects All when the field
 }) => {
   await seedAdaSession(page);
   await page.goto('/settings');
-  await expect(page.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(
+    page
+      .getByRole('group', { name: 'Living room' })
+      .getByRole('button', { name: 'All', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
 });
 
 test('Function: PushToggle — settings shows the this-device On/Off control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/settings');
-  const device = page.getByRole('group', { name: 'This device' });
+  const device = page.getByRole('group', { name: 'Notifications' });
   await expect(device).toBeVisible();
   await expect(device.getByRole('button', { name: 'Off' })).toBeVisible();
   await expect(page.getByRole('heading', { level: 2, name: 'Notifications' })).toBeVisible();
@@ -12320,54 +12324,54 @@ test('Function: vapidPublicKeyToBytes — settings shows the this-device control
 }) => {
   await seedAdaSession(page);
   await page.goto('/settings');
-  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Notifications' })).toBeVisible();
   await expect(
-    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+    page.getByRole('group', { name: 'Notifications' }).getByRole('button', { name: 'Off' }),
   ).toBeVisible();
 });
 
 test('Function: registerPushWorker — settings shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/settings');
-  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Notifications' })).toBeVisible();
   await expect(
-    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+    page.getByRole('group', { name: 'Notifications' }).getByRole('button', { name: 'Off' }),
   ).toBeVisible();
 });
 
 test('Function: enablePush — settings shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/settings');
-  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Notifications' })).toBeVisible();
   await expect(
-    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+    page.getByRole('group', { name: 'Notifications' }).getByRole('button', { name: 'Off' }),
   ).toBeVisible();
 });
 
 test('Function: disablePush — settings shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/settings');
-  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Notifications' })).toBeVisible();
   await expect(
-    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+    page.getByRole('group', { name: 'Notifications' }).getByRole('button', { name: 'Off' }),
   ).toBeVisible();
 });
 
 test('Function: isStandaloneDisplay — settings shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/settings');
-  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Notifications' })).toBeVisible();
   await expect(
-    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+    page.getByRole('group', { name: 'Notifications' }).getByRole('button', { name: 'Off' }),
   ).toBeVisible();
 });
 
 test('Function: isIosSafari — settings shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
   await page.goto('/settings');
-  await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Notifications' })).toBeVisible();
   await expect(
-    page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
+    page.getByRole('group', { name: 'Notifications' }).getByRole('button', { name: 'Off' }),
   ).toBeVisible();
 });
 

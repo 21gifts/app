@@ -125,7 +125,7 @@ test('settings shows Wallet, Display, Notifications, Account, and About & legal 
   }
   await expect(display.getByText('Saved on this device')).toHaveCount(2);
   const notifications = page.getByRole('region', { name: 'Notifications' });
-  await expect(notifications.getByRole('group', { name: 'Notification level' })).toBeVisible();
+  await expect(notifications.getByRole('group', { name: 'Living room' })).toBeVisible();
   await expect(notifications.getByRole('group', { name: 'Hearts' })).toBeVisible();
   await expect(
     page.getByRole('region', { name: 'Account' }).getByRole('button', { name: 'Log out' }),

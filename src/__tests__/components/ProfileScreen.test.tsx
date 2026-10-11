@@ -276,6 +276,7 @@ describe('ProfileScreen', () => {
       'Fiat currency',
       'Notification level',
       'Hearts',
+      'Living room',
       'This device',
     ]) {
       expect(screen.queryByRole('group', { name })).toBeNull();

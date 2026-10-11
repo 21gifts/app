@@ -220,7 +220,7 @@ describe('SettingsScreen', () => {
   it('holds the notification level and hearts under Notifications', () => {
     renderWithLocale(<SettingsScreen />);
     const notifications = screen.getByRole('region', { name: 'Notifications' });
-    expect(within(notifications).getByRole('group', { name: 'Notification level' })).toBeTruthy();
+    expect(within(notifications).getByRole('group', { name: 'Living room' })).toBeTruthy();
     expect(within(notifications).getByRole('group', { name: 'Hearts' })).toBeTruthy();
   });
 
