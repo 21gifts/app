@@ -31,6 +31,7 @@ import {
   proxyPosGet,
   proxyPosPost,
   proxyMeForumLawsDismissedPost,
+  proxyMeWalletIntroSeenPost,
   proxyMeAmountUnitPost,
   proxyMeFiatPost,
   proxyMeLocalePost,
@@ -441,6 +442,15 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/forum-laws-dismissed');
+  });
+
+  it('proxyMeWalletIntroSeenPost hits POST /me/wallet-intro-seen', async () => {
+    const fetchMock = stubApi();
+    await proxyMeWalletIntroSeenPost(
+      new Request('http://localhost/me/wallet-intro-seen', { method: 'POST' }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/wallet-intro-seen');
   });
 
   it('proxyMeNotificationLevelPost hits POST /me/notification-level', async () => {

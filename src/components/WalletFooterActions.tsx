@@ -39,7 +39,8 @@ export interface WalletFooterActionsProps {
  * labels fit at 320px. When they come back after a view closed, the button
  * that opened it takes the focus again. Both stay enabled while the wallet
  * opens: only a step inside a view that needs the open wallet waits for it.
- * Used by `/wallet` and `/welcome`.
+ * Used by `/wallet` and `/welcome`. The buttons carry `data-wallet-tour`
+ * (`receive`, `send`) for the wallet tour on `/welcome`.
  *
  * The buttons follow the page scroll. A progress from 0 (full: 56 px tall,
  * `text-base`, 20 px icons, footer padding `0.5rem` above and `1.25rem` below)
@@ -199,6 +200,7 @@ export function WalletFooterActions({
           >
             <Button
               ref={receiveRef}
+              data-wallet-tour="receive"
               size="lg"
               className={buttonClass}
               icon={<ArrowDownRight aria-hidden="true" className={iconClass} />}
@@ -208,6 +210,7 @@ export function WalletFooterActions({
             </Button>
             <Button
               ref={sendRef}
+              data-wallet-tour="send"
               size="lg"
               className={buttonClass}
               icon={<ArrowUpRight aria-hidden="true" className={iconClass} />}

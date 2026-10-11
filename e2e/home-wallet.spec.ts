@@ -291,7 +291,7 @@ test('Function: MenuAccountHeader — on a phone the open Menu ends above the fo
   await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
   await page.getByRole('button', { name: 'Menu' }).click();
   const menu = page.locator('#signed-in-menu');
-  await expect(menu.locator('dl').getByText('Posts', { exact: true })).toBeVisible();
+  await expect(menu.getByRole('link', { name: /^Open your profile/ })).toBeVisible();
   const footer = (await page.locator('footer').boundingBox())!;
   const panel = (await menu.boundingBox())!;
   expect(panel.y + panel.height).toBeLessThanOrEqual(footer.y + 1);

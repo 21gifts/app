@@ -12,6 +12,7 @@ import {
   type WalletPayRequest,
   type WalletReportPayment,
   type WalletSdk,
+  type WalletSdkEvent,
   type WalletTarget,
 } from '@/lib/wallet/wallet-sdk';
 import { useAuthStore } from '@/stores/auth-store';
@@ -36,6 +37,19 @@ const CONNECT_TIMEOUT_MS = 30_000;
 
 /** Counter value of the read that last wrote the store balance. */
 let writtenReadCounter = 0;
+
+/** How many of the newest payments count as known when a wallet connects. */
+const KNOWN_PAYMENTS_LIMIT = 100;
+
+/**
+ * Ids of the received payments that were already completed when the current
+ * connection opened, plus every payment announced since. `null` until that
+ * first list was read: payment events before it are not announced.
+ */
+let knownPaymentIds: Set<string> | null = null;
+
+/** Listeners told about each newly received payment. */
+const incomingListeners = new Set<(payment: WalletPayment) => void>();
 
 /**
  * Host the app is served from. The wallet's address lives on this host, and
@@ -65,6 +79,7 @@ function bumpRun(): number {
 async function dropConnection(): Promise<void> {
   const current = connection;
   connection = null;
+  knownPaymentIds = null;
   if (current === null) {
     return;
   }
@@ -146,6 +161,78 @@ function reportWalletOpenFailure(reason: 'timeout' | 'error'): void {
 }
 
 /**
+ * Reads the payments a fresh connection already holds, so that only a payment
+ * that completes later is announced. A failed read counts as none known: the
+ * SDK announces only payments that change, so nothing old is announced then.
+ *
+ * @param run - Run number that owns the connection.
+ * @param conn - The fresh connection.
+ * @returns Resolves once the known ids are set, or when the run is stale.
+ */
+async function rememberKnownPayments(run: number, conn: WalletConnection): Promise<void> {
+  let payments: WalletPayment[] = [];
+  try {
+    payments = await conn.listPayments({ offset: 0, limit: KNOWN_PAYMENTS_LIMIT });
+  } catch {
+    // None known; see above.
+  }
+  if (run !== runCounter || connection !== conn) {
+    return;
+  }
+  knownPaymentIds = new Set(
+    payments
+      .filter((payment) => payment.direction === 'received' && payment.status === 'completed')
+      .map((payment) => payment.id),
+  );
+}
+
+/**
+ * Handles one SDK event of the current connection: a sync reads the balance
+ * again, and a received payment that just completed is announced to the
+ * {@link onIncomingPayment} listeners and read into the balance, once per
+ * payment id and never before the payments known at connect were read.
+ *
+ * @param event - The SDK event.
+ */
+function onWalletEvent(event: WalletSdkEvent): void {
+  if (event.type === 'synced') {
+    void refreshWallet();
+    return;
+  }
+  const payment = event.payment;
+  if (
+    event.type !== 'paymentSucceeded' ||
+    payment === undefined ||
+    payment.direction !== 'received' ||
+    payment.status !== 'completed' ||
+    knownPaymentIds === null ||
+    knownPaymentIds.has(payment.id)
+  ) {
+    return;
+  }
+  knownPaymentIds.add(payment.id);
+  void refreshWallet();
+  for (const listener of incomingListeners) {
+    listener(payment);
+  }
+}
+
+/**
+ * Subscribes to received payments that complete while the wallet is open in
+ * this tab: never one the wallet already held when it connected, and each
+ * payment id once.
+ *
+ * @param listener - Called with each newly received payment.
+ * @returns Unsubscribe function.
+ */
+export function onIncomingPayment(listener: (payment: WalletPayment) => void): () => void {
+  incomingListeners.add(listener);
+  return () => {
+    incomingListeners.delete(listener);
+  };
+}
+
+/**
  * Connects the in-app wallet from the tab phrase and Breez API key. Loading the
  * SDK, connecting, and the first synchronized balance read share a 30-second
  * deadline. A timeout moves a still-connecting wallet to `error`, but leaves a
@@ -190,14 +277,15 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
       }
       connection = next;
       await next.addEventListener((event) => {
-        if (event.type === 'synced' && run === runCounter && connection === next) {
-          void refreshWallet();
+        if (run === runCounter && connection === next) {
+          onWalletEvent(event);
         }
       });
       if (run !== runCounter) {
         return;
       }
       await readBalance(run, next, { ensureSynced: true });
+      void rememberKnownPayments(run, next);
     } catch {
       if (run === runCounter) {
         reportWalletOpenFailure('error');

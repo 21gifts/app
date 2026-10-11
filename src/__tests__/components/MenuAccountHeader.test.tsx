@@ -5,8 +5,8 @@ import { MenuAccountHeader } from '@/components/MenuAccountHeader';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useMyLoans } from '@/hooks/useMyLoans';
 import { useWallet, type UseWalletResult } from '@/hooks/useWallet';
-import { fetchAccountActivity, fetchMember, fetchProfilePhoto } from '@/lib/api';
-import type { Account, AccountActivity, MemberProfile } from '@/lib/api-types';
+import { fetchProfilePhoto } from '@/lib/api';
+import type { Account } from '@/lib/api-types';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -39,11 +39,7 @@ vi.mock('next/link', () => ({
 vi.mock('@/hooks/useWallet', () => ({ useWallet: vi.fn() }));
 vi.mock('@/hooks/useSpotRate', () => ({ useSpotRate: vi.fn() }));
 vi.mock('@/hooks/useMyLoans', () => ({ useMyLoans: vi.fn() }));
-vi.mock('@/lib/api', () => ({
-  fetchAccountActivity: vi.fn(),
-  fetchMember: vi.fn(),
-  fetchProfilePhoto: vi.fn(),
-}));
+vi.mock('@/lib/api', () => ({ fetchProfilePhoto: vi.fn() }));
 
 const RATE_DAY: FiatRateDay = {
   sats: 100_000_000,
@@ -53,14 +49,7 @@ const RATE_DAY: FiatRateDay = {
   php: '5600000.00',
 };
 
-const ACTIVITY = {
-  donatedSats: 2_100,
-  receivedSats: 21_000,
-  donatedOverTime: [],
-  receivedOverTime: [],
-} as unknown as AccountActivity;
-
-const MEMBER = { postCount: 7 } as MemberProfile;
+const JPEG = (): Blob => new Blob(['x'], { type: 'image/jpeg' });
 
 let sessionCount = 0;
 
@@ -89,16 +78,10 @@ async function settle(): Promise<void> {
   });
 }
 
-function statRow(): HTMLElement {
-  return document.querySelector('dl') as HTMLElement;
-}
-
 beforeEach(() => {
   vi.mocked(useWallet).mockReturnValue(walletWith('disabled'));
   vi.mocked(useSpotRate).mockReturnValue(RATE_DAY);
   vi.mocked(useMyLoans).mockReturnValue({ loans: null, reload: vi.fn() });
-  vi.mocked(fetchAccountActivity).mockReset().mockResolvedValue(ACTIVITY);
-  vi.mocked(fetchMember).mockReset().mockResolvedValue(MEMBER);
   vi.mocked(fetchProfilePhoto).mockReset().mockRejectedValue(new Error('none'));
   Object.assign(URL, {
     createObjectURL: vi.fn(() => 'blob:photo'),
@@ -182,12 +165,29 @@ describe('MenuAccountHeader', () => {
     expect(screen.getByText("₿1'000").textContent).toBe("₿1'000");
   });
 
+  it('re-reads loans once whenever the Menu opens', () => {
+    signIn();
+    const reload = vi.fn().mockResolvedValue(null);
+    vi.mocked(useMyLoans).mockReturnValue({ loans: null, reload });
+    const view = renderWithLocale(
+      <MenuAccountHeader onNavigate={vi.fn()} tight={false} open={false} />,
+    );
+    expect(reload).not.toHaveBeenCalled();
+    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    expect(reload).toHaveBeenCalledTimes(1);
+    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    expect(reload).toHaveBeenCalledTimes(1);
+    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open={false} />);
+    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    expect(reload).toHaveBeenCalledTimes(2);
+  });
+
   it('renders nothing when signed out', () => {
     const { container } = renderWithLocale(
       <MenuAccountHeader onNavigate={vi.fn()} tight={false} open />,
     );
     expect(container.innerHTML).toBe('');
-    expect(fetchAccountActivity).not.toHaveBeenCalled();
+    expect(fetchProfilePhoto).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -213,10 +213,10 @@ describe('MenuAccountHeader', () => {
       const pending = identityLines();
       expect(pending).toEqual(['h-5', 'h-4']);
       expect(card.querySelectorAll('.flex-1.flex-col .animate-pulse')).toHaveLength(2);
-      expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(5);
+      expect(card.querySelector('dl')).toBeNull();
       expect(screen.queryByText(/^@/)).toBeNull();
       expect(screen.queryByRole('link')).toBeNull();
-      expect(fetchAccountActivity).not.toHaveBeenCalled();
+      expect(fetchProfilePhoto).not.toHaveBeenCalled();
       act(() => {
         signIn();
       });
@@ -233,7 +233,7 @@ describe('MenuAccountHeader', () => {
     const { container } = renderWithLocale(
       <MenuAccountHeader onNavigate={vi.fn()} tight={false} open />,
     );
-    expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(5);
+    expect(container.querySelectorAll('.animate-pulse')).toHaveLength(3);
     act(() => {
       useAuthStore.getState().clearAuth();
     });
@@ -247,51 +247,40 @@ describe('MenuAccountHeader', () => {
     view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight open />);
     const card = view.container.firstElementChild as HTMLElement;
     expect(card.className).toContain('mt-2');
-    expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(5);
+    expect(card.querySelectorAll('.animate-pulse')).toHaveLength(3);
   });
 
-  it('shows the initial, name, and @username, and skeletons that become values without changing height', async () => {
+  it('shows the initial, name, and @username, and no Received / Given / Posts row', async () => {
     const session = signIn();
-    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    const { container } = renderWithLocale(
+      <MenuAccountHeader onNavigate={vi.fn()} tight={false} open />,
+    );
     expect(screen.getByText('Ada')).toBeTruthy();
     expect(screen.getByText('@ada')).toBeTruthy();
     expect(screen.getByText('A').getAttribute('aria-hidden')).toBe('true');
-    const loadingLines = Array.from(statRow().querySelectorAll('dd > span')).map(
-      (line) => line.className.match(/\bh-[\d.]+\b/)?.[0],
-    );
-    expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(5);
     await settle();
-    expect(fetchAccountActivity).toHaveBeenCalledWith(session);
-    expect(fetchMember).toHaveBeenCalledWith(session, 'acc_1');
-    expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(0);
-    const loadedLines = Array.from(statRow().querySelectorAll('dd > span')).map(
-      (line) => line.className.match(/\bh-[\d.]+\b/)?.[0],
-    );
-    expect(loadedLines).toEqual(loadingLines);
-    const cells = statRow().querySelectorAll(':scope > div');
-    expect(within(cells[0] as HTMLElement).getByText('Received')).toBeTruthy();
-    expect(within(cells[0] as HTMLElement).getByText("₿21'000")).toBeTruthy();
-    expect(within(cells[0] as HTMLElement).getByText('$21.00')).toBeTruthy();
-    expect(within(cells[1] as HTMLElement).getByText('Given')).toBeTruthy();
-    expect(within(cells[1] as HTMLElement).getByText("₿2'100")).toBeTruthy();
-    expect(within(cells[1] as HTMLElement).getByText('$2.10')).toBeTruthy();
-    expect(within(cells[2] as HTMLElement).getByText('Posts')).toBeTruthy();
-    expect(within(cells[2] as HTMLElement).getByText('7')).toBeTruthy();
+    expect(fetchProfilePhoto).toHaveBeenCalledWith(session);
+    expect(container.querySelector('dl')).toBeNull();
+    for (const label of ['Received', 'Given', 'Posts']) {
+      expect(screen.queryByText(label)).toBeNull();
+    }
+    expect(container.querySelectorAll('.animate-pulse')).toHaveLength(0);
   });
 
-  it('reuses the loaded stats on the next mount in the same session', async () => {
+  it('reuses the loaded photo on the next mount in the same session', async () => {
     signIn();
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(JPEG());
     const first = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();
     first.unmount();
     renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
-    expect(statRow().querySelectorAll('.animate-pulse')).toHaveLength(0);
-    expect(screen.getByText('7')).toBeTruthy();
-    expect(fetchAccountActivity).toHaveBeenCalledTimes(1);
+    expect(document.querySelector('img')?.getAttribute('src')).toBe('blob:photo');
+    expect(fetchProfilePhoto).toHaveBeenCalledTimes(1);
   });
 
   it('shares one load between two mounts at once', async () => {
     signIn();
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(JPEG());
     renderWithLocale(
       <>
         <MenuAccountHeader onNavigate={vi.fn()} tight={false} open />
@@ -299,44 +288,37 @@ describe('MenuAccountHeader', () => {
       </>,
     );
     await settle();
-    expect(fetchAccountActivity).toHaveBeenCalledTimes(1);
-    expect(screen.getAllByText('7')).toHaveLength(2);
+    expect(fetchProfilePhoto).toHaveBeenCalledTimes(1);
+    expect(document.querySelectorAll('img')).toHaveLength(2);
   });
 
-  it('shows a dash for values that could not be read, without fiat, and tries again on the next mount', async () => {
+  it('shows the initial when the photo could not be read, and tries again on the next mount', async () => {
     signIn();
-    vi.mocked(fetchAccountActivity).mockRejectedValue(new Error('down'));
-    vi.mocked(fetchMember).mockResolvedValue(null);
     const first = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();
-    expect(within(statRow()).getAllByText('–')).toHaveLength(3);
-    expect(within(statRow()).queryByText(/\$/)).toBeNull();
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(screen.getByText('A')).toBeTruthy();
     first.unmount();
-    vi.mocked(fetchAccountActivity).mockResolvedValue(ACTIVITY);
-    vi.mocked(fetchMember).mockRejectedValue(new Error('down'));
-    const second = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
-    await settle();
-    expect(fetchAccountActivity).toHaveBeenCalledTimes(2);
-    expect(screen.getByText("₿21'000")).toBeTruthy();
-    second.unmount();
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(JPEG());
     renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();
-    expect(fetchAccountActivity).toHaveBeenCalledTimes(3);
+    expect(fetchProfilePhoto).toHaveBeenCalledTimes(2);
+    expect(document.querySelector('img')?.getAttribute('src')).toBe('blob:photo');
   });
 
   it('drops a load that settles after unmount', async () => {
     signIn();
-    let finish: (value: AccountActivity) => void = () => undefined;
-    vi.mocked(fetchAccountActivity).mockReturnValue(
+    let finish: (value: Blob) => void = () => undefined;
+    vi.mocked(fetchProfilePhoto).mockReturnValue(
       new Promise((resolve) => {
         finish = resolve;
       }),
     );
     const view = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     view.unmount();
-    finish(ACTIVITY);
+    finish(JPEG());
     await settle();
-    expect(screen.queryByText('7')).toBeNull();
+    expect(screen.queryByRole('img')).toBeNull();
   });
 
   it('shows the profile photo, and replaces the cached one when a new session loads', async () => {
@@ -384,7 +366,6 @@ describe('MenuAccountHeader', () => {
     expect(within(profile).getByText('A').getAttribute('aria-hidden')).toBe('true');
     expect(within(profile).getByText('Ada')).toBeTruthy();
     expect(within(profile).getByText('@ada')).toBeTruthy();
-    expect(statRow().closest('a')).toBeNull();
     fireEvent.click(within(profile).getByText('@ada'));
     expect(onNavigate).toHaveBeenCalledTimes(1);
   });
@@ -458,51 +439,25 @@ describe('MenuAccountHeader', () => {
 
   it('loads while the Menu is closed but renders nothing until it opens', async () => {
     signIn();
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(JPEG());
     const view = renderWithLocale(
       <MenuAccountHeader onNavigate={vi.fn()} tight={false} open={false} />,
     );
     expect(view.container.innerHTML).toBe('');
     await settle();
-    expect(fetchAccountActivity).toHaveBeenCalledTimes(1);
+    expect(fetchProfilePhoto).toHaveBeenCalledTimes(1);
     view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
-    expect(screen.getByText('7')).toBeTruthy();
-  });
-
-  it('re-reads loans once whenever the Menu opens', () => {
-    signIn();
-    const reload = vi.fn().mockResolvedValue(null);
-    vi.mocked(useMyLoans).mockReturnValue({ loans: null, reload });
-    const view = renderWithLocale(
-      <MenuAccountHeader onNavigate={vi.fn()} tight={false} open={false} />,
-    );
-    expect(reload).not.toHaveBeenCalled();
-    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
-    expect(reload).toHaveBeenCalledTimes(1);
-    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
-    expect(reload).toHaveBeenCalledTimes(1);
-    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open={false} />);
-    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
-    expect(reload).toHaveBeenCalledTimes(2);
-  });
-
-  it('creates no photo URL when the stats read failed', async () => {
-    signIn();
-    vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
-    vi.mocked(fetchMember).mockRejectedValue(new Error('down'));
-    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
-    await settle();
-    expect(URL.createObjectURL).not.toHaveBeenCalled();
-    expect(screen.queryByRole('img')).toBeNull();
+    expect(document.querySelector('img')?.getAttribute('src')).toBe('blob:photo');
   });
 
   it('keeps the newer session when an older load settles last', async () => {
-    let finishOld: (value: AccountActivity) => void = () => undefined;
-    vi.mocked(fetchAccountActivity).mockReturnValueOnce(
+    let finishOld: (value: Blob) => void = () => undefined;
+    vi.mocked(fetchProfilePhoto).mockReturnValueOnce(
       new Promise((resolve) => {
         finishOld = resolve;
       }),
     );
-    vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(JPEG());
     signIn();
     const old = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     old.unmount();
@@ -510,7 +465,7 @@ describe('MenuAccountHeader', () => {
     renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     await settle();
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
-    finishOld(ACTIVITY);
+    finishOld(JPEG());
     await settle();
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
     expect(URL.revokeObjectURL).not.toHaveBeenCalled();
@@ -518,19 +473,19 @@ describe('MenuAccountHeader', () => {
   });
 
   it('keeps nothing from a load that settles after sign-out, and drops the cache when the session changes', async () => {
-    let finish: (value: AccountActivity) => void = () => undefined;
-    vi.mocked(fetchAccountActivity).mockReturnValueOnce(
+    let finish: (value: Blob) => void = () => undefined;
+    vi.mocked(fetchProfilePhoto).mockReturnValueOnce(
       new Promise((resolve) => {
         finish = resolve;
       }),
     );
-    vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    vi.mocked(fetchProfilePhoto).mockResolvedValue(JPEG());
     signIn();
     const view = renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
     act(() => {
       useAuthStore.setState({ session: null, account: null });
     });
-    finish(ACTIVITY);
+    finish(JPEG());
     await settle();
     expect(URL.createObjectURL).not.toHaveBeenCalled();
     view.unmount();

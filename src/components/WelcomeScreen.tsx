@@ -19,6 +19,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useChromeBack } from '@/components/ViewHistoryRoot';
 import { WalletFooterActions } from '@/components/WalletFooterActions';
 import { WalletPanelView } from '@/components/WalletPanelView';
+import { WalletTour } from '@/components/WalletTour';
 import { Card, IconButton } from '@/components/ui';
 import { useWallet } from '@/hooks/useWallet';
 import { useWalletPanel } from '@/hooks/useWalletPanel';
@@ -193,6 +194,10 @@ function PanelChromeBack({ onBack, over }: { onBack: () => void; over: boolean }
  * come back once the focus has left the field and no such form is open; a
  * focused field that disappears with its form counts as left.
  *
+ * A signed-in member whose account has `walletIntroSeen: false` gets the
+ * one-time {@link WalletTour} over the page; it waits while a wallet view or
+ * the writer is open.
+ *
  * In a Playwright build only, a `?visual=send-…` pin opens the Send view.
  *
  * @returns The column or the open wallet view, and the footer actions.
@@ -306,6 +311,7 @@ export function WelcomeScreen(): ReactElement {
 
   return (
     <>
+      {signedIn ? <WalletTour blocked={shown !== 'none' || writerOpen} /> : null}
       {shown === 'none' ? null : <PanelChromeBack onBack={panel.stepBack} over />}
       {writerOpen ? <PanelChromeBack onBack={closeWriter} over={false} /> : null}
       {shown === 'none' ? null : (

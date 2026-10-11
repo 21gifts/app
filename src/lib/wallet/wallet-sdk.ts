@@ -49,11 +49,17 @@ export interface WalletInfo {
 }
 
 /**
- * Opaque SDK event forwarded to listeners.
+ * SDK event forwarded to listeners.
  */
 export interface WalletSdkEvent {
   /** Event discriminant from the SDK. */
   type: string;
+  /**
+   * The Bitcoin payment a payment event (`paymentSucceeded`, `paymentPending`,
+   * `paymentFailed`, `paymentMetadataUpdated`) is about; absent on other
+   * events and on a token payment.
+   */
+  payment?: WalletPayment;
 }
 
 /** Direction of a wallet payment as the member sees it. */
@@ -896,7 +902,16 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
           };
         },
         async addEventListener(onEvent: (event: WalletSdkEvent) => void): Promise<string> {
-          return handle.addEventListener({ onEvent });
+          return handle.addEventListener({
+            onEvent: (event) => {
+              // Token amounts are not satoshis; like the Bitcoin-only list, their payment is left out.
+              onEvent(
+                'payment' in event && event.payment.method !== 'token'
+                  ? { type: event.type, payment: toWalletPayment(event.payment) }
+                  : { type: event.type },
+              );
+            },
+          });
         },
         async registerAddress(username: string): Promise<void> {
           await handle.registerLightningAddress({ username });
