@@ -1,9 +1,10 @@
-import { cleanup, screen } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Home, { generateMetadata } from '@/app/(marketing)/page';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { OG_IMAGE_ALT } from '@/lib/marketing-metadata';
+import { getCatalog } from '@/lib/messages';
 import { getRequestLocale } from '@/lib/request-locale';
 
 vi.mock('next/link', () => ({
@@ -45,6 +46,37 @@ describe('Home', () => {
     expect(screen.queryByRole('spinbutton')).toBeNull();
     expect(screen.queryByRole('button', { name: /pay with/i })).toBeNull();
   });
+
+  it.each(['en', 'de', 'es', 'fil'] as const)(
+    'shows the how-it-works numbers from the %s catalog',
+    async (locale) => {
+      vi.mocked(getRequestLocale).mockResolvedValueOnce(locale);
+      renderWithLocale(await Home(), locale);
+      const how = document.getElementById('how');
+      expect(how).toBeTruthy();
+      const messages = getCatalog(locale);
+      const scope = within(how as HTMLElement);
+      expect(scope.getByText(messages['home.give1Num'])).toBeTruthy();
+      expect(scope.getByText(messages['home.give2Num'])).toBeTruthy();
+      expect(scope.getByText(messages['home.give3Num'])).toBeTruthy();
+    },
+  );
+
+  it.each(['en', 'de', 'es', 'fil'] as const)(
+    'shows the why numbers from the %s catalog',
+    async (locale) => {
+      vi.mocked(getRequestLocale).mockResolvedValueOnce(locale);
+      renderWithLocale(await Home(), locale);
+      const why = document.getElementById('why');
+      expect(why).toBeTruthy();
+      const messages = getCatalog(locale);
+      const scope = within(why as HTMLElement);
+      expect(scope.getByText(messages['home.why1Num'])).toBeTruthy();
+      expect(scope.getByText(messages['home.why2Num'])).toBeTruthy();
+      expect(scope.getByText(messages['home.why3Num'])).toBeTruthy();
+      expect(scope.getByText(messages['home.why4Num'])).toBeTruthy();
+    },
+  );
 
   it('publishes the same English preview on every language URL', async () => {
     const title = 'Help people with Bitcoin | 21.gifts';

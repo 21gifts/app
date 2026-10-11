@@ -11,13 +11,21 @@ import { getCatalog } from '@/lib/messages';
 export function HappylandSection({ locale }: { locale: Locale }): ReactElement {
   const messages = getCatalog(locale);
   const notes = [
-    { number: '01', title: messages['happyland.dailyTitle'], body: messages['happyland.daily'] },
     {
-      number: '02',
+      number: messages['happyland.dailyNum'],
+      title: messages['happyland.dailyTitle'],
+      body: messages['happyland.daily'],
+    },
+    {
+      number: messages['happyland.povertyNum'],
       title: messages['happyland.povertyTitle'],
       body: messages['happyland.poverty'],
     },
-    { number: '03', title: messages['happyland.lanesTitle'], body: messages['happyland.lanes'] },
+    {
+      number: messages['happyland.lanesNum'],
+      title: messages['happyland.lanesTitle'],
+      body: messages['happyland.lanes'],
+    },
   ];
   const peoplePhotos = [
     {

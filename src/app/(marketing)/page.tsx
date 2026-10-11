@@ -218,28 +218,38 @@ export default async function Home(): Promise<ReactElement> {
             </p>
           </div>
           <div className="mt-10 grid gap-3 md:grid-cols-3">
-            {[
-              { number: '01', Icon: Search, title: 'home.give1Title', body: 'home.give1Body' },
-              {
-                number: '02',
-                Icon: MessageCircle,
-                title: 'home.give2Title',
-                body: 'home.give2Body',
-              },
-              { number: '03', Icon: Wallet, title: 'home.give3Title', body: 'home.give3Body' },
-            ].map(({ number, Icon, title, body }) => (
+            {(
+              [
+                {
+                  num: 'home.give1Num',
+                  Icon: Search,
+                  title: 'home.give1Title',
+                  body: 'home.give1Body',
+                },
+                {
+                  num: 'home.give2Num',
+                  Icon: MessageCircle,
+                  title: 'home.give2Title',
+                  body: 'home.give2Body',
+                },
+                {
+                  num: 'home.give3Num',
+                  Icon: Wallet,
+                  title: 'home.give3Title',
+                  body: 'home.give3Body',
+                },
+              ] as const
+            ).map(({ num, Icon, title, body }) => (
               <article
-                key={number}
+                key={title}
                 className="rounded-2xl border border-ink/10 bg-home-card p-6 sm:p-7"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-ink/50">{number}</span>
+                  <span className="text-sm font-semibold text-ink/50">{t(num)}</span>
                   <Icon aria-hidden="true" className="h-6 w-6 stroke-home-step" />
                 </div>
-                <h3 className="mt-8 text-xl font-semibold tracking-tight">
-                  {t(title as MessageKey)}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink/65">{t(body as MessageKey)}</p>
+                <h3 className="mt-8 text-xl font-semibold tracking-tight">{t(title)}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-ink/65">{t(body)}</p>
               </article>
             ))}
           </div>
@@ -375,13 +385,18 @@ export default async function Home(): Promise<ReactElement> {
             </h2>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            {(['1', '2', '3', '4'] as const).map((number) => (
-              <article key={number} className="rounded-2xl border border-ink/10 bg-paper p-6">
-                <span className="text-xs font-semibold text-ink/45">0{number}</span>
-                <h3 className="mt-6 text-lg font-semibold">{t(`home.why${number}Title`)}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink/65">
-                  {t(`home.why${number}Body`)}
-                </p>
+            {(
+              [
+                { num: 'home.why1Num', title: 'home.why1Title', body: 'home.why1Body' },
+                { num: 'home.why2Num', title: 'home.why2Title', body: 'home.why2Body' },
+                { num: 'home.why3Num', title: 'home.why3Title', body: 'home.why3Body' },
+                { num: 'home.why4Num', title: 'home.why4Title', body: 'home.why4Body' },
+              ] as const
+            ).map(({ num, title, body }) => (
+              <article key={title} className="rounded-2xl border border-ink/10 bg-paper p-6">
+                <span className="text-xs font-semibold text-ink/45">{t(num)}</span>
+                <h3 className="mt-6 text-lg font-semibold">{t(title)}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-ink/65">{t(body)}</p>
               </article>
             ))}
           </div>

@@ -33,7 +33,16 @@ describe('HappylandSection', () => {
       }
       expect(within(section).getAllByRole('img')).toHaveLength(4);
       expect(within(section).getAllByRole('heading', { level: 3 })).toHaveLength(3);
-      for (const key of ['intro', 'daily', 'poverty', 'lanes', 'source'] as const) {
+      for (const key of [
+        'intro',
+        'daily',
+        'poverty',
+        'lanes',
+        'source',
+        'dailyNum',
+        'povertyNum',
+        'lanesNum',
+      ] as const) {
         expect(within(section).getByText(messages[`happyland.${key}`])).toBeTruthy();
       }
       expect(within(section).getAllByRole('article')).toHaveLength(3);
