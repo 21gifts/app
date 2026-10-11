@@ -148,7 +148,11 @@ describe('SettingsScreen', () => {
     expect(writeText).toHaveBeenCalledWith('ada@21.gifts');
     expect(screen.getByText('Copied')).toBeTruthy();
     act(() => {
-      vi.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(1999);
+    });
+    expect(screen.getByText('Copied')).toBeTruthy();
+    act(() => {
+      vi.advanceTimersByTime(1);
     });
     expect(screen.queryByText('Copied')).toBeNull();
   });
