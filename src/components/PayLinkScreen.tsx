@@ -599,7 +599,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 ) : null}
                 {formError === 'open' ? (
                   <p role="alert" className="text-center text-sm text-app-danger">
-                    {t('pay.alreadyOpen')}
+                    {t('pos.already')}
                   </p>
                 ) : null}
                 <div className={`flex max-w-full flex-col gap-3 ${INVOICE_QR_PLATE_WIDTH}`}>
@@ -664,7 +664,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 ) : null}
                 {formError === 'open' ? (
                   <p role="alert" className="text-sm text-app-danger">
-                    {t('pay.alreadyOpen')}
+                    {t('pos.already')}
                   </p>
                 ) : null}
               </form>

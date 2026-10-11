@@ -1352,6 +1352,226 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-pl-charge-failed');
   });
 
+  test('screen /pl stablecoin', async ({ page }, testInfo) => {
+    const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await page.route(
+      (url) => new URL(url).pathname.startsWith('/pay/'),
+      async (route) => {
+        const url = route.request().url();
+        if (url.includes('/payment')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ payment: '8d1c1b9a-6c0e-4f1a-9c2d-111111111111' }),
+          });
+          return;
+        }
+        if (url.includes('/invoice')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ pr: 'lnbc210n1paylink', amountSats: 21 }),
+          });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            name: 'Ada Lovelace',
+            username: 'ada',
+            minSats: 1,
+            maxSats: 100000000,
+            charge: null,
+          }),
+        });
+      },
+    );
+    await page.route(/\/\.well-known\/lnurlp\/ada$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          quote: { expiration: '2026-09-24T12:05:00.000Z' },
+          transferAmounts: [
+            { method: 'ethereum', available: true, assets: [{ asset: 'USDT', amount: '1.25' }] },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/pl?lightning=${lnurl}`);
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('USDT · ethereum · 1.25')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with USDT or USDC' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    }
+    await page.getByRole('button', { name: 'Pay with USDT or USDC' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pl-stablecoin');
+  });
+
+  test('screen /pl charge stablecoin', async ({ page }, testInfo) => {
+    const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await page.route(
+      (url) => new URL(url).pathname.startsWith('/pay/'),
+      async (route) => {
+        const url = route.request().url();
+        if (url.includes('/payment')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ payment: '8d1c1b9a-6c0e-4f1a-9c2d-111111111111' }),
+          });
+          return;
+        }
+        if (url.includes('/invoice')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ pr: 'lnbc210n1paylink', amountSats: 238093 }),
+          });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            name: 'Ada Lovelace',
+            username: 'ada',
+            minSats: 238093,
+            maxSats: 238093,
+            charge: { amountSats: 238093, expiresAt: '2026-09-24T12:05:00.000Z' },
+          }),
+        });
+      },
+    );
+    await page.route(/\/\.well-known\/lnurlp\/ada$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          quote: { expiration: '2026-09-24T12:05:00.000Z' },
+          transferAmounts: [
+            { method: 'ethereum', available: true, assets: [{ asset: 'USDT', amount: '1.25' }] },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/pl?lightning=${lnurl}`);
+    await expect(page.getByText('USDT · ethereum · 1.25')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with USDT or USDC' })).toBeVisible();
+    await expect(page.getByText('5:00 left').first()).toBeVisible();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    }
+    await page.getByRole('button', { name: 'Pay with USDT or USDC' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pl-charge-stablecoin');
+  });
+
+  test('screen /pl already open', async ({ page }) => {
+    const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await fulfillRateDay(page);
+    await page.route(
+      (url) => new URL(url).pathname.startsWith('/pay/'),
+      async (route) => {
+        const url = route.request().url();
+        if (url.includes('/payment')) {
+          await route.fulfill({
+            status: 409,
+            contentType: 'application/json',
+            body: JSON.stringify({ error: 'A payment is already open' }),
+          });
+          return;
+        }
+        if (url.includes('/invoice')) {
+          await route.fulfill({ status: 500, contentType: 'text/plain', body: 'no' });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            name: 'Ada Lovelace',
+            username: 'ada',
+            minSats: 1,
+            maxSats: 100000000,
+            charge: null,
+          }),
+        });
+      },
+    );
+    await page.goto(`/pl?lightning=${lnurl}`);
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'A payment is already open.' }),
+    ).toHaveText('A payment is already open.');
+    await expect(page.getByLabel('Amount')).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    await shotScreen(page, 'state-pl-already-open');
+  });
+
+  test('screen /pl charge already open', async ({ page }, testInfo) => {
+    const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await page.route(
+      (url) => new URL(url).pathname.startsWith('/pay/'),
+      async (route) => {
+        const url = route.request().url();
+        if (url.includes('/payment')) {
+          await route.fulfill({ status: 409, contentType: 'application/json', body: '{}' });
+          return;
+        }
+        if (url.includes('/invoice')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ pr: 'lnbc210n1paylink', amountSats: 238093 }),
+          });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            name: 'Ada Lovelace',
+            username: 'ada',
+            minSats: 238093,
+            maxSats: 238093,
+            charge: { amountSats: 238093, expiresAt: '2026-09-24T12:05:00.000Z' },
+          }),
+        });
+      },
+    );
+    await page.goto(`/pl?lightning=${lnurl}`);
+    await expect(
+      page.getByRole('alert').filter({ hasText: 'A payment is already open.' }),
+    ).toHaveText('A payment is already open.');
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with USDT or USDC' })).toHaveCount(0);
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    }
+    await shotScreen(page, 'state-pl-charge-already-open');
+  });
+
   test('screen /wallet', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');

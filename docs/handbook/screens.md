@@ -877,9 +877,9 @@ Heading **Send help**, explainer lead, **Open the forum**.
 ## Screen: /pl
 
 - **URL:** `/pl?lightning=LNURL…` — public, no auth gate. `/pl` without a usable link stays on this page and does not 404.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none). The shop sticker's storefront sits above the person's name, which is the only heading. With no open payment, under it an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When a payment is active, either because `GET /pay/:username` returned an unexpired `charge` or because **Continue** minted an invoice, that amount field and **Continue** are gone. The page shows the same active payment: five minutes left, the sat amount, the viewer's default fiat beside it, and **Pay**. **Pay** is the width of the invoice QR plate (232px plus its padding and border), centered, not the width of the page. **Pay** hands the invoice to the visitor's own Bitcoin wallet app with a generic `lightning:` link; no particular wallet is named. The fiat code is the profile cookie when set, otherwise the language default. Desktop shows the Bitcoin invoice QR only while that payment is active. A smartphone (`isSmartphoneUserAgent`, not viewport) never shows it. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
-- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. A positive fiat amount that the spot rate cannot price in the preferred fiat (typed before that fiat changed to one without a price) shows **No {code} exchange rate yet.** and keeps the form; `{code}` is the preferred fiat. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with a Bitcoin wallet app**), which sets `location.href` to `lightning:` plus the invoice (`lightningHref`), so the device opens whichever Bitcoin wallet app handles that link. An open till mints that exact amount with no amount step. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
-- **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `ProfileChromeLeft`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `GET /pay/[username]`, `POST /pay/[username]/invoice`.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none). The shop sticker's storefront sits above the person's name, which is the only heading. With no open payment, under it an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When a payment is active, either because `GET /pay/:username` returned an unexpired `charge` or because **Continue** minted an invoice, that amount field and **Continue** are gone. The page shows the same active payment: five minutes left, the sat amount, the viewer's default fiat beside it, and **Pay**. **Pay** is the width of the invoice QR plate (232px plus its padding and border), centered, not the width of the page. **Pay** hands the invoice to the visitor's own Bitcoin wallet app with a generic `lightning:` link; no particular wallet is named. When the decoded pay link offers USDT or USDC, those lines, that quote's remaining time, and a second **Pay with USDT or USDC** sit under the Bitcoin amount. That second button opens `lightning:` plus the same encoded LNURL. It is not a QR and does not replace **Pay**. Those lines are absent when the pay link offers none. When another shop payment is already open, the page shows **A payment is already open.** (`pos.already`) and does not add a stablecoin line. On the amount form it also does not mint an invoice. On an open till it keeps the charge and the invoice. The fiat code is the profile cookie when set, otherwise the language default. Desktop shows the Bitcoin invoice QR only while that payment is active. A smartphone (`isSmartphoneUserAgent`, not viewport) never shows it. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
+- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. A positive fiat amount that the spot rate cannot price in the preferred fiat (typed before that fiat changed to one without a price) shows **No {code} exchange rate yet.** and keeps the form; `{code}` is the preferred fiat. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with a Bitcoin wallet app**), which sets `location.href` to `lightning:` plus the invoice (`lightningHref`), so the device opens whichever Bitcoin wallet app handles that link. An open till mints that exact amount with no amount step. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. **Pay with USDT or USDC** (`pay.stablecoinWallet`) sets `location.href` to `lightning:` plus the encoded LNURL. Change language from the header.
+- **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `ProfileChromeLeft`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `payRequestUrl`, `openShopPayment`, `fetchPayRequest`, `GET /pay/[username]`, `POST /pay/[username]/invoice`, `POST /pay/[username]/payment`.
 
 ### Variant: default
 
@@ -922,6 +922,30 @@ The open till: the shop sticker's storefront above the name, then time left, the
 Open till, mint failed. The shop sticker, time left, the sat amount, the viewer's default fiat beside it, **Could not create the invoice.**, and **Pay**. No invoice QR. **Pay** tries the mint again.
 
 ![21.gifts pay link charge failed](images/pl-charge-failed.png)
+
+### Variant: stablecoin
+
+After **Continue**, the active payment plus one line per offered USDT or USDC chain, that quote's remaining time, and **Pay with USDT or USDC**. **Pay** stays. Desktop still shows the Bitcoin invoice QR. A smartphone does not.
+
+![21.gifts pay link stablecoin](images/pl-stablecoin.png)
+
+### Variant: charge-stablecoin
+
+The open till with the same stablecoin lines, quote time, and **Pay with USDT or USDC** under the Bitcoin amount. Desktop shows the Bitcoin invoice QR. A smartphone does not.
+
+![21.gifts pay link charge stablecoin](images/pl-charge-stablecoin.png)
+
+### Variant: already-open
+
+**Continue** when another shop payment is already open. The amount form stays, **A payment is already open.** is shown, and no invoice is minted.
+
+![21.gifts pay link already open](images/pl-already-open.png)
+
+### Variant: charge-already-open
+
+Open till when another shop payment is already open. The charge, the invoice, and **Pay** stay, and **A payment is already open.** is shown. No stablecoin line.
+
+![21.gifts pay link charge already open](images/pl-charge-already-open.png)
 
 ## Screen: /setup/name
 

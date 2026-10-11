@@ -3139,6 +3139,26 @@
     "es": "Tras Continuar, el mismo pago activo que en una caja abierta: la pegatina de la tienda, cinco minutos restantes, el importe de sat bloqueado, al lado la moneda fiduciaria predeterminada de quien mira, y Pagar. Sin campo de importe. En el ordenador se muestra el código QR de la factura de Bitcoin. Un teléfono inteligente muestra la cuenta atrás y Pagar, no el código QR.",
     "fil": "Pagkatapos ng Magpatuloy, ang parehong aktibong bayad tulad ng bukas na kaha: ang sticker ng tindahan, limang minuto na natitira, ang naka-lock na halaga ng sat, sa tabi nito ang default na fiat ng tumitingin, at Magbayad. Walang field ng halaga. Sa malapad na screen ipinapakita ang QR ng resibo ng Bitcoin. Ang smartphone ay nagpapakita ng countdown at Magbayad, hindi ang QR."
   },
+  "/pl:stablecoin": {
+    "de": "Nach Weiter dieselbe aktive Zahlung, dazu eine Zeile je angebotener USDT- oder USDC-Kette, die restliche Angebotszeit und Mit USDT oder USDC zahlen. Zahlen für Bitcoin bleibt. Am Computer bleibt der QR der Bitcoin-Rechnung. Ein Smartphone zeigt ihn nicht.",
+    "es": "Tras Continuar, el mismo pago activo, más una línea por cada cadena USDT o USDC ofrecida, el tiempo restante de la oferta y Pagar con USDT o USDC. Pagar de Bitcoin permanece. En el ordenador sigue el código QR de la factura de Bitcoin. Un teléfono inteligente no lo muestra.",
+    "fil": "Pagkatapos ng Magpatuloy, ang parehong aktibong bayad, kasama ang isang linya bawat inaalok na USDT o USDC chain, ang natitirang oras ng alok, at Magbayad gamit ang USDT o USDC. Nanatili ang Magbayad para sa Bitcoin. Sa malapad na screen nananatili ang QR ng resibo ng Bitcoin. Hindi ito ipinapakita ng smartphone."
+  },
+  "/pl:charge-stablecoin": {
+    "de": "Offene Kasse mit denselben Stablecoin-Zeilen, der Angebotszeit und Mit USDT oder USDC zahlen unter dem Bitcoin-Betrag. Am Computer wird der QR der Bitcoin-Rechnung gezeigt. Ein Smartphone zeigt ihn nicht.",
+    "es": "Caja abierta con las mismas líneas de stablecoin, el tiempo de la oferta y Pagar con USDT o USDC bajo el importe de Bitcoin. En el ordenador se muestra el código QR de la factura de Bitcoin. Un teléfono inteligente no lo muestra.",
+    "fil": "Bukas na kaha na may parehong mga linya ng stablecoin, oras ng alok, at Magbayad gamit ang USDT o USDC sa ilalim ng halaga ng Bitcoin. Sa malapad na screen ipinapakita ang QR ng resibo ng Bitcoin. Hindi ito ipinapakita ng smartphone."
+  },
+  "/pl:already-open": {
+    "de": "Weiter, während schon eine andere Shop-Zahlung offen ist. Das Betragsformular bleibt, Es ist schon eine Zahlung offen. wird gezeigt, und es wird keine Rechnung erzeugt.",
+    "es": "Continuar cuando ya hay otro pago de la tienda abierto. El formulario de importe permanece, se muestra Ya hay un pago abierto. y no se crea ninguna factura.",
+    "fil": "Magpatuloy habang may bukas nang ibang bayad sa tindahan. Nananatili ang form ng halaga, ipinapakita ang May bukas nang bayad. at walang ginagawang invoice."
+  },
+  "/pl:charge-already-open": {
+    "de": "Offene Kasse, während schon eine andere Shop-Zahlung offen ist. Betrag, Rechnung und Zahlen bleiben, und Es ist schon eine Zahlung offen. wird gezeigt. Keine Stablecoin-Zeile.",
+    "es": "Caja abierta cuando ya hay otro pago de la tienda abierto. El importe, la factura y Pagar permanecen, y se muestra Ya hay un pago abierto. Sin línea de stablecoin.",
+    "fil": "Bukas na kaha habang may bukas nang ibang bayad sa tindahan. Nananatili ang halaga, ang invoice, at Magbayad, at ipinapakita ang May bukas nang bayad. Walang linya ng stablecoin."
+  },
   "/members/[accountId]:shop-edit-open": {
     "de": "Dieselbe Moderatorin hat Shop-Eintrag bearbeiten angeklickt. Schritt 1 von 5 · Bilder ist offen. Die Historie sagt, es gibt noch keine Bearbeitungen. Der Fotoschritt schliesst mit einem nur als Symbol sichtbaren Schliessen (X). Der zugängliche Name ist Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
     "es": "La misma moderadora pulsó Editar la entrada de la tienda. El paso 1 de 5 · Fotos está abierto. El historial dice que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay una palabra Cancelar visible. El lápiz cerrado no cubre este resultado.",
