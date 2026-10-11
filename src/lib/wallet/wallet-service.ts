@@ -1,6 +1,8 @@
+import { captureMessage } from '@sentry/nextjs';
 import { getBreezApiKey } from '@/lib/config';
 import { logInteraction } from '@/lib/interaction-log';
 import { peekSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
+import type { PaymentFailure, PayMethod, PayReason, PayStage } from '@/lib/wallet/payment-failure';
 import {
   loadWalletSdk,
   type OnchainSpeed,
@@ -127,11 +129,30 @@ async function failRun(run: number): Promise<void> {
 }
 
 /**
+ * Reports a wallet that did not open: `Wallet did not open` to error reporting
+ * (a no-op while it is off; one issue per reason) and the member event
+ * `wallet_open_failed` (dropped without a session).
+ *
+ * @param reason - `timeout` after the connect deadline, `error` when loading,
+ *   connecting, or the first read failed.
+ */
+function reportWalletOpenFailure(reason: 'timeout' | 'error'): void {
+  captureMessage('Wallet did not open', {
+    level: 'error',
+    fingerprint: ['wallet-open-failed', reason],
+    tags: { wallet_open_reason: reason },
+  });
+  logInteraction('wallet_open_failed', { reason });
+}
+
+/**
  * Connects the in-app wallet from the tab phrase and Breez API key. Loading the
  * SDK, connecting, and the first synchronized balance read share a 30-second
  * deadline. A timeout moves a still-connecting wallet to `error`, but leaves a
  * wallet made ready by a synchronized refresh unchanged. No-ops when either
- * input is missing. Never rejects; failures end in the store.
+ * input is missing. Never rejects; failures end in the store. A failure of
+ * the attempt that is still current is reported as `wallet_open_failed`
+ * (`error`, or `timeout` at the deadline) and `Wallet did not open`.
  *
  * @param loadSdk - SDK loader; defaults to {@link loadWalletSdk}.
  * @returns Resolves when the attempt leaves `connecting`, is superseded, or reaches its deadline.
@@ -178,6 +199,9 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
       }
       await readBalance(run, next, { ensureSynced: true });
     } catch {
+      if (run === runCounter) {
+        reportWalletOpenFailure('error');
+      }
       await failRun(run);
     }
   })();
@@ -190,6 +214,7 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
     await deadline;
   }
   if (run === runCounter && useWalletStore.getState().status === 'connecting') {
+    reportWalletOpenFailure('timeout');
     void failRun(run);
   }
 }
@@ -391,12 +416,16 @@ export const WALLET_SEND_TIMEOUT_MS = 30_000;
  *   (the payment went out), or `false` when it fails.
  * - `expired`: the fee quote of a payment to a base-chain address expired;
  *   nothing was sent, and only a new prepare gives a quote to send.
+ *
+ * Every outcome but `paid` carries `failure`: stage, reason, method, amount,
+ * and fee for {@link reportPaymentFailure}. The caller reports it once it
+ * knows the payment did not go out (it may prepare again instead).
  */
 export type WalletSendResult =
   | { kind: 'paid' }
-  | { kind: 'insufficient' }
-  | { kind: 'failed'; sentLate?: Promise<boolean> }
-  | { kind: 'expired' };
+  | { kind: 'insufficient'; failure: PaymentFailure }
+  | { kind: 'failed'; failure: PaymentFailure; sentLate?: Promise<boolean> }
+  | { kind: 'expired'; failure: PaymentFailure };
 
 /**
  * Fee choice of a prepared payment to a base-chain address: the fee of each
@@ -414,7 +443,7 @@ export interface WalletOnchainFees {
  *
  * - `confirm`: amount and fee to show; `send` pays it once. A payment to a
  *   base-chain address also carries `onchain`, and `feeSats` is its medium
- *   speed; `send` then takes the chosen speed.
+ *   speed; `send` then takes the chosen speed. `method` is how it moves.
  * - `insufficient`: the balance does not cover amount and fee (for a
  *   base-chain address: amount and the lowest fee); `feeSats` is that fee
  *   when the prepare succeeded and only the balance fell short.
@@ -423,19 +452,23 @@ export interface WalletOnchainFees {
  * - `failed`: prepare or the balance read failed, or the connection changed
  *   during prepare or that read.
  * - `unlock`: no wallet connection yet (the phrase is not in tab memory).
+ *
+ * Every outcome but `confirm` carries `failure` (stage `prepare`) for
+ * {@link reportPaymentFailure}.
  */
 export type WalletPayResult =
   | {
       kind: 'confirm';
       amountSats: number;
       feeSats: number;
+      method: PayMethod;
       onchain?: WalletOnchainFees;
       send: (speed?: OnchainSpeed) => Promise<WalletSendResult>;
     }
-  | { kind: 'insufficient'; feeSats?: number }
-  | { kind: 'belowMinimum'; minSats: number }
-  | { kind: 'failed' }
-  | { kind: 'unlock' };
+  | { kind: 'insufficient'; feeSats?: number; failure: PaymentFailure }
+  | { kind: 'belowMinimum'; minSats: number; failure: PaymentFailure }
+  | { kind: 'failed'; failure: PaymentFailure }
+  | { kind: 'unlock'; failure: PaymentFailure };
 
 /**
  * Outcome of reading a pasted text with {@link parseWalletInput}.
@@ -453,14 +486,34 @@ export type WalletParseResult =
   | { kind: 'unlock' };
 
 /**
+ * Text of an SDK rejection, read only to classify it and never reported: the
+ * message of an `Error`, or a thrown string. Anything else, and a rejection
+ * whose `message` cannot be read (a throwing getter), is the empty text, which
+ * classifies as `sdk_error`. Nothing is converted with `String()`, so a
+ * throwing `toString` cannot escape either.
+ *
+ * @param err - Rejection from the SDK.
+ * @returns The text, or `''`.
+ */
+function errorText(err: unknown): string {
+  if (typeof err === 'string') {
+    return err;
+  }
+  try {
+    return err instanceof Error && typeof err.message === 'string' ? err.message : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
  * True when an SDK error says the balance is too low.
  *
  * @param err - Rejection from the SDK.
  * @returns Whether the error names insufficient funds.
  */
 function isInsufficientFunds(err: unknown): boolean {
-  const text = err instanceof Error ? err.message : String(err);
-  return /insufficient/i.test(text);
+  return /insufficient/i.test(errorText(err));
 }
 
 /**
@@ -471,8 +524,7 @@ function isInsufficientFunds(err: unknown): boolean {
  * @returns Whole sats, or `null` when the error is not that refusal.
  */
 function minimumOf(err: unknown): number | null {
-  const text = err instanceof Error ? err.message : String(err);
-  const match = /below the minimum of (\d+) sats/i.exec(text);
+  const match = /below the minimum of (\d+) sats/i.exec(errorText(err));
   return match === null ? null : Number(match[1]);
 }
 
@@ -483,8 +535,64 @@ function minimumOf(err: unknown): number | null {
  * @returns Whether the error names an expired quote.
  */
 function isQuoteExpired(err: unknown): boolean {
-  const text = err instanceof Error ? err.message : String(err);
-  return /quote[^.]*expired|expired[^.]*quote/i.test(text);
+  return /quote[^.]*expired|expired[^.]*quote/i.test(errorText(err));
+}
+
+/**
+ * Reason code of an SDK rejection, from the shape of its message. Never
+ * returns the text itself. A refused minimum is read by `payFromWallet`
+ * itself, since it carries the minimum.
+ *
+ * @param err - Rejection from the SDK.
+ * @returns The reason.
+ */
+function sdkFailureReason(err: unknown): PayReason {
+  const text = errorText(err);
+  if (isInsufficientFunds(err)) {
+    return 'insufficient';
+  }
+  if (/expired/i.test(text)) {
+    return 'expired';
+  }
+  if (/no route|route not found|unable to (?:find|route)|failed to (?:find|route)/i.test(text)) {
+    return 'no_route';
+  }
+  if (/timeout|timed out/i.test(text)) {
+    return 'timeout';
+  }
+  if (/^(?:network|connection|connect) error|failed to fetch|networkerror/i.test(text)) {
+    return 'network';
+  }
+  if (/^lnurl error/i.test(text)) {
+    return 'lnurl_error';
+  }
+  return 'sdk_error';
+}
+
+/**
+ * How a payment request moves, read from the request before the SDK prepares
+ * it: an LNURL receiver, a Spark invoice or address, a Lightning request
+ * (also a BIP21 URI that offers one), or a base-chain address.
+ *
+ * @param request - Payment to prepare.
+ * @returns The method, or `unknown`.
+ */
+function methodOf(request: WalletPayRequest): PayMethod {
+  if (request.type === 'lnurl') {
+    return 'lnurl';
+  }
+  const text = request.input.trim().toLowerCase();
+  const bare = text.replace(/^(?:lightning|bitcoin):/, '');
+  if (bare.startsWith('spark')) {
+    return 'spark';
+  }
+  if (bare.startsWith('ln')) {
+    return 'lightning';
+  }
+  if (text.startsWith('bitcoin:')) {
+    return /[?&]lightning=/.test(text) ? 'lightning' : 'onchain';
+  }
+  return /^(?:bc1|tb1|bcrt1|[13mn2])[0-9a-z]{20,}$/.test(bare) ? 'onchain' : 'unknown';
 }
 
 /**
@@ -531,36 +639,68 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
  * @returns Confirmation with `send`, or why the payment cannot be made.
  */
 export async function payFromWallet(request: WalletPayRequest): Promise<WalletPayResult> {
+  const requestMethod = methodOf(request);
+  const requestSats = request.amountSats ?? null;
+  const prepareFailure = (
+    reason: PayReason,
+    error?: unknown,
+    feeSats: number | null = null,
+  ): PaymentFailure => ({
+    stage: 'prepare',
+    reason,
+    method: requestMethod,
+    amountSats: requestSats,
+    feeSats,
+    ...(error === undefined ? {} : { error }),
+  });
   const conn = connection;
   if (conn === null) {
-    return { kind: 'unlock' };
+    return { kind: 'unlock', failure: prepareFailure('unlock') };
   }
   let prepared;
   try {
     prepared = await conn.prepare(request);
   } catch (err: unknown) {
     if (connection !== conn) {
-      return { kind: 'failed' };
+      return { kind: 'failed', failure: prepareFailure('disconnected', err) };
     }
     const minSats = minimumOf(err);
     if (minSats !== null) {
-      return { kind: 'belowMinimum', minSats };
+      return { kind: 'belowMinimum', minSats, failure: prepareFailure('below_minimum', err) };
     }
-    return isInsufficientFunds(err) ? { kind: 'insufficient' } : { kind: 'failed' };
+    const reason = sdkFailureReason(err);
+    return reason === 'insufficient'
+      ? { kind: 'insufficient', failure: prepareFailure('insufficient', err) }
+      : { kind: 'failed', failure: prepareFailure(reason, err) };
   }
   const { amountSats, feeSats } = prepared;
   const quote = prepared.onchain;
+  const method: PayMethod = quote === undefined ? requestMethod : 'onchain';
   const lowestFeeSats = quote === undefined ? feeSats : Math.min(...Object.values(quote.fees));
+  const failureOf = (
+    stage: PayStage,
+    reason: PayReason,
+    chosenFeeSats: number,
+    error?: unknown,
+  ): PaymentFailure => ({
+    stage,
+    reason,
+    method,
+    amountSats,
+    feeSats: chosenFeeSats,
+    ...(quote === undefined ? {} : { onchainFees: quote.fees }),
+    ...(error === undefined ? {} : { error }),
+  });
   let spendableFeeSats = 0;
   if (connection !== conn) {
-    return { kind: 'failed' };
+    return { kind: 'failed', failure: failureOf('prepare', 'disconnected', feeSats) };
   }
   try {
     balanceReadCounter += 1;
     const read = balanceReadCounter;
     const info = await conn.getInfo({ ensureSynced: true });
     if (connection !== conn) {
-      return { kind: 'failed' };
+      return { kind: 'failed', failure: failureOf('prepare', 'disconnected', feeSats) };
     }
     let balanceSats = info.balanceSats;
     if (read === balanceReadCounter) {
@@ -571,23 +711,35 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
       balanceSats = useWalletStore.getState().balanceSats ?? info.balanceSats;
     }
     if (balanceSats < amountSats + lowestFeeSats) {
-      return { kind: 'insufficient', feeSats: lowestFeeSats };
+      return {
+        kind: 'insufficient',
+        feeSats: lowestFeeSats,
+        failure: failureOf('prepare', 'insufficient', lowestFeeSats),
+      };
     }
     spendableFeeSats = balanceSats - amountSats;
-  } catch {
-    return { kind: 'failed' };
+  } catch (err: unknown) {
+    const reason = connection === conn ? 'balance_read' : 'disconnected';
+    return { kind: 'failed', failure: failureOf('prepare', reason, feeSats, err) };
   }
   let sent = false;
   const send = async (speed: OnchainSpeed = 'medium'): Promise<WalletSendResult> => {
-    if (sent || connection !== conn) {
-      return { kind: 'failed' };
+    const chosenFeeSats = quote === undefined ? feeSats : quote.fees[speed];
+    if (sent) {
+      return { kind: 'failed', failure: failureOf('confirm', 'already_sent', chosenFeeSats) };
+    }
+    if (connection !== conn) {
+      return { kind: 'failed', failure: failureOf('confirm', 'disconnected', chosenFeeSats) };
     }
     if (quote !== undefined) {
-      if (quote.fees[speed] > spendableFeeSats) {
-        return { kind: 'insufficient' };
+      if (chosenFeeSats > spendableFeeSats) {
+        return {
+          kind: 'insufficient',
+          failure: failureOf('confirm', 'insufficient', chosenFeeSats),
+        };
       }
       if (Date.now() >= quote.expiresAtMs - WALLET_QUOTE_MARGIN_MS) {
-        return { kind: 'expired' };
+        return { kind: 'expired', failure: failureOf('confirm', 'expired', chosenFeeSats) };
       }
     }
     sent = true;
@@ -596,11 +748,7 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
     const recordSent = (): void => {
       logInteraction(
         'payment_sent',
-        {
-          amountSats,
-          feeSats: quote === undefined ? feeSats : quote.fees[speed],
-          onchain: quote !== undefined,
-        },
+        { amountSats, feeSats: chosenFeeSats, onchain: quote !== undefined },
         session,
       );
     };
@@ -619,16 +767,25 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
           },
           () => false,
         );
-        result = { kind: 'failed', sentLate };
+        result = {
+          kind: 'failed',
+          failure: failureOf('send', 'timeout', chosenFeeSats),
+          sentLate,
+        };
       } else {
         recordSent();
         result = { kind: 'paid' };
       }
     } catch (err: unknown) {
       if (quote !== undefined && isQuoteExpired(err)) {
-        result = { kind: 'expired' };
+        result = { kind: 'expired', failure: failureOf('send', 'expired', chosenFeeSats, err) };
       } else {
-        result = isInsufficientFunds(err) ? { kind: 'insufficient' } : { kind: 'failed' };
+        const reason = sdkFailureReason(err);
+        const failure = failureOf('send', reason, chosenFeeSats, err);
+        result =
+          reason === 'insufficient'
+            ? { kind: 'insufficient', failure }
+            : { kind: 'failed', failure };
       }
     }
     if (connection === conn) {
@@ -637,11 +794,12 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
     return result;
   };
   return quote === undefined
-    ? { kind: 'confirm', amountSats, feeSats, send }
+    ? { kind: 'confirm', amountSats, feeSats, method, send }
     : {
         kind: 'confirm',
         amountSats,
         feeSats,
+        method,
         onchain: { fees: quote.fees, spendableFeeSats },
         send,
       };

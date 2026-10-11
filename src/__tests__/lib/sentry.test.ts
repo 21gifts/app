@@ -153,8 +153,20 @@ describe('beforeSend scrubber', () => {
     ['a Spark address', 'spark1pgss9qf0yp5y0sv5v8wtlm7mn0q7cfhjvcq5m4mq4dg9xr0p0c4mr7xmgaqh8a'],
     ['a Spark regtest address', 'sparkrt1pgss9qf0yp5y0sv5v8wtlm7mn0q7cfhjvcq5m4mq4dg9xr0p0c'],
     ['64 hex digits', HEX64],
+    ['a BOLT12 offer', 'lno1qgsqvgnwgcg35z6ee2h3yczraddm72xrfua9uve2rlrm9deu7xyfzrc'],
+    ['a bech32 base-chain address', 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq'],
+    ['a bech32 testnet address', 'tb1qw508d6qejxtdg4y5r3zarvary0c5xw7kxpjzsx'],
+    ['a base58 base-chain address', '1BoatSLRHtKNngkdXEeobR76b53LETtpyT'],
+    ['a base58 script address', '3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy'],
+    ['a Lightning address', 'bob@example.com'],
   ])('redacts %s', (_label, secret) => {
     expect(scrubText(`pay ${secret} failed`)).toBe('pay [Filtered] failed');
+  });
+
+  it('keeps a lower-case chunk hash, a package version, and a long camelCase name', () => {
+    const text =
+      'at notificationPermissionDenied (/_next/static/chunks/3a7b8c9d1e2f3a4b5c6d7e8f9a1b2c3d.js) react@18.3.1';
+    expect(scrubText(text)).toBe(text);
   });
 
   it('keeps the lnurlp path segment of a lightning address URL', () => {

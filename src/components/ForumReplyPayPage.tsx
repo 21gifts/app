@@ -69,7 +69,13 @@ export function ForumReplyPayPage({
         })}
         {preferredFiatSuffix(amountSats, rateDay, fiat, numberFormat)}
       </p>
-      <WalletPay sparkInvoice={sparkInvoice} pr={pr} amountSats={amountSats} rateDay={rateDay} />
+      <WalletPay
+        sparkInvoice={sparkInvoice}
+        pr={pr}
+        amountSats={amountSats}
+        rateDay={rateDay}
+        flow="reaction"
+      />
       {payWaiting ? (
         <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>
       ) : null}

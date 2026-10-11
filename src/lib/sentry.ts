@@ -68,10 +68,19 @@ const WORD = /^[a-z]{3,8}$/i;
 const REDACTIONS: ReadonlyArray<readonly [RegExp, string]> = [
   // 12 or more BIP-39-shaped words in a row (space, comma, or quote separated).
   [/\b[a-z]{3,8}(?:[\s,"']+[a-z]{3,8}){11,}\b/gi, FILTERED],
-  // BOLT11 invoices and LNURL strings.
-  [/\b(?:lnbc|lntb|lnurl)[0-9a-z]{10,}/gi, FILTERED],
+  // BOLT11 invoices, BOLT12 offers and invoices, and LNURL strings.
+  [/\b(?:lnbc|lntb|lnurl|lno1|lni1)[0-9a-z]{10,}/gi, FILTERED],
   // Spark addresses.
   [/\bspark(?:rt)?1[0-9a-z]{10,}/gi, FILTERED],
+  // Bitcoin base-chain addresses: bech32 (bc1, tb1, bcrt1) and base58 (mixed case
+  // with a digit after the first character, so a long camelCase name stays).
+  [/\b(?:bc|tb|bcrt)1[02-9ac-hj-np-z]{8,}\b/gi, FILTERED],
+  [
+    /\b[123mn](?=[1-9A-HJ-NP-Za-km-z]*[A-HJ-NP-Z])(?=[1-9A-HJ-NP-Za-km-z]*[a-km-z])(?=[1-9A-HJ-NP-Za-km-z]*[1-9])[1-9A-HJ-NP-Za-km-z]{25,39}\b/g,
+    FILTERED,
+  ],
+  // Lightning addresses (and e-mail addresses): name@host.tld.
+  [/\b[a-z0-9._%+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}\b/gi, FILTERED],
   // Keys, hashes, preimages, view keys: 64 or more hex digits.
   [/\b[0-9a-f]{64,}\b/gi, FILTERED],
   // Bearer tokens.

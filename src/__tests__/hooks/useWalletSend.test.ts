@@ -19,6 +19,7 @@ import {
   type WalletPayResult,
   type WalletSendResult,
 } from '@/lib/wallet/wallet-service';
+import { reportPaymentFailure, type PaymentFailure } from '@/lib/wallet/payment-failure';
 import { setWalletUsable } from '@/__tests__/wallet-pay-fixture';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
@@ -28,6 +29,8 @@ vi.mock('@/lib/wallet/wallet-service', () => ({
   parseWalletInput: vi.fn(),
   payFromWallet: vi.fn(),
 }));
+
+vi.mock('@/lib/wallet/payment-failure', () => ({ reportPaymentFailure: vi.fn() }));
 
 vi.mock('@/lib/wallet/wallet-setup', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/wallet/wallet-setup')>()),
@@ -57,12 +60,32 @@ const LNURL: WalletTarget = {
   recipient: 'bob@pay.example',
 };
 
+/** A prepare the SDK refused. */
+const FAILED: PaymentFailure = {
+  stage: 'prepare',
+  reason: 'sdk_error',
+  method: 'lightning',
+  amountSats: null,
+  feeSats: null,
+};
+/** A balance too low for amount and fee. */
+const LOW: PaymentFailure = { ...FAILED, reason: 'insufficient' };
+/** An amount below the SDK minimum for a base-chain address. */
+const BELOW: PaymentFailure = { ...FAILED, reason: 'below_minimum', method: 'onchain' };
+/** A base-chain fee quote that ran out. */
+const EXPIRED: PaymentFailure = {
+  ...FAILED,
+  stage: 'confirm',
+  reason: 'expired',
+  method: 'onchain',
+};
+
 function target(value: WalletTarget): void {
   vi.mocked(parseWalletInput).mockResolvedValue({ kind: 'target', target: value });
 }
 
 function confirmWith(send: () => Promise<WalletSendResult>): WalletPayResult {
-  return { kind: 'confirm', amountSats: 2_100, feeSats: 1, send };
+  return { kind: 'confirm', amountSats: 2_100, feeSats: 1, method: 'lightning', send };
 }
 
 async function typeAndSubmit(
@@ -93,6 +116,7 @@ beforeEach(() => {
   vi.mocked(fetchShopChargeInvoice).mockResolvedValue({ kind: 'none' });
   vi.mocked(fetchMemberSparkInvoice).mockReset();
   vi.mocked(fetchMemberSparkInvoice).mockResolvedValue(null);
+  vi.mocked(reportPaymentFailure).mockClear();
   useAuthStore.setState({ session: 'sess' });
 });
 
@@ -210,11 +234,11 @@ describe('useWalletSend input', () => {
 
   it('maps a prepare failure and insufficient balance to input alerts', async () => {
     target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
-    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed' });
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed', failure: FAILED });
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, 'lnbc1');
     expect(result.current.state).toEqual({ step: 'input', error: 'failed' });
-    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient' });
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient', failure: LOW });
     await typeAndSubmit(result, 'lnbc1');
     expect(result.current.state).toEqual({ step: 'input', error: 'insufficient' });
   });
@@ -272,7 +296,7 @@ describe('useWalletSend amount', () => {
 
   it('sends no comment when it is blank', async () => {
     target(LNURL);
-    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'failed' });
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'failed', failure: FAILED });
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, 'bob@21.gifts');
     await act(async () => {
@@ -388,13 +412,13 @@ describe('useWalletSend confirm', () => {
   });
 
   it('maps a failed or insufficient send to input alerts without retrying', async () => {
-    const failed = await toConfirm(async () => ({ kind: 'failed' }));
+    const failed = await toConfirm(async () => ({ kind: 'failed', failure: FAILED }));
     await act(async () => {
       failed.current.confirm();
     });
     expect(failed.current.state).toEqual({ step: 'input', error: 'failed' });
     cleanup();
-    const low = await toConfirm(async () => ({ kind: 'insufficient' }));
+    const low = await toConfirm(async () => ({ kind: 'insufficient', failure: LOW }));
     await act(async () => {
       low.current.confirm();
     });
@@ -816,6 +840,7 @@ describe('useWalletSend base-chain address', () => {
       kind: 'confirm',
       amountSats: 50_000,
       feeSats: FEES.medium,
+      method: 'onchain',
       onchain: { fees: FEES, spendableFeeSats },
       send,
     };
@@ -894,7 +919,7 @@ describe('useWalletSend base-chain address', () => {
     });
     expect(result.current.state).toMatchObject({ onchain: { speed: 'medium' } });
     await act(async () => {
-      finish({ kind: 'failed' });
+      finish({ kind: 'failed', failure: FAILED });
     });
     const before = result.current.state;
     act(() => {
@@ -928,7 +953,11 @@ describe('useWalletSend base-chain address', () => {
 
   it('reopens the amount step with the SDK minimum and checks it before asking again', async () => {
     target({ ...ONCHAIN, amountSats: 100 });
-    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'belowMinimum', minSats: 294 });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'belowMinimum',
+      minSats: 294,
+      failure: BELOW,
+    });
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, `bitcoin:${ADDRESS}?amount=0.000001`);
     expect(result.current.state).toEqual({
@@ -953,14 +982,21 @@ describe('useWalletSend base-chain address', () => {
 
   it('shows a refused minimum outside a base-chain address as a failed payment', async () => {
     target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
-    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'belowMinimum', minSats: 294 });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'belowMinimum',
+      minSats: 294,
+      failure: BELOW,
+    });
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, 'lnbc1');
     expect(result.current.state).toEqual({ step: 'input', error: 'failed' });
   });
 
   it('renews an expired quote with the chosen speed and says so, without sending', async () => {
-    const expired = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'expired' }));
+    const expired = vi.fn(async (): Promise<WalletSendResult> => ({
+      kind: 'expired',
+      failure: EXPIRED,
+    }));
     const result = await toOnchainConfirm(expired);
     act(() => {
       result.current.setSpeed('fast');
@@ -993,7 +1029,7 @@ describe('useWalletSend base-chain address', () => {
   });
 
   it('renews with the default speed when the new quote no longer covers the chosen one', async () => {
-    const result = await toOnchainConfirm(async () => ({ kind: 'expired' }));
+    const result = await toOnchainConfirm(async () => ({ kind: 'expired', failure: EXPIRED }));
     act(() => {
       result.current.setSpeed('fast');
     });
@@ -1011,7 +1047,9 @@ describe('useWalletSend base-chain address', () => {
 
   it('renews a payment without a quote with its own fee', async () => {
     target({ type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' });
-    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'expired' })));
+    vi.mocked(payFromWallet).mockResolvedValue(
+      confirmWith(async () => ({ kind: 'expired', failure: EXPIRED })),
+    );
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, 'lnbc1');
     await act(async () => {
@@ -1042,7 +1080,7 @@ describe('useWalletSend base-chain address', () => {
     });
     expect(result.current.state.step).toBe('confirm');
     await act(async () => {
-      finish({ kind: 'expired' });
+      finish({ kind: 'expired', failure: EXPIRED });
     });
     expect(payFromWallet).toHaveBeenCalledTimes(1);
     expect(result.current.state).toEqual({
@@ -1062,7 +1100,7 @@ describe('useWalletSend base-chain address', () => {
   });
 
   it('closes the confirm step while a quote is renewed and drops the late renewal', async () => {
-    const result = await toOnchainConfirm(async () => ({ kind: 'expired' }));
+    const result = await toOnchainConfirm(async () => ({ kind: 'expired', failure: EXPIRED }));
     let finish: (value: WalletPayResult) => void = () => undefined;
     vi.mocked(payFromWallet).mockReturnValue(
       new Promise((resolve) => {
@@ -1088,7 +1126,7 @@ describe('useWalletSend base-chain address', () => {
   });
 
   it('quotes again once open when the wallet leaves ready while a quote is renewed', async () => {
-    const result = await toOnchainConfirm(async () => ({ kind: 'expired' }));
+    const result = await toOnchainConfirm(async () => ({ kind: 'expired', failure: EXPIRED }));
     vi.mocked(payFromWallet).mockReturnValue(new Promise(() => undefined));
     await act(async () => {
       result.current.confirm();
@@ -1301,7 +1339,7 @@ describe('useWalletSend wallet status', () => {
     });
     lockedView();
     await act(async () => {
-      finishPrepare({ kind: 'failed' });
+      finishPrepare({ kind: 'failed', failure: FAILED });
     });
     expect(result.current.state).toEqual({
       step: 'quote',
@@ -1377,7 +1415,7 @@ describe('useWalletSend wallet status', () => {
     setStatus('locked');
     setStatus('ready');
     await act(async () => {
-      finishPrepare({ kind: 'failed' });
+      finishPrepare({ kind: 'failed', failure: FAILED });
     });
     expect(payFromWallet).toHaveBeenCalledTimes(2);
     expect(result.current.state.step).toBe('confirm');
@@ -1760,6 +1798,7 @@ describe('useWalletSend relay invoice', () => {
       kind: 'confirm',
       amountSats: 100,
       feeSats: 1,
+      method: 'lnurl',
       send: async () => ({ kind: 'paid' }),
     });
     act(() => {
@@ -1794,6 +1833,7 @@ describe('useWalletSend relay invoice', () => {
       kind: 'confirm',
       amountSats: 101,
       feeSats: 1,
+      method: 'lightning',
       send: async () => ({ kind: 'paid' }),
     });
     await act(async () => {
@@ -1894,6 +1934,7 @@ describe('useWalletSend relay answers while the wallet opens', () => {
       kind: 'confirm',
       amountSats: 100,
       feeSats: 1,
+      method: 'lnurl',
       send: async () => ({ kind: 'paid' }),
     });
     await act(async () => {
@@ -1949,7 +1990,13 @@ describe('useWalletSend fixed amount', () => {
   };
 
   function confirmFixed(amountSats = 7): WalletPayResult {
-    return { kind: 'confirm', amountSats, feeSats: 1, send: async () => ({ kind: 'paid' }) };
+    return {
+      kind: 'confirm',
+      amountSats,
+      feeSats: 1,
+      method: 'spark',
+      send: async () => ({ kind: 'paid' }),
+    };
   }
 
   it.each([
@@ -2015,7 +2062,7 @@ describe('useWalletSend fixed amount', () => {
 
   it('maps a failed prepare of a fixed amount to the input alert', async () => {
     target(FIXED);
-    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient', failure: LOW });
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, SHOP_LINK);
     expect(result.current.state).toEqual({ step: 'input', error: 'insufficient' });
@@ -2191,7 +2238,13 @@ describe('useWalletSend shop charge', () => {
   const CHARGE = { kind: 'invoice' as const, amountSats: 7_000, sparkInvoice: 'spark1shop' };
 
   function confirmShop(amountSats = 7_000): WalletPayResult {
-    return { kind: 'confirm', amountSats, feeSats: 0, send: async () => ({ kind: 'paid' }) };
+    return {
+      kind: 'confirm',
+      amountSats,
+      feeSats: 0,
+      method: 'spark',
+      send: async () => ({ kind: 'paid' }),
+    };
   }
 
   it('pays the open charge of a shop QR with its Spark invoice and no fee', async () => {
@@ -2237,7 +2290,7 @@ describe('useWalletSend shop charge', () => {
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, SHOP_QR);
     expect(result.current.state).toMatchObject({ step: 'confirm', recipient: 'shop@21.gifts' });
-    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed' });
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed', failure: FAILED });
     act(() => {
       useWalletStore.setState({ status: 'locked' });
     });
@@ -2269,7 +2322,7 @@ describe('useWalletSend shop charge', () => {
   });
 
   it.each([
-    ['a failed prepare', { kind: 'failed' } as WalletPayResult],
+    ['a failed prepare', { kind: 'failed', failure: FAILED } as WalletPayResult],
     ['a closed wallet', { kind: 'unlock' } as WalletPayResult],
     ['another amount', confirmShop(21)],
   ])('falls back to the wallet read after %s', async (_label, prepared) => {
@@ -2290,7 +2343,7 @@ describe('useWalletSend shop charge', () => {
 
   it('shows the low balance of a Spark payment instead of falling back', async () => {
     vi.mocked(fetchShopChargeInvoice).mockResolvedValue(CHARGE);
-    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient', failure: LOW });
     const { result } = renderHook(() => useWalletSend());
     await typeAndSubmit(result, SHOP_QR);
     expect(parseWalletInput).not.toHaveBeenCalled();
@@ -2349,7 +2402,13 @@ describe('useWalletSend member without a charge', () => {
   };
 
   function prepared(amountSats = 100, feeSats = 0): WalletPayResult {
-    return { kind: 'confirm', amountSats, feeSats, send: async () => ({ kind: 'paid' }) };
+    return {
+      kind: 'confirm',
+      amountSats,
+      feeSats,
+      method: 'spark',
+      send: async () => ({ kind: 'paid' }),
+    };
   }
 
   async function memberAmountStep(
@@ -2430,7 +2489,7 @@ describe('useWalletSend member without a charge', () => {
   });
 
   it.each([
-    ['a failed prepare', { kind: 'failed' } as WalletPayResult],
+    ['a failed prepare', { kind: 'failed', failure: FAILED } as WalletPayResult],
     ['a closed wallet', { kind: 'unlock' } as WalletPayResult],
     ['another amount', prepared(21)],
   ])('pays over Lightning after %s of the Spark invoice', async (_label, first) => {
@@ -2448,7 +2507,7 @@ describe('useWalletSend member without a charge', () => {
   it('shows the low balance of the Spark payment instead of falling back', async () => {
     const result = await memberAmountStep();
     vi.mocked(fetchMemberSparkInvoice).mockResolvedValue('spark1alice');
-    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient', failure: LOW });
     await act(async () => {
       result.current.submitAmount(100);
     });
@@ -2601,5 +2660,260 @@ describe('useWalletSend unreadable text', () => {
     await typeAndSubmit(result, 'lnbc1');
     expect(result.current.busy).toBe(false);
     expect(result.current.state).toEqual({ step: 'input', error: 'failed' });
+  });
+});
+
+describe('useWalletSend failure report', () => {
+  const REQUEST: WalletTarget = { type: 'request', input: 'lnbc1', amountSats: 21, recipient: 'r' };
+
+  it('reports a failed prepare under send, with the amount and the session', async () => {
+    target(REQUEST);
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'failed', failure: FAILED });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(result.current.state).toEqual({ step: 'input', error: 'failed' });
+    expect(reportPaymentFailure).toHaveBeenCalledTimes(1);
+    expect(reportPaymentFailure).toHaveBeenCalledWith({ ...FAILED, amountSats: 21 }, 'send', {
+      session: 'sess',
+    });
+  });
+
+  it('reports a balance too low, which the report keeps out of error reporting', async () => {
+    target(REQUEST);
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient', failure: LOW });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(reportPaymentFailure).toHaveBeenCalledWith({ ...LOW, amountSats: 21 }, 'send', {
+      session: 'sess',
+    });
+  });
+
+  it('reports a handler that threw as app_error', async () => {
+    target(REQUEST);
+    vi.mocked(payFromWallet).mockResolvedValue(undefined as unknown as WalletPayResult);
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(reportPaymentFailure).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stage: 'prepare',
+        reason: 'app_error',
+        method: 'unknown',
+        amountSats: 21,
+        error: expect.any(TypeError),
+      }),
+      'send',
+      { session: 'sess' },
+    );
+  });
+
+  it('does not report a prepare that rejects after the view closed', async () => {
+    target(REQUEST);
+    let reject: (error: Error) => void = () => undefined;
+    vi.mocked(payFromWallet).mockReturnValue(
+      new Promise<WalletPayResult>((_, fail) => {
+        reject = fail;
+      }),
+    );
+    const { result, unmount } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    unmount();
+    await act(async () => {
+      reject(new Error('late'));
+    });
+    expect(reportPaymentFailure).not.toHaveBeenCalled();
+  });
+
+  it('leaves a read that rejects after the view closed ended', async () => {
+    let reject: (error: Error) => void = () => undefined;
+    vi.mocked(parseWalletInput).mockReturnValue(
+      new Promise((_, fail) => {
+        reject = fail;
+      }),
+    );
+    const { result, unmount } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(parseWalletInput).toHaveBeenCalledWith('lnbc1');
+    unmount();
+    await act(async () => {
+      reject(new Error('late'));
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(reportPaymentFailure).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed send with its late outcome, under the session the send started in', async () => {
+    target(REQUEST);
+    const sentLate = Promise.resolve(false);
+    const failure: PaymentFailure = { ...FAILED, stage: 'send', reason: 'timeout' };
+    vi.mocked(payFromWallet).mockResolvedValue(
+      confirmWith(async () => ({ kind: 'failed', failure, sentLate })),
+    );
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(reportPaymentFailure).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(reportPaymentFailure).toHaveBeenCalledWith({ ...failure, amountSats: 2_100 }, 'send', {
+      session: 'sess',
+      sentLate,
+    });
+  });
+
+  it('does not report a paid send', async () => {
+    target(REQUEST);
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(result.current.state.step).toBe('sent');
+    expect(reportPaymentFailure).not.toHaveBeenCalled();
+  });
+
+  it('renews an expired base-chain quote without a report, and reports the renewed one that fails', async () => {
+    const address = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+    target({ type: 'onchain', address, amountSats: null, recipient: 'bc1qar0srr…wf5mdq' });
+    const fees = { fast: 2_840, medium: 1_420, slow: 710 };
+    vi.mocked(payFromWallet).mockResolvedValueOnce({
+      kind: 'confirm',
+      amountSats: 50_000,
+      feeSats: fees.medium,
+      method: 'onchain',
+      onchain: { fees, spendableFeeSats: 10_000 },
+      send: async () => ({ kind: 'expired', failure: EXPIRED }),
+    });
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed', failure: BELOW });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, address);
+    await act(async () => {
+      result.current.submitAmount(50_000);
+    });
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(reportPaymentFailure).toHaveBeenCalledTimes(1);
+    expect(reportPaymentFailure).toHaveBeenCalledWith({ ...BELOW, amountSats: 50_000 }, 'send', {
+      session: 'sess',
+    });
+  });
+
+  it('reports an amount the SDK refuses as too small for a base-chain address', async () => {
+    const address = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+    target({ type: 'onchain', address, amountSats: null, recipient: 'bc1qar0srr…wf5mdq' });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'belowMinimum',
+      minSats: 294,
+      failure: BELOW,
+    });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, address);
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(result.current.state).toMatchObject({ step: 'amount', amountError: true });
+    expect(reportPaymentFailure).toHaveBeenCalledWith({ ...BELOW, amountSats: 100 }, 'send', {
+      session: 'sess',
+    });
+  });
+
+  it.each([
+    [new LnurlRelayError('notPayable'), 'relay_not_payable'],
+    [new LnurlRelayError('notFound'), 'relay_not_found'],
+    [new LnurlRelayError('unreachable'), 'relay_unreachable'],
+    [new LnurlRelayError('amount'), 'relay_amount'],
+    [new LnurlRelayError('comment'), 'relay_comment'],
+    [new LnurlRelayError('failed'), 'relay_failed'],
+    [new Error('offline'), 'relay_failed'],
+  ])('reports the relay invoice refusal %s as %s', async (error, reason) => {
+    const result = await relayAmountStep();
+    vi.mocked(postLnurlInvoice).mockRejectedValue(error);
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(reportPaymentFailure).toHaveBeenCalledWith(
+      { stage: 'prepare', reason, method: 'lnurl', amountSats: 100, feeSats: null, error },
+      'send',
+      { session: 'sess' },
+    );
+  });
+
+  it('reports a relay invoice of another amount as amount_mismatch', async () => {
+    const result = await relayAmountStep();
+    vi.mocked(postLnurlInvoice).mockResolvedValue({ pr: 'lnbc1relay' });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 101,
+      feeSats: 1,
+      method: 'lightning',
+      send: async () => ({ kind: 'paid' }),
+    });
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(reportPaymentFailure).toHaveBeenCalledWith(
+      {
+        stage: 'prepare',
+        reason: 'amount_mismatch',
+        method: 'lightning',
+        amountSats: 100,
+        feeSats: 1,
+      },
+      'send',
+      { session: 'sess' },
+    );
+  });
+
+  it('does not report a member Spark invoice that falls back to the address, only the fallback', async () => {
+    target({ ...LNURL, recipient: 'alice@21.gifts' });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'Alice@21.gifts');
+    vi.mocked(fetchMemberSparkInvoice).mockResolvedValue('spark1alice');
+    const lnurlFailure: PaymentFailure = { ...FAILED, method: 'lnurl', amountSats: 100 };
+    vi.mocked(payFromWallet)
+      .mockResolvedValueOnce({ kind: 'failed', failure: { ...FAILED, method: 'spark' } })
+      .mockResolvedValueOnce({ kind: 'failed', failure: lnurlFailure });
+    await act(async () => {
+      result.current.submitAmount(100);
+    });
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(reportPaymentFailure).toHaveBeenCalledTimes(1);
+    expect(reportPaymentFailure).toHaveBeenCalledWith(lnurlFailure, 'send', { session: 'sess' });
+  });
+
+  it('reports a shop charge under pos, at prepare and at send', async () => {
+    const charge = { kind: 'invoice' as const, amountSats: 7_000, sparkInvoice: 'spark1shop' };
+    vi.mocked(fetchShopChargeInvoice).mockResolvedValue(charge);
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient', failure: LOW });
+    const low = renderHook(() => useWalletSend());
+    await typeAndSubmit(low.result, WALLET_SEND_VISUAL_FIXTURE.fixedLink);
+    expect(reportPaymentFailure).toHaveBeenLastCalledWith({ ...LOW, amountSats: 7_000 }, 'pos', {
+      session: 'sess',
+    });
+    low.unmount();
+
+    const failure: PaymentFailure = { ...FAILED, stage: 'send', method: 'spark' };
+    vi.mocked(payFromWallet).mockResolvedValueOnce({
+      kind: 'confirm',
+      amountSats: 7_000,
+      feeSats: 0,
+      method: 'spark',
+      send: async () => ({ kind: 'failed', failure }),
+    });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, WALLET_SEND_VISUAL_FIXTURE.fixedLink);
+    await act(async () => {
+      result.current.confirm();
+    });
+    expect(reportPaymentFailure).toHaveBeenLastCalledWith(
+      { ...failure, amountSats: 7_000 },
+      'pos',
+      {
+        session: 'sess',
+        sentLate: undefined,
+      },
+    );
   });
 });

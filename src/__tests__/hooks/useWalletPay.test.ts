@@ -14,6 +14,7 @@ import {
   type WalletSendResult,
 } from '@/lib/wallet/wallet-service';
 import { logInteraction } from '@/lib/interaction-log';
+import { reportPaymentFailure, type PaymentFailure } from '@/lib/wallet/payment-failure';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
 
@@ -24,6 +25,7 @@ vi.mock('@/lib/wallet/wallet-service', () => ({
 }));
 
 vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
+vi.mock('@/lib/wallet/payment-failure', () => ({ reportPaymentFailure: vi.fn() }));
 vi.mock('@/lib/wallet/wallet-sdk', () => ({ walletNeedsReload: vi.fn(() => false) }));
 
 const account = {
@@ -48,6 +50,18 @@ const account = {
 };
 
 const SPARK = 'spark1invoice';
+/** A prepare the SDK refused. */
+const FAILED: PaymentFailure = {
+  stage: 'prepare',
+  reason: 'sdk_error',
+  method: 'spark',
+  amountSats: null,
+  feeSats: null,
+};
+/** A balance too low for amount and fee. */
+const LOW: PaymentFailure = { ...FAILED, reason: 'insufficient', amountSats: 21, feeSats: 0 };
+/** A send the app stopped waiting for. */
+const TIMEOUT: PaymentFailure = { ...FAILED, stage: 'send', reason: 'timeout', amountSats: 21 };
 const PR = 'lnbc210n1invoice';
 const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
 const ORIGINAL_BREEZ_KEY = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
@@ -57,7 +71,7 @@ function setWallet(status: WalletStatus, balanceSats: number | null = null): voi
 }
 
 function confirmWith(send: () => Promise<WalletSendResult>, feeSats = 0): WalletPayResult {
-  return { kind: 'confirm', amountSats: 21, feeSats, send };
+  return { kind: 'confirm', amountSats: 21, feeSats, method: 'spark', send };
 }
 
 beforeEach(() => {
@@ -71,6 +85,7 @@ beforeEach(() => {
   vi.mocked(refreshWallet).mockReset().mockResolvedValue(undefined);
   vi.mocked(walletNeedsReload).mockReset().mockReturnValue(false);
   vi.mocked(logInteraction).mockClear();
+  vi.mocked(reportPaymentFailure).mockClear();
 });
 
 afterEach(() => {
@@ -92,7 +107,7 @@ describe('useWalletPay path choice', () => {
   it('pays the payment request when there is no sparkInvoice', async () => {
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
     for (const value of [null, undefined, '']) {
-      const { result, unmount } = renderHook(() => useWalletPay(value, PR, 21));
+      const { result, unmount } = renderHook(() => useWalletPay(value, PR, 21, 'gift'));
       await act(async () => undefined);
       expect(result.current.view).toBe('confirm');
       unmount();
@@ -105,14 +120,14 @@ describe('useWalletPay path choice', () => {
 
   it('pays the sparkInvoice when the api issued one', async () => {
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
-    renderHook(() => useWalletPay(SPARK, PR, 21));
+    renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK });
   });
 
   it('is unavailable when the wallet is not configured', () => {
     setWallet('disabled');
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     expect(result.current.view).toBe('unavailable');
     expect(payFromWallet).not.toHaveBeenCalled();
   });
@@ -120,7 +135,7 @@ describe('useWalletPay path choice', () => {
   it('shows preparing while the account is in the one-time wallet setup', () => {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     expect(result.current.view).toBe('preparing');
     expect(payFromWallet).not.toHaveBeenCalled();
   });
@@ -129,7 +144,7 @@ describe('useWalletPay path choice', () => {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     expect(result.current.view).toBe('preparing');
     await act(async () => {
       useAuthStore.setState({ account: { ...account, sparkWalletVerified: true } });
@@ -140,7 +155,7 @@ describe('useWalletPay path choice', () => {
 
   it('falls unavailable when the account cannot hold a wallet', () => {
     useAuthStore.setState({ account: { ...account, passkeyCredentialId: null } });
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     expect(result.current.view).toBe('unavailable');
     expect(payFromWallet).not.toHaveBeenCalled();
   });
@@ -149,14 +164,14 @@ describe('useWalletPay path choice', () => {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'breez-key';
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
     useWalletStore.setState({ setupFailedSession: 'token' });
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     expect(result.current.view).toBe('setupFailed');
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
   it('shows failed while the wallet store is in error', () => {
     setWallet('error');
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     expect(result.current.view).toBe('failed');
     expect(payFromWallet).not.toHaveBeenCalled();
   });
@@ -164,7 +179,7 @@ describe('useWalletPay path choice', () => {
   it('shows preparing while the store has not connected, then prepares when ready', async () => {
     setWallet('locked');
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' }), 3));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     expect(result.current.view).toBe('preparing');
     expect(payFromWallet).not.toHaveBeenCalled();
     await act(async () => setWallet('ready'));
@@ -177,7 +192,7 @@ describe('useWalletPay path choice', () => {
     vi.mocked(payFromWallet).mockResolvedValueOnce(confirmWith(oldSend));
     let payDuringRender = false;
     const { result, unmount } = renderHook(() => {
-      const slot = useWalletPay(SPARK, PR, 21);
+      const slot = useWalletPay(SPARK, PR, 21, 'gift');
       if (payDuringRender) {
         slot.pay();
       }
@@ -201,7 +216,7 @@ describe('useWalletPay path choice', () => {
         finish = resolve;
       }),
     );
-    const second = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const second = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(second.result.current.view).toBe('preparing');
     await act(async () => {
@@ -221,9 +236,10 @@ describe('useWalletPay guards', () => {
       kind: 'confirm',
       amountSats: 22,
       feeSats: 0,
+      method: 'spark',
       send: async () => ({ kind: 'paid' }),
     });
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('failed');
   });
@@ -238,7 +254,7 @@ describe('useWalletPay guards', () => {
       const seen: string[] = [];
       const { result, rerender } = renderHook(
         ({ input, sats }) => {
-          const slot = useWalletPay(input, PR, sats);
+          const slot = useWalletPay(input, PR, sats, 'gift');
           if (input !== SPARK || sats !== 21) {
             seen.push(slot.view);
             slot.pay();
@@ -263,9 +279,10 @@ describe('useWalletPay guards', () => {
         kind: 'confirm',
         amountSats: 42,
         feeSats: 0,
+        method: 'spark',
         send: async () => ({ kind: 'paid' }),
       });
-    const { result, rerender } = renderHook(({ sats }) => useWalletPay(SPARK, PR, sats), {
+    const { result, rerender } = renderHook(({ sats }) => useWalletPay(SPARK, PR, sats, 'gift'), {
       initialProps: { sats: 21 },
     });
     await act(async () => undefined);
@@ -281,7 +298,7 @@ describe('useWalletPay guards', () => {
 
   it('drops a confirm step when the wallet leaves ready, and prepares again once ready', async () => {
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('confirm');
     act(() => {
@@ -310,7 +327,7 @@ describe('useWalletPay guards', () => {
         finish = resolve;
       }),
     );
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     expect(result.current.view).toBe('preparing');
     act(() => {
       setWallet('error');
@@ -325,7 +342,7 @@ describe('useWalletPay guards', () => {
     vi.mocked(payFromWallet).mockResolvedValue(
       confirmWith(() => new Promise<WalletSendResult>(() => undefined)),
     );
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     act(() => {
       result.current.pay();
@@ -341,9 +358,9 @@ describe('useWalletPay balance after insufficient', () => {
   it('prepares again once the balance rises, and not while it stays the same', async () => {
     setWallet('ready', 10);
     vi.mocked(payFromWallet)
-      .mockResolvedValueOnce({ kind: 'insufficient' })
+      .mockResolvedValueOnce({ kind: 'insufficient', failure: LOW })
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('insufficient');
     await act(async () => {
@@ -361,9 +378,9 @@ describe('useWalletPay balance after insufficient', () => {
   it('starts over when the wallet leaves ready while insufficient shows', async () => {
     setWallet('ready', 10);
     vi.mocked(payFromWallet)
-      .mockResolvedValueOnce({ kind: 'insufficient' })
+      .mockResolvedValueOnce({ kind: 'insufficient', failure: LOW })
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('insufficient');
     await act(async () => {
@@ -380,8 +397,8 @@ describe('useWalletPay balance after insufficient', () => {
   it('becomes unavailable and stops balance reads when the account leaves wallet mode', async () => {
     vi.useFakeTimers();
     setWallet('ready', 10);
-    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient', failure: LOW });
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('insufficient');
     await act(async () => {
@@ -402,12 +419,12 @@ describe('useWalletPay balance after insufficient', () => {
         }),
       )
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('preparing');
     await act(async () => {
       setWallet('ready', 5_000);
-      finish({ kind: 'insufficient' });
+      finish({ kind: 'insufficient', failure: LOW });
     });
     expect(payFromWallet).toHaveBeenCalledTimes(2);
     expect(result.current.view).toBe('confirm');
@@ -416,9 +433,9 @@ describe('useWalletPay balance after insufficient', () => {
   it('measures a rise from the lowest balance seen after insufficient', async () => {
     setWallet('ready', 1_000);
     vi.mocked(payFromWallet)
-      .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'insufficient' })))
+      .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'insufficient', failure: LOW })))
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     await act(async () => {
       result.current.pay();
@@ -438,9 +455,9 @@ describe('useWalletPay balance after insufficient', () => {
   it('prepares again after an insufficient send once the balance rises', async () => {
     setWallet('ready', 10);
     vi.mocked(payFromWallet)
-      .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'insufficient' })))
+      .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'insufficient', failure: LOW })))
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     await act(async () => {
       result.current.pay();
@@ -455,9 +472,9 @@ describe('useWalletPay balance after insufficient', () => {
   it('prepares again when the balance becomes known after an insufficient result and covers it', async () => {
     setWallet('ready', null);
     vi.mocked(payFromWallet)
-      .mockResolvedValueOnce({ kind: 'insufficient' })
+      .mockResolvedValueOnce({ kind: 'insufficient', failure: LOW })
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('insufficient');
     await act(async () => {
@@ -475,9 +492,9 @@ describe('useWalletPay balance after insufficient', () => {
   it('keeps the insufficient view while a top-up does not yet cover amount and known fee', async () => {
     setWallet('ready', 0);
     vi.mocked(payFromWallet)
-      .mockResolvedValueOnce({ kind: 'insufficient', feeSats: 4 })
+      .mockResolvedValueOnce({ kind: 'insufficient', feeSats: 4, failure: LOW })
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' }), 4));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('insufficient');
     expect(result.current.feeSats).toBe(4);
@@ -501,9 +518,9 @@ describe('useWalletPay balance after insufficient', () => {
     const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     setWallet('ready', 10);
     vi.mocked(payFromWallet)
-      .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'insufficient' }), 2))
+      .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'insufficient', failure: LOW }), 2))
       .mockResolvedValueOnce(confirmWith(send, 2));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     await act(async () => {
       result.current.pay();
@@ -523,8 +540,8 @@ describe('useWalletPay balance after insufficient', () => {
 
   it('gives no missing amount while the balance is unknown or the fee makes up the rest', async () => {
     setWallet('ready', null);
-    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient', failure: LOW });
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('insufficient');
     expect(result.current.missingSats).toBeNull();
@@ -551,9 +568,9 @@ describe('useWalletPay balance reads while insufficient', () => {
     );
     setWallet('ready', 0);
     vi.mocked(payFromWallet)
-      .mockResolvedValueOnce({ kind: 'insufficient' })
+      .mockResolvedValueOnce({ kind: 'insufficient', failure: LOW })
       .mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('insufficient');
     expect(refreshWallet).not.toHaveBeenCalled();
@@ -585,15 +602,15 @@ describe('useWalletPay balance reads while insufficient', () => {
   it('stops reading when the slot closes or the wallet leaves ready', async () => {
     vi.useFakeTimers();
     setWallet('ready', 0);
-    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient' });
-    const first = renderHook(() => useWalletPay(SPARK, PR, 21));
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient', failure: LOW });
+    const first = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     first.unmount();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS * 2);
     });
     expect(refreshWallet).not.toHaveBeenCalled();
-    const second = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const second = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(second.result.current.view).toBe('insufficient');
     await act(async () => {
@@ -609,7 +626,7 @@ describe('useWalletPay balance reads while insufficient', () => {
     vi.useFakeTimers();
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/welcome?visual=wallet-pay-insufficient');
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     expect(result.current).toMatchObject({ view: 'insufficient', missingSats: 21 });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS * 2);
@@ -623,7 +640,7 @@ describe('useWalletPay sending', () => {
     vi.useFakeTimers();
     const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('confirm');
     await act(async () => {
@@ -646,9 +663,12 @@ describe('useWalletPay sending', () => {
 
   it('after a failed send waits 60 s on the long-poll, then says not confirmed yet, without retrying', async () => {
     vi.useFakeTimers();
-    const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'failed' }));
+    const send = vi.fn(async (): Promise<WalletSendResult> => ({
+      kind: 'failed',
+      failure: FAILED,
+    }));
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     await act(async () => {
       result.current.pay();
@@ -668,8 +688,10 @@ describe('useWalletPay sending', () => {
   });
 
   it('shows insufficient balance when the send says so', async () => {
-    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'insufficient' })));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    vi.mocked(payFromWallet).mockResolvedValue(
+      confirmWith(async () => ({ kind: 'insufficient', failure: LOW })),
+    );
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     await act(async () => {
       result.current.pay();
@@ -680,8 +702,10 @@ describe('useWalletPay sending', () => {
 
   it('drops the wait when the sheet closes before the timer fires', async () => {
     vi.useFakeTimers();
-    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'failed' })));
-    const { result, unmount } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    vi.mocked(payFromWallet).mockResolvedValue(
+      confirmWith(async () => ({ kind: 'failed', failure: FAILED })),
+    );
+    const { result, unmount } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     await act(async () => {
       result.current.pay();
@@ -701,8 +725,8 @@ describe('useWalletPay sending', () => {
           }),
       ),
     );
-    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed' });
-    const { result, rerender } = renderHook(({ value }) => useWalletPay(value, PR, 21), {
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed', failure: FAILED });
+    const { result, rerender } = renderHook(({ value }) => useWalletPay(value, PR, 21, 'gift'), {
       initialProps: { value: SPARK },
     });
     await act(async () => undefined);
@@ -713,16 +737,18 @@ describe('useWalletPay sending', () => {
       rerender({ value: 'spark1other' });
     });
     await act(async () => {
-      finish({ kind: 'insufficient' });
+      finish({ kind: 'insufficient', failure: LOW });
     });
     expect(result.current.view).toBe('failed');
   });
 
   it('ignores the 60 s timer of an older invoice', async () => {
     vi.useFakeTimers();
-    vi.mocked(payFromWallet).mockResolvedValueOnce(confirmWith(async () => ({ kind: 'failed' })));
-    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient' });
-    const { result, rerender } = renderHook(({ value }) => useWalletPay(value, PR, 21), {
+    vi.mocked(payFromWallet).mockResolvedValueOnce(
+      confirmWith(async () => ({ kind: 'failed', failure: FAILED })),
+    );
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient', failure: LOW });
+    const { result, rerender } = renderHook(({ value }) => useWalletPay(value, PR, 21, 'gift'), {
       initialProps: { value: SPARK },
     });
     await act(async () => undefined);
@@ -753,7 +779,7 @@ describe('useWalletPay visual pins', () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     setWallet('error');
     window.history.replaceState({}, '', `/welcome?visual=${visual}`);
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     expect(result.current).toMatchObject({ view, feeSats: 0, missingSats: 21 });
     act(() => {
       result.current.pay();
@@ -768,30 +794,38 @@ describe('useWalletPay visual pins', () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     setWallet('disabled');
     window.history.replaceState({}, '', '/welcome?visual=wallet-pay-confirm');
-    expect(renderHook(() => useWalletPay(null, PR, 21)).result.current.view).toBe('confirm');
+    expect(renderHook(() => useWalletPay(null, PR, 21, 'gift')).result.current.view).toBe(
+      'confirm',
+    );
   });
 
   it.each(pins.map(([visual]) => visual))('ignores %s in a production build', (visual) => {
     window.history.replaceState({}, '', `/welcome?visual=${visual}`);
     setWallet('disabled');
-    expect(renderHook(() => useWalletPay(SPARK, PR, 21)).result.current.view).toBe('unavailable');
+    expect(renderHook(() => useWalletPay(SPARK, PR, 21, 'gift')).result.current.view).toBe(
+      'unavailable',
+    );
   });
 
   it('ignores another or missing visual value', () => {
     setWallet('disabled');
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/welcome?visual=other');
-    expect(renderHook(() => useWalletPay(SPARK, PR, 21)).result.current.view).toBe('unavailable');
+    expect(renderHook(() => useWalletPay(SPARK, PR, 21, 'gift')).result.current.view).toBe(
+      'unavailable',
+    );
     window.history.replaceState({}, '', '/welcome');
-    expect(renderHook(() => useWalletPay(SPARK, PR, 21)).result.current.view).toBe('unavailable');
+    expect(renderHook(() => useWalletPay(SPARK, PR, 21, 'gift')).result.current.view).toBe(
+      'unavailable',
+    );
   });
 });
 
 describe('useWalletPay retry', () => {
   it('prepares again after a failed prepare without reconnecting', async () => {
-    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed' });
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed', failure: FAILED });
     vi.mocked(payFromWallet).mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' }), 2));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('failed');
     await act(async () => {
@@ -809,10 +843,11 @@ describe('useWalletPay retry', () => {
       kind: 'confirm',
       amountSats: 22,
       feeSats: 0,
+      method: 'spark',
       send: async () => ({ kind: 'paid' }),
     });
-    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient' });
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient', failure: LOW });
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('failed');
     await act(async () => {
@@ -823,7 +858,7 @@ describe('useWalletPay retry', () => {
 
   it('connects the wallet again when the store is in error', () => {
     setWallet('error');
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     act(() => {
       result.current.retry();
     });
@@ -835,7 +870,7 @@ describe('useWalletPay retry', () => {
   it('reloads the page when the wallet library failed to load', () => {
     setWallet('error');
     vi.mocked(walletNeedsReload).mockReturnValue(true);
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     const previous = window.location;
     const reload = vi.fn();
     Object.defineProperty(window, 'location', {
@@ -857,8 +892,8 @@ describe('useWalletPay retry', () => {
         finish = resolve;
       }),
     );
-    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient' });
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'insufficient', failure: LOW });
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     expect(result.current.view).toBe('preparing');
     act(() => {
       setWallet('error');
@@ -886,7 +921,7 @@ describe('useWalletPay gift record', () => {
         }),
     );
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
-    const { result, unmount } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result, unmount } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     await act(async () => {
       result.current.pay();
@@ -908,7 +943,7 @@ describe('useWalletPay gift record', () => {
         }),
     );
     vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     await act(async () => {
       result.current.pay();
@@ -926,9 +961,9 @@ describe('useWalletPay gift record', () => {
       late = resolve;
     });
     vi.mocked(payFromWallet).mockResolvedValue(
-      confirmWith(async () => ({ kind: 'failed', sentLate })),
+      confirmWith(async () => ({ kind: 'failed', failure: TIMEOUT, sentLate })),
     );
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     await act(async () => {
       result.current.pay();
@@ -942,14 +977,131 @@ describe('useWalletPay gift record', () => {
 
   it('records nothing when a send the app stopped waiting for fails later', async () => {
     vi.mocked(payFromWallet).mockResolvedValue(
-      confirmWith(async () => ({ kind: 'failed', sentLate: Promise.resolve(false) })),
+      confirmWith(async () => ({
+        kind: 'failed',
+        failure: TIMEOUT,
+        sentLate: Promise.resolve(false),
+      })),
     );
-    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     await act(async () => {
       result.current.pay();
     });
     await act(async () => undefined);
     expect(logInteraction).not.toHaveBeenCalled();
+  });
+});
+
+describe('useWalletPay failure report', () => {
+  it('reports a failed prepare under the flow, the sheet amount, and the session', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'failed', failure: FAILED });
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'repay'));
+    await act(async () => undefined);
+    expect(result.current.view).toBe('failed');
+    expect(reportPaymentFailure).toHaveBeenCalledTimes(1);
+    expect(reportPaymentFailure).toHaveBeenCalledWith({ ...FAILED, amountSats: 21 }, 'repay', {
+      session: 'token',
+    });
+  });
+
+  it('reports a balance too low, which the report keeps out of error reporting', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'insufficient', feeSats: 0, failure: LOW });
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'inbox'));
+    await act(async () => undefined);
+    expect(result.current.view).toBe('insufficient');
+    expect(reportPaymentFailure).toHaveBeenCalledWith(LOW, 'inbox', { session: 'token' });
+  });
+
+  it('reports a prepared amount that is not the sheet amount as amount_mismatch', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 22,
+      feeSats: 1,
+      method: 'lightning',
+      send: async () => ({ kind: 'paid' }),
+    });
+    renderHook(() => useWalletPay(null, PR, 21, 'gift'));
+    await act(async () => undefined);
+    expect(reportPaymentFailure).toHaveBeenCalledWith(
+      {
+        stage: 'prepare',
+        reason: 'amount_mismatch',
+        method: 'lightning',
+        amountSats: 21,
+        feeSats: 1,
+      },
+      'gift',
+      { session: 'token' },
+    );
+  });
+
+  it('does not report a prepare whose sheet moved on meanwhile', async () => {
+    let finish: (value: WalletPayResult) => void = () => undefined;
+    vi.mocked(payFromWallet).mockImplementationOnce(
+      () =>
+        new Promise<WalletPayResult>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const { unmount } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
+    await act(async () => undefined);
+    unmount();
+    await act(async () => {
+      finish({ kind: 'failed', failure: FAILED });
+    });
+    expect(reportPaymentFailure).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed send even after the sheet closed, and a paid one not at all', async () => {
+    const send = vi.fn<() => Promise<WalletSendResult>>();
+    send.mockResolvedValueOnce({ kind: 'paid' });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
+    const paid = renderHook(() => useWalletPay(SPARK, PR, 21, 'post_fee'));
+    await act(async () => undefined);
+    await act(async () => {
+      paid.result.current.pay();
+    });
+    expect(reportPaymentFailure).not.toHaveBeenCalled();
+    paid.unmount();
+
+    let finish: (value: WalletSendResult) => void = () => undefined;
+    send.mockImplementationOnce(
+      () =>
+        new Promise<WalletSendResult>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const failing = renderHook(() => useWalletPay(SPARK, PR, 21, 'post_fee'));
+    await act(async () => undefined);
+    await act(async () => {
+      failing.result.current.pay();
+    });
+    useAuthStore.setState({ session: 'other' });
+    failing.unmount();
+    const failure: PaymentFailure = { ...FAILED, stage: 'send', reason: 'no_route' };
+    await act(async () => {
+      finish({ kind: 'insufficient', failure });
+    });
+    expect(reportPaymentFailure).toHaveBeenCalledWith({ ...failure, amountSats: 21 }, 'post_fee', {
+      session: 'token',
+      sentLate: undefined,
+    });
+  });
+
+  it('hands a timed-out send its late outcome', async () => {
+    const sentLate = Promise.resolve(false);
+    vi.mocked(payFromWallet).mockResolvedValue(
+      confirmWith(async () => ({ kind: 'failed', failure: TIMEOUT, sentLate })),
+    );
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'reaction'));
+    await act(async () => undefined);
+    await act(async () => {
+      result.current.pay();
+    });
+    expect(reportPaymentFailure).toHaveBeenCalledWith(TIMEOUT, 'reaction', {
+      session: 'token',
+      sentLate,
+    });
   });
 });

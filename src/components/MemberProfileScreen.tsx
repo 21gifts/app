@@ -702,6 +702,7 @@ export function MemberProfileScreen({
           messageId,
           pr: invoice.pr,
           amountSats: invoice.amountSats,
+          flow: 'repay',
         });
       })
       .catch((err: unknown) => {

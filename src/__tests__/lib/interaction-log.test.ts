@@ -354,6 +354,38 @@ describe('a batch the api refuses', () => {
   });
 });
 
+describe('failure events the api may not know yet', () => {
+  it('go out in a batch of their own, so a 400 for them drops no other event', async () => {
+    fetchMock.mockImplementation((_url: string, init: SentRequest) => {
+      const names = (JSON.parse(init.body) as { events: SentEvent[] }).events.map((e) => e.name);
+      const refused = names.includes('payment_failed');
+      return Promise.resolve({ ok: !refused, status: refused ? 400 : 204 });
+    });
+    mod.logInteraction('payment_sent', { amountSats: 21 });
+    mod.logInteraction('payment_failed', { stage: 'send', reason: 'no_route' });
+    mod.logInteraction('wallet_open_failed', { reason: 'timeout' });
+    mod.logInteraction('gift_sent', { amountSats: 21 });
+    await mod.flushInteractions();
+    expect(batches()).toEqual([
+      ['payment_sent', 'gift_sent'],
+      ['payment_failed', 'wallet_open_failed'],
+    ]);
+    answer('ok');
+    await mod.flushInteractions();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('are sent first when they are the oldest, and a failed batch of them is kept', async () => {
+    answer(new Error('offline'));
+    mod.logInteraction('wallet_open_failed', { reason: 'error' });
+    mod.logInteraction('screen_view');
+    await mod.flushInteractions();
+    answer('ok');
+    await mod.flushInteractions();
+    expect(batches()).toEqual([['wallet_open_failed'], ['wallet_open_failed'], ['screen_view']]);
+  });
+});
+
 describe('logInteraction with the session of the action', () => {
   it('keeps the event while that session is still current', async () => {
     mod.logInteraction('search', { query: 'ada', results: 1 }, 'sess');

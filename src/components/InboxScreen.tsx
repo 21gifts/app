@@ -1283,6 +1283,7 @@ export function InboxScreen({
               pr={invoice.pr}
               amountSats={invoice.amountSats}
               rateDay={rateDay}
+              flow="inbox"
             />
             {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
             {payWaiting ? (
