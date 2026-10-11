@@ -261,7 +261,7 @@ afterEach(() => {
 });
 
 describe('ProfileScreen', () => {
-  it('shows the heading, name form, chart, theme group, and number format group, without an address field', async () => {
+  it('shows the heading, name form, and chart, without an address field or any setting', async () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.getByRole('heading', { name: 'Profile' })).toBeTruthy();
     expect(screen.getByText('Name')).toBeTruthy();
@@ -269,27 +269,19 @@ describe('ProfileScreen', () => {
     expect(screen.queryByLabelText(/address/i)).toBeNull();
     expect(screen.queryByRole('button', { name: /link address/i })).toBeNull();
     expect(screen.queryByText('You are not verified yet.')).toBeNull();
-    expect(screen.getByRole('group', { name: 'Language' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'English' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    expect(screen.getByRole('button', { name: 'Deutsch' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Español' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Filipino' })).toBeTruthy();
-    expect(screen.getByRole('group', { name: 'Theme' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    expect(screen.getByRole('button', { name: 'Light' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Dark' })).toBeTruthy();
-    expect(screen.getByRole('group', { name: 'Number format' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: "10'000.23" }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    expect(screen.getByRole('button', { name: '10,000.23' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: '23.000,33' })).toBeTruthy();
+    for (const name of [
+      'Language',
+      'Theme',
+      'Number format',
+      'Fiat currency',
+      'Notification level',
+      'Hearts',
+      'This device',
+    ]) {
+      expect(screen.queryByRole('group', { name })).toBeNull();
+    }
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
-    expect(screen.getAllByRole('group', { name: 'Fiat currency' })).toHaveLength(1);
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
@@ -303,7 +295,7 @@ describe('ProfileScreen', () => {
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
-    expect(screen.getAllByRole('group', { name: 'Fiat currency' })).toHaveLength(1);
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Given and received' })).toBeNull();

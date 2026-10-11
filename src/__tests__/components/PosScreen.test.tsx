@@ -485,7 +485,9 @@ describe('PosScreen', () => {
     });
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })));
     renderWithLocale(<PosScreen />);
-    expect(await screen.findByRole('link', { name: 'Set a username first.' })).toBeTruthy();
+    expect(
+      (await screen.findByRole('link', { name: 'Set a username first.' })).getAttribute('href'),
+    ).toBe('/settings#address');
     expect(screen.queryByRole('link', { name: 'Set up your wallet first.' })).toBeNull();
   });
 

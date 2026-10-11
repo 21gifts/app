@@ -1383,6 +1383,7 @@ test.describe('screen baselines', () => {
     await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeEnabled();
     await expect(page.getByRole('link', { name: 'Add recovery phrase' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Back up your wallet' })).toBeVisible();
     await shotScreen(page, 'screen-wallet');
   });
 
@@ -8544,43 +8545,6 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Your wallet could not be set up yet.')).toHaveCount(0);
     await expect(page.getByText('No payments yet.')).toBeVisible();
     await shotScreen(page, 'state-pos-setup-pending');
-  });
-
-  test('profile fiat', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          location: null,
-          username: 'alice',
-          lightningAddress: null,
-          rulesAgreedAt: 1_700_000_001,
-          viewKey: 'a'.repeat(64),
-          setup: null,
-          missing: [],
-        }),
-      });
-    });
-    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EMPTY_ACTIVITY),
-      });
-    });
-    await openProfile(page);
-    const group = page.getByRole('group', { name: 'Fiat currency' }).last();
-    await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
-    await group.scrollIntoViewIfNeeded();
-    // Viewport-only capture after AppShell scroller scroll keeps the Fiat
-    // currency row in frame.
-    await shotScreen(page, 'state-profile-fiat', false);
   });
 
   test('screen /members/[accountId]', async ({ page }) => {
@@ -16315,51 +16279,6 @@ test.describe('profile activity chart variants', () => {
     await page.getByRole('button', { name: 'Save About me' }).click();
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-profile-about-save-error');
-  });
-
-  test('profile notification-level-error', async ({ page }) => {
-    await seedAdaProfile(page);
-    await stubProfileStats(page, EMPTY_ACTIVITY);
-    await page.route('**/me/notification-level', async (route) => {
-      await route.fulfill({
-        status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'unavailable' }),
-      });
-    });
-    await openProfile(page);
-    await page.getByRole('button', { name: 'Active' }).click();
-    await expect(page.getByText('Could not save notification level.')).toBeVisible();
-    await shotScreen(page, 'state-profile-notification-level-error');
-  });
-
-  test('profile heart-notify-error', async ({ page }) => {
-    await seedAdaProfile(page);
-    await stubProfileStats(page, EMPTY_ACTIVITY);
-    await page.route('**/me/heart-notifications', async (route) => {
-      await route.fulfill({
-        status: 500,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'unavailable' }),
-      });
-    });
-    await openProfile(page);
-    await page.getByRole('group', { name: 'Hearts' }).getByRole('button', { name: 'Off' }).click();
-    await expect(page.getByText('Could not save the heart setting.')).toBeVisible();
-    await page.getByText('Could not save the heart setting.').scrollIntoViewIfNeeded();
-    await shotScreen(page, 'state-profile-heart-notify-error');
-  });
-
-  test('profile push-enable-error', async ({ page }) => {
-    await seedAdaProfile(page);
-    await stubProfileStats(page, EMPTY_ACTIVITY);
-    await openProfile(page);
-    await page
-      .getByRole('group', { name: 'This device' })
-      .getByRole('button', { name: 'On' })
-      .click();
-    await expect(page.getByText('Notifications are not available in this browser.')).toBeVisible();
-    await shotScreen(page, 'state-profile-push-enable-error');
   });
 });
 
@@ -28569,5 +28488,129 @@ test.describe('habit tracker baselines', () => {
       node.scrollTop = 0;
     });
     await shotScreen(page, 'state-habit-tracker-delete-comment-error');
+  });
+});
+
+test.describe('settings states', () => {
+  async function seedSettingsAccount(
+    page: Page,
+    extras: Record<string, unknown> = {},
+  ): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+          ...extras,
+        }),
+      });
+    });
+  }
+
+  async function openSettings(page: Page): Promise<void> {
+    await page.goto('/settings');
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+  }
+
+  test('settings no-username', async ({ page }) => {
+    await seedSettingsAccount(page, { username: null });
+    await openSettings(page);
+    await expect(page.getByText('Set a username first.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+    await shotScreen(page, 'state-settings-no-username');
+  });
+
+  test('settings address-copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await seedSettingsAccount(page);
+    await openSettings(page);
+    await page.getByRole('button', { name: 'Copy 21.gifts address' }).click();
+    await expect(page.getByText('Copied')).toBeAttached();
+    await shotScreen(page, 'state-settings-address-copied');
+  });
+
+  test('settings default-amount-fiat', async ({ page }) => {
+    await seedSettingsAccount(page);
+    await page.route(/\/me\/amount-unit$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    await openSettings(page);
+    const fiat = page.getByRole('group', { name: 'Default amount' }).getByRole('button', {
+      name: 'USD',
+    });
+    await fiat.click();
+    await expect(fiat).toHaveAttribute('aria-pressed', 'true');
+    await shotScreen(page, 'state-settings-default-amount-fiat');
+  });
+
+  test('settings notification-level-error', async ({ page }) => {
+    await seedSettingsAccount(page);
+    await page.route('**/me/notification-level', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await openSettings(page);
+    await page.getByRole('button', { name: 'Active' }).click();
+    await expect(page.getByText('Could not save notification level.')).toBeVisible();
+    await shotScreen(page, 'state-settings-notification-level-error');
+  });
+
+  test('settings heart-notify-error', async ({ page }) => {
+    await seedSettingsAccount(page);
+    await page.route('**/me/heart-notifications', async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'unavailable' }),
+      });
+    });
+    await openSettings(page);
+    await page.getByRole('group', { name: 'Hearts' }).getByRole('button', { name: 'Off' }).click();
+    await expect(page.getByText('Could not save the heart setting.')).toBeVisible();
+    await page.getByText('Could not save the heart setting.').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-heart-notify-error');
+  });
+
+  test('settings push-enable-error', async ({ page }) => {
+    await seedSettingsAccount(page);
+    await openSettings(page);
+    await page
+      .getByRole('group', { name: 'This device' })
+      .getByRole('button', { name: 'On' })
+      .click();
+    await expect(page.getByText('Notifications are not available in this browser.')).toBeVisible();
+    await shotScreen(page, 'state-settings-push-enable-error');
   });
 });

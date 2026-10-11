@@ -250,6 +250,37 @@ describe('WalletScreenView', () => {
     expect(screen.getByRole('button', { name: 'Receive' })).toBeTruthy();
   });
 
+  it.each([
+    ['missing', undefined],
+    ['empty', ''],
+    ['null', null],
+  ])(
+    'links Back up your wallet to the Settings recovery entry when passkeyCredentialId is %s',
+    (_label, credentialId) => {
+      setWalletAccount();
+      const account = useAuthStore.getState().account;
+      useAuthStore.setState({
+        account: { ...account, passkeyCredentialId: credentialId } as typeof account,
+      });
+      renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult('ready')} />);
+      expect(screen.getByRole('link', { name: 'Back up your wallet' }).getAttribute('href')).toBe(
+        '/settings#recovery',
+      );
+    },
+  );
+
+  it('shows no Back up your wallet link once the account has a recovery phrase', () => {
+    setWalletAccount();
+    renderWithLocale(<WalletScreenView {...ENTRY_PROPS} wallet={walletResult('ready')} />);
+    expect(screen.queryByRole('link', { name: 'Back up your wallet' })).toBeNull();
+  });
+
+  it('shows no Back up your wallet link without an account', () => {
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(<WalletScreenView {...ENTRY_PROPS} />);
+    expect(screen.queryByRole('link', { name: 'Back up your wallet' })).toBeNull();
+  });
+
   it('keeps Send and Receive enabled whatever the wallet status, and opens Send while it connects', () => {
     setWalletAccount();
     for (const status of ['ready', 'connecting', 'error', 'disabled'] as const) {
@@ -510,7 +541,7 @@ describe('WalletScreenView', () => {
     ).not.toBeNull();
   });
 
-  it('points at the profile when the account has no username', () => {
+  it('points at the Settings address row when the account has no username', () => {
     useAuthStore.setState({
       session: 'tok',
       account: {
@@ -546,7 +577,7 @@ describe('WalletScreenView', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
     expect(screen.getByRole('link', { name: 'Set a username first.' }).getAttribute('href')).toBe(
-      '/profile',
+      '/settings#address',
     );
   });
 

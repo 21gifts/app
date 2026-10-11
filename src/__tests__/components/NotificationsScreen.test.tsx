@@ -167,6 +167,28 @@ describe('NotificationsScreen', () => {
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
+  it.each([
+    ['loading', null, false, true],
+    ['error', null, true, false],
+    ['empty', [], false, false],
+  ] as const)(
+    'links Notification settings to the Settings notifications section while %s',
+    (_label, notifications, error, loading) => {
+      renderWithLocale(
+        <NotificationsScreen
+          notifications={notifications === null ? null : [...notifications]}
+          error={error}
+          loading={loading}
+          onRetry={() => undefined}
+          onOpen={() => undefined}
+        />,
+      );
+      expect(screen.getByRole('link', { name: 'Notification settings' }).getAttribute('href')).toBe(
+        '/settings#notifications',
+      );
+    },
+  );
+
   it('shows an error and retries', () => {
     const onRetry = vi.fn();
     renderWithLocale(
