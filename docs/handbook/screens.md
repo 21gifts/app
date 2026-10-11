@@ -210,6 +210,18 @@ The same ready wallet and loan amounts after **Show loan** is pressed. The discl
 
 ![21.gifts wallet loans open](images/wallet-loans-open.png)
 
+### Variant: loans-waiting-all
+
+Ready wallet with **Balance ₿21'000 · $21.00**. Between the balance and **Payments**, the neutral **Your loan** card shows **Fully funded.**, **Ask ₿30'000 · $30.00** with **100%**, muted **Nothing due today** without the check, **Next: tomorrow, ₿1'000 · $1.00**, and the wallet-only muted line **₿1'000 · $1.00 waits · 3 lenders have no wallet yet**. The right-arrow link to repayment details is present. There is no Send button; **Show loan** remains closed.
+
+![21.gifts wallet loans waiting all](images/wallet-loans-waiting-all.png)
+
+### Variant: loans-waiting-all-open
+
+The same ready wallet after **Show loan** is pressed. The disclosure is open as **Hide loan** and shows the linked text **I need a small loan to buy a second-hand sewing machine for my repair stall.** with **100%**; **Balance ₿21'000 · $21.00**, muted **Nothing due today** without the check, **Next: tomorrow, ₿1'000 · $1.00**, and **₿1'000 · $1.00 waits · 3 lenders have no wallet yet** stay unchanged. There is no Send button.
+
+![21.gifts wallet loans waiting all open](images/wallet-loans-waiting-all-open.png)
+
 ### Variant: balance-locked
 
 Pinned fixture (`?visual=balance-locked`, Playwright builds only), not a live wallet. The ordinary `/login` card appears in place of the wallet while the path stays `/wallet`: the muted greeting **Welcome back, Ada**, heading **Log in with your device**, primary **Log in**, the new-account line, and **Open a new account**. The wallet heading, balance, payment history, **Receive** / **Send** footer, and the signed-in **Menu** are absent, and there is no **Log out**: logging in with any passkey decides the account. The pin represents a valid stored session whose tab does not hold the recovery phrase; in a live browser, login opens the wallet and then reveals the page.
@@ -711,7 +723,7 @@ The same when the background wallet setup gave up (pin `?visual=balance-setup-fa
 ## Screen: /loans/repay
 
 - **URL:** `/loans/repay` — the signed-in member's one repayment screen for every loan still collecting or being repaid. It uses the ordinary top-left history arrow and **Menu**; there is no second Back control.
-- **What the user sees:** The due box comes first. It says **Due today**, **Due today · last payment**, **You're N days behind** in the danger colour, or **Still due today** after a partial send. The large amount is Bitcoin with the member's fiat below; when every payable loan was asked in the same fiat currency, that currency leads the large line (for example **₱30.00 · ₿1'200**) and the member's different preferred fiat sits below. Then comes **to N people**, with **· N loans** when more than one loan is payable. A notice-colour box explains any amount waiting for lenders without wallets. **Who gets paid** is closed initially; opened, it lists each lender and amount, groups rows by loan when there is more than one, and marks a lender who cannot receive with a notice-colour warning and **No wallet yet · waits**. While the wallet connects, the pay area says **Checking your wallet…**; if background setup has exhausted its retries, **Your wallet could not be set up yet.** appears with **Try again**. When the wallet is ready and has enough, **From your wallet · ₿balance · fiat** and **Send ₿amount · fiat** follow; one tap requests every loan's currently due bills, pays them oldest-first from the in-app wallet, and waits for settlement without a confirmation step. The progress line says **Sending ₿X · fiat…**. A successful ordinary repayment says **Repaid ₿X · fiat** and, only for a nonzero wallet fee, **Fee ₿X · fiat**, then names the next payment; a last payment uses the green **That was your last payment** message, or names the completed loan when other loans remain. An unconfirmed send stays neutral and a failed request is red. When the balance is short, a bordered box says **Not enough in your wallet** and **Your wallet has ₿A · fiat. Still missing ₿B · fiat.**, then **Top up your wallet**. Opening it reveals **To add Bitcoin, send it to your address:**, the member's own address, its Open CryptoPay QR, an icon-only **Copy**, and **Waiting for your top-up…**. A separate link offers **Send ₿C · fiat now to {names}, the rest after your top-up** when every loan's repayment list has loaded and the oldest complete share or shares fit, and it pays exactly the shares it names; after a run reports a shortfall, the link stays hidden until the wallet balance changes. If some lenders cannot receive, the available shares can still be sent and a notice says what waits; if all are unavailable, **Today's payment waits until they do** and there is no Send control. Sunday shows **No repayments on Sundays** and no Send control. Beneath the due box, **Your loan** or **Your loans** lists every loan from top to bottom: its text; total, term, and per-day amount; **Repaid ₿X · fiat of ₿Y · fiat** with **Day n of N** and a green bar; and **Repayment list**. A collecting loan instead says **Not fully funded yet.** The empty state says **You have no loan to repay.** A failed loan read says **Could not load your loans.** with **Try again**.
+- **What the user sees:** The due box comes first. It says **Due today**, **Due today · last payment**, **You're N days behind** in the danger colour, or **Still due today** after a partial send. The large amount is Bitcoin with the member's fiat below; when every payable loan was asked in the same fiat currency, that currency leads the large line (for example **₱30.00 · ₿1'200**) and the member's different preferred fiat sits below. Then comes **to N people**, with **· N loans** when more than one loan is payable. A notice-colour box explains any amount waiting for lenders without wallets. **Who gets paid** is closed initially; opened, it lists each lender and amount, groups rows by loan when there is more than one, and marks a lender who cannot receive with a notice-colour warning and **No wallet yet · waits**. While a loan's repayment list is still loading, the open list shows a muted **Loading who gets paid…** status with a spinner; after a failed `GET /messages/:id/repayment` it shows a red **Could not load who gets paid for this loan.** The send-now link stays hidden until every list has loaded. While the wallet connects, the pay area says **Checking your wallet…**; if background setup has exhausted its retries, **Your wallet could not be set up yet.** appears with **Try again**. When the wallet is ready and has enough, **From your wallet · ₿balance · fiat** and **Send ₿amount · fiat** follow; one tap requests every loan's currently due bills, pays them oldest-first from the in-app wallet, and waits for settlement without a confirmation step. The progress line says **Sending ₿X · fiat…**. A successful ordinary repayment says **Repaid ₿X · fiat** and, only for a nonzero wallet fee, **Fee ₿X · fiat**, then names the next payment; a last payment uses the green **That was your last payment** message, or names the completed loan when other loans remain. An unconfirmed send stays neutral and a failed request is red. When the balance is short, a bordered box says **Not enough in your wallet** and **Your wallet has ₿A · fiat. Still missing ₿B · fiat.**, then **Top up your wallet**. Opening it reveals **To add Bitcoin, send it to your address:**, the member's own address, its Open CryptoPay QR, an icon-only **Copy**, and **Waiting for your top-up…**. A separate link offers **Send ₿C · fiat now to {names}, the rest after your top-up** when every loan's repayment list has loaded and the oldest complete share or shares fit, and it pays exactly the shares it names; after a run reports a shortfall, the link stays hidden until the wallet balance changes. If some lenders cannot receive, the available shares can still be sent and a notice says what waits; if all are unavailable, **Today's payment waits until they do** and there is no Send control. Sunday shows **No repayments on Sundays** and no Send control. Beneath the due box, **Your loan** or **Your loans** lists every loan from top to bottom: its text; total, term, and per-day amount; **Repaid ₿X · fiat of ₿Y · fiat** with **Day n of N** and a green bar; and **Repayment list**. A collecting loan instead says **Not fully funded yet.** The empty state says **You have no loan to repay.** A failed loan read says **Could not load your loans.** with **Try again**.
 - **Actions:** Open or close **Who gets paid**; tap **Send ₿X · fiat** once to pay all currently payable shares; when short, open **Top up your wallet**, copy the own address, or send now exactly the shares the link names; open a loan's **Repayment list**; retry a failed load; use the single top-left arrow to return to the previous in-app view, or `/welcome` when this tab has none; open **Menu**.
 - **Calls:** `LoanRepayPage`, `AppShell`, `WalletChromeLeft`, `SignedInChrome`, `OnboardingGate`, `LoanRepayScreen`, `useMyLoans`, `useLoanRepay`, `useSpotRate`, `getRepayment`, `postRepaymentDue`, `summarizeLoans`, `dueShares`, `fittingPrefix`, `formatDefinedGoalAmount`, `creditSmallestUnits`, `splitCreditPlan`, `payFromWallet`, `WalletOwnAddress`, `WalletSetupNote`, `GET /me/loans`, `GET /messages/:id/repayment`, and `POST /messages/:id/repayment/due`.
 
@@ -726,6 +738,30 @@ Loan A ready to pay: **Due today**, **₿1'000** with **$1.00** below, **to 3 pe
 The default state after **Who gets paid** is opened. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**; the due total remains **₿1'000 · $1.00** and the one-tap Send control remains visible.
 
 ![21.gifts loans repay recipients](images/loans-repay-who-open.png)
+
+### Variant: ledger-loading
+
+Loan A is ready to pay while its repayment list never arrives. The due box still says **Due today**, **₿1'000** with **$1.00** below, and **to 3 people** from the loan; **Who gets paid** is closed. **From your wallet · ₿21'000 · $21.00** and **Send ₿1'000 · $1.00** remain. The send-now link is hidden. **Your loan** still shows the sewing-machine text and progress.
+
+![21.gifts loans repay ledger loading](images/loans-repay-ledger-loading.png)
+
+### Variant: ledger-loading-who-open
+
+The same loading state after **Who gets paid** is opened. The list shows a muted **Loading who gets paid…** status line with a spinner; Bruno, Carla, and Diego are absent. The due total remains **₿1'000 · $1.00**, Send remains, and the send-now link stays hidden.
+
+![21.gifts loans repay ledger loading who open](images/loans-repay-ledger-loading-who-open.png)
+
+### Variant: ledger-error
+
+Loan A is ready to pay after **GET /messages/:id/repayment** answers 500. The due box still says **Due today**, **₿1'000** with **$1.00** below, and **to 3 people** from the loan; **Who gets paid** is closed. **From your wallet · ₿21'000 · $21.00** and **Send ₿1'000 · $1.00** remain. The send-now link is hidden.
+
+![21.gifts loans repay ledger error](images/loans-repay-ledger-error.png)
+
+### Variant: ledger-error-who-open
+
+The same failed-list state after **Who gets paid** is opened. The list shows a red **Could not load who gets paid for this loan.** alert; Bruno, Carla, and Diego are absent. The due total remains **₿1'000 · $1.00**, Send remains, and the send-now link stays hidden.
+
+![21.gifts loans repay ledger error who open](images/loans-repay-ledger-error-who-open.png)
 
 ### Variant: unavailable
 
@@ -1436,6 +1472,18 @@ The **Your loan** card says **Fully funded.**, shows **Ask ₿30'000 · $30.00**
 The nothing-due card after **Show loan** is pressed. It keeps **Fully funded.**, **Ask ₿30'000 · $30.00** with **100%**, the success outline, a green check with **Nothing due today**, **Next: tomorrow, ₿1'000 · $1.00**, and the right-arrow link. There is no Send button. The list shows the linked loan text **I need a small loan to buy a second-hand sewing machine for my repair stall.** with **100%**; the toggle now says **Hide loan**.
 
 ![21.gifts welcome loan nothing due open](images/welcome-loans-nothing-due-open.png)
+
+### Variant: loans-waiting-all
+
+The **Your loan** card says **Fully funded.**, shows **Ask ₿30'000 · $30.00** with **100%**, and has a neutral outline. Its row shows muted **Nothing due today** without the check, then **Next: tomorrow, ₿1'000 · $1.00**, plus the right-arrow link to repayment details. There is no Send button; **Show loan** remains closed.
+
+![21.gifts welcome loan waiting all](images/welcome-loans-waiting-all.png)
+
+### Variant: loans-waiting-all-open
+
+The waiting-all card after **Show loan** is pressed. It keeps **Fully funded.**, **Ask ₿30'000 · $30.00** with **100%**, the neutral outline, muted **Nothing due today** without the check, **Next: tomorrow, ₿1'000 · $1.00**, and the right-arrow link. There is no Send button. The list shows the linked loan text **I need a small loan to buy a second-hand sewing machine for my repair stall.** with **100%**; the toggle now says **Hide loan**.
+
+![21.gifts welcome loan waiting all open](images/welcome-loans-waiting-all-open.png)
 
 ### Variant: loans-sunday
 

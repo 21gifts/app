@@ -170,26 +170,30 @@ afterEach(() => {
 describe('useLoanRepay wallet state', () => {
   it('derives unavailable, connecting, setupFailed, and idle with its balance', async () => {
     setWallet('disabled', null);
-    const disabled = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const disabled = renderHook(() => useLoanRepay({ reload: vi.fn(async () => body([loan()])) }));
     expect(disabled.result.current).toMatchObject({ phase: 'unavailable', balanceSats: null });
     disabled.unmount();
 
     useAuthStore.setState({ account: { ...account, passkeyCredentialId: null } });
     setWallet('ready');
-    const cannotUnlock = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const cannotUnlock = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     expect(cannotUnlock.result.current.phase).toBe('unavailable');
     cannotUnlock.unmount();
 
     useAuthStore.setState({ account });
     setWallet('connecting', null);
-    const connecting = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const connecting = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     expect(connecting.result.current.phase).toBe('connecting');
     connecting.unmount();
 
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'key';
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
     setWallet('ready');
-    const setup = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const setup = renderHook(() => useLoanRepay({ reload: vi.fn(async () => body([loan()])) }));
     expect(setup.result.current.phase).toBe('connecting');
     await act(async () => {
       useWalletStore.setState({ setupFailedSession: 'token' });
@@ -200,7 +204,7 @@ describe('useLoanRepay wallet state', () => {
     delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
     useAuthStore.setState({ account });
     setWallet('ready', 21_000);
-    const ready = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const ready = renderHook(() => useLoanRepay({ reload: vi.fn(async () => body([loan()])) }));
     expect(ready.result.current).toMatchObject({
       phase: 'idle',
       balanceSats: 21_000,
@@ -216,7 +220,9 @@ describe('useLoanRepay wallet state', () => {
         finish = resolve;
       }),
     );
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => {
       result.current.openTopUp();
     });
@@ -242,7 +248,9 @@ describe('useLoanRepay wallet state', () => {
 
   it('does not start a run without a current session', () => {
     useAuthStore.setState({ session: null, account });
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     expect(result.current.phase).toBe('idle');
     act(() => result.current.pay([loan()]));
     expect(postRepaymentDue).not.toHaveBeenCalled();
@@ -257,7 +265,9 @@ describe('useLoanRepay preparation', () => {
         reject = fail;
       }),
     );
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => {
       result.current.pay([loan()]);
       result.current.pay([loan('m2')]);
@@ -291,7 +301,9 @@ describe('useLoanRepay preparation', () => {
         reject = fail;
       }),
     );
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await act(async () => {
       useAuthStore.setState({ session: 'other' });
@@ -370,7 +382,9 @@ describe('useLoanRepay preparation', () => {
   ])('fails before sending for an unusable prepare result %#', async (prepare) => {
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [bill('Bruno')], waiting: [] });
     vi.mocked(payFromWallet).mockResolvedValue(prepare);
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('failed'));
     expect(result.current.errorKey).toBe('forum.payErrorRequest');
@@ -386,7 +400,9 @@ describe('useLoanRepay preparation', () => {
         resolvePrepare = resolve;
       }),
     );
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(payFromWallet).toHaveBeenCalledTimes(1));
     await act(async () => {
@@ -473,7 +489,9 @@ describe('useLoanRepay preparation', () => {
         feeSats: 20,
         failure: failure('prepare', 'insufficient'),
       });
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('idle'));
     expect(result.current.missingSats).toBe(330);
@@ -491,7 +509,9 @@ describe('useLoanRepay preparation', () => {
       feeSats: 25,
       failure: failure('prepare', 'insufficient'),
     });
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('idle'));
     expect(result.current.missingSats).toBe(25);
@@ -507,7 +527,9 @@ describe('useLoanRepay preparation', () => {
       kind: 'insufficient',
       failure: failure('prepare', 'insufficient'),
     });
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('idle'));
     expect(result.current.missingSats).toBe(1);
@@ -522,7 +544,9 @@ describe('useLoanRepay preparation', () => {
     vi.mocked(payFromWallet)
       .mockResolvedValueOnce(confirmed(500, async () => ({ kind: 'paid' }), 100))
       .mockResolvedValueOnce(confirmed(200));
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('idle'));
     expect(result.current.missingSats).toBe(200);
@@ -534,7 +558,9 @@ describe('useLoanRepay preparation', () => {
     setWallet('ready', null);
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [bill('Bruno')], waiting: [] });
     vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.missingSats).toBe(500));
     expect(result.current).toMatchObject({ phase: 'idle', sentSats: 0 });
@@ -680,7 +706,9 @@ describe('useLoanRepay preparation', () => {
     vi.mocked(payFromWallet)
       .mockResolvedValueOnce(confirmed(500, sendFirst, 50))
       .mockResolvedValueOnce(confirmed(400, sendSecond, 50));
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()], shareKeys('m1', firstBill, secondBill)));
     await waitFor(() => expect(result.current.phase).toBe('idle'));
     expect(sendFirst).not.toHaveBeenCalled();
@@ -704,7 +732,9 @@ describe('useLoanRepay preparation', () => {
         feeSats: 20,
         failure: failure('prepare', 'insufficient'),
       });
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()], shareKeys('m1', firstBill, secondBill)));
     await waitFor(() => expect(result.current.phase).toBe('idle'));
     expect(send).not.toHaveBeenCalled();
@@ -767,7 +797,9 @@ describe('useLoanRepay send and settlement', () => {
     );
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [bill('Bruno')], waiting: [] });
     vi.mocked(payFromWallet).mockResolvedValue(confirmed(500, send));
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
     await act(async () => {
@@ -832,7 +864,9 @@ describe('useLoanRepay send and settlement', () => {
           : { kind: 'failed', failure: failure('send', 'sdk_error') },
       ),
     );
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('failed'));
     expect(result.current.sentSats).toBe(0);
@@ -854,7 +888,9 @@ describe('useLoanRepay send and settlement', () => {
           }),
       ),
     );
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(resolveSend).toBeTypeOf('function'));
     await act(async () => {
@@ -883,7 +919,9 @@ describe('useLoanRepay send and settlement', () => {
         sentLate,
       })),
     );
-    const reload = vi.fn(async (): Promise<MyLoans> => body([]));
+    const reload = vi
+      .fn(async (): Promise<MyLoans> => body([]))
+      .mockResolvedValueOnce(body([loan()]));
     const { result } = renderHook(() => useLoanRepay({ reload }));
     act(() => result.current.pay([loan()]));
     await act(async () => undefined);
@@ -912,7 +950,9 @@ describe('useLoanRepay send and settlement', () => {
         }),
       })),
     );
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('waiting'));
     await act(async () => {
@@ -934,7 +974,9 @@ describe('useLoanRepay send and settlement', () => {
         sentLate,
       })),
     );
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('waiting'));
     await act(async () => {
@@ -960,7 +1002,9 @@ describe('useLoanRepay send and settlement', () => {
         sentLate,
       })),
     );
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await act(async () => undefined);
     expect(result.current.phase).toBe('waiting');
@@ -1107,7 +1151,9 @@ describe('useLoanRepay send and settlement', () => {
         resolve = done;
       }),
     );
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await act(async () => {
       useAuthStore.setState({ session: 'other' });
@@ -1125,7 +1171,9 @@ describe('useLoanRepay failure report', () => {
     const prepareFailure = failure('prepare', 'sdk_error');
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [bill('Bruno')], waiting: [] });
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'failed', failure: prepareFailure });
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('failed'));
     expect(reportPaymentFailure).toHaveBeenCalledTimes(1);
@@ -1148,7 +1196,9 @@ describe('useLoanRepay failure report', () => {
       feeSats: 25,
       failure: low,
     });
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('idle'));
     expect(reportPaymentFailure).toHaveBeenCalledTimes(1);
@@ -1166,7 +1216,9 @@ describe('useLoanRepay failure report', () => {
       method: 'lightning',
       send: async () => ({ kind: 'paid' }),
     });
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('failed'));
     expect(reportPaymentFailure).toHaveBeenCalledWith(
@@ -1189,7 +1241,9 @@ describe('useLoanRepay failure report', () => {
     vi.mocked(payFromWallet).mockResolvedValue(
       confirmed(500, async () => ({ kind: 'failed', failure: sendFailure, sentLate })),
     );
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('failed'));
     expect(reportPaymentFailure).toHaveBeenCalledWith(
@@ -1212,7 +1266,9 @@ describe('useLoanRepay failure report', () => {
     );
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [bill('Bruno')], waiting: [] });
     vi.mocked(payFromWallet).mockResolvedValue(confirmed(500, send));
-    const { result, unmount } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result, unmount } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
     unmount();
@@ -1235,7 +1291,9 @@ describe('useLoanRepay failure report', () => {
         resolvePrepare = resolve;
       }),
     );
-    const { result, unmount } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result, unmount } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(payFromWallet).toHaveBeenCalledTimes(1));
     unmount();
@@ -1406,7 +1464,9 @@ describe('useLoanRepay already-sent invoices', () => {
     );
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [dueBill], waiting: [] });
     vi.mocked(payFromWallet).mockResolvedValue(confirmed(500, send));
-    const { result, unmount } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result, unmount } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
     unmount();
@@ -1435,7 +1495,7 @@ describe('useLoanRepay already-sent invoices', () => {
         sentLate,
       })),
     );
-    const first = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const first = renderHook(() => useLoanRepay({ reload: vi.fn(async () => body([loan()])) }));
     act(() => first.result.current.pay([loan()]));
     await waitFor(() => expect(first.result.current.phase).toBe('waiting'));
     first.unmount();
@@ -1464,7 +1524,9 @@ describe('useLoanRepay already-sent invoices', () => {
         }),
       })),
     );
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('waiting'));
     await act(async () => {
@@ -1532,7 +1594,9 @@ describe('useLoanRepay already-sent invoices', () => {
     );
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [dueBill], waiting: [] });
     vi.mocked(payFromWallet).mockResolvedValue(confirmed(500, send));
-    const { result, unmount } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result, unmount } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
     unmount();
@@ -1568,7 +1632,9 @@ describe('useLoanRepay already-sent invoices', () => {
               : { kind: 'failed', failure: failure('send', 'sdk_error') },
         ),
       );
-      const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+      const { result } = renderHook(() =>
+        useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+      );
       act(() => result.current.pay([loan()]));
       await waitFor(() => expect(result.current.phase).toBe('failed'));
 
@@ -1602,8 +1668,8 @@ describe('useLoanRepay already-sent invoices', () => {
             resolveSecondPrepare = resolve;
           }),
       );
-    const first = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
-    const second = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const first = renderHook(() => useLoanRepay({ reload: vi.fn(async () => body([loan()])) }));
+    const second = renderHook(() => useLoanRepay({ reload: vi.fn(async () => body([loan()])) }));
     act(() => first.result.current.pay([loan()]));
     await waitFor(() => expect(payFromWallet).toHaveBeenCalledTimes(1));
     act(() => second.result.current.pay([loan()]));
@@ -1651,7 +1717,7 @@ describe('useLoanRepay already-sent invoices', () => {
     await act(async () => undefined);
     expect(sendA).toHaveBeenCalledTimes(1);
 
-    const other = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const other = renderHook(() => useLoanRepay({ reload: vi.fn(async () => body([loan()])) }));
     act(() => other.result.current.pay([loan('m1', 900, 100)]));
     await act(async () => undefined);
     expect(sendB).toHaveBeenCalledTimes(1);
@@ -1813,7 +1879,9 @@ describe('useLoanRepay already-sent invoices', () => {
     const sendSecond = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [firstBill], waiting: [] });
     vi.mocked(payFromWallet).mockResolvedValue(confirmed(500, sendFirst));
-    const first = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const first = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan('share-rotate')])) }),
+    );
     act(() => first.result.current.pay([loan('share-rotate')]));
     await waitFor(() => expect(sendFirst).toHaveBeenCalledTimes(1));
 
@@ -1876,51 +1944,51 @@ describe('useLoanRepay fresh settlement baseline', () => {
     expect(result.current.phase).toBe('repaid');
   });
 
-  it('falls back to the tap-time repaidSats when the post-due reload is null', async () => {
-    vi.useFakeTimers();
+  it('sends nothing when the post-due reload is null', async () => {
     vi.mocked(postRepaymentDue).mockResolvedValue({
       bills: [bill('NullBase')],
       waiting: [],
     });
     vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
-    const reload = vi
-      .fn<() => Promise<MyLoans | null>>()
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(body([loan('null-m1', 500, 599)]))
-      .mockResolvedValue(body([loan('null-m1', 0, 600)]));
+    const reload = vi.fn(async (): Promise<MyLoans | null> => null);
     const { result } = renderHook(() => useLoanRepay({ reload }));
     act(() => result.current.pay([loan('null-m1')]));
-    await act(async () => undefined);
-    expect(result.current.phase).toBe('waiting');
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
-    });
-    expect(result.current.phase).toBe('waiting');
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
-    });
-    expect(result.current.phase).toBe('repaid');
+    await waitFor(() => expect(result.current.phase).toBe('failed'));
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.errorKey).toBe('forum.payErrorRequest');
   });
 
-  it('keeps the tap-time repaidSats when the post-due reload omits that loan', async () => {
-    vi.useFakeTimers();
+  it('sends nothing when the post-due reload omits a loan that has a bill', async () => {
     vi.mocked(postRepaymentDue).mockResolvedValue({
       bills: [bill('OmitLoan')],
       waiting: [],
     });
     vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
-    const reload = vi
-      .fn<() => Promise<MyLoans>>()
-      .mockResolvedValueOnce(body([loan('other-loan', 0, 9_000)]))
-      .mockResolvedValueOnce(body([loan('omit-m1', 500, 599)]))
-      .mockResolvedValue(body([loan('omit-m1', 0, 600)]));
+    const reload = vi.fn(async (): Promise<MyLoans> => body([loan('other-loan', 0, 9_000)]));
     const { result } = renderHook(() => useLoanRepay({ reload }));
     act(() => result.current.pay([loan('omit-m1')]));
-    await act(async () => undefined);
-    expect(result.current.phase).toBe('waiting');
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
+    await waitFor(() => expect(result.current.phase).toBe('failed'));
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(result.current.errorKey).toBe('forum.payErrorRequest');
+  });
+
+  it('proceeds when the post-due reload omits a loan that has no bills in the run', async () => {
+    vi.useFakeTimers();
+    vi.mocked(postRepaymentDue).mockResolvedValue({
+      bills: [bill('Keep')],
+      waiting: [],
     });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
+    const payable = loan('keep-m1', 500, 100);
+    const skipped = loan('skip-m2', 0, 50);
+    const reload = vi
+      .fn<() => Promise<MyLoans>>()
+      .mockResolvedValueOnce(body([payable]))
+      .mockResolvedValue(body([loan('keep-m1', 0, 600)]));
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+    act(() => result.current.pay([payable, skipped]));
+    await act(async () => undefined);
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
     expect(result.current.phase).toBe('waiting');
     await act(async () => {
       await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
@@ -1951,7 +2019,9 @@ describe('useLoanRepay visual pins', () => {
     vi.mocked(getE2eNow).mockReturnValue('2026-10-10T12:00:00.000Z');
     window.history.replaceState({}, '', `/loans/repay?visual=${visual}`);
     setWallet('disabled', null);
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     expect(result.current).toMatchObject({ phase, balanceSats, pinned: true });
     act(() => {
       result.current.openTopUp();
@@ -1990,14 +2060,18 @@ describe('useLoanRepay visual pins', () => {
   it.each(pins.map(([visual]) => visual))('ignores %s in a production build', (visual) => {
     window.history.replaceState({}, '', `/loans/repay?visual=${visual}`);
     setWallet('disabled', null);
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     expect(result.current).toMatchObject({ phase: 'unavailable', pinned: false });
   });
 
   it('ignores another visual value in a Playwright build', () => {
     vi.mocked(getE2eNow).mockReturnValue('2026-10-10T12:00:00.000Z');
     window.history.replaceState({}, '', '/loans/repay?visual=other');
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
     expect(result.current).toMatchObject({ phase: 'idle', pinned: false });
   });
 });
