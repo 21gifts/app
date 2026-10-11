@@ -964,6 +964,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'waiting-all-who-open',
+    image: 'loans-repay-waiting-all-who-open.png',
+    visual: 'state-loans-repay-waiting-all-who-open',
+    needle: 'state /loans/repay waiting-all-who-open',
+  },
+  {
+    route: '/loans/repay',
     id: 'short',
     image: 'loans-repay-short.png',
     visual: 'state-loans-repay-short',
@@ -985,10 +992,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'fee-gap-topup-copied',
+    image: 'loans-repay-fee-gap-topup-copied.png',
+    visual: 'state-loans-repay-fee-gap-topup-copied',
+    needle: 'state /loans/repay fee-gap-topup-copied',
+  },
+  {
+    route: '/loans/repay',
     id: 'topup',
     image: 'loans-repay-topup.png',
     visual: 'state-loans-repay-topup',
     needle: 'state /loans/repay topup',
+  },
+  {
+    route: '/loans/repay',
+    id: 'topup-copied',
+    image: 'loans-repay-topup-copied.png',
+    visual: 'state-loans-repay-topup-copied',
+    needle: 'state /loans/repay topup-copied',
   },
   {
     route: '/loans/repay',
@@ -1955,6 +1976,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-loans-due.png',
     visual: 'state-welcome-loans-due',
     needle: 'state /welcome loans-due',
+  },
+  {
+    route: '/welcome',
+    id: 'loans-open',
+    image: 'welcome-loans-open.png',
+    visual: 'state-welcome-loans-open',
+    needle: 'state /welcome loans-open',
   },
   {
     route: '/welcome',

@@ -5721,7 +5721,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Renders the all-loans repayment body: due summary first, recipient disclosure, one-tap wallet payment, top-up state, and per-loan repayment progress.
 - **Inputs:** No props; reads the session account, `useMyLoans`, `useLoanRepay`, `GET /messages/:id/repayment`, preferred fiat and number format, and the current spot rate.
-- **Returns / side effects:** Loads every loan ledger, derives payable and waiting shares, pays the available bills oldest-first, reloads settlement, and renders loading, load-error, empty, collecting, Sunday, ready, short-balance, sending, partial, completed, final-payment, unconfirmed, and failed states. Only the initial read and the load-error **Try again** control set the load-error flag; a failed settlement reload leaves the current shared loans and **Sending…** state in place. **Who gets paid** and **Top up your wallet** are local disclosures; top-up reuses `WalletOwnAddress` with Copy.
+- **Returns / side effects:** Loads every loan ledger, derives payable and waiting shares, pays the available bills oldest-first, reloads settlement, and renders loading, load-error, empty, collecting, Sunday, ready, short-balance, sending, partial, completed, final-payment, unconfirmed, and failed states. Only the initial read and the load-error **Try again** control set the load-error flag; a failed settlement reload leaves the current shared loans and **Sending…** state in place. **Who gets paid** and **Top up your wallet** are local disclosures; top-up reuses `WalletOwnAddress` with its icon-only Copy control.
 - **Used by:** `LoanRepayPage` at `/loans/repay`.
 
 ## Function: LoanRepayPage
@@ -5735,5 +5735,5 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Shared member-owned 21.gifts address block for adding Bitcoin to the in-app wallet.
 - **Inputs:** `username` and optional `copy` (default false); reads the browser hostname and localized labels.
-- **Returns / side effects:** Returns `null` until the host is known or when no address can be formed. Otherwise shows the add-funds sentence, truncated monospaced address, and profile-style Open CryptoPay QR on every device; `copy` also adds **Copy**, which writes the address and shows **Copied** for two seconds. Clipboard refusal leaves the readable block unchanged.
+- **Returns / side effects:** Returns `null` until the host is known or when no address can be formed. Otherwise shows the add-funds sentence, truncated monospaced address, and profile-style Open CryptoPay QR on every device; `copy` also adds an icon-only `IconButton` whose accessible name is **Copy**. It writes the address, then changes to a green check with accessible name **Copied** for two seconds; neither label is visible. Clipboard refusal leaves the readable block unchanged.
 - **Used by:** `WalletPay` for an insufficient gift/payment sheet and `LoanRepayScreen` after **Top up your wallet**.
