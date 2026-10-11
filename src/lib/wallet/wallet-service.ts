@@ -38,6 +38,27 @@ const CONNECT_TIMEOUT_MS = 30_000;
 /** Counter value of the read that last wrote the store balance. */
 let writtenReadCounter = 0;
 
+/**
+ * Balance reads (`getInfo`) of the current connection still running, so an
+ * announcement can wait for the newest balance. Cleared when the connection drops.
+ */
+const readsInFlight = new Set<Promise<unknown>>();
+
+/**
+ * Keeps a running balance read in {@link readsInFlight} until it settles.
+ *
+ * @param read - The `getInfo` promise.
+ * @returns The same promise.
+ */
+function trackRead<T>(read: Promise<T>): Promise<T> {
+  readsInFlight.add(read);
+  const settled = (): void => {
+    readsInFlight.delete(read);
+  };
+  read.then(settled, settled);
+  return read;
+}
+
 /** How many of the newest payments count as known when a wallet connects. */
 const KNOWN_PAYMENTS_LIMIT = 100;
 
@@ -88,6 +109,8 @@ async function dropConnection(): Promise<void> {
   connection = null;
   knownPaymentIds = null;
   heldPayments = [];
+  // A read of the dropped connection may never answer; announcements of the next one do not wait for it.
+  readsInFlight.clear();
   if (current === null) {
     return;
   }
@@ -117,10 +140,9 @@ async function readBalance(
   balanceReadCounter += 1;
   const read = balanceReadCounter;
   try {
-    const info =
-      options?.ensureSynced === true
-        ? await conn.getInfo({ ensureSynced: true })
-        : await conn.getInfo();
+    const info = await trackRead(
+      options?.ensureSynced === true ? conn.getInfo({ ensureSynced: true }) : conn.getInfo(),
+    );
     if (run !== runCounter || read !== balanceReadCounter) {
       return;
     }
@@ -208,7 +230,8 @@ async function rememberKnownPayments(run: number, conn: WalletConnection): Promi
 
 /**
  * Announces a newly received payment once per id: adds it to the known ids,
- * reads the balance again, and once that read is done tells every
+ * reads the balance again, and once that read and any newer one are done
+ * (a newer read makes this one stale, and only the newest writes) tells every
  * {@link onIncomingPayment} listener, so a listener that shows the balance
  * never shows the one from before the payment. Nothing is told when the
  * connection ended meanwhile (sign-out, or a failed read that drops it).
@@ -223,6 +246,9 @@ async function announcePayment(known: Set<string>, payment: WalletPayment): Prom
   }
   known.add(payment.id);
   await refreshWallet();
+  while (readsInFlight.size > 0) {
+    await Promise.allSettled(readsInFlight);
+  }
   if (knownPaymentIds !== known) {
     return;
   }
@@ -830,7 +856,7 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
   try {
     balanceReadCounter += 1;
     const read = balanceReadCounter;
-    const info = await conn.getInfo({ ensureSynced: true });
+    const info = await trackRead(conn.getInfo({ ensureSynced: true }));
     if (connection !== conn) {
       return { kind: 'failed', failure: failureOf('prepare', 'disconnected', feeSats) };
     }
