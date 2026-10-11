@@ -385,7 +385,7 @@ describe('LoanRepayScreen', () => {
       name: /Send ₿500 · \$0.50 now to Bruno/,
     });
     fireEvent.click(sendNow);
-    expect(state.pay).toHaveBeenCalledWith(expect.any(Array), 600);
+    expect(state.pay).toHaveBeenCalledWith(expect.any(Array), 500);
     vi.mocked(useLoanRepay).mockReturnValue({ ...state, phase: 'preparing' });
     view.rerender(<LoanRepayScreen />);
     expect(screen.getByRole('status').textContent).toContain('Sending ₿500 · $0.50…');

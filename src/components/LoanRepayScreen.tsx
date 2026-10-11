@@ -382,7 +382,7 @@ export function LoanRepayScreen(): ReactElement {
           <button
             type="button"
             className="text-sm font-medium text-app-fg underline underline-offset-2"
-            onClick={() => rememberAndPay(balanceSats)}
+            onClick={() => rememberAndPay(fittingSats)}
           >
             {t('loans.sendNow', {
               amount: money(fittingSats),
