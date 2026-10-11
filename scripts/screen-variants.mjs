@@ -943,6 +943,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'behind-who-open',
+    image: 'loans-repay-behind-who-open.png',
+    visual: 'state-loans-repay-behind-who-open',
+    needle: 'state /loans/repay behind-who-open',
+  },
+  {
+    route: '/loans/repay',
     id: 'waiting',
     image: 'loans-repay-waiting.png',
     visual: 'state-loans-repay-waiting',
