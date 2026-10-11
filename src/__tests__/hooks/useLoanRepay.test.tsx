@@ -1246,6 +1246,232 @@ describe('useLoanRepay already-sent invoices', () => {
     expect(payFromWallet).not.toHaveBeenCalled();
     expect(reload).toHaveBeenCalledTimes(1);
   });
+
+  it('does not send a bill whose send is still in flight after unmount', async () => {
+    const dueBill = bill('InFlight');
+    let resolveSend!: (result: WalletSendResult) => void;
+    const send = vi.fn(
+      () =>
+        new Promise<WalletSendResult>((resolve) => {
+          resolveSend = resolve;
+        }),
+    );
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [dueBill], waiting: [] });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500, send));
+    const { result, unmount } = renderHook(() => useLoanRepay({ reload: vi.fn() }));
+    act(() => result.current.pay([loan()]));
+    await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+    unmount();
+
+    vi.mocked(payFromWallet).mockClear();
+    const sendSecond = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500, sendSecond));
+    const reload = vi.fn(async (): Promise<MyLoans> => body([loan()]));
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [dueBill], waiting: [] });
+    const fresh = renderHook(() => useLoanRepay({ reload }));
+    act(() => fresh.result.current.pay([loan()]));
+    await waitFor(() => expect(fresh.result.current.phase).toBe('unconfirmed'));
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(sendSecond).not.toHaveBeenCalled();
+    expect(reload).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      resolveSend({ kind: 'paid' });
+    });
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['insufficient', 'expired', 'failed'] as const)(
+    'releases a bill after a send that resolves %s so a later pay sends it again',
+    async (kind) => {
+      const dueBill = bill(`Release${kind}`);
+      vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [dueBill], waiting: [] });
+      vi.mocked(payFromWallet).mockResolvedValue(
+        confirmed(500, async (): Promise<WalletSendResult> =>
+          kind === 'insufficient'
+            ? { kind: 'insufficient', failure: failure('send', 'insufficient') }
+            : kind === 'expired'
+              ? { kind: 'expired', failure: failure('send', 'expired') }
+              : { kind: 'failed', failure: failure('send', 'sdk_error') },
+        ),
+      );
+      const { result } = renderHook(() => useLoanRepay({ reload: vi.fn() }));
+      act(() => result.current.pay([loan()]));
+      await waitFor(() => expect(result.current.phase).toBe('failed'));
+
+      const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+      vi.mocked(payFromWallet).mockReset();
+      vi.mocked(payFromWallet).mockResolvedValue(confirmed(500, send));
+      vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [dueBill], waiting: [] });
+      act(() => result.current.pay([loan()]));
+      await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
+      expect(payFromWallet).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('skips a send when another run already reserved the same invoice', async () => {
+    const dueBill = bill('RaceReserve');
+    let resolveFirstPrepare!: (result: WalletPayResult) => void;
+    let resolveSecondPrepare!: (result: WalletPayResult) => void;
+    const sendFirst = vi.fn(() => new Promise<WalletSendResult>(() => undefined));
+    const sendSecond = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [dueBill], waiting: [] });
+    vi.mocked(payFromWallet)
+      .mockImplementationOnce(
+        () =>
+          new Promise<WalletPayResult>((resolve) => {
+            resolveFirstPrepare = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<WalletPayResult>((resolve) => {
+            resolveSecondPrepare = resolve;
+          }),
+      );
+    const first = renderHook(() => useLoanRepay({ reload: vi.fn() }));
+    const second = renderHook(() => useLoanRepay({ reload: vi.fn() }));
+    act(() => first.result.current.pay([loan()]));
+    await waitFor(() => expect(payFromWallet).toHaveBeenCalledTimes(1));
+    act(() => second.result.current.pay([loan()]));
+    await waitFor(() => expect(payFromWallet).toHaveBeenCalledTimes(2));
+    await act(async () => {
+      resolveFirstPrepare(confirmed(500, sendFirst));
+    });
+    await waitFor(() => expect(sendFirst).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      resolveSecondPrepare(confirmed(500, sendSecond));
+    });
+    expect(sendSecond).not.toHaveBeenCalled();
+    expect(second.result.current.phase).toBe('unconfirmed');
+  });
+
+  it('counts a bill skipped at send toward the settlement of its loan', async () => {
+    vi.useFakeTimers();
+    const billA = bill('SendSkipA', 500);
+    const billB = bill('SendSkipB', 400, 1);
+    let resolveASend!: (result: WalletSendResult) => void;
+    const sendA = vi.fn(
+      () =>
+        new Promise<WalletSendResult>((resolve) => {
+          resolveASend = resolve;
+        }),
+    );
+    const sendB = vi.fn(() => new Promise<WalletSendResult>(() => undefined));
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [billA, billB], waiting: [] });
+    vi.mocked(payFromWallet).mockImplementation(async (request) => {
+      if (request.type !== 'input') {
+        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+      }
+      if (request.input === invoiceOf(billA)) {
+        return confirmed(500, sendA);
+      }
+      return confirmed(400, sendB);
+    });
+    const reload = vi
+      .fn<() => Promise<MyLoans | null>>()
+      .mockResolvedValueOnce(body([loan('m1', 400, 600)]))
+      .mockResolvedValue(body([loan('m1', 0, 1_000)]));
+    const main = renderHook(() => useLoanRepay({ reload }));
+    act(() => main.result.current.pay([loan('m1', 900, 100)]));
+    await act(async () => undefined);
+    expect(sendA).toHaveBeenCalledTimes(1);
+
+    const other = renderHook(() => useLoanRepay({ reload: vi.fn() }));
+    act(() => other.result.current.pay([loan('m1', 900, 100)]));
+    await act(async () => undefined);
+    expect(sendB).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveASend({ kind: 'paid' });
+    });
+    expect(sendB).toHaveBeenCalledTimes(1);
+    expect(main.result.current).toMatchObject({ phase: 'waiting', sentSats: 500 });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
+    });
+    expect(main.result.current.phase).toBe('waiting');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
+    });
+    expect(main.result.current.phase).toBe('repaid');
+  });
+
+  it('counts skipped bills toward the settlement target of their loan', async () => {
+    vi.useFakeTimers();
+    const billA = bill('SkipSettleA', 500);
+    const billB = bill('SkipSettleB', 400, 1);
+    const sendA = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [billA], waiting: [] });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500, sendA));
+    const first = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan('m1', 900, 100)])) }),
+    );
+    act(() => first.result.current.pay([loan('m1', 900, 100)]));
+    await act(async () => undefined);
+    expect(sendA).toHaveBeenCalledTimes(1);
+    first.unmount();
+
+    const sendB = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [billA, billB], waiting: [] });
+    vi.mocked(payFromWallet).mockReset();
+    vi.mocked(payFromWallet).mockImplementation(async (request) => {
+      if (request.type !== 'input') {
+        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+      }
+      expect(request.input).toBe(invoiceOf(billB));
+      return confirmed(400, sendB);
+    });
+    const waitingReload = vi.fn(async (): Promise<MyLoans> => body([loan('m1', 400, 600)]));
+    const waitingHook = renderHook(() => useLoanRepay({ reload: waitingReload }));
+    act(() => waitingHook.result.current.pay([loan('m1', 900, 100)]));
+    await act(async () => undefined);
+    expect(sendB).toHaveBeenCalledTimes(1);
+    expect(waitingHook.result.current.sentSats).toBe(400);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
+    });
+    expect(waitingHook.result.current.phase).toBe('waiting');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(WALLET_PAY_CONFIRM_WAIT_MS - WALLET_PAY_BALANCE_POLL_MS);
+    });
+    expect(waitingHook.result.current.phase).toBe('unconfirmed');
+    waitingHook.unmount();
+
+    const billC = bill('SkipSettleC', 500);
+    const billD = bill('SkipSettleD', 400, 1);
+    const sendC = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [billC], waiting: [] });
+    vi.mocked(payFromWallet).mockReset();
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500, sendC));
+    const seed = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan('m1', 900, 100)])) }),
+    );
+    act(() => seed.result.current.pay([loan('m1', 900, 100)]));
+    await act(async () => undefined);
+    expect(sendC).toHaveBeenCalledTimes(1);
+    seed.unmount();
+
+    const sendD = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [billC, billD], waiting: [] });
+    vi.mocked(payFromWallet).mockReset();
+    vi.mocked(payFromWallet).mockImplementation(async (request) => {
+      if (request.type !== 'input') {
+        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+      }
+      expect(request.input).toBe(invoiceOf(billD));
+      return confirmed(400, sendD);
+    });
+    const settledReload = vi.fn(async (): Promise<MyLoans> => body([loan('m1', 0, 1_000)]));
+    const settled = renderHook(() => useLoanRepay({ reload: settledReload }));
+    act(() => settled.result.current.pay([loan('m1', 900, 100)]));
+    await act(async () => undefined);
+    expect(sendD).toHaveBeenCalledTimes(1);
+    expect(settled.result.current.sentSats).toBe(400);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
+    });
+    expect(settled.result.current.phase).toBe('repaid');
+  });
 });
 
 describe('useLoanRepay visual pins', () => {
