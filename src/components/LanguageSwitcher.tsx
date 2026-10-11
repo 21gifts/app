@@ -113,7 +113,7 @@ async function persistLocale(next: Locale, current: Locale, refresh: () => void)
  * refreshes the App Router tree so server components re-negotiate locale.
  *
  * Public / unsigned chrome only: Globe pill trigger + absolute popover listbox.
- * Signed-in language lives on Profile (`LanguagePreferenceSwitcher`).
+ * Signed-in language lives on Settings (`LanguagePreferenceSwitcher`).
  *
  * Marketing passes `tone="dark"` (hardcoded). Unsigned app pages pass
  * `tone="light"` so chrome follows semantic theme tokens.
