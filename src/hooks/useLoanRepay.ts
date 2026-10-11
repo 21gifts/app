@@ -74,9 +74,11 @@ export interface LoanRepayResult {
   /**
    * One tap: pays every payable bill of `loans` (all loans with due.payableSats \> 0).
    * `limitSats` (optional): pay only the fitting prefix of the ordered bills whose amount
-   * stays ≤ limitSats (the "send ₿C now" link passes the named prefix total). Only that
-   * named prefix is prepared. The whole prefix is sent, or nothing: an `insufficient`
-   * prepare in the prefix, or a total that does not fit the current balance, sends nothing.
+   * stays ≤ limitSats (the "send ₿C now" link passes the named prefix total). The named
+   * prefix is taken from all due shares; shares of it another run already holds are
+   * skipped. Only that named prefix is prepared. The whole prefix is sent, or nothing: an
+   * `insufficient` prepare in the prefix, or a total that does not fit the current
+   * balance, sends nothing.
    *
    * @param loans - Current loans body in list order.
    * @param limitSats - Optional amount-only budget for a leading subset; only that named
@@ -223,11 +225,12 @@ const reservedShares = new Set<string>();
 /**
  * Runs the all-loans repayment flow and waits for api settlement. A share is
  * reserved from the moment its send starts; a send that did not go out
- * releases it. A reserved share is never prepared or sent again in this app
- * session, including when `/due` later returns a new invoice for that share;
- * when only such shares are due the run ends unconfirmed. A share another
- * run is sending is skipped; if that leaves nothing sent the run ends
- * unconfirmed.
+ * releases it. The named prefix is taken from all due shares; shares of it
+ * another run already holds are skipped. A reserved share is never prepared
+ * or sent again in this app session, including when `/due` later returns a
+ * new invoice for that share; when every named share is reserved the run
+ * ends unconfirmed. A share another run is sending is skipped; if that
+ * leaves nothing sent the run ends unconfirmed.
  * Every prepare or send that does not pay (also `insufficient`, and a prepared
  * amount other than the bill, as `amount_mismatch`) is reported with
  * {@link reportPaymentFailure} under the flow `repay`; a send also after the
@@ -392,10 +395,14 @@ export function useLoanRepay(options: {
         }
 
         const ordered = orderBills(perLoan);
-        let bills = ordered.filter((bill) => !reservedShares.has(shareKey(bill)));
-        const skipped = bills.length !== ordered.length;
+        const named =
+          limitSats === undefined
+            ? ordered
+            : fittingPrefix(ordered, (bill) => bill.amountSats, limitSats);
+        const bills = named.filter((bill) => !reservedShares.has(shareKey(bill)));
+        const skipped = bills.length !== named.length;
         const skippedByMessage = new Map<string, number>();
-        for (const bill of ordered) {
+        for (const bill of named) {
           if (reservedShares.has(shareKey(bill))) {
             skippedByMessage.set(
               bill.messageId,
@@ -403,7 +410,7 @@ export function useLoanRepay(options: {
             );
           }
         }
-        if (bills.length === 0) {
+        if (bills.length === 0 && (named.length > 0 || ordered.length === 0)) {
           await options.reload();
           if (!active()) {
             return;
@@ -426,10 +433,6 @@ export function useLoanRepay(options: {
           for (const row of fresh.loans) {
             beforeByMessage.set(row.messageId, row.repaidSats);
           }
-        }
-
-        if (limitSats !== undefined) {
-          bills = fittingPrefix(bills, (bill) => bill.amountSats, limitSats);
         }
 
         const prepared: PreparedBill[] = [];

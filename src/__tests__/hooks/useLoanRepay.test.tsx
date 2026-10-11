@@ -1181,6 +1181,92 @@ describe('useLoanRepay failure report', () => {
 });
 
 describe('useLoanRepay already-sent invoices', () => {
+  it('prepares only the named unpaid share when a reserved leader would free budget', async () => {
+    const billA = bill('NamedA', 500);
+    const billB = bill('NamedB', 400, 1);
+    const billC = bill('UnnamedC', 300, 2);
+    const sendA = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    const sendBFail = vi.fn(async (): Promise<WalletSendResult> => ({
+      kind: 'failed',
+      failure: failure('send', 'sdk_error'),
+    }));
+    vi.mocked(postRepaymentDue).mockResolvedValue({
+      bills: [billA, billB, billC],
+      waiting: [],
+    });
+    vi.mocked(payFromWallet)
+      .mockResolvedValueOnce(confirmed(500, sendA))
+      .mockResolvedValueOnce(confirmed(400, sendBFail));
+    const first = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan('m1', 1_200, 100)])) }),
+    );
+    act(() => first.result.current.pay([loan('m1', 1_200, 100)], 900));
+    await act(async () => undefined);
+    expect(sendA).toHaveBeenCalledTimes(1);
+    expect(sendBFail).toHaveBeenCalledTimes(1);
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    first.unmount();
+
+    const sendB = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(payFromWallet).mockReset();
+    vi.mocked(payFromWallet).mockImplementation(async (request) => {
+      if (request.type !== 'input') {
+        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+      }
+      expect(request.input).toBe(invoiceOf(billB));
+      return confirmed(400, sendB);
+    });
+    vi.mocked(postRepaymentDue).mockResolvedValue({
+      bills: [billA, billB, billC],
+      waiting: [],
+    });
+    const second = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan('m1', 0, 1_000)])) }),
+    );
+    act(() => second.result.current.pay([loan('m1', 700, 600)], 900));
+    await act(async () => undefined);
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: invoiceOf(billB) });
+    expect(sendB).toHaveBeenCalledTimes(1);
+    expect(second.result.current.sentSats).toBe(400);
+  });
+
+  it('ends unconfirmed when every named share is reserved and prepares nothing', async () => {
+    const billA = bill('AllNamedA', 500);
+    const billB = bill('AllNamedB', 400, 1);
+    const billC = bill('AllNamedC', 300, 2);
+    const sendA = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    const sendB = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(postRepaymentDue).mockResolvedValue({
+      bills: [billA, billB],
+      waiting: [],
+    });
+    vi.mocked(payFromWallet)
+      .mockResolvedValueOnce(confirmed(500, sendA))
+      .mockResolvedValueOnce(confirmed(400, sendB));
+    const seed = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan('m1', 900, 100)])) }),
+    );
+    act(() => seed.result.current.pay([loan('m1', 900, 100)], 900));
+    await act(async () => undefined);
+    expect(sendA).toHaveBeenCalledTimes(1);
+    expect(sendB).toHaveBeenCalledTimes(1);
+    seed.unmount();
+
+    vi.mocked(payFromWallet).mockReset();
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(300));
+    vi.mocked(postRepaymentDue).mockResolvedValue({
+      bills: [billA, billB, billC],
+      waiting: [],
+    });
+    const reload = vi.fn(async (): Promise<MyLoans> => body([loan()]));
+    const second = renderHook(() => useLoanRepay({ reload }));
+    act(() => second.result.current.pay([loan('m1', 1_200, 100)], 900));
+    await waitFor(() => expect(second.result.current.phase).toBe('unconfirmed'));
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
   it('prepares only the unpaid bill when a prior run paid the first and failed the second', async () => {
     vi.useFakeTimers();
     const firstBill = bill('SkipPaid', 500);
