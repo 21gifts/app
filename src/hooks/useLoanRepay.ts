@@ -230,7 +230,9 @@ const reservedShares = new Set<string>();
  * or sent again in this app session, including when `/due` later returns a
  * new invoice for that share; when every named share is reserved the run
  * ends unconfirmed. A share another run is sending is skipped; if that
- * leaves nothing sent the run ends unconfirmed.
+ * leaves nothing sent the run ends unconfirmed. A skipped share still counts
+ * toward the settlement of its loan; a reserved share already counted in the
+ * fresh baseline is not required again.
  * Every prepare or send that does not pay (also `insufficient`, and a prepared
  * amount other than the bill, as `amount_mismatch`) is reported with
  * {@link reportPaymentFailure} under the flow `repay`; a send also after the
@@ -424,16 +426,23 @@ export function useLoanRepay(options: {
           return;
         }
 
+        const tapByMessage = new Map(loans.map((loan) => [loan.messageId, loan.repaidSats]));
         const fresh = await options.reload();
         if (!active()) {
           return;
         }
-        const beforeByMessage = new Map(loans.map((loan) => [loan.messageId, loan.repaidSats]));
+        const beforeByMessage = new Map(tapByMessage);
         if (fresh !== null) {
           for (const row of fresh.loans) {
             beforeByMessage.set(row.messageId, row.repaidSats);
           }
         }
+        const extraSkipped = (messageId: string): number => {
+          const skipped = skippedByMessage.get(messageId) ?? 0;
+          const before = beforeByMessage.get(messageId)!;
+          const tapRepaid = tapByMessage.get(messageId)!;
+          return Math.max(0, skipped - Math.max(0, before - tapRepaid));
+        };
 
         const prepared: PreparedBill[] = [];
         let insufficient = false;
@@ -524,7 +533,7 @@ export function useLoanRepay(options: {
           if (target === undefined) {
             sent.targets.set(item.bill.messageId, {
               before: beforeByMessage.get(item.bill.messageId)!,
-              sent: item.bill.amountSats + (skippedByMessage.get(item.bill.messageId) ?? 0),
+              sent: item.bill.amountSats + extraSkipped(item.bill.messageId),
             });
           } else {
             target.sent += item.bill.amountSats;
