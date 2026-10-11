@@ -2067,6 +2067,41 @@ describe('onIncomingPayment', () => {
     unsubscribe();
   });
 
+  it('tells the listeners of two payments close together only once the newest balance is in', async () => {
+    const { emit, connection } = await connected();
+    const seen: Array<[string, number | null]> = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push([p.id, useWalletStore.getState().balanceSats]);
+    });
+    const answers: Array<(balanceSats: number) => void> = [];
+    const held = (): Promise<{ balanceSats: number; identityPubkey: string }> =>
+      new Promise((resolve) => {
+        answers.push((balanceSats) => {
+          resolve({ balanceSats, identityPubkey: IDENTITY });
+        });
+      });
+    connection.getInfo.mockImplementationOnce(held).mockImplementationOnce(held);
+    emit({ type: 'paymentSucceeded', payment: payment('first') });
+    emit({ type: 'paymentSucceeded', payment: payment('second') });
+    await settle();
+    const [answerFirst, answerSecond] = answers;
+    if (answerFirst === undefined || answerSecond === undefined) {
+      throw new Error('expected two balance reads');
+    }
+    // The first read answers but is stale: the second one writes.
+    answerFirst(21_500);
+    await settle();
+    expect(seen).toEqual([]);
+    answerSecond(22_000);
+    await vi.waitFor(() =>
+      expect(seen).toEqual([
+        ['first', 22_000],
+        ['second', 22_000],
+      ]),
+    );
+    unsubscribe();
+  });
+
   it('never announces a payment the wallet held at connect, a send, a pending one, or another event', async () => {
     const { emit } = await connected([
       payment('old'),
