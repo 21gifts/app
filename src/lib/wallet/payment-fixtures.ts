@@ -1,4 +1,29 @@
 import type { Payment } from '@breeztech/breez-sdk-spark';
+import { toWalletPayment, type WalletPayment } from '@/lib/wallet/wallet-sdk';
+
+/**
+ * Person a fixture payment was sent to, when the SDK record has no address.
+ * The sent gift is to @alice; the title stays Gift and To shows the person.
+ */
+const FIXTURE_RECIPIENT: Readonly<Record<string, string>> = {
+  'df98837c-6a12-4b15-94f8-375c33937a4e': '@alice',
+};
+
+/**
+ * Maps a fixture payment for the pinned history and payment screens.
+ * A listed recipient is the To line; it does not replace a gift or shop title.
+ *
+ * @param payment - One synthetic SDK payment.
+ * @returns The payment the pinned screens show.
+ */
+export function toFixturePayment(payment: Payment): WalletPayment {
+  const mapped = toWalletPayment(payment);
+  const recipient = FIXTURE_RECIPIENT[payment.id];
+  if (recipient === undefined) {
+    return mapped;
+  }
+  return { ...mapped, info: { ...mapped.info, lnAddress: recipient } };
+}
 
 /**
  * Synthetic wallet payments in the SDK's own `Payment` shape, newest first,

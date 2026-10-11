@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { WALLET_VISUAL_FIXTURE_SATS } from '@/hooks/useWallet';
-import { WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
+import { toFixturePayment, WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
 import { toWalletPayment } from '@/lib/wallet/wallet-sdk';
 
 const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
@@ -141,9 +141,17 @@ describe('WALLET_PAYMENT_FIXTURES', () => {
     for (const payment of gifts) {
       expect(payment.direction).toBe('sent');
       expect(payment.info.description).toBeUndefined();
+      expect(payment.info.lnAddress).toBeUndefined();
       expect(payment.info.paymentHash).toBe(
         '79d7ebca70b18b8a13cfb40e6c6055be64f9cacfcd79c706b29e80e1707b00dc',
       );
+      const source = payments.find((row) => row.id === payment.id);
+      if (source === undefined) {
+        throw new Error(`missing fixture ${payment.id}`);
+      }
+      const shown = toFixturePayment(source);
+      expect(shown.info.purpose).toBe('gift');
+      expect(shown.info.lnAddress).toBe('@alice');
     }
     const shops = mapped.filter((payment) => payment.info.purpose === 'shop');
     expect(shops).toHaveLength(1);

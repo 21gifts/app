@@ -626,7 +626,7 @@ A payment to the Lightning address **bob@example.com** with the comment **Thanks
 
 ### Variant: spark-send
 
-A sent gift of **₿5'000** titled **Gift**, **Type** Wallet transfer, **Fee** Free, and no **Total** row. Under **Details**, the payment request, the payment hash taken from the gift memo, and the payment id. The memo itself is not shown.
+A sent gift of **₿5'000** titled **Gift**, **Type** Wallet transfer, **To** @alice, **Fee** Free, and no **Total** row. Under **Details**, the payment request, the payment hash taken from the gift memo, and the payment id. The memo itself is not shown.
 
 ![21.gifts wallet payment wallet transfer](images/wallet-payment-spark-send.png)
 

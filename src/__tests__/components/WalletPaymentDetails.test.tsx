@@ -6,8 +6,8 @@ import { useWallet, type UseWalletResult } from '@/hooks/useWallet';
 import { useWalletPayment, type WalletPaymentState } from '@/hooks/useWalletPayment';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import type { FiatRateDay } from '@/lib/stats-money';
-import { WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
-import { toWalletPayment, type WalletPayment } from '@/lib/wallet/wallet-sdk';
+import { toFixturePayment, WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
+import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('next/navigation', () => ({
@@ -40,7 +40,7 @@ function fixture(prefix: string): WalletPayment {
   if (found === undefined) {
     throw new Error(`no fixture ${prefix}`);
   }
-  return toWalletPayment(found);
+  return toFixturePayment(found);
 }
 
 const ZAP = 'f43f0362';
@@ -164,6 +164,7 @@ describe('WalletPaymentDetails', () => {
     showPayment(fixture(SPARK_SEND));
     expect(screen.getByText('Gift')).toBeTruthy();
     expect(row('Type').textContent).toBe('Wallet transfer');
+    expect(row('To').textContent).toBe('@alice');
     expect(row('Fee').textContent).toBe('Free');
     expect(screen.queryByText('Total', { selector: 'dt' })).toBeNull();
     expect(row('Payment hash').textContent).toBeTruthy();

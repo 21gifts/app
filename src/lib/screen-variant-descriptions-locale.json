@@ -4195,9 +4195,9 @@
     "fil": "Isang bayad sa Lightning address na bob@example.com na may komentong Thanks for dinner: −₿10'000, Para kay bob@example.com, Bayarin ₿3, Kabuuan ₿10'003 (bawat isa ay may fiat)."
   },
   "/wallet/payment:spark-send": {
-    "de": "Ein gesendetes Geschenk von ₿5'000 mit dem Titel Geschenk, Art Wallet-Überweisung, Gebühr Kostenlos und keine Zeile Gesamt. Unter Details die Zahlungsanforderung, der Zahlungs-Hash aus dem Geschenk-Memo und die Zahlungs-ID. Das Memo selbst wird nicht gezeigt.",
-    "es": "Un regalo enviado de ₿5'000 titulado Regalo, Tipo Transferencia de wallet, Comisión Gratis y sin fila Total. Bajo Detalles, la solicitud de pago, el hash del pago tomado del memo del regalo y el ID del pago. El memo en sí no se muestra.",
-    "fil": "Isang ipinadalang regalo na ₿5'000 na may titulong Regalo, Uri Wallet transfer, Bayarin Libre, at walang hilera ng Kabuuan. Sa ilalim ng Mga detalye, ang payment request, ang payment hash na kinuha mula sa memo ng regalo, at ang payment ID. Hindi ipinapakita ang memo mismo."
+    "de": "Ein gesendetes Geschenk von ₿5'000 mit dem Titel Geschenk, Art Wallet-Überweisung, An @alice, Gebühr Kostenlos und keine Zeile Gesamt. Unter Details die Zahlungsanforderung, der Zahlungs-Hash aus dem Geschenk-Memo und die Zahlungs-ID. Das Memo selbst wird nicht gezeigt.",
+    "es": "Un regalo enviado de ₿5'000 titulado Regalo, Tipo Transferencia de wallet, Para @alice, Comisión Gratis y sin fila Total. Bajo Detalles, la solicitud de pago, el hash del pago tomado del memo del regalo y el ID del pago. El memo en sí no se muestra.",
+    "fil": "Isang ipinadalang regalo na ₿5'000 na may titulong Regalo, Uri Wallet transfer, Para kay @alice, Bayarin Libre, at walang hilera ng Kabuuan. Sa ilalim ng Mga detalye, ang payment request, ang payment hash na kinuha mula sa memo ng regalo, at ang payment ID. Hindi ipinapakita ang memo mismo."
   },
   "/wallet/payment:shop": {
     "de": "Eine Shop-Zahlung von ₿1 mit dem Titel Shop-Zahlung, Art Wallet-Überweisung, Gebühr Kostenlos, keine Zeile Gesamt und kein Zahlungs-Hash. Unter Details die Zahlungsanforderung und die Zahlungs-ID. Das Memo selbst wird nicht gezeigt.",

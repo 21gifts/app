@@ -4018,6 +4018,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `WalletPayment`. Pure.
 - **Used by:** `loadWalletSdk` (`listPayments`).
 
+## Function: toFixturePayment
+
+- **Purpose:** Maps one synthetic SDK payment for the pinned wallet screens. Same mapping as `toWalletPayment`, then the sent gift (`df98837c-6a12-4b15-94f8-375c33937a4e`) gets **To** @alice. The title stays **Gift**. Other fixtures are unchanged. The SDK record itself has no address for that gift.
+- **Inputs:** One `Payment` from `WALLET_PAYMENT_FIXTURES`.
+- **Returns / side effects:** `WalletPayment`. Pure.
+- **Used by:** `useWalletHistory` and `useWalletPayment` under the `?visual=history-rows` pin.
+
 ## Function: toWalletReportPayment
 
 - **Purpose:** Maps one SDK payment to the payment the wallet data report sends: `id`, `direction` (`in` or `out`), `status` (an unknown status counts as completed), whole-sat `amountSats` and `feeSats`, `timestamp` (ISO 8601 from the SDK's epoch seconds), `method` (`lightning`, `spark`, `token`, `onchain` for the SDK's `deposit` and `withdraw`, otherwise `unknown`), and the counterparty data the SDK lists: `paymentHash` (HTLC payment hash), `invoice` (Lightning or Spark request), `destination` (Lightning address, else LNURL domain, else base-chain transaction id, else the receiving node's public key), `description`, and `lnurlComment` (the comment sent, else the payer's note received). Blank texts are `null`.
@@ -4111,7 +4118,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useWalletHistory
 
-- **Purpose:** The `/wallet` payment list: loads `WALLET_HISTORY_PAGE_LIMIT` (20) payments newest first once the wallet is ready, appends the next page on `loadMore` (skipping ids it already has), and reloads every loaded page whenever `useWalletStore.syncCount` changes, which happens after connect and after each SDK `synced` event, so the list does not depend on payment events. Only the latest load writes state. A failed later page stops paging quietly. `?visual=history-empty|history-rows|history-error` pins a fixture list only in a Playwright build; `history-rows` is `WALLET_PAYMENT_FIXTURES` mapped with `toWalletPayment` (ten synthetic payments covering a zap, a sent gift, a Spark receive, a Lightning-address send with a fee, a received note, a pending and a failed send, an on-chain deposit and withdrawal, and a shop payment, netting to the ₿21'000 visual balance).
+- **Purpose:** The `/wallet` payment list: loads `WALLET_HISTORY_PAGE_LIMIT` (20) payments newest first once the wallet is ready, appends the next page on `loadMore` (skipping ids it already has), and reloads every loaded page whenever `useWalletStore.syncCount` changes, which happens after connect and after each SDK `synced` event, so the list does not depend on payment events. Only the latest load writes state. A failed later page stops paging quietly. `?visual=history-empty|history-rows|history-error` pins a fixture list only in a Playwright build; `history-rows` is `WALLET_PAYMENT_FIXTURES` mapped with `toFixturePayment` (ten synthetic payments covering a zap, a sent gift, a Spark receive, a Lightning-address send with a fee, a received note, a pending and a failed send, an on-chain deposit and withdrawal, and a shop payment, netting to the ₿21'000 visual balance).
 - **Inputs:** None.
 - **Returns / side effects:** `{ status, payments, hasMore, loadMore, retry }`.
 - **Used by:** `WalletHistory`.
@@ -4299,7 +4306,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useWalletPayment
 
-- **Purpose:** Loads one payment for `/wallet/payment`: once the wallet is ready it calls `getWalletPayment(id)`, and again whenever `useWalletStore.syncCount` changes, so a pending payment turns completed or failed in place. A missing id, a payment the wallet does not know (the SDK's not-found answer), or a token payment is `missing`; any other failed read is `error` with a `retry` that shows `loading` and reads again; a later read that fails keeps a payment already shown, and a wallet that stops being ready drops it back to `loading`; an answer after unmount is dropped. Under the `?visual=history-rows` pin (Playwright builds only) it shows the `WALLET_PAYMENT_FIXTURES` payment with that id (or `missing`), under `?visual=history-error` a failed read (`error`, whose `retry` does nothing), and reads nothing.
+- **Purpose:** Loads one payment for `/wallet/payment`: once the wallet is ready it calls `getWalletPayment(id)`, and again whenever `useWalletStore.syncCount` changes, so a pending payment turns completed or failed in place. A missing id, a payment the wallet does not know (the SDK's not-found answer), or a token payment is `missing`; any other failed read is `error` with a `retry` that shows `loading` and reads again; a later read that fails keeps a payment already shown, and a wallet that stops being ready drops it back to `loading`; an answer after unmount is dropped. Under the `?visual=history-rows` pin (Playwright builds only) it shows the `WALLET_PAYMENT_FIXTURES` payment with that id through `toFixturePayment` (or `missing`), under `?visual=history-error` a failed read (`error`, whose `retry` does nothing), and reads nothing.
 - **Inputs:** `id` from the address, or `null`.
 - **Returns / side effects:** `{ status: 'loading' }`, `{ status: 'ready', payment }`, `{ status: 'missing' }`, or `{ status: 'error', retry }`.
 - **Used by:** `WalletPaymentDetails`.

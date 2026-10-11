@@ -1,8 +1,8 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
-import { WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
-import { toWalletPayment, type WalletPayment } from '@/lib/wallet/wallet-sdk';
+import { toFixturePayment, WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
+import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { getWalletPayment } from '@/lib/wallet/wallet-service';
 import { useWalletStore } from '@/stores/wallet-store';
 
@@ -132,7 +132,7 @@ describe('useWalletPayment', () => {
     const fixture = WALLET_PAYMENT_FIXTURES[3]!;
     expect(renderHook(() => useWalletPayment(fixture.id)).result.current).toEqual({
       status: 'ready',
-      payment: toWalletPayment(fixture),
+      payment: toFixturePayment(fixture),
     });
     expect(renderHook(() => useWalletPayment('nope')).result.current).toEqual({
       status: 'missing',

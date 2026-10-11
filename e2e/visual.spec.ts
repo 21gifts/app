@@ -2013,6 +2013,7 @@ test.describe('screen baselines', () => {
     await fulfillRateDay(page);
     await page.goto('/wallet/payment?id=df98837c-6a12-4b15-94f8-375c33937a4e&visual=history-rows');
     await expect(page.getByText('Gift', { exact: true })).toBeVisible();
+    await expect(page.getByText('@alice')).toBeVisible();
     await expect(page.getByText('Wallet transfer')).toBeVisible();
     await expect(page.getByText('Free')).toBeVisible();
     await expect(page.getByText('Payment hash')).toBeVisible();
