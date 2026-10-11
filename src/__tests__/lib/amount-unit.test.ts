@@ -63,9 +63,10 @@ describe('saveAmountUnit', () => {
     const saving = saveAmountUnit('s1', account, 'fiat');
     expect(storedUnit()).toBe('fiat');
     expect(setAmountUnit).toHaveBeenCalledWith('s1', 'fiat');
-    answer.resolve('fiat');
+    // The server answers with another unit than the optimistic one: the account follows it.
+    answer.resolve('btc');
     await saving;
-    expect(storedUnit()).toBe('fiat');
+    expect(storedUnit()).toBe('btc');
   });
 
   it('uses the chosen unit when the answer omits one', async () => {
@@ -91,16 +92,19 @@ describe('saveAmountUnit', () => {
     expect(storedUnit()).toBe('btc');
   });
 
-  it('starts a new burst from the stored unit once the previous save in the session settled', async () => {
+  it("starts a new burst from the caller's unit once the previous save in the session settled", async () => {
     useAuthStore.setState({ session: 's12', account: { ...account, amountUnit: 'btc' } });
     vi.mocked(setAmountUnit).mockResolvedValueOnce({ ...account, amountUnit: 'fiat' });
     await saveAmountUnit('s12', { ...account, amountUnit: 'btc' }, 'fiat');
     expect(storedUnit()).toBe('fiat');
+    // Meanwhile the account was read again with bitcoin; the next burst starts from that unit,
+    // not from the unit the earlier save confirmed.
+    useAuthStore.setState({ account: { ...account, amountUnit: 'btc' } });
     vi.mocked(setAmountUnit).mockRejectedValueOnce(new Error('down'));
     const onRollback = vi.fn();
-    await saveAmountUnit('s12', { ...account, amountUnit: 'fiat' }, 'btc', onRollback);
-    expect(onRollback).toHaveBeenCalledWith('fiat');
-    expect(storedUnit()).toBe('fiat');
+    await saveAmountUnit('s12', { ...account, amountUnit: 'btc' }, 'fiat', onRollback);
+    expect(onRollback).toHaveBeenCalledWith('btc');
+    expect(storedUnit()).toBe('btc');
   });
 
   it('lets a later choice win over a slower earlier answer', async () => {
