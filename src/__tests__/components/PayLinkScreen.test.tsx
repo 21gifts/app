@@ -672,4 +672,194 @@ describe('PayLinkScreen', () => {
       expect(fetch).toHaveBeenCalled();
     });
   });
+
+  it('keeps the invoice screen when the shop payment route is missing', async () => {
+    mockFetch(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/payment')) {
+        expect(init?.method).toBe('POST');
+        return new Response(null, { status: 404 });
+      }
+      if (url.endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(screen.queryByText(/USDT/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pay with USDT or USDC' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeTruthy();
+  });
+
+  it('shows that a payment is already open and does not mint an invoice', async () => {
+    mockFetch(async (input) => {
+      if (String(input).endsWith('/payment')) {
+        return new Response(JSON.stringify({ error: 'A payment is already open' }), {
+          status: 409,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (String(input).endsWith('/invoice')) {
+        throw new Error('invoice must not be minted');
+      }
+      if (String(input).includes('/.well-known/lnurlp/')) {
+        throw new Error('pay link must not be read');
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect((await screen.findByRole('alert')).textContent).toBe('A payment is already open.');
+    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+    expect(postedInvoice()).toBe(false);
+  });
+
+  it('keeps the till invoice when another shop payment is already open', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    mockFetch(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 238093 });
+      }
+      if (url.endsWith('/payment')) {
+        return new Response(null, { status: 409 });
+      }
+      if (url.includes('/.well-known/lnurlp/')) {
+        throw new Error('pay link must not be read');
+      }
+      return Response.json({
+        ...profile,
+        charge: { amountSats: 238093, expiresAt: new Date(fixed + 300_000).toISOString() },
+      });
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText("₿238'093")).toBeTruthy();
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect((await screen.findByRole('alert')).textContent).toBe('A payment is already open.');
+    expect(screen.queryByText(/USDT/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Pay with USDT or USDC' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeTruthy();
+  });
+
+  it('shows offered stablecoin amounts without replacing the invoice button', async () => {
+    const fixed = 1_700_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(fixed);
+    const hrefs: string[] = [];
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: {
+        get href(): string {
+          return 'http://localhost/';
+        },
+        set href(value: string) {
+          hrefs.push(value);
+        },
+        host: 'localhost',
+      },
+    });
+    mockFetch(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/payment')) {
+        expect(init?.body).toBe(JSON.stringify({ amountSats: 21 }));
+        return Response.json({ payment: '8d1c1b9a-6c0e-4f1a-9c2d-111111111111' });
+      }
+      if (url.endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      if (url.includes('/.well-known/lnurlp/ada')) {
+        expect(url).toBe('https://21.gifts/.well-known/lnurlp/ada');
+        expect(url).not.toContain('timeout');
+        return Response.json({
+          transferAmounts: [
+            {
+              method: 'Lightning',
+              available: true,
+              assets: [{ asset: 'BTC', amount: '0.00000021' }],
+            },
+            {
+              method: 'ethereum',
+              available: true,
+              assets: [{ asset: 'USDT', amount: '1.25' }],
+            },
+          ],
+          quote: { expiration: new Date(fixed + 90_000).toISOString() },
+        });
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(await screen.findByText('USDT · ethereum · 1.25')).toBeTruthy();
+    expect(screen.getByText('1:30 left')).toBeTruthy();
+    expect(screen.getByText('5:00 left')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with USDT or USDC' }));
+    expect(hrefs).toEqual([`lightning:lnbc210n1paylink`, `lightning:${ADA}`]);
+  });
+
+  it('requests the next quote when the stablecoin quote has lapsed', async () => {
+    const previous = window.location;
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { href: 'http://localhost/', host: 'localhost' },
+    });
+    let reads = 0;
+    mockFetch(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith('/payment')) {
+        expect(init?.body).toBe(JSON.stringify({ amountSats: 21 }));
+        return Response.json({ payment: '8d1c1b9a-6c0e-4f1a-9c2d-111111111111' });
+      }
+      if (url.endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      if (url.includes('/.well-known/lnurlp/ada')) {
+        expect(url).toBe('https://21.gifts/.well-known/lnurlp/ada');
+        expect(url).not.toContain('timeout');
+        reads += 1;
+        if (reads === 1) {
+          return Response.json({
+            quote: { expiration: '2020-01-01T00:00:00.000Z' },
+            transferAmounts: [
+              {
+                method: 'ethereum',
+                available: true,
+                assets: [{ asset: 'USDT', amount: '1.25' }],
+              },
+            ],
+          });
+        }
+        return Response.json({
+          quote: { expiration: new Date(Date.now() + 120_000).toISOString() },
+          transferAmounts: [
+            {
+              method: 'ethereum',
+              available: true,
+              assets: [{ asset: 'USDT', amount: '9.99' }],
+            },
+          ],
+        });
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('USDT · ethereum · 9.99')).toBeTruthy();
+    expect(screen.queryByText('USDT · ethereum · 1.25')).toBeNull();
+    expect(reads).toBe(2);
+    Object.defineProperty(window, 'location', { configurable: true, value: previous });
+  });
 });

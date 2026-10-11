@@ -26,6 +26,12 @@ import {
   type ShopStickerPictogramPart,
 } from '@/lib/shop-sticker-pictogram';
 import { isSmartphoneUserAgent, lightningHref } from '@/lib/payment-link';
+import {
+  fetchPayRequest,
+  openShopPayment,
+  payRequestUrl,
+  type StablecoinAmount,
+} from '@/lib/shop-payment';
 
 function PayLinkAmount(props: {
   value: string;
@@ -191,8 +197,20 @@ function ShopStickerIcon(): ReactElement {
 /**
  * Public LNURL payment form that creates one exact-amount BOLT11 invoice.
  *
+ * A valid link shows the shop sticker, then the amount form or the active
+ * payment (locked sats, default fiat, and Pay). Pay hands the invoice to the
+ * device's Bitcoin wallet app through a generic `lightning:` link. The invoice
+ * QR mounts only when one exists and the visitor is not a smartphone. An
+ * invalid link shows the gift glyph.
+ *
+ * Opening a shop payment does not change this screen unless the api confirms
+ * one. A missing route leaves the invoice as it is. USDT and USDC amounts,
+ * that quote's expiry, and a second wallet button appear only when the pay
+ * link offers them. A lapsed quote is fetched again for the same sats. The
+ * second button does not replace Pay.
+ *
  * @param props - Encoded LNURL from the `lightning` query parameter.
- * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
+ * @returns Public payment chrome.
  */
 export function PayLinkScreen({ lightning }: { lightning: string }): ReactElement {
   const { t } = useTranslations();
@@ -204,12 +222,15 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const rateDay = useSpotRate(profile !== null);
   const [invalid, setInvalid] = useState(false);
   const [amount, setAmount] = useState('');
-  const [formError, setFormError] = useState<'amount' | 'rate' | 'failed' | null>(null);
+  const [formError, setFormError] = useState<'amount' | 'rate' | 'failed' | 'open' | null>(null);
   const [posting, setPosting] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
   const [mintedSats, setMintedSats] = useState<number | null>(null);
   const [mintedExpiresAt, setMintedExpiresAt] = useState<string | null>(null);
   const [showInvoiceQr, setShowInvoiceQr] = useState(false);
+  const [stablecoins, setStablecoins] = useState<StablecoinAmount[]>([]);
+  const [quoteExpiresAt, setQuoteExpiresAt] = useState<string | null>(null);
+  const quoteUrlRef = useRef<string | null>(null);
   const [mintNonce, setMintNonce] = useState(0);
   const postingRef = useRef(false);
   const generationRef = useRef(0);
@@ -226,6 +247,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setInvoice(null);
     setMintedSats(null);
     setMintedExpiresAt(null);
+    setStablecoins([]);
+    setQuoteExpiresAt(null);
+    quoteUrlRef.current = null;
     setFormError(null);
     setPosting(false);
     postingRef.current = false;
@@ -272,6 +296,8 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const chargeLive = charge !== null && remaining > 0;
   const mintedRemaining = mintedExpiresAt === null ? 0 : Date.parse(mintedExpiresAt) - now;
   const mintedLive = invoice !== null && mintedExpiresAt !== null && mintedRemaining > 0;
+  const quoteRemaining = quoteExpiresAt === null ? 0 : Date.parse(quoteExpiresAt) - now;
+  const quoteLive = stablecoins.length > 0 && Number.isFinite(quoteRemaining) && quoteRemaining > 0;
 
   useEffect(() => {
     if (charge === null && mintedExpiresAt === null) {
@@ -288,6 +314,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   useEffect(() => {
     if (charge !== null && !chargeLive) {
       setInvoice(null);
+      setStablecoins([]);
+      setQuoteExpiresAt(null);
+      quoteUrlRef.current = null;
       setFormError(null);
       postingRef.current = false;
       setPosting(false);
@@ -301,10 +330,55 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setInvoice(null);
     setMintedSats(null);
     setMintedExpiresAt(null);
+    setStablecoins([]);
+    setQuoteExpiresAt(null);
+    quoteUrlRef.current = null;
     setFormError(null);
     postingRef.current = false;
     setPosting(false);
   }, [invoice, mintedExpiresAt, now]);
+
+  useEffect(() => {
+    if (quoteExpiresAt === null) {
+      return;
+    }
+    const expiresAtMs = Date.parse(quoteExpiresAt);
+    const url = quoteUrlRef.current;
+    if (!Number.isFinite(expiresAtMs) || url === null) {
+      return;
+    }
+    const generation = generationRef.current;
+    let active = true;
+    const refresh = (): void => {
+      void fetchPayRequest(url).then((offer) => {
+        if (!active || generationRef.current !== generation) {
+          return;
+        }
+        const nextMs = offer.expiresAt === null ? Number.NaN : Date.parse(offer.expiresAt);
+        const next =
+          offer.amounts.length > 0 && Number.isFinite(nextMs) && nextMs > Date.now()
+            ? offer.expiresAt
+            : null;
+        if (next === null) {
+          quoteUrlRef.current = null;
+        }
+        setStablecoins(offer.amounts);
+        setQuoteExpiresAt(next);
+      });
+    };
+    const delay = expiresAtMs - Date.now();
+    if (delay <= 0) {
+      refresh();
+      return () => {
+        active = false;
+      };
+    }
+    const timer = setTimeout(refresh, Math.min(delay, 2_147_483_647));
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [quoteExpiresAt]);
 
   useEffect(() => {
     if (!chargeLive || profile === null || charge === null) {
@@ -330,6 +404,33 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
           return;
         }
         setInvoice(result.pr);
+        setStablecoins([]);
+        setQuoteExpiresAt(null);
+        quoteUrlRef.current = null;
+        postingRef.current = false;
+        setPosting(false);
+        const payment = await openShopPayment(profile.username, charge.amountSats);
+        if (!active || generationRef.current !== generation) {
+          return;
+        }
+        if (payment === 'conflict') {
+          setFormError('open');
+          return;
+        }
+        if (payment !== 'opened') {
+          return;
+        }
+        const url = payRequestUrl(lightning, window.location.host);
+        if (url === null) {
+          return;
+        }
+        const offer = await fetchPayRequest(url);
+        if (!active || generationRef.current !== generation) {
+          return;
+        }
+        quoteUrlRef.current = offer.amounts.length > 0 ? url : null;
+        setStablecoins(offer.amounts);
+        setQuoteExpiresAt(offer.amounts.length > 0 ? offer.expiresAt : null);
       })
       .catch(() => {
         if (active && generationRef.current === generation) {
@@ -349,7 +450,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         setPosting(false);
       }
     };
-  }, [charge, chargeLive, mintNonce, profile]);
+  }, [charge, chargeLive, lightning, mintNonce, profile]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -381,6 +482,17 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     postingRef.current = true;
     setPosting(true);
     try {
+      const payment = await openShopPayment(profile.username, amountSats);
+      if (generationRef.current !== generation) {
+        return;
+      }
+      if (payment === 'conflict') {
+        setStablecoins([]);
+        setQuoteExpiresAt(null);
+        quoteUrlRef.current = null;
+        setFormError('open');
+        return;
+      }
       const response = await fetch(`/pay/${encodeURIComponent(profile.username)}/invoice`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -400,6 +512,25 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       setInvoice(result.pr);
       setMintedSats(result.amountSats);
       setMintedExpiresAt(new Date(Date.now() + PAYMENT_TTL_MS).toISOString());
+      setStablecoins([]);
+      setQuoteExpiresAt(null);
+      quoteUrlRef.current = null;
+      postingRef.current = false;
+      setPosting(false);
+      if (payment !== 'opened') {
+        return;
+      }
+      const url = payRequestUrl(lightning, window.location.host);
+      if (url === null || generationRef.current !== generation) {
+        return;
+      }
+      const offer = await fetchPayRequest(url);
+      if (generationRef.current !== generation) {
+        return;
+      }
+      quoteUrlRef.current = offer.amounts.length > 0 ? url : null;
+      setStablecoins(offer.amounts);
+      setQuoteExpiresAt(offer.amounts.length > 0 ? offer.expiresAt : null);
     } catch {
       if (generationRef.current === generation) {
         setFormError('failed');
@@ -449,9 +580,28 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                   {formatBitcoin(activeSats, numberFormat)}
                 </p>
                 <ChargeFiat amountSats={activeSats} rateDay={rateDay} />
+                {stablecoins.length > 0 ? (
+                  <ul className="w-full text-center text-sm text-app-subtle">
+                    {stablecoins.map((row) => (
+                      <li key={`${row.method}:${row.asset}`}>
+                        {`${row.asset} · ${row.method} · ${row.amount}`}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+                {quoteLive ? (
+                  <p className="text-center text-sm text-app-subtle">
+                    {t('pay.timeLeft', { time: formatLeft(quoteRemaining) })}
+                  </p>
+                ) : null}
                 {formError === 'failed' ? (
                   <p role="alert" className="text-center text-sm text-app-danger">
                     {t('pay.failed')}
+                  </p>
+                ) : null}
+                {formError === 'open' ? (
+                  <p role="alert" className="text-center text-sm text-app-danger">
+                    {t('pay.alreadyOpen')}
                   </p>
                 ) : null}
                 <div className={`flex max-w-full flex-col gap-3 ${INVOICE_QR_PLATE_WIDTH}`}>
@@ -473,6 +623,18 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                   >
                     {t('forum.payOpenWallet')}
                   </Button>
+                  {stablecoins.length > 0 ? (
+                    <Button
+                      type="button"
+                      className="w-full"
+                      aria-label={t('pay.stablecoinWallet')}
+                      onClick={() => {
+                        openWallet(lightning);
+                      }}
+                    >
+                      {t('pay.stablecoinWallet')}
+                    </Button>
+                  ) : null}
                 </div>
               </div>
             ) : (
@@ -500,6 +662,11 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 {formError === 'failed' ? (
                   <p role="alert" className="text-sm text-app-danger">
                     {t('pay.failed')}
+                  </p>
+                ) : null}
+                {formError === 'open' ? (
+                  <p role="alert" className="text-sm text-app-danger">
+                    {t('pay.alreadyOpen')}
                   </p>
                 ) : null}
               </form>
