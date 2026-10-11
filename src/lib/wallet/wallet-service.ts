@@ -701,7 +701,8 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
     }
     spendableFeeSats = balanceSats - amountSats;
   } catch (err: unknown) {
-    return { kind: 'failed', failure: failureOf('prepare', 'balance_read', feeSats, err) };
+    const reason = connection === conn ? 'balance_read' : 'disconnected';
+    return { kind: 'failed', failure: failureOf('prepare', reason, feeSats, err) };
   }
   let sent = false;
   const send = async (speed: OnchainSpeed = 'medium'): Promise<WalletSendResult> => {
@@ -758,11 +759,11 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
         result = { kind: 'paid' };
       }
     } catch (err: unknown) {
-      const reason = sdkFailureReason(err);
-      const failure = failureOf('send', reason, chosenFeeSats, err);
       if (quote !== undefined && isQuoteExpired(err)) {
-        result = { kind: 'expired', failure };
+        result = { kind: 'expired', failure: failureOf('send', 'expired', chosenFeeSats, err) };
       } else {
+        const reason = sdkFailureReason(err);
+        const failure = failureOf('send', reason, chosenFeeSats, err);
         result =
           reason === 'insufficient'
             ? { kind: 'insufficient', failure }
