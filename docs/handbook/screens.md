@@ -29,11 +29,53 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 
 ![21.gifts home language](images/root-language.png)
 
+### Variant: faq-account-open
+
+The first question is open: **Do I need an account to see the forum?** The answer says you sign in for the forum. To receive Bitcoin donations yourself, also add a Wallet of Satoshi address.
+
+![21.gifts home FAQ account open](images/root-faq-account-open.png)
+
 ### Variant: faq-share-open
 
 The second question is open: **Does 21.gifts keep any of my donation?** The answer says 21.gifts keeps no share. A wallet or the payment network may still charge its own fees.
 
 ![21.gifts home FAQ share open](images/root-faq-share-open.png)
+
+### Variant: faq-password-open
+
+The third question is open: **Does 21.gifts store my password?** The answer says you do not create a password for 21.gifts. Your access stays on your device or in its sync. Never share recovery words with anyone.
+
+![21.gifts home FAQ password open](images/root-faq-password-open.png)
+
+### Variant: faq-device-open
+
+The fourth question is open: **What if I lose my device?** The answer says that if you lose access on your device and in any sync, the account cannot be recovered yet. Check how your device backs up your sign-in.
+
+![21.gifts home FAQ device open](images/root-faq-device-open.png)
+
+### Variant: faq-recipient-open
+
+The fifth question is open: **Who receives the Bitcoin?** The answer says the person who wrote the post. A reaction with an amount sends the Bitcoin to that person's wallet address.
+
+![21.gifts home FAQ recipient open](images/root-faq-recipient-open.png)
+
+### Variant: faq-bitcoin-open
+
+The sixth question is open: **Why Bitcoin?** The answer says you can send even small amounts directly to the chosen wallet address. 21.gifts does not hold the donation. Your wallet provider may charge fees.
+
+![21.gifts home FAQ bitcoin open](images/root-faq-bitcoin-open.png)
+
+### Variant: faq-taxes-open
+
+The seventh question is open: **Is this regulated, and how do taxes work?** The answer says 21.gifts does not hold the donation. Which rules and taxes apply depends on where you live and your situation.
+
+![21.gifts home FAQ taxes open](images/root-faq-taxes-open.png)
+
+### Variant: faq-sat-open
+
+The eighth question is open: **What does ₿1 mean here?** The answer says that on 21.gifts, ₿1 means one sat, the smallest Bitcoin unit. One Bitcoin has 100 million sats.
+
+![21.gifts home FAQ sat open](images/root-faq-sat-open.png)
 
 ## Screen: /legal
 

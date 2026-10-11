@@ -1411,15 +1411,100 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-language');
   });
 
+  test('state / faq-account-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('Do I need an account to see the forum?').click();
+    await expect(
+      faq.getByText(
+        'Yes. You sign in for the forum. If you want to receive Bitcoin donations yourself, also add a Wallet of Satoshi address.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-account-open');
+  });
+
   test('state / faq-share-open', async ({ page }) => {
     await page.goto('/');
-    await page.getByText('Does 21.gifts keep any of my donation?').click();
+    const faq = page.locator('#faq');
+    await faq.getByText('Does 21.gifts keep any of my donation?').click();
     await expect(
-      page.getByText(
+      faq.getByText(
         '21.gifts keeps no share. Your wallet or the payment network may charge its own fees.',
       ),
     ).toBeVisible();
     await shotScreen(page, 'state-root-faq-share-open');
+  });
+
+  test('state / faq-password-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('Does 21.gifts store my password?').click();
+    await expect(
+      faq.getByText(
+        'You do not create a password for 21.gifts. Your access stays on your device or in its sync. Never share recovery words with anyone.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-password-open');
+  });
+
+  test('state / faq-device-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('What if I lose my device?').click();
+    await expect(
+      faq.getByText(
+        'If you lose access on your device and in any sync, we cannot recover your account yet. Check how your device backs up your sign-in.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-device-open');
+  });
+
+  test('state / faq-recipient-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('Who receives the Bitcoin?').click();
+    await expect(
+      faq.getByText(
+        "The person who wrote the post. Write a reaction under it and add an amount. The Bitcoin goes to that person's wallet address.",
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-recipient-open');
+  });
+
+  test('state / faq-bitcoin-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('Why Bitcoin?').click();
+    await expect(
+      faq.getByText(
+        'So you can send even small amounts directly to the chosen wallet address. 21.gifts does not hold the donation. Your wallet provider may charge fees.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-bitcoin-open');
+  });
+
+  test('state / faq-taxes-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('Is this regulated, and how do taxes work?').click();
+    await expect(
+      faq.getByText(
+        '21.gifts does not hold the donation. Which rules and taxes apply depends on where you live and your situation. Check the requirements that apply to you.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-taxes-open');
+  });
+
+  test('state / faq-sat-open', async ({ page }) => {
+    await page.goto('/');
+    const faq = page.locator('#faq');
+    await faq.getByText('What does ₿1 mean here?').click();
+    await expect(
+      faq.getByText(
+        'On 21.gifts, ₿1 means one sat, the smallest Bitcoin unit. One Bitcoin has 100 million sats.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-sat-open');
   });
 
   test('screen /legal', async ({ page }) => {

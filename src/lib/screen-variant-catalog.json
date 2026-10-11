@@ -18,9 +18,51 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/:faq-account-open",
+    "label": "/ faq-account-open",
+    "visual": "state-root-faq-account-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/:faq-share-open",
     "label": "/ faq-share-open",
     "visual": "state-root-faq-share-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:faq-password-open",
+    "label": "/ faq-password-open",
+    "visual": "state-root-faq-password-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:faq-device-open",
+    "label": "/ faq-device-open",
+    "visual": "state-root-faq-device-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:faq-recipient-open",
+    "label": "/ faq-recipient-open",
+    "visual": "state-root-faq-recipient-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:faq-bitcoin-open",
+    "label": "/ faq-bitcoin-open",
+    "visual": "state-root-faq-bitcoin-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:faq-taxes-open",
+    "label": "/ faq-taxes-open",
+    "visual": "state-root-faq-taxes-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/:faq-sat-open",
+    "label": "/ faq-sat-open",
+    "visual": "state-root-faq-sat-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

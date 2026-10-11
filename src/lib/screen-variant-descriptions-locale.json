@@ -2249,10 +2249,45 @@
     "es": "El selector de idioma del encabezado publicitario está abierto. Cuadro de lista personalizado (panel redondeado, filas de endónimos con una marca en la configuración regional actual) — no la interfaz del sistema.",
     "fil": "Bukas ang pampalit ng wika sa pampromosyong ulo. Pasadyang listahan (bilugang panid, mga hanay ng endonym na may tsek sa kasalukuyang wika) — hindi ang mukha ng sistema."
   },
+  "/:faq-account-open": {
+    "de": "Die erste Frage ist geöffnet: Brauche ich ein Konto, um das Wohnzimmer zu sehen? Die Antwort sagt, dass du dich für das Wohnzimmer anmeldest. Um selbst Bitcoin-Spenden zu empfangen, hinterlegst du zusätzlich eine Adresse aus Wallet of Satoshi.",
+    "es": "La primera pregunta está abierta: ¿Necesito una cuenta para ver el foro? La respuesta dice que inicias sesión para el foro. Para recibir donaciones en Bitcoin, añades además una dirección de Wallet of Satoshi.",
+    "fil": "Bukas ang unang tanong: Kailangan ko ba ng account para makita ang forum? Sinasabi ng sagot na mag-log in ka para sa forum. Para tumanggap ng Bitcoin donation, maglagay ka rin ng Wallet of Satoshi address."
+  },
   "/:faq-share-open": {
     "de": "Die zweite Frage ist geöffnet: Behält 21.gifts etwas von meiner Spende? Die Antwort sagt, dass 21.gifts keinen Anteil behält. Deine Wallet oder das Zahlungsnetzwerk kann trotzdem eigene Gebühren verlangen.",
     "es": "La segunda pregunta está abierta: ¿Se queda 21.gifts con algo de mi donación? La respuesta dice que 21.gifts no se queda con ninguna parte. Una cartera o la red de pago pueden cobrar sus propias comisiones.",
     "fil": "Bukas ang pangalawang tanong: May kinukuha ba ang 21.gifts sa donasyon ko? Sinasabi ng sagot na walang bahaging kinukuha ang 21.gifts. Maaaring maningil pa rin ng sariling bayarin ang wallet mo o ang payment network."
+  },
+  "/:faq-password-open": {
+    "de": "Die dritte Frage ist geöffnet: Speichert 21.gifts mein Passwort? Die Antwort sagt, dass du kein Passwort für 21.gifts anlegst. Dein Zugang bleibt auf deinem Gerät oder in dessen Synchronisierung. Gib Wiederherstellungswörter nie weiter.",
+    "es": "La tercera pregunta está abierta: ¿Guarda 21.gifts mi contraseña? La respuesta dice que no creas una contraseña para 21.gifts. Tu acceso queda en tu dispositivo o en su sincronización. Nunca compartas tus palabras de recuperación.",
+    "fil": "Bukas ang ikatlong tanong: Iniimbak ba ng 21.gifts ang password ko? Sinasabi ng sagot na hindi ka gagawa ng password para sa 21.gifts. Mananatili ang access mo sa iyong device o sa sync nito. Huwag kailanman ibahagi ang iyong mga recovery word."
+  },
+  "/:faq-device-open": {
+    "de": "Die vierte Frage ist geöffnet: Was passiert, wenn ich mein Gerät verliere? Die Antwort sagt, dass wir dein Konto derzeit nicht wiederherstellen können, wenn der Zugang auf deinem Gerät und in jeder Synchronisierung verloren ist. Prüfe, wie dein Gerät den Zugang sichert.",
+    "es": "La cuarta pregunta está abierta: ¿Y si pierdo mi dispositivo? La respuesta dice que todavía no podemos recuperar tu cuenta si pierdes el acceso en tu dispositivo y en todas las copias sincronizadas. Comprueba cómo guarda tu dispositivo el acceso.",
+    "fil": "Bukas ang ikaapat na tanong: Paano kung mawala ang device ko? Sinasabi ng sagot na hindi pa maibabalik ang account kung mawala ang access sa device mo at sa lahat ng naka-sync na kopya. Alamin kung paano bina-back up ng device mo ang pag-log in."
+  },
+  "/:faq-recipient-open": {
+    "de": "Die fünfte Frage ist geöffnet: Wer bekommt den Bitcoin? Die Antwort sagt, die Person, die den Beitrag geschrieben hat. Eine Reaktion mit einem Betrag schickt den Bitcoin an ihre Wallet-Adresse.",
+    "es": "La quinta pregunta está abierta: ¿Quién recibe el Bitcoin? La respuesta dice que quien escribió la publicación. Una reacción con un importe envía el Bitcoin a la dirección de cartera de esa persona.",
+    "fil": "Bukas ang ikalimang tanong: Sino ang tatanggap ng Bitcoin? Sinasabi ng sagot na ang sumulat ng post. Ang reaksyon na may halaga ay nagpapadala ng Bitcoin sa wallet address niya."
+  },
+  "/:faq-bitcoin-open": {
+    "de": "Die sechste Frage ist geöffnet: Warum Bitcoin? Die Antwort sagt, dass du auch kleine Beträge direkt an die gewählte Wallet-Adresse schicken kannst. 21.gifts verwahrt die Spende nicht. Dein Wallet-Anbieter kann Gebühren berechnen.",
+    "es": "La sexta pregunta está abierta: ¿Por qué Bitcoin? La respuesta dice que puedes enviar incluso cantidades pequeñas directamente a la dirección de cartera elegida. 21.gifts no guarda la donación. Tu proveedor de cartera puede cobrar comisiones.",
+    "fil": "Bukas ang ikaanim na tanong: Bakit Bitcoin? Sinasabi ng sagot na makakapagpadala ka ng kahit maliit na halaga direkta sa napiling wallet address. Hindi hinahawakan ng 21.gifts ang donasyon. Maaaring maningil ang wallet provider mo."
+  },
+  "/:faq-taxes-open": {
+    "de": "Die siebte Frage ist geöffnet: Ist das reguliert, und wie sieht es mit Steuern aus? Die Antwort sagt, dass 21.gifts die Spende nicht verwahrt. Welche Regeln und Steuern gelten, hängt von deinem Wohnort und deiner Situation ab.",
+    "es": "La séptima pregunta está abierta: ¿Está regulado y cómo funcionan los impuestos? La respuesta dice que 21.gifts no guarda la donación. Las normas y los impuestos que se aplican dependen de dónde vives y de tu situación.",
+    "fil": "Bukas ang ikapitong tanong: Regulado ba ito, at paano ang buwis? Sinasabi ng sagot na hindi hinahawakan ng 21.gifts ang donasyon. Nakadepende sa tinitirhan at sitwasyon mo kung aling mga tuntunin at buwis ang naaangkop."
+  },
+  "/:faq-sat-open": {
+    "de": "Die achte Frage ist geöffnet: Was bedeutet ₿1 hier? Die Antwort sagt, dass ₿1 auf 21.gifts für einen Sat steht, die kleinste Bitcoin-Einheit. 100 Millionen Sats ergeben einen Bitcoin.",
+    "es": "La octava pregunta está abierta: ¿Qué significa ₿1 aquí? La respuesta dice que en 21.gifts ₿1 representa un sat, la unidad más pequeña de Bitcoin. Un Bitcoin equivale a 100 millones de sats.",
+    "fil": "Bukas ang ikawalong tanong: Ano ang ibig sabihin ng ₿1 dito? Sinasabi ng sagot na sa 21.gifts ang ₿1 ay isang sat, ang pinakamaliit na yunit ng Bitcoin. May 100 milyong sat sa isang Bitcoin."
   },
   "/welcome:ask-credit-error-request": {
     "de": "Kredit, Schritt 9 von 9, nachdem das Senden fehlschlägt. Die Vorschau bleibt, mit Nachricht konnte nicht gesendet werden darunter. Kredit bleibt gedrückt. Der Zähler zeigt 9 von 9.",
