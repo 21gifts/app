@@ -710,7 +710,7 @@
     "fil": "Umiiral na miyembro na hindi naka-configure ang wallet (Playwright builds) at wala pang recovery phrase. Walang bahagi ng balanse ang home view at tanging ang maliit na link na I-back up ang iyong wallet papunta sa recovery entry ng /settings ang laman nito; parehong naka-enable ang Tanggapin at Ipadala sa ibaba sa ilalim ng malambot na fade, ang Tanggapin sa kaliwa, at walang anuman sa ilalim nila."
   },
   "/wallet:loans": {
-    "de": "Die bereite Wallet zeigt Guthaben ₿21'000 · $21.00. Zwischen Guthaben und Zahlungen steht die neutrale Karte Dein Kredit mit Vollständig finanziert., Anfragen ₿30'000 · $30.00 und 100 %, Heute fällig ₿800 · $0.80 und Senden sowie der gedämpften Zeile ₿200 · $0.20 wartet · eine kreditgebende Person hat noch keine Wallet. Kredit anzeigen ist geschlossen.",
+    "de": "Die bereite Wallet zeigt Guthaben ₿21'000 · $21.00. Zwischen Guthaben und Zahlungen steht die neutrale Karte Ihr Kredit mit Vollständig finanziert., Anfragen ₿30'000 · $30.00 und 100 %, Heute fällig ₿800 · $0.80 und Senden sowie der gedämpften Zeile ₿200 · $0.20 wartet · eine kreditgebende Person hat noch keine Wallet. Kredit anzeigen ist geschlossen.",
     "es": "La wallet lista muestra Saldo ₿21'000 · $21.00. Entre Saldo y Pagos está la tarjeta neutral Tu préstamo con Totalmente financiado., Pedir ₿30'000 · $30.00 y 100 %, Vence hoy ₿800 · $0.80 y Enviar, además de la línea atenuada ₿200 · $0.20 espera · un prestamista aún no tiene wallet. Ver préstamo está cerrado.",
     "fil": "Ipinapakita ng handang wallet ang Balanse ₿21'000 · $21.00. Sa pagitan ng Balanse at Mga bayad ay ang neutral na kard na Ang iyong utang na may Buo na ang pondo., Hiling ₿30'000 · $30.00 at 100%, Bayaran ngayon ₿800 · $0.80 at Ipadala, pati ang mahinang linyang ₿200 · $0.20 ang naghihintay · wala pang wallet ang isang nagpautang. Sarado ang Ipakita ang utang."
   },
@@ -3615,12 +3615,12 @@
     "fil": "Icon ng regalo na may pinagsamang sagisag ng Bitcoin, Welcome, Ada, nang walang hint ng mga batas sa living room (forumLawsDismissed), nakapili ang Aktibo. Mga talang Nabayaran mula sa pinakabago (Ada ₿5 tapos Carol ₿21); hindi nakikita ang hindi pa nabayarang tala ni Bob. Walang kahon ng pagsulat sa pahina: lumulutang sa kanang ibaba ang + (Sumulat ng post); nasa lugar ng pagsulat ang Mag-post / Humingi ng pera at ang kahon ng pagsulat. Tumugon (forum.react) sa bawat pangunahing tala. Ang mga post ay hindi nagpapakita ng Magpadala ng Bitcoin; lumilitaw ang Regalo sa isang masisingil na sagot pagkatapos ng Ipakita ang mga reaksyon. Mga pildoras Tagapagtatag / Tagapamagitan / Tagapagsimula / Beripikado sa tabi ng pangalan kapag ang tungkulin ay isa sa apat na iyon; walang pildoras ang basis (beripikado si Carol, tagapamagitan si Ada; si Bob ay basis at nakatago sa Aktibo). Isang Menu sa itaas-kanan (tingnan ang Header kapag naka-sign in); sa pagbukas ng Menu ay Home, Balanse, Mga Tindahan, Point of sale, Profile, Grant, Mga setting, Mga patakaran sa living room, Habit-Tracker, Trust Chain, Mga istatistika, Mga abiso, Mga mensahe, Contact, opsyonal I-install ang app, at Mag-log out."
   },
   "/welcome:loans-collecting": {
-    "de": "Unter Willkommen, Ada zeigt die neutrale Karte Dein Kredit: Noch nicht vollständig finanziert. und einen ForumGoalBar mit Anfragen ₿30'000 · $30.00 und 60 %. Es gibt keine Fälligkeitszeile; Kredit anzeigen ist geschlossen.",
+    "de": "Unter Willkommen, Ada zeigt die neutrale Karte Ihr Kredit: Noch nicht vollständig finanziert. und einen ForumGoalBar mit Anfragen ₿30'000 · $30.00 und 60 %. Es gibt keine Fälligkeitszeile; Kredit anzeigen ist geschlossen.",
     "es": "Bajo Hola, Ada, la tarjeta neutral Tu préstamo muestra Aún no está totalmente financiado. y un ForumGoalBar con Pedir ₿30'000 · $30.00 y 60 %. No hay fila de vencimiento; Ver préstamo está cerrado.",
     "fil": "Sa ilalim ng Welcome, Ada, ipinapakita ng neutral na kard na Ang iyong utang ang Hindi pa buo ang pondo. at isang ForumGoalBar na may Hiling ₿30'000 · $30.00 at 60%. Walang hilera ng bayaran; sarado ang Ipakita ang utang."
   },
   "/welcome:loans-due": {
-    "de": "Unter Willkommen, Ada sagt die geschlossene neutrale Karte Dein Kredit und Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 %, Heute fällig, ₿1'000 · $1.00 und Senden. Kredit anzeigen bleibt geschlossen.",
+    "de": "Unter Willkommen, Ada sagt die geschlossene neutrale Karte Ihr Kredit und Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 %, Heute fällig, ₿1'000 · $1.00 und Senden. Kredit anzeigen bleibt geschlossen.",
     "es": "Bajo Hola, Ada, la tarjeta neutral cerrada dice Tu préstamo y Totalmente financiado., y muestra Pedir ₿30'000 · $30.00 con 100 %, Vence hoy, ₿1'000 · $1.00 y Enviar. Ver préstamo sigue cerrado.",
     "fil": "Sa ilalim ng Welcome, Ada, sinasabi ng saradong neutral na kard ang Ang iyong utang at Buo na ang pondo., at ipinapakita ang Hiling ₿30'000 · $30.00 na may 100%, Bayaran ngayon, ₿1'000 · $1.00 at Ipadala. Sarado pa rin ang Ipakita ang utang."
   },
@@ -3630,22 +3630,22 @@
     "fil": "Ang due na kard pagkatapos pindutin ang Ipakita ang utang. Nananatili ang Buo na ang pondo., Hiling ₿30'000 · $30.00 na may 100%, Bayaran ngayon, ₿1'000 · $1.00, at Ipadala. Pagkatapos ay ipinapakita nito ang naka-link na teksto ng utang na Kailangan ko ng maliit na utang para makabili ng second-hand na makinang panahi para sa puwesto kong pangkumpuni. na may 100%; Itago ang utang na ngayon ang toggle."
   },
   "/welcome:loans-behind": {
-    "de": "Die Karte Dein Kredit sagt Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 % und hat die Gefahrenkontur. Die Fälligkeitszeile zeigt rot Sie sind 2 Tage im Rückstand, ₿3'000 · $3.00 und Senden; Kredit anzeigen bleibt geschlossen.",
+    "de": "Die Karte Ihr Kredit sagt Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 % und hat die Gefahrenkontur. Die Fälligkeitszeile zeigt rot Sie sind 2 Tage im Rückstand, ₿3'000 · $3.00 und Senden; Kredit anzeigen bleibt geschlossen.",
     "es": "La tarjeta Tu préstamo dice Totalmente financiado., muestra Pedir ₿30'000 · $30.00 con 100 % y tiene el contorno de peligro. La fila muestra en rojo Llevas 2 días de retraso, ₿3'000 · $3.00 y Enviar; Ver préstamo sigue cerrado.",
     "fil": "Sinasabi ng kard na Ang iyong utang ang Buo na ang pondo., ipinapakita ang Hiling ₿30'000 · $30.00 na may 100%, at may danger outline. Ipinapakita ng hilera sa pula ang Huli ka nang 2 araw, ₿3'000 · $3.00 at Ipadala; sarado pa rin ang Ipakita ang utang."
   },
   "/welcome:loans-nothing-due": {
-    "de": "Die Karte Dein Kredit sagt Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 % und hat die Erfolgskontur. Die Zeile zeigt Heute ist nichts fällig und Nächste Zahlung: morgen, ₿1'000 · $1.00 mit Pfeil; es gibt kein Senden und Kredit anzeigen bleibt geschlossen.",
+    "de": "Die Karte Ihr Kredit sagt Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 % und hat die Erfolgskontur. Die Zeile zeigt Heute ist nichts fällig und Nächste Zahlung: morgen, ₿1'000 · $1.00 mit Pfeil; es gibt kein Senden und Kredit anzeigen bleibt geschlossen.",
     "es": "La tarjeta Tu préstamo dice Totalmente financiado., muestra Pedir ₿30'000 · $30.00 con 100 % y tiene el contorno de éxito. La fila muestra No vence nada hoy y Siguiente: mañana, ₿1'000 · $1.00 con flecha; no hay Enviar y Ver préstamo sigue cerrado.",
     "fil": "Sinasabi ng kard na Ang iyong utang ang Buo na ang pondo., ipinapakita ang Hiling ₿30'000 · $30.00 na may 100%, at may success outline. Ipinapakita ng hilera ang Walang babayaran ngayon at Susunod: bukas, ₿1'000 · $1.00 na may palaso; walang Ipadala at sarado pa rin ang Ipakita ang utang."
   },
   "/welcome:loans-sunday": {
-    "de": "Die Karte Dein Kredit sagt Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 %, hat eine neutrale Kontur und zeigt Sonntags gibt es keine Rückzahlungen. Es gibt weder Betrag noch Senden; Kredit anzeigen ist geschlossen.",
+    "de": "Die Karte Ihr Kredit sagt Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 %, hat eine neutrale Kontur und zeigt Sonntags gibt es keine Rückzahlungen. Es gibt weder Betrag noch Senden; Kredit anzeigen ist geschlossen.",
     "es": "La tarjeta Tu préstamo dice Totalmente financiado., muestra Pedir ₿30'000 · $30.00 con 100 %, tiene un contorno neutral y muestra Los domingos no hay devoluciones. No hay importe ni Enviar; Ver préstamo está cerrado.",
     "fil": "Sinasabi ng kard na Ang iyong utang ang Buo na ang pondo., ipinapakita ang Hiling ₿30'000 · $30.00 na may 100%, may neutral na outline, at ipinapakita ang Walang pagbabayad ng utang tuwing Linggo. Walang halaga o Ipadala; sarado ang Ipakita ang utang."
   },
   "/welcome:loans-multi": {
-    "de": "Die geschlossene Karte Deine Kredite (2) zeigt 1 von 2 vollständig finanziert. Der gemeinsame Balken zeigt Anfragen ₿42'000 · $42.00 und 71 %. Nur der finanzierte PHP-Kredit ist fällig: Heute fällig, ₿1'200 · $1.20 und Senden. Kredite anzeigen ist geschlossen.",
+    "de": "Die geschlossene Karte Ihre Kredite (2) zeigt 1 von 2 vollständig finanziert. Der gemeinsame Balken zeigt Anfragen ₿42'000 · $42.00 und 71 %. Nur der finanzierte PHP-Kredit ist fällig: Heute fällig, ₿1'200 · $1.20 und Senden. Kredite anzeigen ist geschlossen.",
     "es": "La tarjeta cerrada Tus préstamos (2) muestra 1 de 2 totalmente financiados. La barra combinada muestra Pedir ₿42'000 · $42.00 y 71 %. Solo vence el préstamo en PHP financiado: Vence hoy, ₿1'200 · $1.20 y Enviar. Ver préstamos está cerrado.",
     "fil": "Ipinapakita ng saradong kard na Ang iyong mga utang (2) ang 1 sa 2 ang buo na ang pondo. Ipinapakita ng pinagsamang bar ang Hiling ₿42'000 · $42.00 at 71%. Ang napondohang PHP na utang lamang ang dapat bayaran: Bayaran ngayon, ₿1'200 · $1.20 at Ipadala. Sarado ang Ipakita ang mga utang."
   },
