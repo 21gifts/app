@@ -45,7 +45,33 @@ describe('stablecoinAmounts', () => {
       { method: 'ethereum', asset: 'USDC', amount: '1.25' },
     ]);
     expect(stablecoinAmounts(null)).toEqual([]);
+    expect(stablecoinAmounts('nope')).toEqual([]);
+    expect(stablecoinAmounts(1)).toEqual([]);
     expect(stablecoinAmounts({ transferAmounts: 'nope' })).toEqual([]);
+  });
+
+  it('skips a row that is not one offered stablecoin amount', () => {
+    expect(
+      stablecoinAmounts({
+        transferAmounts: [
+          null,
+          'bad-row',
+          { method: 1, available: true, assets: [{ asset: 'USDT', amount: '1' }] },
+          { method: 'ethereum', available: true, assets: null },
+          {
+            method: 'ethereum',
+            available: true,
+            assets: [
+              null,
+              'bad-asset',
+              { asset: 'USDT', amount: 2 },
+              { asset: 'USDT', amount: '' },
+              { asset: 'USDC', amount: '3' },
+            ],
+          },
+        ],
+      }),
+    ).toEqual([{ method: 'ethereum', asset: 'USDC', amount: '3' }]);
   });
 });
 
@@ -74,6 +100,14 @@ describe('readPayRequest', () => {
       expiresAt: null,
     });
     expect(readPayRequest(null)).toEqual({ amounts: [], expiresAt: null });
+    expect(readPayRequest('nope')).toEqual({ amounts: [], expiresAt: null });
+    expect(readPayRequest(1)).toEqual({ amounts: [], expiresAt: null });
+    expect(readPayRequest({})).toEqual({ amounts: [], expiresAt: null });
+    expect(readPayRequest({ quote: null })).toEqual({ amounts: [], expiresAt: null });
+    expect(readPayRequest({ quote: 1 })).toEqual({ amounts: [], expiresAt: null });
+    expect(readPayRequest({ quote: {} })).toEqual({ amounts: [], expiresAt: null });
+    expect(readPayRequest({ quote: { expiration: 1 } })).toEqual({ amounts: [], expiresAt: null });
+    expect(readPayRequest({ quote: { expiration: '' } })).toEqual({ amounts: [], expiresAt: null });
   });
 });
 
@@ -96,6 +130,16 @@ describe('openShopPayment', () => {
     await expect(openShopPayment('ada', 21)).resolves.toBe('unavailable');
 
     fetchMock.mockResolvedValueOnce(Response.json({ name: 'Ada' }));
+    await expect(openShopPayment('ada', 21)).resolves.toBe('unavailable');
+
+    fetchMock.mockResolvedValueOnce(Response.json({ payment: '' }));
+    await expect(openShopPayment('ada', 21)).resolves.toBe('unavailable');
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.reject(new Error('bad json')),
+    } as Response);
     await expect(openShopPayment('ada', 21)).resolves.toBe('unavailable');
 
     fetchMock.mockRejectedValueOnce(new Error('offline'));
@@ -123,6 +167,14 @@ describe('fetchPayRequest', () => {
       expiresAt: '2026-10-11T12:00:00.000Z',
     });
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 404 }));
+    await expect(fetchPayRequest(decoded)).resolves.toEqual({ amounts: [], expiresAt: null });
+    fetchMock.mockRejectedValueOnce(new Error('offline'));
+    await expect(fetchPayRequest(decoded)).resolves.toEqual({ amounts: [], expiresAt: null });
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: () => Promise.reject(new Error('bad json')),
+    } as Response);
     await expect(fetchPayRequest(decoded)).resolves.toEqual({ amounts: [], expiresAt: null });
     vi.unstubAllGlobals();
   });

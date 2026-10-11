@@ -2925,11 +2925,46 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `<name>@<host>` with the name as it stands in the URL, or `null` for other text and for an LNURL that is not https, has a port other than 443, a query, or user info, has another path, or has a name an address cannot carry (only letters, digits, `.`, `_`, `+`, `-`). Pure; does not call the network.
 - **Used by:** `useWalletSend` (recipient of the amount and confirm steps, and the `send-confirm-fixed` pin).
 
+## Function: payRequestUrl
+
+- **Purpose:** The pay-link URL the payment page may fetch for the sticker LNURL. Same acceptance as `payLinkUsername`. The page does not add a query.
+- **Inputs:** `lightning` encoded LNURL from the payment-page query, and `pageHost` of the current page.
+- **Returns / side effects:** The decoded URL, or `null` when the payment link is invalid. No network call.
+- **Used by:** `PayLinkScreen`.
+
+## Function: stablecoinAmounts
+
+- **Purpose:** USDT and USDC amounts a pay request is offering. Lightning, an empty method, and a row that is not available are skipped. One line per chain and asset; a repeat keeps the first amount string.
+- **Inputs:** JSON body from the decoded pay link.
+- **Returns / side effects:** Entries of method, asset, and amount in response order. The amount string is not recomputed. No network call.
+- **Used by:** `readPayRequest`.
+
+## Function: readPayRequest
+
+- **Purpose:** Read the stablecoin amounts and the quote expiry from one pay-request body.
+- **Inputs:** JSON body from the decoded pay link.
+- **Returns / side effects:** The amounts and `expiresAt`. `expiresAt` is `quote.expiration` as returned, or `null` when it is missing or not a time. No network call.
+- **Used by:** `fetchPayRequest`.
+
+## Function: openShopPayment
+
+- **Purpose:** Ask the api to open the shop payment for the sat amount the page already accepted.
+- **Inputs:** `username` of the shop, and `amountSats` as whole sats.
+- **Returns / side effects:** `opened` when the response is 200 with a non-empty `payment` string, `conflict` on 409, and `unavailable` for every other result, including a route that is not mounted. Posts `{ amountSats }` to `/pay/<username>/payment`.
+- **Used by:** `PayLinkScreen`.
+
+## Function: fetchPayRequest
+
+- **Purpose:** Read the stablecoin offer from the decoded pay link. The URL is fetched as given, with no `timeout` or other query added.
+- **Inputs:** The decoded pay-link URL.
+- **Returns / side effects:** The offer from `readPayRequest`, or no amounts when the request fails. Does not change the invoice.
+- **Used by:** `PayLinkScreen`.
+
 ## Function: PayLinkScreen
 
 - **Purpose:** Public payment card: the person's name, an exact satoshi amount, and one BOLT11 invoice.
 - **Inputs:** `lightning` query string.
-- **Returns / side effects:** `PageChrome` with `ProfileChromeLeft` (wordmark `HomeWordmark`) and a light language switcher. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. Renders the shop sticker's storefront for a real pay link, and the welcome glyph only when the link is not valid. After `GET /pay/:username`, shows the name and amount form, or that open till. **Continue** posts the amount and then shows the active payment (locked sats, the default fiat when the spot rate is usable, and **Pay**, no amount field). One `useSpotRate` call, made once the pay profile is loaded, feeds both the amount field and that fiat line, so creating the payment does not ask for the rate again. **Pay** (aria **Pay with a Bitcoin wallet app**) is the width of the invoice QR plate, centered, not the page column. With an issued invoice, **Pay** sets `window.location.href` to the generic `lightning:` link from `lightningHref`, so the device opens whichever Bitcoin wallet app handles that scheme; no particular wallet is named and there is no wallet icon. Before the invoice exists **Pay** is disabled, except after a failed create, when it requests the invoice again. Off a smartphone the invoice QR shows above **Pay**. A smartphone does not show it (`isSmartphoneUserAgent`, not viewport), before or after the payment is active. A new `lightning` value clears the previous person, including an invoice that is still being created. A positive fiat amount that the spot rate cannot price in the preferred fiat (typed before that fiat changed to one without a price) shows an alert that names that currency. No forum and no auth gate.
+- **Returns / side effects:** `PageChrome` with `ProfileChromeLeft` (wordmark `HomeWordmark`) and a light language switcher. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. Renders the shop sticker's storefront for a real pay link, and the welcome glyph only when the link is not valid. After `GET /pay/:username`, shows the name and amount form, or that open till. **Continue** posts the same sats to `/pay/:username/payment` and then shows the active payment (locked sats, the default fiat when the spot rate is usable, and **Pay**, no amount field). A missing payment route leaves this screen unchanged. **409** shows that a payment is already open and, on the amount form, does not mint an invoice. When the pay link then offers USDT or USDC, those amounts and that quote's remaining time appear under the sats, and a second button opens `lightning:` plus the same LNURL. That button does not replace **Pay**. A lapsed quote is read again for the same sats. One `useSpotRate` call, made once the pay profile is loaded, feeds both the amount field and that fiat line, so creating the payment does not ask for the rate again. **Pay** (aria **Pay with a Bitcoin wallet app**) is the width of the invoice QR plate, centered, not the page column. With an issued invoice, **Pay** sets `window.location.href` to the generic `lightning:` link from `lightningHref`, so the device opens whichever Bitcoin wallet app handles that scheme; no particular wallet is named and there is no wallet icon. Before the invoice exists **Pay** is disabled, except after a failed create, when it requests the invoice again. Off a smartphone the invoice QR shows above **Pay**. A smartphone does not show it (`isSmartphoneUserAgent`, not viewport), before or after the payment is active. A new `lightning` value clears the previous person, including an invoice that is still being created. A positive fiat amount that the spot rate cannot price in the preferred fiat (typed before that fiat changed to one without a price) shows an alert that names that currency. No forum and no auth gate.
 - **Used by:** `PayLinkPage`.
 
 ## Function: PayLinkPage

@@ -297,7 +297,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const mintedRemaining = mintedExpiresAt === null ? 0 : Date.parse(mintedExpiresAt) - now;
   const mintedLive = invoice !== null && mintedExpiresAt !== null && mintedRemaining > 0;
   const quoteRemaining = quoteExpiresAt === null ? 0 : Date.parse(quoteExpiresAt) - now;
-  const quoteLive = stablecoins.length > 0 && Number.isFinite(quoteRemaining) && quoteRemaining > 0;
+  const quoteLive = stablecoins.length > 0 && quoteRemaining > 0;
 
   useEffect(() => {
     if (charge === null && mintedExpiresAt === null) {
@@ -344,6 +344,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     }
     const expiresAtMs = Date.parse(quoteExpiresAt);
     const url = quoteUrlRef.current;
+    /* v8 ignore next 3 -- a stored expiry is a parsed time, and it is stored with its URL */
     if (!Number.isFinite(expiresAtMs) || url === null) {
       return;
     }
@@ -384,7 +385,6 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     if (!chargeLive || profile === null || charge === null) {
       return;
     }
-    const generation = generationRef.current;
     let active = true;
     postingRef.current = true;
     setPosting(true);
@@ -396,7 +396,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     })
       .then(async (response) => {
         const result = response.ok ? ((await response.json()) as { pr: string }) : null;
-        if (!active || generationRef.current !== generation) {
+        if (!active) {
           return;
         }
         if (result === null) {
@@ -410,7 +410,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         postingRef.current = false;
         setPosting(false);
         const payment = await openShopPayment(profile.username, charge.amountSats);
-        if (!active || generationRef.current !== generation) {
+        if (!active) {
           return;
         }
         if (payment === 'conflict') {
@@ -425,7 +425,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
           return;
         }
         const offer = await fetchPayRequest(url);
-        if (!active || generationRef.current !== generation) {
+        if (!active) {
           return;
         }
         quoteUrlRef.current = offer.amounts.length > 0 ? url : null;
@@ -433,22 +433,20 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         setQuoteExpiresAt(offer.amounts.length > 0 ? offer.expiresAt : null);
       })
       .catch(() => {
-        if (active && generationRef.current === generation) {
+        if (active) {
           setFormError('failed');
         }
       })
       .finally(() => {
-        if (active && generationRef.current === generation) {
+        if (active) {
           postingRef.current = false;
           setPosting(false);
         }
       });
     return () => {
       active = false;
-      if (generationRef.current === generation) {
-        postingRef.current = false;
-        setPosting(false);
-      }
+      postingRef.current = false;
+      setPosting(false);
     };
   }, [charge, chargeLive, lightning, mintNonce, profile]);
 
@@ -521,7 +519,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         return;
       }
       const url = payRequestUrl(lightning, window.location.host);
-      if (url === null || generationRef.current !== generation) {
+      if (url === null) {
         return;
       }
       const offer = await fetchPayRequest(url);

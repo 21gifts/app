@@ -13,6 +13,7 @@ import {
   type ShopStickerFormat,
 } from '../src/lib/shop-sticker';
 import { encodeLnurl } from '../src/lib/lnurl';
+import { payRequestUrl, readPayRequest, stablecoinAmounts } from '../src/lib/shop-payment';
 import { RULES_CHAPTER_IDS } from '../src/lib/rules-chapters';
 import { creditSmallestUnits, parseCreditTermDays, splitCreditPlan } from '../src/lib/credit-plan';
 import { parseForumAskAmountInUnit } from '../src/lib/forum-goal';
@@ -6855,6 +6856,119 @@ test('Function: PayLinkScreen — public pay page names the person', async ({ pa
   await page.goto(`/pl?lightning=${ADA_LNURL}`);
   await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
+});
+
+test('Function: payRequestUrl — localhost decodes the sticker and another host does not', () => {
+  expect(payRequestUrl(ADA_LNURL, 'localhost')).toBe('https://21.gifts/.well-known/lnurlp/ada');
+  expect(payRequestUrl(ADA_LNURL, 'dev.21.gifts')).toBeNull();
+});
+
+test('Function: stablecoinAmounts — Lightning is skipped and the USDT string is kept', () => {
+  expect(
+    stablecoinAmounts({
+      transferAmounts: [
+        {
+          method: 'Lightning',
+          available: true,
+          assets: [{ asset: 'BTC', amount: '0.00000021' }],
+        },
+        { method: 'ethereum', available: true, assets: [{ asset: 'USDT', amount: '1.25' }] },
+      ],
+    }),
+  ).toEqual([{ method: 'ethereum', asset: 'USDT', amount: '1.25' }]);
+});
+
+test('Function: readPayRequest — amounts keep the quote expiry string', () => {
+  expect(
+    readPayRequest({
+      quote: { expiration: '2026-10-11T12:00:00.000Z' },
+      transferAmounts: [
+        { method: 'ethereum', available: true, assets: [{ asset: 'USDT', amount: '1.25' }] },
+      ],
+    }),
+  ).toEqual({
+    amounts: [{ method: 'ethereum', asset: 'USDT', amount: '1.25' }],
+    expiresAt: '2026-10-11T12:00:00.000Z',
+  });
+});
+
+test('Function: openShopPayment — a payment already open does not mint', async ({ page }) => {
+  let invoices = 0;
+  await page.route(/\/pay\/ada$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ name: 'Ada Lovelace', username: 'ada', minSats: 1, maxSats: 100 }),
+    });
+  });
+  await page.route(/\/pay\/ada\/invoice$/, async (route) => {
+    invoices += 1;
+    await route.fulfill({ status: 500, contentType: 'text/plain', body: 'no' });
+  });
+  await page.route(/\/pay\/ada\/payment$/, async (route) => {
+    await route.fulfill({
+      status: 409,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'A payment is already open' }),
+    });
+  });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('alert')).toHaveText('A payment is already open.');
+  await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+  expect(invoices).toBe(0);
+});
+
+test('Function: fetchPayRequest — offered USDT stays under the same invoice', async ({ page }) => {
+  await page.route(/\/pay\/ada$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ name: 'Ada Lovelace', username: 'ada', minSats: 1, maxSats: 100 }),
+    });
+  });
+  await page.route(/\/pay\/ada\/invoice$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ pr: 'lnbc210n1paylink', amountSats: 21 }),
+    });
+  });
+  await page.route(/\/pay\/ada\/payment$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ payment: '8d1c1b9a-6c0e-4f1a-9c2d-111111111111' }),
+    });
+  });
+  await page.route(/\/\.well-known\/lnurlp\/ada$/, async (route) => {
+    expect(route.request().url()).toBe('https://21.gifts/.well-known/lnurlp/ada');
+    expect(route.request().url()).not.toContain('timeout');
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        quote: { expiration: '2099-01-01T00:00:00.000Z' },
+        transferAmounts: [
+          {
+            method: 'Lightning',
+            available: true,
+            assets: [{ asset: 'BTC', amount: '0.00000021' }],
+          },
+          { method: 'ethereum', available: true, assets: [{ asset: 'USDT', amount: '1.25' }] },
+        ],
+      }),
+    });
+  });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await expect(page.getByRole('heading', { name: 'Ada Lovelace' })).toBeVisible();
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('USDT · ethereum · 1.25')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with USDT or USDC' })).toBeVisible();
 });
 
 test('Function: PayLinkPage — missing lightning stays on the pay page', async ({ page }) => {
