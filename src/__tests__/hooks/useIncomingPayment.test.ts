@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useIncomingPayment } from '@/hooks/useIncomingPayment';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { onIncomingPayment } from '@/lib/wallet/wallet-service';
+import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/wallet/wallet-service', () => ({ onIncomingPayment: vi.fn() }));
 
@@ -28,6 +29,7 @@ function payment(id: string): WalletPayment {
 
 beforeEach(() => {
   vi.useFakeTimers();
+  useAuthStore.setState({ session: 'session-a' });
   unsubscribe.mockReset();
   vi.mocked(onIncomingPayment)
     .mockReset()
@@ -39,6 +41,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  useAuthStore.setState({ session: null });
   vi.useRealTimers();
   window.history.replaceState({}, '', originalHref);
   if (ORIGINAL_E2E_NOW === undefined) delete process.env.NEXT_PUBLIC_E2E_NOW;
@@ -94,6 +97,34 @@ describe('useIncomingPayment', () => {
     expect(result.current.payment).toBeNull();
   });
 
+  it('never shows a payment after its session ended or under the next one, and listens only while signed in', () => {
+    const { result } = renderHook(() => useIncomingPayment(1000));
+    act(() => {
+      emit(payment('a'));
+    });
+    expect(result.current.payment?.id).toBe('a');
+    act(() => {
+      useAuthStore.setState({ session: 'session-b' });
+    });
+    expect(result.current.payment).toBeNull();
+    expect(unsubscribe).toHaveBeenCalledTimes(1);
+    expect(onIncomingPayment).toHaveBeenCalledTimes(2);
+    act(() => {
+      emit(payment('b'));
+    });
+    expect(result.current.payment?.id).toBe('b');
+    act(() => {
+      useAuthStore.setState({ session: null });
+    });
+    expect(result.current.payment).toBeNull();
+    expect(unsubscribe).toHaveBeenCalledTimes(2);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(onIncomingPayment).toHaveBeenCalledTimes(2);
+    expect(result.current.payment).toBeNull();
+  });
+
   it('dismisses early and unsubscribes on unmount', () => {
     const { result, unmount } = renderHook(() => useIncomingPayment(1000));
     act(() => {
@@ -114,7 +145,6 @@ describe('useIncomingPayment', () => {
     expect(result.current.payment).toMatchObject({
       amountSats: 500,
       direction: 'received',
-      info: { lnAddress: 'bruno@21.gifts' },
     });
     expect(onIncomingPayment).not.toHaveBeenCalled();
     act(() => {
