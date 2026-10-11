@@ -138,6 +138,7 @@ interface SendRun {
   latePending: boolean;
   timedOut: boolean;
   lastSendAt: number;
+  skippedAtSend: boolean;
 }
 
 type PinnedLoanRepay = Pick<
@@ -207,13 +208,16 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
   },
 };
 
-/** Bill inputs whose send returned paid, or whose sentLate is pending or true. Never cleared. */
+/** Bill inputs reserved from the start of their send until it is known they did not go out. */
 const sentInvoices = new Set<string>();
 
 /**
- * Runs the all-loans repayment flow and waits for api settlement. A bill whose
- * payment already went out (or may still go out) in this app session is never
- * prepared or sent again; when only such bills are due the run ends unconfirmed.
+ * Runs the all-loans repayment flow and waits for api settlement. A bill is
+ * reserved from the moment its send starts; a send that did not go out
+ * releases it. A reserved bill is never prepared or sent again in this app
+ * session; when only such bills are due the run ends unconfirmed. A bill
+ * another run is sending is skipped; if that leaves nothing sent the run
+ * ends unconfirmed.
  * Every prepare or send that does not pay (also `insufficient`, and a prepared
  * amount other than the bill, as `amount_mismatch`) is reported with
  * {@link reportPaymentFailure} under the flow `repay`; a send also after the
@@ -379,6 +383,15 @@ export function useLoanRepay(options: {
         const ordered = orderBills(perLoan);
         const bills = ordered.filter((bill) => !sentInvoices.has(invoiceInput(bill)));
         const skipped = bills.length !== ordered.length;
+        const skippedByMessage = new Map<string, number>();
+        for (const bill of ordered) {
+          if (sentInvoices.has(invoiceInput(bill))) {
+            skippedByMessage.set(
+              bill.messageId,
+              (skippedByMessage.get(bill.messageId) ?? 0) + bill.amountSats,
+            );
+          }
+        }
         if (bills.length === 0) {
           await options.reload();
           if (!active()) {
@@ -479,6 +492,7 @@ export function useLoanRepay(options: {
           latePending: false,
           timedOut: false,
           lastSendAt: Date.now(),
+          skippedAtSend: false,
         };
 
         const publishSent = (): void => {
@@ -497,7 +511,7 @@ export function useLoanRepay(options: {
           if (target === undefined) {
             sent.targets.set(item.bill.messageId, {
               before: beforeByMessage.get(item.bill.messageId)!,
-              sent: item.bill.amountSats,
+              sent: item.bill.amountSats + (skippedByMessage.get(item.bill.messageId) ?? 0),
             });
           } else {
             target.sent += item.bill.amountSats;
@@ -574,21 +588,37 @@ export function useLoanRepay(options: {
           } else if (sent.failed) {
             clearSettlement();
             setLivePhase('failed');
+          } else if (sent.skippedAtSend) {
+            clearSettlement();
+            setLivePhase('unconfirmed');
           }
         };
 
         for (const [index, item] of kept.entries()) {
-          const result = await item.send();
           const invoice = invoiceInput(item.bill);
-          if (result.kind === 'paid') {
-            sentInvoices.add(invoice);
-          } else if (result.kind === 'failed' && result.sentLate !== undefined) {
-            sentInvoices.add(invoice);
+          if (sentInvoices.has(invoice)) {
+            sent.skippedAtSend = true;
+            const target = sent.targets.get(item.bill.messageId);
+            if (target !== undefined) {
+              target.sent += item.bill.amountSats;
+            } else {
+              skippedByMessage.set(
+                item.bill.messageId,
+                (skippedByMessage.get(item.bill.messageId) ?? 0) + item.bill.amountSats,
+              );
+            }
+            continue;
+          }
+          sentInvoices.add(invoice);
+          const result = await item.send();
+          if (result.kind === 'failed' && result.sentLate !== undefined) {
             void result.sentLate.then((wasSent) => {
               if (!wasSent) {
                 sentInvoices.delete(invoice);
               }
             });
+          } else if (result.kind !== 'paid') {
+            sentInvoices.delete(invoice);
           }
           if (result.kind !== 'paid') {
             const sentLate = result.kind === 'failed' ? result.sentLate : undefined;
