@@ -11,6 +11,12 @@ const PENDING_KEY = '21gifts.moveFunds';
 let pending: MoveFundsSource | null = null;
 
 /**
+ * True once this document took a request, so a stored copy that could not be
+ * removed is not taken a second time; a new request clears it.
+ */
+let taken = false;
+
+/**
  * Whether a stored value is a request source.
  *
  * @param value - Stored value.
@@ -30,6 +36,7 @@ function isSource(value: string | null): value is MoveFundsSource {
  */
 export function requestMoveFunds(source: MoveFundsSource): void {
   pending = source;
+  taken = false;
   try {
     sessionStorage.setItem(PENDING_KEY, source);
   } catch {
@@ -48,11 +55,16 @@ export function takeMoveFundsRequest(): MoveFundsSource | null {
   let stored: string | null = null;
   try {
     stored = sessionStorage.getItem(PENDING_KEY);
-    sessionStorage.removeItem(PENDING_KEY);
   } catch {
     stored = null;
   }
-  const source = pending ?? (isSource(stored) ? stored : null);
+  try {
+    sessionStorage.removeItem(PENDING_KEY);
+  } catch {
+    // Not removed: `taken` keeps this document from taking the stored copy again.
+  }
+  const source = pending ?? (!taken && isSource(stored) ? stored : null);
   pending = null;
+  taken = true;
   return source;
 }
