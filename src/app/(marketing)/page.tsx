@@ -55,6 +55,71 @@ export default async function Home(): Promise<ReactElement> {
     ['home.faq7Q', 'home.faq7A'],
     ['home.faq8Q', 'home.faq8A'],
   ] as const;
+  const discovery = [
+    {
+      href: '#happyland' as const,
+      kicker: 'home.discoverStoryKicker' as const,
+      title: 'home.discoverStoryTitle' as const,
+      body: 'home.discoverStoryBody' as const,
+      graphic: (
+        <div className="flex h-48 flex-col justify-end overflow-hidden bg-home-story p-7 text-paper">
+          <span className="text-xs font-semibold tracking-home-kicker text-accent uppercase">
+            {messages['happyland.kicker']}
+          </span>
+          <span className="mt-3 text-4xl font-semibold tracking-tight">{t('nav.happyland')}</span>
+        </div>
+      ),
+    },
+    {
+      href: '#why' as const,
+      kicker: 'home.discoverBitcoinKicker' as const,
+      title: 'home.discoverBitcoinTitle' as const,
+      body: 'home.discoverBitcoinBody' as const,
+      graphic: (
+        <div className="flex h-48 items-center justify-center bg-home-bitcoin">
+          <Image
+            src="/bitcoin-symbol.svg"
+            alt=""
+            loading="eager"
+            width={112}
+            height={112}
+            className="block h-28 w-28"
+          />
+        </div>
+      ),
+    },
+    {
+      href: '#faq' as const,
+      kicker: 'home.discoverTrustKicker' as const,
+      title: 'home.discoverTrustTitle' as const,
+      body: 'home.discoverTrustBody' as const,
+      graphic: (
+        <div className="flex h-48 items-center justify-center bg-ink px-7">
+          <div
+            aria-hidden="true"
+            className="flex w-full max-w-home-path items-center justify-between gap-3"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-accent text-2xl text-paper">
+              <Wallet className="h-6 w-6" strokeWidth={1.5} />
+            </span>
+            <span className="h-px flex-1 bg-accent" />
+            <Image
+              src="/bitcoin-symbol.svg"
+              alt=""
+              loading="eager"
+              width={64}
+              height={64}
+              className="block h-16 w-16 shrink-0"
+            />
+            <span className="h-px flex-1 bg-accent" />
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-accent text-2xl text-paper">
+              <UserRound className="h-6 w-6" strokeWidth={1.5} />
+            </span>
+          </div>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <main>
@@ -275,98 +340,28 @@ export default async function Home(): Promise<ReactElement> {
             {t('home.discoverTitle')}
           </h2>
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            <Link
-              href="#happyland"
-              className="group overflow-hidden rounded-2xl border border-ink/10 bg-home-card transition hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-            >
-              <div className="flex h-48 flex-col justify-end overflow-hidden bg-home-story p-7 text-paper">
-                <span className="text-xs font-semibold tracking-home-kicker text-accent uppercase">
-                  {messages['happyland.kicker']}
-                </span>
-                <span className="mt-3 text-4xl font-semibold tracking-tight">
-                  {t('nav.happyland')}
-                </span>
-              </div>
-              <div className="p-6">
-                <span className="text-xs font-semibold tracking-home-label text-ink/60 uppercase">
-                  {t('home.discoverStoryKicker')}
-                </span>
-                <div className="mt-2 flex items-start justify-between gap-3">
-                  <h3 className="text-xl font-semibold">{t('home.discoverStoryTitle')}</h3>
-                  <ArrowUpRight aria-hidden="true" className="mt-1 h-5 w-5 shrink-0 text-ink/60" />
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-ink/65">
-                  {t('home.discoverStoryBody')}
-                </p>
-              </div>
-            </Link>
-            <Link
-              href="#why"
-              className="group overflow-hidden rounded-2xl border border-ink/10 bg-home-card transition hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-            >
-              <div className="flex h-48 items-center justify-center bg-home-bitcoin">
-                <Image
-                  src="/bitcoin-symbol.svg"
-                  alt=""
-                  loading="eager"
-                  width={112}
-                  height={112}
-                  className="block h-28 w-28"
-                />
-              </div>
-              <div className="p-6">
-                <span className="text-xs font-semibold tracking-home-label text-ink/60 uppercase">
-                  {t('home.discoverBitcoinKicker')}
-                </span>
-                <div className="mt-2 flex items-start justify-between gap-3">
-                  <h3 className="text-xl font-semibold">{t('home.discoverBitcoinTitle')}</h3>
-                  <ArrowUpRight aria-hidden="true" className="mt-1 h-5 w-5 shrink-0 text-ink/60" />
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-ink/65">
-                  {t('home.discoverBitcoinBody')}
-                </p>
-              </div>
-            </Link>
-            <Link
-              href="#faq"
-              className="group overflow-hidden rounded-2xl border border-ink/10 bg-home-card transition hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
-            >
-              <div className="flex h-48 items-center justify-center bg-ink px-7">
-                <div
-                  aria-hidden="true"
-                  className="flex w-full max-w-home-path items-center justify-between gap-3"
-                >
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full border border-accent text-2xl text-paper">
-                    <Wallet className="h-6 w-6" strokeWidth={1.5} />
+            {discovery.map(({ href, kicker, title, body, graphic }) => (
+              <Link
+                key={href}
+                href={href}
+                className="group overflow-hidden rounded-2xl border border-ink/10 bg-home-card transition hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              >
+                {graphic}
+                <div className="p-6">
+                  <span className="text-xs font-semibold tracking-home-label text-ink/60 uppercase">
+                    {t(kicker)}
                   </span>
-                  <span className="h-px flex-1 bg-accent" />
-                  <Image
-                    src="/bitcoin-symbol.svg"
-                    alt=""
-                    loading="eager"
-                    width={64}
-                    height={64}
-                    className="block h-16 w-16 shrink-0"
-                  />
-                  <span className="h-px flex-1 bg-accent" />
-                  <span className="flex h-14 w-14 items-center justify-center rounded-full border border-accent text-2xl text-paper">
-                    <UserRound className="h-6 w-6" strokeWidth={1.5} />
-                  </span>
+                  <div className="mt-2 flex items-start justify-between gap-3">
+                    <h3 className="text-xl font-semibold">{t(title)}</h3>
+                    <ArrowUpRight
+                      aria-hidden="true"
+                      className="mt-1 h-5 w-5 shrink-0 text-ink/60"
+                    />
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed text-ink/65">{t(body)}</p>
                 </div>
-              </div>
-              <div className="p-6">
-                <span className="text-xs font-semibold tracking-home-label text-ink/60 uppercase">
-                  {t('home.discoverTrustKicker')}
-                </span>
-                <div className="mt-2 flex items-start justify-between gap-3">
-                  <h3 className="text-xl font-semibold">{t('home.discoverTrustTitle')}</h3>
-                  <ArrowUpRight aria-hidden="true" className="mt-1 h-5 w-5 shrink-0 text-ink/60" />
-                </div>
-                <p className="mt-2 text-sm leading-relaxed text-ink/65">
-                  {t('home.discoverTrustBody')}
-                </p>
-              </div>
-            </Link>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
