@@ -2706,6 +2706,41 @@ describe('useWalletSend failure report', () => {
     );
   });
 
+  it('does not report a prepare that rejects after the view closed', async () => {
+    target(REQUEST);
+    let reject: (error: Error) => void = () => undefined;
+    vi.mocked(payFromWallet).mockReturnValue(
+      new Promise<WalletPayResult>((_, fail) => {
+        reject = fail;
+      }),
+    );
+    const { result, unmount } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    unmount();
+    await act(async () => {
+      reject(new Error('late'));
+    });
+    expect(reportPaymentFailure).not.toHaveBeenCalled();
+  });
+
+  it('leaves a read that rejects after the view closed ended', async () => {
+    let reject: (error: Error) => void = () => undefined;
+    vi.mocked(parseWalletInput).mockReturnValue(
+      new Promise((_, fail) => {
+        reject = fail;
+      }),
+    );
+    const { result, unmount } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, 'lnbc1');
+    expect(parseWalletInput).toHaveBeenCalledWith('lnbc1');
+    unmount();
+    await act(async () => {
+      reject(new Error('late'));
+    });
+    expect(result.current.state).toEqual({ step: 'input', error: null });
+    expect(reportPaymentFailure).not.toHaveBeenCalled();
+  });
+
   it('reports a failed send with its late outcome, under the session the send started in', async () => {
     target(REQUEST);
     const sentLate = Promise.resolve(false);
