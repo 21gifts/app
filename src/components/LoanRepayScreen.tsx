@@ -378,7 +378,7 @@ export function LoanRepayScreen(): ReactElement {
             </div>
           )}
         </div>
-        {repay.missingSats === null && fitting.length > 0 ? (
+        {repay.missingSats === null && !ledgersMissing && fitting.length > 0 ? (
           <button
             type="button"
             className="text-sm font-medium text-app-fg underline underline-offset-2"

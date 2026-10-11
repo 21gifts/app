@@ -1676,6 +1676,46 @@ describe('useLoanRepay already-sent invoices', () => {
     expect(settled.result.current.phase).toBe('repaid');
   });
 
+  it('does not require a reserved share already counted in the fresh baseline', async () => {
+    vi.useFakeTimers();
+    const billA = bill('BaselineSkipA', 500);
+    const billB = bill('BaselineSkipB', 400, 1);
+    const sendA = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [billA], waiting: [] });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500, sendA));
+    const first = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan('m1', 900, 100)])) }),
+    );
+    act(() => first.result.current.pay([loan('m1', 900, 100)]));
+    await act(async () => undefined);
+    expect(sendA).toHaveBeenCalledTimes(1);
+    first.unmount();
+
+    const sendB = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [billA, billB], waiting: [] });
+    vi.mocked(payFromWallet).mockReset();
+    vi.mocked(payFromWallet).mockImplementation(async (request) => {
+      if (request.type !== 'input') {
+        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+      }
+      expect(request.input).toBe(invoiceOf(billB));
+      return confirmed(400, sendB);
+    });
+    const reload = vi
+      .fn<() => Promise<MyLoans>>()
+      .mockResolvedValueOnce(body([loan('m1', 400, 600)]))
+      .mockResolvedValue(body([loan('m1', 0, 1_000)]));
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+    act(() => result.current.pay([loan('m1', 900, 100)]));
+    await act(async () => undefined);
+    expect(sendB).toHaveBeenCalledTimes(1);
+    expect(result.current.sentSats).toBe(400);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
+    });
+    expect(result.current.phase).toBe('repaid');
+  });
+
   it('does not send a new invoice for a share whose first send is still in flight', async () => {
     const firstBill = bill('ShareRotate', 500, 0, 'spark-share-old');
     const rotatedBill = {

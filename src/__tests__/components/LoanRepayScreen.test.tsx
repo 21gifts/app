@@ -409,6 +409,24 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByTestId('own-address')).toBeNull();
   });
 
+  it('hides send-now when a loan repayment list has not loaded', async () => {
+    vi.mocked(getRepayment).mockImplementation(async (id) =>
+      id === 'loan-1'
+        ? ledger({
+            repayments: [{ ...ledger().repayments[0]!, sats: 500 }],
+          })
+        : null,
+    );
+    show(
+      { sundayRest: false, loans: [loan(), loan({ messageId: 'loan-2' })] },
+      repay({ balanceSats: 600 }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    expect(await screen.findByText('Bruno')).toBeTruthy();
+    expect(screen.getByText('Not enough in your wallet')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /now to/ })).toBeNull();
+  });
+
   it('shows the fee shortfall and top-up without send-now when the amount fits', () => {
     const state = repay({ balanceSats: 1_000, missingSats: 25 });
     show({ sundayRest: false, loans: [loan()] }, state);
