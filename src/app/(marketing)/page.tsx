@@ -270,7 +270,7 @@ export default async function Home(): Promise<ReactElement> {
           <div className="mt-8 grid gap-4 lg:grid-cols-3">
             <Link
               href="#happyland"
-              className="group overflow-hidden rounded-2xl border border-ink/10 bg-[#faf9f7] transition hover:-translate-y-1 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="group overflow-hidden rounded-2xl border border-ink/10 bg-[#faf9f7] transition hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               <div className="flex h-48 flex-col justify-end overflow-hidden bg-[radial-gradient(circle_at_75%_25%,#5b3a1e,#211b18_60%)] p-7 text-paper">
                 <span className="text-xs font-semibold tracking-[0.2em] text-accent uppercase">
@@ -295,7 +295,7 @@ export default async function Home(): Promise<ReactElement> {
             </Link>
             <Link
               href="#why"
-              className="group overflow-hidden rounded-2xl border border-ink/10 bg-[#faf9f7] transition hover:-translate-y-1 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="group overflow-hidden rounded-2xl border border-ink/10 bg-[#faf9f7] transition hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               <div className="flex h-48 items-center justify-center bg-[#18120d]">
                 <Image
@@ -322,7 +322,7 @@ export default async function Home(): Promise<ReactElement> {
             </Link>
             <Link
               href="#faq"
-              className="group overflow-hidden rounded-2xl border border-ink/10 bg-[#faf9f7] transition hover:-translate-y-1 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+              className="group overflow-hidden rounded-2xl border border-ink/10 bg-[#faf9f7] transition hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
             >
               <div className="flex h-48 items-center justify-center bg-ink px-7">
                 <div
