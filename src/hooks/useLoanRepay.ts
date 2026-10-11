@@ -78,7 +78,9 @@ export interface LoanRepayResult {
    * shares of the set another run already holds are skipped. Only that named set is
    * prepared. The whole set is sent, or nothing: an `insufficient` prepare in the set,
    * or a total that does not fit the current balance, sends nothing. When the set is
-   * given and none of those shares are still due, the run reloads and returns to idle.
+   * given and none of those shares are still due, the run reloads, then ends
+   * `unconfirmed` if one of the named shares is held by another run, `repaid` if
+   * nothing is due any more, otherwise `idle`.
    *
    * @param loans - Current loans body in list order.
    * @param onlyShares - Optional exact share keys to pay; only those named shares are
@@ -231,8 +233,10 @@ const reservedShares = new Set<string>();
  * or sent again in this app session, including when `/due` later returns a
  * new invoice for that share; when every named share is reserved the run
  * ends unconfirmed. When `onlyShares` is given and none of those shares are
- * still due, the run reloads and returns to idle. A share another run is
- * sending is skipped; if that leaves nothing sent the run ends unconfirmed.
+ * still due, the run reloads, then ends `unconfirmed` if one of the named
+ * shares is held by another run, `repaid` if nothing is due any more, otherwise
+ * `idle`. A share another run is sending is skipped; if that leaves nothing
+ * sent the run ends unconfirmed.
  * A skipped share still counts toward the settlement of its loan; a reserved
  * share already counted in the fresh baseline is not required again.
  * Every prepare or send that does not pay (also `insufficient`, and a prepared
