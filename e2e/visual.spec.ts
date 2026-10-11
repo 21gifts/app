@@ -2423,10 +2423,14 @@ test.describe('screen baselines', () => {
   test('wallet received', async ({ page }) => {
     await seedWalletSend(page);
     await page.goto('/wallet?visual=wallet-received');
-    await expect(page.getByText('You received ₿500')).toBeVisible();
-    await expect(page.getByRole('status').filter({ hasText: 'You received ₿500' })).toContainText(
-      '$0.50',
-    );
+    const banner = page.getByRole('status').filter({ hasText: 'You received ₿500' });
+    await expect(banner).toContainText('$0.50');
+    // The banner slides in; shoot it where it rests.
+    await expect
+      .poll(() =>
+        banner.evaluate((el) => el.getAnimations().every((a) => a.playState === 'finished')),
+      )
+      .toBe(true);
     await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500 · $0.50');
     await shotScreen(page, 'state-wallet-received');
   });
