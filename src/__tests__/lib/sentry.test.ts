@@ -163,8 +163,9 @@ describe('beforeSend scrubber', () => {
     expect(scrubText(`pay ${secret} failed`)).toBe('pay [Filtered] failed');
   });
 
-  it('keeps a lower-case chunk hash and a package version', () => {
-    const text = 'at /_next/static/chunks/3a7b8c9d1e2f3a4b5c6d7e8f9a1b2c3d.js (react@18.3.1)';
+  it('keeps a lower-case chunk hash, a package version, and a long camelCase name', () => {
+    const text =
+      'at notificationPermissionDenied (/_next/static/chunks/3a7b8c9d1e2f3a4b5c6d7e8f9a1b2c3d.js) react@18.3.1';
     expect(scrubText(text)).toBe(text);
   });
 

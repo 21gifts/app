@@ -124,8 +124,28 @@ describe('reportPaymentFailure', () => {
     );
   });
 
-  it('keeps only the type of a rejection that cannot be printed, and still reports', () => {
-    const unprintable = Object.create(null) as object;
+  it.each<[string, () => unknown]>([
+    ['an object without a prototype', () => Object.create(null) as object],
+    [
+      'an Error whose name getter throws',
+      () =>
+        Object.defineProperty(new Error('x'), 'name', {
+          get(): never {
+            throw new Error('no name');
+          },
+        }),
+    ],
+    [
+      'an Error whose message getter throws',
+      () =>
+        Object.defineProperty(new Error(), 'message', {
+          get(): never {
+            throw new Error('no message');
+          },
+        }),
+    ],
+  ])('keeps only the type of %s, and still reports', (_label, make) => {
+    const unprintable = make();
     expect(() => {
       reportPaymentFailure({ ...SEND_FAILURE, reason: 'sdk_error', error: unprintable }, 'send');
     }).not.toThrow();
