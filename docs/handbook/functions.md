@@ -4195,10 +4195,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useCopied
 
-- **Purpose:** Copy to the clipboard with a two-second **Copied** state, shared by the Receive view and the move-funds flow.
+- **Purpose:** Copy to the clipboard with a two-second **Copied** state, shared by the Receive view, the Settings address row, and the move-funds flow.
 - **Inputs:** None.
 - **Returns / side effects:** `{ copied, copy }`: `copy(text)` writes `text` with `navigator.clipboard.writeText`; each success shows `copied` for two seconds, counted again from each copy. A missing or refusing clipboard changes nothing. Clears its timer on unmount.
-- **Used by:** `WalletReceive`, `MoveFundsSheet`.
+- **Used by:** `WalletReceive`, `SettingsScreen` (address row), `MoveFundsSheet`.
 
 ## Function: useWalletHistory
 
