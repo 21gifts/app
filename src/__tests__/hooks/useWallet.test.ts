@@ -71,6 +71,7 @@ const PINS = [
   ['history-empty', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['history-rows', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['history-error', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+  ['wallet-received', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['balance-error', 'error', null],
   ['balance-setup-failed', 'error', null],
   ['send-input', 'ready', WALLET_VISUAL_FIXTURE_SATS],

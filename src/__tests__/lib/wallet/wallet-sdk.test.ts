@@ -133,6 +133,63 @@ describe('loadWalletSdk', () => {
     expect(seen).toEqual(['synced']);
   });
 
+  it('addEventListener maps the payment of a payment event and leaves out a token payment', async () => {
+    let forwarded: ((event: unknown) => void) | undefined;
+    mocks.addEventListener.mockImplementation(
+      async (listener: { onEvent: (e: unknown) => void }) => {
+        forwarded = listener.onEvent;
+        return 'listener-1';
+      },
+    );
+    const sdk = await loadWalletSdk();
+    const connection = await sdk.connect(MNEMONIC, API_KEY, HOST);
+    const seen: unknown[] = [];
+    await connection.addEventListener((event) => {
+      seen.push(event);
+    });
+    forwarded?.({
+      type: 'paymentSucceeded',
+      payment: {
+        id: 'p1',
+        paymentType: 'receive',
+        status: 'completed',
+        amount: BigInt(500),
+        fees: BigInt(0),
+        timestamp: 10,
+        method: 'lightning',
+      },
+    });
+    forwarded?.({
+      type: 'paymentSucceeded',
+      payment: {
+        id: 't1',
+        paymentType: 'receive',
+        status: 'completed',
+        amount: BigInt(5),
+        fees: BigInt(0),
+        timestamp: 10,
+        method: 'token',
+      },
+    });
+    expect(seen).toEqual([
+      {
+        type: 'paymentSucceeded',
+        payment: {
+          id: 'p1',
+          direction: 'received',
+          amountSats: 500,
+          feesSats: 0,
+          timestamp: 10_000,
+          status: 'completed',
+          method: 'lightning',
+          senderComment: null,
+          info: {},
+        },
+      },
+      { type: 'paymentSucceeded' },
+    ]);
+  });
+
   it('registerAddress registers only the given username and never checks availability', async () => {
     const sdk = await loadWalletSdk();
     const connection = await sdk.connect(MNEMONIC, API_KEY, HOST);

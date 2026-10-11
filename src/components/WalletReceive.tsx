@@ -7,8 +7,10 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button, ButtonLink } from '@/components/ui';
+import { useCopied } from '@/hooks/useCopied';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { requestMoveFunds } from '@/lib/move-funds';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -20,6 +22,9 @@ import { useAuthStore } from '@/stores/auth-store';
  * opens also while the wallet's one-time setup still runs: until the address
  * is registered, **Opening your wallet…** stands where the address goes, and
  * a setup that gave up shows the inline setup note with **Try again**.
+ * Under **Set an amount**, a member whose account once had an outside wallet
+ * (`hadExternalWallet`) also gets the text button **Move Bitcoin from another
+ * wallet**, which opens the move-funds flow (`requestMoveFunds`).
  *
  * @returns The receive block.
  */
@@ -28,29 +33,10 @@ export function WalletReceive(): ReactElement {
   const account = useAuthStore((state) => state.account);
   const setup = useWalletSetup();
   const [showQr, setShowQr] = useState(false);
-  /** Successful copies so far; each one restarts the two-second Copied label. */
-  const [copies, setCopies] = useState(0);
-  const copied = copies > 0;
+  const { copied, copy: copyAddress } = useCopied();
   useEffect(() => {
     setShowQr(true);
   }, []);
-  useEffect(() => {
-    if (copies === 0) {
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      setCopies(0);
-    }, 2000);
-    return () => window.clearTimeout(timer);
-  }, [copies]);
-  const copyAddress = async (text: string): Promise<void> => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopies((count) => count + 1);
-    } catch {
-      // No clipboard here (an insecure page, or a refused write): the address stays readable.
-    }
-  };
   /* v8 ignore next -- this client screen always runs in a browser */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
   const username = account?.username ?? null;
@@ -105,6 +91,17 @@ export function WalletReceive(): ReactElement {
         </p>
       ) : null}
       <ButtonLink href="/pos">{t('wallet.setAmount')}</ButtonLink>
+      {account?.hadExternalWallet === true ? (
+        <button
+          type="button"
+          onClick={() => {
+            requestMoveFunds('receive');
+          }}
+          className="min-h-11 text-sm text-app-muted underline underline-offset-2 hover:text-app-fg"
+        >
+          {t('moveFunds.open')}
+        </button>
+      ) : null}
     </>
   );
 }

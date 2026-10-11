@@ -368,6 +368,13 @@
 - **Used by:** `dismissForumLaws`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/wallet-intro-seen
+
+- **Purpose:** Same-origin proxy that records that the member finished or skipped the one-time wallet tour on `/welcome` (`walletIntroSeen: true` on the account), so it is not shown again on any device. No body; idempotent.
+- **Errors:** Upstream 401, or 502 if the api is unreachable.
+- **Used by:** `markWalletIntroSeen`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/notification-level
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/me/notification-level`. JSON body `{ level: "all"|"active"|"mentions" }` returns the owner Account.

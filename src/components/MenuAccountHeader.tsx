@@ -10,30 +10,21 @@ import { ButtonLink } from '@/components/ui';
 import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
-import { fetchAccountActivity, fetchMember, fetchProfilePhoto } from '@/lib/api';
+import { fetchProfilePhoto } from '@/lib/api';
 import { loadSession } from '@/lib/session-storage';
 import { summarizeLoans } from '@/lib/loan-repay';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** What the header loads once per session; `null` where it could not be read. */
-interface MenuStats {
-  receivedSats: number | null;
-  givenSats: number | null;
-  postCount: number | null;
-  /** Object URL of the profile photo, or `null` without one. */
-  pictureUrl: string | null;
-}
-
-/** Stats of the current session, kept while the document lives. */
-let cached: { session: string; stats: MenuStats } | null = null;
+/** Object URL of the profile photo of the current session (`null` without one), kept while the document lives. */
+let cached: { session: string; pictureUrl: string | null } | null = null;
 /** The load in flight, so two screens mounting at once do not fetch twice. */
-let inFlight: { session: string; promise: Promise<MenuStats> } | null = null;
+let inFlight: { session: string; promise: Promise<string | null> } | null = null;
 
-/** Drops the cached photo and numbers (and revokes the photo URL). */
+/** Drops the cached photo (and revokes its URL). */
 function dropCache(): void {
-  if (cached !== null && cached.stats.pictureUrl !== null) {
-    URL.revokeObjectURL(cached.stats.pictureUrl);
+  if (cached !== null && cached.pictureUrl !== null) {
+    URL.revokeObjectURL(cached.pictureUrl);
   }
   cached = null;
 }
@@ -47,47 +38,36 @@ useAuthStore.subscribe((state) => {
 });
 
 /**
- * Loads the profile photo (`GET /pictures/me`), given and received totals
- * (`GET /me/activity`), and the post count (`GET /forum/members/:id`). A
- * complete load is cached for the session; when the activity or the member
- * read failed, the next mount of the signed-in chrome tries again.
+ * Loads the profile photo (`GET /pictures/me`) and caches it for the session.
  *
  * @param session - Bearer session.
- * @param accountId - The signed-in account id.
- * @returns The stats, with `null` for what could not be read.
+ * @returns Object URL of the photo, or `null` without one or when it could not be read.
  */
-function loadStats(session: string, accountId: string): Promise<MenuStats> {
+function loadPhoto(session: string): Promise<string | null> {
   if (inFlight?.session === session) {
     return inFlight.promise;
   }
-  const promise = Promise.allSettled([
-    fetchAccountActivity(session),
-    fetchMember(session, accountId),
-    fetchProfilePhoto(session),
-  ]).then(([activity, member, picture]): MenuStats => {
-    const stats: MenuStats = {
-      receivedSats: activity.status === 'fulfilled' ? activity.value.receivedSats : null,
-      givenSats: activity.status === 'fulfilled' ? activity.value.donatedSats : null,
-      postCount:
-        member.status === 'fulfilled' && member.value !== null ? member.value.postCount : null,
-      pictureUrl: null,
-    };
-    const current = inFlight?.promise === promise;
-    if (current) {
-      inFlight = null;
-    }
-    // Only the current, complete load of the session that is still signed in is kept;
-    // anything else is shown once without a photo.
-    const signedIn = useAuthStore.getState().session === session;
-    if (!current || !signedIn || activity.status === 'rejected' || member.status === 'rejected') {
-      return stats;
-    }
-    if (picture.status === 'fulfilled' && picture.value.type.startsWith('image/')) {
-      stats.pictureUrl = URL.createObjectURL(picture.value);
-    }
-    cached = { session, stats };
-    return stats;
-  });
+  const promise = fetchProfilePhoto(session).then(
+    (picture): string | null => {
+      const current = inFlight?.promise === promise;
+      if (current) {
+        inFlight = null;
+      }
+      // Only the current load of the session that is still signed in is kept.
+      if (!current || useAuthStore.getState().session !== session) {
+        return null;
+      }
+      const pictureUrl = picture.type.startsWith('image/') ? URL.createObjectURL(picture) : null;
+      cached = { session, pictureUrl };
+      return pictureUrl;
+    },
+    (): null => {
+      if (inFlight?.promise === promise) {
+        inFlight = null;
+      }
+      return null;
+    },
+  );
   inFlight = { session, promise };
   return promise;
 }
@@ -111,13 +91,15 @@ const SKELETON_CLASS = 'block rounded bg-app-border animate-pulse motion-reduce:
  * truncate, together one link to `/profile`, and in the right corner the wallet balance (₿, the default fiat
  * small under it, right-aligned, never wrapping) as a link to `/wallet`; a
  * skeleton of the same size while the wallet connects, and nothing on error
- * or without a wallet. Under it Received, Given, and Posts, always in their
- * final size: a skeleton bar while loading, `–` when a value could not be
- * read. Received and Given show the default fiat on a small line under the ₿
- * figure (current spot rate; empty only without a usable rate). A currently payable loan adds its due row under the stats. Loans re-read whenever the Menu opens while the current shared body stays visible. The photo and the three stats start loading when the signed-in chrome mounts, not when the Menu opens, and are cached for the session; nothing waits for them. Until the account is loaded (a stored session still being
- * checked right after a page load), the card already has its final size:
- * a skeleton circle for the photo, skeleton bars for the name and
- * `@username`, and the stats row's skeletons; that placeholder is not a link.
+ * or without a wallet. A currently payable loan adds its due row under it;
+ * loans re-read whenever the Menu opens while the current shared body stays
+ * visible. The photo starts loading when the signed-in chrome
+ * mounts, not when the Menu opens, and is cached for the session (a failed
+ * read is tried again on the next mount); nothing waits for it. Until the
+ * account is loaded (a stored session still being checked right after a page
+ * load), the card already has its final size: a skeleton circle for the photo
+ * and skeleton bars for the name and `@username`; that placeholder is not a
+ * link.
  *
  * @param props - See {@link MenuAccountHeaderProps}.
  * @returns The header card while the Menu is open, or `null` while it is
@@ -137,26 +119,26 @@ export function MenuAccountHeader({
   const storedSession = useAuthStore((state) =>
     state.session === null || state.account === null ? loadSession() : null,
   );
-  const accountId = account?.id ?? null;
+  const signedIn = session !== null && account !== null;
   const wallet = useWallet();
   const { loans, reload: reloadLoans } = useMyLoans();
   const rateDay = useSpotRate();
-  const [loaded, setLoaded] = useState<{ session: string; stats: MenuStats } | null>(null);
+  const [loaded, setLoaded] = useState<{ session: string; pictureUrl: string | null } | null>(null);
 
   useEffect(() => {
-    if (session === null || accountId === null || cached?.session === session) {
+    if (session === null || !signedIn || cached?.session === session) {
       return;
     }
     let live = true;
-    void loadStats(session, accountId).then((stats) => {
+    void loadPhoto(session).then((pictureUrl) => {
       if (live) {
-        setLoaded({ session, stats });
+        setLoaded({ session, pictureUrl });
       }
     });
     return () => {
       live = false;
     };
-  }, [session, accountId]);
+  }, [session, signedIn]);
 
   useEffect(() => {
     if (open) {
@@ -171,12 +153,12 @@ export function MenuAccountHeader({
   if (pending && storedSession === null) {
     return null;
   }
-  const stats = pending
+  const pictureUrl = pending
     ? null
     : cached?.session === session
-      ? cached.stats
+      ? cached.pictureUrl
       : loaded?.session === session
-        ? loaded.stats
+        ? loaded.pictureUrl
         : null;
   const name = account?.name?.trim() ?? '';
   const username = account?.username ?? null;
@@ -220,54 +202,6 @@ export function MenuAccountHeader({
     );
   }
 
-  const skeleton = (width: string, height: string): ReactElement => (
-    <span className={`flex ${height} items-center`}>
-      <span className={`${SKELETON_CLASS} h-3 ${width}`} />
-    </span>
-  );
-  const shown = (value: number | null | undefined, format: (n: number) => string): string =>
-    value === null || value === undefined ? '–' : format(value);
-  const bitcoin = (sats: number): string => formatBitcoin(sats, numberFormat);
-  const fiatOf = (sats: number | null | undefined): string | null => {
-    if (sats === null || sats === undefined) {
-      return null;
-    }
-    const amount = satsToFiatAmount(sats, rateDay, fiat);
-    return amount === null ? null : formatFiatDisplay(amount, fiat, numberFormat);
-  };
-  /** A ₿ total with its fiat line; both lines keep their height while loading. */
-  const amountMetric = (sats: number | null | undefined): ReactElement =>
-    stats === null ? (
-      <>
-        {skeleton('w-12', 'h-4')}
-        {skeleton('w-8', 'h-3.5')}
-      </>
-    ) : (
-      <>
-        <span className="block h-4 truncate">{shown(sats, bitcoin)}</span>
-        <span className="block h-3.5 truncate text-[10px] font-normal text-app-muted">
-          {fiatOf(sats)}
-        </span>
-      </>
-    );
-  const metrics: { key: string; label: string; value: ReactElement }[] = [
-    {
-      key: 'received',
-      label: t('profile.legendReceived'),
-      value: amountMetric(stats?.receivedSats),
-    },
-    { key: 'given', label: t('profile.legendGiven'), value: amountMetric(stats?.givenSats) },
-    {
-      key: 'posts',
-      label: t('nav.posts'),
-      value:
-        stats === null ? (
-          skeleton('w-8', 'h-4')
-        ) : (
-          <span className="block h-4 truncate">{shown(stats.postCount, String)}</span>
-        ),
-    },
-  ];
   const loanSummary = loans === null ? null : summarizeLoans(loans);
 
   return (
@@ -296,10 +230,10 @@ export function MenuAccountHeader({
             className="-mx-1 -my-0.5 flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-lg px-1 py-0.5 no-underline transition hover:bg-app-hover"
           >
             <span className="sr-only">{t('nav.openProfile')}</span>
-            {stats?.pictureUrl !== null && stats?.pictureUrl !== undefined ? (
+            {pictureUrl !== null ? (
               // eslint-disable-next-line @next/next/no-img-element -- blob URL from the profile photo
               <img
-                src={stats.pictureUrl}
+                src={pictureUrl}
                 alt=""
                 className="h-10 w-10 shrink-0 rounded-full object-cover"
               />
@@ -323,16 +257,6 @@ export function MenuAccountHeader({
         )}
         {balance}
       </div>
-      <dl className="grid grid-cols-3 gap-2">
-        {metrics.map((item) => (
-          <div key={item.key} className="flex min-w-0 flex-col">
-            <dt className="truncate text-[11px] text-app-muted">{item.label}</dt>
-            <dd className="text-xs font-semibold tabular-nums lining-nums text-app-fg">
-              {item.value}
-            </dd>
-          </div>
-        ))}
-      </dl>
       {loanSummary?.payable === true ? (
         <div className="flex items-center justify-between gap-3 rounded-lg bg-app-card px-3 py-2">
           <div className="min-w-0">

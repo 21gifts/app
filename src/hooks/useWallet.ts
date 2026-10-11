@@ -49,6 +49,8 @@ function visualStatus(): WalletViewStatus | null {
     case 'history-empty':
     case 'history-rows':
     case 'history-error':
+    case 'wallet-received':
+    case 'move-arrived':
       return 'ready';
     case 'balance-error':
     case 'balance-setup-failed':
@@ -65,7 +67,7 @@ function visualStatus(): WalletViewStatus | null {
  * `connecting`. While the one-time wallet setup is still due the balance
  * shows `connecting` until the wallet is verified, or `error` with
  * `setupFailed` once the setup gave up. Visual pins (`?visual=balance-…`,
- * `?visual=history-…`, `?visual=setup-pending` as connecting, and the
+ * `?visual=history-…`, `?visual=wallet-received` and `?visual=move-arrived` as ready, `?visual=setup-pending` as connecting, and the
  * `?visual=send-…` pins as ready) are honoured only in a Playwright build
  * (`getE2eNow()` set) and leave retry inert while pinned.
  *

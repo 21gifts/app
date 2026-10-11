@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletReceive } from '@/components/WalletReceive';
 import type { Account } from '@/lib/api-types';
+import { requestMoveFunds } from '@/lib/move-funds';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -11,6 +12,8 @@ const setup = vi.hoisted(() => ({ due: false, failed: false, retry: vi.fn() }));
 vi.mock('@/hooks/useWalletSetup', () => ({
   useWalletSetup: () => setup,
 }));
+
+vi.mock('@/lib/move-funds', () => ({ requestMoveFunds: vi.fn() }));
 
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => (
@@ -72,6 +75,36 @@ describe('WalletReceive', () => {
     expect(screen.queryByText('ada@21.gifts')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(setup.retry).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers to move Bitcoin from another wallet only with hadExternalWallet', () => {
+    renderReceive();
+    expect(screen.queryByRole('button', { name: 'Move Bitcoin from another wallet' })).toBeNull();
+    cleanup();
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_wallet',
+        name: 'Ada',
+        username: 'ada',
+        hadExternalWallet: false,
+      } as Account,
+    });
+    renderReceive();
+    expect(screen.queryByRole('button', { name: 'Move Bitcoin from another wallet' })).toBeNull();
+    cleanup();
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_wallet',
+        name: 'Ada',
+        username: 'ada',
+        hadExternalWallet: true,
+      } as Account,
+    });
+    renderReceive();
+    fireEvent.click(screen.getByRole('button', { name: 'Move Bitcoin from another wallet' }));
+    expect(requestMoveFunds).toHaveBeenCalledWith('receive');
   });
 
   it('links to the Settings address row when the account has no username yet', () => {

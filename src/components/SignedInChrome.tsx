@@ -23,11 +23,14 @@ import { usePathname } from 'next/navigation';
 import { useContext, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import { AppShellContext, useAppShellScroller } from '@/components/AppShell';
+import { HeaderBalance } from '@/components/HeaderBalance';
 import { IntroduceYourselfOverlay } from '@/components/IntroduceYourselfOverlay';
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
 import { MenuAccountHeader } from '@/components/MenuAccountHeader';
+import { MoveFundsSheet } from '@/components/MoveFundsSheet';
 import { PwaInstall } from '@/components/PwaInstall';
+import { ReceivedNotice } from '@/components/ReceivedNotice';
 import { useUnreadCount } from '@/hooks/useUnreadCount';
 import { useWalletOpen } from '@/hooks/useWalletOpen';
 import { getAppVersion } from '@/lib/config';
@@ -40,8 +43,12 @@ import { recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Top-right signed-in page chrome: one Menu disclosure; open, it starts with
- * {@link MenuAccountHeader} (photo, name, balance, Received / Given / Posts),
+ * Top-right signed-in page chrome: left of **Menu** the wallet balance
+ * ({@link HeaderBalance}, only while the balance is known), the banner for a
+ * payment that arrives while the app is open ({@link ReceivedNotice}), the
+ * move-funds flow ({@link MoveFundsSheet}, closed until asked for), and
+ * one Menu disclosure; open, it starts with
+ * {@link MenuAccountHeader} (photo, name, balance),
  * mounted with the chrome so its data loads before the Menu opens (also while a
  * stored session is still being checked, so the header holds its place), and a
  * divider, then icon+label rows (Home first, which clears this tab's view
@@ -362,6 +369,9 @@ function SignedInMenu(): ReactElement {
 
   return (
     <div className="flex items-center">
+      <HeaderBalance />
+      <ReceivedNotice />
+      <MoveFundsSheet />
       <div ref={setRootEl} className="relative">
         <button
           ref={buttonRef}

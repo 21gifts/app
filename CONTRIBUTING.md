@@ -74,6 +74,7 @@ app/
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
 │   │   │   ├── push-subscriptions/route.ts  # POST/DELETE /me/push-subscriptions
 │   │   │   ├── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
+│   │   │   ├── wallet-intro-seen/route.ts  # POST /me/wallet-intro-seen (wallet tour seen)
 │   │   │   ├── notification-level/route.ts  # POST /me/notification-level
 │   │   │   ├── wallet-backup-seen/route.ts  # POST /me/wallet-backup-seen
 │   │   │   ├── wallet/route.ts  # PUT /me/wallet (claim the in-app wallet key)
@@ -229,7 +230,12 @@ app/
 │   │   ├── WalletLoginCard.tsx  # LoginCard shown in place while a signed-in screen's wallet is not open in this tab
 │   │   ├── WalletScreen.tsx     # Wires useWallet + useWalletPhrase + useWalletSend into WalletScreenView (balance, payments list while ready, Receive/Send)
 │   │   ├── SettingsScreen.tsx   # Signed-in /settings (Wallet: recovery phrase, address, default amount; Display; Notifications; Account; About & legal)
-│   │   ├── MenuAccountHeader.tsx # Menu top card: photo, name, @username (profile link), balance link, Received / Given / Posts
+│   │   ├── MenuAccountHeader.tsx # Menu top card: photo, name, @username (profile link), balance link
+│   │   ├── HeaderBalance.tsx    # Signed-in header balance (₿ over fiat, link to /wallet, green bump on arrival)
+│   │   ├── ReceivedNotice.tsx   # In-app banner for a payment received while the app is open
+│   │   ├── WalletTour.tsx       # One-time wallet spotlight tour on /welcome (walletIntroSeen)
+│   │   ├── MoveFundsSheet.tsx   # Move Bitcoin from another wallet: intro, address, waiting, arrived
+│   │   ├── MoveFundsLink.tsx    # Root ?move=1 listener (kept through sign-in)
 │   │   ├── WalletScreenView.tsx # Wallet home, Send and Receive views, and the visible one-step Back
 │   │   ├── WalletFooterActions.tsx # Receive / Send footer buttons shared by /wallet and /welcome
 │   │   ├── WalletPanelView.tsx  # Open Receive or Send view as the page body (/wallet and over /welcome)
@@ -318,7 +324,9 @@ app/
 │   │   ├── useWalletPhrase.ts   # In-tab PRF recovery phrase
 │   │   ├── useWalletSend.ts     # Wallet send flow steps
 │   │   ├── useWalletPanel.ts    # Receive / Send view over a page, its Back steps, scroll restore (/wallet, /welcome)
-│   │   └── useWalletPayment.ts  # One payment by id for /wallet/payment, re-read after each sync
+│   │   ├── useWalletPayment.ts  # One payment by id for /wallet/payment, re-read after each sync
+│   │   ├── useIncomingPayment.ts # The payment that arrived last while the app is open, for a hold time
+│   │   └── useCopied.ts         # Clipboard copy with a two-second Copied state
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)
 │   │   ├── sentry.ts            # Error reporting: init options, privacy scrubber, tunnel forwarder
@@ -335,6 +343,7 @@ app/
 │   │   ├── prf-mnemonic.ts      # WebAuthn PRF → BIP-39 English 12 words
 │   │   ├── tab-phrase.ts        # In-tab recovery phrase RAM + SESSION_PHRASE_EVENT (never localStorage)
 │   │   ├── interaction-log.ts   # Signed-in interaction events: queue, cleaned props, POST /me/events batches
+│   │   ├── move-funds.ts        # Tab-scoped move-funds request (source receive | link) + MOVE_FUNDS_EVENT
 │   │   ├── wallet/              # In-app Bitcoin wallet (SDK load, connect, phrase remember/unlock, pay, parse)
 │   │   │   ├── wallet-open.ts   # Login-to-open gate, hydration lock, and post-login wallet opening
 │   │   │   ├── wallet-sdk.ts    # Dynamic Breez SDK load + narrow WalletSdk surface

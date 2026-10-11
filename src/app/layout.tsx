@@ -9,6 +9,7 @@ import { ScrollSurfaceGuard } from '@/components/ScrollSurfaceGuard';
 import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
+import { MoveFundsLink } from '@/components/MoveFundsLink';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { PushOpenListener } from '@/components/PushOpenListener';
 import { RememberWalletReturn } from '@/components/RememberWalletReturn';
@@ -166,6 +167,9 @@ export default async function RootLayout({
                 <InteractionLog />
                 <Suspense fallback={null}>
                   <RememberWalletReturn />
+                </Suspense>
+                <Suspense fallback={null}>
+                  <MoveFundsLink />
                 </Suspense>
                 <ViewHistoryRoot>{children}</ViewHistoryRoot>
               </ThemeProvider>

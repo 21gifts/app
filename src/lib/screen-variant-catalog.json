@@ -588,6 +588,42 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:received",
+    "label": "/wallet received",
+    "visual": "state-wallet-received",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:receive-move",
+    "label": "/wallet receive-move",
+    "visual": "state-wallet-receive-move",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:move-intro",
+    "label": "/wallet move-intro",
+    "visual": "state-wallet-move-intro",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:move-address",
+    "label": "/wallet move-address",
+    "visual": "state-wallet-move-address",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:move-waiting",
+    "label": "/wallet move-waiting",
+    "visual": "state-wallet-move-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:move-arrived",
+    "label": "/wallet move-arrived",
+    "visual": "state-wallet-move-arrived",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/payment:default",
     "label": "/wallet/payment default",
     "visual": "screen-wallet-payment",
@@ -2586,12 +2622,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:menu-header-loading",
-    "label": "/welcome menu-header-loading",
-    "visual": "state-welcome-menu-header-loading",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/welcome:menu-header-balance",
     "label": "/welcome menu-header-balance",
     "visual": "state-welcome-menu-header-balance",
@@ -2607,12 +2637,6 @@
     "id": "/welcome:menu-header-connecting",
     "label": "/welcome menu-header-connecting",
     "visual": "state-welcome-menu-header-connecting",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/welcome:menu-header-failed",
-    "label": "/welcome menu-header-failed",
-    "visual": "state-welcome-menu-header-failed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5529,6 +5553,30 @@
     "id": "/welcome:shop-edit-summary",
     "label": "/welcome shop-edit-summary",
     "visual": "state-welcome-shop-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-tour-balance",
+    "label": "/welcome wallet-tour-balance",
+    "visual": "state-welcome-wallet-tour-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-tour-receive",
+    "label": "/welcome wallet-tour-receive",
+    "visual": "state-welcome-wallet-tour-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-tour-send",
+    "label": "/welcome wallet-tour-send",
+    "visual": "state-welcome-wallet-tour-send",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-tour-menu",
+    "label": "/welcome wallet-tour-menu",
+    "visual": "state-welcome-wallet-tour-menu",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

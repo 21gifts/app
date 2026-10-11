@@ -9,6 +9,7 @@ import {
   fetchShopNoteEdits,
   deletePushSubscription,
   dismissForumLaws,
+  markWalletIntroSeen,
   fetchConversation,
   fetchConversationMessagePhoto,
   fetchConversations,
@@ -855,6 +856,24 @@ describe('setLocation', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(setLocation('sess', 'x')).rejects.toThrow();
+  });
+});
+
+describe('markWalletIntroSeen', () => {
+  it('posts and returns the validated account', async () => {
+    const seen = { ...account, walletIntroSeen: true };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: seen });
+
+    await expect(markWalletIntroSeen('sess')).resolves.toEqual(seen);
+    expect(fetchMock).toHaveBeenCalledWith(`/me/wallet-intro-seen`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(markWalletIntroSeen('sess')).rejects.toThrow('Could not save the wallet tour');
   });
 });
 

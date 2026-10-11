@@ -18,7 +18,31 @@ export type InteractionName =
   | 'profile_opened'
   | 'login'
   | 'logout'
-  | 'signup_completed';
+  | 'signup_completed'
+  | 'wallet_tour_shown'
+  | 'wallet_tour_step'
+  | 'wallet_tour_done'
+  | 'wallet_move_opened'
+  | 'wallet_move_step'
+  | 'wallet_move_copied'
+  | 'wallet_move_closed'
+  | 'wallet_move_done';
+
+/**
+ * Names an older api may not accept yet (its allow-list predates them). When
+ * the api refuses a batch for good, the other events of that batch are sent
+ * again without these, so a newer name never takes them down with it.
+ */
+const NEWER_NAMES: ReadonlySet<InteractionName> = new Set<InteractionName>([
+  'wallet_tour_shown',
+  'wallet_tour_step',
+  'wallet_tour_done',
+  'wallet_move_opened',
+  'wallet_move_step',
+  'wallet_move_copied',
+  'wallet_move_closed',
+  'wallet_move_done',
+]);
 
 /** Values an interaction may carry: ids, amounts, counts, and search terms. */
 export type InteractionProps = Record<string, string | number | boolean | null>;
@@ -316,7 +340,9 @@ function nextBatch(): InteractionEvent[] {
  * {@link INTERACTION_REQUEST_TIMEOUT_MS} is aborted. A batch the api refused
  * for good (a 4xx status other than 429) is dropped; another failed batch goes
  * back to the front of the queue and the next flush tries again. One flush per
- * session runs at a time; a flush of an earlier session does not hold a new
+ * session runs at a time; when a refused batch held events with a name an
+ * older api may not know yet, the other events of that batch are sent again
+ * on their own and only those newer ones are dropped; a flush of an earlier session does not hold a new
  * session's queue back, and once its member signed out it sends no further
  * batch and drops what is left. Never rejects.
  *
@@ -375,6 +401,11 @@ async function sendQueue(session: string): Promise<boolean> {
       await postEvents(session, batch);
     } catch (err: unknown) {
       if (err instanceof EventsRefusedError) {
+        const older = batch.filter((event) => !NEWER_NAMES.has(event.name));
+        if (older.length > 0 && older.length < batch.length && sendsFor(session)) {
+          // An api without the newer names refused them: the others go again on their own.
+          queue.unshift(...older);
+        }
         continue;
       }
       if (sendsFor(session)) {

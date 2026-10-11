@@ -8,6 +8,7 @@ import {
   getWalletPayment,
   listWalletPayments,
   listWalletReportPayments,
+  onIncomingPayment,
   parseWalletInput,
   payFromWallet,
   refreshWallet,
@@ -18,6 +19,7 @@ import {
 } from '@/lib/wallet/wallet-service';
 import type {
   WalletConnection,
+  WalletPayment,
   WalletPreparedPayment,
   WalletSdk,
   WalletTarget,
@@ -1041,8 +1043,8 @@ describe('listWalletPayments', () => {
       status: 'completed',
       senderComment: null,
     };
-    connection.listPayments.mockResolvedValueOnce([row]);
     await connectWallet(loadSdk);
+    connection.listPayments.mockResolvedValueOnce([row]);
     await expect(listWalletPayments({ offset: 20, limit: 20 })).resolves.toEqual([row]);
     expect(connection.listPayments).toHaveBeenCalledWith({ offset: 20, limit: 20 });
   });
@@ -1962,5 +1964,145 @@ describe('parseWalletInput', () => {
     await disconnectWallet();
     settle.reject(new Error('fetch failed'));
     await expect(failed).resolves.toEqual({ kind: 'unlock' });
+  });
+});
+
+describe('onIncomingPayment', () => {
+  function payment(id: string, overrides?: Partial<WalletPayment>): WalletPayment {
+    return {
+      id,
+      direction: 'received',
+      amountSats: 500,
+      feesSats: 0,
+      timestamp: 1,
+      status: 'completed',
+      method: 'lightning',
+      senderComment: null,
+      info: {},
+      ...overrides,
+    };
+  }
+
+  async function connected(known: WalletPayment[] = []): Promise<{
+    emit: (event: { type: string; payment?: WalletPayment }) => void;
+    connection: ReturnType<typeof createFakeSdk>['connection'];
+  }> {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    connection.listPayments.mockResolvedValueOnce(known);
+    await connectWallet(loadSdk);
+    await vi.waitFor(() => expect(connection.listPayments).toHaveBeenCalled());
+    // Let the known-payments read settle.
+    await Promise.resolve();
+    await Promise.resolve();
+    return {
+      emit: (event) => {
+        for (const listener of listeners) {
+          (listener as (event: { type: string; payment?: WalletPayment }) => void)(event);
+        }
+      },
+      connection,
+    };
+  }
+
+  it('announces a received payment that completes after connect, once, and reads the balance', async () => {
+    const { emit, connection } = await connected([payment('old')]);
+    expect(connection.listPayments).toHaveBeenCalledWith({ offset: 0, limit: 100 });
+    const seen: string[] = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push(p.id);
+    });
+    const reads = connection.getInfo.mock.calls.length;
+    emit({ type: 'paymentSucceeded', payment: payment('new') });
+    emit({ type: 'paymentSucceeded', payment: payment('new') });
+    expect(seen).toEqual(['new']);
+    expect(connection.getInfo.mock.calls.length).toBe(reads + 1);
+    unsubscribe();
+    emit({ type: 'paymentSucceeded', payment: payment('later') });
+    expect(seen).toEqual(['new']);
+  });
+
+  it('never announces a payment the wallet held at connect, a send, a pending one, or another event', async () => {
+    const { emit } = await connected([
+      payment('old'),
+      payment('sent-old', { direction: 'sent' }),
+      payment('pending-old', { status: 'pending' }),
+    ]);
+    const seen: string[] = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push(p.id);
+    });
+    emit({ type: 'paymentSucceeded', payment: payment('old') });
+    emit({ type: 'paymentSucceeded', payment: payment('out', { direction: 'sent' }) });
+    emit({ type: 'paymentSucceeded', payment: payment('wait', { status: 'pending' }) });
+    emit({ type: 'paymentPending', payment: payment('pending') });
+    emit({ type: 'paymentSucceeded' });
+    emit({ type: 'claimedDeposits' });
+    expect(seen).toEqual([]);
+    emit({ type: 'paymentSucceeded', payment: payment('pending-old') });
+    expect(seen).toEqual(['pending-old']);
+    unsubscribe();
+  });
+
+  it('announces nothing before the payments known at connect were read', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    let resolveList!: (payments: WalletPayment[]) => void;
+    connection.listPayments.mockImplementationOnce(
+      () =>
+        new Promise<WalletPayment[]>((resolve) => {
+          resolveList = resolve;
+        }),
+    );
+    await connectWallet(loadSdk);
+    const seen: string[] = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push(p.id);
+    });
+    const emit = (event: { type: string; payment?: WalletPayment }): void => {
+      for (const listener of listeners) {
+        (listener as (event: { type: string; payment?: WalletPayment }) => void)(event);
+      }
+    };
+    emit({ type: 'paymentSucceeded', payment: payment('early') });
+    resolveList([]);
+    await vi.waitFor(() => {
+      emit({ type: 'paymentSucceeded', payment: payment('after') });
+      expect(seen).toEqual(['after']);
+    });
+    unsubscribe();
+  });
+
+  it('counts none as known when the read fails, and ignores a read from a dropped connection', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const first = createFakeSdk();
+    let resolveStale!: (payments: WalletPayment[]) => void;
+    first.connection.listPayments.mockImplementationOnce(
+      () =>
+        new Promise<WalletPayment[]>((resolve) => {
+          resolveStale = resolve;
+        }),
+    );
+    await connectWallet(first.loadSdk);
+    await disconnectWallet();
+    resolveStale([]);
+    const seen: string[] = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push(p.id);
+    });
+    rememberSessionPhrase(MNEMONIC);
+    const second = createFakeSdk();
+    second.connection.listPayments.mockRejectedValueOnce(new Error('list failed'));
+    await connectWallet(second.loadSdk);
+    const emit = (event: { type: string; payment?: WalletPayment }): void => {
+      for (const listener of second.listeners) {
+        (listener as (event: { type: string; payment?: WalletPayment }) => void)(event);
+      }
+    };
+    await vi.waitFor(() => {
+      emit({ type: 'paymentSucceeded', payment: payment('fresh') });
+      expect(seen).toEqual(['fresh']);
+    });
+    unsubscribe();
   });
 });

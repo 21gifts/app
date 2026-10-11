@@ -81,6 +81,18 @@ export const accountSchema = z.object({
    */
   walletBackupSeenAt: z.number().nullable().optional(),
   /**
+   * True once the member finished or skipped the one-time wallet tour on the
+   * forum home (`POST /me/wallet-intro-seen`). Optional so older api bodies
+   * still parse; a missing field counts as seen.
+   */
+  walletIntroSeen: z.boolean().optional(),
+  /**
+   * True when the member used a wallet outside 21.gifts before the in-app
+   * wallet: the Receive view then offers to move that Bitcoin here. Optional
+   * so older api bodies still parse; a missing field hides the offer.
+   */
+  hadExternalWallet: z.boolean().optional(),
+  /**
    * Seed passkey credential id (base64url). Present once a seed passkey
    * exists: new accounts from the start, and older accounts after seed
    * finish (which also sets `walletRequired`). Missing or null means no seed.
@@ -181,7 +193,11 @@ export const accountSchema = z.object({
  * `passkeyRenewClosed !== true`. `passkeyRenewFailed` only selects the failure
  * step. `passkeyRenewPrfUnsupported` selects the missing-key wording on that
  * step. `walletBackupSeenAt` is epoch ms the api may
- * record; the app does not read it. `passkeyCredentialId` is set once a seed
+ * record; the app does not read it. `walletIntroSeen` is false until the
+ * member finished or skipped the wallet tour on `/welcome`; omitted on older
+ * api builds, which counts as seen (no tour). `hadExternalWallet` is true
+ * when the member used an outside wallet before; omitted on older api builds,
+ * which hides the Receive view's move offer. `passkeyCredentialId` is set once a seed
  * passkey exists; missing or null means no seed.
  * `sparkPubkey` is the claimed in-app wallet key and `sparkWalletVerified`
  * is true once that wallet registered the account's address; then the
