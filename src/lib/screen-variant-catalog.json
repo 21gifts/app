@@ -594,6 +594,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:received-banner",
+    "label": "/wallet received-banner",
+    "visual": "state-wallet-received-banner",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:received-bump",
+    "label": "/wallet received-bump",
+    "visual": "state-wallet-received-bump",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:receive-move",
     "label": "/wallet receive-move",
     "visual": "state-wallet-receive-move",
@@ -603,6 +615,12 @@
     "id": "/wallet:move-intro",
     "label": "/wallet move-intro",
     "visual": "state-wallet-move-intro",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:move-intro-receive",
+    "label": "/wallet move-intro-receive",
+    "visual": "state-wallet-move-intro-receive",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5589,6 +5607,12 @@
     "id": "/welcome:wallet-tour-menu",
     "label": "/welcome wallet-tour-menu",
     "visual": "state-welcome-wallet-tour-menu",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-tour-short",
+    "label": "/welcome wallet-tour-short",
+    "visual": "state-welcome-wallet-tour-short",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

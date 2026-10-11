@@ -85,6 +85,10 @@ test('Function: ReceivedNotice — a payment that arrived shows the banner and t
   page,
 }) => {
   await signIn(page);
+  // The pinned payment is held like a real one: keep time still while it is checked.
+  const now = Date.now();
+  await page.clock.install({ time: now });
+  await page.clock.pauseAt(now + 1_000);
   await page.goto('/wallet?visual=wallet-received');
   const banner = page.getByRole('status').filter({ hasText: 'You received ₿500' });
   await expect(banner).toBeVisible();
@@ -95,14 +99,24 @@ test('Function: ReceivedNotice — a payment that arrived shows the banner and t
   await expect(banner).toHaveCount(0);
 });
 
-test('Function: useIncomingPayment — the pinned payment stays until dismissed and its text opens /wallet', async ({
+test('Function: useIncomingPayment — the pinned payment is held for its time, and its text opens /wallet', async ({
   page,
 }) => {
   await signIn(page);
+  const now = Date.now();
+  await page.clock.install({ time: now });
+  await page.clock.pauseAt(now + 1_000);
   await page.goto('/welcome?visual=wallet-received');
   const banner = page.getByRole('status').filter({ hasText: 'You received ₿500' });
-  await page.waitForTimeout(6500);
+  const bump = page.locator('[data-wallet-tour="balance"]');
   await expect(banner).toBeVisible();
+  await expect(bump).toContainText('+₿500');
+  await page.clock.runFor(2_500);
+  await expect(bump).not.toContainText('+₿500');
+  await expect(banner).toBeVisible();
+  await page.clock.runFor(3_600);
+  await expect(banner).toHaveCount(0);
+  await page.goto('/welcome?visual=wallet-received');
   await banner.getByRole('link').click();
   await expect(page).toHaveURL(/\/wallet$/);
   await expect(page.getByText('You received ₿500')).toHaveCount(0);

@@ -2420,8 +2420,18 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-receive');
   });
 
-  test('wallet received', async ({ page }) => {
+  /**
+   * Opens `/wallet` under the `wallet-received` pin with the clock paused, so
+   * the banner (6 s) and the header bump (2.4 s) only end when the test moves time.
+   *
+   * @param page - The page.
+   * @returns The banner.
+   */
+  async function openReceived(page: Page): Promise<Locator> {
     await seedWalletSend(page);
+    const now = Date.now();
+    await page.clock.install({ time: now });
+    await page.clock.pauseAt(now + 1_000);
     await page.goto('/wallet?visual=wallet-received');
     const banner = page.getByRole('status').filter({ hasText: 'You received ₿500' });
     await expect(banner).toContainText('$0.50');
@@ -2435,8 +2445,29 @@ test.describe('screen baselines', () => {
         }),
       )
       .toBe(true);
+    return banner;
+  }
+
+  test('wallet received', async ({ page }) => {
+    await openReceived(page);
     await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500 · $0.50');
     await shotScreen(page, 'state-wallet-received');
+  });
+
+  test('wallet received-banner', async ({ page }) => {
+    const banner = await openReceived(page);
+    await page.clock.runFor(2_500);
+    await expect(page.locator('[data-wallet-tour="balance"]')).not.toContainText('+₿500');
+    await expect(banner).toBeVisible();
+    await shotScreen(page, 'state-wallet-received-banner');
+  });
+
+  test('wallet received-bump', async ({ page }) => {
+    const banner = await openReceived(page);
+    await banner.getByRole('button', { name: 'Close' }).click();
+    await expect(banner).toHaveCount(0);
+    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500 · $0.50');
+    await shotScreen(page, 'state-wallet-received-bump');
   });
 
   test('wallet receive-move', async ({ page }) => {
@@ -2448,6 +2479,16 @@ test.describe('screen baselines', () => {
       page.getByRole('button', { name: 'Move Bitcoin from another wallet' }),
     ).toBeVisible();
     await shotScreen(page, 'state-wallet-receive-move');
+  });
+
+  test('wallet move-intro-receive', async ({ page }) => {
+    await seedWalletSend(page, 'btc', { kind: 'blank' }, { hadExternalWallet: true });
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Receive' }).click();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+    await page.getByRole('button', { name: 'Move Bitcoin from another wallet' }).click();
+    await expect(page.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-move-intro-receive');
   });
 
   test('wallet move-intro', async ({ page }) => {
@@ -5190,6 +5231,18 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByRole('dialog', { name: 'Everything else' })).toContainText('4 of 4');
     await shotScreen(page, 'state-welcome-wallet-tour-menu');
+  });
+
+  test('welcome wallet-tour-short', async ({ page }) => {
+    await seedWelcomeWallet(page, { kind: 'blank' }, { walletIntroSeen: false });
+    await page.route(/\/me\/wallet-intro-seen$/, async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    // No open wallet: the balance, Receive, and Send steps have no target, so only the Menu step is left.
+    await page.goto('/welcome');
+    await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Everything else' })).toContainText('1 of 1');
+    await shotScreen(page, 'state-welcome-wallet-tour-short');
   });
 
   test('welcome wallet-buttons', async ({ page }) => {

@@ -34,8 +34,9 @@ export interface IncomingPaymentState {
  * The received payment that completed last while the app is open, for
  * `holdMs` after it arrived. A newer payment replaces it and starts the time
  * again. Under the `?visual=wallet-received` pin (honoured only in a
- * Playwright build) a fixed ₿500 payment is shown until dismissed, without a
- * timer. A payment belongs to the session it arrived in: it is never shown
+ * Playwright build) a fixed ₿500 payment arrives on mount and is held for
+ * `holdMs` like a real one, so the screenshots reach each later state with
+ * Playwright's clock. A payment belongs to the session it arrived in: it is never shown
  * after that session ended or under another one, and nothing is listened for
  * while signed out.
  *
@@ -56,19 +57,22 @@ export function useIncomingPayment(holdMs: number): IncomingPaymentState {
     if (session === null) {
       return;
     }
-    // Read after the commit: during a client navigation the address is the new one only by then.
-    if (visualPin() === RECEIVED_VISUAL_PIN) {
-      setShown({ session, payment: RECEIVED_VISUAL_FIXTURE });
-      return;
-    }
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const unsubscribe = onIncomingPayment((next) => {
+    const show = (next: WalletPayment): void => {
       clearTimeout(timer);
       setShown({ session, payment: next });
       timer = setTimeout(() => {
         setShown(null);
       }, holdRef.current);
-    });
+    };
+    // Read after the commit: during a client navigation the address is the new one only by then.
+    if (visualPin() === RECEIVED_VISUAL_PIN) {
+      show(RECEIVED_VISUAL_FIXTURE);
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+    const unsubscribe = onIncomingPayment(show);
     return () => {
       unsubscribe();
       clearTimeout(timer);
