@@ -2249,6 +2249,11 @@
     "es": "El selector de idioma del encabezado publicitario está abierto. Cuadro de lista personalizado (panel redondeado, filas de endónimos con una marca en la configuración regional actual) — no la interfaz del sistema.",
     "fil": "Bukas ang pampalit ng wika sa pampromosyong ulo. Pasadyang listahan (bilugang panid, mga hanay ng endonym na may tsek sa kasalukuyang wika) — hindi ang mukha ng sistema."
   },
+  "/:faq-share-open": {
+    "de": "Die zweite Frage ist geöffnet: Behält 21.gifts etwas von meiner Spende? Die Antwort sagt, dass 21.gifts keinen Anteil behält. Deine Wallet oder das Zahlungsnetzwerk kann trotzdem eigene Gebühren verlangen.",
+    "es": "La segunda pregunta está abierta: ¿Se queda 21.gifts con algo de mi donación? La respuesta dice que 21.gifts no se queda con ninguna parte. Una cartera o la red de pago pueden cobrar sus propias comisiones.",
+    "fil": "Bukas ang pangalawang tanong: May kinukuha ba ang 21.gifts sa donasyon ko? Sinasabi ng sagot na walang bahaging kinukuha ang 21.gifts. Maaaring maningil pa rin ng sariling bayarin ang wallet mo o ang payment network."
+  },
   "/welcome:ask-credit-error-request": {
     "de": "Kredit, Schritt 9 von 9, nachdem das Senden fehlschlägt. Die Vorschau bleibt, mit Nachricht konnte nicht gesendet werden darunter. Kredit bleibt gedrückt. Der Zähler zeigt 9 von 9.",
     "es": "Crédito, paso 9 de 9, después de que falle Publicar. La vista previa permanece, con No se pudo publicar el mensaje debajo. Crédito sigue pulsado. El contador muestra 9 de 9.",

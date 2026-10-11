@@ -1411,6 +1411,17 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-language');
   });
 
+  test('state / faq-share-open', async ({ page }) => {
+    await page.goto('/');
+    await page.getByText('Does 21.gifts keep any of my donation?').click();
+    await expect(
+      page.getByText(
+        '21.gifts keeps no share. Your wallet or the payment network may charge its own fees.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-root-faq-share-open');
+  });
+
   test('screen /legal', async ({ page }) => {
     await page.goto('/legal');
     await expect(page.getByRole('heading', { name: 'Legal Notice' })).toBeVisible();

@@ -93,6 +93,13 @@ export const SCREEN_VARIANTS = [
     needle: "getByRole('option', { name: 'Español' })",
   },
   {
+    route: '/',
+    id: 'faq-share-open',
+    image: 'root-faq-share-open.png',
+    visual: 'state-root-faq-share-open',
+    needle: '21.gifts keeps no share',
+  },
+  {
     route: '/legal',
     id: 'default',
     image: 'legal.png',

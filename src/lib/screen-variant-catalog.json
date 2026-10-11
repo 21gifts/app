@@ -18,6 +18,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/:faq-share-open",
+    "label": "/ faq-share-open",
+    "visual": "state-root-faq-share-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/legal:default",
     "label": "/legal default",
     "visual": "screen-legal",

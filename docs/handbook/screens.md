@@ -29,6 +29,12 @@ Open the language switcher in the marketing header. Custom listbox (rounded pane
 
 ![21.gifts home language](images/root-language.png)
 
+### Variant: faq-share-open
+
+The second question is open: **Does 21.gifts keep any of my donation?** The answer says 21.gifts keeps no share. A wallet or the payment network may still charge its own fees.
+
+![21.gifts home FAQ share open](images/root-faq-share-open.png)
+
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
