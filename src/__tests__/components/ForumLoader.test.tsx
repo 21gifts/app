@@ -211,6 +211,8 @@ const SAMPLE: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 function forumPage(
@@ -233,6 +235,8 @@ const PAYABLE_REPLY: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const NESTED_REPLY: ForumMessage = {
@@ -248,6 +252,8 @@ const NESTED_REPLY: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 async function clickReplyGift(replyId = 'r-pay'): Promise<HTMLElement> {
@@ -280,6 +286,8 @@ const FRESH: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const FOREIGN: ForumMessage = {
@@ -296,6 +304,8 @@ const FOREIGN: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const UNREAD_APPOINTED: Notification = {
@@ -657,6 +667,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     postMock.mockResolvedValue({
       ...SAMPLE,
@@ -720,6 +732,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     await waitFor(
       () => {
@@ -751,6 +765,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     postMock.mockResolvedValue({
       ...SAMPLE,
@@ -1340,6 +1356,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     postMock.mockResolvedValue({
       ...SAMPLE,
@@ -2028,6 +2046,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
         listed,
       ]),
@@ -2086,6 +2106,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]),
     );
@@ -2146,6 +2168,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]),
     );
@@ -2172,6 +2196,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]),
     );
@@ -2203,6 +2229,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]),
     );
@@ -2229,6 +2257,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 1,
+      heartCount: 0,
+      hearted: false,
     };
     let resolvePhoto: ((blob: Blob) => void) | undefined;
     photoMock.mockImplementationOnce(
@@ -3178,6 +3208,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]),
     );
@@ -3211,6 +3243,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]),
     );
@@ -3246,6 +3280,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]),
     );
@@ -3301,6 +3337,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
         {
           id: 'm2',
@@ -3315,6 +3353,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]),
     );
@@ -3351,6 +3391,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]),
     );
@@ -3398,6 +3440,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 1,
+      heartCount: 0,
+      hearted: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -3445,6 +3489,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -3772,6 +3818,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -3816,6 +3864,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     const onClose = vi.fn();
     renderWithLocale(<ForumLoader writer={{ open: true, onOpen: () => undefined, onClose }} />);
@@ -3868,6 +3918,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -3909,6 +3961,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
@@ -3925,6 +3979,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -4038,6 +4094,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     postMock.mockResolvedValue({
       ...SAMPLE,
@@ -4112,6 +4170,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     postMock.mockResolvedValue({
       ...SAMPLE,
@@ -4176,6 +4236,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     postVideoMock.mockResolvedValue({
       ...SAMPLE,
@@ -4231,6 +4293,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     postMock.mockRejectedValue(new Error('offline'));
     renderWithLocale(<ForumLoader />);
@@ -4302,6 +4366,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     }));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
@@ -4358,6 +4424,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -4403,6 +4471,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     fetchMock.mockResolvedValue(forumPage([created]));
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:existing');
@@ -4539,6 +4609,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -4567,6 +4639,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     const fromServer: ForumMessage = {
       id: 'm1',
@@ -4581,6 +4655,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     fetchMock
       .mockImplementationOnce(
@@ -4632,6 +4708,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -4666,6 +4744,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     fetchMock.mockResolvedValue(forumPage([created]));
     postMock.mockResolvedValue(created);
@@ -4702,6 +4782,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -4738,6 +4820,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     postMock.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(created);
     const onClose = vi.fn();
@@ -4777,6 +4861,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -4815,6 +4901,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
@@ -4917,6 +5005,8 @@ describe('ForumLoader', () => {
         videoContentType: null,
         role: 'basis',
         replyCount: 0,
+        heartCount: 0,
+        hearted: false,
       });
     });
 
@@ -4960,6 +5050,8 @@ describe('ForumLoader', () => {
         videoContentType: null,
         role: 'basis',
         replyCount: 0,
+        heartCount: 0,
+        hearted: false,
       });
     });
 
@@ -5038,6 +5130,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }, second]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
@@ -5772,6 +5866,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     const withUsd: ForumMessage = { ...asking, amountUsd: '0.75' };
     const withChf: ForumMessage = { ...withUsd, amountChf: '0.60' };
@@ -5816,6 +5912,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 1,
+      heartCount: 0,
+      hearted: false,
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
     fetchMock.mockResolvedValueOnce(forumPage([])).mockResolvedValue(forumPage([]));
@@ -5864,6 +5962,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 1,
+      heartCount: 0,
+      hearted: false,
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
     fetchMock.mockResolvedValueOnce(forumPage([])).mockResolvedValue(forumPage([]));
@@ -5952,6 +6052,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 1,
+      heartCount: 0,
+      hearted: false,
     };
     const signed: ForumMessage = { ...unsigned, payable: true };
     fetchMock.mockResolvedValueOnce(forumPage([])).mockResolvedValue(forumPage([]));
@@ -6370,6 +6472,8 @@ describe('ForumLoader', () => {
         videoContentType: null,
         role: 'basis',
         replyCount: 0,
+        heartCount: 0,
+        hearted: false,
       },
     ]);
     renderWithLocale(<ForumLoader />);
@@ -6402,6 +6506,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]),
     );
@@ -6419,6 +6525,8 @@ describe('ForumLoader', () => {
         videoContentType: null,
         role: 'basis',
         replyCount: 0,
+        heartCount: 0,
+        hearted: false,
       },
     ]);
     repliesMock.mockImplementationOnce(() => new Promise(() => undefined));
@@ -6456,6 +6564,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]),
     );
@@ -6499,6 +6609,8 @@ describe('ForumLoader', () => {
         videoContentType: null,
         role: 'basis',
         replyCount: 0,
+        heartCount: 0,
+        hearted: false,
       });
     });
     expect(screen.queryByText('Ada reply')).toBeNull();
@@ -6522,6 +6634,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]),
     );
@@ -6571,6 +6685,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([reply]);
@@ -6611,6 +6727,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
       ]),
     );
@@ -6628,6 +6746,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -6688,6 +6808,8 @@ describe('ForumLoader', () => {
         videoContentType: null,
         role: 'basis',
         replyCount: 0,
+        heartCount: 0,
+        hearted: false,
       });
     });
     expect(useAuthStore.getState().account?.hasPosted).toBeUndefined();
@@ -6709,6 +6831,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -6853,6 +6977,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -7479,6 +7605,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'founder',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -7611,6 +7739,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'moderator',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -7646,6 +7776,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'moderator',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -7699,6 +7831,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'moderator',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     vi.mocked(deleteMessage).mockResolvedValue(undefined);
     renderWithLocale(<ForumLoader />);
@@ -7771,6 +7905,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'moderator',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     vi.mocked(deleteMessage).mockResolvedValue(undefined);
     renderWithLocale(<ForumLoader />);
@@ -7854,6 +7990,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'verified',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -7891,6 +8029,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -8139,6 +8279,8 @@ describe('ForumLoader', () => {
             videoContentType: null,
             role: 'basis',
             replyCount: 0,
+            heartCount: 0,
+            hearted: false,
           },
           SAMPLE,
         ]),
@@ -8228,6 +8370,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     fetchMock
       .mockResolvedValueOnce(forumPage([SAMPLE]))
@@ -8907,6 +9051,8 @@ describe('ForumLoader', () => {
           videoContentType: null,
           role: 'basis',
           replyCount: 0,
+          heartCount: 0,
+          hearted: false,
         },
         SAMPLE,
       ]),
@@ -9431,6 +9577,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     vi.mocked(setName).mockResolvedValue({
       ...account,
@@ -9474,6 +9622,8 @@ describe('ForumLoader', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     vi.mocked(agreeToRules).mockResolvedValue({
       ...account,

@@ -2,7 +2,7 @@
 
 import { HandHeart, Loader2, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { MemberTrustActions } from '@/components/MemberTrustActions';
@@ -235,7 +235,6 @@ export function MemberProfileScreen({
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
-  const { onHeartTip, heartTipViews } = useHeartTip({ readOnly: session === null });
   const { fiat } = useFiatPreference();
   const amountUnit = account?.amountUnit ?? 'btc';
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
@@ -281,6 +280,25 @@ export function MemberProfileScreen({
   const [activityReplies, setActivityReplies] = useState<ForumMessage[] | null>(null);
   const [activityRepliesLoading, setActivityRepliesLoading] = useState(false);
   const [activityRepliesError, setActivityRepliesError] = useState(false);
+  const heartCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const shown =
+      activity === 'posts' ? (posts ?? []) : activity === 'replies' ? (activityReplies ?? []) : [];
+    for (const message of shown) {
+      counts[message.id] = message.heartCount;
+    }
+    const boardReplies = expandedId === null ? null : replies;
+    if (boardReplies !== null) {
+      for (const message of boardReplies) {
+        counts[message.id] = message.heartCount;
+      }
+    }
+    return counts;
+  }, [activity, posts, activityReplies, expandedId, replies]);
+  const { onHeartTip, heartTipViews } = useHeartTip({
+    readOnly: session === null,
+    heartCounts,
+  });
   const postsLoadGen = useRef(0);
   const repliesLoadGen = useRef(0);
   /* v8 ignore next -- SSR: no window */

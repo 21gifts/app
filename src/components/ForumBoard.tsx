@@ -474,8 +474,11 @@ function fallbackCopy(text: string): boolean {
  * 1-sat heart in a note or reply action row. Hidden on a deleted note, on the
  * viewer's own note, on a note whose author cannot receive (`payable` false),
  * and on a board without a heart handler. Click stops the card from expanding.
+ * The count sits immediately to the right of the icon; the fill remains after
+ * a tap. Who does not see the heart does not see the count.
  *
- * @param props - Message id, author id, deleted stamp, payable, heartViewerId, visual state, click.
+ * @param props - Message id, author id, deleted stamp, payable, heartViewerId,
+ *   server `heartCount` / `hearted`, visual state, click.
  * @returns The heart control, or `null` when it must not show.
  */
 function ForumHeartControl({
@@ -484,6 +487,8 @@ function ForumHeartControl({
   deletedAt,
   payable,
   heartViewerId,
+  heartCount,
+  hearted,
   view,
   onHeartTip,
 }: {
@@ -492,6 +497,8 @@ function ForumHeartControl({
   deletedAt: string | undefined;
   payable: boolean;
   heartViewerId: string | null;
+  heartCount: number;
+  hearted: boolean;
   view: HeartTipView | undefined;
   onHeartTip: ((id: string) => void) | undefined;
 }): ReactElement | null {
@@ -504,39 +511,54 @@ function ForumHeartControl({
   ) {
     return null;
   }
-  const pressed = view !== undefined && view.pressed;
+  const extra = view?.extra ?? 0;
   const plusOne = view !== undefined && view.plusOne;
-  const filled = pressed || plusOne;
+  const filled = hearted || (view !== undefined && view.pressed) || plusOne || extra > 0;
   const needsBalance = view !== undefined && view.needsBalance;
+  const count = heartCount + extra;
+  const buttonClass = plusOne
+    ? 'scale-110 text-app-accent'
+    : filled
+      ? 'text-app-accent'
+      : undefined;
   return (
     <>
-      <span className="relative inline-flex">
-        <IconButton
-          type="button"
-          size="sm"
-          variant="ghost"
-          aria-label={t('forum.heart')}
-          title={t('forum.heart')}
-          className={filled ? 'scale-110 text-app-accent' : undefined}
-          onClick={(event) => {
-            event.stopPropagation();
-            onHeartTip(messageId);
-          }}
-        >
-          <Heart
-            aria-hidden="true"
-            className="h-4 w-4 shrink-0"
-            fill={filled ? 'currentColor' : 'none'}
-          />
-        </IconButton>
-        {plusOne ? (
-          <span
-            className="forum-heart-plus-one absolute inset-x-0 -top-3 text-center text-xs font-semibold text-app-accent"
-            aria-hidden="true"
+      <span className="inline-flex items-center gap-1">
+        <span className="relative inline-flex">
+          <IconButton
+            type="button"
+            size="sm"
+            variant="ghost"
+            aria-label={t('forum.heart')}
+            title={t('forum.heart')}
+            className={buttonClass}
+            onClick={(event) => {
+              event.stopPropagation();
+              onHeartTip(messageId);
+            }}
           >
-            +1
-          </span>
-        ) : null}
+            <Heart
+              aria-hidden="true"
+              className="h-4 w-4 shrink-0"
+              fill={filled ? 'currentColor' : 'none'}
+            />
+          </IconButton>
+          {plusOne ? (
+            <span
+              className="forum-heart-plus-one absolute inset-x-0 -top-3 text-center text-xs font-semibold text-app-accent"
+              aria-hidden="true"
+            >
+              +1
+            </span>
+          ) : null}
+        </span>
+        <span
+          className={
+            filled ? 'text-xs tabular-nums text-app-accent' : 'text-xs tabular-nums text-app-subtle'
+          }
+        >
+          {count}
+        </span>
       </span>
       {needsBalance ? (
         <p role="alert" className="text-xs text-app-danger">
@@ -618,7 +640,8 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * expands the reply composer; omitted when `deletedAt` is set), a 1-sat heart
  * (`forum.heart`, lucide Heart) on a non-deleted post and a non-deleted reply
  * when `onHeartTip` is set, `payable` is true, and `heartViewerId !== accountId`
- * (shown signed-out; omitted on the viewer's own note), payable-reply
+ * (shown signed-out; omitted on the viewer's own note; the count sits
+ * immediately to the right of the icon and the fill remains after a tap), payable-reply
  * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
  * never on posts; omitted when `deletedAt` is set), optional shop-note
  * pencil when `shopNoteEdit` and `onShopNoteUpdated` are set (top-level
@@ -1406,6 +1429,8 @@ export function ForumBoard({
                     deletedAt={message.deletedAt}
                     payable={message.payable}
                     heartViewerId={heartViewerId}
+                    heartCount={message.heartCount}
+                    hearted={message.hearted}
                     view={heartTipViews === undefined ? undefined : heartTipViews[message.id]}
                     onHeartTip={onHeartTip}
                   />
@@ -1735,6 +1760,8 @@ export function ForumBoard({
                                 deletedAt={reply.deletedAt}
                                 payable={reply.payable}
                                 heartViewerId={heartViewerId}
+                                heartCount={reply.heartCount}
+                                hearted={reply.hearted}
                                 view={
                                   heartTipViews === undefined ? undefined : heartTipViews[reply.id]
                                 }

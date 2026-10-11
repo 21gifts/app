@@ -25,6 +25,8 @@ const ADA: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const CAROL: ForumMessage = {
@@ -40,6 +42,8 @@ const CAROL: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const BOB: ForumMessage = {
@@ -55,6 +59,8 @@ const BOB: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const UNPAID_FOUNDER: ForumMessage = {
@@ -70,6 +76,8 @@ const UNPAID_FOUNDER: ForumMessage = {
   videoContentType: null,
   role: 'founder',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const UNPAID_MODERATOR: ForumMessage = {
@@ -85,6 +93,8 @@ const UNPAID_MODERATOR: ForumMessage = {
   videoContentType: null,
   role: 'moderator',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const UNPAID_VERIFIED: ForumMessage = {
@@ -100,6 +110,8 @@ const UNPAID_VERIFIED: ForumMessage = {
   videoContentType: null,
   role: 'verified',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const TIE_NEWER: ForumMessage = {
@@ -115,6 +127,8 @@ const TIE_NEWER: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const TIE_OLDER: ForumMessage = {
@@ -130,6 +144,8 @@ const TIE_OLDER: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 const TIE_SAME_TIME_LOW_ID: ForumMessage = {
@@ -145,6 +161,8 @@ const TIE_SAME_TIME_LOW_ID: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 afterEach(() => {

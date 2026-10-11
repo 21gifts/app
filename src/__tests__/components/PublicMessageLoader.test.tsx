@@ -100,6 +100,8 @@ const sample: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  heartCount: 0,
+  hearted: false,
 };
 
 beforeEach(() => {
@@ -1185,6 +1187,8 @@ describe('PublicMessageLoader', () => {
       videoContentType: null,
       role: 'verified',
       replyCount: 1,
+      heartCount: 0,
+      hearted: false,
     };
     const quoted: ForumMessage = {
       id: quotedId,
@@ -1199,6 +1203,8 @@ describe('PublicMessageLoader', () => {
       videoContentType: null,
       role: 'founder',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     const reply: ForumMessage = {
       id: replyId,
@@ -1214,6 +1220,8 @@ describe('PublicMessageLoader', () => {
       videoContentType: null,
       role: 'founder',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     };
     fetchMessage.mockImplementation(async (id: string) => {
       if (id === rianaId) {

@@ -53,13 +53,124 @@ export type HeartTipFailure =
 
 /** Per-message heart visuals for the forum board. */
 export type HeartTipView = {
-  /** True while the glyph is filled and scaled. */
+  /** True while the glyph is filled. */
   pressed: boolean;
   /** True while the +1 is shown. */
   plusOne: boolean;
   /** True after a tap the wallet balance cannot cover: shows the balance-required line. */
   needsBalance: boolean;
+  /**
+   * Hearts this session that the server `heartCount` does not yet include.
+   * Missing reads as 0 (`view?.extra ?? 0`). The hook always sets a number.
+   */
+  extra?: number;
 };
+
+/** sessionStorage key for hearts sent this tab session. */
+const HEART_SENT_STORAGE_KEY = '21gifts.heart.sent';
+
+/** One note's session hearts: server `base` at first tap, plus uncounted `extra`. */
+type HeartSentEntry = { base: number; extra: number };
+
+/** sessionStorage map of note id to {@link HeartSentEntry}. */
+type HeartSentMap = Record<string, HeartSentEntry>;
+
+/**
+ * True when `value` is a non-negative integer.
+ *
+ * @param value - Unknown JSON value.
+ * @returns Whether it can be a stored heart count.
+ */
+function isNonNegativeInt(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+}
+
+/**
+ * True when `value` is a stored heart-sent entry.
+ *
+ * @param value - Unknown JSON value.
+ * @returns Whether it has integer `base` and `extra`.
+ */
+function isHeartSentEntry(value: unknown): value is HeartSentEntry {
+  if (value === null || typeof value !== 'object') {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  return isNonNegativeInt(record['base']) && isNonNegativeInt(record['extra']);
+}
+
+/**
+ * Reads {@link HEART_SENT_STORAGE_KEY} in the browser. Missing, unreadable, or
+ * corrupt JSON is an empty map. Never throws; never touches storage on the server.
+ *
+ * @returns The stored map, omitting invalid entries and extra-0 rows.
+ */
+function readHeartSentMap(): HeartSentMap {
+  if (typeof sessionStorage === 'undefined') {
+    return {};
+  }
+  try {
+    const raw = sessionStorage.getItem(HEART_SENT_STORAGE_KEY);
+    if (raw === null) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+    const next: HeartSentMap = {};
+    for (const [id, entry] of Object.entries(parsed)) {
+      if (isHeartSentEntry(entry) && entry.extra > 0) {
+        next[id] = { base: entry.base, extra: entry.extra };
+      }
+    }
+    return next;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Writes {@link HEART_SENT_STORAGE_KEY}. A storage error is ignored.
+ *
+ * @param map - Current session map.
+ */
+function writeHeartSentMap(map: HeartSentMap): void {
+  if (typeof sessionStorage === 'undefined') {
+    return;
+  }
+  try {
+    sessionStorage.setItem(HEART_SENT_STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    /* ignore quota / access errors; the tap and the payment still run */
+  }
+}
+
+/**
+ * Value signature of `heartCounts`: sorted `id:count` pairs. Equal numbers in a
+ * new object identity must not reconcile again.
+ *
+ * @param counts - Id to server heart count.
+ * @returns Stable signature string.
+ */
+function heartCountsSignature(counts: Readonly<Record<string, number>>): string {
+  return Object.keys(counts)
+    .sort()
+    .map((id) => `${id}:${String(counts[id])}`)
+    .join('|');
+}
+
+/**
+ * Session extra for `id`, or 0 when the map has no row.
+ *
+ * @param map - Session map.
+ * @param id - Note id.
+ * @returns Extra hearts this session.
+ */
+function mapExtra(map: HeartSentMap, id: string): number {
+  const entry = map[id];
+  return entry === undefined ? 0 : entry.extra;
+}
 
 /** Result of one {@link sendHeartTip} run. */
 export type HeartTipOutcome =
@@ -483,25 +594,173 @@ async function invoiceAndPayHeart(
 }
 
 /**
+ * Applies server `heartCounts` to the session map. An id missing from
+ * `heartCounts` is not treated as 0: it is not reconciled and not deleted.
+ * Equal numbers in a new object identity are skipped. Partial growth persists
+ * `base` immediately so a later run cannot subtract the same growth twice.
+ *
+ * @param counts - Id to server heart count of notes the board shows.
+ * @param force - True on the first run after reading storage.
+ * @param sentRef - Session map (source of truth).
+ * @param lastSignatureRef - Last applied value signature.
+ * @param lastAppliedRef - Last applied per-id server counts.
+ * @param setHeartTipViews - View setter (functional).
+ */
+function reconcileHeartCounts(
+  counts: Readonly<Record<string, number>>,
+  force: boolean,
+  sentRef: { current: HeartSentMap },
+  lastSignatureRef: { current: string | null },
+  lastAppliedRef: { current: Record<string, number> },
+  setHeartTipViews: (
+    update: (prev: Record<string, HeartTipView>) => Record<string, HeartTipView>,
+  ) => void,
+): void {
+  const signature = heartCountsSignature(counts);
+  if (!force && lastSignatureRef.current === signature) {
+    return;
+  }
+  const prevApplied = lastAppliedRef.current;
+  lastSignatureRef.current = signature;
+  const nextApplied: Record<string, number> = {};
+  for (const id of Object.keys(counts)) {
+    const server = counts[id];
+    if (server !== undefined) {
+      nextApplied[id] = server;
+    }
+  }
+  lastAppliedRef.current = nextApplied;
+
+  const ids = new Set<string>();
+  if (force) {
+    for (const id of Object.keys(sentRef.current)) {
+      if (counts[id] !== undefined) {
+        ids.add(id);
+      }
+    }
+  } else {
+    for (const id of Object.keys(counts)) {
+      const server = counts[id];
+      if (server !== undefined && prevApplied[id] !== server) {
+        ids.add(id);
+      }
+    }
+  }
+
+  const extraById = new Map<string, number>();
+  const map = sentRef.current;
+  let changed = false;
+  for (const id of ids) {
+    const server = counts[id] as number;
+    const entry = map[id];
+    if (entry === undefined) {
+      continue;
+    }
+    if (server >= entry.base + entry.extra) {
+      delete map[id];
+      extraById.set(id, 0);
+      changed = true;
+    } else if (server > entry.base && server < entry.base + entry.extra) {
+      const nextExtra = entry.extra - (server - entry.base);
+      map[id] = { base: server, extra: nextExtra };
+      extraById.set(id, nextExtra);
+      changed = true;
+    }
+  }
+  if (changed) {
+    writeHeartSentMap(map);
+  }
+
+  setHeartTipViews((prev) => {
+    let next: Record<string, HeartTipView> | null = null;
+    const write = (id: string, view: HeartTipView): void => {
+      if (next === null) {
+        next = { ...prev };
+      }
+      next[id] = view;
+    };
+    if (force) {
+      for (const [id, entry] of Object.entries(map)) {
+        if (entry.extra > 0 && extraById.get(id) === undefined) {
+          write(id, {
+            pressed: true,
+            plusOne: false,
+            needsBalance: false,
+            extra: entry.extra,
+          });
+        }
+      }
+    }
+    for (const [id, extra] of extraById) {
+      const current = (next ?? prev)[id];
+      const plusOne = current !== undefined && current.plusOne;
+      write(id, {
+        pressed: extra > 0 || plusOne,
+        plusOne,
+        needsBalance: current !== undefined && current.needsBalance,
+        extra,
+      });
+    }
+    return next ?? prev;
+  });
+}
+
+/**
+ * Ends the +1 on one heart. A missing row is returned unchanged.
+ * `pressed` stays only while this session still has `extra`.
+ *
+ * @param prev - Current per-id views.
+ * @param messageId - Note whose +1 ends.
+ * @returns The next view map.
+ */
+export function endHeartPlusOne(
+  prev: Readonly<Record<string, HeartTipView>>,
+  messageId: string,
+): Record<string, HeartTipView> {
+  const current = prev[messageId];
+  if (current === undefined) {
+    return prev;
+  }
+  const extra = current.extra ?? 0;
+  return {
+    ...prev,
+    [messageId]: { ...current, plusOne: false, pressed: extra > 0 },
+  };
+}
+
+/**
  * Heart-click machine for a forum board: on every tap of a signed-in,
  * writable board, vibrate and show the filled heart with its +1 at once for
  * {@link HEART_TIP_PLUS_ONE_MS}, while {@link sendHeartTip} pays in the
- * background. A heart that is not sent shows nothing more; it is only
- * reported. The one exception is a wallet snapshot whose balance cannot
- * cover the heart: then there is no vibrate, no press, and no +1, only the
- * balance-required line, and nothing is sent. A signed-out or read-only tap
- * does nothing.
+ * background. After 700 ms only the +1 leaves; the fill and `extra` remain.
+ * Session hearts not yet in the server `heartCount` are `extra`. A second tap
+ * sends another heart and counts up; there is no undo. A heart that is not
+ * sent rolls back that tap's `extra`; it is also reported. The one exception
+ * is a wallet snapshot whose balance cannot cover the heart: then there is no
+ * vibrate, no new fill, and no +1, only the balance-required line, and
+ * nothing is sent. A signed-out or read-only tap does nothing.
  *
  * @param options - `readOnly` matches the board (`true` when signed out).
+ *   `heartCounts` maps shown note ids to the server heart count; omit for `{}`.
  * @returns Click handler and the per-id views to pass to the forum board.
  */
-export function useHeartTip(options: { readOnly: boolean }): {
+export function useHeartTip(options: {
+  readOnly: boolean;
+  heartCounts?: Readonly<Record<string, number>>;
+}): {
   onHeartTip: (messageId: string) => void;
   heartTipViews: Readonly<Record<string, HeartTipView>>;
 } {
   const { readOnly } = options;
+  const heartCounts = options.heartCounts ?? {};
   const [heartTipViews, setHeartTipViews] = useState<Record<string, HeartTipView>>({});
   const timersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  const sentRef = useRef<HeartSentMap>({});
+  const heartCountsRef = useRef(heartCounts);
+  heartCountsRef.current = heartCounts;
+  const lastSignatureRef = useRef<string | null>(null);
+  const lastAppliedRef = useRef<Record<string, number>>({});
+  const didReadRef = useRef(false);
 
   useEffect(() => {
     const timers = timersRef.current;
@@ -512,6 +771,22 @@ export function useHeartTip(options: { readOnly: boolean }): {
       timers.clear();
     };
   }, []);
+
+  useEffect(() => {
+    const force = !didReadRef.current;
+    if (force) {
+      sentRef.current = readHeartSentMap();
+      didReadRef.current = true;
+    }
+    reconcileHeartCounts(
+      heartCounts,
+      force,
+      sentRef,
+      lastSignatureRef,
+      lastAppliedRef,
+      setHeartTipViews,
+    );
+  }, [heartCounts]);
 
   const onHeartTip = useCallback(
     (messageId: string): void => {
@@ -539,31 +814,89 @@ export function useHeartTip(options: { readOnly: boolean }): {
         timersRef.current.delete(messageId);
       }
       if (lacksHeartBalance(input)) {
-        setHeartTipViews((prev) => ({
-          ...prev,
-          [messageId]: { pressed: false, plusOne: false, needsBalance: true },
-        }));
+        setHeartTipViews((prev) => {
+          const extra = mapExtra(sentRef.current, messageId);
+          if (extra > 0) {
+            return {
+              ...prev,
+              [messageId]: {
+                pressed: true,
+                plusOne: false,
+                needsBalance: true,
+                extra,
+              },
+            };
+          }
+          return {
+            ...prev,
+            [messageId]: {
+              pressed: false,
+              plusOne: false,
+              needsBalance: true,
+              extra: 0,
+            },
+          };
+        });
         return;
       }
       if (typeof navigator.vibrate === 'function') {
         navigator.vibrate(10);
       }
+      const map = sentRef.current;
+      const existing = map[messageId];
+      const extra = existing === undefined ? 1 : existing.extra + 1;
+      if (existing === undefined) {
+        const server = heartCountsRef.current[messageId];
+        map[messageId] = {
+          base: server === undefined ? 0 : server,
+          extra,
+        };
+      } else {
+        map[messageId] = { base: existing.base, extra };
+      }
+      writeHeartSentMap(map);
       setHeartTipViews((prev) => ({
         ...prev,
-        [messageId]: { pressed: true, plusOne: true, needsBalance: false },
+        [messageId]: { pressed: true, plusOne: true, needsBalance: false, extra },
       }));
       if (visualPin() !== 'heart-paid') {
         const timer = setTimeout(() => {
           timersRef.current.delete(messageId);
-          setHeartTipViews((prev) => {
-            const next = { ...prev };
-            delete next[messageId];
-            return next;
-          });
+          setHeartTipViews((prev) => endHeartPlusOne(prev, messageId));
         }, HEART_TIP_PLUS_ONE_MS);
         timersRef.current.set(messageId, timer);
       }
-      void sendHeartTip(input);
+      void sendHeartTip(input).then((outcome) => {
+        if (outcome.kind === 'paid') {
+          return;
+        }
+        const sent = sentRef.current;
+        const entry = sent[messageId];
+        if (entry !== undefined) {
+          const nextExtra = entry.extra - 1;
+          if (nextExtra <= 0) {
+            delete sent[messageId];
+          } else {
+            sent[messageId] = { base: entry.base, extra: nextExtra };
+          }
+          writeHeartSentMap(sent);
+        }
+        setHeartTipViews((prev) => {
+          const current = prev[messageId];
+          const nextExtra = mapExtra(sentRef.current, messageId);
+          const plusOne = current !== undefined && current.plusOne;
+          const needsBalance = current !== undefined && current.needsBalance;
+          return {
+            ...prev,
+            [messageId]: {
+              pressed: nextExtra > 0 || plusOne,
+              plusOne,
+              needsBalance,
+              extra: nextExtra,
+            },
+          };
+        });
+      });
     },
     [readOnly],
   );
