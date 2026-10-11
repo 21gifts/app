@@ -51,6 +51,10 @@ function shortLoanText(text: string): string {
   return `${trimmed.slice(0, end).trimEnd()}…`;
 }
 
+function shareKey(share: Pick<DueShare, 'messageId' | 'dayIndex' | 'accountId'>): string {
+  return `${share.messageId}:${share.dayIndex}:${share.accountId}`;
+}
+
 /**
  * All-loans repayment screen: live due totals, recipients, one-tap wallet payment,
  * top-up controls, and per-loan progress.
@@ -336,10 +340,10 @@ export function LoanRepayScreen(): ReactElement {
   const fittingSats = fitting.reduce((sum, share) => sum + (share.sats as number), 0);
   const fittingNames = [...new Set(fitting.map((share) => share.name))].join(', ');
   const hasMissingSats = repay.missingSats !== null && repay.missingSats > 0;
-  const rememberAndPay = (limitSats?: number): void => {
+  const rememberAndPay = (onlyShares?: ReadonlySet<string>): void => {
     setPaidLoans(loans.loans);
-    setSendingSats(limitSats === undefined ? payable : fittingSats);
-    repay.pay(loans.loans, limitSats);
+    setSendingSats(onlyShares === undefined ? payable : fittingSats);
+    repay.pay(loans.loans, onlyShares);
   };
 
   const idleControls =
@@ -382,7 +386,7 @@ export function LoanRepayScreen(): ReactElement {
           <button
             type="button"
             className="text-sm font-medium text-app-fg underline underline-offset-2"
-            onClick={() => rememberAndPay(fittingSats)}
+            onClick={() => rememberAndPay(new Set(fitting.map(shareKey)))}
           >
             {t('loans.sendNow', {
               amount: money(fittingSats),
