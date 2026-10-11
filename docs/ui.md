@@ -731,7 +731,7 @@ export function Wordmark(props: {
 }): ReactElement;
 ```
 
-`HomeWordmark` is the session-aware wrapper (`publicHref`, default `/`, until hydrate; `/welcome` when `ready && session !== null`). Do not over-type primitive `href` as `'/' | '/welcome'` — unsigned `/rules` still uses `/`, and the footer is not a link.
+`HomeWordmark` is the session-aware wrapper (`publicHref`, default `/`, until hydrate; `/welcome` when `ready && session !== null`). Do not over-type primitive `href` as `'/' | '/welcome'` — unsigned `/messages/[id]` still uses `/`, the language homes are `/{locale}`, and the footer is not a link.
 
 ### `Card`
 
