@@ -767,6 +767,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'received-banner',
+    image: 'wallet-received-banner.png',
+    visual: 'state-wallet-received-banner',
+    needle: "shotScreen(page, 'state-wallet-received-banner')",
+  },
+  {
+    route: '/wallet',
+    id: 'received-bump',
+    image: 'wallet-received-bump.png',
+    visual: 'state-wallet-received-bump',
+    needle: "shotScreen(page, 'state-wallet-received-bump')",
+  },
+  {
+    route: '/wallet',
     id: 'receive-move',
     image: 'wallet-receive-move.png',
     visual: 'state-wallet-receive-move',
@@ -778,6 +792,13 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-move-intro.png',
     visual: 'state-wallet-move-intro',
     needle: "shotScreen(page, 'state-wallet-move-intro')",
+  },
+  {
+    route: '/wallet',
+    id: 'move-intro-receive',
+    image: 'wallet-move-intro-receive.png',
+    visual: 'state-wallet-move-intro-receive',
+    needle: "shotScreen(page, 'state-wallet-move-intro-receive')",
   },
   {
     route: '/wallet',
@@ -6591,6 +6612,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-wallet-tour-menu.png',
     visual: 'state-welcome-wallet-tour-menu',
     needle: "shotScreen(page, 'state-welcome-wallet-tour-menu')",
+  },
+  {
+    route: '/welcome',
+    id: 'wallet-tour-short',
+    image: 'welcome-wallet-tour-short.png',
+    visual: 'state-welcome-wallet-tour-short',
+    needle: "shotScreen(page, 'state-welcome-wallet-tour-short')",
   },
   {
     route: '/shops',

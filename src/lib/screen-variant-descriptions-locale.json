@@ -5293,5 +5293,25 @@
     "de": "Angeheftete Fixture (?visual=move-arrived, nur Playwright-Builds): der letzte Schritt, nachdem ₿500 angekommen sind. Alle vier Punkte gefüllt, ein grünes Häkchen, ₿500 sind angekommen mit $0.50 darunter, Dein Wallet hat jetzt ₿21'000 · $21.00. Ist dort noch etwas übrig? Du kannst das jederzeit wieder über Empfangen machen. und Fertig.",
     "es": "Fixture fijado (?visual=move-arrived, solo builds de Playwright): el último paso después de que llegaran ₿500. Los cuatro puntos llenos, una marca verde, Llegaron ₿500 con $0.50 debajo, Tu billetera ahora tiene ₿21'000 · $21.00. ¿Quedó algo allí? Puedes volver a hacerlo cuando quieras desde Recibir. y Listo.",
     "fil": "Naka-pin na fixture (?visual=move-arrived, sa mga Playwright build lang): ang huling hakbang matapos dumating ang ₿500. Puno ang apat na tuldok, berdeng tsek, Dumating ang ₿500 na may $0.50 sa ilalim, May ₿21'000 · $21.00 na ngayon ang iyong wallet. May natira pa ba roon? Puwede mo itong gawin ulit anumang oras mula sa Tanggapin. at Tapos na."
+  },
+  "/wallet:received-banner": {
+    "de": "Wie received, nach 2,4 Sekunden: das Guthaben im Kopf ist wieder in der normalen Farbe ohne +₿500 darunter, das Banner Du hast ₿500 erhalten mit $0.50 steht noch oben in der Mitte, bis es nach sechs Sekunden verschwindet.",
+    "es": "Como received, a los 2,4 segundos: el saldo de la cabecera vuelve a su color normal sin +₿500 debajo, y el aviso Recibiste ₿500 con $0.50 sigue arriba en el centro hasta que desaparece a los seis segundos.",
+    "fil": "Gaya ng received, pagkalipas ng 2.4 segundo: normal na ulit ang kulay ng balanse sa header at wala nang +₿500 sa ilalim, at nasa itaas na gitna pa ang banner na Nakatanggap ka ng ₿500 na may $0.50 hanggang mawala ito pagkalipas ng anim na segundo."
+  },
+  "/wallet:received-bump": {
+    "de": "Wie received, nachdem das Banner mit Schließen (X) geschlossen wurde: oben ist kein Banner mehr, das Guthaben im Kopf ist noch grün mit +₿500 · $0.50 darunter, bis 2,4 Sekunden um sind.",
+    "es": "Como received, después de cerrar el aviso con Cerrar (X): ya no hay aviso arriba, y el saldo de la cabecera sigue en verde con +₿500 · $0.50 debajo hasta que pasan 2,4 segundos.",
+    "fil": "Gaya ng received, pagkatapos isara ang banner gamit ang Isara (X): wala nang banner sa itaas, at berde pa ang balanse sa header na may +₿500 · $0.50 sa ilalim hanggang lumipas ang 2.4 segundo."
+  },
+  "/wallet:move-intro-receive": {
+    "de": "Derselbe erste Schritt wie move-intro, geöffnet mit Bitcoin aus einem anderen Wallet holen in der Empfangen-Ansicht (Konto mit hadExternalWallet: true): das Blatt liegt über der Empfangen-Ansicht statt über der Wallet-Startseite.",
+    "es": "El mismo primer paso que move-intro, abierto con Traer Bitcoin de otra billetera en la vista Recibir (cuenta con hadExternalWallet: true): la hoja queda sobre la vista Recibir en lugar del inicio de la wallet.",
+    "fil": "Parehong unang hakbang gaya ng move-intro, binuksan gamit ang Ilipat ang Bitcoin mula sa ibang wallet sa view ng Tanggapin (account na may hadExternalWallet: true): nasa ibabaw ng view ng Tanggapin ang sheet sa halip na sa home ng wallet."
+  },
+  "/welcome:wallet-tour-short": {
+    "de": "Die Wallet-Tour, wenn ihre Ziele fehlen: ohne offenes Wallet gibt es kein Guthaben im Kopf und keine Empfangen- und Senden-Knöpfe, deshalb bleibt nur der Menü-Schritt: Menü oben rechts im Ring und die Karte 1 von 1, Alles andere, Überspringen und Verstanden.",
+    "es": "El tour de la wallet cuando faltan sus objetivos: sin wallet abierta no hay saldo en la cabecera ni botones Recibir y Enviar, así que solo queda el paso del Menú: Menú arriba a la derecha dentro del anillo y la tarjeta 1 de 1, Todo lo demás, Omitir y Entendido.",
+    "fil": "Ang tour ng wallet kapag wala ang mga target nito: kung walang bukas na wallet, walang balanse sa header at walang mga button na Tanggapin at Ipadala, kaya ang hakbang ng Menu na lang ang natitira: ang Menu sa itaas-kanan sa loob ng singsing at ang card na 1 sa 1, Lahat ng iba pa, Laktawan at Sige."
   }
 }

@@ -611,6 +611,18 @@ Pinned fixture (`?visual=wallet-received`, Playwright builds only): a payment of
 
 ![21.gifts wallet with a payment just received](images/wallet-received.png)
 
+### Variant: received-banner
+
+The same arrival 2.4 seconds later: the header balance is back in its normal colour without **+₿500** under it, while the banner **You received ₿500** with **$0.50** stays at the top centre until six seconds are up.
+
+![21.gifts wallet, received banner after the header amount ended](images/wallet-received-banner.png)
+
+### Variant: received-bump
+
+The same arrival right after the banner's Close (X): no banner at the top, while the header balance is still green with **+₿500 · $0.50** under it until 2.4 seconds are up.
+
+![21.gifts wallet, header amount after the banner was closed](images/wallet-received-bump.png)
+
 ### Variant: receive-move
 
 The Receive view (after **Receive**) for a member whose account once used a wallet outside 21.gifts (`hadExternalWallet: true`): as in the receive shot, and under **Set an amount** the underlined text button **Move Bitcoin from another wallet**. Without that field the button is not there.
@@ -622,6 +634,12 @@ The Receive view (after **Receive**) for a member whose account once used a wall
 The move-funds flow, opened by a `?move=1` link (here `/wallet?move=1`; the parameter is removed once it opened): a sheet over the page under the header (from the bottom on a phone, centred on a wide screen) with four progress dots, the first one filled, and a Close (X). **Bring your Bitcoin here**, **Have Bitcoin in another wallet? Send it to your 21.gifts wallet. It takes about a minute and costs nothing on this side.**, three numbered lines (copy your address, choose how much and send it, come back and it shows up in your balance), and **Start**.
 
 ![21.gifts move Bitcoin, first step](images/wallet-move-intro.png)
+
+### Variant: move-intro-receive
+
+The same first step, opened with **Move Bitcoin from another wallet** in the Receive view (an account with `hadExternalWallet: true`): the sheet sits over the Receive view instead of the wallet home.
+
+![21.gifts move Bitcoin, opened from Receive](images/wallet-move-intro-receive.png)
 
 ### Variant: move-address
 
@@ -3319,6 +3337,12 @@ The same tour, after **Next** again: **Send** inside the ring and the card above
 The same tour, the last step: **Menu** top right inside the ring and the card under it: **4 of 4**, **Everything else**, **Your profile, your wallet details and your loans are in the Menu.**, **Skip**, and **Got it**, which ends the tour (there is no card after it).
 
 ![21.gifts wallet tour, Menu highlighted](images/welcome-wallet-tour-menu.png)
+
+### Variant: wallet-tour-short
+
+The tour when its targets are missing: without an open wallet there is no header balance and no **Receive** or **Send**, so those steps are left out and only the Menu step is shown: **Menu** top right inside the ring and the card **1 of 1**, **Everything else**, **Skip**, and **Got it**.
+
+![21.gifts wallet tour with only the Menu step](images/welcome-wallet-tour-short.png)
 
 ## Screen: /shops
 

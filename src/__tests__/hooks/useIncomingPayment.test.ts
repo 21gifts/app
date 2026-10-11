@@ -138,23 +138,31 @@ describe('useIncomingPayment', () => {
     expect(unsubscribe).toHaveBeenCalled();
   });
 
-  it('shows the fixed ₿500 payment under the wallet-received pin in a Playwright build, without a timer', () => {
+  it('holds the fixed ₿500 payment of the wallet-received pin for the hold time in a Playwright build', () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/wallet?visual=wallet-received');
-    const { result } = renderHook(() => useIncomingPayment(1000));
+    const { result, unmount } = renderHook(() => useIncomingPayment(1000));
     expect(result.current.payment).toMatchObject({
       amountSats: 500,
       direction: 'received',
     });
     expect(onIncomingPayment).not.toHaveBeenCalled();
     act(() => {
-      vi.advanceTimersByTime(10_000);
+      vi.advanceTimersByTime(999);
     });
     expect(result.current.payment).not.toBeNull();
     act(() => {
-      result.current.dismiss();
+      vi.advanceTimersByTime(1);
     });
     expect(result.current.payment).toBeNull();
+    unmount();
+    const again = renderHook(() => useIncomingPayment(1000));
+    act(() => {
+      again.result.current.dismiss();
+    });
+    expect(again.result.current.payment).toBeNull();
+    again.unmount();
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it('ignores the wallet-received pin in a production build', () => {
