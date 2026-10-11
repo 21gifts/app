@@ -74,7 +74,6 @@ export function LoanRepayScreen(): ReactElement {
 
   const reloadAfterPayment = useCallback(async (): Promise<MyLoans | null> => {
     const body = await reload();
-    setFailed(body === null);
     if (body !== null) {
       setLedgerRevision((revision) => revision + 1);
     }

@@ -738,6 +738,13 @@ export const SCREEN_VARIANTS = [
     needle: 'state /wallet loans',
   },
   {
+    route: '/wallet',
+    id: 'loans-open',
+    image: 'wallet-loans-open.png',
+    visual: 'state-wallet-loans-open',
+    needle: 'state /wallet loans-open',
+  },
+  {
     route: '/wallet/payment',
     id: 'default',
     image: 'wallet-payment.png',
@@ -968,6 +975,13 @@ export const SCREEN_VARIANTS = [
     image: 'loans-repay-fee-gap.png',
     visual: 'state-loans-repay-fee-gap',
     needle: 'state /loans/repay fee-gap',
+  },
+  {
+    route: '/loans/repay',
+    id: 'fee-gap-topup',
+    image: 'loans-repay-fee-gap-topup.png',
+    visual: 'state-loans-repay-fee-gap-topup',
+    needle: 'state /loans/repay fee-gap-topup',
   },
   {
     route: '/loans/repay',

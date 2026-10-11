@@ -1438,6 +1438,24 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-loans');
   });
 
+  test('state /wallet loans-open', async ({ page }) => {
+    const waitingLoan = loanWith(loanA, {
+      due: { payableSats: 800, payablePeople: 2, waitingSats: 200, waitingPeople: 1 },
+    });
+    const waitingLedger = ledgerWith(ledgerA, {
+      givers: ledgerA.givers.map((giver) => ({
+        ...giver,
+        canReceive: giver.accountId !== 'acc_diego',
+      })),
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [waitingLoan], { 'loan-a': waitingLedger });
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanA.text })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-open');
+  });
+
   test('screen /wallet/phrase', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -3742,6 +3760,19 @@ test.describe('loans repay screens', () => {
     await expect(page.getByRole('button', { name: /now to/i })).toHaveCount(0);
     await expect(page.getByRole('link', { name: /now to/i })).toHaveCount(0);
     await shotScreen(page, 'state-loans-repay-fee-gap');
+  });
+
+  test('state /loans/repay fee-gap-topup', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-fee-gap-topup',
+      text: /Still missing ₿25 · \$0\.03\./,
+      qr: true,
+    });
+    await expect(page.getByRole('button', { name: /now to/i })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /now to/i })).toHaveCount(0);
+    await shotScreen(page, 'state-loans-repay-fee-gap-topup');
   });
 
   test('state /loans/repay topup', async ({ page }) => {

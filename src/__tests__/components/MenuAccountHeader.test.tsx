@@ -468,6 +468,23 @@ describe('MenuAccountHeader', () => {
     expect(screen.getByText('7')).toBeTruthy();
   });
 
+  it('re-reads loans once whenever the Menu opens', () => {
+    signIn();
+    const reload = vi.fn().mockResolvedValue(null);
+    vi.mocked(useMyLoans).mockReturnValue({ loans: null, reload });
+    const view = renderWithLocale(
+      <MenuAccountHeader onNavigate={vi.fn()} tight={false} open={false} />,
+    );
+    expect(reload).not.toHaveBeenCalled();
+    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    expect(reload).toHaveBeenCalledTimes(1);
+    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    expect(reload).toHaveBeenCalledTimes(1);
+    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open={false} />);
+    view.rerender(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    expect(reload).toHaveBeenCalledTimes(2);
+  });
+
   it('creates no photo URL when the stats read failed', async () => {
     signIn();
     vi.mocked(fetchProfilePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));

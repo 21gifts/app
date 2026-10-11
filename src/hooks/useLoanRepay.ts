@@ -160,6 +160,13 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
   'repay-setup-failed': { ...PIN_BASE, phase: 'setupFailed', balanceSats: null },
   'repay-short': { ...PIN_BASE, phase: 'idle', balanceSats: 600 },
   'repay-fee-gap': { ...PIN_BASE, phase: 'idle', balanceSats: 1_000, missingSats: 25 },
+  'repay-fee-gap-topup': {
+    ...PIN_BASE,
+    phase: 'idle',
+    balanceSats: 1_000,
+    missingSats: 25,
+    topUpOpen: true,
+  },
   'repay-topup': { ...PIN_BASE, phase: 'idle', balanceSats: 600, topUpOpen: true },
   'repay-sending': { ...PIN_BASE, phase: 'sending', balanceSats: 21_000 },
   'repay-partial': {
