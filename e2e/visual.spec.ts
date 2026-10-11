@@ -1862,8 +1862,10 @@ test.describe('screen baselines', () => {
     });
     await fulfillRateDay(page);
     await page.goto('/wallet?visual=balance-ready');
-    await expect(page.getByText("₿21'000")).toBeVisible();
-    await expect(page.getByText('$21.00')).toBeVisible();
+    const balance = page.getByRole('region', { name: 'Balance' });
+    await expect(balance.getByText("₿21'000")).toBeVisible();
+    await expect(balance.getByText('$21.00')).toBeVisible();
+    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('$21.00');
     await shotScreen(page, 'state-wallet-balance-ready');
   });
 
@@ -1952,7 +1954,8 @@ test.describe('screen baselines', () => {
     await fulfillRateDay(page);
     await page.goto('/wallet?visual=history-empty');
     await expect(page.getByText('No payments yet.')).toBeVisible();
-    await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText('$21.00')).toBeVisible();
+    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('$21.00');
     await page.getByText('No payments yet.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-wallet-history-empty');
   });
