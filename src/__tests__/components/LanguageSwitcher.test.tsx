@@ -18,6 +18,41 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh }),
 }));
 
+function listenForCookieWrites(current: string): {
+  set: ReturnType<typeof vi.fn>;
+  restore: () => void;
+} {
+  const set = vi.fn();
+  const previous = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+  Object.defineProperty(document, 'cookie', {
+    configurable: true,
+    get: () => current,
+    set,
+  });
+  return {
+    set,
+    restore() {
+      if (previous !== undefined) {
+        Object.defineProperty(document, 'cookie', previous);
+      }
+    },
+  };
+}
+
+function expectedLocaleCookie(code: string): string {
+  const secure = globalThis.location.protocol === 'https:' ? '; Secure' : '';
+  return `${LOCALE_COOKIE}=${code}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+}
+
+function localeCookieWrites(set: ReturnType<typeof vi.fn>): string[] {
+  return set.mock.calls
+    .map((call) => call[0])
+    .filter(
+      (value): value is string =>
+        typeof value === 'string' && value.startsWith(`${LOCALE_COOKIE}=`),
+    );
+}
+
 function account(id: string, locale: 'en' | 'de'): Account {
   return {
     id,
@@ -511,5 +546,99 @@ describe('LanguageSwitcher', () => {
     expect(useAuthStore.getState().account).toBe(original);
     expect(document.cookie).not.toContain(`${LOCALE_COOKIE}=de`);
     expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it('rewrites the locale cookie when a restored public page disagrees with it', () => {
+    const writes = listenForCookieWrites(`${LOCALE_COOKIE}=es`);
+    window.history.replaceState({}, '', '/de/about');
+    try {
+      renderWithLocale(<LanguageSwitcher tone="light" />);
+      globalThis.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+      expect(writes.set).toHaveBeenCalledWith(expectedLocaleCookie('de'));
+      expect(navigate).not.toHaveBeenCalled();
+      expect(refresh).not.toHaveBeenCalled();
+    } finally {
+      writes.restore();
+      window.history.replaceState({}, '', '/');
+    }
+  });
+
+  it('leaves the locale cookie unchanged when pageshow is not a back-forward restore', () => {
+    const writes = listenForCookieWrites(`${LOCALE_COOKIE}=es`);
+    window.history.replaceState({}, '', '/de/about');
+    try {
+      renderWithLocale(<LanguageSwitcher tone="light" />);
+      globalThis.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: false }));
+      expect(localeCookieWrites(writes.set)).toEqual([]);
+    } finally {
+      writes.restore();
+      window.history.replaceState({}, '', '/');
+    }
+  });
+
+  it('leaves the locale cookie unchanged when a restored page has no language prefix', () => {
+    const writes = listenForCookieWrites(`${LOCALE_COOKIE}=es`);
+    window.history.replaceState({}, '', '/login');
+    try {
+      renderWithLocale(<LanguageSwitcher tone="light" />);
+      globalThis.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+      expect(localeCookieWrites(writes.set)).toEqual([]);
+    } finally {
+      writes.restore();
+      window.history.replaceState({}, '', '/');
+    }
+  });
+
+  it('leaves the locale cookie unchanged when the restored page already matches it', () => {
+    const writes = listenForCookieWrites(`${LOCALE_COOKIE}=de`);
+    window.history.replaceState({}, '', '/de/about');
+    try {
+      renderWithLocale(<LanguageSwitcher tone="light" />);
+      globalThis.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+      expect(localeCookieWrites(writes.set)).toEqual([]);
+    } finally {
+      writes.restore();
+      window.history.replaceState({}, '', '/');
+    }
+  });
+
+  it('writes the restored language when the locale cookie is absent', () => {
+    const writes = listenForCookieWrites('');
+    window.history.replaceState({}, '', '/de/about');
+    try {
+      renderWithLocale(<LanguageSwitcher tone="light" />);
+      globalThis.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+      expect(writes.set).toHaveBeenCalledWith(expectedLocaleCookie('de'));
+    } finally {
+      writes.restore();
+      window.history.replaceState({}, '', '/');
+    }
+  });
+
+  it('ignores a pageshow event that is not a page transition', () => {
+    const writes = listenForCookieWrites(`${LOCALE_COOKIE}=es`);
+    window.history.replaceState({}, '', '/de/about');
+    try {
+      renderWithLocale(<LanguageSwitcher tone="light" />);
+      globalThis.dispatchEvent(new Event('pageshow'));
+      expect(localeCookieWrites(writes.set)).toEqual([]);
+    } finally {
+      writes.restore();
+      window.history.replaceState({}, '', '/');
+    }
+  });
+
+  it('stops rewriting the locale cookie after the switcher unmounts', () => {
+    const writes = listenForCookieWrites(`${LOCALE_COOKIE}=es`);
+    window.history.replaceState({}, '', '/de/about');
+    try {
+      const { unmount } = renderWithLocale(<LanguageSwitcher tone="light" />);
+      unmount();
+      globalThis.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+      expect(localeCookieWrites(writes.set)).toEqual([]);
+    } finally {
+      writes.restore();
+      window.history.replaceState({}, '', '/');
+    }
   });
 });

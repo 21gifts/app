@@ -11,9 +11,13 @@ import {
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { setAccountLocale } from '@/lib/api';
-import { LOCALES, LOCALE_COOKIE, type Locale } from '@/lib/locale';
+import { LOCALES, LOCALE_COOKIE, parseSupportedLocale, type Locale } from '@/lib/locale';
 import { bumpLocaleGeneration, localeGeneration } from '@/lib/preference-generation';
-import { localizedPublicPath, publicPathFromUrl } from '@/lib/public-locale-path';
+import {
+  localizedPublicPath,
+  parseLocalizedPublicPath,
+  publicPathFromUrl,
+} from '@/lib/public-locale-path';
 import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -67,6 +71,38 @@ function localeAt(index: number): Locale {
 }
 
 /**
+ * Writes the locale cookie with the attributes the language switcher uses.
+ *
+ * @param next - Locale to store.
+ */
+function writeLocaleCookie(next: Locale): void {
+  const secure = globalThis.location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+}
+
+/**
+ * Rewrites the locale cookie when the browser restores a public language page
+ * from the back/forward cache. That restore does not run middleware, so the
+ * cookie can still name a language chosen later. Does not navigate or refresh.
+ *
+ * @param event - Browser `pageshow` event.
+ */
+function syncLocaleCookieOnPageShow(event: Event): void {
+  if (!(event instanceof PageTransitionEvent) || !event.persisted) {
+    return;
+  }
+  const localized = parseLocalizedPublicPath(globalThis.location.pathname);
+  if (localized === null) {
+    return;
+  }
+  const match = document.cookie.match(new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`));
+  if (parseSupportedLocale(match?.[1]) === localized.locale) {
+    return;
+  }
+  writeLocaleCookie(localized.locale);
+}
+
+/**
  * Writes the locale cookie, then loads a public language URL or refreshes app pages.
  *
  * @param next - Locale the visitor chose.
@@ -108,8 +144,7 @@ async function persistLocale(
       target = publicPath === null ? null : localizedPublicPath(next, publicPath);
     }
   }
-  const secure = globalThis.location.protocol === 'https:' ? '; Secure' : '';
-  document.cookie = `${LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+  writeLocaleCookie(next);
   if (target !== null) {
     document.documentElement.lang = next;
     navigate(`${target}${publicPath === '/' ? globalThis.location.hash : ''}`);
@@ -140,6 +175,13 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState<Locale>(locale);
+
+  useEffect(() => {
+    globalThis.addEventListener('pageshow', syncLocaleCookieOnPageShow);
+    return () => {
+      globalThis.removeEventListener('pageshow', syncLocaleCookieOnPageShow);
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) {
