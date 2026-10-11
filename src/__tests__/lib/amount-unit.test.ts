@@ -91,6 +91,18 @@ describe('saveAmountUnit', () => {
     expect(storedUnit()).toBe('btc');
   });
 
+  it('starts a new burst from the stored unit once the previous save in the session settled', async () => {
+    useAuthStore.setState({ session: 's12', account: { ...account, amountUnit: 'btc' } });
+    vi.mocked(setAmountUnit).mockResolvedValueOnce({ ...account, amountUnit: 'fiat' });
+    await saveAmountUnit('s12', { ...account, amountUnit: 'btc' }, 'fiat');
+    expect(storedUnit()).toBe('fiat');
+    vi.mocked(setAmountUnit).mockRejectedValueOnce(new Error('down'));
+    const onRollback = vi.fn();
+    await saveAmountUnit('s12', { ...account, amountUnit: 'fiat' }, 'btc', onRollback);
+    expect(onRollback).toHaveBeenCalledWith('fiat');
+    expect(storedUnit()).toBe('fiat');
+  });
+
   it('lets a later choice win over a slower earlier answer', async () => {
     useAuthStore.setState({ session: 's5', account });
     const first = deferred();
