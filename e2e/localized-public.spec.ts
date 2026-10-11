@@ -2,6 +2,12 @@ import { expect, test } from '@playwright/test';
 
 const locales = ['en', 'de', 'es', 'fil'] as const;
 const pages = ['', '/about', '/donate', '/rules'] as const;
+const englishTitles: Record<(typeof pages)[number], string> = {
+  '': 'Help people with Bitcoin | 21.gifts',
+  '/about': 'What 21.gifts stands for | 21.gifts',
+  '/donate': 'Donate Bitcoin and help someone | 21.gifts',
+  '/rules': 'Living room rules | 21.gifts',
+};
 
 test('Function: middleware — URL language overrides a conflicting cookie', async ({
   page,
@@ -114,7 +120,7 @@ test('language switching updates the preview, navigation, and footer in every la
   }
 });
 
-test('all localized public pages serve reciprocal canonical and language links', async ({
+test('Function: generateMetadata — all localized public pages serve reciprocal canonical and language links', async ({
   request,
 }) => {
   for (const path of pages) {
@@ -125,6 +131,7 @@ test('all localized public pages serve reciprocal canonical and language links',
       expect(response.status()).toBe(200);
       const html = await response.text();
       expect(html).toContain(`<html lang="${locale}"`);
+      expect(html).toContain(`<title>${englishTitles[path]}</title>`);
       expect(html).toContain(`rel="canonical" href="https://21.gifts/${locale}${path}"`);
       for (const alternate of locales) {
         expect(html).toContain(
@@ -133,6 +140,14 @@ test('all localized public pages serve reciprocal canonical and language links',
       }
     }
   }
+});
+
+test('unsigned /de/rules wordmark opens the German home', async ({ page }) => {
+  await page.goto('/de/rules');
+  await expect(page.getByRole('link', { name: '21.gifts', exact: true })).toHaveAttribute(
+    'href',
+    '/de',
+  );
 });
 
 test('a German URL keeps English document metadata and a German canonical', async ({ request }) => {

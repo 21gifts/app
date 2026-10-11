@@ -102,11 +102,20 @@ test('Happyland uses the original people photographs with equal gallery frames',
     expect(sources[index] ?? '').toContain(`/happyland/${photo}.webp`);
   }
   const galleryImages = section.locator('figure img');
-  const frames = await galleryImages.evaluateAll((images) =>
-    images.slice(1).map((image) => ({ width: image.clientWidth, height: image.clientHeight })),
-  );
-  expect(frames).toHaveLength(3);
-  expect(new Set(frames.map(({ height }) => height)).size).toBe(1);
+  const expectEqualFourByThree = async (): Promise<void> => {
+    const frames = await galleryImages.evaluateAll((images) =>
+      images.slice(1).map((image) => ({ width: image.clientWidth, height: image.clientHeight })),
+    );
+    expect(frames).toHaveLength(3);
+    expect(new Set(frames.map(({ width }) => width)).size).toBe(1);
+    expect(new Set(frames.map(({ height }) => height)).size).toBe(1);
+    for (const frame of frames) {
+      expect(Math.abs(frame.width / frame.height - 4 / 3)).toBeLessThanOrEqual(0.02);
+    }
+  };
+  await expectEqualFourByThree();
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expectEqualFourByThree();
   await expect(section.locator('article')).toHaveCount(3);
   for (const title of [
     'What others throw away',

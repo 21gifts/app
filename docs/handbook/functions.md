@@ -388,11 +388,11 @@
 
 ## Function: DonatePage
 
-- **Purpose:** Next.js page for `/donate`. Guest-visible donation explainer: read a forum post, write a reaction under it with an amount, then pay from your wallet; CTA to `/welcome`. No address/amount form and no QR.
+- **Purpose:** Next.js page for `/donate`, `/en/donate`, `/de/donate`, `/es/donate`, and `/fil/donate`. Guest-visible donation explainer: read a forum post, write a reaction under it with an amount, then pay from your wallet; CTA to `/welcome`. No address/amount form and no QR.
 - **Inputs:** None. Calls `getRequestLocale()` for localized copy.
 - **Returns / side effects:** `AppShell` with `ProfileChromeLeft` (wordmark `HomeWordmark`: `localizedPublicPath(locale, '/')` when unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right; heading, lead, **Open the forum** `ButtonLink`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. No OnboardingGate.
 - **Used by:**
-  - **Route `/donate`**
+  - **Route `/donate`, `/en/donate`, `/de/donate`, `/es/donate`, and `/fil/donate`**
   - **Home CTA `home.ctaSend`**
   - **LanguageSwitcher on `/donate`**
 
@@ -1102,10 +1102,10 @@
 
 ## Function: generateMetadata
 
-- **Purpose:** Next.js App Router metadata for `/messages/[id]` and `/{npub}`. A message loads through `loadPublicMessageForOg`; a shop loads api `GET /shops/:npub` through the same request-cached loader as `ShopPage`. Both use `AbortSignal.timeout(API_FETCH_TIMEOUT_MS)` (2500 ms) and inherit root metadata on missing, invalid, timed-out, or unusable responses. Both build description, `og:description`, and `twitter:description` with `ogDescriptionText` and the default image alt `DEFAULT_OG_ALT`.
-- **Inputs:** Dynamic route params: `{ id }` for a public message or `{ npub }` for a public shop.
-- **Returns / side effects:** `Promise<Metadata>`. Notes use author/text and note photo rules. Shops use the shop name, `ogDescriptionText(description, name)` (trimmed, `{name} on 21.gifts` when blank, cut above 300 code units with `…`), first photo (or `/og.png`), and relative canonical/open-graph URL `/{npub}` resolved by root `metadataBase`.
-- **Used by:** Routes `/messages/[id]` (`PublicMessagePage`) and `/[npub]` (`ShopPage`).
+- **Purpose:** Next.js App Router metadata for six pages. On `/messages/[id]`, loads the public note via `loadPublicMessageForOg` and maps it through `publicMessageOgMetadata` so crawlers see the author, text, and photo without running JS. Missing or failed fetches inherit the root layout preview. On `/`, `/about`, `/donate`, and `/rules`, each implementation reads the language with `getRequestLocale()` and calls `marketingMetadata` with that locale, an English title, and an English description that stay the same on every language URL. Home title `Help people with Bitcoin | 21.gifts`, description `Read what people share, react to a post and donate Bitcoin directly to the person's wallet. 21.gifts does not hold your donation and keeps no share.` About title `What 21.gifts stands for | 21.gifts`, description `In the forum, people can ask for help and donate Bitcoin to one another. Three convictions stand behind 21.gifts.` Donate title `Donate Bitcoin and help someone | 21.gifts`, description `Sign in and open a post in the forum. Write a reaction under it, add an amount and pay from your wallet. The Bitcoin goes to the person who wrote the post.` Rules title `Living room rules | 21.gifts`, description `You are a guest in a living room with the windows open. Everything you write here is public, and anyone walking past can read along.` A shop on `/{npub}` loads api `GET /shops/:npub` through the same request-cached loader as `ShopPage`, uses `AbortSignal.timeout(API_FETCH_TIMEOUT_MS)` (2500 ms), inherits root metadata on missing, invalid, timed-out, or unusable responses, and builds description, `og:description`, and `twitter:description` with `ogDescriptionText` and the default image alt `DEFAULT_OG_ALT`.
+- **Inputs:** `/messages/[id]` takes `{ params: Promise<{ id: string }> }` from the dynamic route. The four public pages take no route params. Each of them calls `getRequestLocale()` and passes that locale into `marketingMetadata` with path `/`, `/about`, `/donate`, or `/rules`. `/{npub}` takes `{ npub }` from the dynamic route.
+- **Returns / side effects:** `Promise<Metadata>`. `/messages/[id]` returns per-note Open Graph / Twitter tags when the note is found, or `{}` so the site-wide layout preview is inherited, and does not render the visible page. Each public page returns the English title and description above, a canonical URL for the language of the request (`/en`, `/de`, `/es`, `/fil`, and the same prefix on `/about`, `/donate`, and `/rules`), reciprocal `hreflang` links for `en`, `de`, `es`, and `fil` plus `x-default` to the unprefixed path, and Open Graph / Twitter image `/og.png`. Those four do not render the visible page. `/{npub}` returns the shop name, `ogDescriptionText(description, name)` (trimmed, `{name} on 21.gifts` when blank, cut above 300 code units with `…`), the first photo (or `/og.png`), and the relative canonical/open-graph URL `/{npub}` resolved by root `metadataBase`, and does not render the visible page.
+- **Used by:** Route `/messages/[id]` (`PublicMessagePage`). Routes `/`, `/en`, `/de`, `/es`, and `/fil` (`Home`). Routes `/about`, `/en/about`, `/de/about`, `/es/about`, and `/fil/about` (`AboutPage`). Routes `/donate`, `/en/donate`, `/de/donate`, `/es/donate`, and `/fil/donate` (`DonatePage`). Routes `/rules`, `/en/rules`, `/de/rules`, `/es/rules`, and `/fil/rules` (`RulesPage`). Route `/[npub]` (`ShopPage`).
 
 ## Function: loadPublicMessageForOg
 
@@ -1717,17 +1717,17 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: RulesPageChrome
 
-- **Purpose:** Client chrome wrapper for public `/rules`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise mounts `ProfileChromeLeft` with wordmark href `/` plus `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none.
-- **Inputs:** `children` (heading + `RulesDocument` from `RulesPage`). Uses `useHydrateSession` and `useAuthStore` for `session`.
-- **Returns / side effects:** `PageChrome` with the matching top-left / top-right slots around `children`. No network beyond session hydration.
+- **Purpose:** Client chrome wrapper for public `/rules`: when a session is hydrated (`ready && session !== null`), mounts signed-in shell (`ProfileChromeLeft` + `SignedInChrome`); otherwise mounts `ProfileChromeLeft` with `HomeWordmark` (`publicHref` is `homeHref`, the language home) plus `LanguageSwitcher`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. The signed-in wordmark stays `/welcome`.
+- **Inputs:** `children` (heading + `RulesDocument` from `RulesPage`) and `homeHref` (unsigned language home). Uses `useHydrateSession` and `useAuthStore` for `session`.
+- **Returns / side effects:** `PageChrome` with the matching top-left / top-right slots around `children`. The unsigned wordmark opens `homeHref`. No network beyond session hydration.
 - **Used by:** `RulesPage`.
 
 ## Function: RulesPage
 
-- **Purpose:** Next.js page for `/rules` with localized heading and living-room rules document, wrapped in `RulesPageChrome` (signed-in or unsigned chrome depending on hydrated session).
-- **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog.
-- **Returns / side effects:** Heading + `RulesDocument` inside `RulesPageChrome` (chrome is no longer always unsigned Wordmark + Language).
-- **Used by:** Route `/rules`.
+- **Purpose:** Next.js page for `/rules`, `/en/rules`, `/de/rules`, `/es/rules`, and `/fil/rules` with localized heading and living-room rules document, wrapped in `RulesPageChrome` (signed-in or unsigned chrome depending on hydrated session).
+- **Inputs:** None. Calls `getRequestLocale()` for the page title and document catalog, and passes `homeHref={localizedPublicPath(locale, '/')}` to `RulesPageChrome`.
+- **Returns / side effects:** Heading + `RulesDocument` inside `RulesPageChrome` (chrome is no longer always unsigned Wordmark + Language). The unsigned wordmark opens that language home.
+- **Used by:** Routes `/rules`, `/en/rules`, `/de/rules`, `/es/rules`, and `/fil/rules`.
 
 ## Function: ForumLoader
 
@@ -3073,10 +3073,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: AboutPage
 
-- **Purpose:** Next.js page for `/about`. What 21.gifts stands for, Matthew 10:8, 1 John 3:18, and a CTA into `/welcome`.
+- **Purpose:** Next.js page for `/about`, `/en/about`, `/de/about`, `/es/about`, and `/fil/about`. What 21.gifts stands for, Matthew 10:8, 1 John 3:18, and a CTA into `/welcome`.
 - **Inputs:** None. Calls `getRequestLocale()` and reads copy from the catalog via `translate`.
 - **Returns / side effects:** The about screen with a link to `/welcome`.
-- **Used by:** Route `/about`.
+- **Used by:** Routes `/about`, `/en/about`, `/de/about`, `/es/about`, and `/fil/about`.
 
 ## Function: LegalPage
 

@@ -81,6 +81,12 @@ describe('Home', () => {
       alternates: { canonical: '/es' },
       openGraph: { ...preview.openGraph, url: '/es' },
     });
+    vi.mocked(getRequestLocale).mockResolvedValueOnce('fil');
+    expect(await generateMetadata()).toMatchObject({
+      ...preview,
+      alternates: { canonical: '/fil' },
+      openGraph: { ...preview.openGraph, url: '/fil' },
+    });
   });
 
   it('does not say the product is coming soon', async () => {

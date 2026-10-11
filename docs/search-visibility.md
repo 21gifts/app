@@ -13,7 +13,7 @@ People write a reaction with an amount under a post in the living room, and the 
 
 ## Search and advertising follow-up
 
-The four public language URLs now have reciprocal `hreflang` links and sitemap entries. Search Console data is still needed to prioritize queries, markets, pages, and measured outcomes; this local build does not prove indexing or ranking.
+The sixteen public language URLs (four pages in four languages) now have reciprocal `hreflang` links and sitemap entries. Search Console data is still needed to prioritize queries, markets, pages, and measured outcomes; this local build does not prove indexing or ranking.
 
 The localized `/{locale}/donate` page is the public donation entry for paid search: it explains that sign-in and a reaction with an amount under a post precede a payment. No advertising campaign, tracking tag, or budget is configured here. Before any Google Ads launch, choose a target country and check whether the Bitcoin-related ad and advertiser certification rules apply. The current legal page says the site does not run advertising or track visitors; that statement must remain true until the operating practice changes.
 
