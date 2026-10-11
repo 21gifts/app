@@ -298,6 +298,26 @@ describe('MoveFundsSheet', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('stops listening for a payment as soon as the member signs out', () => {
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    expect(onIncomingPayment).toHaveBeenCalledTimes(1);
+    act(() => {
+      useAuthStore.setState({ session: null, account: null });
+    });
+    expect(unsubscribe).toHaveBeenCalled();
+    vi.mocked(logInteraction).mockClear();
+    act(() => {
+      useAuthStore.setState({
+        session: 'tok2',
+        account: { id: 'acc_2', name: 'Bo', username: 'bo' } as Account,
+      });
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(events()).toEqual([]);
+  });
+
   it('closes with X and with Escape, and ignores other keys', () => {
     renderWithLocale(<MoveFundsSheet />);
     openByRequest();

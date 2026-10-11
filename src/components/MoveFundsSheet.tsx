@@ -161,7 +161,7 @@ export function MoveFundsSheet(): ReactElement | null {
   }, [signedIn]);
 
   const step = state?.step ?? null;
-  const listening = step === 'go' || step === 'waiting';
+  const listening = signedIn && (step === 'go' || step === 'waiting');
 
   useEffect(() => {
     if (!listening) {
