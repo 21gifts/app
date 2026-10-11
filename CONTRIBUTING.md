@@ -951,7 +951,8 @@ Privacy rules (this app holds wallets):
   in the browser and on the server. It replaces 12–24-word recovery-phrase
   runs in any letter case; `lnbc…`/`lntb…`/`lnurl…` strings and BOLT12
   `lno1…`/`lni1…` strings; `spark1…`/`sparkrt1…` addresses; Bitcoin base-chain
-  addresses (bech32 `bc1…`/`tb1…`/`bcrt1…`, and mixed-case base58); Lightning
+  addresses (bech32 `bc1…`/`tb1…`/`bcrt1…`, and mixed-case base58 with a
+  digit); Lightning
   and e-mail addresses (`name@host.tld`); hex strings of 64+ digits; raw byte arrays
   (typed arrays such as `Uint8Array`); bearer tokens and `Authorization`
   headers; the stored session token (`21gifts.session`); URL query strings and

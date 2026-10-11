@@ -72,10 +72,11 @@ const REDACTIONS: ReadonlyArray<readonly [RegExp, string]> = [
   [/\b(?:lnbc|lntb|lnurl|lno1|lni1)[0-9a-z]{10,}/gi, FILTERED],
   // Spark addresses.
   [/\bspark(?:rt)?1[0-9a-z]{10,}/gi, FILTERED],
-  // Bitcoin base-chain addresses: bech32 (bc1, tb1, bcrt1) and base58 (mixed case).
+  // Bitcoin base-chain addresses: bech32 (bc1, tb1, bcrt1) and base58 (mixed case
+  // with a digit after the first character, so a long camelCase name stays).
   [/\b(?:bc|tb|bcrt)1[02-9ac-hj-np-z]{8,}\b/gi, FILTERED],
   [
-    /\b[123mn](?=[1-9A-HJ-NP-Za-km-z]*[A-HJ-NP-Z])(?=[1-9A-HJ-NP-Za-km-z]*[a-km-z])[1-9A-HJ-NP-Za-km-z]{25,39}\b/g,
+    /\b[123mn](?=[1-9A-HJ-NP-Za-km-z]*[A-HJ-NP-Z])(?=[1-9A-HJ-NP-Za-km-z]*[a-km-z])(?=[1-9A-HJ-NP-Za-km-z]*[1-9])[1-9A-HJ-NP-Za-km-z]{25,39}\b/g,
     FILTERED,
   ],
   // Lightning addresses (and e-mail addresses): name@host.tld.
