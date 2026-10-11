@@ -68,6 +68,32 @@ describe('useIncomingPayment', () => {
     expect(result.current.payment).toBeNull();
   });
 
+  it('keeps the running timer when the hold time changes, and uses the new one for the next payment', () => {
+    const { result, rerender } = renderHook(({ hold }) => useIncomingPayment(hold), {
+      initialProps: { hold: 1000 },
+    });
+    act(() => {
+      emit(payment('a'));
+    });
+    rerender({ hold: 5000 });
+    expect(onIncomingPayment).toHaveBeenCalledTimes(1);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(result.current.payment).toBeNull();
+    act(() => {
+      emit(payment('b'));
+    });
+    act(() => {
+      vi.advanceTimersByTime(4999);
+    });
+    expect(result.current.payment?.id).toBe('b');
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current.payment).toBeNull();
+  });
+
   it('dismisses early and unsubscribes on unmount', () => {
     const { result, unmount } = renderHook(() => useIncomingPayment(1000));
     act(() => {

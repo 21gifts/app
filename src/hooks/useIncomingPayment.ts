@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { visualPin } from '@/lib/visual-pin';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { onIncomingPayment } from '@/lib/wallet/wallet-service';
@@ -41,6 +41,11 @@ export interface IncomingPaymentState {
  */
 export function useIncomingPayment(holdMs: number): IncomingPaymentState {
   const [payment, setPayment] = useState<WalletPayment | null>(null);
+  // Read when a payment arrives, so a new hold time never drops the running timer.
+  const holdRef = useRef(holdMs);
+  useLayoutEffect(() => {
+    holdRef.current = holdMs;
+  });
 
   useEffect(() => {
     // Read after the commit: during a client navigation the address is the new one only by then.
@@ -54,13 +59,13 @@ export function useIncomingPayment(holdMs: number): IncomingPaymentState {
       setPayment(next);
       timer = setTimeout(() => {
         setPayment(null);
-      }, holdMs);
+      }, holdRef.current);
     });
     return () => {
       unsubscribe();
       clearTimeout(timer);
     };
-  }, [holdMs]);
+  }, []);
 
   const dismiss = useCallback((): void => {
     setPayment(null);
