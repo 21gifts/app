@@ -74,12 +74,14 @@ export interface LoanRepayResult {
   /**
    * One tap: pays every payable bill of `loans` (all loans with due.payableSats \> 0).
    * `limitSats` (optional): pay only the fitting prefix of the ordered bills whose amount
-   * stays ≤ limitSats (the "send ₿C now" link passes the named prefix total). Fees of that
-   * prefix must also fit the current balance, or nothing is sent.
+   * stays ≤ limitSats (the "send ₿C now" link passes the named prefix total). Only that
+   * named prefix is prepared. The whole prefix is sent, or nothing: an `insufficient`
+   * prepare in the prefix, or a total that does not fit the current balance, sends nothing.
    *
    * @param loans - Current loans body in list order.
-   * @param limitSats - Optional amount-only budget for a leading subset; fees must also
-   *   fit the balance or nothing is sent.
+   * @param limitSats - Optional amount-only budget for a leading subset; only that named
+   *   prefix is prepared. An insufficient prepare in the prefix, or fees that do not fit
+   *   the balance, send nothing.
    */
   pay: (loans: readonly MyLoan[], limitSats?: number) => void;
   /** True while a `repay-*` visual pin, including its fixed sent totals, applies. */
@@ -390,7 +392,7 @@ export function useLoanRepay(options: {
         }
 
         const ordered = orderBills(perLoan);
-        const bills = ordered.filter((bill) => !reservedShares.has(shareKey(bill)));
+        let bills = ordered.filter((bill) => !reservedShares.has(shareKey(bill)));
         const skipped = bills.length !== ordered.length;
         const skippedByMessage = new Map<string, number>();
         for (const bill of ordered) {
@@ -424,6 +426,10 @@ export function useLoanRepay(options: {
           for (const row of fresh.loans) {
             beforeByMessage.set(row.messageId, row.repaidSats);
           }
+        }
+
+        if (limitSats !== undefined) {
+          bills = fittingPrefix(bills, (bill) => bill.amountSats, limitSats);
         }
 
         const prepared: PreparedBill[] = [];
@@ -476,25 +482,10 @@ export function useLoanRepay(options: {
           bills.reduce((sum, bill) => sum + bill.amountSats, 0) +
           prepared.reduce((sum, item) => sum + item.feeSats, 0) +
           insufficientFeeSats;
-        const kept =
-          limitSats === undefined
-            ? prepared
-            : fittingPrefix(prepared, (item) => item.bill.amountSats, limitSats);
-        if (kept.length === 0) {
+        const kept = prepared;
+        if (kept.length === 0 || insufficient || knownTotal > currentBalance) {
           missingBalance.current = useWalletStore.getState().balanceSats;
           setMissingSats(Math.max(1, allTotal - currentBalance));
-          setLivePhase('idle');
-          return;
-        }
-        const keptCost = kept.reduce((sum, item) => sum + item.bill.amountSats + item.feeSats, 0);
-        if (
-          (limitSats === undefined && (insufficient || knownTotal > currentBalance)) ||
-          (limitSats !== undefined && keptCost > currentBalance)
-        ) {
-          missingBalance.current = useWalletStore.getState().balanceSats;
-          setMissingSats(
-            Math.max(1, (limitSats === undefined ? allTotal : keptCost) - currentBalance),
-          );
           setLivePhase('idle');
           return;
         }
