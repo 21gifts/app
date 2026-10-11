@@ -57,6 +57,8 @@ const account: Account = {
   missing: [],
 };
 
+const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+
 const ADD_HINT =
   'This creates a recovery phrase on this device. Your existing login passkey stays.';
 
@@ -70,6 +72,7 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.useRealTimers();
   vi.mocked(saveAmountUnit).mockClear();
+  HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
   window.history.replaceState(null, '', '/');
   useAuthStore.setState({ session: null, account: null });
 });
@@ -136,7 +139,7 @@ describe('SettingsScreen', () => {
     expect(within(wallet).getByText('21.gifts address')).toBeTruthy();
     expect(within(wallet).getByText('ada@21.gifts')).toBeTruthy();
     const copy = screen.getByRole('button', { name: 'Copy 21.gifts address' });
-    expect(screen.queryByText('Copy')).toBeNull();
+    expect(screen.queryByText('Copy 21.gifts address')).toBeNull();
     await act(async () => {
       fireEvent.click(copy);
       await Promise.resolve();
@@ -239,7 +242,7 @@ describe('SettingsScreen', () => {
 
   it('scrolls the part named by the address hash into view', () => {
     const scrollIntoView = vi.fn();
-    Element.prototype.scrollIntoView = scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
     window.history.replaceState(null, '', '/settings#notifications');
     renderWithLocale(<SettingsScreen />);
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
@@ -248,13 +251,17 @@ describe('SettingsScreen', () => {
     );
   });
 
-  it('scrolls nothing without a hash or for an unknown one', () => {
+  it('scrolls nothing without a hash, for an unknown one, or for a malformed one', () => {
     const scrollIntoView = vi.fn();
-    Element.prototype.scrollIntoView = scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
     renderWithLocale(<SettingsScreen />);
     cleanup();
     window.history.replaceState(null, '', '/settings#nowhere');
     renderWithLocale(<SettingsScreen />);
+    cleanup();
+    window.history.replaceState(null, '', '/settings#%');
+    renderWithLocale(<SettingsScreen />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeTruthy();
     expect(scrollIntoView).not.toHaveBeenCalled();
   });
 });

@@ -171,6 +171,7 @@ describe('NotificationsScreen', () => {
     ['loading', null, false, true],
     ['error', null, true, false],
     ['empty', [], false, false],
+    ['listing', [UNREAD, READ], false, false],
   ] as const)(
     'links Notification settings to the Settings notifications section while %s',
     (_label, notifications, error, loading) => {

@@ -188,7 +188,8 @@ export function SettingsScreen(): ReactElement | null {
     if (!ready) {
       return;
     }
-    const id = decodeURIComponent(window.location.hash.slice(1));
+    // The section ids are plain words, so the raw hash is the id; a stray `%` cannot throw.
+    const id = window.location.hash.slice(1);
     if (id === '') {
       return;
     }
