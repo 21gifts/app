@@ -124,6 +124,24 @@ describe('reportPaymentFailure', () => {
     );
   });
 
+  it('keeps only the type of a rejection that cannot be printed, and still reports', () => {
+    const unprintable = Object.create(null) as object;
+    expect(() => {
+      reportPaymentFailure({ ...SEND_FAILURE, reason: 'sdk_error', error: unprintable }, 'send');
+    }).not.toThrow();
+    expect(captureMessage).toHaveBeenCalledWith(
+      'Payment failed',
+      expect.objectContaining({
+        extra: expect.objectContaining({
+          errorName: 'object',
+          errorCode: null,
+          errorMessage: null,
+        }),
+      }),
+    );
+    expect(logInteraction).toHaveBeenCalledTimes(1);
+  });
+
   it.each<PayReason>(['unlock', 'insufficient', 'below_minimum'])(
     'records %s as a member event only, never to error reporting',
     (reason) => {

@@ -746,7 +746,7 @@ export function useWalletSend(): UseWalletSendResult {
    * that ends the payment (not one that runs `fallback`) is reported with
    * {@link reportPaymentFailure} under `flow` (default `send`) and
    * `amountSats`; a prepared amount that is not `expectedSats` as
-   * `amount_mismatch`, and a handler that threw as `app_error`.
+   * `amount_mismatch`, and a handler of the current run that threw as `app_error`.
    */
   const prepare = useCallback(
     function prepareSend(
@@ -849,6 +849,10 @@ export function useWalletSend(): UseWalletSendResult {
           });
         })
         .catch((error: unknown) => {
+          // A run that a Cancel or a new run already ended is not reported, like every other ending.
+          if (run !== generation.current) {
+            return;
+          }
           reportPaymentFailure(
             {
               stage: 'prepare',

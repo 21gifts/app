@@ -89,7 +89,8 @@ const MEMBER_STATE: ReadonlySet<PayReason> = new Set(['unlock', 'insufficient', 
  * message starts with its error kind (`Network error: …`); that kind is the
  * code. The api relay's error carries its own `reason`. The message is kept
  * whole: cutting it before the scrubber runs could split a recovery phrase
- * below the length the scrubber recognises.
+ * below the length the scrubber recognises. A rejection that cannot be
+ * printed (a throwing `toString` or getter) keeps only its type.
  *
  * @param error - Rejection, or `undefined`.
  * @returns The three fields, each `null` when absent.
@@ -102,8 +103,15 @@ function errorFields(error: unknown): {
   if (error === undefined) {
     return { errorName: null, errorCode: null, errorMessage: null };
   }
-  const message = error instanceof Error ? error.message : String(error);
-  const reason = (error as { reason?: unknown } | null)?.reason;
+  let message: string;
+  let reason: unknown;
+  try {
+    message = error instanceof Error ? error.message : String(error);
+    reason = (error as { reason?: unknown } | null)?.reason;
+  } catch {
+    // A rejection that cannot be printed never breaks the report or the screen.
+    return { errorName: typeof error, errorCode: null, errorMessage: null };
+  }
   const kind = /^([A-Za-z][A-Za-z ]{0,40}?) error:/.exec(message)?.[1];
   let errorCode: string | null = null;
   if (typeof reason === 'string') {
