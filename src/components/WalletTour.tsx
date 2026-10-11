@@ -70,7 +70,8 @@ const OTHER_MODAL =
  * The element a step points at, when it is on screen.
  *
  * @param step - The step.
- * @returns The element, or `null` when it is missing or has no box.
+ * @returns The element, or `null` when it is missing, has no box, or lies
+ *   wholly outside the window.
  */
 function targetOf(step: TourStep): Element | null {
   const element = document.querySelector(step.target);
@@ -78,7 +79,14 @@ function targetOf(step: TourStep): Element | null {
     return null;
   }
   const box = element.getBoundingClientRect();
-  return box.width > 0 && box.height > 0 ? element : null;
+  const visible =
+    box.width > 0 &&
+    box.height > 0 &&
+    box.right > 0 &&
+    box.bottom > 0 &&
+    box.left < window.innerWidth &&
+    box.top < window.innerHeight;
+  return visible ? element : null;
 }
 
 /** Props for {@link WalletTour}. */
@@ -252,7 +260,7 @@ export function WalletTour({ blocked }: WalletTourProps): ReactElement | null {
           top: ringTop,
           bottom: ringBottom,
           left: ringLeft,
-          width: ringRight - ringLeft,
+          width: Math.max(0, ringRight - ringLeft),
         }}
       />
       <div
