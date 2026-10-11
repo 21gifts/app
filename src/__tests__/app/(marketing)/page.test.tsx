@@ -171,4 +171,14 @@ describe('Home', () => {
       '#faq',
     );
   });
+
+  it('gives all eight FAQ disclosures the same name', async () => {
+    renderWithLocale(await Home());
+    const faq = document.getElementById('faq');
+    expect(faq).toBeTruthy();
+    const names = [...(faq as HTMLElement).querySelectorAll('details')].map((detail) =>
+      detail.getAttribute('name'),
+    );
+    expect(names).toEqual(Array.from({ length: 8 }, () => 'home-faq'));
+  });
 });

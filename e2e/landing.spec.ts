@@ -21,6 +21,14 @@ test('landing shows the 21.gifts wordmark', async ({ page }) => {
   await expect(page.getByRole('spinbutton')).toHaveCount(0);
 });
 
+test('opening a second FAQ question closes the first', async ({ page }) => {
+  await page.goto('/');
+  const questions = page.locator('#faq details');
+  await questions.nth(0).locator('summary').click();
+  await questions.nth(1).locator('summary').click();
+  await expect(questions.nth(0)).toHaveJSProperty('open', false);
+});
+
 test('landing shows the project donate address', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: '21.gifts also needs support' })).toBeVisible();

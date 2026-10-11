@@ -451,7 +451,7 @@ export default async function Home(): Promise<ReactElement> {
           </div>
           <div className="divide-y divide-paper/15 border-t border-paper/15">
             {faq.map(([question, answer]) => (
-              <details key={question} className="group py-5">
+              <details key={question} name="home-faq" className="group py-5">
                 <summary className="min-h-11 cursor-pointer pr-4 text-base font-medium marker:text-accent hover:text-accent">
                   {t(question)}
                 </summary>
