@@ -80,8 +80,8 @@ async function persistLocale(
   refresh: () => void,
   navigate: (path: string) => void,
 ): Promise<void> {
-  const publicPath = publicPathFromUrl(globalThis.location.pathname);
-  const target = publicPath === null ? null : localizedPublicPath(next, publicPath);
+  let publicPath = publicPathFromUrl(globalThis.location.pathname);
+  let target = publicPath === null ? null : localizedPublicPath(next, publicPath);
   if (next === current && (target === null || target === globalThis.location.pathname)) {
     return;
   }
@@ -104,6 +104,8 @@ async function persistLocale(
       } catch {
         return;
       }
+      publicPath = publicPathFromUrl(globalThis.location.pathname);
+      target = publicPath === null ? null : localizedPublicPath(next, publicPath);
     }
   }
   const secure = globalThis.location.protocol === 'https:' ? '; Secure' : '';

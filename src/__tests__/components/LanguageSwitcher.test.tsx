@@ -420,6 +420,37 @@ describe('LanguageSwitcher', () => {
     expect(useAuthStore.getState().account?.id).toBe(original.id);
   });
 
+  it('refreshes the app page left during a signed-in locale save', async () => {
+    vi.mocked(setAccountLocale).mockReset();
+    const original = account('language_switcher_left', 'en');
+    const updated = account('language_switcher_left', 'de');
+    useAuthStore.setState({ account: original });
+    saveSession('tok');
+    let resolveRequest!: (value: Account) => void;
+    const request = new Promise<Account>((resolve) => {
+      resolveRequest = resolve;
+    });
+    vi.mocked(setAccountLocale).mockReturnValue(request);
+    window.history.replaceState({}, '', '/about');
+    try {
+      renderWithLocale(<LanguageSwitcher tone="light" />);
+      fireEvent.click(screen.getByLabelText('Language'));
+      fireEvent.click(screen.getByRole('option', { name: 'Deutsch' }));
+      expect(navigate).not.toHaveBeenCalled();
+      expect(refresh).not.toHaveBeenCalled();
+      window.history.replaceState({}, '', '/welcome');
+      await act(async () => {
+        resolveRequest(updated);
+        await request;
+      });
+      expect(navigate).not.toHaveBeenCalled();
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(document.cookie).toContain(`${LOCALE_COOKIE}=de`);
+    } finally {
+      window.history.replaceState({}, '', '/');
+    }
+  });
+
   it('keeps signed-in locale state unchanged when the account update rejects', async () => {
     vi.mocked(setAccountLocale).mockReset();
     const original = account('language_switcher_reject', 'en');
