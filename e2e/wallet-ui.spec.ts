@@ -191,6 +191,10 @@ test('Function: requestMoveFunds — a move link opened signed out opens the flo
   page,
 }) => {
   await page.goto('/welcome?move=1');
+  // The request waits in this tab until a member is signed in.
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem('21gifts.moveFunds')))
+    .toBe('link');
   await expect(page.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toHaveCount(0);
   await signIn(page);
   await page.goto('/welcome');
