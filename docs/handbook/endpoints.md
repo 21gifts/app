@@ -743,7 +743,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api DELETE `/me/push-subscriptions` (remove a browser push subscription by `{ endpoint }`).
 - **Errors:** Upstream 400, 401, 404, 503 `{ error: "Push is not configured" }`, or 502 if the api is unreachable.
-- **Used by:** `deletePushSubscription` via `disablePush` on `/profile`.
+- **Used by:** `deletePushSubscription` via `disablePush` on `/settings` and from `LogoutButton` (Menu and the Settings Account section).
 - **Auth:** Bearer.
 
 ## Endpoint: GET /trust/graph

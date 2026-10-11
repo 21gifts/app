@@ -1245,9 +1245,9 @@
     "fil": "Hiling, hakbang 3 sa 4, na may Need help with a train ticket na nakasulat sa patlang ng mensahe. Magpatuloy ay nananatiling gumagana."
   },
   "/pos:need-username": {
-    "de": "Die Einrichtung ist abgeschlossen und der Benutzername ist leer. Link Zuerst einen Benutzernamen setzen. Kein Adress- und kein Betragsformular. Darunter Verlauf mit Noch keine Zahlungen.",
-    "es": "La configuración ha terminado y el nombre de usuario está vacío. Enlace Primero elige un nombre de usuario. Sin formulario de dirección ni de importe. Debajo, Historial con Todavía no hay pagos.",
-    "fil": "Tapos na ang paghahanda at walang laman ang username. Kawing Maglagay muna ng username. Walang pormularyo ng address at walang pormularyo ng halaga. Sa ilalim nito, Kasaysayan na may Wala pang bayad."
+    "de": "Die Einrichtung ist abgeschlossen und der Benutzername ist leer. Link Zuerst einen Benutzernamen setzen. zur Adresszeile von /settings (/settings#address). Kein Adress- und kein Betragsformular. Darunter Verlauf mit Noch keine Zahlungen.",
+    "es": "La configuración ha terminado y el nombre de usuario está vacío. Enlace Primero elige un nombre de usuario. a la fila de dirección de /settings (/settings#address). Sin formulario de dirección ni de importe. Debajo, Historial con Todavía no hay pagos.",
+    "fil": "Tapos na ang paghahanda at walang laman ang username. Kawing Maglagay muna ng username. papunta sa hilera ng address ng /settings (/settings#address). Walang pormularyo ng address at walang pormularyo ng halaga. Sa ilalim nito, Kasaysayan na may Wala pang bayad."
   },
   "/messages:thread-preparing-photo": {
     "de": "Offener Direkt-Thread. JPEG-Anhang unterwegs; Senden deaktiviert; noch kein Ausgewähltes Foto. Betragsfeld sichtbar.",
