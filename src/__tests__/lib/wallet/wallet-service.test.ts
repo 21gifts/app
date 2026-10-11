@@ -1983,6 +1983,13 @@ describe('onIncomingPayment', () => {
     };
   }
 
+  /** Lets the balance read behind an announcement settle. */
+  async function settle(): Promise<void> {
+    for (let i = 0; i < 10; i += 1) {
+      await Promise.resolve();
+    }
+  }
+
   async function connected(known: WalletPayment[] = []): Promise<{
     emit: (event: { type: string; payment?: WalletPayment }) => void;
     connection: ReturnType<typeof createFakeSdk>['connection'];
@@ -2015,11 +2022,49 @@ describe('onIncomingPayment', () => {
     const reads = connection.getInfo.mock.calls.length;
     emit({ type: 'paymentSucceeded', payment: payment('new') });
     emit({ type: 'paymentSucceeded', payment: payment('new') });
-    expect(seen).toEqual(['new']);
+    await vi.waitFor(() => expect(seen).toEqual(['new']));
     expect(connection.getInfo.mock.calls.length).toBe(reads + 1);
     unsubscribe();
     emit({ type: 'paymentSucceeded', payment: payment('later') });
+    await settle();
     expect(seen).toEqual(['new']);
+  });
+
+  it('tells the listeners only once the balance was read again, and not when the wallet closed meanwhile', async () => {
+    const { emit, connection } = await connected();
+    const seen: Array<[string, number | null]> = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push([p.id, useWalletStore.getState().balanceSats]);
+    });
+    let answer!: () => void;
+    connection.getInfo.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          answer = () => {
+            resolve({ balanceSats: 21_500, identityPubkey: IDENTITY });
+          };
+        }),
+    );
+    emit({ type: 'paymentSucceeded', payment: payment('new') });
+    await settle();
+    expect(seen).toEqual([]);
+    answer();
+    await vi.waitFor(() => expect(seen).toEqual([['new', 21_500]]));
+    connection.getInfo.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          answer = () => {
+            resolve({ balanceSats: 22_000, identityPubkey: IDENTITY });
+          };
+        }),
+    );
+    emit({ type: 'paymentSucceeded', payment: payment('closing') });
+    await settle();
+    await disconnectWallet();
+    answer();
+    await settle();
+    expect(seen).toEqual([['new', 21_500]]);
+    unsubscribe();
   });
 
   it('never announces a payment the wallet held at connect, a send, a pending one, or another event', async () => {
@@ -2038,9 +2083,10 @@ describe('onIncomingPayment', () => {
     emit({ type: 'paymentPending', payment: payment('pending') });
     emit({ type: 'paymentSucceeded' });
     emit({ type: 'claimedDeposits' });
+    await settle();
     expect(seen).toEqual([]);
     emit({ type: 'paymentSucceeded', payment: payment('pending-old') });
-    expect(seen).toEqual(['pending-old']);
+    await vi.waitFor(() => expect(seen).toEqual(['pending-old']));
     unsubscribe();
   });
 
@@ -2071,7 +2117,7 @@ describe('onIncomingPayment', () => {
     resolveList([payment('listed')]);
     await vi.waitFor(() => expect(seen).toEqual(['early']));
     emit({ type: 'paymentSucceeded', payment: payment('after') });
-    expect(seen).toEqual(['early', 'after']);
+    await vi.waitFor(() => expect(seen).toEqual(['early', 'after']));
     unsubscribe();
   });
 
@@ -2158,7 +2204,7 @@ describe('onIncomingPayment', () => {
         payment: payment('fresh'),
       });
     }
-    expect(seen).toEqual(['fresh']);
+    await vi.waitFor(() => expect(seen).toEqual(['fresh']));
     unsubscribe();
   });
 });

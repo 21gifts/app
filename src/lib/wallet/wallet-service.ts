@@ -201,24 +201,31 @@ async function rememberKnownPayments(run: number, conn: WalletConnection): Promi
   heldPayments = [];
   if (read) {
     for (const payment of held) {
-      announcePayment(known, payment);
+      void announcePayment(known, payment);
     }
   }
 }
 
 /**
  * Announces a newly received payment once per id: adds it to the known ids,
- * reads the balance again, and tells every {@link onIncomingPayment} listener.
+ * reads the balance again, and once that read is done tells every
+ * {@link onIncomingPayment} listener, so a listener that shows the balance
+ * never shows the one from before the payment. Nothing is told when the
+ * connection ended meanwhile (sign-out, or a failed read that drops it).
  *
  * @param known - The known payment ids of the current connection.
  * @param payment - The received, completed payment.
+ * @returns Resolves after the listeners were told, or when the connection ended.
  */
-function announcePayment(known: Set<string>, payment: WalletPayment): void {
+async function announcePayment(known: Set<string>, payment: WalletPayment): Promise<void> {
   if (known.has(payment.id)) {
     return;
   }
   known.add(payment.id);
-  void refreshWallet();
+  await refreshWallet();
+  if (knownPaymentIds !== known) {
+    return;
+  }
   for (const listener of incomingListeners) {
     listener(payment);
   }
@@ -251,7 +258,7 @@ function onWalletEvent(event: WalletSdkEvent): void {
     heldPayments.push(payment);
     return;
   }
-  announcePayment(knownPaymentIds, payment);
+  void announcePayment(knownPaymentIds, payment);
 }
 
 /**
