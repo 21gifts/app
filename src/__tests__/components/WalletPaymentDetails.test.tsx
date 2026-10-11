@@ -162,14 +162,23 @@ describe('WalletPaymentDetails', () => {
 
   it('shows Free for a fee-less send and a received payment note', () => {
     showPayment(fixture(SPARK_SEND));
-    expect(screen.getByText('Gift to @alice')).toBeTruthy();
+    expect(screen.getByText('Gift')).toBeTruthy();
     expect(row('Type').textContent).toBe('Wallet transfer');
     expect(row('Fee').textContent).toBe('Free');
     expect(screen.queryByText('Total', { selector: 'dt' })).toBeNull();
+    expect(row('Payment hash').textContent).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/zap:/);
     cleanup();
     showPayment(fixture(NOTE_RECEIVE));
     expect(screen.getByText('Happy birthday!')).toBeTruthy();
     expect(screen.getByText('Received')).toBeTruthy();
+  });
+
+  it('shows a shop payment without a payment hash or the shop memo', () => {
+    showPayment(fixture('0c892d4e'));
+    expect(screen.getByText('Shop payment')).toBeTruthy();
+    expect(screen.queryByText('Payment hash', { selector: 'dt' })).toBeNull();
+    expect(document.body.textContent).not.toMatch(/pos:/);
   });
 
   it('marks a pending send with its hint', () => {

@@ -303,7 +303,9 @@ test.describe('wallet history', () => {
     await expect(rows.nth(0)).toContainText("+₿2'100");
     await expect(rows.nth(0)).toContainText('$2.10');
     await expect(rows.nth(0)).toContainText('Great photo!');
-    await expect(rows.nth(1)).toContainText('Gift to @alice');
+    await expect(rows.nth(1)).toContainText('Gift');
+    await expect(rows.nth(1)).not.toContainText('Gift to @alice');
+    await expect(rows.nth(1)).not.toContainText('zap:');
     await expect(rows.nth(1)).toContainText("−₿5'000");
     await expect(rows.nth(3)).toContainText('bob@example.com');
     await expect(rows.nth(3)).toContainText('Thanks for dinner');
@@ -403,7 +405,8 @@ test.describe('wallet history', () => {
     await openWallet(page, '?visual=history-rows');
     const rows = page.getByRole('region', { name: 'Payments' }).getByRole('link');
     await expect(rows.first()).toContainText('Gift on your post');
-    await expect(rows.nth(9)).toContainText('Posting fee');
+    await expect(rows.nth(9)).toContainText('Shop payment');
+    await expect(rows.nth(9)).not.toContainText('Posting fee');
   });
 
   test('Function: paymentMessage — the rows pin shows the message under each row', async ({

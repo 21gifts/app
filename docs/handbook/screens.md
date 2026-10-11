@@ -320,7 +320,7 @@ Pinned fixture (`?visual=history-empty`, Playwright builds only). Ready balance,
 
 ### Variant: history-rows
 
-Pinned fixture (`?visual=history-rows`, Playwright builds only; ten synthetic payments that net to the ₿21'000 balance). **Payments** lists them newest first, each row a link with a chevron to its payment screen: **Gift on your post** `+₿2'100` with **Great photo!**, **Gift to @alice** `−₿5'000`, **Coffee & croissant** `+₿12'500`, **bob@example.com** `−₿10'000` with **Thanks for dinner**, **Received** `+₿21'000` with **Happy birthday!**, **Sticker pack #42** marked **Pending**, **Hardware wallet** struck through and marked **Failed**, **On-chain deposit**, **On-chain withdrawal**, and **Posting fee** `−₿1`. Each row shows its date and time and the default fiat. The shot is scrolled to the end of the list, so **Receive** and **Send** are slim (36 px); the other `/wallet` home shots, at the top, show them full size.
+Pinned fixture (`?visual=history-rows`, Playwright builds only; ten synthetic payments that net to the ₿21'000 balance). **Payments** lists them newest first, each row a link with a chevron to its payment screen: **Gift on your post** `+₿2'100` with **Great photo!**, **Gift** `−₿5'000`, **Coffee & croissant** `+₿12'500`, **bob@example.com** `−₿10'000` with **Thanks for dinner**, **Received** `+₿21'000` with **Happy birthday!**, **Sticker pack #42** marked **Pending**, **Hardware wallet** struck through and marked **Failed**, **On-chain deposit**, **On-chain withdrawal**, and **Shop payment** `−₿1`. Each row shows its date and time and the default fiat. The shot is scrolled to the end of the list, so **Receive** and **Send** are slim (36 px); the other `/wallet` home shots, at the top, show them full size.
 ![21.gifts wallet history rows](images/wallet-history-rows.png)
 
 ### Variant: history-error
@@ -626,9 +626,15 @@ A payment to the Lightning address **bob@example.com** with the comment **Thanks
 
 ### Variant: spark-send
 
-A wallet transfer of **₿5'000** with the description **Gift to @alice**: **Type** Wallet transfer, **Fee** Free, and no **Total** row.
+A sent gift of **₿5'000** titled **Gift**, **Type** Wallet transfer, **Fee** Free, and no **Total** row. Under **Details**, the payment request, the payment hash taken from the gift memo, and the payment id. The memo itself is not shown.
 
 ![21.gifts wallet payment wallet transfer](images/wallet-payment-spark-send.png)
+
+### Variant: shop
+
+A shop payment of **₿1** titled **Shop payment**, **Type** Wallet transfer, **Fee** Free, and no **Total** row and no payment hash. Under **Details**, the payment request and the payment id. The memo itself is not shown.
+
+![21.gifts wallet payment shop](images/wallet-payment-shop.png)
 
 ### Variant: pending
 

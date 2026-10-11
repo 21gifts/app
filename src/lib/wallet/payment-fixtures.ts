@@ -47,7 +47,7 @@ export const WALLET_PAYMENT_FIXTURES: readonly Payment[] = [
     details: {
       type: 'spark',
       invoiceDetails: {
-        description: 'Gift to @alice',
+        description: 'zap:79d7ebca70b18b8a13cfb40e6c6055be64f9cacfcd79c706b29e80e1707b00dc',
         invoice:
           'spark1gf5h90jgvam58xnlph0vmlrmtfcplprsneuw55vw47fucev5xw0yy6tjheyxwa6rnflsmhkdl3a45uqls3cfu7822x82ly7vvk2r88jzd9etujr8wape5lcdmmxlc766wq0cguy70r49rr40j0xxt9pnnch2rxx6',
       },
@@ -201,7 +201,7 @@ export const WALLET_PAYMENT_FIXTURES: readonly Payment[] = [
     details: {
       type: 'spark',
       invoiceDetails: {
-        description: 'Posting fee',
+        description: 'pos:01a12748-till',
         invoice:
           'spark17zr6df6dpngv4hdddaxh59ss4kh57drfldvnpxh58axjdj8esv30ppax5axse5x2mkkk7nt6zcg2mt60x35lkkfsnt6r7nfxerucxghss7n2wngv6r9dmtt0f4apvy9d4a8ng60mtycf4aplf5nv37vrygfyzfdv',
       },
