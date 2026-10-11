@@ -94,7 +94,8 @@ import {
   throwIfWalletAnswer,
   postMessageInvoice,
   getRepayment,
-  postRepaymentInvoice,
+  getMyLoans,
+  postRepaymentDue,
   postMessageVideo,
   postNotificationLevel,
   postHeartNotifications,
@@ -2085,46 +2086,171 @@ describe('wallet answers', () => {
 describe('getRepayment', () => {
   it('returns the public ledger and null when it is missing or unusable', async () => {
     stubFetch({ ok: true, status: 200, body: LEDGER });
-    await expect(getRepayment('m1')).resolves.toEqual(LEDGER);
+    await expect(getRepayment('m1')).resolves.toEqual({
+      ...LEDGER,
+      givers: LEDGER.givers.map((giver) => ({ ...giver, canReceive: true })),
+      repayments: LEDGER.repayments.map((row) => ({ ...row, dueSats: null })),
+    });
     stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
     await expect(getRepayment('m1')).resolves.toBeNull();
     stubFetch({ ok: true, status: 200, body: { currency: 'nope' } });
     await expect(getRepayment('m1')).resolves.toBeNull();
   });
+
+  it('keeps explicit receiver availability and live due sats', async () => {
+    const body = {
+      ...LEDGER,
+      givers: LEDGER.givers.map((giver) => ({ ...giver, canReceive: false })),
+      repayments: LEDGER.repayments.map((row) => ({ ...row, sats: null, dueSats: 20 })),
+    };
+    stubFetch({ ok: true, status: 200, body });
+    await expect(getRepayment('m1')).resolves.toEqual(body);
+  });
 });
 
-describe('postRepaymentInvoice', () => {
-  it('returns the giver invoice', async () => {
-    stubFetch({
-      ok: true,
-      status: 200,
-      body: { pr: 'lnbc21n1repay', amountSats: 21 },
-    });
-    await expect(postRepaymentInvoice('sess', 'm1')).resolves.toEqual({
-      pr: 'lnbc21n1repay',
-      amountSats: 21,
+const MY_LOAN = {
+  messageId: 'm1',
+  text: 'Train ticket',
+  createdAt: '2026-10-01T12:00:00.000Z',
+  goalSats: 30_000,
+  sats: 18_000,
+  goalCurrency: 'BTC',
+  goalAmount: '30000',
+  goalAmountUsd: null,
+  goalAmountChf: null,
+  goalAmountEur: null,
+  goalAmountPhp: null,
+  amountUsd: null,
+  amountChf: null,
+  amountEur: null,
+  amountPhp: null,
+  termDays: 30,
+  fundedAt: '2026-10-02T12:00:00.000Z',
+  daysDue: 12,
+  daysPaid: 11,
+  repaidSats: 11_000,
+  totalSats: 30_000,
+  due: {
+    payableSats: 800,
+    payablePeople: 2,
+    waitingSats: 200,
+    waitingPeople: 1,
+    behindDays: 0,
+    payableAmount: null,
+    waitingAmount: null,
+    lastPayment: false,
+  },
+  next: { dueOn: '2026-10-11', sats: 1_000, amount: null },
+};
+
+describe('getMyLoans', () => {
+  it('returns a validated body with bearer and the same-origin path', async () => {
+    const body = { sundayRest: false, loans: [MY_LOAN] };
+    const fetchMock = stubFetch({ ok: true, status: 200, body });
+    await expect(getMyLoans('sess')).resolves.toEqual(body);
+    expect(fetchMock).toHaveBeenCalledWith('/me/loans', {
+      headers: { Authorization: 'Bearer sess' },
     });
   });
 
-  it('surfaces a 400 and a missing-requirements 409', async () => {
-    stubFetch({ ok: false, status: 400, body: { error: 'Nothing is due' } });
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow('Nothing is due');
+  it('uses one stable error for non-ok, invalid, and rejected reads', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(getMyLoans('sess')).rejects.toThrow('Could not load your loans');
+    stubFetch({ ok: true, status: 200, body: { sundayRest: false, loans: [{}] } });
+    await expect(getMyLoans('sess')).rejects.toThrow('Could not load your loans');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    await expect(getMyLoans('sess')).rejects.toThrow('Could not load your loans');
+  });
+});
+
+describe('postRepaymentDue', () => {
+  it('returns bills, defaults sparkInvoice, and encodes the note id', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: {
+        bills: [
+          {
+            dayIndex: 3,
+            recipientAccountId: 'acc_1',
+            name: 'Bruno',
+            username: 'bruno',
+            amountSats: 500,
+            amount: null,
+            pr: 'lnbc500n1repay',
+          },
+        ],
+        waiting: [
+          {
+            dayIndex: 3,
+            recipientAccountId: 'acc_2',
+            name: 'Diego',
+            username: null,
+            amountSats: 200,
+            amount: null,
+          },
+        ],
+      },
+    });
+    await expect(postRepaymentDue('sess', 'a/b')).resolves.toEqual({
+      bills: [
+        {
+          dayIndex: 3,
+          recipientAccountId: 'acc_1',
+          name: 'Bruno',
+          username: 'bruno',
+          amountSats: 500,
+          amount: null,
+          pr: 'lnbc500n1repay',
+          sparkInvoice: null,
+        },
+      ],
+      waiting: [
+        {
+          dayIndex: 3,
+          recipientAccountId: 'acc_2',
+          name: 'Diego',
+          username: null,
+          amountSats: 200,
+          amount: null,
+        },
+      ],
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/messages/a%2Fb/repayment/due', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('surfaces user-facing 400, 404, and 429 errors and their fallback', async () => {
+    for (const status of [400, 404, 429]) {
+      stubFetch({ ok: false, status, body: { error: 'Lightning invoice failed' } });
+      await expect(postRepaymentDue('sess', 'm1')).rejects.toThrow('Bitcoin payment failed');
+    }
     stubFetch({ ok: false, status: 400, body: {} });
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toThrow(
       'Could not start the Bitcoin payment',
     );
+  });
+
+  it('throws typed wallet and missing-requirements errors', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { error: 'wallet required', code: 'wallet_required' },
+    });
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toBeInstanceOf(WalletRequiredError);
     stubFetch({
       ok: false,
       status: 409,
       body: { error: 'missing_requirements', missing: ['rules'] },
     });
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toBeInstanceOf(Error);
-    stubFetch({ ok: false, status: 503, body: {} });
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
-      'Could not start the Bitcoin payment',
-    );
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toBeInstanceOf(MissingRequirementsError);
+  });
+
+  it('uses generic payment copy for unusable 409 and other non-ok answers', async () => {
     stubFetch({ ok: false, status: 409, body: { error: 'busy' } });
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toThrow(
       'Could not start the Bitcoin payment',
     );
     vi.stubGlobal(
@@ -2132,30 +2258,24 @@ describe('postRepaymentInvoice', () => {
       vi.fn().mockResolvedValue({
         ok: false,
         status: 409,
-        json: () => Promise.reject(new Error('not json')),
-      }),
+        json: () => Promise.reject(new SyntaxError('bad json')),
+        clone() {
+          return this;
+        },
+      } as unknown as Response),
     );
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toThrow(
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toThrow(
+      'Could not start the Bitcoin payment',
+    );
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toThrow(
       'Could not start the Bitcoin payment',
     );
   });
 
-  it('throws WalletRequiredError on a 400 with code wallet_required', async () => {
-    stubFetch({
-      ok: false,
-      status: 400,
-      body: { error: 'wallet required', code: 'wallet_required' },
-    });
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toBeInstanceOf(WalletRequiredError);
-  });
-
-  it('throws CannotReceiveError on a 400 with code cannot_receive', async () => {
-    stubFetch({
-      ok: false,
-      status: 400,
-      body: { error: 'cannot receive', code: 'cannot_receive' },
-    });
-    await expect(postRepaymentInvoice('sess', 'm1')).rejects.toBeInstanceOf(CannotReceiveError);
+  it('rejects an invalid success body', async () => {
+    stubFetch({ ok: true, status: 200, body: { bills: [{}], waiting: [] } });
+    await expect(postRepaymentDue('sess', 'm1')).rejects.toThrow();
   });
 });
 

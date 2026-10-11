@@ -5,10 +5,14 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
+import { ButtonLink } from '@/components/ui';
+import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
 import { fetchAccountActivity, fetchMember, fetchProfilePhoto } from '@/lib/api';
 import { loadSession } from '@/lib/session-storage';
+import { summarizeLoans } from '@/lib/loan-repay';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -110,9 +114,7 @@ const SKELETON_CLASS = 'block rounded bg-app-border animate-pulse motion-reduce:
  * or without a wallet. Under it Received, Given, and Posts, always in their
  * final size: a skeleton bar while loading, `–` when a value could not be
  * read. Received and Given show the default fiat on a small line under the ₿
- * figure (current spot rate; empty only without a usable rate). The photo and the three stats start loading when the signed-in chrome
- * mounts, not when the Menu opens, and are cached for the session; nothing
- * waits for them. Until the account is loaded (a stored session still being
+ * figure (current spot rate; empty only without a usable rate). A currently payable loan adds its due row under the stats. Loans re-read whenever the Menu opens while the current shared body stays visible. The photo and the three stats start loading when the signed-in chrome mounts, not when the Menu opens, and are cached for the session; nothing waits for them. Until the account is loaded (a stored session still being
  * checked right after a page load), the card already has its final size:
  * a skeleton circle for the photo, skeleton bars for the name and
  * `@username`, and the stats row's skeletons; that placeholder is not a link.
@@ -137,6 +139,7 @@ export function MenuAccountHeader({
   );
   const accountId = account?.id ?? null;
   const wallet = useWallet();
+  const { loans, reload: reloadLoans } = useMyLoans();
   const rateDay = useSpotRate();
   const [loaded, setLoaded] = useState<{ session: string; stats: MenuStats } | null>(null);
 
@@ -154,6 +157,12 @@ export function MenuAccountHeader({
       live = false;
     };
   }, [session, accountId]);
+
+  useEffect(() => {
+    if (open) {
+      void reloadLoans();
+    }
+  }, [open, reloadLoans]);
 
   if (!open) {
     return null;
@@ -259,6 +268,7 @@ export function MenuAccountHeader({
         ),
     },
   ];
+  const loanSummary = loans === null ? null : summarizeLoans(loans);
 
   return (
     <div className={`flex flex-col gap-3 rounded-xl bg-app-card-muted p-3${tight ? ' mt-2' : ''}`}>
@@ -323,6 +333,30 @@ export function MenuAccountHeader({
           </div>
         ))}
       </dl>
+      {loanSummary?.payable === true ? (
+        <div className="flex items-center justify-between gap-3 rounded-lg bg-app-card px-3 py-2">
+          <div className="min-w-0">
+            <p
+              className={`text-[11px] ${
+                loanSummary.behindDays > 0 ? 'font-medium text-app-danger' : 'text-app-muted'
+              }`}
+            >
+              {t(loanSummary.behindDays > 0 ? 'loans.menuBehind' : 'loans.menuDue')}
+            </p>
+            <p
+              className={`text-sm font-semibold tabular-nums lining-nums ${
+                loanSummary.behindDays > 0 ? 'text-app-danger' : 'text-app-fg'
+              }`}
+            >
+              {formatBitcoin(loanSummary.payableSats, numberFormat)}
+              {preferredFiatSuffix(loanSummary.payableSats, rateDay, fiat, numberFormat)}
+            </p>
+          </div>
+          <ButtonLink href="/loans/repay" size="sm" onClick={onNavigate}>
+            {t('wallet.payFromWallet')}
+          </ButtonLink>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -17,7 +17,7 @@ export type PayMethod = 'lightning' | 'spark' | 'onchain' | 'lnurl' | 'unknown';
  * Which feature started the payment: the wallet Send view (`send`), a shop's
  * point-of-sale charge read in that view (`pos`), a gift on a note, reply, or
  * habit comment (`gift`), a paid reaction (`reaction`), the posting fee
- * (`post_fee`), today's repayment of a credit (`repay`), the inbox pay sheet
+ * (`post_fee`), a loan repayment on `/loans/repay` (`repay`), the inbox pay sheet
  * (`inbox`), or a heart (`heart`).
  */
 export type PayFlow =

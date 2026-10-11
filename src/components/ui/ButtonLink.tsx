@@ -31,6 +31,8 @@ export interface ButtonLinkProps {
   className?: string;
   /** Accessible name when the visible label is not enough. */
   'aria-label'?: string;
+  /** Optional action before an internal or external link is followed. */
+  onClick?: () => void;
 }
 
 const SIZE_CLASS: Record<ButtonLinkSize, string> = {
@@ -80,6 +82,7 @@ export function ButtonLink({
   icon,
   children,
   className,
+  onClick,
   'aria-label': ariaLabel,
 }: ButtonLinkProps): ReactElement {
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
@@ -88,14 +91,19 @@ export function ButtonLink({
   const named = ariaLabel === undefined ? {} : { 'aria-label': ariaLabel };
   if (!internal) {
     return (
-      <a href={href} className={classes} {...named}>
+      <a href={href} className={classes} {...(onClick === undefined ? {} : { onClick })} {...named}>
         {icon}
         {children}
       </a>
     );
   }
   return (
-    <Link href={href} className={classes} {...named}>
+    <Link
+      href={href}
+      className={classes}
+      {...(onClick === undefined ? {} : { onClick })}
+      {...named}
+    >
       {icon}
       {children}
     </Link>

@@ -818,6 +818,18 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const repaymentDueMatch = pathName.match(/^\/messages\/([^/]+)\/repayment\/due$/);
+  if (repaymentDueMatch && method === 'POST') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { bills: [], waiting: [] });
+    return;
+  }
+
   const repaymentMatch = pathName.match(/^\/messages\/([^/]+)\/repayment$/);
   if (repaymentMatch && method === 'POST') {
     const token = bearer(req);
@@ -1565,6 +1577,16 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     json(res, 200, EMPTY_ACTIVITY);
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/me/loans') {
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, { sundayRest: false, loans: [] });
     return;
   }
 

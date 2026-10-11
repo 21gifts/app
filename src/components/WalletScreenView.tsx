@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { AppShellTopLeft } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
+import { LoansCard } from '@/components/LoansCard';
 import { WalletBalance } from '@/components/WalletBalance';
 import { WalletFooterActions } from '@/components/WalletFooterActions';
 import { WalletHistory } from '@/components/WalletHistory';
@@ -36,7 +37,7 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
 
 /**
  * `/wallet` home shows the large balance and, while the wallet is ready, the
- * payment list, with Receive and Send side by side in the shell footer
+ * member's loan card followed by the payment list, with Receive and Send side by side in the shell footer
  * (`WalletFooterActions`, Receive on the left). Recovery-phrase access lives
  * on `/settings`. The views and their Back steps come from `useWalletPanel`,
  * shared with `/welcome`: Send opens the send flow and Receive the address,
@@ -198,7 +199,12 @@ export function WalletScreenView({
           </Link>
         ) : null}
       </Card>
-      {walletReady ? <WalletHistory /> : null}
+      {walletReady ? (
+        <>
+          <LoansCard place="wallet" />
+          <WalletHistory />
+        </>
+      ) : null}
       <WalletFooterActions
         onReceive={panel.openReceive}
         onSend={panel.openSend}

@@ -14,6 +14,9 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/hooks/useWallet', () => ({ useWallet: vi.fn() }));
 vi.mock('@/hooks/useWalletSend', () => ({ useWalletSend: vi.fn() }));
+vi.mock('@/components/LoansCard', () => ({
+  LoansCard: ({ place }: { place: string }) => <section aria-label={`Loans ${place}`} />,
+}));
 const askStep = vi.hoisted(() => ({ on: false, inWriter: false, back: vi.fn() }));
 vi.mock('@/components/ForumLoader', async () => {
   const { useChromeBack } = await import('@/components/ViewHistoryRoot');
@@ -194,6 +197,15 @@ afterEach(() => {
 });
 
 describe('WelcomeScreen', () => {
+  it('puts the loans card below the heading and before the forum', () => {
+    renderWelcome();
+    const heading = screen.getByRole('heading', { name: 'Welcome, Ada' });
+    const loans = screen.getByRole('region', { name: 'Loans welcome' });
+    const forum = screen.getByText('Forum stub');
+    expect(heading.compareDocumentPosition(loans) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+    expect(loans.compareDocumentPosition(forum) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+  });
+
   it('shows a welcome without name or address forms', async () => {
     renderWithLocale(<WelcomeScreen />);
     expect(screen.getByRole('heading', { name: 'Welcome, Ada' })).toBeTruthy();

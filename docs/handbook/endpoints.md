@@ -568,7 +568,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/repayment`. The author pays the next giver their share of the next due day. Success `{ pr, amountSats, sparkInvoice? }`; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
 - **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable.
-- **Used by:** `postRepaymentInvoice`.
+- **Used by:** No screen since `/loans/repay` asks for every payable bill at once (`POST /messages/[id]/repayment/due`); kept as the api's single-share proxy.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /messages/[id]/invoice
@@ -583,6 +583,20 @@
 - **Purpose:** Same-origin Bearer proxy of api POST `/lnurl/pay-request`. Body `{ target }` (`user@domain` or a bech32 LNURL on another host). 200 `{ target, minSendableMsat, maxSendableMsat, commentAllowed, description, domain }`.
 - **Errors:** Upstream 400 `Not a payable address` (malformed, not https, not a pay request, or on this app's own host), 404 `Address not found`, 502 `Address could not be reached`, 401 without a session; 502 `Upstream api unreachable` when the api is unreachable.
 - **Used by:** `postLnurlPayRequest`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /me/loans
+
+- **Purpose:** Same-origin proxy of api `GET /me/loans`, listing the signed-in member's loans that are still collecting or being repaid plus the Sunday-rest flag.
+- **Errors:** Upstream 401 or service errors, or 502 if the api is unreachable.
+- **Used by:** `getMyLoans` through `useMyLoans` for the loans card, Menu row, and `/loans/repay`.
+- **Auth:** Bearer.
+
+## Endpoint: POST /messages/[id]/repayment/due
+
+- **Purpose:** Same-origin proxy of api `POST /messages/:id/repayment/due`. It returns every currently payable recipient bill for the author's funded loan, oldest first, plus waiting shares whose recipients cannot receive; one call is capped at 60 bills.
+- **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable.
+- **Used by:** `postRepaymentDue` through `useLoanRepay` before wallet preparation.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /lnurl/invoice

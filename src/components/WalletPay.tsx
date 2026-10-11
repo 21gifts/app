@@ -1,17 +1,16 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import { useEffect, useState, type ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
-import { QrCode } from '@/components/QrCode';
+import { WalletOwnAddress } from '@/components/WalletOwnAddress';
 import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button } from '@/components/ui';
 import { useWalletPay } from '@/hooks/useWalletPay';
-import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
-import { profileQrLogo } from '@/lib/profile-qr-logo';
+import { giftsLightningAddress } from '@/lib/gifts-address';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 import type { PayFlow } from '@/lib/wallet/payment-failure';
 import { useAuthStore } from '@/stores/auth-store';
@@ -33,43 +32,6 @@ export interface WalletPayProps {
    * says **Pay {amount} and post** instead of **Send**.
    */
   postsOnPay?: boolean;
-}
-
-/**
- * The member's own 21.gifts address and its Open CryptoPay QR, shown when the
- * wallet balance is too low so Bitcoin can be added. The same address and QR
- * as `/wallet`, so it is shown on a smartphone too. It shrinks to fit a narrow
- * card (the reaction pay page on a phone) and never grows past its usual size.
- *
- * @param props - The member's username, which gives a 21.gifts address.
- * @returns The address block, or `null` before the page host is known.
- */
-function OwnAddress({ username }: { username: string }): ReactElement | null {
-  const { t } = useTranslations();
-  const [host, setHost] = useState<string | null>(null);
-  useEffect(() => {
-    setHost(window.location.hostname);
-  }, []);
-  if (host === null) {
-    return null;
-  }
-  const address = giftsLightningAddress(username, host);
-  const qr = openCryptoPayQrValue(username, host);
-  /* v8 ignore next 3 -- WalletPay renders this only when the username gives an address */
-  if (address === null || qr === null) {
-    return null;
-  }
-  return (
-    <>
-      <p className="text-center text-sm text-app-muted">{t('wallet.payAddFunds')}</p>
-      <p className="min-w-0 max-w-full truncate text-center font-mono text-sm text-app-fg">
-        {address}
-      </p>
-      <div className="w-full max-w-[266px] [&_svg]:h-auto [&_svg]:w-full">
-        <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
-      </div>
-    </>
-  );
 }
 
 /**
@@ -179,7 +141,7 @@ export function WalletPay({
               {preferredFiatSuffix(missingSats, rateDay, fiat, numberFormat)}
             </p>
           )}
-          {hasAddress && username !== null ? <OwnAddress username={username} /> : null}
+          {hasAddress && username !== null ? <WalletOwnAddress username={username} /> : null}
         </>
       );
     default:

@@ -44,7 +44,6 @@ import {
   postMessage,
   postMessageInvoice,
   postMessageVideo,
-  postRepaymentInvoice,
   PostFeeRequiredError,
   PublicForumUnauthorizedError,
   WalletRequiredError,
@@ -458,10 +457,6 @@ export function ForumLoader({
   const [payDraft, setPayDraft] = useState('');
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
-  const [repayNotice, setRepayNotice] = useState<{
-    messageId: string;
-    error: Exclude<ForumPayError, null> | null;
-  } | null>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
   const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
@@ -549,7 +544,6 @@ export function ForumLoader({
     'name' | 'username' | 'rules' | 'wallet' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
-  const startRepaymentRef = useRef<(messageId: string) => void>(() => undefined);
   const pendingComposeTextRef = useRef<string | null>(null);
   const pendingComposePhotosRef = useRef<ForumPhotoPayload[]>([]);
   const pendingComposeVideoRef = useRef<ForumVideoPayload | null>(null);
@@ -799,72 +793,6 @@ export function ForumLoader({
     }
     setOverlayRequirement(next);
     return true;
-  };
-
-  startRepaymentRef.current = (messageId: string): void => {
-    if (session === null) {
-      return;
-    }
-    const generation = bumpPayPollGeneration();
-    setPayMessageId(null);
-    setPayHost(null);
-    setPayDraft('');
-    setPayInvoice(null);
-    setPayWaiting(false);
-    setPayError(null);
-    setRepayNotice({ messageId, error: null });
-    setPayBusy(true);
-    void postRepaymentInvoice(session, messageId)
-      .then((invoice) => {
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        setRepayNotice(null);
-        setPayHost('card');
-        setPayMessageId(messageId);
-        setPayInvoice({
-          messageId,
-          pr: invoice.pr,
-          amountSats: invoice.amountSats,
-          sparkInvoice: invoice.sparkInvoice,
-          flow: 'repay',
-        });
-      })
-      .catch((err: unknown) => {
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        if (err instanceof MissingRequirementsError) {
-          if (openOverlayForMissing(err.missing)) {
-            pendingPostRef.current = () => {
-              startRepaymentRef.current(messageId);
-              return Promise.resolve();
-            };
-            return;
-          }
-          setRepayNotice({ messageId, error: 'request' });
-          return;
-        }
-        if (err instanceof WalletRequiredError) {
-          setRepayNotice(null);
-          setOverlayRequirement('wallet');
-          return;
-        }
-        setRepayNotice({
-          messageId,
-          error: isRateLimitError(err)
-            ? 'rateLimit'
-            : isAuthorWalletError(err)
-              ? 'authorWallet'
-              : 'request',
-        });
-      })
-      .finally(() => {
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        setPayBusy(false);
-      });
   };
 
   const refreshMessages = (): boolean => {
@@ -2975,7 +2903,6 @@ export function ForumLoader({
         payDraft={payDraft}
         payBusy={payBusy}
         payError={payError}
-        repayNotice={repayNotice}
         payInvoice={payInvoice}
         replyPayPreview={replyPayPreview}
         payWaiting={payWaiting}
@@ -2994,9 +2921,7 @@ export function ForumLoader({
         heartViewerId={account?.id ?? null}
         onHeartTip={onHeartTip}
         heartTipViews={heartTipViews}
-        onRepay={(messageId) => {
-          startRepaymentRef.current(messageId);
-        }}
+        repayLink
         onPayUnitChange={setPayShownUnit}
         onReplyUnitChange={setReplyShownUnit}
         onPayDraftChange={(value) => {
