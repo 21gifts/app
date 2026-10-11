@@ -161,6 +161,7 @@ describe('SettingsScreen', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Copy 21.gifts address' }));
       await Promise.resolve();
     });
+    expect(writeText).toHaveBeenCalledWith('ada@21.gifts');
     expect(screen.queryByText('Copied')).toBeNull();
     expect(screen.getByText('ada@21.gifts')).toBeTruthy();
   });
