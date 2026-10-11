@@ -2428,7 +2428,11 @@ test.describe('screen baselines', () => {
     // The banner slides in; shoot it where it rests.
     await expect
       .poll(() =>
-        banner.evaluate((el) => el.getAnimations().every((a) => a.playState === 'finished')),
+        banner.evaluate((el) => {
+          // The slide-in fills both ways, so it stays listed once finished.
+          const animations = el.getAnimations();
+          return animations.length > 0 && animations.every((a) => a.playState === 'finished');
+        }),
       )
       .toBe(true);
     await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500 · $0.50');
