@@ -486,14 +486,34 @@ export type WalletParseResult =
   | { kind: 'unlock' };
 
 /**
+ * Text of an SDK rejection, read only to classify it and never reported: the
+ * message of an `Error`, or a thrown string. Anything else, and a rejection
+ * whose `message` cannot be read (a throwing getter), is the empty text, which
+ * classifies as `sdk_error`. Nothing is converted with `String()`, so a
+ * throwing `toString` cannot escape either.
+ *
+ * @param err - Rejection from the SDK.
+ * @returns The text, or `''`.
+ */
+function errorText(err: unknown): string {
+  if (typeof err === 'string') {
+    return err;
+  }
+  try {
+    return err instanceof Error && typeof err.message === 'string' ? err.message : '';
+  } catch {
+    return '';
+  }
+}
+
+/**
  * True when an SDK error says the balance is too low.
  *
  * @param err - Rejection from the SDK.
  * @returns Whether the error names insufficient funds.
  */
 function isInsufficientFunds(err: unknown): boolean {
-  const text = err instanceof Error ? err.message : String(err);
-  return /insufficient/i.test(text);
+  return /insufficient/i.test(errorText(err));
 }
 
 /**
@@ -504,8 +524,7 @@ function isInsufficientFunds(err: unknown): boolean {
  * @returns Whole sats, or `null` when the error is not that refusal.
  */
 function minimumOf(err: unknown): number | null {
-  const text = err instanceof Error ? err.message : String(err);
-  const match = /below the minimum of (\d+) sats/i.exec(text);
+  const match = /below the minimum of (\d+) sats/i.exec(errorText(err));
   return match === null ? null : Number(match[1]);
 }
 
@@ -516,8 +535,7 @@ function minimumOf(err: unknown): number | null {
  * @returns Whether the error names an expired quote.
  */
 function isQuoteExpired(err: unknown): boolean {
-  const text = err instanceof Error ? err.message : String(err);
-  return /quote[^.]*expired|expired[^.]*quote/i.test(text);
+  return /quote[^.]*expired|expired[^.]*quote/i.test(errorText(err));
 }
 
 /**
@@ -529,7 +547,7 @@ function isQuoteExpired(err: unknown): boolean {
  * @returns The reason.
  */
 function sdkFailureReason(err: unknown): PayReason {
-  const text = err instanceof Error ? err.message : String(err);
+  const text = errorText(err);
   if (isInsufficientFunds(err)) {
     return 'insufficient';
   }

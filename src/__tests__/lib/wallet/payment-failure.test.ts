@@ -18,6 +18,11 @@ const PHRASE =
 const INVOICE = 'lnbc2500u1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypq';
 const ADDRESS = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
 const SPARK = 'spark1pgss9qf0yp5y0sv5v8wtlm7mn0q7cfhjvcq5m4mq4dg9xr0p0c4mr7xmgaqh8a';
+/** A well-known test WIF private key (never funded). */
+const WIF = 'KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn';
+/** The BIP-32 test vector 1 master extended private key. */
+const XPRV =
+  'xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi';
 
 /** A send that the SDK refused, with every field set. */
 const SEND_FAILURE: PaymentFailure = {
@@ -57,7 +62,6 @@ describe('reportPaymentFailure', () => {
         onchainFees: null,
         errorName: 'Error',
         errorCode: 'spark',
-        errorMessage: 'Spark error: no route found',
       },
     });
     expect(logInteraction).toHaveBeenCalledWith(
@@ -89,7 +93,6 @@ describe('reportPaymentFailure', () => {
           onchainFees,
           errorName: null,
           errorCode: null,
-          errorMessage: null,
         },
       }),
     );
@@ -112,9 +115,29 @@ describe('reportPaymentFailure', () => {
       { errorName: 'Error', errorCode: 'chain_service' },
     ],
     [
-      'a thrown string',
+      'a thrown string by its type only',
       'insufficientFunds',
-      { errorName: 'string', errorCode: null, errorMessage: 'insufficientFunds' },
+      { errorName: 'string', errorCode: null },
+    ],
+    [
+      'a byte array by its type only',
+      new Uint8Array([7, 7, 7]),
+      { errorName: 'object', errorCode: null },
+    ],
+    [
+      'an object that only carries a reason by its type only',
+      { reason: 'lnbc1secret' },
+      { errorName: 'object', errorCode: null },
+    ],
+    [
+      'an Error whose name is not an identifier as Error',
+      Object.assign(new Error('x'), { name: 'pay lnbc1secret failed' }),
+      { errorName: 'Error', errorCode: null },
+    ],
+    [
+      'an Error whose message is not text without a code',
+      Object.assign(new Error(), { message: Symbol('m') as unknown as string }),
+      { errorName: 'Error', errorCode: null },
     ],
   ])('names %s', (_label, error, fields) => {
     reportPaymentFailure({ ...SEND_FAILURE, reason: 'sdk_error', error }, 'send');
@@ -124,8 +147,8 @@ describe('reportPaymentFailure', () => {
     );
   });
 
-  it.each<[string, () => unknown]>([
-    ['an object without a prototype', () => Object.create(null) as object],
+  it.each<[string, () => unknown, string]>([
+    ['an object without a prototype', () => Object.create(null) as object, 'object'],
     [
       'an Error whose name getter throws',
       () =>
@@ -134,6 +157,7 @@ describe('reportPaymentFailure', () => {
             throw new Error('no name');
           },
         }),
+      'Error',
     ],
     [
       'an Error whose message getter throws',
@@ -143,8 +167,9 @@ describe('reportPaymentFailure', () => {
             throw new Error('no message');
           },
         }),
+      'Error',
     ],
-  ])('keeps only the type of %s, and still reports', (_label, make) => {
+  ])('keeps only the type of %s, and still reports', (_label, make, errorName) => {
     const unprintable = make();
     expect(() => {
       reportPaymentFailure({ ...SEND_FAILURE, reason: 'sdk_error', error: unprintable }, 'send');
@@ -152,11 +177,7 @@ describe('reportPaymentFailure', () => {
     expect(captureMessage).toHaveBeenCalledWith(
       'Payment failed',
       expect.objectContaining({
-        extra: expect.objectContaining({
-          errorName: 'object',
-          errorCode: null,
-          errorMessage: null,
-        }),
+        extra: expect.objectContaining({ errorName, errorCode: null }),
       }),
     );
     expect(logInteraction).toHaveBeenCalledTimes(1);
@@ -250,18 +271,22 @@ describe('reportPaymentFailure', () => {
     );
   });
 
-  it('leaves no invoice, address, or phrase in the report once the scrubber ran', () => {
+  it.each<[string, unknown]>([
+    ['a byte array', new Uint8Array([131, 7, 251, 64, 9, 200, 17, 3])],
+    ['a WIF private key', new Error(`Generic error: bad key ${WIF}`)],
+    ['an extended private key', new Error(`Signer error: ${XPRV}`)],
+    [
+      'an invoice, addresses, and a phrase',
+      new Error(`Generic error: ${INVOICE} ${ADDRESS} ${SPARK} bob@example.com ${PHRASE}`),
+    ],
+    ['a thrown key string', WIF],
+  ])('never puts %s into the report, before or after the scrubber', (_label, error) => {
     vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', 'https://publickey@errors.example/42');
     vi.stubEnv('NEXT_PUBLIC_APP_VERSION', '123');
     const options = sentryOptions('browser');
     if (options === null) {
       throw new Error('expected error reporting to be on');
     }
-    // Long enough that a cut before the scrubber would split the phrase.
-    const error = new Error(
-      `Generic error: cannot pay ${INVOICE} to ${ADDRESS} or ${SPARK} or bob@example.com (${PHRASE})`,
-    );
-    expect(error.message.length).toBeGreaterThan(300);
     reportPaymentFailure({ ...SEND_FAILURE, reason: 'sdk_error', error }, 'send', {
       session: 'sess',
     });
@@ -269,21 +294,37 @@ describe('reportPaymentFailure', () => {
       string,
       { extra: Record<string, unknown>; tags: Record<string, string> },
     ];
+    expect(Object.keys(hint.extra).sort()).toEqual([
+      'amountSats',
+      'errorCode',
+      'errorName',
+      'feeSats',
+      'onchainFees',
+    ]);
     const event = options.beforeSend({
       type: undefined,
       message,
       extra: hint.extra,
       tags: hint.tags,
     } as ErrorEvent);
-    const sent = JSON.stringify(event);
-    for (const secret of [INVOICE, ADDRESS, SPARK, 'bob@example.com', 'abandon ability']) {
-      expect(sent).not.toContain(secret);
+    for (const sent of [JSON.stringify(hint), JSON.stringify(event)]) {
+      for (const secret of [
+        WIF,
+        XPRV,
+        INVOICE,
+        ADDRESS,
+        SPARK,
+        'bob@example.com',
+        'abandon ability',
+        'Generic error',
+        '131',
+        '251',
+      ]) {
+        expect(sent).not.toContain(secret);
+      }
     }
-    expect(event.extra?.['errorMessage']).toBe(
-      'Generic error: cannot pay [Filtered] to [Filtered] or [Filtered] or [Filtered] ([Filtered])',
-    );
     const props = vi.mocked(logInteraction).mock.calls[0]?.[1];
     expect(Object.values(props ?? {}).every((value) => typeof value !== 'object')).toBe(true);
-    expect(JSON.stringify(props)).not.toContain('Generic error');
+    expect(JSON.stringify(props)).not.toContain(WIF);
   });
 });

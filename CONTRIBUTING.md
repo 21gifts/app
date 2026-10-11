@@ -996,8 +996,9 @@ to error reporting (`Payment failed`, one issue per stage and reason, and
 `Wallet did not open`, one per reason), errors-only like every other report.
 Member state (too little balance, an amount below the minimum, no wallet
 connection) and hearts (`Heart not sent`) are not sent as `Payment failed`.
-Reason, stage, method, and flow are short codes; an SDK error message goes
-only into `extra`, through the scrubber above.
+Reason, stage, method, flow, and the error name and code are short codes; the
+text of an SDK or api error is never sent, because it can carry invoices,
+addresses, or keys.
 
 **Hard requirement:** neither report, nor any other request, log, or error
 report, ever carries the recovery phrase, the seed, PRF output, a preimage, or
