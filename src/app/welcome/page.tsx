@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
+import { WelcomeTopRight } from '@/app/welcome/WelcomeTopRight';
 import { ForumHomeWordmark } from '@/components/ForumHomeWordmark';
 import { OnboardingGate } from '@/components/OnboardingGate';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { WelcomeScreen } from '@/components/WelcomeScreen';
-import { WelcomeTopRight } from '@/components/WelcomeTopRight';
 import { PageChrome } from '@/components/ui';
 
 /** The signed-in living room is not public search content. */

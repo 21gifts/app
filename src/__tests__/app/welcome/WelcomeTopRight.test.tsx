@@ -1,6 +1,6 @@
 import { cleanup, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { WelcomeTopRight } from '@/components/WelcomeTopRight';
+import { WelcomeTopRight } from '@/app/welcome/WelcomeTopRight';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
