@@ -7,7 +7,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, SegmentedControl } from '@/components/ui';
 import { useActiveSession } from '@/hooks/useActiveSession';
-import { setAmountUnit } from '@/lib/api';
+import { saveAmountUnit } from '@/lib/amount-unit';
 import type { AmountUnit } from '@/lib/api-types';
 import { separatorsFor } from '@/lib/number-format';
 import {
@@ -110,75 +110,6 @@ function nextKeypadDraft(
   return `${current}${key}`;
 }
 
-/** Shared across fields so a slower save cannot overwrite a later choice. */
-let unitRequest = 0;
-let unitRequestOpen = false;
-let confirmedRequest = 0;
-let savedUnit: AmountUnit = 'btc';
-let unitRequestSession: string | null = null;
-
-/**
- * Starts one account-wide amount-unit save.
- * A different session drops the previous burst so its unit cannot leak.
- *
- * @param current - Unit already stored before this click's optimistic update.
- * @param sessionToken - Session that owns this save.
- * @returns Id of this save. Higher ids happened later.
- */
-function beginUnitRequest(current: AmountUnit, sessionToken: string): number {
-  if (unitRequestSession !== sessionToken) {
-    unitRequestSession = sessionToken;
-    unitRequestOpen = false;
-    savedUnit = current;
-  } else if (!unitRequestOpen) {
-    savedUnit = current;
-  }
-  unitRequestOpen = true;
-  unitRequest += 1;
-  return unitRequest;
-}
-
-/**
- * Whether this save is still the latest one.
- *
- * @param request - Id from {@link beginUnitRequest}.
- * @returns True when no newer save has started.
- */
-function isLatestUnitRequest(request: number): boolean {
-  return request === unitRequest;
-}
-
-/**
- * Marks the latest save finished so the next click starts a new burst.
- *
- * @param request - Id from {@link beginUnitRequest}.
- */
-function finishUnitRequest(request: number): void {
-  if (request === unitRequest) {
-    unitRequestOpen = false;
-  }
-}
-
-/**
- * Records a successful save. A newer success replaces an older one.
- * An older success still counts after a later failure, so the rollback
- * keeps the unit the server already stored.
- *
- * @param request - Id from {@link beginUnitRequest}.
- * @param chosen - Unit the server stored.
- * @returns True when the account should show `chosen` now.
- */
-function confirmUnitRequest(request: number, chosen: AmountUnit): boolean {
-  if (request <= confirmedRequest) {
-    return false;
-  }
-  confirmedRequest = request;
-  savedUnit = chosen;
-  const apply = request === unitRequest || !unitRequestOpen;
-  finishUnitRequest(request);
-  return apply;
-}
-
 /**
  * Converts a draft from one typing unit to the other.
  *
@@ -238,7 +169,6 @@ export function AmountEntry({
   // A login still opening its wallet counts as signed out: the unit stays local.
   const session = useActiveSession();
   const account = useAuthStore((state) => state.account);
-  const setAccount = useAuthStore((state) => state.setAccount);
   const [localUnit, setLocalUnit] = useState<AmountUnit>('btc');
   const rateRef = useRef(rateDay);
   rateRef.current = rateDay;
@@ -377,60 +307,28 @@ export function AmountEntry({
       }
       return;
     }
-    const token = session;
-    const currentAccount = account;
-    const request = beginUnitRequest(currentAccount.amountUnit ?? 'btc', token);
     posting.current = true;
-    setAccount({ ...currentAccount, amountUnit: next });
+    // The account shows `next` before the converted draft arrives.
+    const saving = saveAmountUnit(session, account, next, (rollback) => {
+      const live = draftRef.current;
+      const restored =
+        rollback === previousUnit && live === converted
+          ? previousDraft
+          : draftForUnit(next, rollback, live, rateRef.current, fiatRef.current);
+      const keepTyped = restored === '' && live.trim() !== '';
+      applied.current = keepTyped ? next : rollback;
+      setShownUnit(keepTyped ? next : rollback);
+      onUnitChange?.(keepTyped ? next : rollback);
+      if (!keepTyped) {
+        onValueChange(restored);
+      }
+    });
     if (converted !== value) {
       onValueChange(converted);
     }
-    void setAmountUnit(token, next)
-      .then((updated) => {
-        if (useAuthStore.getState().session !== token) {
-          finishUnitRequest(request);
-          return;
-        }
-        const chosen = updated.amountUnit ?? next;
-        if (!confirmUnitRequest(request, chosen)) {
-          return;
-        }
-        const current = useAuthStore.getState().account;
-        if (current === null) {
-          return;
-        }
-        setAccount({ ...current, amountUnit: savedUnit });
-      })
-      .catch(() => {
-        if (useAuthStore.getState().session !== token) {
-          finishUnitRequest(request);
-          return;
-        }
-        if (!isLatestUnitRequest(request)) {
-          return;
-        }
-        const rollback = savedUnit;
-        finishUnitRequest(request);
-        const current = useAuthStore.getState().account;
-        if (current !== null) {
-          setAccount({ ...current, amountUnit: rollback });
-        }
-        const live = draftRef.current;
-        const restored =
-          rollback === previousUnit && live === converted
-            ? previousDraft
-            : draftForUnit(next, rollback, live, rateRef.current, fiatRef.current);
-        const keepTyped = restored === '' && live.trim() !== '';
-        applied.current = keepTyped ? next : rollback;
-        setShownUnit(keepTyped ? next : rollback);
-        onUnitChange?.(keepTyped ? next : rollback);
-        if (!keepTyped) {
-          onValueChange(restored);
-        }
-      })
-      .finally(() => {
-        posting.current = false;
-      });
+    void saving.finally(() => {
+      posting.current = false;
+    });
   };
 
   const shown = locked ? String(lockedSats) : value;

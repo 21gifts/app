@@ -13,7 +13,7 @@ type PushTogglePhase = 'checking' | 'unsupported' | 'ready';
 type DevicePushValue = 'on' | 'off';
 
 /**
- * Profile identity-card Notifications section: uppercase heading, a three-stage
+ * Settings Notifications rows: the uppercase level label, a three-stage
  * `SegmentedControl` (All / Active / Mentions) whenever a session exists, a
  * Hearts On / Off `SegmentedControl` under that level, and a This-device On / Off
  * `SegmentedControl` (`aria.push`) when Push/Service Worker APIs are ready. The
@@ -203,7 +203,7 @@ export function PushToggle(): ReactElement | null {
   return (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
       <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-        {t('profile.push.heading')}
+        {t('profile.push.level.label')}
       </p>
       <SegmentedControl
         tone="neutral"

@@ -3044,17 +3044,17 @@ test('Function: proxyMeFiatPost — POST /me/fiat stores CHF', async ({ request 
   expect(((await res.json()) as { fiat: string }).fiat).toBe('CHF');
 });
 
-test('Function: setAccountLocale — profile language saves Deutsch', async ({ page }) => {
+test('Function: setAccountLocale — settings language saves Deutsch', async ({ page }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const deutsch = page.getByRole('button', { name: 'Deutsch' });
   await deutsch.click();
   await expect(deutsch).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Function: setAccountFiat — profile currency saves CHF', async ({ page }) => {
+test('Function: setAccountFiat — settings currency saves CHF', async ({ page }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const chf = page
     .getByRole('group', { name: 'Fiat currency' })
     .getByRole('button', { name: 'CHF' });
@@ -3094,25 +3094,25 @@ test('Function: AccountPreferenceSync — an empty account stores the screen lan
   await expect.poll(() => page.evaluate(() => document.cookie)).toContain('locale=en');
 });
 
-test('Function: bumpLocaleGeneration — profile language saves Español', async ({ page }) => {
+test('Function: bumpLocaleGeneration — settings language saves Español', async ({ page }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const espanol = page.getByRole('button', { name: 'Español' });
   await espanol.click();
   await expect(espanol).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Function: localeGeneration — profile language saves Filipino', async ({ page }) => {
+test('Function: localeGeneration — settings language saves Filipino', async ({ page }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const filipino = page.getByRole('button', { name: 'Filipino' });
   await filipino.click();
   await expect(filipino).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Function: bumpFiatGeneration — profile currency saves EUR', async ({ page }) => {
+test('Function: bumpFiatGeneration — settings currency saves EUR', async ({ page }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const eur = page
     .getByRole('group', { name: 'Fiat currency' })
     .getByRole('button', { name: 'EUR' });
@@ -3120,9 +3120,9 @@ test('Function: bumpFiatGeneration — profile currency saves EUR', async ({ pag
   await expect(eur).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Function: fiatGeneration — profile currency saves PHP', async ({ page }) => {
+test('Function: fiatGeneration — settings currency saves PHP', async ({ page }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const php = page
     .getByRole('group', { name: 'Fiat currency' })
     .getByRole('button', { name: 'PHP' });
@@ -5810,11 +5810,13 @@ test('Function: formatFiatTick — populated profile chart shows CHF ticks', asy
     receivedSats: 1500,
     receivedOverTime: POPULATED_STATS.spendOverTime,
   });
-  await page.goto('/profile');
-  await page
+  await page.goto('/settings');
+  const chf = page
     .getByRole('group', { name: 'Fiat currency' })
-    .getByRole('button', { name: 'CHF' })
-    .click();
+    .getByRole('button', { name: 'CHF' });
+  await chf.click();
+  await expect(chf).toHaveAttribute('aria-pressed', 'true');
+  await page.goto('/profile');
   await page
     .getByRole('group', { name: 'Chart scale' })
     .getByRole('button', { name: 'CHF' })
@@ -5833,10 +5835,16 @@ test('Function: FiatPicker — stats page offers CHF EUR USD PHP', async ({ page
   await expect(group.getByRole('button', { name: 'PHP' })).toBeVisible();
 });
 
-test('Function: FiatPicker — empty profile offers CHF EUR USD PHP', async ({ page }) => {
+test('Function: FiatPicker — settings offers CHF EUR USD PHP, the empty profile none', async ({
+  page,
+}) => {
   await seedAdaSession(page);
   await stubAccountActivity(page, EMPTY_ACTIVITY);
   await page.goto('/profile');
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
+  await expect(page.getByRole('group', { name: 'Chart scale' })).toHaveCount(0);
+  await page.goto('/settings');
   const groups = page.getByRole('group', { name: 'Fiat currency' });
   await expect(groups).toHaveCount(1);
   const group = groups.first();
@@ -5845,8 +5853,6 @@ test('Function: FiatPicker — empty profile offers CHF EUR USD PHP', async ({ p
   await expect(group.getByRole('button', { name: 'USD' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'PHP' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'USD' })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByText('No gifts yet.')).toBeVisible();
-  await expect(page.getByRole('group', { name: 'Chart scale' })).toHaveCount(0);
 });
 
 test('Function: formatFiatDisplay — empty stats hero shows $0.00', async ({ page }) => {
@@ -6478,7 +6484,7 @@ test('Function: LanguageSwitcher — landing exposes the language switcher', asy
 test("Function: parseNumberFormat — Number format options include 10'000.23", async ({ page }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(
     page.getByRole('group', { name: 'Number format' }).getByRole('button', { name: "10'000.23" }),
   ).toBeVisible();
@@ -6487,18 +6493,18 @@ test("Function: parseNumberFormat — Number format options include 10'000.23", 
 test('Function: separatorsFor — same click shows 10,000.23 and 23.000,33', async ({ page }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const group = page.getByRole('group', { name: 'Number format' });
   await expect(group.getByRole('button', { name: '10,000.23' })).toBeVisible();
   await expect(group.getByRole('button', { name: '23.000,33' })).toBeVisible();
 });
 
-test('Function: getRequestNumberFormat — signed-in /profile Number format is visible', async ({
+test('Function: getRequestNumberFormat — signed-in /settings Number format is visible', async ({
   page,
 }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(page.getByRole('group', { name: 'Number format' })).toBeVisible();
 });
 
@@ -6508,7 +6514,7 @@ test('Function: NumberFormatProvider — picking 23.000,33 writes numberFormat=d
 }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await page
     .getByRole('group', { name: 'Number format' })
     .getByRole('button', { name: '23.000,33' })
@@ -6519,10 +6525,10 @@ test('Function: NumberFormatProvider — picking 23.000,33 writes numberFormat=d
   );
 });
 
-test('Function: useNumberFormat — Number format on /profile reads provider', async ({ page }) => {
+test('Function: useNumberFormat — Number format on /settings reads provider', async ({ page }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(page.getByRole('group', { name: 'Number format' })).toBeVisible();
 });
 
@@ -6584,10 +6590,10 @@ test('Function: useFiatPreference — welcome feed has no fiat switcher', async 
   await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
 });
 
-test('Function: FiatPreferenceSwitcher — /profile offers CHF EUR USD PHP', async ({ page }) => {
+test('Function: FiatPreferenceSwitcher — /settings offers CHF EUR USD PHP', async ({ page }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const group = page.getByRole('group', { name: 'Fiat currency' }).last();
   await expect(group.getByRole('button', { name: 'CHF' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'EUR' })).toBeVisible();
@@ -6595,22 +6601,22 @@ test('Function: FiatPreferenceSwitcher — /profile offers CHF EUR USD PHP', asy
   await expect(group.getByRole('button', { name: 'PHP' })).toBeVisible();
 });
 
-test('Function: NumberFormatSwitcher — /profile lists the three samples', async ({ page }) => {
+test('Function: NumberFormatSwitcher — /settings lists the three samples', async ({ page }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const group = page.getByRole('group', { name: 'Number format' });
   await expect(group.getByRole('button', { name: "10'000.23" })).toBeVisible();
   await expect(group.getByRole('button', { name: '10,000.23' })).toBeVisible();
   await expect(group.getByRole('button', { name: '23.000,33' })).toBeVisible();
 });
 
-test('Function: LanguagePreferenceSwitcher — /profile lists English Deutsch Español Filipino', async ({
+test('Function: LanguagePreferenceSwitcher — /settings lists English Deutsch Español Filipino', async ({
   page,
 }) => {
   await seedAdaSession(page);
   await stubGiftStats(page, EMPTY_STATS);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const group = page.getByRole('group', { name: 'Language' });
   await expect(group.getByRole('button', { name: 'English' })).toBeVisible();
   await expect(group.getByRole('button', { name: 'Deutsch' })).toBeVisible();
@@ -11404,35 +11410,35 @@ test('Function: formatBitcoin — populated profile chart shows grouped ₿ tick
   await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
 });
 
-test('Function: ThemeProvider — picking Dark sets html.dark on /profile', async ({ page }) => {
+test('Function: ThemeProvider — picking Dark sets html.dark on /settings', async ({ page }) => {
   await seedAdaSession(page);
   await stubAccountActivity(page, EMPTY_ACTIVITY);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await page.getByRole('group', { name: 'Theme' }).getByRole('button', { name: 'Dark' }).click();
   await expect(page.locator('html')).toHaveClass(/dark/);
 });
 
-test('Function: ThemeSwitcher — System Light Dark options on /profile', async ({ page }) => {
+test('Function: ThemeSwitcher — System Light Dark options on /settings', async ({ page }) => {
   await seedAdaSession(page);
   await stubAccountActivity(page, EMPTY_ACTIVITY);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const theme = page.getByRole('group', { name: 'Theme' });
   await expect(theme.getByRole('button', { name: 'System' })).toBeVisible();
   await expect(theme.getByRole('button', { name: 'Light' })).toBeVisible();
   await expect(theme.getByRole('button', { name: 'Dark' })).toBeVisible();
 });
 
-test('Function: useTheme — ThemeSwitcher on /profile reads provider context', async ({ page }) => {
+test('Function: useTheme — ThemeSwitcher on /settings reads provider context', async ({ page }) => {
   await seedAdaSession(page);
   await stubAccountActivity(page, EMPTY_ACTIVITY);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(page.getByRole('group', { name: 'Theme' })).toBeVisible();
 });
 
 test('Function: THEME_COOKIE — Dark option persists theme=dark', async ({ page }) => {
   await seedAdaSession(page);
   await stubAccountActivity(page, EMPTY_ACTIVITY);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await page.getByRole('group', { name: 'Theme' }).getByRole('button', { name: 'Dark' }).click();
   expect(await page.context().cookies()).toEqual(
     expect.arrayContaining([expect.objectContaining({ name: 'theme', value: 'dark' })]),
@@ -11719,12 +11725,12 @@ test('Function: deletePushSubscription — DELETE /me/push-subscriptions with be
   expect(((await res.json()) as { ok: boolean }).ok).toBe(true);
 });
 
-test('Function: postNotificationLevel — profile shows All Active Mentions', async ({
+test('Function: postNotificationLevel — settings shows All Active Mentions', async ({
   page,
   request,
 }) => {
   await reachWelcome(page, request);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const intro = page.getByRole('dialog', { name: 'Introduce yourself' });
   if (await intro.isVisible()) {
     await page.getByRole('button', { name: 'Close' }).click();
@@ -11747,12 +11753,12 @@ test('Function: postNotificationLevel — profile shows All Active Mentions', as
   );
 });
 
-test('Function: postHeartNotifications — profile Hearts Off posts the switch', async ({
+test('Function: postHeartNotifications — settings Hearts Off posts the switch', async ({
   page,
   request,
 }) => {
   await reachWelcome(page, request);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const intro = page.getByRole('dialog', { name: 'Introduce yourself' });
   if (await intro.isVisible()) {
     await page.getByRole('button', { name: 'Close' }).click();
@@ -12027,75 +12033,73 @@ test('Function: ExternalAuthorProfile — the read-only feed shows no heart', as
   await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
 });
 
-test('Function: accountNotificationLevel — profile selects All when the field is omitted', async ({
+test('Function: accountNotificationLevel — settings selects All when the field is omitted', async ({
   page,
 }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(page.getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true');
 });
 
-test('Function: PushToggle — profile shows the this-device On/Off control', async ({ page }) => {
+test('Function: PushToggle — settings shows the this-device On/Off control', async ({ page }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   const device = page.getByRole('group', { name: 'This device' });
   await expect(device).toBeVisible();
   await expect(device.getByRole('button', { name: 'Off' })).toBeVisible();
-  await expect(
-    page.getByRole('paragraph').getByText('Notifications', { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Notifications' })).toBeVisible();
 });
 
-test('Function: vapidPublicKeyToBytes — profile shows the this-device control', async ({
+test('Function: vapidPublicKeyToBytes — settings shows the this-device control', async ({
   page,
 }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
   await expect(
     page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
   ).toBeVisible();
 });
 
-test('Function: registerPushWorker — profile shows the this-device control', async ({ page }) => {
+test('Function: registerPushWorker — settings shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
   await expect(
     page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
   ).toBeVisible();
 });
 
-test('Function: enablePush — profile shows the this-device control', async ({ page }) => {
+test('Function: enablePush — settings shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
   await expect(
     page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
   ).toBeVisible();
 });
 
-test('Function: disablePush — profile shows the this-device control', async ({ page }) => {
+test('Function: disablePush — settings shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
   await expect(
     page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
   ).toBeVisible();
 });
 
-test('Function: isStandaloneDisplay — profile shows the this-device control', async ({ page }) => {
+test('Function: isStandaloneDisplay — settings shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
   await expect(
     page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),
   ).toBeVisible();
 });
 
-test('Function: isIosSafari — profile shows the this-device control', async ({ page }) => {
+test('Function: isIosSafari — settings shows the this-device control', async ({ page }) => {
   await seedAdaSession(page);
-  await page.goto('/profile');
+  await page.goto('/settings');
   await expect(page.getByRole('group', { name: 'This device' })).toBeVisible();
   await expect(
     page.getByRole('group', { name: 'This device' }).getByRole('button', { name: 'Off' }),

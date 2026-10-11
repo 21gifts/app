@@ -6,9 +6,10 @@ import { useTheme } from '@/components/ThemeProvider';
 import { SegmentedControl } from '@/components/ui';
 
 /**
- * Profile identity-card section: System / Light / Dark via SegmentedControl.
+ * Settings Display row: System / Light / Dark via SegmentedControl.
  *
- * Always visible on the signed-in Profile card. Not page chrome.
+ * Always visible on the signed-in Settings page. Not page chrome. The choice
+ * is a cookie on this device, which a muted line under the control says.
  *
  * @returns The theme settings section.
  */
@@ -32,6 +33,7 @@ export function ThemeSwitcher(): ReactElement {
         onChange={setPreference}
         ariaLabel={t('aria.theme')}
       />
+      <p className="text-center text-xs text-app-muted">{t('settings.deviceOnly')}</p>
     </div>
   );
 }

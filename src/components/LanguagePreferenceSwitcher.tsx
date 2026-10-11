@@ -65,9 +65,9 @@ async function persistLocale(next: Locale, current: Locale, refresh: () => void)
 }
 
 /**
- * Profile identity-card section: language via SegmentedControl.
+ * Settings Display row: language via SegmentedControl.
  *
- * Always visible on the signed-in Profile card. Not page chrome.
+ * Always visible on the signed-in Settings page. Not page chrome.
  * Writes the `locale` cookie and refreshes the App Router tree (same
  * persist as LanguageSwitcher).
  *

@@ -40,6 +40,7 @@ describe('ThemeSwitcher', () => {
       'false',
     );
     expect(screen.getByRole('button', { name: 'Dark' }).getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByText('Saved on this device')).toBeTruthy();
   });
 
   it('uses the profile settings section chrome, not a chrome pill', () => {

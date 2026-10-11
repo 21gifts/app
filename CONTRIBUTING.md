@@ -159,7 +159,7 @@ app/
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
-│   │   │   ├── page.tsx         # GET /profile — signed-in name + location + notification level + optional this-device On/Off pill
+│   │   │   ├── page.tsx         # GET /profile — signed-in identity: photo, banner, About me, name, location, facts, share link
 │   │   │   └── apply/page.tsx   # GET /profile/apply — redirect to /grants/apply
 │   │   ├── grants/
 │   │   │   ├── page.tsx         # GET /grants — grant status and the staff queue link
@@ -172,7 +172,7 @@ app/
 │   │   │   ├── payment/page.tsx # GET /wallet/payment?id= — one payment's details
 │   │   │   └── phrase/page.tsx  # GET /wallet/phrase — add or show the recovery phrase
 │   │   ├── settings/
-│   │   │   └── page.tsx         # GET /settings — signed-in settings (Wallet: Recovery phrase or Add recovery phrase)
+│   │   │   └── page.tsx         # GET /settings — signed-in settings: Wallet, Display, Notifications, Account, About & legal
 │   │   ├── auth/passkey/replace/
 │   │   │   ├── begin/route.ts   # POST /auth/passkey/replace/begin
 │   │   │   └── finish/route.ts  # POST /auth/passkey/replace/finish
@@ -211,10 +211,10 @@ app/
 │   │   ├── HandbookCopyLink.tsx # Copy absolute #id URL beside handbook headings
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
-│   │   ├── LanguagePreferenceSwitcher.tsx # Profile locale SegmentedControl (endonyms)
+│   │   ├── LanguagePreferenceSwitcher.tsx # Settings locale SegmentedControl (endonyms)
 │   │   ├── NumberFormatSwitcher.tsx # Cookie numberFormat override (ch/us/de)
-│   │   ├── FiatPicker.tsx       # CHF|EUR|USD|PHP control (profile settings; unsigned chart/stats/day)
-│   │   ├── FiatPreferenceSwitcher.tsx # Profile cookie fiat override (CHF|EUR|USD|PHP)
+│   │   ├── FiatPicker.tsx       # CHF|EUR|USD|PHP control (settings; unsigned chart/stats/day)
+│   │   ├── FiatPreferenceSwitcher.tsx # Settings cookie fiat override (CHF|EUR|USD|PHP)
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
 │   │   ├── FiatPreferenceProvider.tsx # Client preferred-fiat context + cookie write
@@ -225,10 +225,10 @@ app/
 │   │   ├── ShopStickerOverlay.tsx # Member-profile shop sticker preview, second language, PDF/PNG/JPG/SVG download
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location + 21.gifts address + notification level + optional this-device On/Off + language + theme + fiat + number format)
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (identity only: pictures + totals + About me + name/location + public facts)
 │   │   ├── WalletLoginCard.tsx  # LoginCard shown in place while a signed-in screen's wallet is not open in this tab
 │   │   ├── WalletScreen.tsx     # Wires useWallet + useWalletPhrase + useWalletSend into WalletScreenView (balance, payments list while ready, Receive/Send)
-│   │   ├── SettingsScreen.tsx   # Signed-in /settings (Wallet section: Recovery phrase or Add recovery phrase)
+│   │   ├── SettingsScreen.tsx   # Signed-in /settings (Wallet: recovery phrase, address, default amount; Display; Notifications; Account; About & legal)
 │   │   ├── MenuAccountHeader.tsx # Menu top card: photo, name, @username (profile link), balance link, Received / Given / Posts
 │   │   ├── WalletScreenView.tsx # Wallet home, Send and Receive views, and the visible one-step Back
 │   │   ├── WalletFooterActions.tsx # Receive / Send footer buttons shared by /wallet and /welcome
@@ -324,6 +324,7 @@ app/
 │   │   ├── sentry.ts            # Error reporting: init options, privacy scrubber, tunnel forwarder
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
+│   │   ├── amount-unit.ts       # saveAmountUnit: the one ordered save of account.amountUnit
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
 │   │   ├── request-number-format.ts # Cookie numberFormat for the current request
 │   │   ├── request-fiat.ts      # Cookie fiat for the current request
