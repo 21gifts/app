@@ -1369,6 +1369,27 @@ describe('payFromWallet', () => {
     expect(getInfo.mock.calls.length).toBe(reads);
   });
 
+  it('fails as disconnected when the balance read rejects after the connection changed', async () => {
+    const { getInfo } = await connectPaying({});
+    let reject: (err: Error) => void = () => undefined;
+    getInfo.mockImplementationOnce(
+      () =>
+        new Promise((_, fail) => {
+          reject = fail;
+        }),
+    );
+    const pending = payFromWallet({ type: 'input', input: 'a' });
+    await vi.waitFor(() => {
+      expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
+    });
+    await disconnectWallet();
+    reject(new Error('offline'));
+    await expect(pending).resolves.toMatchObject({
+      kind: 'failed',
+      failure: { stage: 'prepare', reason: 'disconnected' },
+    });
+  });
+
   it('fails when the balance cannot be read before confirmation', async () => {
     const { getInfo } = await connectPaying({});
     getInfo.mockRejectedValueOnce(new Error('offline'));
@@ -1736,6 +1757,7 @@ describe('payFromWallet to a base-chain address', () => {
       'insufficient',
     ],
     [new Error('service unavailable'), 'failed', 'sdk_error'],
+    [new Error('Insufficient funds: the fee quote expired'), 'expired', 'expired'],
   ])('maps the send rejection %s to %s (%s)', async (error, kind, reason) => {
     await connectPaying({
       balanceSats: 60_000,
