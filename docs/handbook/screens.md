@@ -204,6 +204,12 @@ Ready wallet with **Balance ₿21'000 · $21.00**. Between the balance and **Pay
 
 ![21.gifts wallet loans](images/wallet-loans.png)
 
+### Variant: loans-open
+
+The same ready wallet and loan amounts after **Show loan** is pressed. The disclosure is open as **Hide loan** and shows the linked text **I need a small loan to buy a second-hand sewing machine for my repair stall.** with **100%**; **Balance ₿21'000 · $21.00**, **Due today ₿800 · $0.80**, **₿200 · $0.20 waits**, and **Send** stay unchanged.
+
+![21.gifts wallet loans open](images/wallet-loans-open.png)
+
 ### Variant: balance-locked
 
 Pinned fixture (`?visual=balance-locked`, Playwright builds only), not a live wallet. The ordinary `/login` card appears in place of the wallet while the path stays `/wallet`: the muted greeting **Welcome back, Ada**, heading **Log in with your device**, primary **Log in**, the new-account line, and **Open a new account**. The wallet heading, balance, payment history, **Receive** / **Send** footer, and the signed-in **Menu** are absent, and there is no **Log out**: logging in with any passkey decides the account. The pin represents a valid stored session whose tab does not hold the recovery phrase; in a live browser, login opens the wallet and then reveals the page.
@@ -798,6 +804,12 @@ The due amount remains **₿1'000 · $1.00**, but the wallet has only **₿600 �
 The wallet covers Loan A's due amount but not its fee. The bordered box says **Not enough in your wallet** and **Your wallet has ₿1'000 · $1.00. Still missing ₿25 · $0.03.**, with **Top up your wallet**. There is no Send control and no send-now link.
 
 ![21.gifts loans repay fee gap](images/loans-repay-fee-gap.png)
+
+### Variant: fee-gap-topup
+
+The same fee-only gap after **Top up your wallet** is pressed. The box keeps **Your wallet has ₿1'000 · $1.00. Still missing ₿25 · $0.03.**, then shows **To add Bitcoin, send it to your address:**, Ada's 21.gifts address, exactly one Open CryptoPay QR, **Copy**, and **Waiting for your top-up…**. There is still no Send control or send-now link.
+
+![21.gifts loans repay fee gap top-up](images/loans-repay-fee-gap-topup.png)
 
 ### Variant: topup
 

@@ -177,6 +177,25 @@ describe('LoanRepayScreen', () => {
     expect(reload).toHaveBeenCalledTimes(2);
   });
 
+  it('does not turn a failed settlement reload into an initial-load error', async () => {
+    const data = { sundayRest: false, loans: [loan()] };
+    const reload = vi.fn().mockResolvedValueOnce(data).mockResolvedValueOnce(null);
+    vi.mocked(useMyLoans).mockReturnValue({ loans: data, reload });
+    vi.mocked(useLoanRepay).mockReturnValue(repay({ phase: 'waiting' }));
+    const view = renderWithLocale(<LoanRepayScreen />);
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
+    const options = vi.mocked(useLoanRepay).mock.calls[0]?.[0];
+    await act(async () => {
+      await expect(options?.reload()).resolves.toBeNull();
+    });
+    expect(screen.getByRole('status').textContent).toContain("Sending ₿1'000 · $1.00…");
+
+    vi.mocked(useMyLoans).mockReturnValue({ loans: null, reload });
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.getByRole('status').textContent).toBe('Loading your loans…');
+    expect(screen.queryByText('Could not load your loans.')).toBeNull();
+  });
+
   it('shows the no-loans state', () => {
     show({ sundayRest: false, loans: [] });
     expect(screen.getByRole('heading', { name: 'Loan repayment' }).className).toContain('sr-only');

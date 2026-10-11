@@ -836,6 +836,7 @@ describe('useLoanRepay visual pins', () => {
     ['repay-setup-failed', 'setupFailed', null],
     ['repay-short', 'idle', 600],
     ['repay-fee-gap', 'idle', 1_000],
+    ['repay-fee-gap-topup', 'idle', 1_000],
     ['repay-topup', 'idle', 600],
     ['repay-sending', 'sending', 21_000],
     ['repay-partial', 'idle', 21_000],
@@ -859,10 +860,10 @@ describe('useLoanRepay visual pins', () => {
     });
     expect(postRepaymentDue).not.toHaveBeenCalled();
     expect(refreshWallet).not.toHaveBeenCalled();
-    if (visual === 'repay-topup') {
+    if (visual === 'repay-topup' || visual === 'repay-fee-gap-topup') {
       expect(result.current.topUpOpen).toBe(true);
     }
-    if (visual === 'repay-fee-gap') {
+    if (visual === 'repay-fee-gap' || visual === 'repay-fee-gap-topup') {
       expect(result.current.missingSats).toBe(25);
     }
     if (visual === 'repay-partial') {

@@ -714,6 +714,11 @@
     "es": "La wallet lista muestra Saldo ₿21'000 · $21.00. Entre Saldo y Pagos está la tarjeta neutral Tu préstamo con Totalmente financiado., Pedir ₿30'000 · $30.00 y 100 %, Vence hoy ₿800 · $0.80 y Enviar, además de la línea atenuada ₿200 · $0.20 espera · un prestamista aún no tiene wallet. Ver préstamo está cerrado.",
     "fil": "Ipinapakita ng handang wallet ang Balanse ₿21'000 · $21.00. Sa pagitan ng Balanse at Mga bayad ay ang neutral na kard na Ang iyong utang na may Buo na ang pondo., Hiling ₿30'000 · $30.00 at 100%, Bayaran ngayon ₿800 · $0.80 at Ipadala, pati ang mahinang linyang ₿200 · $0.20 ang naghihintay · wala pang wallet ang isang nagpautang. Sarado ang Ipakita ang utang."
   },
+  "/wallet:loans-open": {
+    "de": "Dieselbe bereite Wallet nach Kredit anzeigen. Die offene Anzeige heißt Kredit ausblenden und zeigt den verlinkten Text I need a small loan to buy a second-hand sewing machine for my repair stall. mit 100 %. Guthaben ₿21'000 · $21.00, Heute fällig ₿800 · $0.80, ₿200 · $0.20 wartet und Senden bleiben unverändert.",
+    "es": "La misma wallet lista después de Ver préstamo. El control abierto dice Ocultar préstamo y muestra el texto enlazado I need a small loan to buy a second-hand sewing machine for my repair stall. con 100 %. Saldo ₿21'000 · $21.00, Vence hoy ₿800 · $0.80, ₿200 · $0.20 espera y Enviar no cambian.",
+    "fil": "Ang parehong handang wallet pagkatapos pindutin ang Ipakita ang utang. Ang bukas na kontrol ay Itago ang utang at ipinapakita ang nakaugnay na tekstong I need a small loan to buy a second-hand sewing machine for my repair stall. na may 100%. Hindi nagbabago ang Balanse ₿21'000 · $21.00, Bayaran ngayon ₿800 · $0.80, ₿200 · $0.20 ang naghihintay, at Ipadala."
+  },
   "/setup/rules:forbidden": {
     "de": "Überschrift Verboten, gedämpfte Einleitung und die drei verbotenen Gruppen (rote Kreuz-Glyphen).",
     "es": "Encabezado Prohibido, introducción atenuada y los tres grupos prohibidos (glifos de cruz roja).",
@@ -4833,6 +4838,11 @@
     "de": "Die Wallet deckt den fälligen Betrag von Kredit A, aber nicht die Gebühr. Der Rahmen sagt Nicht genug in Ihrer Wallet und Ihre Wallet enthält ₿1'000 · $1.00. Es fehlen noch ₿25 · $0.03., mit Wallet aufladen. Es gibt weder Senden noch einen Jetzt-senden-Link.",
     "es": "La wallet cubre el importe vencido del préstamo A, pero no la comisión. El cuadro dice No hay suficiente en tu wallet y Tu wallet tiene ₿1'000 · $1.00. Aún faltan ₿25 · $0.03., con Recargar tu wallet. No hay control Enviar ni enlace para enviar ahora.",
     "fil": "Sapat ang wallet para sa halagang dapat bayaran sa utang A, pero hindi para sa bayarin. Sinasabi ng kahon ang Kulang ang laman ng wallet mo at May ₿1'000 · $1.00 ang wallet mo. Kulang pa ng ₿25 · $0.03., na may Dagdagan ang laman ng wallet mo. Walang Ipadala o ugnay para magpadala ngayon."
+  },
+  "/loans/repay:fee-gap-topup": {
+    "de": "Dieselbe reine Gebührenlücke nach Wallet aufladen. Der Rahmen behält Ihre Wallet enthält ₿1'000 · $1.00. Es fehlen noch ₿25 · $0.03. und zeigt dann Um Bitcoin hinzuzufügen, senden Sie es an Ihre Adresse:, Adas 21.gifts-Adresse, genau einen Open-CryptoPay-QR, Kopieren und Ihre Aufladung wird erwartet…. Es gibt weiterhin weder Senden noch einen Jetzt-senden-Link.",
+    "es": "La misma diferencia solo de comisión después de Recargar tu wallet. El cuadro conserva Tu wallet tiene ₿1'000 · $1.00. Aún faltan ₿25 · $0.03. y luego muestra Para añadir Bitcoin, envíalo a tu dirección:, la dirección de 21.gifts de Ada, exactamente un QR de Open CryptoPay, Copiar y Esperando tu recarga…. Sigue sin haber Enviar ni enlace para enviar ahora.",
+    "fil": "Ang parehong puwang na bayarin lang pagkatapos ng Dagdagan ang laman ng wallet mo. Nananatili sa kahon ang May ₿1'000 · $1.00 ang wallet mo. Kulang pa ng ₿25 · $0.03., at ipinapakita nito ang Para magdagdag ng Bitcoin, ipadala ito sa address mo:, 21.gifts address ni Ada, eksaktong isang Open CryptoPay QR, Kopyahin, at Hinihintay ang pagdagdag mo…. Wala pa ring Ipadala o ugnay para magpadala ngayon."
   },
   "/loans/repay:topup": {
     "de": "Der Zustand mit zu wenig Guthaben nach Wallet aufladen. Der Rahmen behält ₿600 · $0.60 und ₿400 · $0.40 und zeigt dann Um Bitcoin hinzuzufügen, senden Sie es an Ihre Adresse:, Adas 21.gifts-Adresse, den Open-CryptoPay-QR, Kopieren und Ihre Aufladung wird erwartet…. Der Link für ₿500 · $0.50 an Bruno bleibt darunter.",

@@ -114,9 +114,7 @@ const SKELETON_CLASS = 'block rounded bg-app-border animate-pulse motion-reduce:
  * or without a wallet. Under it Received, Given, and Posts, always in their
  * final size: a skeleton bar while loading, `–` when a value could not be
  * read. Received and Given show the default fiat on a small line under the ₿
- * figure (current spot rate; empty only without a usable rate). A currently payable loan adds its due row under the stats. The photo and the three stats start loading when the signed-in chrome
- * mounts, not when the Menu opens, and are cached for the session; nothing
- * waits for them. Until the account is loaded (a stored session still being
+ * figure (current spot rate; empty only without a usable rate). A currently payable loan adds its due row under the stats. Loans re-read whenever the Menu opens while the current shared body stays visible. The photo and the three stats start loading when the signed-in chrome mounts, not when the Menu opens, and are cached for the session; nothing waits for them. Until the account is loaded (a stored session still being
  * checked right after a page load), the card already has its final size:
  * a skeleton circle for the photo, skeleton bars for the name and
  * `@username`, and the stats row's skeletons; that placeholder is not a link.
@@ -141,7 +139,7 @@ export function MenuAccountHeader({
   );
   const accountId = account?.id ?? null;
   const wallet = useWallet();
-  const { loans } = useMyLoans();
+  const { loans, reload: reloadLoans } = useMyLoans();
   const rateDay = useSpotRate();
   const [loaded, setLoaded] = useState<{ session: string; stats: MenuStats } | null>(null);
 
@@ -159,6 +157,12 @@ export function MenuAccountHeader({
       live = false;
     };
   }, [session, accountId]);
+
+  useEffect(() => {
+    if (open) {
+      void reloadLoans();
+    }
+  }, [open, reloadLoans]);
 
   if (!open) {
     return null;
