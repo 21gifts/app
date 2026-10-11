@@ -2452,7 +2452,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Takes a waiting move-funds request and clears it, so the flow opens once per request.
 - **Inputs:** None.
-- **Returns / side effects:** The source (`'receive'` | `'link'`) of the request `requestMoveFunds` left, or `null` when there is none or it was taken already; clears the stored and the in-memory copy. A storage that throws drops only the stored value; the in-memory copy of this document still counts. A stored value that is not a source counts as none.
+- **Returns / side effects:** The source (`'receive'` | `'link'`) of the request `requestMoveFunds` left, or `null` when there is none or it was taken already; clears the stored and the in-memory copy. A failed read drops only the stored value; the in-memory copy of this document still counts. A failed remove keeps the value already read, and this document does not take that stored copy a second time (a new `requestMoveFunds` clears that). A stored value that is not a source counts as none.
 - **Used by:** `MoveFundsSheet`.
 
 ## Function: requestForumCompose
