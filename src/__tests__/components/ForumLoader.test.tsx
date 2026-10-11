@@ -26,12 +26,6 @@ import {
   resetWallet,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
-import { useWalletPay } from '@/hooks/useWalletPay';
-
-vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
-  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
-});
 
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();

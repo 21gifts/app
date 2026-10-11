@@ -58,7 +58,6 @@ describe('ForumPaySheet', () => {
   it.each([
     ['a gift', {}, 'gift'],
     ['a posting fee', { postsOnPay: true }, 'post_fee'],
-    ["today's repayment", { flow: 'repay' as const }, 'repay'],
   ])('pays %s under its flow', (_label, extra, flow) => {
     renderWithLocale(
       <ForumPaySheet

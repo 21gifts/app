@@ -12,6 +12,7 @@ import {
 } from '@/lib/api';
 import { fittingPrefix } from '@/lib/loan-repay';
 import { visualPin } from '@/lib/visual-pin';
+import { reportPaymentFailure } from '@/lib/wallet/payment-failure';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import { payFromWallet, refreshWallet, type WalletSendResult } from '@/lib/wallet/wallet-service';
@@ -200,7 +201,11 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
 };
 
 /**
- * Runs the all-loans repayment flow and waits for api settlement.
+ * Runs the all-loans repayment flow and waits for api settlement. Every prepare
+ * or send that does not pay (also `insufficient`, and a prepared amount other
+ * than the bill, as `amount_mismatch`) is reported with
+ * {@link reportPaymentFailure} under the flow `repay`; a send also after the
+ * screen closed, a prepare only while its run is current.
  *
  * @param options - Supplies the loans reload used by settlement polling.
  * @returns Wallet availability, run totals, top-up state, and repayment actions.
@@ -310,8 +315,8 @@ export function useLoanRepay(options: {
   const pay = useCallback(
     (loans: readonly MyLoan[], limitSats?: number): void => {
       const allowed = new Set<LoanRepayPhase>(['idle', 'failed', 'repaid', 'unconfirmed']);
-      const currentSession = useAuthStore.getState().session;
-      if (pinned || !allowed.has(phaseRef.current) || currentSession === null) {
+      const session = useAuthStore.getState().session;
+      if (pinned || !allowed.has(phaseRef.current) || session === null) {
         return;
       }
 
@@ -348,7 +353,7 @@ export function useLoanRepay(options: {
             if (loan.due.payableSats <= 0) {
               continue;
             }
-            const due = await postRepaymentDue(currentSession, loan.messageId);
+            const due = await postRepaymentDue(session, loan.messageId);
             if (!active()) {
               return;
             }
@@ -381,12 +386,30 @@ export function useLoanRepay(options: {
           if (!active()) {
             return;
           }
-          if (result.kind === 'insufficient') {
-            insufficient = true;
-            insufficientFeeSats = result.feeSats ?? 0;
-            break;
+          if (result.kind !== 'confirm') {
+            reportPaymentFailure({ ...result.failure, amountSats: bill.amountSats }, 'repay', {
+              session,
+            });
+            if (result.kind === 'insufficient') {
+              insufficient = true;
+              insufficientFeeSats = result.feeSats ?? 0;
+              break;
+            }
+            failBeforeSend(new Error('prepare'));
+            return;
           }
-          if (result.kind !== 'confirm' || result.amountSats !== bill.amountSats) {
+          if (result.amountSats !== bill.amountSats) {
+            reportPaymentFailure(
+              {
+                stage: 'prepare',
+                reason: 'amount_mismatch',
+                method: result.method,
+                amountSats: bill.amountSats,
+                feeSats: result.feeSats,
+              },
+              'repay',
+              { session },
+            );
             failBeforeSend(new Error('prepare'));
             return;
           }
@@ -529,6 +552,13 @@ export function useLoanRepay(options: {
 
         for (const [index, item] of kept.entries()) {
           const result = await item.send();
+          if (result.kind !== 'paid') {
+            const sentLate = result.kind === 'failed' ? result.sentLate : undefined;
+            reportPaymentFailure({ ...result.failure, amountSats: item.bill.amountSats }, 'repay', {
+              session,
+              sentLate,
+            });
+          }
           if (!active()) {
             return;
           }
