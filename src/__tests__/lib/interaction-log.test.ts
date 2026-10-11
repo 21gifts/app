@@ -353,31 +353,6 @@ describe('a batch the api refuses', () => {
     expect(batches()).toEqual([['screen_view'], ['login'], ['login']]);
   });
 
-  it('sends the other events again without the newer wallet names an older api refuses', async () => {
-    fetchMock.mockImplementation((_url: string, init: SentRequest) => {
-      const names = (JSON.parse(init.body) as { events: SentEvent[] }).events.map((e) => e.name);
-      const refused = names.some((name) => name.startsWith('wallet_'));
-      return Promise.resolve({ ok: !refused, status: refused ? 400 : 204 });
-    });
-    mod.logInteraction('screen_view');
-    mod.logInteraction('wallet_tour_shown', { steps: 4 });
-    mod.logInteraction('wallet_move_done', { amountSats: 500 });
-    mod.logInteraction('login');
-    await mod.flushInteractions();
-    expect(batches()).toEqual([
-      ['screen_view', 'wallet_tour_shown', 'wallet_move_done', 'login'],
-      ['screen_view', 'login'],
-    ]);
-    fetchMock.mockClear();
-    mod.logInteraction('wallet_move_opened', { source: 'link' });
-    await mod.flushInteractions();
-    // A batch of newer names only is dropped, as any refused batch.
-    expect(batches()).toEqual([['wallet_move_opened']]);
-    fetchMock.mockClear();
-    await mod.flushInteractions();
-    expect(batches()).toEqual([]);
-  });
-
   it('keeps every wallet event once an api accepts the names', async () => {
     for (const [name, props] of [
       ['wallet_tour_shown', { steps: 3 }],
@@ -424,6 +399,30 @@ describe('failure events the api may not know yet', () => {
     answer('ok');
     await mod.flushInteractions();
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('keep the wallet tour and move events apart from the failure events and from the rest', async () => {
+    fetchMock.mockImplementation((_url: string, init: SentRequest) => {
+      const names = (JSON.parse(init.body) as { events: SentEvent[] }).events.map((e) => e.name);
+      // An api that knows the failure events but not the wallet tour and move events yet.
+      const refused = names.some(
+        (name) => name.startsWith('wallet_tour') || name.startsWith('wallet_move'),
+      );
+      return Promise.resolve({ ok: !refused, status: refused ? 400 : 204 });
+    });
+    mod.logInteraction('wallet_tour_shown', { steps: 4 });
+    mod.logInteraction('payment_failed', { stage: 'send', reason: 'no_route' });
+    mod.logInteraction('screen_view');
+    mod.logInteraction('wallet_move_opened', { source: 'link' });
+    await mod.flushInteractions();
+    expect(batches()).toEqual([
+      ['wallet_tour_shown', 'wallet_move_opened'],
+      ['payment_failed'],
+      ['screen_view'],
+    ]);
+    // The refused wallet batch is dropped; the others were accepted, so nothing is sent again.
+    await mod.flushInteractions();
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it('are sent first when they are the oldest, and a failed batch of them is kept', async () => {
