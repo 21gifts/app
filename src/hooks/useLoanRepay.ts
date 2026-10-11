@@ -73,11 +73,13 @@ export interface LoanRepayResult {
   openTopUp: () => void;
   /**
    * One tap: pays every payable bill of `loans` (all loans with due.payableSats \> 0).
-   * `limitSats` (optional): pay only the fitting prefix of the ordered bills whose amount + fee
-   * stays ≤ limitSats (the "send ₿C now" link passes the balance).
+   * `limitSats` (optional): pay only the fitting prefix of the ordered bills whose amount
+   * stays ≤ limitSats (the "send ₿C now" link passes the named prefix total). Fees of that
+   * prefix must also fit the current balance, or nothing is sent.
    *
    * @param loans - Current loans body in list order.
-   * @param limitSats - Optional amount-plus-fee budget for a leading subset.
+   * @param limitSats - Optional amount-only budget for a leading subset; fees must also
+   *   fit the balance or nothing is sent.
    */
   pay: (loans: readonly MyLoan[], limitSats?: number) => void;
   /** True while a `repay-*` visual pin, including its fixed sent totals, applies. */
@@ -108,6 +110,11 @@ function orderBills(
         left.billIndex - right.billIndex,
     )
     .map(({ loanIndex: _loanIndex, billIndex: _billIndex, ...bill }) => bill);
+}
+
+/** Spark invoice, or the payment request when the api did not issue one. */
+function invoiceInput(bill: Pick<RepaymentBill, 'sparkInvoice' | 'pr'>): string {
+  return bill.sparkInvoice ?? bill.pr;
 }
 
 interface PreparedBill {
@@ -200,10 +207,15 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
   },
 };
 
+/** Bill inputs whose send returned paid, or whose sentLate is pending or true. Never cleared. */
+const sentInvoices = new Set<string>();
+
 /**
- * Runs the all-loans repayment flow and waits for api settlement. Every prepare
- * or send that does not pay (also `insufficient`, and a prepared amount other
- * than the bill, as `amount_mismatch`) is reported with
+ * Runs the all-loans repayment flow and waits for api settlement. A bill whose
+ * payment already went out (or may still go out) in this app session is never
+ * prepared or sent again; when only such bills are due the run ends unconfirmed.
+ * Every prepare or send that does not pay (also `insufficient`, and a prepared
+ * amount other than the bill, as `amount_mismatch`) is reported with
  * {@link reportPaymentFailure} under the flow `repay`; a send also after the
  * screen closed, a prepare only while its run is current.
  *
@@ -364,10 +376,16 @@ export function useLoanRepay(options: {
           return;
         }
 
-        const bills = orderBills(perLoan);
+        const ordered = orderBills(perLoan);
+        const bills = ordered.filter((bill) => !sentInvoices.has(invoiceInput(bill)));
+        const skipped = bills.length !== ordered.length;
         if (bills.length === 0) {
           await options.reload();
           if (!active()) {
+            return;
+          }
+          if (skipped) {
+            setLivePhase('unconfirmed');
             return;
           }
           setTopUpOpen(false);
@@ -381,7 +399,7 @@ export function useLoanRepay(options: {
         for (const bill of bills) {
           const result = await payFromWallet({
             type: 'input',
-            input: bill.sparkInvoice ?? bill.pr,
+            input: invoiceInput(bill),
           });
           if (!active()) {
             return;
@@ -428,13 +446,22 @@ export function useLoanRepay(options: {
         const kept =
           limitSats === undefined
             ? prepared
-            : fittingPrefix(prepared, (item) => item.bill.amountSats + item.feeSats, limitSats);
-        if (
-          kept.length === 0 ||
-          (limitSats === undefined && (insufficient || knownTotal > currentBalance))
-        ) {
+            : fittingPrefix(prepared, (item) => item.bill.amountSats, limitSats);
+        if (kept.length === 0) {
           missingBalance.current = useWalletStore.getState().balanceSats;
           setMissingSats(Math.max(1, allTotal - currentBalance));
+          setLivePhase('idle');
+          return;
+        }
+        const keptCost = kept.reduce((sum, item) => sum + item.bill.amountSats + item.feeSats, 0);
+        if (
+          (limitSats === undefined && (insufficient || knownTotal > currentBalance)) ||
+          (limitSats !== undefined && keptCost > currentBalance)
+        ) {
+          missingBalance.current = useWalletStore.getState().balanceSats;
+          setMissingSats(
+            Math.max(1, (limitSats === undefined ? allTotal : keptCost) - currentBalance),
+          );
           setLivePhase('idle');
           return;
         }
@@ -552,6 +579,17 @@ export function useLoanRepay(options: {
 
         for (const [index, item] of kept.entries()) {
           const result = await item.send();
+          const invoice = invoiceInput(item.bill);
+          if (result.kind === 'paid') {
+            sentInvoices.add(invoice);
+          } else if (result.kind === 'failed' && result.sentLate !== undefined) {
+            sentInvoices.add(invoice);
+            void result.sentLate.then((wasSent) => {
+              if (!wasSent) {
+                sentInvoices.delete(invoice);
+              }
+            });
+          }
           if (result.kind !== 'paid') {
             const sentLate = result.kind === 'failed' ? result.sentLate : undefined;
             reportPaymentFailure({ ...result.failure, amountSats: item.bill.amountSats }, 'repay', {
