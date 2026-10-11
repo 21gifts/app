@@ -377,7 +377,10 @@ test('a borrower takes a credit, three people give, and every share is paid back
 
   const home = await openMember(browser, ui.borrower, '/welcome');
   await repayAll(home, messageId, ui);
-  await home.getByRole('button', { name: 'Who gave and who is paid back' }).click();
+  await expect(home.getByRole('button', { name: "Pay today's repayment" })).toBeVisible();
+  await expect(home.getByRole('link', { name: 'Repay your loan' })).toBeVisible();
+  await home.getByRole('link', { name: 'Repayment list' }).click();
+  await expect(home).toHaveURL(new RegExp(`/messages/${messageId}/repayment-list$`));
   const paidBack = home.getByRole('region', { name: 'Paid back' });
   await expect(paidBack.getByText('Paid', { exact: true })).toHaveCount(SHARE_COUNT);
   const ledger = await readLedger(home, messageId);
@@ -397,7 +400,6 @@ test('a borrower takes a credit, three people give, and every share is paid back
     );
     expect(paid).toHaveLength(TERM_DAYS);
   }
-  await expect(home.getByRole('link', { name: 'Repay your loan' })).toBeVisible();
   await home.goto('/loans/repay');
   const nothingDue = home.getByText('Nothing due today');
   const heading = home.getByRole('heading', { name: 'Loan repayment' });
