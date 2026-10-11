@@ -117,6 +117,13 @@ function invoiceInput(bill: Pick<RepaymentBill, 'sparkInvoice' | 'pr'>): string 
   return bill.sparkInvoice ?? bill.pr;
 }
 
+/** Share identity that stays stable when `/due` rotates the invoice. */
+function shareKey(
+  bill: Pick<OrderedBill, 'messageId' | 'dayIndex' | 'recipientAccountId'>,
+): string {
+  return `${bill.messageId}:${bill.dayIndex}:${bill.recipientAccountId}`;
+}
+
 interface PreparedBill {
   bill: OrderedBill;
   feeSats: number;
@@ -208,26 +215,28 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
   },
 };
 
-/** Bill inputs reserved from the start of their send until it is known they did not go out. */
-const sentInvoices = new Set<string>();
+/** Shares reserved from the start of their send until it is known they did not go out. */
+const reservedShares = new Set<string>();
 
 /**
- * Runs the all-loans repayment flow and waits for api settlement. A bill is
+ * Runs the all-loans repayment flow and waits for api settlement. A share is
  * reserved from the moment its send starts; a send that did not go out
- * releases it. A reserved bill is never prepared or sent again in this app
- * session; when only such bills are due the run ends unconfirmed. A bill
- * another run is sending is skipped; if that leaves nothing sent the run
- * ends unconfirmed.
+ * releases it. A reserved share is never prepared or sent again in this app
+ * session, including when `/due` later returns a new invoice for that share;
+ * when only such shares are due the run ends unconfirmed. A share another
+ * run is sending is skipped; if that leaves nothing sent the run ends
+ * unconfirmed.
  * Every prepare or send that does not pay (also `insufficient`, and a prepared
  * amount other than the bill, as `amount_mismatch`) is reported with
  * {@link reportPaymentFailure} under the flow `repay`; a send also after the
  * screen closed, a prepare only while its run is current.
  *
- * @param options - Supplies the loans reload used by settlement polling.
+ * @param options - Supplies the loans reload used by the post-due baseline and
+ *   settlement polling.
  * @returns Wallet availability, run totals, top-up state, and repayment actions.
  */
 export function useLoanRepay(options: {
-  /** Reload from useMyLoans; used for the settlement poll. */
+  /** Reload from useMyLoans; used for the post-due baseline and the settlement poll. */
   reload: () => Promise<MyLoans | null>;
 }): LoanRepayResult {
   const session = useAuthStore((state) => state.session);
@@ -381,11 +390,11 @@ export function useLoanRepay(options: {
         }
 
         const ordered = orderBills(perLoan);
-        const bills = ordered.filter((bill) => !sentInvoices.has(invoiceInput(bill)));
+        const bills = ordered.filter((bill) => !reservedShares.has(shareKey(bill)));
         const skipped = bills.length !== ordered.length;
         const skippedByMessage = new Map<string, number>();
         for (const bill of ordered) {
-          if (sentInvoices.has(invoiceInput(bill))) {
+          if (reservedShares.has(shareKey(bill))) {
             skippedByMessage.set(
               bill.messageId,
               (skippedByMessage.get(bill.messageId) ?? 0) + bill.amountSats,
@@ -404,6 +413,17 @@ export function useLoanRepay(options: {
           setTopUpOpen(false);
           setLivePhase('repaid');
           return;
+        }
+
+        const fresh = await options.reload();
+        if (!active()) {
+          return;
+        }
+        const beforeByMessage = new Map(loans.map((loan) => [loan.messageId, loan.repaidSats]));
+        if (fresh !== null) {
+          for (const row of fresh.loans) {
+            beforeByMessage.set(row.messageId, row.repaidSats);
+          }
         }
 
         const prepared: PreparedBill[] = [];
@@ -481,7 +501,6 @@ export function useLoanRepay(options: {
 
         setTopUpOpen(false);
         setLivePhase('sending');
-        const beforeByMessage = new Map(loans.map((loan) => [loan.messageId, loan.repaidSats]));
         const sent: SendRun = {
           sentSats: 0,
           feeSats: 0,
@@ -595,8 +614,8 @@ export function useLoanRepay(options: {
         };
 
         for (const [index, item] of kept.entries()) {
-          const invoice = invoiceInput(item.bill);
-          if (sentInvoices.has(invoice)) {
+          const share = shareKey(item.bill);
+          if (reservedShares.has(share)) {
             sent.skippedAtSend = true;
             const target = sent.targets.get(item.bill.messageId);
             if (target !== undefined) {
@@ -609,16 +628,16 @@ export function useLoanRepay(options: {
             }
             continue;
           }
-          sentInvoices.add(invoice);
+          reservedShares.add(share);
           const result = await item.send();
           if (result.kind === 'failed' && result.sentLate !== undefined) {
             void result.sentLate.then((wasSent) => {
               if (!wasSent) {
-                sentInvoices.delete(invoice);
+                reservedShares.delete(share);
               }
             });
           } else if (result.kind !== 'paid') {
-            sentInvoices.delete(invoice);
+            reservedShares.delete(share);
           }
           if (result.kind !== 'paid') {
             const sentLate = result.kind === 'failed' ? result.sentLate : undefined;
