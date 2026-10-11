@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { CannotReceiveError, postMessageInvoice, WalletRequiredError } from '@/lib/api';
 import { logInteraction } from '@/lib/interaction-log';
 import { visualPin } from '@/lib/visual-pin';
+import { reportPaymentFailure, type PaymentFailure } from '@/lib/wallet/payment-failure';
 import { canUnlockWallet, unlockWalletPhrase } from '@/lib/wallet/wallet-phrase';
 import {
   listWalletPayments,
@@ -204,6 +205,27 @@ function liveReadyBalanceIsZero(): boolean {
 }
 
 /**
+ * Records a heart payment that did not go out as the member event
+ * `payment_failed` (flow `heart`, 1 sat). Hearts are not sent to error
+ * reporting as `Payment failed`: {@link sendHeartTip} reports them as
+ * `Heart not sent`.
+ *
+ * @param failure - What the wallet saw.
+ * @param input - Click snapshot: the session.
+ * @param sentLate - `sentLate` of a send the app stopped waiting for.
+ */
+function recordHeartPaymentFailure(
+  failure: PaymentFailure,
+  input: HeartTipInput,
+  sentLate?: Promise<boolean>,
+): void {
+  reportPaymentFailure({ ...failure, amountSats: 1 }, 'heart', {
+    session: input.sessionToken,
+    sentLate,
+  });
+}
+
+/**
  * Pays a prepared heart invoice. `confirm` sends at once, but only when the
  * prepared payment is exactly 1 sat with a fee of ₿0; anything else is
  * `heart_unavailable` and nothing is sent. `insufficient` or a ready zero
@@ -211,7 +233,9 @@ function liveReadyBalanceIsZero(): boolean {
  * of the click, also when the SDK finishes a send the app stopped waiting for.
  * A send that timed out (`sentLate`) is remembered for this note until its
  * outcome is known, so a retap waits instead of paying again: `sentLate`
- * `true` marks it sent, `false` forgets it.
+ * `true` marks it sent, `false` forgets it. Every outcome that is not paid is
+ * also recorded as `payment_failed` (see {@link recordHeartPaymentFailure}),
+ * a prepared heart that is not 1 sat at ₿0 as `amount_mismatch`.
  *
  * @param result - Outcome of {@link payFromWallet}.
  * @param input - Click snapshot: the message id and the session.
@@ -223,45 +247,67 @@ async function finishPreparedPay(
   input: HeartTipInput,
   invoice: string,
 ): Promise<HeartTipOutcome> {
-  if (result.kind === 'insufficient' || liveReadyBalanceIsZero()) {
+  if (result.kind !== 'confirm') {
+    recordHeartPaymentFailure(result.failure, input);
+    return {
+      kind: 'failed',
+      reason:
+        result.kind === 'insufficient' || liveReadyBalanceIsZero()
+          ? 'insufficient_balance'
+          : 'payment_failed',
+    };
+  }
+  if (liveReadyBalanceIsZero()) {
+    recordHeartPaymentFailure(
+      {
+        stage: 'prepare',
+        reason: 'insufficient',
+        method: result.method,
+        amountSats: 1,
+        feeSats: result.feeSats,
+      },
+      input,
+    );
     return { kind: 'failed', reason: 'insufficient_balance' };
   }
-  if (result.kind === 'confirm') {
-    if (result.amountSats !== 1 || result.feeSats > 0) {
-      return { kind: 'failed', reason: 'heart_unavailable' };
-    }
-    const sent = await result.send();
-    const recordHeart = (): void => {
-      logInteraction(
-        'heart_sent',
-        { messageId: input.messageId, amountSats: 1 },
-        input.sessionToken,
-      );
-    };
-    if (sent.kind === 'paid') {
-      recordHeart();
-      return { kind: 'paid' };
-    }
-    if (sent.kind === 'insufficient') {
-      return { kind: 'failed', reason: 'insufficient_balance' };
-    }
-    if (sent.kind === 'failed' && sent.sentLate !== undefined) {
-      const held: UnsettledHeart = { invoice, sinceMs: Date.now(), sent: false };
-      unsettledHearts.set(input.messageId, held);
-      void sent.sentLate.then((late) => {
-        if (late) {
-          recordHeart();
-          held.sent = true;
-        } else if (unsettledHearts.get(input.messageId) === held) {
-          unsettledHearts.delete(input.messageId);
-        }
-      });
-      return { kind: 'failed', reason: 'timeout_pending' };
-    }
-    return { kind: 'failed', reason: 'payment_failed' };
+  if (result.amountSats !== 1 || result.feeSats > 0) {
+    recordHeartPaymentFailure(
+      {
+        stage: 'prepare',
+        reason: 'amount_mismatch',
+        method: result.method,
+        amountSats: 1,
+        feeSats: result.feeSats,
+      },
+      input,
+    );
+    return { kind: 'failed', reason: 'heart_unavailable' };
   }
-  if (result.kind === 'unlock') {
-    return { kind: 'failed', reason: 'payment_failed' };
+  const sent = await result.send();
+  const recordHeart = (): void => {
+    logInteraction('heart_sent', { messageId: input.messageId, amountSats: 1 }, input.sessionToken);
+  };
+  if (sent.kind === 'paid') {
+    recordHeart();
+    return { kind: 'paid' };
+  }
+  const sentLate = sent.kind === 'failed' ? sent.sentLate : undefined;
+  recordHeartPaymentFailure(sent.failure, input, sentLate);
+  if (sent.kind === 'insufficient') {
+    return { kind: 'failed', reason: 'insufficient_balance' };
+  }
+  if (sentLate !== undefined) {
+    const held: UnsettledHeart = { invoice, sinceMs: Date.now(), sent: false };
+    unsettledHearts.set(input.messageId, held);
+    void sentLate.then((late) => {
+      if (late) {
+        recordHeart();
+        held.sent = true;
+      } else if (unsettledHearts.get(input.messageId) === held) {
+        unsettledHearts.delete(input.messageId);
+      }
+    });
+    return { kind: 'failed', reason: 'timeout_pending' };
   }
   return { kind: 'failed', reason: 'payment_failed' };
 }
@@ -330,12 +376,12 @@ async function payHeartInvoice(
   if (first.kind === 'unlock') {
     if (!input.needsWalletSetup && input.canUnlockWallet) {
       const unlocked = await unlockWalletPhrase();
-      if (unlocked !== 'unlocked') {
-        return { kind: 'failed', reason: 'payment_failed' };
+      if (unlocked === 'unlocked') {
+        const second = await payFromWallet({ type: 'input', input: sparkInvoice });
+        return finishPreparedPay(second, input, sparkInvoice);
       }
-      const second = await payFromWallet({ type: 'input', input: sparkInvoice });
-      return finishPreparedPay(second, input, sparkInvoice);
     }
+    recordHeartPaymentFailure(first.failure, input);
     return { kind: 'failed', reason: 'payment_failed' };
   }
   return finishPreparedPay(first, input, sparkInvoice);

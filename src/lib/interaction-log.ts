@@ -8,6 +8,8 @@ export type InteractionName =
   | 'gift_sent'
   | 'heart_sent'
   | 'payment_sent'
+  | 'payment_failed'
+  | 'wallet_open_failed'
   | 'payment_received_seen'
   | 'pos_charge_created'
   | 'pos_charge_paid_seen'
@@ -93,6 +95,16 @@ const MAX_BATCH_BYTES = 60_000;
 
 /** Measures request bodies in UTF-8 bytes, as the browser counts them. */
 const encoder = new TextEncoder();
+
+/**
+ * Events the api may not accept yet (it answers 400 for a batch that holds an
+ * unknown name). They go out in batches of their own, so such a refusal never
+ * drops another event.
+ */
+const SEPARATE_EVENTS: ReadonlySet<InteractionName> = new Set([
+  'payment_failed',
+  'wallet_open_failed',
+]);
 
 /** Events waiting to be sent. */
 const queue: InteractionEvent[] = [];
@@ -264,22 +276,35 @@ export function logInteraction(
 /**
  * Takes the next batch off the queue: at most {@link INTERACTION_BATCH_SIZE}
  * events and at most {@link MAX_BATCH_BYTES} UTF-8 bytes of JSON, and always
- * at least one.
+ * at least one. A batch holds either only {@link SEPARATE_EVENTS} or none of
+ * them, whichever the oldest queued event is; the others stay queued in order.
  *
  * @returns The batch.
  */
 function nextBatch(): InteractionEvent[] {
-  let count = 0;
+  // Called only while the queue holds an event.
+  const separate = SEPARATE_EVENTS.has((queue[0] as InteractionEvent).name);
+  const picked: number[] = [];
   // The wrapper, each event, and one comma per event (one more than needed).
   let bytes = WRAPPER_BYTES;
-  for (const event of queue) {
+  for (const [index, event] of queue.entries()) {
+    if (SEPARATE_EVENTS.has(event.name) !== separate) {
+      continue;
+    }
     bytes += encoder.encode(JSON.stringify(event)).length + 1;
-    if (count === INTERACTION_BATCH_SIZE || (count > 0 && bytes > MAX_BATCH_BYTES)) {
+    if (
+      picked.length === INTERACTION_BATCH_SIZE ||
+      (picked.length > 0 && bytes > MAX_BATCH_BYTES)
+    ) {
       break;
     }
-    count += 1;
+    picked.push(index);
   }
-  return queue.splice(0, count);
+  const batch = picked.map((index) => queue[index] as InteractionEvent);
+  for (const index of picked.reverse()) {
+    queue.splice(index, 1);
+  }
+  return batch;
 }
 
 /**

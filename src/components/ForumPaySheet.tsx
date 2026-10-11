@@ -11,6 +11,7 @@ import { WalletPay } from '@/components/WalletPay';
 import { Button, IconButton } from '@/components/ui';
 import type { AmountUnit } from '@/lib/api-types';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
+import type { PayFlow } from '@/lib/wallet/payment-failure';
 
 /** Pay-sheet validation or request failure. */
 export type ForumPayError =
@@ -28,6 +29,11 @@ export interface ForumPayInvoice {
   sparkInvoice?: string | null | undefined;
   /** True for the posting fee of a new post or reply: paying it also posts that text. */
   postsOnPay?: boolean;
+  /**
+   * Feature the invoice pays, for the failure report. Absent: `post_fee` for a
+   * posting fee, otherwise `gift`.
+   */
+  flow?: PayFlow;
 }
 
 /**
@@ -180,6 +186,7 @@ export function ForumPaySheet({
         amountSats={invoiceForCard.amountSats}
         rateDay={rateDay}
         postsOnPay={invoiceForCard.postsOnPay === true}
+        flow={invoiceForCard.flow ?? (invoiceForCard.postsOnPay === true ? 'post_fee' : 'gift')}
       />
       {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
       {payWaiting ? (

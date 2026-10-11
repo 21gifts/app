@@ -9,6 +9,7 @@ import { lnurlPayAddress } from '@/lib/pay-link';
 import { fetchMemberSparkInvoice, fetchShopChargeInvoice } from '@/lib/pos';
 import { visualPin } from '@/lib/visual-pin';
 import { lnurlRelayTarget, ownShop, type OwnShop } from '@/lib/wallet/lnurl-relay';
+import { reportPaymentFailure, type PayFlow, type PayReason } from '@/lib/wallet/payment-failure';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
@@ -259,6 +260,8 @@ interface PrepareOptions {
   onchainTarget?: WalletSendOnchainTarget;
   /** Speed chosen before the quote expired; set only when renewing a quote. */
   renewSpeed?: OnchainSpeed;
+  /** Feature that started the payment, for the failure report; absent means `send`. */
+  flow?: PayFlow;
 }
 
 /** The last prepare that opened the confirm step, kept to renew an expired quote. */
@@ -461,6 +464,29 @@ export function walletSendBounds(target: WalletSendAmountTarget): { min: number;
 }
 
 /**
+ * Failure reason of an api refusal of `POST /lnurl/invoice`.
+ *
+ * @param error - Rejection of `postLnurlInvoice`.
+ * @returns The reason code.
+ */
+function relayFailureReason(error: unknown): PayReason {
+  switch (error instanceof LnurlRelayError ? error.reason : 'failed') {
+    case 'notPayable':
+      return 'relay_not_payable';
+    case 'notFound':
+      return 'relay_not_found';
+    case 'unreachable':
+      return 'relay_unreachable';
+    case 'amount':
+      return 'relay_amount';
+    case 'comment':
+      return 'relay_comment';
+    default:
+      return 'relay_failed';
+  }
+}
+
+/**
  * Input alert for an api refusal of a `/lnurl/…` request.
  *
  * @param error - Rejection of `postLnurlPayRequest` or `postLnurlInvoice`.
@@ -571,6 +597,8 @@ export function useWalletSend(): UseWalletSendResult {
   const [comment, setComment] = useState('');
   const [pinSpeed, setPinSpeed] = useState<OnchainSpeed | null>(null);
   const sendRef = useRef<((speed?: OnchainSpeed) => Promise<WalletSendResult>) | null>(null);
+  /** Feature that started the payment `sendRef` sends. */
+  const sendFlowRef = useRef<PayFlow>('send');
   const preparedRef = useRef<PreparedSend | null>(null);
   const sendingRef = useRef(false);
   const [sending, setSending] = useState(false);
@@ -714,7 +742,11 @@ export function useWalletSend(): UseWalletSendResult {
    * with an alert. An amount the SDK refuses as below its minimum for a
    * base-chain address reopens the amount step with that minimum. A payment
    * to a base-chain address opens with `renewSpeed` when the balance covers
-   * it (marked `renewed`), otherwise with {@link defaultSpeed}.
+   * it (marked `renewed`), otherwise with {@link defaultSpeed}. Every result
+   * that ends the payment (not one that runs `fallback`) is reported with
+   * {@link reportPaymentFailure} under `flow` (default `send`) and
+   * `amountSats`; a prepared amount that is not `expectedSats` as
+   * `amount_mismatch`, and a handler that threw as `app_error`.
    */
   const prepare = useCallback(
     function prepareSend(
@@ -723,7 +755,7 @@ export function useWalletSend(): UseWalletSendResult {
       amountSats: number,
       options: PrepareOptions = {},
     ): void {
-      const { expectedSats, fallback, onchainTarget, renewSpeed } = options;
+      const { expectedSats, fallback, onchainTarget, renewSpeed, flow = 'send' } = options;
       const run = generation.current;
       const again = (): void => {
         prepareSend(request, recipient, amountSats, options);
@@ -737,6 +769,7 @@ export function useWalletSend(): UseWalletSendResult {
       }
       setBusy(true);
       const epoch = walletEpoch.current;
+      const session = useAuthStore.getState().session;
       void payFromWallet(request)
         .then((result) => {
           if (run !== generation.current) {
@@ -753,6 +786,7 @@ export function useWalletSend(): UseWalletSendResult {
           ) {
             setBusy(false);
             sendRef.current = result.send;
+            sendFlowRef.current = flow;
             preparedRef.current = { request, recipient, options, epoch };
             const fees = result.onchain;
             if (fees === undefined) {
@@ -782,6 +816,7 @@ export function useWalletSend(): UseWalletSendResult {
             return;
           }
           if (result.kind === 'belowMinimum' && onchainTarget !== undefined) {
+            reportPaymentFailure({ ...result.failure, amountSats }, flow, { session });
             setBusy(false);
             setState({
               step: 'amount',
@@ -794,13 +829,38 @@ export function useWalletSend(): UseWalletSendResult {
             fallback();
             return;
           }
+          reportPaymentFailure(
+            result.kind === 'confirm'
+              ? {
+                  stage: 'prepare',
+                  reason: 'amount_mismatch',
+                  method: result.method,
+                  amountSats,
+                  feeSats: result.feeSats,
+                }
+              : { ...result.failure, amountSats },
+            flow,
+            { session },
+          );
           setBusy(false);
           setState({
             step: 'input',
             error: result.kind === 'insufficient' ? 'insufficient' : 'failed',
           });
         })
-        .catch(() => {
+        .catch((error: unknown) => {
+          reportPaymentFailure(
+            {
+              stage: 'prepare',
+              reason: 'app_error',
+              method: 'unknown',
+              amountSats,
+              feeSats: null,
+              error,
+            },
+            flow,
+            { session },
+          );
           failRun(run, 'failed');
         });
     },
@@ -858,6 +918,18 @@ export function useWalletSend(): UseWalletSendResult {
             if (run !== generation.current) {
               return;
             }
+            reportPaymentFailure(
+              {
+                stage: 'prepare',
+                reason: relayFailureReason(error),
+                method: 'lnurl',
+                amountSats: sats,
+                feeSats: null,
+                error,
+              },
+              'send',
+              { session },
+            );
             setBusy(false);
             const reason = error instanceof LnurlRelayError ? error.reason : 'failed';
             if (target.minSats === target.maxSats) {
@@ -1099,6 +1171,7 @@ export function useWalletSend(): UseWalletSendResult {
           fallback: () => {
             readWithWallet(null);
           },
+          flow: 'pos',
         });
       })
       .catch(() => {
@@ -1142,16 +1215,26 @@ export function useWalletSend(): UseWalletSendResult {
     const { amountSats, recipient } = state;
     const speed = state.onchain?.speed;
     const run = generation.current;
+    const flow = sendFlowRef.current;
+    const session = useAuthStore.getState().session;
     setBusy(true);
     sendingRef.current = true;
     setSending(true);
     void send(speed).then((result) => {
       sendingRef.current = false;
       setSending(false);
-      if (run !== generation.current) {
+      const last = preparedRef.current;
+      const current = run === generation.current;
+      // An expired quote of the current step is renewed, not reported.
+      if (result.kind !== 'paid' && !(current && result.kind === 'expired' && last !== null)) {
+        reportPaymentFailure({ ...result.failure, amountSats }, flow, {
+          session,
+          sentLate: result.kind === 'failed' ? result.sentLate : undefined,
+        });
+      }
+      if (!current) {
         return;
       }
-      const last = preparedRef.current;
       if (result.kind === 'expired' && last !== null) {
         prepare(last.request, last.recipient, amountSats, {
           ...last.options,

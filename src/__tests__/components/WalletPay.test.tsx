@@ -32,7 +32,13 @@ function hookWith(
 
 function renderPay(sparkInvoice: string | null = 'spark1x'): void {
   renderWithLocale(
-    <WalletPay sparkInvoice={sparkInvoice} pr="lnbc210n1x" amountSats={21} rateDay={RATE_DAY} />,
+    <WalletPay
+      sparkInvoice={sparkInvoice}
+      pr="lnbc210n1x"
+      amountSats={21}
+      rateDay={RATE_DAY}
+      flow="gift"
+    />,
   );
 }
 
@@ -50,7 +56,7 @@ describe('WalletPay', () => {
   it('passes both requests and the amount to the hook', () => {
     hookWith('preparing');
     renderPay(null);
-    expect(useWalletPay).toHaveBeenCalledWith(null, 'lnbc210n1x', 21);
+    expect(useWalletPay).toHaveBeenCalledWith(null, 'lnbc210n1x', 21, 'gift');
   });
 
   it('says the wallet is not available here, without any button', () => {
@@ -121,6 +127,7 @@ describe('WalletPay', () => {
         amountSats={21}
         rateDay={RATE_DAY}
         postsOnPay
+        flow="post_fee"
       />,
     );
     const button = screen.getByRole('button', { name: /^Pay ₿21 and post/ });
@@ -138,6 +145,7 @@ describe('WalletPay', () => {
         amountSats={21}
         rateDay={null}
         postsOnPay
+        flow="post_fee"
       />,
     );
     expect(screen.getByRole('button').textContent).toBe('Pay ₿21 and post');
@@ -146,7 +154,13 @@ describe('WalletPay', () => {
   it('keeps Send when no rate is known', () => {
     hookWith('confirm', 0);
     renderWithLocale(
-      <WalletPay sparkInvoice="spark1x" pr="lnbc210n1x" amountSats={21} rateDay={null} />,
+      <WalletPay
+        sparkInvoice="spark1x"
+        pr="lnbc210n1x"
+        amountSats={21}
+        rateDay={null}
+        flow="gift"
+      />,
     );
     expect(screen.getByRole('button').textContent).toBe('Send');
   });
@@ -173,7 +187,13 @@ describe('WalletPay', () => {
     cleanup();
     hookWith('insufficient', 3, 1_234);
     renderWithLocale(
-      <WalletPay sparkInvoice="spark1x" pr="lnbc210n1x" amountSats={21} rateDay={null} />,
+      <WalletPay
+        sparkInvoice="spark1x"
+        pr="lnbc210n1x"
+        amountSats={21}
+        rateDay={null}
+        flow="gift"
+      />,
     );
     expect(screen.getByText(/^Still missing/).textContent).toBe("Still missing: ₿1'234");
   });

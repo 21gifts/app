@@ -1055,6 +1055,52 @@ async function routeOutsideAddress(page: Page): Promise<void> {
   });
 }
 
+test('Function: reportPaymentFailure — an outside address whose invoice is refused records payment_failed', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await stubWalletRate(page);
+  await stubCamera(page, { kind: 'blank' });
+  await routeOutsideAddress(page);
+  await page.route(/\/lnurl\/invoice$/, async (route) => {
+    await route.fulfill({
+      status: 502,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Address could not be reached' }),
+    });
+  });
+  await page.goto('/wallet');
+  await openSend(page);
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await region.getByRole('button', { name: 'Enter manually' }).click();
+  await region.getByLabel('Payment request or address').fill('bob@example.com');
+  await region.getByRole('button', { name: 'Continue' }).click();
+  await region.getByLabel('Amount').fill('1000');
+  await region.getByRole('button', { name: 'Continue' }).click();
+  await expect(region.getByRole('alert')).toBeVisible();
+  const sent = page.waitForRequest(
+    (req) =>
+      req.url().endsWith('/me/events') &&
+      req.method() === 'POST' &&
+      (req.postData() ?? '').includes('payment_failed'),
+  );
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event('pagehide'));
+  });
+  const body = (await sent).postDataJSON() as {
+    events: Array<{ name: string; props: Record<string, unknown> }>;
+  };
+  expect(body.events.map((event) => event.name)).toEqual(['payment_failed']);
+  expect(body.events[0]?.props).toEqual({
+    stage: 'prepare',
+    reason: 'relay_unreachable',
+    method: 'lnurl',
+    flow: 'send',
+    amountSats: 1000,
+  });
+  expect(JSON.stringify(body)).not.toContain('bob@example.com');
+});
+
 test.describe('Send while the wallet is still opening', () => {
   test('Function: useWalletPanel — Send stays enabled while the wallet opens and opens the camera at once', async ({
     page,

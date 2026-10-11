@@ -22,10 +22,12 @@ import type {
   WalletSdk,
   WalletTarget,
 } from '@/lib/wallet/wallet-sdk';
+import { captureMessage } from '@sentry/nextjs';
 import { logInteraction } from '@/lib/interaction-log';
 import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
+vi.mock('@sentry/nextjs', () => ({ captureMessage: vi.fn() }));
 import { useWalletStore } from '@/stores/wallet-store';
 
 const MNEMONIC =
@@ -101,7 +103,24 @@ beforeEach(() => {
   useWalletStore.getState().reset();
   useAuthStore.setState({ session: null, account: null, wrongAccount: false });
   ssrImport.mockClear();
+  vi.mocked(captureMessage).mockClear();
+  vi.mocked(logInteraction).mockClear();
 });
+
+/**
+ * Asserts that exactly one wallet-open failure was reported, with `reason`.
+ *
+ * @param reason - Expected reason.
+ */
+function expectWalletOpenReport(reason: 'timeout' | 'error'): void {
+  expect(captureMessage).toHaveBeenCalledTimes(1);
+  expect(captureMessage).toHaveBeenCalledWith('Wallet did not open', {
+    level: 'error',
+    fingerprint: ['wallet-open-failed', reason],
+    tags: { wallet_open_reason: reason },
+  });
+  expect(logInteraction).toHaveBeenCalledWith('wallet_open_failed', { reason });
+}
 
 afterEach(async () => {
   await disconnectWallet();
@@ -168,9 +187,11 @@ describe('connectWallet', () => {
       await vi.advanceTimersByTimeAsync(0);
       expect(loadSdk).toHaveBeenCalled();
       expect(useWalletStore.getState().status).toBe('connecting');
+      expect(captureMessage).not.toHaveBeenCalled();
       await vi.advanceTimersByTimeAsync(30_000);
       await expect(pending).resolves.toBeUndefined();
       expect(useWalletStore.getState().status).toBe('error');
+      expectWalletOpenReport('timeout');
     });
 
     it('starts the deadline without waiting for the previous disconnect', async () => {
@@ -519,6 +540,27 @@ describe('connectWallet', () => {
     });
     await expect(connectWallet(loadSdk)).resolves.toBeUndefined();
     expect(useWalletStore.getState().status).toBe('error');
+    expectWalletOpenReport('error');
+  });
+
+  it('does not report a failed attempt that a newer one replaced', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let reject: (err: Error) => void = () => undefined;
+    const stale = connectWallet(
+      () =>
+        new Promise<WalletSdk>((_, fail) => {
+          reject = fail;
+        }),
+    );
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().status).toBe('connecting');
+    });
+    await connectWallet(createFakeSdk().loadSdk);
+    reject(new Error('load failed'));
+    await stale;
+    expect(useWalletStore.getState().status).toBe('ready');
+    expect(captureMessage).not.toHaveBeenCalled();
+    expect(logInteraction).not.toHaveBeenCalledWith('wallet_open_failed', expect.anything());
   });
 
   it('connect rejection sets error', async () => {
@@ -1090,6 +1132,13 @@ describe('payFromWallet', () => {
   it('asks to unlock without a connection', async () => {
     await expect(payFromWallet({ type: 'input', input: 'spark1x' })).resolves.toEqual({
       kind: 'unlock',
+      failure: {
+        stage: 'prepare',
+        reason: 'unlock',
+        method: 'spark',
+        amountSats: null,
+        feeSats: null,
+      },
     });
   });
 
@@ -1101,7 +1150,12 @@ describe('payFromWallet', () => {
     const result = await payFromWallet({ type: 'input', input: 'spark1x' });
     expect(prepare).toHaveBeenCalledWith({ type: 'input', input: 'spark1x' });
     expect(getInfo).toHaveBeenLastCalledWith({ ensureSynced: true });
-    expect(result).toMatchObject({ kind: 'confirm', amountSats: 2_100, feeSats: 0 });
+    expect(result).toMatchObject({
+      kind: 'confirm',
+      amountSats: 2_100,
+      feeSats: 0,
+      method: 'spark',
+    });
     if (result.kind !== 'confirm') {
       throw new Error('expected confirm');
     }
@@ -1118,7 +1172,16 @@ describe('payFromWallet', () => {
       expect(getInfo.mock.calls.length).toBeGreaterThan(readsBefore);
     });
     expect(send).toHaveBeenCalledTimes(1);
-    await expect(result.send()).resolves.toEqual({ kind: 'failed' });
+    await expect(result.send()).resolves.toEqual({
+      kind: 'failed',
+      failure: {
+        stage: 'confirm',
+        reason: 'already_sent',
+        method: 'spark',
+        amountSats: 2_100,
+        feeSats: 0,
+      },
+    });
     expect(send).toHaveBeenCalledTimes(1);
   });
 
@@ -1130,15 +1193,23 @@ describe('payFromWallet', () => {
     await expect(payFromWallet({ type: 'input', input: 'spark1x' })).resolves.toEqual({
       kind: 'insufficient',
       feeSats: 1,
+      failure: {
+        stage: 'prepare',
+        reason: 'insufficient',
+        method: 'spark',
+        amountSats: 2_100,
+        feeSats: 1,
+      },
     });
   });
 
   it('writes the synced balance read to the store', async () => {
     const { getInfo } = await connectPaying({});
     getInfo.mockResolvedValueOnce({ balanceSats: 50, identityPubkey: IDENTITY });
-    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({
+    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toMatchObject({
       kind: 'insufficient',
       feeSats: 0,
+      failure: { stage: 'prepare', reason: 'insufficient', method: 'unknown' },
     });
     expect(useWalletStore.getState().balanceSats).toBe(50);
   });
@@ -1182,7 +1253,7 @@ describe('payFromWallet', () => {
     const pendingRefresh = refreshWallet();
     payFinish({ balanceSats: 50, identityPubkey: IDENTITY });
     expect(useWalletStore.getState().balanceSats).toBe(30_000);
-    await expect(pending).resolves.toEqual({ kind: 'insufficient', feeSats: 0 });
+    await expect(pending).resolves.toMatchObject({ kind: 'insufficient', feeSats: 0 });
     finish({ balanceSats: 50, identityPubkey: IDENTITY });
     await pendingRefresh;
 
@@ -1198,7 +1269,16 @@ describe('payFromWallet', () => {
     });
     await disconnectWallet();
     finish({ balanceSats: 50, identityPubkey: IDENTITY });
-    await expect(dropped).resolves.toEqual({ kind: 'failed' });
+    await expect(dropped).resolves.toEqual({
+      kind: 'failed',
+      failure: {
+        stage: 'prepare',
+        reason: 'disconnected',
+        method: 'unknown',
+        amountSats: 2_100,
+        feeSats: 0,
+      },
+    });
     expect(useWalletStore.getState().balanceSats).toBeNull();
   });
 
@@ -1212,8 +1292,19 @@ describe('payFromWallet', () => {
     });
     const pending = payFromWallet({ type: 'input', input: 'a' });
     await disconnectWallet();
-    reject(new Error('Insufficient funds'));
-    await expect(pending).resolves.toEqual({ kind: 'failed' });
+    const error = new Error('Insufficient funds');
+    reject(error);
+    await expect(pending).resolves.toEqual({
+      kind: 'failed',
+      failure: {
+        stage: 'prepare',
+        reason: 'disconnected',
+        method: 'unknown',
+        amountSats: null,
+        feeSats: null,
+        error,
+      },
+    });
   });
 
   it('maps a prepare rejection to failed, or to insufficient when the SDK says so', async () => {
@@ -1230,12 +1321,24 @@ describe('payFromWallet', () => {
         throw 'insufficientFunds';
       },
     });
-    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({ kind: 'failed' });
-    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({
-      kind: 'insufficient',
+    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toMatchObject({
+      kind: 'failed',
+      failure: { stage: 'prepare', reason: 'sdk_error', error: new Error('network') },
     });
-    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({
+    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toMatchObject({
       kind: 'insufficient',
+      failure: { stage: 'prepare', reason: 'insufficient' },
+    });
+    await expect(payFromWallet({ type: 'input', input: 'a', amountSats: 5 })).resolves.toEqual({
+      kind: 'insufficient',
+      failure: {
+        stage: 'prepare',
+        reason: 'insufficient',
+        method: 'unknown',
+        amountSats: 5,
+        feeSats: null,
+        error: 'insufficientFunds',
+      },
     });
   });
 
@@ -1253,14 +1356,33 @@ describe('payFromWallet', () => {
     const pending = payFromWallet({ type: 'input', input: 'a' });
     await disconnectWallet();
     finish();
-    await expect(pending).resolves.toEqual({ kind: 'failed' });
+    await expect(pending).resolves.toEqual({
+      kind: 'failed',
+      failure: {
+        stage: 'prepare',
+        reason: 'disconnected',
+        method: 'unknown',
+        amountSats: 1,
+        feeSats: 0,
+      },
+    });
     expect(getInfo.mock.calls.length).toBe(reads);
   });
 
   it('fails when the balance cannot be read before confirmation', async () => {
     const { getInfo } = await connectPaying({});
     getInfo.mockRejectedValueOnce(new Error('offline'));
-    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({ kind: 'failed' });
+    await expect(payFromWallet({ type: 'input', input: 'a' })).resolves.toEqual({
+      kind: 'failed',
+      failure: {
+        stage: 'prepare',
+        reason: 'balance_read',
+        method: 'unknown',
+        amountSats: 2_100,
+        feeSats: 0,
+        error: new Error('offline'),
+      },
+    });
   });
 
   it('does not refresh a newer connection after a send on a replaced one', async () => {
@@ -1310,8 +1432,14 @@ describe('payFromWallet', () => {
     if (first.kind !== 'confirm' || second.kind !== 'confirm') {
       throw new Error('expected confirm');
     }
-    await expect(first.send()).resolves.toEqual({ kind: 'failed' });
-    await expect(second.send()).resolves.toEqual({ kind: 'insufficient' });
+    await expect(first.send()).resolves.toMatchObject({
+      kind: 'failed',
+      failure: { stage: 'send', reason: 'no_route', method: 'unknown', amountSats: 1, feeSats: 0 },
+    });
+    await expect(second.send()).resolves.toMatchObject({
+      kind: 'insufficient',
+      failure: { stage: 'send', reason: 'insufficient' },
+    });
   });
 
   it('stops waiting for a send after the time limit', async () => {
@@ -1329,7 +1457,10 @@ describe('payFromWallet', () => {
     vi.useFakeTimers();
     const pending = result.send();
     await vi.advanceTimersByTimeAsync(WALLET_SEND_TIMEOUT_MS);
-    await expect(pending).resolves.toMatchObject({ kind: 'failed' });
+    await expect(pending).resolves.toMatchObject({
+      kind: 'failed',
+      failure: { stage: 'send', reason: 'timeout', amountSats: 1, feeSats: 0 },
+    });
   });
 
   it('records a send that the SDK finishes after the time limit, under the session of the send', async () => {
@@ -1411,8 +1542,75 @@ describe('payFromWallet', () => {
       throw new Error('expected confirm');
     }
     await disconnectWallet();
-    await expect(result.send()).resolves.toEqual({ kind: 'failed' });
+    await expect(result.send()).resolves.toEqual({
+      kind: 'failed',
+      failure: {
+        stage: 'confirm',
+        reason: 'disconnected',
+        method: 'unknown',
+        amountSats: 1,
+        feeSats: 0,
+      },
+    });
     expect(send).not.toHaveBeenCalled();
+  });
+});
+
+describe('payFromWallet failure details', () => {
+  it.each([
+    ['lnbc10u1pjexample', 'lightning'],
+    ['LIGHTNING:LNTB10U1PJEXAMPLE', 'lightning'],
+    ['spark1pgssexample', 'spark'],
+    ['sparkrt1pgssexample', 'spark'],
+    [
+      'bitcoin:bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq?amount=0.001&lightning=lnbc1x',
+      'lightning',
+    ],
+    ['bitcoin:bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq?amount=0.001', 'onchain'],
+    ['bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq', 'onchain'],
+    ['1BoatSLRHtKNngkdXEeobR76b53LETtpyT', 'onchain'],
+    ['hello there', 'unknown'],
+  ])('reads %s as %s before the SDK prepares it', async (input, method) => {
+    await expect(payFromWallet({ type: 'input', input })).resolves.toMatchObject({
+      kind: 'unlock',
+      failure: { method },
+    });
+  });
+
+  it('reads an LNURL receiver as lnurl, with the amount asked for', async () => {
+    await expect(
+      payFromWallet({ type: 'lnurl', request: { details: {} }, amountSats: 21 }),
+    ).resolves.toMatchObject({
+      kind: 'unlock',
+      failure: { stage: 'prepare', reason: 'unlock', method: 'lnurl', amountSats: 21 },
+    });
+  });
+
+  it.each([
+    [new Error('Invoice has expired at 1700000000'), 'expired'],
+    [new Error('Spark error: no route found to destination'), 'no_route'],
+    [new Error('Timeout error: operation timed out'), 'timeout'],
+    [new Error('Network error: connection reset'), 'network'],
+    [new TypeError('Failed to fetch'), 'network'],
+    [new Error('Lnurl error: callback refused'), 'lnurl_error'],
+    [new Error('Generic error: something else'), 'sdk_error'],
+  ])('maps the prepare rejection %s to the reason %s', async (error, reason) => {
+    await connectPaying({
+      prepare: async () => {
+        throw error;
+      },
+    });
+    await expect(payFromWallet({ type: 'input', input: 'lnbc10u1pjexample' })).resolves.toEqual({
+      kind: 'failed',
+      failure: {
+        stage: 'prepare',
+        reason,
+        method: 'lightning',
+        amountSats: null,
+        feeSats: null,
+        error,
+      },
+    });
   });
 });
 
@@ -1470,6 +1668,14 @@ describe('payFromWallet to a base-chain address', () => {
     await expect(payFromWallet(REQUEST)).resolves.toEqual({
       kind: 'insufficient',
       feeSats: FEES.slow,
+      failure: {
+        stage: 'prepare',
+        reason: 'insufficient',
+        method: 'onchain',
+        amountSats: 50_000,
+        feeSats: FEES.slow,
+        onchainFees: FEES,
+      },
     });
   });
 
@@ -1481,7 +1687,17 @@ describe('payFromWallet to a base-chain address', () => {
       throw new Error('expected confirm');
     }
     expect(result.onchain?.spendableFeeSats).toBe(1_000);
-    await expect(result.send('fast')).resolves.toEqual({ kind: 'insufficient' });
+    await expect(result.send('fast')).resolves.toEqual({
+      kind: 'insufficient',
+      failure: {
+        stage: 'confirm',
+        reason: 'insufficient',
+        method: 'onchain',
+        amountSats: 50_000,
+        feeSats: FEES.fast,
+        onchainFees: FEES,
+      },
+    });
     expect(send).not.toHaveBeenCalled();
     await expect(result.send('slow')).resolves.toEqual({ kind: 'paid' });
     expect(send).toHaveBeenCalledWith('slow');
@@ -1497,19 +1713,30 @@ describe('payFromWallet to a base-chain address', () => {
     if (result.kind !== 'confirm') {
       throw new Error('expected confirm');
     }
-    await expect(result.send()).resolves.toEqual({ kind: 'expired' });
+    await expect(result.send()).resolves.toEqual({
+      kind: 'expired',
+      failure: {
+        stage: 'confirm',
+        reason: 'expired',
+        method: 'onchain',
+        amountSats: 50_000,
+        feeSats: FEES.medium,
+        onchainFees: FEES,
+      },
+    });
     expect(send).not.toHaveBeenCalled();
   });
 
   it.each([
-    [new Error('Fee quote expired'), 'expired'],
-    ['quote has expired', 'expired'],
+    [new Error('Fee quote expired'), 'expired', 'expired'],
+    ['quote has expired', 'expired', 'expired'],
     [
       new Error('Insufficient funds for withdrawal: amount 50000 sats, fee 1420 sats'),
       'insufficient',
+      'insufficient',
     ],
-    [new Error('service unavailable'), 'failed'],
-  ])('maps the send rejection %s to %s', async (error, kind) => {
+    [new Error('service unavailable'), 'failed', 'sdk_error'],
+  ])('maps the send rejection %s to %s (%s)', async (error, kind, reason) => {
     await connectPaying({
       balanceSats: 60_000,
       prepare: onchainPrepared(async () => {
@@ -1520,7 +1747,18 @@ describe('payFromWallet to a base-chain address', () => {
     if (result.kind !== 'confirm') {
       throw new Error('expected confirm');
     }
-    await expect(result.send()).resolves.toEqual({ kind });
+    await expect(result.send()).resolves.toEqual({
+      kind,
+      failure: {
+        stage: 'send',
+        reason,
+        method: 'onchain',
+        amountSats: 50_000,
+        feeSats: FEES.medium,
+        onchainFees: FEES,
+        error,
+      },
+    });
   });
 
   it('does not read an expired quote into a payment without one', async () => {
@@ -1538,7 +1776,10 @@ describe('payFromWallet to a base-chain address', () => {
       throw new Error('expected confirm');
     }
     expect(result.onchain).toBeUndefined();
-    await expect(result.send()).resolves.toEqual({ kind: 'failed' });
+    await expect(result.send()).resolves.toMatchObject({
+      kind: 'failed',
+      failure: { stage: 'send', reason: 'expired', method: 'spark' },
+    });
   });
 
   it.each([
@@ -1553,6 +1794,15 @@ describe('payFromWallet to a base-chain address', () => {
     await expect(payFromWallet({ ...REQUEST, amountSats: 100 })).resolves.toEqual({
       kind: 'belowMinimum',
       minSats: 294,
+      failure: {
+        stage: 'prepare',
+        reason: 'below_minimum',
+        // `bc1q` is too short to read as an address before the SDK prepares it.
+        method: 'unknown',
+        amountSats: 100,
+        feeSats: null,
+        error,
+      },
     });
   });
 });

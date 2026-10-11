@@ -10,6 +10,7 @@ import {
   type InboxScreenProps,
   type ThreadGiftGroup,
 } from '@/components/InboxScreen';
+import { useWalletPay } from '@/hooks/useWalletPay';
 import { fetchPublicMessage } from '@/lib/api';
 import type { Conversation, ConversationMessage, ForumMessage } from '@/lib/api-types';
 import { searchMentionAccounts } from '@/lib/mention-search';
@@ -32,6 +33,11 @@ function paySend(): HTMLElement | null {
     null
   );
 }
+vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
+  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
+});
+
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
   return { ...actual, payFromWallet: vi.fn() };
@@ -1538,6 +1544,7 @@ describe('InboxScreen', () => {
     expect(screen.queryByLabelText('Amount')).toBeNull();
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    expect(vi.mocked(useWalletPay).mock.calls.at(-1)?.[3]).toBe('inbox');
     expect(locationStub.href).toBe('http://localhost/');
     const close = screen.getByRole('button', { name: 'Close' });
     expect(close.className.split(' ')).not.toContain('absolute');

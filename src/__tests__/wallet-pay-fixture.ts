@@ -42,5 +42,5 @@ export function confirmResult(
   send: () => Promise<WalletSendResult> = vi.fn(async () => ({ kind: 'paid' as const })),
   amountSats = 21,
 ): WalletPayResult {
-  return { kind: 'confirm', amountSats, feeSats: 0, send };
+  return { kind: 'confirm', amountSats, feeSats: 0, method: 'spark', send };
 }

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { visualPin } from '@/lib/visual-pin';
+import { reportPaymentFailure, type PayFlow } from '@/lib/wallet/payment-failure';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
@@ -152,17 +153,22 @@ function visualView(): WalletPayView | null {
  * balance. A new request or a new
  * `amountSats` starts over, and a send prepared for an earlier one is never
  * shown or paid. Visual pins (`?visual=wallet-pay-…`) apply only in a
- * Playwright build and leave the actions inert.
+ * Playwright build and leave the actions inert. Every prepare or send that
+ * did not pay (also `insufficient`, and a prepared amount that differs, as
+ * `amount_mismatch`) is reported with {@link reportPaymentFailure} under
+ * `flow` and the sheet amount; a prepare whose sheet moved on meanwhile is not.
  *
  * @param sparkInvoice - Request the api issued for the in-app wallet, or `null`/`undefined`.
  * @param pr - Payment request of the same invoice, paid when there is no `sparkInvoice`.
  * @param amountSats - Amount the sheet shows; a prepared payment of another amount is not offered.
+ * @param flow - Feature whose sheet this is, for the failure report.
  * @returns View, fee, missing amount, and the pay and retry actions.
  */
 export function useWalletPay(
   sparkInvoice: string | null | undefined,
   pr: string,
   amountSats: number,
+  flow: PayFlow,
 ): UseWalletPayResult {
   const status = useWalletStore((state) => state.status);
   const balanceSats = useWalletStore((state) => state.balanceSats);
@@ -196,7 +202,7 @@ export function useWalletPay(
   }, [input, amountSats]);
 
   const sendPrepared = useCallback(
-    (send: () => Promise<WalletSendResult>, run: number, sats: number): void => {
+    (send: () => Promise<WalletSendResult>, run: number, sats: number, payFlow: PayFlow): void => {
       const balanceBefore = useWalletStore.getState().balanceSats;
       const session = useAuthStore.getState().session;
       setPhase('paying');
@@ -204,13 +210,21 @@ export function useWalletPay(
         if (result.kind === 'paid') {
           // Recorded even when the sheet closed meanwhile: the gift went out.
           logInteraction('gift_sent', { amountSats: sats }, session);
-        } else if (result.kind === 'failed' && result.sentLate !== undefined) {
-          // A send the app stopped waiting for that the SDK still sent.
-          void result.sentLate.then((sent) => {
-            if (sent) {
-              logInteraction('gift_sent', { amountSats: sats }, session);
-            }
+        } else {
+          // Reported even when the sheet closed meanwhile: the send did not go out.
+          const sentLate = result.kind === 'failed' ? result.sentLate : undefined;
+          reportPaymentFailure({ ...result.failure, amountSats: sats }, payFlow, {
+            session,
+            sentLate,
           });
+          if (sentLate !== undefined) {
+            // A send the app stopped waiting for that the SDK still sent.
+            void sentLate.then((sent) => {
+              if (sent) {
+                logInteraction('gift_sent', { amountSats: sats }, session);
+              }
+            });
+          }
         }
         if (run !== generation.current) {
           return;
@@ -237,27 +251,42 @@ export function useWalletPay(
     }
     const run = generation.current;
     const balanceBefore = useWalletStore.getState().balanceSats;
+    const session = useAuthStore.getState().session;
     setPhase('preparing');
     void payFromWallet({ type: 'input', input }).then((result) => {
       if (run !== generation.current) {
         return;
       }
       if (result.kind === 'confirm' && result.amountSats !== amountSats) {
+        reportPaymentFailure(
+          {
+            stage: 'prepare',
+            reason: 'amount_mismatch',
+            method: result.method,
+            amountSats,
+            feeSats: result.feeSats,
+          },
+          flow,
+          { session },
+        );
         setPhase('failed');
       } else if (result.kind === 'confirm') {
         sendRef.current = { send: result.send, input, amountSats };
         setPreparedFor({ input, amountSats });
         setFeeSats(result.feeSats);
         setPhase('confirm');
-      } else if (result.kind === 'insufficient') {
-        insufficientBalance.current = balanceBefore;
-        setFeeSats(result.feeSats ?? null);
-        setPhase('insufficient');
       } else {
-        setPhase('failed');
+        reportPaymentFailure({ ...result.failure, amountSats }, flow, { session });
+        if (result.kind === 'insufficient') {
+          insufficientBalance.current = balanceBefore;
+          setFeeSats(result.feeSats ?? null);
+          setPhase('insufficient');
+        } else {
+          setPhase('failed');
+        }
       }
     });
-  }, [canPay, status, phase, input, amountSats]);
+  }, [canPay, status, phase, input, amountSats, flow]);
 
   useEffect(() => {
     if (phase !== 'insufficient' || balanceSats === null) {
@@ -320,8 +349,8 @@ export function useWalletPay(
       return;
     }
     sendRef.current = null;
-    sendPrepared(prepared.send, generation.current, prepared.amountSats);
-  }, [pinned, canPay, phase, input, amountSats, sendPrepared]);
+    sendPrepared(prepared.send, generation.current, prepared.amountSats, flow);
+  }, [pinned, canPay, phase, input, amountSats, flow, sendPrepared]);
 
   const retry = useCallback((): void => {
     if (pinned !== null) {

@@ -803,6 +803,7 @@ export function ForumLoader({
           pr: invoice.pr,
           amountSats: invoice.amountSats,
           sparkInvoice: invoice.sparkInvoice,
+          flow: 'repay',
         });
       })
       .catch((err: unknown) => {
