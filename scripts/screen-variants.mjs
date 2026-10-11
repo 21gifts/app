@@ -894,6 +894,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'unavailable-who-open',
+    image: 'loans-repay-unavailable-who-open.png',
+    visual: 'state-loans-repay-unavailable-who-open',
+    needle: 'state /loans/repay unavailable-who-open',
+  },
+  {
+    route: '/loans/repay',
     id: 'connecting',
     image: 'loans-repay-connecting.png',
     visual: 'state-loans-repay-connecting',
@@ -901,10 +908,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'connecting-who-open',
+    image: 'loans-repay-connecting-who-open.png',
+    visual: 'state-loans-repay-connecting-who-open',
+    needle: 'state /loans/repay connecting-who-open',
+  },
+  {
+    route: '/loans/repay',
     id: 'setup-failed',
     image: 'loans-repay-setup-failed.png',
     visual: 'state-loans-repay-setup-failed',
     needle: 'state /loans/repay setup-failed',
+  },
+  {
+    route: '/loans/repay',
+    id: 'setup-failed-who-open',
+    image: 'loans-repay-setup-failed-who-open.png',
+    visual: 'state-loans-repay-setup-failed-who-open',
+    needle: 'state /loans/repay setup-failed-who-open',
   },
   {
     route: '/loans/repay',
@@ -933,6 +954,13 @@ export const SCREEN_VARIANTS = [
     image: 'loans-repay-fiat.png',
     visual: 'state-loans-repay-fiat',
     needle: 'state /loans/repay fiat',
+  },
+  {
+    route: '/loans/repay',
+    id: 'fiat-who-open',
+    image: 'loans-repay-fiat-who-open.png',
+    visual: 'state-loans-repay-fiat-who-open',
+    needle: 'state /loans/repay fiat-who-open',
   },
   {
     route: '/loans/repay',
@@ -985,10 +1013,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'short-who-open',
+    image: 'loans-repay-short-who-open.png',
+    visual: 'state-loans-repay-short-who-open',
+    needle: 'state /loans/repay short-who-open',
+  },
+  {
+    route: '/loans/repay',
     id: 'fee-gap',
     image: 'loans-repay-fee-gap.png',
     visual: 'state-loans-repay-fee-gap',
     needle: 'state /loans/repay fee-gap',
+  },
+  {
+    route: '/loans/repay',
+    id: 'fee-gap-who-open',
+    image: 'loans-repay-fee-gap-who-open.png',
+    visual: 'state-loans-repay-fee-gap-who-open',
+    needle: 'state /loans/repay fee-gap-who-open',
   },
   {
     route: '/loans/repay',
@@ -999,10 +1041,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'fee-gap-topup-who-open',
+    image: 'loans-repay-fee-gap-topup-who-open.png',
+    visual: 'state-loans-repay-fee-gap-topup-who-open',
+    needle: 'state /loans/repay fee-gap-topup-who-open',
+  },
+  {
+    route: '/loans/repay',
     id: 'fee-gap-topup-copied',
     image: 'loans-repay-fee-gap-topup-copied.png',
     visual: 'state-loans-repay-fee-gap-topup-copied',
     needle: 'state /loans/repay fee-gap-topup-copied',
+  },
+  {
+    route: '/loans/repay',
+    id: 'fee-gap-topup-copied-who-open',
+    image: 'loans-repay-fee-gap-topup-copied-who-open.png',
+    visual: 'state-loans-repay-fee-gap-topup-copied-who-open',
+    needle: 'state /loans/repay fee-gap-topup-copied-who-open',
   },
   {
     route: '/loans/repay',
@@ -1013,10 +1069,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'topup-who-open',
+    image: 'loans-repay-topup-who-open.png',
+    visual: 'state-loans-repay-topup-who-open',
+    needle: 'state /loans/repay topup-who-open',
+  },
+  {
+    route: '/loans/repay',
     id: 'topup-copied',
     image: 'loans-repay-topup-copied.png',
     visual: 'state-loans-repay-topup-copied',
     needle: 'state /loans/repay topup-copied',
+  },
+  {
+    route: '/loans/repay',
+    id: 'topup-copied-who-open',
+    image: 'loans-repay-topup-copied-who-open.png',
+    visual: 'state-loans-repay-topup-copied-who-open',
+    needle: 'state /loans/repay topup-copied-who-open',
   },
   {
     route: '/loans/repay',
@@ -1027,10 +1097,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'sending-who-open',
+    image: 'loans-repay-sending-who-open.png',
+    visual: 'state-loans-repay-sending-who-open',
+    needle: 'state /loans/repay sending-who-open',
+  },
+  {
+    route: '/loans/repay',
     id: 'partial',
     image: 'loans-repay-partial.png',
     visual: 'state-loans-repay-partial',
     needle: 'state /loans/repay partial',
+  },
+  {
+    route: '/loans/repay',
+    id: 'partial-who-open',
+    image: 'loans-repay-partial-who-open.png',
+    visual: 'state-loans-repay-partial-who-open',
+    needle: 'state /loans/repay partial-who-open',
   },
   {
     route: '/loans/repay',
@@ -1045,6 +1129,13 @@ export const SCREEN_VARIANTS = [
     image: 'loans-repay-last-due.png',
     visual: 'state-loans-repay-last-due',
     needle: 'state /loans/repay last-due',
+  },
+  {
+    route: '/loans/repay',
+    id: 'last-due-who-open',
+    image: 'loans-repay-last-due-who-open.png',
+    visual: 'state-loans-repay-last-due-who-open',
+    needle: 'state /loans/repay last-due-who-open',
   },
   {
     route: '/loans/repay',
@@ -1083,10 +1174,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'unconfirmed-who-open',
+    image: 'loans-repay-unconfirmed-who-open.png',
+    visual: 'state-loans-repay-unconfirmed-who-open',
+    needle: 'state /loans/repay unconfirmed-who-open',
+  },
+  {
+    route: '/loans/repay',
     id: 'failed',
     image: 'loans-repay-failed.png',
     visual: 'state-loans-repay-failed',
     needle: 'state /loans/repay failed',
+  },
+  {
+    route: '/loans/repay',
+    id: 'failed-who-open',
+    image: 'loans-repay-failed-who-open.png',
+    visual: 'state-loans-repay-failed-who-open',
+    needle: 'state /loans/repay failed-who-open',
   },
   {
     route: '/loans/repay',
@@ -1986,6 +2091,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'loans-collecting-open',
+    image: 'welcome-loans-collecting-open.png',
+    visual: 'state-welcome-loans-collecting-open',
+    needle: 'state /welcome loans-collecting-open',
+  },
+  {
+    route: '/welcome',
     id: 'loans-due',
     image: 'welcome-loans-due.png',
     visual: 'state-welcome-loans-due',
@@ -2007,6 +2119,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'loans-behind-open',
+    image: 'welcome-loans-behind-open.png',
+    visual: 'state-welcome-loans-behind-open',
+    needle: 'state /welcome loans-behind-open',
+  },
+  {
+    route: '/welcome',
     id: 'loans-nothing-due',
     image: 'welcome-loans-nothing-due.png',
     visual: 'state-welcome-loans-nothing-due',
@@ -2014,10 +2133,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'loans-nothing-due-open',
+    image: 'welcome-loans-nothing-due-open.png',
+    visual: 'state-welcome-loans-nothing-due-open',
+    needle: 'state /welcome loans-nothing-due-open',
+  },
+  {
+    route: '/welcome',
     id: 'loans-sunday',
     image: 'welcome-loans-sunday.png',
     visual: 'state-welcome-loans-sunday',
     needle: 'state /welcome loans-sunday',
+  },
+  {
+    route: '/welcome',
+    id: 'loans-sunday-open',
+    image: 'welcome-loans-sunday-open.png',
+    visual: 'state-welcome-loans-sunday-open',
+    needle: 'state /welcome loans-sunday-open',
   },
   {
     route: '/welcome',

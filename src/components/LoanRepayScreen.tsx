@@ -55,9 +55,14 @@ function shareKey(share: Pick<DueShare, 'messageId' | 'dayIndex' | 'accountId'>)
   return `${share.messageId}:${share.dayIndex}:${share.accountId}`;
 }
 
+/** POST /messages/:id/repayment/due returns at most 60 bills per call. */
+const DUE_BILLS_PER_REQUEST = 60;
+
 /**
  * All-loans repayment screen: live due totals, recipients, one-tap wallet payment,
- * top-up controls, and per-loan progress.
+ * top-up controls, and per-loan progress. The send-now link names at most 60 shares
+ * per loan (one due request's limit); if any named share is missing from the due
+ * answer, nothing is sent and the screen reloads.
  *
  * @returns The repayment screen body.
  */
@@ -333,9 +338,18 @@ export function LoanRepayScreen(): ReactElement {
   ) : null;
 
   const payableShares = shares.filter((share) => share.canReceive);
+  const keptByLoan = new Map<string, number>();
+  const payableWithinDue = payableShares.filter((share) => {
+    const kept = keptByLoan.get(share.messageId) ?? 0;
+    if (kept >= DUE_BILLS_PER_REQUEST) {
+      return false;
+    }
+    keptByLoan.set(share.messageId, kept + 1);
+    return true;
+  });
   const balanceSats = repay.balanceSats;
   const fitting =
-    balanceSats === null ? [] : fittingPrefix(payableShares, (share) => share.sats, balanceSats);
+    balanceSats === null ? [] : fittingPrefix(payableWithinDue, (share) => share.sats, balanceSats);
   // `fittingPrefix` stops before the first share whose satoshi amount is unknown.
   const fittingSats = fitting.reduce((sum, share) => sum + (share.sats as number), 0);
   const fittingNames = [...new Set(fitting.map((share) => share.name))].join(', ');
