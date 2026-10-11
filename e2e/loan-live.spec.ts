@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test';
+import { loanTimeZone } from './loan-zone';
 
 /**
  * Live credit on the staging screens. The default Playwright run ignores this
@@ -122,7 +123,8 @@ async function openMember(browser: Browser, member: Member, pathname: string): P
   const context = await browser.newContext({
     baseURL: APP,
     locale: 'en-US',
-    timezoneId: 'UTC',
+    // This context is opened by hand, so the Playwright project zone does not apply.
+    timezoneId: loanTimeZone(),
     extraHTTPHeaders: { 'Accept-Language': 'en' },
   });
   await context.addCookies([{ name: 'fiat', value: 'PHP', url: APP }]);
