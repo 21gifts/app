@@ -254,7 +254,7 @@ test('Function: useCopied — Receive shows the move offer only with hadExternal
   await expect(page.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeVisible();
 });
 
-test('Function: takeMoveFundsRequest — Receive hides the move offer without hadExternalWallet', async ({
+test('Function: WalletReceive — Receive hides the move offer without hadExternalWallet', async ({
   page,
 }) => {
   await signIn(page, { sparkWalletVerified: true });
@@ -323,4 +323,18 @@ test('Function: logInteraction — the move flow reports how it opened, its step
       ['wallet_move_step', { step: 'waiting' }],
       ['wallet_move_closed', { step: 'waiting' }],
     ]);
+});
+
+test('Function: takeMoveFundsRequest — a move request opens the flow once; a reload does not open it again', async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.goto('/wallet?move=1&visual=balance-ready');
+  await expect(page.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem('21gifts.moveFunds')))
+    .toBeNull();
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toHaveCount(0);
 });

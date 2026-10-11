@@ -129,8 +129,10 @@ export function MoveFundsSheet(): ReactElement | null {
   const rateDay = useSpotRate(state !== null);
 
   useEffect(() => {
-    // A request waits until a member is signed in (the chrome also shows for a visitor).
+    // A request waits until a member is signed in (the chrome also shows for a visitor), and
+    // signing out ends an open flow, so it never comes back for the next sign-in.
     if (!signedIn) {
+      setState(null);
       return;
     }
     setSmartphone(isSmartphoneUserAgent(navigator.userAgent));
