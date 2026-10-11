@@ -79,8 +79,8 @@ afterEach(() => {
 });
 
 describe('SettingsScreen', () => {
-  it('renders nothing without a session', () => {
-    useAuthStore.setState({ session: null, account: null });
+  it('renders nothing without a session, even with an account loaded', () => {
+    useAuthStore.setState({ session: null });
     const { container } = renderWithLocale(<SettingsScreen />);
     expect(container.innerHTML).toBe('');
   });
