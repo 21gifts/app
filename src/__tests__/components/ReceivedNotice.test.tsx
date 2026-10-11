@@ -51,7 +51,7 @@ describe('ReceivedNotice', () => {
     expect(useIncomingPayment).toHaveBeenCalledWith(6000);
   });
 
-  it('shows the amount, the fiat, and the sender the payment list names, as a link to /wallet', () => {
+  it('shows the amount and only the fiat under it, as a link to /wallet, even when the payment names an address', () => {
     vi.mocked(useIncomingPayment).mockReturnValue({
       payment: payment({ lnAddress: 'bruno@21.gifts' }),
       dismiss,
@@ -61,32 +61,24 @@ describe('ReceivedNotice', () => {
     expect(status.className).toContain('max-w-sm');
     expect(status.className).toContain('border-app-success/40');
     expect(screen.getByText('You received ₿500')).toBeTruthy();
-    expect(screen.getByText('$0.50 · from bruno@21.gifts')).toBeTruthy();
+    expect(screen.getByText('$0.50')).toBeTruthy();
+    expect(screen.queryByText(/bruno/)).toBeNull();
     const link = screen.getByRole('link');
     expect(link.getAttribute('href')).toBe('/wallet');
     fireEvent.click(link);
     expect(dismiss).toHaveBeenCalledTimes(1);
   });
 
-  it('shows only the fiat without a known sender, and closes on X', () => {
+  it('closes on X', () => {
     vi.mocked(useIncomingPayment).mockReturnValue({ payment: payment(), dismiss });
     renderWithLocale(<ReceivedNotice />);
-    expect(screen.getByText('$0.50')).toBeTruthy();
-    expect(screen.queryByText(/from/)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(dismiss).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('Close')).toBeNull();
   });
 
-  it('shows the sender alone without a rate, and no second line without either', () => {
+  it('has no second line without a rate', () => {
     vi.mocked(useSpotRate).mockReturnValue(null);
-    vi.mocked(useIncomingPayment).mockReturnValue({
-      payment: payment({ lnAddress: 'bruno@21.gifts' }),
-      dismiss,
-    });
-    renderWithLocale(<ReceivedNotice />);
-    expect(screen.getByText('from bruno@21.gifts')).toBeTruthy();
-    cleanup();
     vi.mocked(useIncomingPayment).mockReturnValue({ payment: payment(), dismiss });
     renderWithLocale(<ReceivedNotice />);
     const link = screen.getByRole('link');

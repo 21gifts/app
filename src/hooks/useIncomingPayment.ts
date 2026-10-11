@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { visualPin } from '@/lib/visual-pin';
+import { useAuthStore } from '@/stores/auth-store';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { onIncomingPayment } from '@/lib/wallet/wallet-service';
 
 /** Screenshot pin that shows a payment that just arrived (Playwright builds only). */
 const RECEIVED_VISUAL_PIN = 'wallet-received';
 
-/** The payment the `?visual=wallet-received` pin shows: ₿500 from a 21.gifts address. */
+/** The payment the `?visual=wallet-received` pin shows: ₿500 received. */
 const RECEIVED_VISUAL_FIXTURE: WalletPayment = {
   id: 'b1c4a3a2-5e0f-4f3e-9d43-2a6f0c7d9e15',
   direction: 'received',
@@ -18,7 +19,7 @@ const RECEIVED_VISUAL_FIXTURE: WalletPayment = {
   status: 'completed',
   method: 'lightning',
   senderComment: null,
-  info: { lnAddress: 'bruno@21.gifts' },
+  info: {},
 };
 
 /** State returned by {@link useIncomingPayment}. */
@@ -34,13 +35,16 @@ export interface IncomingPaymentState {
  * `holdMs` after it arrived. A newer payment replaces it and starts the time
  * again. Under the `?visual=wallet-received` pin (honoured only in a
  * Playwright build) a fixed ₿500 payment is shown until dismissed, without a
- * timer.
+ * timer. A payment belongs to the session it arrived in: it is never shown
+ * after that session ended or under another one, and nothing is listened for
+ * while signed out.
  *
  * @param holdMs - How long a payment stays shown, in milliseconds.
  * @returns The payment to show and a dismiss action.
  */
 export function useIncomingPayment(holdMs: number): IncomingPaymentState {
-  const [payment, setPayment] = useState<WalletPayment | null>(null);
+  const session = useAuthStore((state) => state.session);
+  const [shown, setShown] = useState<{ session: string; payment: WalletPayment } | null>(null);
   // Read when a payment arrives, so a new hold time never drops the running timer.
   const holdRef = useRef(holdMs);
   useLayoutEffect(() => {
@@ -48,28 +52,34 @@ export function useIncomingPayment(holdMs: number): IncomingPaymentState {
   });
 
   useEffect(() => {
+    setShown(null);
+    if (session === null) {
+      return;
+    }
     // Read after the commit: during a client navigation the address is the new one only by then.
     if (visualPin() === RECEIVED_VISUAL_PIN) {
-      setPayment(RECEIVED_VISUAL_FIXTURE);
+      setShown({ session, payment: RECEIVED_VISUAL_FIXTURE });
       return;
     }
     let timer: ReturnType<typeof setTimeout> | undefined;
     const unsubscribe = onIncomingPayment((next) => {
       clearTimeout(timer);
-      setPayment(next);
+      setShown({ session, payment: next });
       timer = setTimeout(() => {
-        setPayment(null);
+        setShown(null);
       }, holdRef.current);
     });
     return () => {
       unsubscribe();
       clearTimeout(timer);
     };
-  }, []);
+  }, [session]);
 
   const dismiss = useCallback((): void => {
-    setPayment(null);
+    setShown(null);
   }, []);
 
+  // Also for the render between a session change and the effect that clears it.
+  const payment = shown !== null && shown.session === session ? shown.payment : null;
   return { payment, dismiss };
 }

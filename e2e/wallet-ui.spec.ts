@@ -88,7 +88,8 @@ test('Function: ReceivedNotice — a payment that arrived shows the banner and t
   await page.goto('/wallet?visual=wallet-received');
   const banner = page.getByRole('status').filter({ hasText: 'You received ₿500' });
   await expect(banner).toBeVisible();
-  await expect(banner).toContainText('$0.50 · from bruno@21.gifts');
+  await expect(banner).toContainText('$0.50');
+  await expect(banner).not.toContainText('from');
   await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500 · $0.50');
   await banner.getByRole('button', { name: 'Close' }).click();
   await expect(banner).toHaveCount(0);
