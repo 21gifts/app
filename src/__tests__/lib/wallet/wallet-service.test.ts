@@ -2044,7 +2044,7 @@ describe('onIncomingPayment', () => {
     unsubscribe();
   });
 
-  it('announces nothing before the payments known at connect were read', async () => {
+  it('holds a payment that completes while the known payments are read, then announces it unless known', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection, listeners } = createFakeSdk();
     let resolveList!: (payments: WalletPayment[]) => void;
@@ -2065,7 +2065,38 @@ describe('onIncomingPayment', () => {
       }
     };
     emit({ type: 'paymentSucceeded', payment: payment('early') });
-    resolveList([]);
+    emit({ type: 'paymentSucceeded', payment: payment('listed') });
+    emit({ type: 'paymentSucceeded', payment: payment('early') });
+    expect(seen).toEqual([]);
+    resolveList([payment('listed')]);
+    await vi.waitFor(() => expect(seen).toEqual(['early']));
+    emit({ type: 'paymentSucceeded', payment: payment('after') });
+    expect(seen).toEqual(['early', 'after']);
+    unsubscribe();
+  });
+
+  it('drops the payments held meanwhile when the known-payments read fails', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    let rejectList!: (error: Error) => void;
+    connection.listPayments.mockImplementationOnce(
+      () =>
+        new Promise<WalletPayment[]>((_resolve, reject) => {
+          rejectList = reject;
+        }),
+    );
+    await connectWallet(loadSdk);
+    const seen: string[] = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push(p.id);
+    });
+    const emit = (event: { type: string; payment?: WalletPayment }): void => {
+      for (const listener of listeners) {
+        (listener as (event: { type: string; payment?: WalletPayment }) => void)(event);
+      }
+    };
+    emit({ type: 'paymentSucceeded', payment: payment('old-on-sync') });
+    rejectList(new Error('list failed'));
     await vi.waitFor(() => {
       emit({ type: 'paymentSucceeded', payment: payment('after') });
       expect(seen).toEqual(['after']);

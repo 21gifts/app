@@ -52,6 +52,13 @@ let knownPaymentIds: Set<string> | null = null;
 const incomingListeners = new Set<(payment: WalletPayment) => void>();
 
 /**
+ * Received payments that completed while the known payments of the current
+ * connection were still being read; announced once that list is in, unless
+ * it holds them.
+ */
+let heldPayments: WalletPayment[] = [];
+
+/**
  * Host the app is served from. The wallet's address lives on this host, and
  * the app forwards the wallet's address calls to the api.
  *
@@ -80,6 +87,7 @@ async function dropConnection(): Promise<void> {
   const current = connection;
   connection = null;
   knownPaymentIds = null;
+  heldPayments = [];
   if (current === null) {
     return;
   }
@@ -162,35 +170,66 @@ function reportWalletOpenFailure(reason: 'timeout' | 'error'): void {
 
 /**
  * Reads the payments a fresh connection already holds, so that only a payment
- * that completes later is announced. A failed read counts as none known: the
- * SDK announces only payments that change, so nothing old is announced then.
+ * that completes later is announced. A payment that completed while this list
+ * was read is announced once it is in, unless the list holds it. A failed
+ * read counts as none known and drops the payments held meanwhile: the SDK
+ * announces only payments that change, so nothing old is announced then.
  *
  * @param run - Run number that owns the connection.
  * @param conn - The fresh connection.
  * @returns Resolves once the known ids are set, or when the run is stale.
  */
 async function rememberKnownPayments(run: number, conn: WalletConnection): Promise<void> {
-  let payments: WalletPayment[] = [];
+  let known = new Set<string>();
+  let read = false;
   try {
-    payments = await conn.listPayments({ offset: 0, limit: KNOWN_PAYMENTS_LIMIT });
+    const payments = await conn.listPayments({ offset: 0, limit: KNOWN_PAYMENTS_LIMIT });
+    known = new Set(
+      payments
+        .filter((payment) => payment.direction === 'received' && payment.status === 'completed')
+        .map((payment) => payment.id),
+    );
+    read = true;
   } catch {
     // None known; see above.
   }
   if (run !== runCounter || connection !== conn) {
     return;
   }
-  knownPaymentIds = new Set(
-    payments
-      .filter((payment) => payment.direction === 'received' && payment.status === 'completed')
-      .map((payment) => payment.id),
-  );
+  knownPaymentIds = known;
+  const held = heldPayments;
+  heldPayments = [];
+  if (read) {
+    for (const payment of held) {
+      announcePayment(known, payment);
+    }
+  }
+}
+
+/**
+ * Announces a newly received payment once per id: adds it to the known ids,
+ * reads the balance again, and tells every {@link onIncomingPayment} listener.
+ *
+ * @param known - The known payment ids of the current connection.
+ * @param payment - The received, completed payment.
+ */
+function announcePayment(known: Set<string>, payment: WalletPayment): void {
+  if (known.has(payment.id)) {
+    return;
+  }
+  known.add(payment.id);
+  void refreshWallet();
+  for (const listener of incomingListeners) {
+    listener(payment);
+  }
 }
 
 /**
  * Handles one SDK event of the current connection: a sync reads the balance
  * again, and a received payment that just completed is announced to the
  * {@link onIncomingPayment} listeners and read into the balance, once per
- * payment id and never before the payments known at connect were read.
+ * payment id; one that completes before the payments known at connect were
+ * read is held until that list is in.
  *
  * @param event - The SDK event.
  */
@@ -204,17 +243,15 @@ function onWalletEvent(event: WalletSdkEvent): void {
     event.type !== 'paymentSucceeded' ||
     payment === undefined ||
     payment.direction !== 'received' ||
-    payment.status !== 'completed' ||
-    knownPaymentIds === null ||
-    knownPaymentIds.has(payment.id)
+    payment.status !== 'completed'
   ) {
     return;
   }
-  knownPaymentIds.add(payment.id);
-  void refreshWallet();
-  for (const listener of incomingListeners) {
-    listener(payment);
+  if (knownPaymentIds === null) {
+    heldPayments.push(payment);
+    return;
   }
+  announcePayment(knownPaymentIds, payment);
 }
 
 /**
