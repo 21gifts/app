@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
-import { Button } from '@/components/ui';
+import { IconButton } from '@/components/ui';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 
@@ -12,7 +12,7 @@ import { profileQrLogo } from '@/lib/profile-qr-logo';
 export interface WalletOwnAddressProps {
   /** Member username used for the 21.gifts address. */
   username: string;
-  /** Whether to show the Copy / Copied control below the QR. */
+  /** Whether to show the icon-only Copy / Copied control below the QR. */
   copy?: boolean;
 }
 
@@ -69,22 +69,21 @@ export function WalletOwnAddress({
         <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
       </div>
       {copy ? (
-        <Button
-          variant="secondary"
+        <IconButton
+          type="button"
+          variant="ghost"
           size="sm"
-          icon={
-            copied ? (
-              <Check aria-hidden="true" className="h-4 w-4" />
-            ) : (
-              <Copy aria-hidden="true" className="h-4 w-4" />
-            )
-          }
+          aria-label={copied ? t('wallet.copied') : t('wallet.copy')}
           onClick={() => {
             void copyAddress();
           }}
         >
-          {copied ? t('wallet.copied') : t('wallet.copy')}
-        </Button>
+          {copied ? (
+            <Check aria-hidden="true" className="h-3.5 w-3.5 text-app-success" />
+          ) : (
+            <Copy aria-hidden="true" className="h-3.5 w-3.5" />
+          )}
+        </IconButton>
       ) : null}
     </>
   );

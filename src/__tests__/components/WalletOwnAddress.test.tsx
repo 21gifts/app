@@ -24,20 +24,24 @@ describe('WalletOwnAddress', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('copies the address, shows Copied, and resets after two seconds', async () => {
+  it('copies the address, shows the Copied icon control, and resets after two seconds', async () => {
     vi.useFakeTimers();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
     renderWithLocale(<WalletOwnAddress username="ada" copy />);
     await act(async () => undefined);
-    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    const copyButton = screen.getByRole('button', { name: 'Copy' });
+    expect(screen.queryByText('Copy')).toBeNull();
+    fireEvent.click(copyButton);
     await act(async () => undefined);
     expect(writeText).toHaveBeenCalledWith('ada@21.gifts');
     expect(screen.getByRole('button', { name: 'Copied' })).toBeTruthy();
+    expect(screen.queryByText('Copied')).toBeNull();
     act(() => {
       vi.advanceTimersByTime(2000);
     });
     expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    expect(screen.queryByText('Copy')).toBeNull();
   });
 
   it('keeps Copy when clipboard access fails', async () => {
@@ -48,6 +52,7 @@ describe('WalletOwnAddress', () => {
     fireEvent.click(button);
     await act(async () => undefined);
     expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy();
+    expect(screen.queryByText('Copy')).toBeNull();
   });
 
   it('renders nothing for a username that cannot produce an address', async () => {

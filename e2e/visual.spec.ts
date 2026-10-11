@@ -3740,6 +3740,18 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-waiting-all');
   });
 
+  test('state /loans/repay waiting-all-who-open', async ({ page }) => {
+    await loanShot(page, {
+      loans: [waitingAllLoan],
+      ledgers: { 'loan-a': waitingAllLedger },
+      visual: 'repay-ready',
+      text: 'No wallet yet · waits',
+      pressWho: true,
+    });
+    await expect(page.getByText('No wallet yet · waits')).toHaveCount(3);
+    await shotScreen(page, 'state-loans-repay-waiting-all-who-open');
+  });
+
   test('state /loans/repay short', async ({ page }) => {
     await loanShot(page, {
       loans: [loanA],
@@ -3775,6 +3787,24 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-fee-gap-topup');
   });
 
+  test('state /loans/repay fee-gap-topup-copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-fee-gap-topup',
+      text: /Still missing ₿25 · \$0\.03\./,
+      qr: true,
+    });
+    await expect(page.getByRole('button', { name: /now to/i })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /now to/i })).toHaveCount(0);
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-fee-gap-topup-copied');
+  });
+
   test('state /loans/repay topup', async ({ page }) => {
     await loanShot(page, {
       loans: [loanA],
@@ -3784,6 +3814,22 @@ test.describe('loans repay screens', () => {
       qr: true,
     });
     await shotScreen(page, 'state-loans-repay-topup');
+  });
+
+  test('state /loans/repay topup-copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-topup',
+      text: 'ada@21.gifts',
+      qr: true,
+    });
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-topup-copied');
   });
 
   test('state /loans/repay sending', async ({ page }) => {
@@ -18191,6 +18237,15 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('region', { name: 'Your loan' })).toContainText('Due today');
     await expect(page.getByRole('link', { name: 'Send' })).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-due');
+  });
+
+  test('state /welcome loans-open', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanA]));
+    await expect(page.getByRole('region', { name: 'Your loan' })).toContainText('Due today');
+    await expect(page.getByRole('link', { name: 'Send' })).toBeVisible();
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanA.text })).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-open');
   });
 
   test('state /welcome loans-behind', async ({ page }) => {
