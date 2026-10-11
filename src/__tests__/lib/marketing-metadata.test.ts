@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { marketingMetadata, OG_IMAGE_ALT } from '@/lib/marketing-metadata';
+import { HREFLANG_BY_LOCALE, marketingMetadata, OG_IMAGE_ALT } from '@/lib/marketing-metadata';
 
 const TITLE = 'Help people with Bitcoin | 21.gifts';
 const DESCRIPTION =
@@ -56,20 +56,28 @@ describe('marketingMetadata', () => {
     expect(english.alternates?.canonical).toBe('/en/about');
     expect(german.alternates?.canonical).toBe('/de/about');
     expect(spanish.alternates?.canonical).toBe('/es/about');
-    expect(german.alternates).toMatchObject({
-      languages: {
-        en: '/en/about',
-        de: '/de/about',
-        es: '/es/about',
-        fil: '/fil/about',
-        'x-default': '/about',
-      },
+    expect(HREFLANG_BY_LOCALE.fil).toBe('tl');
+    expect(german.alternates?.languages).toEqual({
+      en: '/en/about',
+      de: '/de/about',
+      es: '/es/about',
+      tl: '/fil/about',
+      'x-default': '/about',
     });
     expect(german.openGraph).toMatchObject({ url: '/de/about' });
   });
 
   it('builds home, donate, and rules language URLs with the same English preview', () => {
-    expect(marketingMetadata('/', TITLE, DESCRIPTION, 'fil').alternates?.canonical).toBe('/fil');
+    expect(marketingMetadata('/', TITLE, DESCRIPTION, 'fil').alternates).toEqual({
+      canonical: '/fil',
+      languages: {
+        en: '/en',
+        de: '/de',
+        es: '/es',
+        tl: '/fil',
+        'x-default': '/',
+      },
+    });
     expect(marketingMetadata('/donate', TITLE, DESCRIPTION, 'fil').alternates?.canonical).toBe(
       '/fil/donate',
     );

@@ -134,8 +134,9 @@ test('Function: generateMetadata — all localized public pages serve reciprocal
       expect(html).toContain(`<title>${englishTitles[path]}</title>`);
       expect(html).toContain(`rel="canonical" href="https://21.gifts/${locale}${path}"`);
       for (const alternate of locales) {
+        const hrefLang = alternate === 'fil' ? 'tl' : alternate;
         expect(html).toContain(
-          `rel="alternate" hrefLang="${alternate}" href="https://21.gifts/${alternate}${path}"`,
+          `rel="alternate" hrefLang="${hrefLang}" href="https://21.gifts/${alternate}${path}"`,
         );
       }
     }
@@ -195,4 +196,6 @@ test('sitemap lists the sixteen localized public pages', async ({ request }) => 
       expect(xml).toContain(`<loc>https://21.gifts/${locale}${path}</loc>`);
     }
   }
+  expect(xml.match(/hreflang="tl"/g)?.length).toBe(16);
+  expect(xml).not.toContain('hreflang="fil"');
 });

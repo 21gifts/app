@@ -65,7 +65,7 @@ describe('DonatePage', () => {
     };
     expect(await generateMetadata()).toMatchObject({
       ...preview,
-      alternates: { canonical: '/en/donate', languages: { fil: '/fil/donate' } },
+      alternates: { canonical: '/en/donate', languages: { tl: '/fil/donate' } },
       openGraph: { ...preview.openGraph, url: '/en/donate' },
     });
     vi.mocked(getRequestLocale).mockResolvedValueOnce('de');

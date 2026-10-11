@@ -7,6 +7,22 @@ import { localizedPublicPath, type LocalizedPublicPath } from '@/lib/public-loca
  */
 export const OG_IMAGE_ALT = '21.gifts: Help people. With Bitcoin. Your wallet to their wallet.';
 
+/**
+ * `hreflang` code for each UI locale.
+ *
+ * Google Search accepts only ISO 639-1 language codes in `hreflang`
+ * ("Only language codes listed in ISO 639-1 are supported"). Filipino's
+ * UI locale, URL prefix, `html lang`, cookie, and catalogs stay `fil`.
+ * Google lists Filipino as `tl`, so Filipino alternates use that code.
+ * The linked URL stays `/fil…`.
+ */
+export const HREFLANG_BY_LOCALE = {
+  en: 'en',
+  de: 'de',
+  es: 'es',
+  fil: 'tl',
+} as const satisfies Record<Locale, string>;
+
 const OG_IMAGE = {
   url: '/og.png',
   width: 1200,
@@ -20,8 +36,9 @@ const OG_IMAGE = {
  * Title, description, and the Open Graph image stay the English values the
  * caller passes, on every language URL. When `locale` is set and `path` is
  * `/`, `/about`, `/donate`, or `/rules`, the canonical URL and reciprocal
- * `hreflang` links follow that language. Other paths keep `path` as the
- * canonical URL.
+ * `hreflang` links follow that language. Filipino alternates use `tl`
+ * ({@link HREFLANG_BY_LOCALE}); the URL stays `/fil…`. Other paths keep
+ * `path` as the canonical URL.
  *
  * @param path - Unprefixed path, for example `/` or `/about`.
  * @param title - English document title. Used unchanged.
@@ -40,7 +57,10 @@ export function marketingMetadata(
   const languages = localized
     ? {
         ...Object.fromEntries(
-          LOCALES.map((code) => [code, localizedPublicPath(code, path as LocalizedPublicPath)]),
+          LOCALES.map((code) => [
+            HREFLANG_BY_LOCALE[code],
+            localizedPublicPath(code, path as LocalizedPublicPath),
+          ]),
         ),
         'x-default': path,
       }
