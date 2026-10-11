@@ -10,7 +10,6 @@ import {
   type MyLoans,
   type RepaymentBill,
 } from '@/lib/api';
-import { fittingPrefix } from '@/lib/loan-repay';
 import { visualPin } from '@/lib/visual-pin';
 import { reportPaymentFailure } from '@/lib/wallet/payment-failure';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
@@ -73,19 +72,20 @@ export interface LoanRepayResult {
   openTopUp: () => void;
   /**
    * One tap: pays every payable bill of `loans` (all loans with due.payableSats \> 0).
-   * `limitSats` (optional): pay only the fitting prefix of the ordered bills whose amount
-   * stays ≤ limitSats (the "send ₿C now" link passes the named prefix total). The named
-   * prefix is taken from all due shares; shares of it another run already holds are
-   * skipped. Only that named prefix is prepared. The whole prefix is sent, or nothing: an
-   * `insufficient` prepare in the prefix, or a total that does not fit the current
-   * balance, sends nothing.
+   * `onlyShares` (optional): pay only the bills whose share key
+   * (`messageId:dayIndex:recipientAccountId`) is in the set (the "send ₿C now"
+   * link passes the named shares). The named shares are taken from all due shares;
+   * shares of the set another run already holds are skipped. Only that named set is
+   * prepared. The whole set is sent, or nothing: an `insufficient` prepare in the set,
+   * or a total that does not fit the current balance, sends nothing. When the set is
+   * given and none of those shares are still due, the run reloads and returns to idle.
    *
    * @param loans - Current loans body in list order.
-   * @param limitSats - Optional amount-only budget for a leading subset; only that named
-   *   prefix is prepared. An insufficient prepare in the prefix, or fees that do not fit
-   *   the balance, send nothing.
+   * @param onlyShares - Optional exact share keys to pay; only those named shares are
+   *   prepared. An insufficient prepare in the set, or fees that do not fit the
+   *   balance, send nothing.
    */
-  pay: (loans: readonly MyLoan[], limitSats?: number) => void;
+  pay: (loans: readonly MyLoan[], onlyShares?: ReadonlySet<string>) => void;
   /** True while a `repay-*` visual pin, including its fixed sent totals, applies. */
   pinned: boolean;
 }
@@ -225,14 +225,16 @@ const reservedShares = new Set<string>();
 /**
  * Runs the all-loans repayment flow and waits for api settlement. A share is
  * reserved from the moment its send starts; a send that did not go out
- * releases it. The named prefix is taken from all due shares; shares of it
- * another run already holds are skipped. A reserved share is never prepared
+ * releases it. The named shares are taken from all due shares, or from the
+ * optional `onlyShares` keys when given; shares of that set another run
+ * already holds are skipped. A reserved share is never prepared
  * or sent again in this app session, including when `/due` later returns a
  * new invoice for that share; when every named share is reserved the run
- * ends unconfirmed. A share another run is sending is skipped; if that
- * leaves nothing sent the run ends unconfirmed. A skipped share still counts
- * toward the settlement of its loan; a reserved share already counted in the
- * fresh baseline is not required again.
+ * ends unconfirmed. When `onlyShares` is given and none of those shares are
+ * still due, the run reloads and returns to idle. A share another run is
+ * sending is skipped; if that leaves nothing sent the run ends unconfirmed.
+ * A skipped share still counts toward the settlement of its loan; a reserved
+ * share already counted in the fresh baseline is not required again.
  * Every prepare or send that does not pay (also `insufficient`, and a prepared
  * amount other than the bill, as `amount_mismatch`) is reported with
  * {@link reportPaymentFailure} under the flow `repay`; a send also after the
@@ -345,7 +347,7 @@ export function useLoanRepay(options: {
   }, [pinned]);
 
   const pay = useCallback(
-    (loans: readonly MyLoan[], limitSats?: number): void => {
+    (loans: readonly MyLoan[], onlyShares?: ReadonlySet<string>): void => {
       const allowed = new Set<LoanRepayPhase>(['idle', 'failed', 'repaid', 'unconfirmed']);
       const session = useAuthStore.getState().session;
       if (pinned || !allowed.has(phaseRef.current) || session === null) {
@@ -398,9 +400,9 @@ export function useLoanRepay(options: {
 
         const ordered = orderBills(perLoan);
         const named =
-          limitSats === undefined
+          onlyShares === undefined
             ? ordered
-            : fittingPrefix(ordered, (bill) => bill.amountSats, limitSats);
+            : ordered.filter((bill) => onlyShares.has(shareKey(bill)));
         const bills = named.filter((bill) => !reservedShares.has(shareKey(bill)));
         const skipped = bills.length !== named.length;
         const skippedByMessage = new Map<string, number>();
@@ -412,7 +414,10 @@ export function useLoanRepay(options: {
             );
           }
         }
-        if (bills.length === 0 && (named.length > 0 || ordered.length === 0)) {
+        if (
+          bills.length === 0 &&
+          (named.length > 0 || ordered.length === 0 || onlyShares !== undefined)
+        ) {
           await options.reload();
           if (!active()) {
             return;
@@ -421,8 +426,12 @@ export function useLoanRepay(options: {
             setLivePhase('unconfirmed');
             return;
           }
-          setTopUpOpen(false);
-          setLivePhase('repaid');
+          if (ordered.length === 0) {
+            setTopUpOpen(false);
+            setLivePhase('repaid');
+            return;
+          }
+          setLivePhase('idle');
           return;
         }
 

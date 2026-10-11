@@ -120,6 +120,10 @@ function invoiceOf(row: RepaymentBill): string {
   return row.sparkInvoice ?? row.pr;
 }
 
+function shareKeys(messageId: string, ...rows: RepaymentBill[]): ReadonlySet<string> {
+  return new Set(rows.map((row) => `${messageId}:${row.dayIndex}:${row.recipientAccountId}`));
+}
+
 function setWallet(status: WalletStatus, balanceSats: number | null = 21_000): void {
   useWalletStore.setState({ status, balanceSats, identityPubkey: null });
 }
@@ -536,11 +540,13 @@ describe('useLoanRepay preparation', () => {
     expect(result.current).toMatchObject({ phase: 'idle', sentSats: 0 });
   });
 
-  it('uses a limit for the fitting prefix before an insufficient bill', async () => {
+  it('pays the named share set that fits and skips later due bills', async () => {
     vi.useFakeTimers();
+    const firstBill = bill('Bruno', 500);
+    const laterBill = bill('Cara', 400, 1);
     const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     vi.mocked(postRepaymentDue).mockResolvedValue({
-      bills: [bill('Bruno', 500), bill('Cara', 400, 1)],
+      bills: [firstBill, laterBill],
       waiting: [],
     });
     vi.mocked(payFromWallet).mockResolvedValueOnce(confirmed(500, send, 10));
@@ -549,9 +555,10 @@ describe('useLoanRepay preparation', () => {
       .mockResolvedValueOnce(body([loan()]))
       .mockResolvedValue(body([loan('m1', 0, 600)]));
     const { result } = renderHook(() => useLoanRepay({ reload }));
-    act(() => result.current.pay([loan()], 600));
+    act(() => result.current.pay([loan()], shareKeys('m1', firstBill)));
     await act(async () => undefined);
     expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: invoiceOf(firstBill) });
     expect(send).toHaveBeenCalledTimes(1);
     expect(result.current.sentSats).toBe(500);
     await act(async () => {
@@ -583,7 +590,7 @@ describe('useLoanRepay preparation', () => {
       .mockResolvedValueOnce(body([loan()]))
       .mockResolvedValue(body([loan('m1', 0, 600)]));
     const { result } = renderHook(() => useLoanRepay({ reload }));
-    act(() => result.current.pay([loan()], 600));
+    act(() => result.current.pay([loan()], shareKeys('m1', firstBill)));
     await act(async () => undefined);
     expect(payFromWallet).toHaveBeenCalledTimes(1);
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: invoiceOf(firstBill) });
@@ -595,18 +602,26 @@ describe('useLoanRepay preparation', () => {
     expect(result.current.phase).toBe('repaid');
   });
 
-  it('keeps an empty limited prefix idle', async () => {
-    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [bill('Bruno')], waiting: [] });
-    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
-    const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
-    act(() => result.current.pay([loan()], 100));
+  it('reloads and stays idle when every named share is already gone from /due', async () => {
+    const namedA = bill('GoneA', 500);
+    const namedB = bill('GoneB', 400, 1);
+    const stillDue = bill('StillDue', 300, 2);
+    vi.mocked(postRepaymentDue).mockResolvedValue({
+      bills: [stillDue],
+      waiting: [],
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(300));
+    const reload = vi.fn(async (): Promise<MyLoans> => body([loan()]));
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+    act(() => result.current.pay([loan()], shareKeys('m1', namedA, namedB)));
     await waitFor(() => expect(result.current.phase).toBe('idle'));
     expect(payFromWallet).not.toHaveBeenCalled();
+    expect(reload).toHaveBeenCalledTimes(1);
     expect(result.current.sentSats).toBe(0);
-    expect(result.current.missingSats).toBe(1);
+    expect(result.current.missingSats).toBeNull();
   });
 
-  it('keeps the limited prefix by amount and sends it', async () => {
+  it('pays every named share in the set', async () => {
     vi.useFakeTimers();
     const firstBill = bill('LimitKeepA', 500);
     const secondBill = bill('LimitKeepB', 400, 1);
@@ -624,7 +639,7 @@ describe('useLoanRepay preparation', () => {
       .mockResolvedValueOnce(body([loan()]))
       .mockResolvedValue(body([loan('m1', 0, 1_000)]));
     const { result } = renderHook(() => useLoanRepay({ reload }));
-    act(() => result.current.pay([loan()], 900));
+    act(() => result.current.pay([loan()], shareKeys('m1', firstBill, secondBill)));
     await act(async () => undefined);
     expect(sendFirst).toHaveBeenCalledTimes(1);
     expect(sendSecond).toHaveBeenCalledTimes(1);
@@ -635,7 +650,7 @@ describe('useLoanRepay preparation', () => {
     expect(result.current.phase).toBe('repaid');
   });
 
-  it('sends nothing when the amount-only prefix fees exceed the balance', async () => {
+  it('sends nothing when the named share set fees exceed the balance', async () => {
     setWallet('ready', 900);
     const firstBill = bill('FeeGapA', 500);
     const secondBill = bill('FeeGapB', 400, 1);
@@ -649,18 +664,20 @@ describe('useLoanRepay preparation', () => {
       .mockResolvedValueOnce(confirmed(500, sendFirst, 50))
       .mockResolvedValueOnce(confirmed(400, sendSecond, 50));
     const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
-    act(() => result.current.pay([loan()], 900));
+    act(() => result.current.pay([loan()], shareKeys('m1', firstBill, secondBill)));
     await waitFor(() => expect(result.current.phase).toBe('idle'));
     expect(sendFirst).not.toHaveBeenCalled();
     expect(sendSecond).not.toHaveBeenCalled();
     expect(result.current).toMatchObject({ missingSats: 100, sentSats: 0 });
   });
 
-  it('sends nothing after insufficient preparation of a named-prefix bill', async () => {
+  it('sends nothing after insufficient preparation of a named share', async () => {
     setWallet('ready', 600);
+    const firstBill = bill('Bruno', 500);
+    const secondBill = bill('Cara', 400, 1);
     const send = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
     vi.mocked(postRepaymentDue).mockResolvedValue({
-      bills: [bill('Bruno', 500), bill('Cara', 400, 1)],
+      bills: [firstBill, secondBill],
       waiting: [],
     });
     vi.mocked(payFromWallet)
@@ -671,10 +688,54 @@ describe('useLoanRepay preparation', () => {
         failure: failure('prepare', 'insufficient'),
       });
     const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
-    act(() => result.current.pay([loan()], 900));
+    act(() => result.current.pay([loan()], shareKeys('m1', firstBill, secondBill)));
     await waitFor(() => expect(result.current.phase).toBe('idle'));
     expect(send).not.toHaveBeenCalled();
     expect(result.current).toMatchObject({ missingSats: 330, sentSats: 0 });
+  });
+
+  it('prepares only the named shares when /due amounts shrink below the ledger', async () => {
+    vi.useFakeTimers();
+    const billA = bill('NamedA', 450);
+    const billB = bill('NamedB', 360, 1);
+    const billC = bill('UnnamedC', 80, 2);
+    const sendA = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    const sendB = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    const sendC = vi.fn(async (): Promise<WalletSendResult> => ({ kind: 'paid' }));
+    vi.mocked(postRepaymentDue).mockResolvedValue({
+      bills: [billA, billB, billC],
+      waiting: [],
+    });
+    vi.mocked(payFromWallet).mockImplementation(async (request) => {
+      if (request.type !== 'input') {
+        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+      }
+      if (request.input === invoiceOf(billA)) {
+        return confirmed(450, sendA);
+      }
+      if (request.input === invoiceOf(billB)) {
+        return confirmed(360, sendB);
+      }
+      return confirmed(80, sendC);
+    });
+    const reload = vi
+      .fn<() => Promise<MyLoans>>()
+      .mockResolvedValueOnce(body([loan()]))
+      .mockResolvedValue(body([loan('m1', 0, 910)]));
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+    act(() => result.current.pay([loan()], shareKeys('m1', billA, billB)));
+    await act(async () => undefined);
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: invoiceOf(billA) });
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: invoiceOf(billB) });
+    expect(sendA).toHaveBeenCalledTimes(1);
+    expect(sendB).toHaveBeenCalledTimes(1);
+    expect(sendC).not.toHaveBeenCalled();
+    expect(result.current.sentSats).toBe(810);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
+    });
+    expect(result.current.phase).toBe('repaid');
   });
 });
 
@@ -690,7 +751,7 @@ describe('useLoanRepay send and settlement', () => {
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [bill('Bruno')], waiting: [] });
     vi.mocked(payFromWallet).mockResolvedValue(confirmed(500, send));
     const { result } = renderHook(() => useLoanRepay({ reload: vi.fn(async () => null) }));
-    act(() => result.current.pay([loan()], 1_000));
+    act(() => result.current.pay([loan()]));
     await waitFor(() => expect(send).toHaveBeenCalledTimes(1));
     await act(async () => {
       setWallet('ready', null);
@@ -728,7 +789,7 @@ describe('useLoanRepay send and settlement', () => {
       .mockResolvedValueOnce(body([loan('m1', 110, 100)]))
       .mockResolvedValue(body([loan('m1', 50, 150)]));
     const { result } = renderHook(() => useLoanRepay({ reload }));
-    act(() => result.current.pay([loan('m1', 110, 100)], 1_000));
+    act(() => result.current.pay([loan('m1', 110, 100)]));
     await act(async () => undefined);
     expect(result.current).toMatchObject({
       phase: 'waiting',
@@ -917,7 +978,7 @@ describe('useLoanRepay send and settlement', () => {
       .mockResolvedValueOnce(body([loan('m1', 110, 100)]))
       .mockResolvedValue(body([loan('m1', 0, 150)]));
     const { result } = renderHook(() => useLoanRepay({ reload }));
-    act(() => result.current.pay([loan('m1', 110, 100)], 1_000));
+    act(() => result.current.pay([loan('m1', 110, 100)]));
     await act(async () => undefined);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
@@ -1200,7 +1261,7 @@ describe('useLoanRepay already-sent invoices', () => {
     const first = renderHook(() =>
       useLoanRepay({ reload: vi.fn(async () => body([loan('m1', 1_200, 100)])) }),
     );
-    act(() => first.result.current.pay([loan('m1', 1_200, 100)], 900));
+    act(() => first.result.current.pay([loan('m1', 1_200, 100)], shareKeys('m1', billA, billB)));
     await act(async () => undefined);
     expect(sendA).toHaveBeenCalledTimes(1);
     expect(sendBFail).toHaveBeenCalledTimes(1);
@@ -1223,7 +1284,7 @@ describe('useLoanRepay already-sent invoices', () => {
     const second = renderHook(() =>
       useLoanRepay({ reload: vi.fn(async () => body([loan('m1', 0, 1_000)])) }),
     );
-    act(() => second.result.current.pay([loan('m1', 700, 600)], 900));
+    act(() => second.result.current.pay([loan('m1', 700, 600)], shareKeys('m1', billA, billB)));
     await act(async () => undefined);
     expect(payFromWallet).toHaveBeenCalledTimes(1);
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: invoiceOf(billB) });
@@ -1247,7 +1308,7 @@ describe('useLoanRepay already-sent invoices', () => {
     const seed = renderHook(() =>
       useLoanRepay({ reload: vi.fn(async () => body([loan('m1', 900, 100)])) }),
     );
-    act(() => seed.result.current.pay([loan('m1', 900, 100)], 900));
+    act(() => seed.result.current.pay([loan('m1', 900, 100)], shareKeys('m1', billA, billB)));
     await act(async () => undefined);
     expect(sendA).toHaveBeenCalledTimes(1);
     expect(sendB).toHaveBeenCalledTimes(1);
@@ -1261,7 +1322,7 @@ describe('useLoanRepay already-sent invoices', () => {
     });
     const reload = vi.fn(async (): Promise<MyLoans> => body([loan()]));
     const second = renderHook(() => useLoanRepay({ reload }));
-    act(() => second.result.current.pay([loan('m1', 1_200, 100)], 900));
+    act(() => second.result.current.pay([loan('m1', 1_200, 100)], shareKeys('m1', billA, billB)));
     await waitFor(() => expect(second.result.current.phase).toBe('unconfirmed'));
     expect(payFromWallet).not.toHaveBeenCalled();
     expect(reload).toHaveBeenCalledTimes(1);
