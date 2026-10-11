@@ -1633,6 +1633,82 @@ describe('payFromWallet failure details', () => {
       },
     });
   });
+
+  /** Rejections that cannot be read: a throwing `message` getter, a throwing `toString`. */
+  const unreadable = (): Array<[string, unknown]> => [
+    [
+      'an Error whose message getter throws',
+      Object.defineProperty(new Error(), 'message', {
+        get(): never {
+          throw new Error('no message');
+        },
+      }),
+    ],
+    [
+      'an object whose toString throws',
+      {
+        toString(): never {
+          throw new Error('no text');
+        },
+      },
+    ],
+  ];
+
+  it.each(unreadable())(
+    'classifies a prepare rejecting with %s as sdk_error instead of throwing',
+    async (_label, error) => {
+      await connectPaying({
+        prepare: async () => {
+          throw error;
+        },
+      });
+      const result = await payFromWallet({ type: 'input', input: 'lnbc10u1pjexample' });
+      if (result.kind !== 'failed') {
+        throw new Error('expected failed');
+      }
+      // Compared by identity: a deep comparison would read the throwing getter itself.
+      expect(result.failure.error).toBe(error);
+      expect({ ...result.failure, error: undefined }).toEqual({
+        stage: 'prepare',
+        reason: 'sdk_error',
+        method: 'lightning',
+        amountSats: null,
+        feeSats: null,
+        error: undefined,
+      });
+    },
+  );
+
+  it.each(unreadable())(
+    'classifies a send rejecting with %s as sdk_error instead of throwing, also with a base-chain quote',
+    async (_label, error) => {
+      const fees = { fast: 3, medium: 2, slow: 1 };
+      await connectPaying({
+        prepare: async () => ({
+          amountSats: 1,
+          feeSats: 2,
+          onchain: { fees, expiresAtMs: Date.now() + 600_000 },
+          send: async () => {
+            throw error;
+          },
+        }),
+      });
+      const result = await payFromWallet({ type: 'input', input: 'a', amountSats: 1 });
+      if (result.kind !== 'confirm') {
+        throw new Error('expected confirm');
+      }
+      const sent = await result.send();
+      if (sent.kind !== 'failed') {
+        throw new Error('expected failed');
+      }
+      expect(sent.failure.error).toBe(error);
+      expect([sent.failure.stage, sent.failure.reason, sent.failure.method]).toEqual([
+        'send',
+        'sdk_error',
+        'onchain',
+      ]);
+    },
+  );
 });
 
 describe('payFromWallet to a base-chain address', () => {

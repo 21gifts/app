@@ -1,4 +1,5 @@
 import { captureMessage } from '@sentry/nextjs';
+import { LnurlRelayError } from '@/lib/api';
 import { logInteraction } from '@/lib/interaction-log';
 import type { OnchainSpeed } from '@/lib/wallet/wallet-sdk';
 
@@ -77,57 +78,58 @@ export interface PaymentFailure {
   feeSats: number | null;
   /** Fee of each speed of a base-chain quote. */
   onchainFees?: Record<OnchainSpeed, number>;
-  /** The SDK's or api's rejection; only its name, code, and scrubbed message are reported. */
+  /** The SDK's or api's rejection; only its name and code are reported, never its text. */
   error?: unknown;
 }
 
 /** Reasons that are the member's state, not a fault: never sent to error reporting. */
 const MEMBER_STATE: ReadonlySet<PayReason> = new Set(['unlock', 'insufficient', 'below_minimum']);
 
+/** The only shape an error name may have on a report: a short identifier. */
+const ERROR_NAME = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
+
 /**
- * Name, code, and message of a rejection. The SDK throws plain `Error`s whose
- * message starts with its error kind (`Network error: …`); that kind is the
- * code. The api relay's error carries its own `reason`. The message is kept
- * whole: cutting it before the scrubber runs could split a recovery phrase
- * below the length the scrubber recognises. A rejection that cannot be
- * read or printed (a throwing `toString` or getter) keeps only its type.
+ * Name and code of a rejection, never its text. Free text from the SDK or the
+ * api can carry an invoice, an address, or a key, so no part of a rejection's
+ * message, and nothing converted from an unknown rejection, is reported. The
+ * name is the `Error` subclass name when it is a short identifier (otherwise
+ * `Error`), or the JavaScript type of anything that is not an `Error` (a
+ * thrown string or byte array is just `string` or `object`). The code is the
+ * api relay's `reason`, or the SDK's error kind at the start of its message
+ * (`Network error: …` → `network`, letters only). An `Error` that cannot be
+ * read (a throwing getter) keeps only the name `Error`.
  *
  * @param error - Rejection, or `undefined`.
- * @returns The three fields, each `null` when absent.
+ * @returns The name and the code, each `null` when absent.
  */
-function errorFields(error: unknown): {
-  errorName: string | null;
-  errorCode: string | null;
-  errorMessage: string | null;
-} {
+function errorFields(error: unknown): { errorName: string | null; errorCode: string | null } {
   if (error === undefined) {
-    return { errorName: null, errorCode: null, errorMessage: null };
+    return { errorName: null, errorCode: null };
+  }
+  if (!(error instanceof Error)) {
+    return { errorName: typeof error, errorCode: null };
   }
   try {
-    const message = String(error instanceof Error ? error.message : error);
-    const reason = (error as { reason?: unknown } | null)?.reason;
-    const kind = /^([A-Za-z][A-Za-z ]{0,40}?) error:/.exec(message)?.[1];
+    const { name, message } = error;
+    const errorName = typeof name === 'string' && ERROR_NAME.test(name) ? name : 'Error';
     let errorCode: string | null = null;
-    if (typeof reason === 'string') {
-      errorCode = reason;
-    } else if (kind !== undefined) {
-      errorCode = kind.toLowerCase().replace(/ /g, '_');
+    if (error instanceof LnurlRelayError) {
+      errorCode = error.reason;
+    } else if (typeof message === 'string') {
+      const kind = /^([A-Za-z][A-Za-z ]{0,40}?) error:/.exec(message)?.[1];
+      errorCode = kind === undefined ? null : kind.toLowerCase().replace(/ /g, '_');
     }
-    return {
-      errorName: error instanceof Error ? String(error.name) : typeof error,
-      errorCode,
-      errorMessage: message,
-    };
+    return { errorName, errorCode };
   } catch {
-    // A rejection that cannot be printed never breaks the report or the screen.
-    return { errorName: typeof error, errorCode: null, errorMessage: null };
+    // An unreadable rejection never breaks the report or the screen.
+    return { errorName: 'Error', errorCode: null };
   }
 }
 
 /**
  * Sends one `Payment failed` report to error reporting (a no-op while error
- * reporting is off). The raw message goes into `extra`, which the one
- * scrubber in `src/lib/sentry.ts` cleans before anything leaves the device.
+ * reporting is off). It carries codes and amounts only, never the text of the
+ * rejection, and still passes the one scrubber in `src/lib/sentry.ts`.
  *
  * @param failure - The failure.
  * @param reason - Reason reported (the failure's own, or `sent_late`).
