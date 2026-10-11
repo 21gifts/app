@@ -788,6 +788,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'move-address-copied',
+    image: 'wallet-move-address-copied.png',
+    visual: 'state-wallet-move-address-copied',
+    needle: "shotScreen(page, 'state-wallet-move-address-copied')",
+  },
+  {
+    route: '/wallet',
     id: 'move-waiting',
     image: 'wallet-move-waiting.png',
     visual: 'state-wallet-move-waiting',

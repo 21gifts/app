@@ -88,7 +88,7 @@ beforeEach(() => {
   userAgent(IPHONE);
   useAuthStore.setState({
     session: 'tok',
-    account: { id: 'acc_1', name: 'Ada', username: 'ada' } as Account,
+    account: { id: 'acc_1', name: 'Ada', username: 'ada', setup: null } as Account,
   });
 });
 
@@ -199,11 +199,43 @@ describe('MoveFundsSheet', () => {
     Reflect.deleteProperty(navigator, 'clipboard');
   });
 
-  it('shows no address without a username', () => {
-    useAuthStore.setState({ account: { id: 'acc_1', name: 'Ada', username: null } as Account });
+  it('leaves a request stored during onboarding and opens it once the member has a username', () => {
+    useAuthStore.setState({
+      account: { id: 'acc_1', name: 'Ada', username: null, setup: 'username' } as Account,
+    });
+    vi.mocked(takeMoveFundsRequest).mockReturnValue('link');
+    renderWithLocale(<MoveFundsSheet />);
+    act(() => {
+      window.dispatchEvent(new Event(MOVE_FUNDS_EVENT));
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(takeMoveFundsRequest).not.toHaveBeenCalled();
+    act(() => {
+      useAuthStore.setState({
+        account: { id: 'acc_1', name: 'Ada', username: 'ada', setup: 'rules' } as Account,
+      });
+    });
+    expect(takeMoveFundsRequest).not.toHaveBeenCalled();
+    act(() => {
+      useAuthStore.setState({
+        account: { id: 'acc_1', name: 'Ada', username: 'ada', setup: null } as Account,
+      });
+    });
+    expect(screen.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeTruthy();
+    expect(events()).toEqual([['wallet_move_opened', { source: 'link' }]]);
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    expect(screen.getByRole('button', { name: 'Copy my address' })).toBeTruthy();
+  });
+
+  it('keeps an open flow without an address when the username goes away', () => {
     renderWithLocale(<MoveFundsSheet />);
     openByRequest();
     fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    act(() => {
+      useAuthStore.setState({
+        account: { id: 'acc_1', name: 'Ada', username: null, setup: null } as Account,
+      });
+    });
     expect(screen.queryByRole('button', { name: 'Copy my address' })).toBeNull();
     expect(screen.getByRole('button', { name: 'I sent it' })).toBeTruthy();
   });
@@ -278,7 +310,7 @@ describe('MoveFundsSheet', () => {
     act(() => {
       useAuthStore.setState({
         session: 'tok',
-        account: { id: 'acc_1', name: 'Ada', username: 'ada' } as Account,
+        account: { id: 'acc_1', name: 'Ada', username: 'ada', setup: null } as Account,
       });
     });
     expect(screen.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeTruthy();
@@ -292,7 +324,7 @@ describe('MoveFundsSheet', () => {
     act(() => {
       useAuthStore.setState({
         session: 'tok2',
-        account: { id: 'acc_2', name: 'Bo', username: 'bo' } as Account,
+        account: { id: 'acc_2', name: 'Bo', username: 'bo', setup: null } as Account,
       });
     });
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -311,7 +343,7 @@ describe('MoveFundsSheet', () => {
     act(() => {
       useAuthStore.setState({
         session: 'tok2',
-        account: { id: 'acc_2', name: 'Bo', username: 'bo' } as Account,
+        account: { id: 'acc_2', name: 'Bo', username: 'bo', setup: null } as Account,
       });
     });
     expect(screen.queryByRole('dialog')).toBeNull();

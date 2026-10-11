@@ -15,6 +15,7 @@ import { useWallet } from '@/hooks/useWallet';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { MOVE_FUNDS_EVENT, takeMoveFundsRequest } from '@/lib/move-funds';
 import { logInteraction } from '@/lib/interaction-log';
+import { nextOnboardingPath } from '@/lib/onboarding';
 import { isSmartphoneUserAgent } from '@/lib/payment-link';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
@@ -86,8 +87,10 @@ function MoveFundsBack({ onBack }: { onBack: () => void }): null {
  * `?move=1` link, also one followed before signing in, or the Receive view's
  * **Move Bitcoin from another wallet**) and then removes `move` from the
  * address with `history.replaceState`. It takes a request only while a
- * member is signed in (session and account), so a link opened signed out
- * waits for the sign-in. Four dots show the progress; the
+ * member is signed in (session and account) and done with onboarding (the
+ * next onboarding screen is `/welcome`) with a username, so the address
+ * exists: a link opened signed out or during onboarding waits until then.
+ * Four dots show the progress; the
  * icon-only `X` (`moveFunds.close`) and Escape close it.
  *
  * 1. **Bring your Bitcoin here**, a short text, three numbered lines, **Start**.
@@ -122,6 +125,12 @@ export function MoveFundsSheet(): ReactElement | null {
   const { fiat } = useFiatPreference();
   const username = useAuthStore((state) => state.account?.username ?? null);
   const signedIn = useAuthStore((state) => state.session !== null && state.account !== null);
+  const onboarded = useAuthStore(
+    (state) =>
+      state.account !== null &&
+      giftsLightningAddress(state.account.username) !== null &&
+      nextOnboardingPath(state.account) === '/welcome',
+  );
   const wallet = useWallet();
   const [state, setState] = useState<MoveState>(null);
   const [smartphone, setSmartphone] = useState(true);
@@ -133,6 +142,10 @@ export function MoveFundsSheet(): ReactElement | null {
     // signing out ends an open flow, so it never comes back for the next sign-in.
     if (!signedIn) {
       setState(null);
+      return;
+    }
+    // During onboarding the request stays stored: there is no address to move to yet.
+    if (!onboarded) {
       return;
     }
     setSmartphone(isSmartphoneUserAgent(navigator.userAgent));
@@ -158,7 +171,7 @@ export function MoveFundsSheet(): ReactElement | null {
     return () => {
       window.removeEventListener(MOVE_FUNDS_EVENT, open);
     };
-  }, [signedIn]);
+  }, [signedIn, onboarded]);
 
   const step = state?.step ?? null;
   const listening = signedIn && (step === 'go' || step === 'waiting');
