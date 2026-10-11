@@ -1456,6 +1456,37 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-loans-open');
   });
 
+  test('state /wallet loans-waiting-all', async ({ page }) => {
+    const waitingAllLoan = loanWith(loanA, {
+      due: { payableSats: 0, payablePeople: 0, waitingSats: 1_000, waitingPeople: 3 },
+    });
+    const waitingAllLedger = ledgerWith(ledgerA, {
+      givers: ledgerA.givers.map((giver) => ({ ...giver, canReceive: false })),
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [waitingAllLoan], { 'loan-a': waitingAllLedger });
+    await page.goto('/wallet?visual=balance-ready');
+    await expect(page.getByText('Nothing due today')).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await expect(page.getByText(/waits · 3 lenders have no wallet yet/i)).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-waiting-all');
+  });
+
+  test('state /wallet loans-waiting-all-open', async ({ page }) => {
+    const waitingAllLoan = loanWith(loanA, {
+      due: { payableSats: 0, payablePeople: 0, waitingSats: 1_000, waitingPeople: 3 },
+    });
+    const waitingAllLedger = ledgerWith(ledgerA, {
+      givers: ledgerA.givers.map((giver) => ({ ...giver, canReceive: false })),
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [waitingAllLoan], { 'loan-a': waitingAllLedger });
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanA.text })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-waiting-all-open');
+  });
+
   test('screen /wallet/phrase', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -3594,10 +3625,26 @@ test.describe('loans repay screens', () => {
       pressWho?: boolean;
       sundayRest?: boolean;
       qr?: boolean;
+      ledgerFetch?: 'hang' | 'error';
     },
   ): Promise<void> {
     await seedLoanMember(page);
     await seedLoanData(page, options.loans, options.ledgers ?? {}, options.sundayRest);
+    if (options.ledgerFetch === 'hang') {
+      await page.route(/\/messages\/[^/]+\/repayment$/, () => new Promise(() => undefined));
+    } else if (options.ledgerFetch === 'error') {
+      await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+        if (route.request().method() !== 'GET') {
+          await route.continue();
+          return;
+        }
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: '{}',
+        });
+      });
+    }
     const query = options.visual === undefined ? '' : `?visual=${options.visual}`;
     await page.goto(`/loans/repay${query}`);
     if (options.pressWho === true) {
@@ -3633,6 +3680,48 @@ test.describe('loans repay screens', () => {
       pressWho: true,
     });
     await shotScreen(page, 'state-loans-repay-who-open');
+  });
+
+  test('state /loans/repay ledger-loading', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      visual: 'repay-ready',
+      text: 'Due today',
+      ledgerFetch: 'hang',
+    });
+    await shotScreen(page, 'state-loans-repay-ledger-loading');
+  });
+
+  test('state /loans/repay ledger-loading-who-open', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      visual: 'repay-ready',
+      text: 'Loading who gets paid…',
+      pressWho: true,
+      ledgerFetch: 'hang',
+    });
+    await shotScreen(page, 'state-loans-repay-ledger-loading-who-open');
+  });
+
+  test('state /loans/repay ledger-error', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      visual: 'repay-ready',
+      text: 'Due today',
+      ledgerFetch: 'error',
+    });
+    await shotScreen(page, 'state-loans-repay-ledger-error');
+  });
+
+  test('state /loans/repay ledger-error-who-open', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      visual: 'repay-ready',
+      text: 'Could not load who gets paid for this loan.',
+      pressWho: true,
+      ledgerFetch: 'error',
+    });
+    await shotScreen(page, 'state-loans-repay-ledger-error-who-open');
   });
 
   test('state /loans/repay unavailable', async ({ page }) => {
@@ -18473,6 +18562,28 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Show loan' }).click();
     await expect(page.getByRole('link', { name: loanA.text })).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-nothing-due-open');
+  });
+
+  test('state /welcome loans-waiting-all', async ({ page }) => {
+    const waitingAllLoan = loanWith(loanA, {
+      due: { payableSats: 0, payablePeople: 0, waitingSats: 1_000, waitingPeople: 3 },
+    });
+    await openWelcomeLoans(page, myLoans([waitingAllLoan]));
+    await expect(page.getByText('Nothing due today')).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-waiting-all');
+  });
+
+  test('state /welcome loans-waiting-all-open', async ({ page }) => {
+    const waitingAllLoan = loanWith(loanA, {
+      due: { payableSats: 0, payablePeople: 0, waitingSats: 1_000, waitingPeople: 3 },
+    });
+    await openWelcomeLoans(page, myLoans([waitingAllLoan]));
+    await expect(page.getByText('Nothing due today')).toBeVisible();
+    await expect(page.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeVisible();
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanA.text })).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-waiting-all-open');
   });
 
   test('state /welcome loans-sunday', async ({ page }) => {
