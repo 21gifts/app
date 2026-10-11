@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MoveFundsSheet } from '@/components/MoveFundsSheet';
 import { useChromeBack, type ChromeBackOverride } from '@/components/ViewHistoryRoot';
@@ -282,8 +283,17 @@ describe('MoveFundsSheet', () => {
     });
     expect(screen.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeTruthy();
     expect(events()).toEqual([['wallet_move_opened', { source: 'link' }]]);
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
     act(() => {
       useAuthStore.setState({ session: null, account: null });
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    vi.mocked(takeMoveFundsRequest).mockReturnValue(null);
+    act(() => {
+      useAuthStore.setState({
+        session: 'tok2',
+        account: { id: 'acc_2', name: 'Bo', username: 'bo' } as Account,
+      });
     });
     expect(screen.queryByRole('dialog')).toBeNull();
   });
@@ -291,6 +301,7 @@ describe('MoveFundsSheet', () => {
   it('closes with X and with Escape, and ignores other keys', () => {
     renderWithLocale(<MoveFundsSheet />);
     openByRequest();
+    expect(screen.queryByText('Close')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(screen.queryByRole('dialog')).toBeNull();
     openByRequest();
@@ -311,6 +322,41 @@ describe('MoveFundsSheet', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(events()).toEqual([]);
+  });
+
+  it('reports where it was closed before the end: go and waiting, with X and with Escape', () => {
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    fireEvent.keyDown(window, { key: 'Escape' });
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    fireEvent.click(screen.getByRole('button', { name: 'I sent it' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    fireEvent.click(screen.getByRole('button', { name: 'I sent it' }));
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(events().filter(([name]) => name === 'wallet_move_closed')).toEqual([
+      ['wallet_move_closed', { step: 'go' }],
+      ['wallet_move_closed', { step: 'go' }],
+      ['wallet_move_closed', { step: 'waiting' }],
+      ['wallet_move_closed', { step: 'waiting' }],
+    ]);
+  });
+
+  it('reports the opening once under StrictMode', () => {
+    vi.mocked(takeMoveFundsRequest).mockReturnValueOnce('link');
+    renderWithLocale(
+      <StrictMode>
+        <MoveFundsSheet />
+      </StrictMode>,
+    );
+    expect(screen.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeTruthy();
+    expect(events()).toEqual([['wallet_move_opened', { source: 'link' }]]);
   });
 
   it('opens on the arrived step under the move-arrived pin in a Playwright build only', () => {
