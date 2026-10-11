@@ -62,7 +62,9 @@ const DUE_BILLS_PER_REQUEST = 60;
  * All-loans repayment screen: live due totals, recipients, one-tap wallet payment,
  * top-up controls, and per-loan progress. The send-now link names at most 60 shares
  * per loan (one due request's limit); if any named share is missing from the due
- * answer, nothing is sent and the screen reloads.
+ * answer, nothing is sent and the screen reloads. The opened Who-gets-paid list
+ * shows a muted loading line (with a spinner) while a funded loan's repayment list
+ * is in flight, and a danger error line when that list failed to load.
  *
  * @returns The repayment screen body.
  */
@@ -399,7 +401,7 @@ export function LoanRepayScreen(): ReactElement {
         {repay.missingSats === null && !ledgersMissing && fitting.length > 0 ? (
           <button
             type="button"
-            className="text-sm font-medium text-app-fg underline underline-offset-2"
+            className="inline-flex min-h-11 items-center justify-center text-sm font-medium text-app-fg underline underline-offset-2"
             onClick={() => rememberAndPay(new Set(fitting.map(shareKey)))}
           >
             {t('loans.sendNow', {
@@ -532,7 +534,13 @@ export function LoanRepayScreen(): ReactElement {
         <div id={whoId} className="mt-2 flex flex-col gap-3">
           {loans.loans.map((loan, loanIndex) => {
             const rows = shares.filter((share) => share.loanIndex === loanIndex);
-            if (rows.length === 0) {
+            const ledger = ledgerById[loan.messageId];
+            const showLedgerGap =
+              rows.length === 0 &&
+              loan.fundedAt !== null &&
+              loan.due.payableSats + loan.due.waitingSats > 0 &&
+              (ledger === undefined || ledger === null);
+            if (rows.length === 0 && !showLedgerGap) {
               return null;
             }
             return (
@@ -542,40 +550,53 @@ export function LoanRepayScreen(): ReactElement {
                     {loan.text}
                   </p>
                 ) : null}
-                <ul className="flex flex-col divide-y divide-app-border text-sm">
-                  {rows.map((share) => (
-                    <li
-                      key={`${share.dayIndex}-${share.accountId}`}
-                      className={`flex items-center gap-2 py-2 ${
-                        share.canReceive
-                          ? ''
-                          : '-mx-2 rounded-lg bg-app-notice px-2 text-app-notice-fg'
-                      }`}
-                    >
-                      {share.canReceive ? null : (
-                        <AlertTriangle
-                          aria-hidden="true"
-                          className="h-4 w-4 shrink-0 text-app-notice-fg"
-                        />
-                      )}
-                      <span className="min-w-0 flex-1">
-                        <span className="text-app-fg">{share.name}</span>
-                        {share.dueOn !== null && share.dueOn < today ? (
-                          <span className="text-app-muted">
-                            {' · '}
-                            {dateLabel(share.dueOn, false)}
-                          </span>
-                        ) : null}
+                {showLedgerGap ? (
+                  ledger === undefined ? (
+                    <p role="status" className="flex items-center gap-2 text-sm text-app-muted">
+                      <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                      {t('loans.whoLoading')}
+                    </p>
+                  ) : (
+                    <p role="alert" className="text-sm text-app-danger">
+                      {t('loans.whoError')}
+                    </p>
+                  )
+                ) : (
+                  <ul className="flex flex-col divide-y divide-app-border text-sm">
+                    {rows.map((share) => (
+                      <li
+                        key={`${share.dayIndex}-${share.accountId}`}
+                        className={`flex items-center gap-2 py-2 ${
+                          share.canReceive
+                            ? ''
+                            : '-mx-2 rounded-lg bg-app-notice px-2 text-app-notice-fg'
+                        }`}
+                      >
                         {share.canReceive ? null : (
-                          <span className="block text-xs">{t('loans.noWallet')}</span>
+                          <AlertTriangle
+                            aria-hidden="true"
+                            className="h-4 w-4 shrink-0 text-app-notice-fg"
+                          />
                         )}
-                      </span>
-                      <span className="shrink-0 tabular-nums lining-nums text-app-fg">
-                        {rowAmount(share)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                        <span className="min-w-0 flex-1">
+                          <span className="text-app-fg">{share.name}</span>
+                          {share.dueOn !== null && share.dueOn < today ? (
+                            <span className="text-app-muted">
+                              {' · '}
+                              {dateLabel(share.dueOn, false)}
+                            </span>
+                          ) : null}
+                          {share.canReceive ? null : (
+                            <span className="block text-xs">{t('loans.noWallet')}</span>
+                          )}
+                        </span>
+                        <span className="shrink-0 tabular-nums lining-nums text-app-fg">
+                          {rowAmount(share)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             );
           })}

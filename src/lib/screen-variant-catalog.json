@@ -576,6 +576,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:loans-waiting-all",
+    "label": "/wallet loans-waiting-all",
+    "visual": "state-wallet-loans-waiting-all",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-waiting-all-open",
+    "label": "/wallet loans-waiting-all-open",
+    "visual": "state-wallet-loans-waiting-all-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/payment:default",
     "label": "/wallet/payment default",
     "visual": "screen-wallet-payment",
@@ -693,6 +705,30 @@
     "id": "/loans/repay:who-open",
     "label": "/loans/repay who-open",
     "visual": "state-loans-repay-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:ledger-loading",
+    "label": "/loans/repay ledger-loading",
+    "visual": "state-loans-repay-ledger-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:ledger-loading-who-open",
+    "label": "/loans/repay ledger-loading-who-open",
+    "visual": "state-loans-repay-ledger-loading-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:ledger-error",
+    "label": "/loans/repay ledger-error",
+    "visual": "state-loans-repay-ledger-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:ledger-error-who-open",
+    "label": "/loans/repay ledger-error-who-open",
+    "visual": "state-loans-repay-ledger-error-who-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1761,6 +1797,18 @@
     "id": "/welcome:loans-nothing-due-open",
     "label": "/welcome loans-nothing-due-open",
     "visual": "state-welcome-loans-nothing-due-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-waiting-all",
+    "label": "/welcome loans-waiting-all",
+    "visual": "state-welcome-loans-waiting-all",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-waiting-all-open",
+    "label": "/welcome loans-waiting-all-open",
+    "visual": "state-welcome-loans-waiting-all-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

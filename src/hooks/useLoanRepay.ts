@@ -79,9 +79,11 @@ export interface LoanRepayResult {
    * prepared. The whole set is sent, or nothing: an `insufficient` prepare in the set,
    * or a total that does not fit the current balance, sends nothing. The send-now link
    * names at most 60 shares per loan (one due request's limit); if any named share is
-   * missing from the due answer, nothing is sent and the screen reloads. When the set is
-   * given and none of those shares are still due, the run reloads, then ends
-   * `unconfirmed` if one of the named shares is held by another run, `repaid` if
+   * missing from the due answer, nothing is sent and the screen reloads. After the due
+   * requests, the run reloads for a fresh `repaidSats` baseline; without a fresh body
+   * for every loan it would pay, it prepares nothing, sends nothing, and ends `failed`.
+   * When the set is given and none of those shares are still due, the run reloads, then
+   * ends `unconfirmed` if one of the named shares is held by another run, `repaid` if
    * nothing is due any more, otherwise `idle`.
    *
    * @param loans - Current loans body in list order.
@@ -239,7 +241,12 @@ const reservedShares = new Set<string>();
  * shares is held by another run, `repaid` if nothing is due any more, otherwise
  * `idle`. The send-now link names at most 60 shares per loan (one due request's
  * limit); if any named share is missing from the due answer, nothing is sent
- * and the screen reloads. A share another run is sending is skipped; if that
+ * and the screen reloads. After every due request the run reloads loans for a
+ * fresh `repaidSats` baseline. Without a fresh body, or when any loan this run
+ * would pay is missing from that body, it prepares nothing, sends nothing, and
+ * ends `failed`. A loan with no bills in this run may be absent without effect.
+ * Tap-time `repaidSats` is kept for skipped-share settlement (`extraSkipped`).
+ * A share another run is sending is skipped; if that
  * leaves nothing sent the run ends unconfirmed.
  * A skipped share still counts toward the settlement of its loan; a reserved
  * share already counted in the fresh baseline is not required again.
@@ -449,9 +456,19 @@ export function useLoanRepay(options: {
         if (!active()) {
           return;
         }
-        const beforeByMessage = new Map(tapByMessage);
-        if (fresh !== null) {
-          for (const row of fresh.loans) {
+        const runMessageIds = new Set(bills.map((bill) => bill.messageId));
+        if (
+          fresh === null ||
+          [...runMessageIds].some(
+            (messageId) => !fresh.loans.some((row) => row.messageId === messageId),
+          )
+        ) {
+          failBeforeSend(new Error('baseline'));
+          return;
+        }
+        const beforeByMessage = new Map<string, number>();
+        for (const row of fresh.loans) {
+          if (runMessageIds.has(row.messageId)) {
             beforeByMessage.set(row.messageId, row.repaidSats);
           }
         }

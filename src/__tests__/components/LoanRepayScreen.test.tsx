@@ -384,6 +384,10 @@ describe('LoanRepayScreen', () => {
     const sendNow = await screen.findByRole('button', {
       name: /Send ₿500 · \$0.50 now to Bruno/,
     });
+    expect(sendNow.className).toContain('inline-flex');
+    expect(sendNow.className).toContain('min-h-11');
+    expect(sendNow.className).toContain('items-center');
+    expect(sendNow.className).toContain('justify-center');
     fireEvent.click(sendNow);
     expect(state.pay).toHaveBeenCalledWith(expect.any(Array), new Set(['loan-1:11:giver-1']));
     vi.mocked(useLoanRepay).mockReturnValue({ ...state, phase: 'preparing' });
@@ -454,6 +458,58 @@ describe('LoanRepayScreen', () => {
     expect(await screen.findByText('Bruno')).toBeTruthy();
     expect(screen.getByText('Not enough in your wallet')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /now to/ })).toBeNull();
+  });
+
+  it('shows a loading line in the opened list while a repayment list is pending', () => {
+    vi.mocked(getRepayment).mockImplementation(() => new Promise(() => undefined));
+    show({ sundayRest: false, loans: [loan()] });
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    const status = screen.getByRole('status');
+    expect(status.textContent).toBe('Loading who gets paid…');
+    expect(status.className).toContain('text-app-muted');
+    const spinner = status.querySelector('svg');
+    expect(spinner?.getAttribute('class')).toContain('h-4');
+    expect(spinner?.getAttribute('class')).toContain('animate-spin');
+    expect(spinner?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('shows an error line in the opened list when a repayment list failed', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    show({ sundayRest: false, loans: [loan()] });
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Could not load who gets paid for this loan.');
+    expect(alert.className).toContain('text-app-danger');
+  });
+
+  it('shows rows for a loaded loan and an error line for a failed ledger', async () => {
+    vi.mocked(getRepayment).mockImplementation(async (id) => (id === 'loan-1' ? ledger() : null));
+    show({
+      sundayRest: false,
+      loans: [
+        loan(),
+        loan({ messageId: 'loan-2', text: 'School books for my daughter' }),
+        loan({
+          messageId: 'loan-3',
+          text: 'Still collecting gifts',
+          fundedAt: null,
+          sats: 12_000,
+          due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+        }),
+      ],
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    expect(await screen.findByText('Bruno')).toBeTruthy();
+    const whoList = document.getElementById(
+      screen.getByRole('button', { name: 'Who gets paid' }).getAttribute('aria-controls')!,
+    );
+    expect(whoList).not.toBeNull();
+    expect(within(whoList!).getByText('A sewing machine for my repair stall')).toBeTruthy();
+    expect(within(whoList!).getByText('School books for my daughter')).toBeTruthy();
+    expect(within(whoList!).getByRole('alert').textContent).toBe(
+      'Could not load who gets paid for this loan.',
+    );
+    expect(within(whoList!).queryByText('Still collecting gifts')).toBeNull();
   });
 
   it('shows the fee shortfall and top-up without send-now when the amount fits', () => {
