@@ -887,6 +887,26 @@ export async function dismissForumLaws(sessionToken: string): Promise<Account> {
 }
 
 /**
+ * Records that the member finished or skipped the one-time wallet tour, so it
+ * is not shown again on any device.
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The updated {@link Account}, with `walletIntroSeen` set to `true`.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function markWalletIntroSeen(sessionToken: string): Promise<Account> {
+  const response = await fetch('/me/wallet-intro-seen', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}` },
+  });
+  if (!response.ok) {
+    throw new Error('Could not save the wallet tour');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
  * Sets the signed-in account notification level.
  *
  * @param session - A bearer token from a completed challenge.

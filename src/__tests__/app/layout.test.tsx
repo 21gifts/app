@@ -17,6 +17,7 @@ import { LocaleProvider } from '@/components/LocaleProvider';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { PushOpenListener } from '@/components/PushOpenListener';
+import { MoveFundsLink } from '@/components/MoveFundsLink';
 import { RememberWalletReturn } from '@/components/RememberWalletReturn';
 import { ViewHistoryRoot } from '@/components/ViewHistoryRoot';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -252,7 +253,14 @@ describe('RootLayout', () => {
     expect(suspense.type).toBe(Suspense);
     expect(suspense.props.fallback).toBe(null);
     expect(suspense.props.children.type).toBe(RememberWalletReturn);
-    const viewHistory = themeChildren[5] as ReactElement<{ children: ReactNode }>;
+    const moveSuspense = themeChildren[5] as ReactElement<{
+      fallback: null;
+      children: ReactElement;
+    }>;
+    expect(moveSuspense.type).toBe(Suspense);
+    expect(moveSuspense.props.fallback).toBe(null);
+    expect(moveSuspense.props.children.type).toBe(MoveFundsLink);
+    const viewHistory = themeChildren[6] as ReactElement<{ children: ReactNode }>;
     expect(viewHistory.type).toBe(ViewHistoryRoot);
     expect(viewHistory.props.children).toBe('content');
   });

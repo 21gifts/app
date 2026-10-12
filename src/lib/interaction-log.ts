@@ -18,7 +18,15 @@ export type InteractionName =
   | 'profile_opened'
   | 'login'
   | 'logout'
-  | 'signup_completed';
+  | 'signup_completed'
+  | 'wallet_tour_shown'
+  | 'wallet_tour_step'
+  | 'wallet_tour_done'
+  | 'wallet_move_opened'
+  | 'wallet_move_step'
+  | 'wallet_move_copied'
+  | 'wallet_move_closed'
+  | 'wallet_move_done';
 
 /** Values an interaction may carry: ids, amounts, counts, and search terms. */
 export type InteractionProps = Record<string, string | number | boolean | null>;
@@ -98,13 +106,33 @@ const encoder = new TextEncoder();
 
 /**
  * Events the api may not accept yet (it answers 400 for a batch that holds an
- * unknown name). They go out in batches of their own, so such a refusal never
- * drops another event.
+ * unknown name), by the change that added them. Each group goes out in
+ * batches of its own, apart from the other events and from the other groups,
+ * so such a refusal never drops another event.
  */
-const SEPARATE_EVENTS: ReadonlySet<InteractionName> = new Set([
-  'payment_failed',
-  'wallet_open_failed',
-]);
+const SEPARATE_EVENTS: Partial<Record<InteractionName, string>> = {
+  payment_failed: 'payment-failures',
+  wallet_open_failed: 'payment-failures',
+  wallet_tour_shown: 'wallet-intro',
+  wallet_tour_step: 'wallet-intro',
+  wallet_tour_done: 'wallet-intro',
+  wallet_move_opened: 'wallet-intro',
+  wallet_move_step: 'wallet-intro',
+  wallet_move_copied: 'wallet-intro',
+  wallet_move_closed: 'wallet-intro',
+  wallet_move_done: 'wallet-intro',
+};
+
+/**
+ * The batch group of an event name: its {@link SEPARATE_EVENTS} group, or
+ * `core` for every name the api has always accepted.
+ *
+ * @param name - Event name.
+ * @returns The group.
+ */
+function batchGroup(name: InteractionName): string {
+  return SEPARATE_EVENTS[name] ?? 'core';
+}
 
 /** Events waiting to be sent. */
 const queue: InteractionEvent[] = [];
@@ -276,19 +304,20 @@ export function logInteraction(
 /**
  * Takes the next batch off the queue: at most {@link INTERACTION_BATCH_SIZE}
  * events and at most {@link MAX_BATCH_BYTES} UTF-8 bytes of JSON, and always
- * at least one. A batch holds either only {@link SEPARATE_EVENTS} or none of
- * them, whichever the oldest queued event is; the others stay queued in order.
+ * at least one. A batch holds only events of one {@link SEPARATE_EVENTS}
+ * group, or only events of none, whichever the oldest queued event is; the
+ * others stay queued in order.
  *
  * @returns The batch.
  */
 function nextBatch(): InteractionEvent[] {
   // Called only while the queue holds an event.
-  const separate = SEPARATE_EVENTS.has((queue[0] as InteractionEvent).name);
+  const group = batchGroup((queue[0] as InteractionEvent).name);
   const picked: number[] = [];
   // The wrapper, each event, and one comma per event (one more than needed).
   let bytes = WRAPPER_BYTES;
   for (const [index, event] of queue.entries()) {
-    if (SEPARATE_EVENTS.has(event.name) !== separate) {
+    if (batchGroup(event.name) !== group) {
       continue;
     }
     bytes += encoder.encode(JSON.stringify(event)).length + 1;

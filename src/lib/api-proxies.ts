@@ -454,6 +454,16 @@ export async function proxyMeForumLawsDismissedPost(request: Request): Promise<R
 }
 
 /**
+ * Proxies POST /me/wallet-intro-seen to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletIntroSeenPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet-intro-seen');
+}
+
+/**
  * Proxies POST /me/notification-level to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON `{ level }`).

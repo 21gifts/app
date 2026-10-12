@@ -8,6 +8,7 @@ import {
   getWalletPayment,
   listWalletPayments,
   listWalletReportPayments,
+  onIncomingPayment,
   parseWalletInput,
   payFromWallet,
   refreshWallet,
@@ -18,6 +19,7 @@ import {
 } from '@/lib/wallet/wallet-service';
 import type {
   WalletConnection,
+  WalletPayment,
   WalletPreparedPayment,
   WalletSdk,
   WalletTarget,
@@ -1041,8 +1043,8 @@ describe('listWalletPayments', () => {
       status: 'completed',
       senderComment: null,
     };
-    connection.listPayments.mockResolvedValueOnce([row]);
     await connectWallet(loadSdk);
+    connection.listPayments.mockResolvedValueOnce([row]);
     await expect(listWalletPayments({ offset: 20, limit: 20 })).resolves.toEqual([row]);
     expect(connection.listPayments).toHaveBeenCalledWith({ offset: 20, limit: 20 });
   });
@@ -1962,5 +1964,282 @@ describe('parseWalletInput', () => {
     await disconnectWallet();
     settle.reject(new Error('fetch failed'));
     await expect(failed).resolves.toEqual({ kind: 'unlock' });
+  });
+});
+
+describe('onIncomingPayment', () => {
+  function payment(id: string, overrides?: Partial<WalletPayment>): WalletPayment {
+    return {
+      id,
+      direction: 'received',
+      amountSats: 500,
+      feesSats: 0,
+      timestamp: 1,
+      status: 'completed',
+      method: 'lightning',
+      senderComment: null,
+      info: {},
+      ...overrides,
+    };
+  }
+
+  /** Lets the balance read behind an announcement settle. */
+  async function settle(): Promise<void> {
+    for (let i = 0; i < 10; i += 1) {
+      await Promise.resolve();
+    }
+  }
+
+  async function connected(known: WalletPayment[] = []): Promise<{
+    emit: (event: { type: string; payment?: WalletPayment }) => void;
+    connection: ReturnType<typeof createFakeSdk>['connection'];
+  }> {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    connection.listPayments.mockResolvedValueOnce(known);
+    await connectWallet(loadSdk);
+    await vi.waitFor(() => expect(connection.listPayments).toHaveBeenCalled());
+    // Let the known-payments read settle.
+    await Promise.resolve();
+    await Promise.resolve();
+    return {
+      emit: (event) => {
+        for (const listener of listeners) {
+          (listener as (event: { type: string; payment?: WalletPayment }) => void)(event);
+        }
+      },
+      connection,
+    };
+  }
+
+  it('announces a received payment that completes after connect, once, and reads the balance', async () => {
+    const { emit, connection } = await connected([payment('old')]);
+    expect(connection.listPayments).toHaveBeenCalledWith({ offset: 0, limit: 100 });
+    const seen: string[] = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push(p.id);
+    });
+    const reads = connection.getInfo.mock.calls.length;
+    emit({ type: 'paymentSucceeded', payment: payment('new') });
+    emit({ type: 'paymentSucceeded', payment: payment('new') });
+    await vi.waitFor(() => expect(seen).toEqual(['new']));
+    expect(connection.getInfo.mock.calls.length).toBe(reads + 1);
+    unsubscribe();
+    emit({ type: 'paymentSucceeded', payment: payment('later') });
+    await settle();
+    expect(seen).toEqual(['new']);
+  });
+
+  it('tells the listeners only once the balance was read again, and not when the wallet closed meanwhile', async () => {
+    const { emit, connection } = await connected();
+    const seen: Array<[string, number | null]> = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push([p.id, useWalletStore.getState().balanceSats]);
+    });
+    let answer!: () => void;
+    connection.getInfo.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          answer = () => {
+            resolve({ balanceSats: 21_500, identityPubkey: IDENTITY });
+          };
+        }),
+    );
+    emit({ type: 'paymentSucceeded', payment: payment('new') });
+    await settle();
+    expect(seen).toEqual([]);
+    answer();
+    await vi.waitFor(() => expect(seen).toEqual([['new', 21_500]]));
+    connection.getInfo.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          answer = () => {
+            resolve({ balanceSats: 22_000, identityPubkey: IDENTITY });
+          };
+        }),
+    );
+    emit({ type: 'paymentSucceeded', payment: payment('closing') });
+    await settle();
+    await disconnectWallet();
+    answer();
+    await settle();
+    expect(seen).toEqual([['new', 21_500]]);
+    unsubscribe();
+  });
+
+  it('tells the listeners of two payments close together only once the newest balance is in', async () => {
+    const { emit, connection } = await connected();
+    const seen: Array<[string, number | null]> = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push([p.id, useWalletStore.getState().balanceSats]);
+    });
+    const answers: Array<(balanceSats: number) => void> = [];
+    const held = (): Promise<{ balanceSats: number; identityPubkey: string }> =>
+      new Promise((resolve) => {
+        answers.push((balanceSats) => {
+          resolve({ balanceSats, identityPubkey: IDENTITY });
+        });
+      });
+    connection.getInfo.mockImplementationOnce(held).mockImplementationOnce(held);
+    emit({ type: 'paymentSucceeded', payment: payment('first') });
+    emit({ type: 'paymentSucceeded', payment: payment('second') });
+    await settle();
+    const [answerFirst, answerSecond] = answers;
+    if (answerFirst === undefined || answerSecond === undefined) {
+      throw new Error('expected two balance reads');
+    }
+    // The first read answers but is stale: the second one writes.
+    answerFirst(21_500);
+    await settle();
+    expect(seen).toEqual([]);
+    answerSecond(22_000);
+    await vi.waitFor(() =>
+      expect(seen).toEqual([
+        ['first', 22_000],
+        ['second', 22_000],
+      ]),
+    );
+    unsubscribe();
+  });
+
+  it('never announces a payment the wallet held at connect, a send, a pending one, or another event', async () => {
+    const { emit } = await connected([
+      payment('old'),
+      payment('sent-old', { direction: 'sent' }),
+      payment('pending-old', { status: 'pending' }),
+    ]);
+    const seen: string[] = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push(p.id);
+    });
+    emit({ type: 'paymentSucceeded', payment: payment('old') });
+    emit({ type: 'paymentSucceeded', payment: payment('out', { direction: 'sent' }) });
+    emit({ type: 'paymentSucceeded', payment: payment('wait', { status: 'pending' }) });
+    emit({ type: 'paymentPending', payment: payment('pending') });
+    emit({ type: 'paymentSucceeded' });
+    emit({ type: 'claimedDeposits' });
+    await settle();
+    expect(seen).toEqual([]);
+    emit({ type: 'paymentSucceeded', payment: payment('pending-old') });
+    await vi.waitFor(() => expect(seen).toEqual(['pending-old']));
+    unsubscribe();
+  });
+
+  it('holds a payment that completes while the known payments are read, then announces it unless known', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    let resolveList!: (payments: WalletPayment[]) => void;
+    connection.listPayments.mockImplementationOnce(
+      () =>
+        new Promise<WalletPayment[]>((resolve) => {
+          resolveList = resolve;
+        }),
+    );
+    await connectWallet(loadSdk);
+    const seen: string[] = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push(p.id);
+    });
+    const emit = (event: { type: string; payment?: WalletPayment }): void => {
+      for (const listener of listeners) {
+        (listener as (event: { type: string; payment?: WalletPayment }) => void)(event);
+      }
+    };
+    emit({ type: 'paymentSucceeded', payment: payment('early') });
+    emit({ type: 'paymentSucceeded', payment: payment('listed') });
+    emit({ type: 'paymentSucceeded', payment: payment('early') });
+    expect(seen).toEqual([]);
+    resolveList([payment('listed')]);
+    await vi.waitFor(() => expect(seen).toEqual(['early']));
+    emit({ type: 'paymentSucceeded', payment: payment('after') });
+    await vi.waitFor(() => expect(seen).toEqual(['early', 'after']));
+    unsubscribe();
+  });
+
+  it('drops the payments held meanwhile when the known-payments read fails', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    let rejectList!: (error: Error) => void;
+    connection.listPayments.mockImplementationOnce(
+      () =>
+        new Promise<WalletPayment[]>((_resolve, reject) => {
+          rejectList = reject;
+        }),
+    );
+    await connectWallet(loadSdk);
+    const seen: string[] = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push(p.id);
+    });
+    const emit = (event: { type: string; payment?: WalletPayment }): void => {
+      for (const listener of listeners) {
+        (listener as (event: { type: string; payment?: WalletPayment }) => void)(event);
+      }
+    };
+    emit({ type: 'paymentSucceeded', payment: payment('old-on-sync') });
+    rejectList(new Error('list failed'));
+    await vi.waitFor(() => {
+      emit({ type: 'paymentSucceeded', payment: payment('after') });
+      expect(seen).toEqual(['after']);
+    });
+    unsubscribe();
+  });
+
+  it('counts none as known when the read fails', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    connection.listPayments.mockRejectedValueOnce(new Error('list failed'));
+    await connectWallet(loadSdk);
+    const seen: string[] = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push(p.id);
+    });
+    const emit = (event: { type: string; payment?: WalletPayment }): void => {
+      for (const listener of listeners) {
+        (listener as (event: { type: string; payment?: WalletPayment }) => void)(event);
+      }
+    };
+    await vi.waitFor(() => {
+      emit({ type: 'paymentSucceeded', payment: payment('fresh') });
+      expect(seen).toEqual(['fresh']);
+    });
+    unsubscribe();
+  });
+
+  it('ignores a known-payments read of a dropped connection that settles after the new one', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const first = createFakeSdk();
+    let resolveStale!: (payments: WalletPayment[]) => void;
+    first.connection.listPayments.mockImplementationOnce(
+      () =>
+        new Promise<WalletPayment[]>((resolve) => {
+          resolveStale = resolve;
+        }),
+    );
+    await connectWallet(first.loadSdk);
+    await disconnectWallet();
+    rememberSessionPhrase(MNEMONIC);
+    const second = createFakeSdk();
+    second.connection.listPayments.mockResolvedValueOnce([]);
+    await connectWallet(second.loadSdk);
+    await vi.waitFor(() => expect(second.connection.listPayments).toHaveBeenCalled());
+    await Promise.resolve();
+    await Promise.resolve();
+    // The old read answers last and names the payment that is about to arrive on the new one.
+    resolveStale([payment('fresh')]);
+    await Promise.resolve();
+    await Promise.resolve();
+    const seen: string[] = [];
+    const unsubscribe = onIncomingPayment((p) => {
+      seen.push(p.id);
+    });
+    for (const listener of second.listeners) {
+      (listener as (event: { type: string; payment?: WalletPayment }) => void)({
+        type: 'paymentSucceeded',
+        payment: payment('fresh'),
+      });
+    }
+    await vi.waitFor(() => expect(seen).toEqual(['fresh']));
+    unsubscribe();
   });
 });

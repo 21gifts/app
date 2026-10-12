@@ -1642,7 +1642,7 @@ test.describe('screen baselines', () => {
     const menu = page.locator('#signed-in-menu');
     await expect(menu.getByRole('link', { name: 'Home' })).toBeVisible();
     await expect(menu.locator('.rounded-full.animate-pulse')).toBeVisible();
-    await expect(menu.locator('dl .animate-pulse')).toHaveCount(5);
+    await expect(menu.locator('dl')).toHaveCount(0);
     await shotScreen(page, 'state-settings-menu-header-account-loading');
   });
 
@@ -1862,8 +1862,10 @@ test.describe('screen baselines', () => {
     });
     await fulfillRateDay(page);
     await page.goto('/wallet?visual=balance-ready');
-    await expect(page.getByText("₿21'000")).toBeVisible();
-    await expect(page.getByText('$21.00')).toBeVisible();
+    const balance = page.getByRole('region', { name: 'Balance' });
+    await expect(balance.getByText("₿21'000")).toBeVisible();
+    await expect(balance.getByText('$21.00')).toBeVisible();
+    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('$21.00');
     await shotScreen(page, 'state-wallet-balance-ready');
   });
 
@@ -1952,7 +1954,8 @@ test.describe('screen baselines', () => {
     await fulfillRateDay(page);
     await page.goto('/wallet?visual=history-empty');
     await expect(page.getByText('No payments yet.')).toBeVisible();
-    await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Balance' }).getByText('$21.00')).toBeVisible();
+    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('$21.00');
     await page.getByText('No payments yet.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-wallet-history-empty');
   });
@@ -2236,6 +2239,7 @@ test.describe('screen baselines', () => {
     page: Page,
     amountUnit: 'btc' | 'fiat' = 'btc',
     camera: CameraStub = { kind: 'blank' },
+    extra: Record<string, unknown> = {},
   ): Promise<void> {
     await stubCamera(page, camera);
     await page.addInitScript(() => {
@@ -2257,6 +2261,7 @@ test.describe('screen baselines', () => {
           walletBackupSeenAt: 1,
           passkeyCredentialId: 'cred-seed',
           amountUnit,
+          ...extra,
         }),
       });
     });
@@ -2413,6 +2418,127 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('ada@21.gifts')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible();
     await shotScreen(page, 'state-wallet-receive');
+  });
+
+  /**
+   * Opens `/wallet` under the `wallet-received` pin with the clock paused, so
+   * the banner (6 s) and the header bump (2.4 s) only end when the test moves time.
+   *
+   * @param page - The page.
+   * @returns The banner.
+   */
+  async function openReceived(page: Page): Promise<Locator> {
+    await seedWalletSend(page);
+    const now = Date.now();
+    await page.clock.install({ time: now });
+    await page.clock.pauseAt(now + 1_000);
+    await page.goto('/wallet?visual=wallet-received');
+    const banner = page.getByRole('status').filter({ hasText: 'You received ₿500' });
+    await expect(banner).toContainText('$0.50');
+    // The banner slides in; shoot it where it rests.
+    await expect
+      .poll(() =>
+        banner.evaluate((el) => {
+          // The slide-in fills both ways, so it stays listed once finished.
+          const animations = el.getAnimations();
+          return animations.length > 0 && animations.every((a) => a.playState === 'finished');
+        }),
+      )
+      .toBe(true);
+    return banner;
+  }
+
+  test('wallet received', async ({ page }) => {
+    await openReceived(page);
+    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500 · $0.50');
+    await shotScreen(page, 'state-wallet-received');
+  });
+
+  test('wallet received-banner', async ({ page }) => {
+    const banner = await openReceived(page);
+    await page.clock.runFor(2_500);
+    await expect(page.locator('[data-wallet-tour="balance"]')).not.toContainText('+₿500');
+    await expect(banner).toBeVisible();
+    await shotScreen(page, 'state-wallet-received-banner');
+  });
+
+  test('wallet received-bump', async ({ page }) => {
+    const banner = await openReceived(page);
+    await banner.getByRole('button', { name: 'Close' }).click();
+    await expect(banner).toHaveCount(0);
+    await expect(page.locator('[data-wallet-tour="balance"]')).toContainText('+₿500 · $0.50');
+    await shotScreen(page, 'state-wallet-received-bump');
+  });
+
+  test('wallet receive-move', async ({ page }) => {
+    await seedWalletSend(page, 'btc', { kind: 'blank' }, { hadExternalWallet: true });
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Receive' }).click();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Move Bitcoin from another wallet' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-receive-move');
+  });
+
+  test('wallet move-intro-receive', async ({ page }) => {
+    await seedWalletSend(page, 'btc', { kind: 'blank' }, { hadExternalWallet: true });
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Receive' }).click();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+    await page.getByRole('button', { name: 'Move Bitcoin from another wallet' }).click();
+    await expect(page.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-move-intro-receive');
+  });
+
+  test('wallet move-intro', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?move=1&visual=balance-ready');
+    await expect(page.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeVisible();
+    await expect(page).toHaveURL(/\/wallet\?visual=balance-ready$/);
+    await shotScreen(page, 'state-wallet-move-intro');
+  });
+
+  test('wallet move-address', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?move=1&visual=balance-ready');
+    await page.getByRole('button', { name: 'Start' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Send to your 21.gifts address' });
+    await expect(sheet.getByText('ada@21.gifts')).toBeVisible();
+    await expect(sheet.getByRole('button', { name: 'Copy my address' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-move-address');
+  });
+
+  test('wallet move-address-copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await seedWalletSend(page);
+    await page.clock.install();
+    await page.goto('/wallet?move=1&visual=balance-ready');
+    await page.getByRole('button', { name: 'Start' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Send to your 21.gifts address' });
+    await expect(sheet.getByText('ada@21.gifts')).toBeVisible();
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    await sheet.getByRole('button', { name: 'Copy my address' }).click();
+    await expect(sheet.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-move-address-copied');
+  });
+
+  test('wallet move-waiting', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?move=1&visual=balance-ready');
+    await page.getByRole('button', { name: 'Start' }).click();
+    await page.getByRole('button', { name: 'I sent it' }).click();
+    await expect(page.getByRole('dialog', { name: 'Waiting for your Bitcoin…' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-move-waiting');
+  });
+
+  test('wallet move-arrived', async ({ page }) => {
+    await seedWalletSend(page);
+    await page.goto('/wallet?visual=move-arrived');
+    const done = page.getByRole('dialog', { name: '₿500 arrived' });
+    await expect(done).toContainText("Your wallet now holds ₿21'000 · $21.00.");
+    await shotScreen(page, 'state-wallet-move-arrived');
   });
 
   test('wallet receive-no-username', async ({ page }) => {
@@ -5053,6 +5179,7 @@ test.describe('onboarding screens', () => {
   async function seedWelcomeWallet(
     page: Page,
     camera: CameraStub = { kind: 'blank' },
+    extra: Record<string, unknown> = {},
   ): Promise<void> {
     await stubCamera(page, camera);
     await page.addInitScript(() => {
@@ -5076,12 +5203,47 @@ test.describe('onboarding screens', () => {
           walletRequired: true,
           walletBackupSeenAt: 1,
           passkeyCredentialId: 'cred-seed',
+          ...extra,
         }),
       });
     });
     await fulfillMixedSatsMessages(page);
     await fulfillRateDay(page);
   }
+
+  test('welcome wallet-tour', async ({ page }) => {
+    await seedWelcomeWallet(page, { kind: 'blank' }, { walletIntroSeen: false });
+    await page.route(/\/me\/wallet-intro-seen$/, async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/welcome?visual=balance-ready');
+    await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: '21.gifts is now your wallet' })).toContainText(
+      '1 of 4',
+    );
+    await shotScreen(page, 'state-welcome-wallet-tour-balance');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByRole('dialog', { name: 'Receive' })).toContainText('2 of 4');
+    await shotScreen(page, 'state-welcome-wallet-tour-receive');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByRole('dialog', { name: 'Send' })).toContainText('3 of 4');
+    await shotScreen(page, 'state-welcome-wallet-tour-send');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByRole('dialog', { name: 'Everything else' })).toContainText('4 of 4');
+    await shotScreen(page, 'state-welcome-wallet-tour-menu');
+  });
+
+  test('welcome wallet-tour-short', async ({ page }) => {
+    await seedWelcomeWallet(page, { kind: 'blank' }, { walletIntroSeen: false });
+    await page.route(/\/me\/wallet-intro-seen$/, async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    // No open wallet: the balance, Receive, and Send steps have no target, so only the Menu step is left.
+    await page.goto('/welcome');
+    await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Everything else' })).toContainText('1 of 1');
+    await shotScreen(page, 'state-welcome-wallet-tour-short');
+  });
 
   test('welcome wallet-buttons', async ({ page }) => {
     await seedWelcomeWallet(page);
@@ -20979,8 +21141,8 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Menu' }).click();
     await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
-    await expect(page.locator('#signed-in-menu dl .animate-pulse')).toHaveCount(0);
-    await expect(page.locator('#signed-in-menu dl')).toContainText('Posts');
+    await expect(page.locator('#signed-in-menu .animate-pulse')).toHaveCount(0);
+    await expect(page.locator('#signed-in-menu dl')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-menu');
   });
 
@@ -21067,41 +21229,21 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-tall-sheet');
   });
 
-  /** Answers the Menu header's totals and the spot rate, so every ₿ figure shows its fiat. */
-  async function menuTotals(page: Page): Promise<void> {
-    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EMPTY_ACTIVITY),
-      });
-    });
-    await fulfillRateDay(page);
-  }
-
   test('welcome menu-header-balance', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
-    await menuTotals(page);
+    await fulfillRateDay(page);
     await page.goto('/welcome?visual=balance-ready');
     await page.getByRole('button', { name: 'Menu' }).click();
     const menu = page.locator('#signed-in-menu');
     await expect(menu.getByRole('link', { name: /₿21'000/ })).toBeVisible();
     await expect(menu.getByText('$21.00')).toBeVisible();
-    await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-menu-header-balance');
   });
 
   test('welcome menu-header-no-rate', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
-    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EMPTY_ACTIVITY),
-      });
-    });
     await page.route('**/fx/spot', async (route) => {
       await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
     });
@@ -21111,7 +21253,6 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Menu' }).click();
     const menu = page.locator('#signed-in-menu');
     await expect(menu.getByRole('link', { name: /₿21'000/ })).toBeVisible();
-    await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
     await expect(menu.getByText(/\$/)).toHaveCount(0);
     await shotScreen(page, 'state-welcome-menu-header-no-rate');
   });
@@ -21119,36 +21260,16 @@ test.describe('welcome forum variants', () => {
   test('welcome menu-header-connecting', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
-    await menuTotals(page);
     await page.goto('/welcome?visual=balance-connecting');
     await page.getByRole('button', { name: 'Menu' }).click();
     const menu = page.locator('#signed-in-menu');
     await expect(menu.getByRole('status', { name: 'Opening your wallet…' })).toBeVisible();
-    await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-menu-header-connecting');
-  });
-
-  test('welcome menu-header-failed', async ({ page }) => {
-    await seedAda(page);
-    await emptyForum(page);
-    await page.route(/\/me\/activity$/, async (route) => {
-      await route.fulfill({ status: 500, body: '' });
-    });
-    await page.route(/\/forum\/members\/[^/?]+$/, async (route) => {
-      await route.fulfill({ status: 500, body: '' });
-    });
-    await page.goto('/welcome');
-    await page.getByRole('button', { name: 'Menu' }).click();
-    const stats = page.locator('#signed-in-menu dl');
-    await expect(stats.getByText('–')).toHaveCount(3);
-    await shotScreen(page, 'state-welcome-menu-header-failed');
   });
 
   test('welcome menu-header-photo', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
-    // The photo shows only with a complete load, so the totals must be readable too.
-    await menuTotals(page);
     await page.route(/\/pictures\/me$/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -21167,25 +21288,13 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu-header-photo');
   });
 
-  test('welcome menu-header-loading', async ({ page }) => {
-    await seedAda(page);
-    await emptyForum(page);
-    // The account header's reads never answer, so its skeleton bars stay.
-    await page.route(/\/me\/activity$/, () => undefined);
-    await page.goto('/welcome');
-    await page.getByRole('button', { name: 'Menu' }).click();
-    await expect(page.getByRole('link', { name: /Profile/ })).toBeVisible();
-    await expect(page.locator('#signed-in-menu dl .animate-pulse')).toHaveCount(5);
-    await shotScreen(page, 'state-welcome-menu-header-loading');
-  });
-
   test('welcome menu-sheet-end', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Menu' }).click();
     const menu = page.locator('#signed-in-menu');
-    await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
+    await expect(menu.getByRole('link', { name: /^Open your profile/ })).toBeVisible();
     await menu.evaluate((panel) => {
       panel.scrollTop = panel.scrollHeight;
     });

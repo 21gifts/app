@@ -3009,6 +3009,28 @@ test('Function: proxyMeForumLawsDismissedPost — POST /me/forum-laws-dismissed 
   expect(((await again.json()) as { forumLawsDismissed: boolean }).forumLawsDismissed).toBe(true);
 });
 
+test('Function: proxyMeWalletIntroSeenPost — POST /me/wallet-intro-seen sets the flag, idempotent', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const unseen = await request.post('http://127.0.0.1:3001/e2e/wallet-intro-unseen', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(((await unseen.json()) as { walletIntroSeen: boolean }).walletIntroSeen).toBe(false);
+  const res = await request.post('/me/wallet-intro-seen', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { walletIntroSeen: boolean }).walletIntroSeen).toBe(true);
+  const me = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
+  expect(((await me.json()) as { walletIntroSeen: boolean }).walletIntroSeen).toBe(true);
+  const again = await request.post('/me/wallet-intro-seen', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(again.status()).toBe(200);
+  expect((await request.post('/me/wallet-intro-seen')).status()).toBe(401);
+});
+
 test('Function: proxyMeNotificationLevelPost — POST /me/notification-level without bearer is 401', async ({
   request,
 }) => {

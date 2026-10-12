@@ -12,6 +12,7 @@ import {
   type WalletPayRequest,
   type WalletReportPayment,
   type WalletSdk,
+  type WalletSdkEvent,
   type WalletTarget,
 } from '@/lib/wallet/wallet-sdk';
 import { useAuthStore } from '@/stores/auth-store';
@@ -36,6 +37,47 @@ const CONNECT_TIMEOUT_MS = 30_000;
 
 /** Counter value of the read that last wrote the store balance. */
 let writtenReadCounter = 0;
+
+/**
+ * Balance reads (`getInfo`) of the current connection still running, so an
+ * announcement can wait for the newest balance. Cleared when the connection drops.
+ */
+const readsInFlight = new Set<Promise<unknown>>();
+
+/**
+ * Keeps a running balance read in {@link readsInFlight} until it settles.
+ *
+ * @param read - The `getInfo` promise.
+ * @returns The same promise.
+ */
+function trackRead<T>(read: Promise<T>): Promise<T> {
+  readsInFlight.add(read);
+  const settled = (): void => {
+    readsInFlight.delete(read);
+  };
+  read.then(settled, settled);
+  return read;
+}
+
+/** How many of the newest payments count as known when a wallet connects. */
+const KNOWN_PAYMENTS_LIMIT = 100;
+
+/**
+ * Ids of the received payments that were already completed when the current
+ * connection opened, plus every payment announced since. `null` until that
+ * first list was read: payment events before it are not announced.
+ */
+let knownPaymentIds: Set<string> | null = null;
+
+/** Listeners told about each newly received payment. */
+const incomingListeners = new Set<(payment: WalletPayment) => void>();
+
+/**
+ * Received payments that completed while the known payments of the current
+ * connection were still being read; announced once that list is in, unless
+ * it holds them.
+ */
+let heldPayments: WalletPayment[] = [];
 
 /**
  * Host the app is served from. The wallet's address lives on this host, and
@@ -65,6 +107,10 @@ function bumpRun(): number {
 async function dropConnection(): Promise<void> {
   const current = connection;
   connection = null;
+  knownPaymentIds = null;
+  heldPayments = [];
+  // A read of the dropped connection may never answer; announcements of the next one do not wait for it.
+  readsInFlight.clear();
   if (current === null) {
     return;
   }
@@ -94,10 +140,9 @@ async function readBalance(
   balanceReadCounter += 1;
   const read = balanceReadCounter;
   try {
-    const info =
-      options?.ensureSynced === true
-        ? await conn.getInfo({ ensureSynced: true })
-        : await conn.getInfo();
+    const info = await trackRead(
+      options?.ensureSynced === true ? conn.getInfo({ ensureSynced: true }) : conn.getInfo(),
+    );
     if (run !== runCounter || read !== balanceReadCounter) {
       return;
     }
@@ -146,6 +191,118 @@ function reportWalletOpenFailure(reason: 'timeout' | 'error'): void {
 }
 
 /**
+ * Reads the payments a fresh connection already holds, so that only a payment
+ * that completes later is announced. A payment that completed while this list
+ * was read is announced once it is in, unless the list holds it. A failed
+ * read counts as none known and drops the payments held meanwhile: the SDK
+ * announces only payments that change, so nothing old is announced then.
+ *
+ * @param run - Run number that owns the connection.
+ * @param conn - The fresh connection.
+ * @returns Resolves once the known ids are set, or when the run is stale.
+ */
+async function rememberKnownPayments(run: number, conn: WalletConnection): Promise<void> {
+  let known = new Set<string>();
+  let read = false;
+  try {
+    const payments = await conn.listPayments({ offset: 0, limit: KNOWN_PAYMENTS_LIMIT });
+    known = new Set(
+      payments
+        .filter((payment) => payment.direction === 'received' && payment.status === 'completed')
+        .map((payment) => payment.id),
+    );
+    read = true;
+  } catch {
+    // None known; see above.
+  }
+  if (run !== runCounter || connection !== conn) {
+    return;
+  }
+  knownPaymentIds = known;
+  const held = heldPayments;
+  heldPayments = [];
+  if (read) {
+    for (const payment of held) {
+      void announcePayment(known, payment);
+    }
+  }
+}
+
+/**
+ * Announces a newly received payment once per id: adds it to the known ids,
+ * reads the balance again, and once that read and any newer one are done
+ * (a newer read makes this one stale, and only the newest writes) tells every
+ * {@link onIncomingPayment} listener, so a listener that shows the balance
+ * never shows the one from before the payment. Nothing is told when the
+ * connection ended meanwhile (sign-out, or a failed read that drops it).
+ *
+ * @param known - The known payment ids of the current connection.
+ * @param payment - The received, completed payment.
+ * @returns Resolves after the listeners were told, or when the connection ended.
+ */
+async function announcePayment(known: Set<string>, payment: WalletPayment): Promise<void> {
+  if (known.has(payment.id)) {
+    return;
+  }
+  known.add(payment.id);
+  await refreshWallet();
+  while (readsInFlight.size > 0) {
+    await Promise.allSettled(readsInFlight);
+  }
+  if (knownPaymentIds !== known) {
+    return;
+  }
+  for (const listener of incomingListeners) {
+    listener(payment);
+  }
+}
+
+/**
+ * Handles one SDK event of the current connection: a sync reads the balance
+ * again, and a received payment that just completed is announced to the
+ * {@link onIncomingPayment} listeners and read into the balance, once per
+ * payment id; one that completes before the payments known at connect were
+ * read is held until that list is in.
+ *
+ * @param event - The SDK event.
+ */
+function onWalletEvent(event: WalletSdkEvent): void {
+  if (event.type === 'synced') {
+    void refreshWallet();
+    return;
+  }
+  const payment = event.payment;
+  if (
+    event.type !== 'paymentSucceeded' ||
+    payment === undefined ||
+    payment.direction !== 'received' ||
+    payment.status !== 'completed'
+  ) {
+    return;
+  }
+  if (knownPaymentIds === null) {
+    heldPayments.push(payment);
+    return;
+  }
+  void announcePayment(knownPaymentIds, payment);
+}
+
+/**
+ * Subscribes to received payments that complete while the wallet is open in
+ * this tab: never one the wallet already held when it connected, and each
+ * payment id once.
+ *
+ * @param listener - Called with each newly received payment.
+ * @returns Unsubscribe function.
+ */
+export function onIncomingPayment(listener: (payment: WalletPayment) => void): () => void {
+  incomingListeners.add(listener);
+  return () => {
+    incomingListeners.delete(listener);
+  };
+}
+
+/**
  * Connects the in-app wallet from the tab phrase and Breez API key. Loading the
  * SDK, connecting, and the first synchronized balance read share a 30-second
  * deadline. A timeout moves a still-connecting wallet to `error`, but leaves a
@@ -190,14 +347,15 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
       }
       connection = next;
       await next.addEventListener((event) => {
-        if (event.type === 'synced' && run === runCounter && connection === next) {
-          void refreshWallet();
+        if (run === runCounter && connection === next) {
+          onWalletEvent(event);
         }
       });
       if (run !== runCounter) {
         return;
       }
       await readBalance(run, next, { ensureSynced: true });
+      void rememberKnownPayments(run, next);
     } catch {
       if (run === runCounter) {
         reportWalletOpenFailure('error');
@@ -698,7 +856,7 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
   try {
     balanceReadCounter += 1;
     const read = balanceReadCounter;
-    const info = await conn.getInfo({ ensureSynced: true });
+    const info = await trackRead(conn.getInfo({ ensureSynced: true }));
     if (connection !== conn) {
       return { kind: 'failed', failure: failureOf('prepare', 'disconnected', feeSats) };
     }

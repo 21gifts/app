@@ -216,6 +216,10 @@ function newAccount(linkingKey) {
     lightningAddress: null,
     lightningAddressVerified: false,
     forumLawsDismissed: false,
+    // The api starts at false; the stub starts at true so the wallet tour does not cover
+    // every signed-in /welcome spec. POST /e2e/wallet-intro-unseen sets it back to false.
+    walletIntroSeen: true,
+    hadExternalWallet: false,
     createdAt: Date.now(),
     rulesAgreedAt: null,
     viewKey: hex(randomBytes(32)),
@@ -2059,6 +2063,30 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     account.forumLawsDismissed = true;
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/wallet-intro-seen') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    account.walletIntroSeen = true;
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/e2e/wallet-intro-unseen') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    account.walletIntroSeen = false;
     json(res, 200, account);
     return;
   }

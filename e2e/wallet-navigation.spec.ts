@@ -369,26 +369,27 @@ async function fulfillSpotRate(page: Page): Promise<void> {
   await fulfillSpot(page);
 }
 
-test('Function: MenuAccountHeader shows the ready balance with fiat, the name, and the stats, and its balance opens the wallet without a document load', async ({
+test('Function: MenuAccountHeader shows the ready balance with fiat and the name, no stats row, and its balance opens the wallet without a document load', async ({
   page,
 }) => {
   await signInWithPasskey(page);
   await fulfillSpotRate(page);
   await page.goto('/settings?visual=balance-ready');
   await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
-  // No wallet control in the header row any more; the balance lives in the Menu.
-  await expect(
-    page.locator('[data-app-chrome]').getByRole('link', { name: /Wallet|₿/ }),
-  ).toHaveCount(0);
+  // The header row holds the balance as plain text (one link), no wallet button.
+  const chrome = page.locator('[data-app-chrome]');
+  await expect(chrome.getByRole('link', { name: /₿/ })).toHaveCount(1);
+  await expect(chrome.getByRole('link', { name: "Balance ₿21'000 $21.00" })).toBeVisible();
+  await expect(chrome.getByRole('link', { name: /Wallet/ })).toHaveCount(0);
   await page.getByRole('button', { name: 'Menu' }).click();
   const menu = page.locator('#signed-in-menu');
   const balance = menu.getByRole('link', { name: /₿21'000/ });
   await expect(balance).toContainText('$21.00');
   await expect(balance).toHaveAttribute('href', '/wallet');
+  await expect(menu.locator('dl')).toHaveCount(0);
   for (const label of ['Received', 'Given', 'Posts']) {
-    await expect(menu.locator('dl').getByText(label, { exact: true })).toBeVisible();
+    await expect(menu.getByText(label, { exact: true })).toHaveCount(0);
   }
-  await expect(menu.locator('dl .animate-pulse')).toHaveCount(0);
   const rows = menu.getByRole('link');
   await expect(rows.nth(0)).toHaveAccessibleName('Open your profile Ada @ada');
   await expect(rows.nth(2)).toHaveAccessibleName('Home');
@@ -455,27 +456,6 @@ for (const layout of [
   });
 }
 
-test('MenuAccountHeader keeps the stats row height while the numbers load', async ({ page }) => {
-  await signInWithPasskey(page);
-  let release: () => void = () => undefined;
-  const held = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  await page.route(/\/me\/activity$/, async (route) => {
-    await held;
-    await route.fallback();
-  });
-  await page.goto('/settings');
-  await page.getByRole('button', { name: 'Menu' }).click();
-  const row = page.locator('#signed-in-menu dl');
-  await expect(row.locator('.animate-pulse')).toHaveCount(5);
-  const before = (await row.boundingBox())!;
-  release();
-  await expect(row.locator('.animate-pulse')).toHaveCount(0);
-  const after = (await row.boundingBox())!;
-  expect(after.height).toBe(before.height);
-});
-
 test('the Menu rows stay put when it opens right after a page load', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signInWithPasskey(page);
@@ -493,7 +473,7 @@ test('the Menu rows stay put when it opens right after a page load', async ({ pa
   const menu = page.locator('#signed-in-menu');
   const home = menu.getByRole('link', { name: 'Home' });
   await expect(home).toBeVisible();
-  await expect(menu.locator('dl .animate-pulse')).toHaveCount(5);
+  await expect(menu.locator('.rounded-full.animate-pulse')).toBeVisible();
   // The placeholder is not a link; the profile link appears with the account.
   await expect(menu.getByRole('link', { name: /^Open your profile/ })).toHaveCount(0);
   const before = (await home.boundingBox())!;

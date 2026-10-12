@@ -2,7 +2,7 @@
 
 import { Check, Copy } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
+import { useEffect, type ReactElement, type ReactNode } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { FiatPreferenceSwitcher } from '@/components/FiatPreferenceSwitcher';
 import { LanguagePreferenceSwitcher } from '@/components/LanguagePreferenceSwitcher';
@@ -13,6 +13,7 @@ import { PushToggle } from '@/components/PushToggle';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { UsernameForm } from '@/components/UsernameForm';
 import { ButtonLink, Card, IconButton, SegmentedControl } from '@/components/ui';
+import { useCopied } from '@/hooks/useCopied';
 import { saveAmountUnit } from '@/lib/amount-unit';
 import type { AmountUnit } from '@/lib/api-types';
 import { getAppVersion } from '@/lib/config';
@@ -64,28 +65,11 @@ function SettingsSection(props: {
 function AddressRow(): ReactElement {
   const { t } = useTranslations();
   const username = useAuthStore((state) => state.account?.username ?? null);
-  const [copies, setCopies] = useState(0);
-  useEffect(() => {
-    if (copies === 0) {
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      setCopies(0);
-    }, 2000);
-    return () => window.clearTimeout(timer);
-  }, [copies]);
+  const { copied, copy } = useCopied();
   /* v8 ignore next -- this client screen always runs in a browser */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
   const address = giftsLightningAddress(username, host);
   const label = t('profile.giftsHeading');
-  const copy = async (text: string): Promise<void> => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopies((count) => count + 1);
-    } catch {
-      // No clipboard here (an insecure page, or a refused write): the address stays readable.
-    }
-  };
   return (
     <div
       id="address"
@@ -104,14 +88,14 @@ function AddressRow(): ReactElement {
               void copy(address);
             }}
           >
-            {copies > 0 ? (
+            {copied ? (
               <Check aria-hidden="true" className="h-3.5 w-3.5 text-app-success" />
             ) : (
               <Copy aria-hidden="true" className="h-3.5 w-3.5" />
             )}
           </IconButton>
           <span className="sr-only" aria-live="polite">
-            {copies > 0 ? t('wallet.payment.copied') : ''}
+            {copied ? t('wallet.payment.copied') : ''}
           </span>
         </div>
       ) : (
