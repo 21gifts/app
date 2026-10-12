@@ -332,6 +332,17 @@ describe('SignedInChrome', () => {
     expect(screen.queryByRole('button', { name: 'Account header', hidden: true })).toBeNull();
   });
 
+  it('shows the Menu trigger as an icon only, with Menu as its accessible name', () => {
+    renderWithLocale(<SignedInChrome />);
+    const trigger = screen.getByRole('button', { name: 'Menu' });
+    expect(screen.queryByText('Menu')).toBeNull();
+    expect(trigger.textContent).toBe('');
+    expect(trigger.querySelector('svg')?.getAttribute('class')).toContain('h-6 w-6');
+    expect(trigger.className).toContain('min-h-11 min-w-11');
+    expect(trigger.className).toContain('text-app-fg');
+    expect(trigger.className).not.toContain('text-app-muted');
+  });
+
   it('shows Menu while Log out stays hidden', () => {
     renderWithLocale(<SignedInChrome />);
     expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
