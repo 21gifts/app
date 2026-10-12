@@ -5270,9 +5270,9 @@
     "fil": "Naka-pin na fixture (?visual=wallet-received, sa mga Playwright build lang): may dumating na ₿500 habang bukas ang app. Sa itaas na gitna ang banner na Nakatanggap ka ng ₿500 na may $0.50 sa ilalim, berdeng bilog na may palasong papasok sa kaliwa at Isara (X) sa kanan; sa header berde ang balanse (₿21'000 sa ibabaw ng fiat nito) na may +₿500 · $0.50 sa ilalim. Sa ilalim nito ang home ng wallet na may balanse."
   },
   "/welcome:wallet-tour-menu": {
-    "de": "Dieselbe Tour, der letzte Schritt: Menü oben rechts im Ring und die Karte darunter 4 von 4, Alles andere, Überspringen und Verstanden.",
-    "es": "El mismo tour, el último paso: Menú arriba a la derecha dentro del anillo y la tarjeta debajo 4 de 4, Todo lo demás, Omitir y Entendido.",
-    "fil": "Ang parehong tour, ang huling hakbang: ang Menu sa kanang itaas sa loob ng singsing at ang card sa ilalim nito 4 sa 4, Lahat ng iba pa, Laktawan at Sige."
+    "de": "Dieselbe Tour, der letzte Schritt: das Menü-Symbol oben rechts im Ring und die Karte darunter 4 von 4, Alles andere, Überspringen und Verstanden.",
+    "es": "El mismo tour, el último paso: el icono del Menú arriba a la derecha dentro del anillo y la tarjeta debajo 4 de 4, Todo lo demás, Omitir y Entendido.",
+    "fil": "Ang parehong tour, ang huling hakbang: ang icon ng Menu sa kanang itaas sa loob ng singsing at ang card sa ilalim nito 4 sa 4, Lahat ng iba pa, Laktawan at Sige."
   },
   "/welcome:wallet-tour-balance": {
     "de": "Ein Mitglied, das die Wallet-Tour noch nicht gesehen hat (walletIntroSeen: false), angemeldet mit geöffneter Wallet (?visual=balance-ready, nur Playwright-Builds), auf der Forum-Startseite: das Guthaben im Kopf (₿21'000 über dem Fiat-Betrag) in einem weißen Ring, der Rest abgedunkelt, darunter die Karte 1 von 4, 21.gifts ist jetzt dein Wallet, Überspringen und Weiter.",
@@ -5315,9 +5315,9 @@
     "fil": "Parehong unang hakbang gaya ng move-intro, binuksan gamit ang Ilipat ang Bitcoin mula sa ibang wallet sa view ng Tanggapin (account na may hadExternalWallet: true): nasa ibabaw ng view ng Tanggapin ang sheet sa halip na sa home ng wallet."
   },
   "/welcome:wallet-tour-short": {
-    "de": "Die Wallet-Tour, wenn ihre Ziele fehlen: ohne offenes Wallet gibt es kein Guthaben im Kopf und keine Empfangen- und Senden-Knöpfe, deshalb bleibt nur der Menü-Schritt: Menü oben rechts im Ring und die Karte 1 von 1, Alles andere, Überspringen und Verstanden.",
-    "es": "El tour de la wallet cuando faltan sus objetivos: sin wallet abierta no hay saldo en la cabecera ni botones Recibir y Enviar, así que solo queda el paso del Menú: Menú arriba a la derecha dentro del anillo y la tarjeta 1 de 1, Todo lo demás, Omitir y Entendido.",
-    "fil": "Ang tour ng wallet kapag wala ang mga target nito: kung walang bukas na wallet, walang balanse sa header at walang mga button na Tanggapin at Ipadala, kaya ang hakbang ng Menu na lang ang natitira: ang Menu sa itaas-kanan sa loob ng singsing at ang card na 1 sa 1, Lahat ng iba pa, Laktawan at Sige."
+    "de": "Die Wallet-Tour, wenn ihre Ziele fehlen: ohne offenes Wallet gibt es kein Guthaben im Kopf und keine Empfangen- und Senden-Knöpfe, deshalb bleibt nur der Menü-Schritt: das Menü-Symbol oben rechts im Ring und die Karte 1 von 1, Alles andere, Überspringen und Verstanden.",
+    "es": "El tour de la wallet cuando faltan sus objetivos: sin wallet abierta no hay saldo en la cabecera ni botones Recibir y Enviar, así que solo queda el paso del Menú: el icono del Menú arriba a la derecha dentro del anillo y la tarjeta 1 de 1, Todo lo demás, Omitir y Entendido.",
+    "fil": "Ang tour ng wallet kapag wala ang mga target nito: kung walang bukas na wallet, walang balanse sa header at walang mga button na Tanggapin at Ipadala, kaya ang hakbang ng Menu na lang ang natitira: ang icon ng Menu sa itaas-kanan sa loob ng singsing at ang card na 1 sa 1, Lahat ng iba pa, Laktawan at Sige."
   },
   "/welcome:wallet-tour-error": {
     "de": "Die Wallet-Tour, wenn sich das Wallet nicht öffnen ließ (?visual=balance-error, nur Playwright-Builds): Im Kopf steht kein Guthaben, deshalb fehlt dieser Schritt, während Empfangen und Senden unten bleiben. Die Tour beginnt mit Empfangen unten im weißen Ring und der Karte darüber: 1 von 3, Empfangen, der Text dazu, Überspringen und Weiter; Senden und Menü folgen als 2 und 3 von 3.",

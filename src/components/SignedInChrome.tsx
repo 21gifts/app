@@ -402,12 +402,11 @@ function SignedInMenu(): ReactElement {
           }}
           className={
             lifted
-              ? 'relative z-[60] inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg'
-              : 'inline-flex min-h-11 items-center gap-1.5 px-2 text-sm text-app-muted transition hover:text-app-fg'
+              ? 'relative z-[60] inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-app-fg transition hover:bg-app-hover aria-expanded:bg-app-hover'
+              : 'inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-app-fg transition hover:bg-app-hover aria-expanded:bg-app-hover'
           }
         >
-          <Menu aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-          {t('aria.menu')}
+          <Menu aria-hidden="true" className="h-6 w-6 shrink-0" />
         </button>
         {panelTarget === null
           ? null
