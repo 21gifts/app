@@ -14369,13 +14369,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('$0.02').first()).toBeVisible();
   }
 
-  for (const state of [
-    'moderation',
-    'delete-confirm',
-    'deleting',
-    'delete-error',
-    'delete-open-credit',
-  ] as const) {
+  for (const state of ['moderation', 'delete-confirm', 'deleting', 'delete-error'] as const) {
     test('welcome ' + state, async ({ page }) => {
       await seedAda(page, 'moderator');
       await fulfillMixedSatsMessages(page);
@@ -14386,15 +14380,11 @@ test.describe('welcome forum variants', () => {
             release = resolve;
           });
         }
-        await route.fulfill(
-          state === 'delete-open-credit'
-            ? {
-                status: 409,
-                contentType: 'application/json',
-                body: '{"error":"An open credit cannot be deleted"}',
-              }
-            : { status: 503, contentType: 'application/json', body: '{"error":"Unavailable"}' },
-        );
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: '{"error":"Unavailable"}',
+        });
       });
       await page.goto('/welcome');
       await chooseForumView(page, 'No gifts yet');
@@ -14405,7 +14395,7 @@ test.describe('welcome forum variants', () => {
           page.getByRole('group', { name: 'Delete this post and its reactions from 21.gifts?' }),
         ).toBeVisible();
       }
-      if (state === 'deleting' || state === 'delete-error' || state === 'delete-open-credit') {
+      if (state === 'deleting' || state === 'delete-error') {
         await page.getByRole('button', { name: 'Confirm deletion' }).click();
         if (state === 'deleting') {
           await expect(page.getByRole('button', { name: 'Confirm deletion' })).toBeDisabled();
@@ -14414,20 +14404,13 @@ test.describe('welcome forum variants', () => {
             page
               .getByRole('group', { name: 'Delete this post and its reactions from 21.gifts?' })
               .getByRole('alert'),
-          ).toHaveText(
-            state === 'delete-open-credit'
-              ? 'This credit is not fully repaid yet and cannot be deleted.'
-              : 'Could not delete the post. Please try again.',
-          );
+          ).toHaveText('Could not delete the post. Please try again.');
         }
       }
       if (state === 'moderation') await shotScreen(page, 'state-welcome-moderation');
       if (state === 'delete-confirm') await shotScreen(page, 'state-welcome-delete-confirm');
       if (state === 'deleting') await shotScreen(page, 'state-welcome-deleting');
       if (state === 'delete-error') await shotScreen(page, 'state-welcome-delete-error');
-      if (state === 'delete-open-credit') {
-        await shotScreen(page, 'state-welcome-delete-open-credit');
-      }
       release();
     });
   }
@@ -14775,6 +14758,56 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-credit');
+  });
+
+  test('welcome delete-open-credit', async ({ page }) => {
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await seedAda(page, 'moderator');
+    await fulfillRateDay(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-credit',
+              name: 'Bob',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-goal-credit', async (route) => {
+      await route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: '{"error":"An open credit cannot be deleted"}',
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
+    await page.getByRole('button', { name: 'Delete post', exact: true }).click();
+    await page.getByRole('button', { name: 'Confirm deletion' }).click();
+    await expect(
+      page
+        .getByRole('group', { name: 'Delete this post and its reactions from 21.gifts?' })
+        .getByRole('alert'),
+    ).toHaveText('This credit is not fully repaid yet and cannot be deleted.');
+    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
+    await shotScreen(page, 'state-welcome-delete-open-credit');
   });
 
   test('state /welcome loan-tag-open', async ({ page }) => {
