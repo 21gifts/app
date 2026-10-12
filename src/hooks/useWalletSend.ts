@@ -898,9 +898,10 @@ export function useWalletSend(): UseWalletSendResult {
    * amount step, so its refusals return to the input. An own-host member is
    * first asked for a Spark invoice of `sats`; without one, or when it cannot
    * be prepared for exactly `sats`, the wallet asks the LNURL receiver.
+   * Failures are reported under `flow` (default `send`).
    */
   const payAmount = useCallback(
-    (target: WalletSendAmountTarget, sats: number, note: string): void => {
+    (target: WalletSendAmountTarget, sats: number, note: string, flow: PayFlow = 'send'): void => {
       if (target.type === 'relay') {
         const trimmed = note.trim().slice(0, target.commentMaxLength);
         const run = generation.current;
@@ -916,6 +917,7 @@ export function useWalletSend(): UseWalletSendResult {
             }
             prepare({ type: 'input', input: invoice.pr }, target.recipient, sats, {
               expectedSats: sats,
+              flow,
             });
           },
           (error: unknown) => {
@@ -931,7 +933,7 @@ export function useWalletSend(): UseWalletSendResult {
                 feeSats: null,
                 error,
               },
-              'send',
+              flow,
               { session },
             );
             setBusy(false);
@@ -966,6 +968,7 @@ export function useWalletSend(): UseWalletSendResult {
             },
             target.recipient,
             sats,
+            { flow },
           );
         };
         if (target.member === undefined) {
@@ -985,6 +988,7 @@ export function useWalletSend(): UseWalletSendResult {
           prepare({ type: 'input', input: sparkInvoice }, target.recipient, sats, {
             expectedSats: sats,
             fallback: lightning,
+            flow,
           });
         });
         return;
@@ -994,24 +998,31 @@ export function useWalletSend(): UseWalletSendResult {
           { type: 'input', input: target.address, amountSats: sats },
           target.recipient,
           sats,
-          { onchainTarget: target },
+          { onchainTarget: target, flow },
         );
         return;
       }
-      prepare({ type: 'input', input: target.input, amountSats: sats }, target.recipient, sats);
+      prepare({ type: 'input', input: target.input, amountSats: sats }, target.recipient, sats, {
+        flow,
+      });
     },
     [session, prepare],
   );
 
   /**
    * Opens the amount step for `target`, or pays at once when its whole-sat
-   * bounds are one amount (a point-of-sale charge): then no message is sent.
+   * bounds are one amount (a point-of-sale charge): then no message is sent,
+   * and failures are reported under `flow` (default `send`). An amount the
+   * member types afterwards is their own payment, reported as `send`.
    */
   const askAmount = useCallback(
-    (target: Exclude<WalletSendAmountTarget, { type: 'request' | 'onchain' }>): void => {
+    (
+      target: Exclude<WalletSendAmountTarget, { type: 'request' | 'onchain' }>,
+      flow: PayFlow = 'send',
+    ): void => {
       setComment('');
       if (target.minSats === target.maxSats) {
-        payAmount(target, target.minSats, '');
+        payAmount(target, target.minSats, '', flow);
         return;
       }
       setBusy(false);
@@ -1073,11 +1084,12 @@ export function useWalletSend(): UseWalletSendResult {
         });
       return;
     }
-    const readWithWallet = (member: OwnShop | null): void => {
+    // `flow` is `pos` for the fallback of an open shop charge, so its failure is reported as the charge.
+    const readWithWallet = (member: OwnShop | null, flow: PayFlow = 'send'): void => {
       // The run of this read: a shop charge's fallback can start it after a re-quote bumped it.
       const read = generation.current;
       const again = (): void => {
-        readWithWallet(member);
+        readWithWallet(member, flow);
       };
       if (holdForWallet(read, again) !== 'ready') {
         return;
@@ -1118,7 +1130,7 @@ export function useWalletSend(): UseWalletSendResult {
                 { type: 'input', input: target.address, amountSats: target.amountSats },
                 target.recipient,
                 target.amountSats,
-                { onchainTarget: { ...target, amountSats: null } },
+                { onchainTarget: { ...target, amountSats: null }, flow },
               );
               return;
             }
@@ -1128,12 +1140,15 @@ export function useWalletSend(): UseWalletSendResult {
             return;
           }
           if (target.type === 'lnurl') {
-            askAmount({
-              ...target,
-              ...(member === null
-                ? { recipient: recipientOf(text, target.recipient) }
-                : { recipient: member.address, member: member.name }),
-            });
+            askAmount(
+              {
+                ...target,
+                ...(member === null
+                  ? { recipient: recipientOf(text, target.recipient) }
+                  : { recipient: member.address, member: member.name }),
+              },
+              flow,
+            );
             return;
           }
           if (target.amountSats !== null && target.amountSats > 0) {
@@ -1145,6 +1160,7 @@ export function useWalletSend(): UseWalletSendResult {
               },
               target.recipient,
               target.amountSats,
+              { flow },
             );
             return;
           }
@@ -1173,7 +1189,7 @@ export function useWalletSend(): UseWalletSendResult {
         prepare({ type: 'input', input: charge.sparkInvoice }, shop.address, charge.amountSats, {
           expectedSats: charge.amountSats,
           fallback: () => {
-            readWithWallet(null);
+            readWithWallet(null, 'pos');
           },
           flow: 'pos',
         });
