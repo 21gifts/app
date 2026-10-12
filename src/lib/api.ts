@@ -2620,6 +2620,7 @@ const repaymentLineSchema = z.object({
 const repaymentLedgerSchema = z.object({
   currency: z.enum(['BTC', 'USD', 'CHF', 'EUR', 'PHP']),
   fundedAt: z.string().nullable(),
+  startsOn: z.string().nullable().optional(),
   termDays: z.number().int(),
   daysDue: z.number().int().nonnegative(),
   daysPaid: z.number().int().nonnegative(),

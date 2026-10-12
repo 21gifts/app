@@ -114,6 +114,19 @@ const btc = {
 };
 
 describe('CreditLedger', () => {
+  it('shows the first repayment day when the plan has a start', async () => {
+    ledger({ ...btc, startsOn: '2026-11-01' });
+    renderWithLocale(<CreditLedger messageId="m1" />);
+    expect(await screen.findByText('First repayment day: November 1, 2026.')).toBeTruthy();
+  });
+
+  it('shows no first repayment day while the start is unknown', async () => {
+    ledger({ ...btc, fundedAt: null, startsOn: null });
+    renderWithLocale(<CreditLedger messageId="m1" />);
+    expect((await screen.findAllByText('Bea @bea')).length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toContain('First repayment day');
+  });
+
   it('lists givers and each bitcoin repayment', async () => {
     ledger(btc);
     renderWithLocale(<CreditLedger messageId="m1" list="page" />);
