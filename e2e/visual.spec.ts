@@ -5365,8 +5365,13 @@ test.describe('onboarding screens', () => {
       await openWriter(page);
       await expect(page.getByRole('heading', { name: 'Send a post' })).toBeVisible();
       const field = (await page.getByLabel('Your message').boundingBox())!;
+      const camera = (await page
+        .getByRole('button', { name: 'Take a photo', exact: true })
+        .boundingBox())!;
       const post = (await page.getByRole('button', { name: 'Post', exact: true }).boundingBox())!;
-      expect(post.y).toBeGreaterThanOrEqual(field.y + field.height);
+      // The photo icon row is on top; the field and Post share the row below it.
+      expect(field.y).toBeGreaterThanOrEqual(camera.y + camera.height);
+      expect(post.x).toBeGreaterThanOrEqual(field.x + field.width);
       await shotScreen(page, 'state-welcome-writer');
     });
 
