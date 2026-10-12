@@ -100,6 +100,8 @@ export interface WalletPaymentZap {
 export interface WalletPaymentInfo {
   /** Invoice description or the Spark invoice's description. */
   description?: string;
+  /** Gift or shop, when the invoice memo names that and is not a sentence. */
+  purpose?: 'gift' | 'shop';
   /** BOLT11 invoice or Spark invoice. */
   invoice?: string;
   /** Lightning payment hash (hex). */
@@ -110,6 +112,8 @@ export interface WalletPaymentInfo {
   destinationPubkey?: string;
   /** Lightning address that was paid. */
   lnAddress?: string;
+  /** Account id when To is that member. Absent for a Lightning address. */
+  memberAccountId?: string;
   /** Comment sent along with a Lightning-address payment. */
   lnurlComment?: string;
   /** Zap request of a received zap. */
@@ -214,6 +218,11 @@ function parseZap(raw: string | undefined): WalletPaymentZap | null {
   };
 }
 
+/** Gift invoice memo: `zap:` plus 64 hex digits. */
+const GIFT_MEMO = /^zap:([0-9a-fA-F]{64})$/;
+/** Shop invoice memo: `pos:` plus a charge id with no space. */
+const SHOP_MEMO = /^pos:\S+$/;
+
 /**
  * Collects the details the payment screen shows.
  *
@@ -226,7 +235,13 @@ function paymentInfo(details: SdkPaymentDetailsLike | undefined): WalletPaymentI
     return info;
   }
   const description = (details.description ?? details.invoiceDetails?.description)?.trim();
-  if (description !== undefined && description !== '') {
+  const giftMemo =
+    description !== undefined && description !== '' ? GIFT_MEMO.exec(description) : null;
+  if (giftMemo !== null) {
+    info.purpose = 'gift';
+  } else if (description !== undefined && description !== '' && SHOP_MEMO.test(description)) {
+    info.purpose = 'shop';
+  } else if (description !== undefined && description !== '') {
     info.description = description;
   }
   const invoice = details.invoice ?? details.invoiceDetails?.invoice;
@@ -238,6 +253,8 @@ function paymentInfo(details: SdkPaymentDetailsLike | undefined): WalletPaymentI
     if (details.htlcDetails.preimage !== undefined) {
       info.preimage = details.htlcDetails.preimage;
     }
+  } else if (giftMemo !== null && giftMemo[1] !== undefined) {
+    info.paymentHash = giftMemo[1].toLowerCase();
   }
   if (details.destinationPubkey !== undefined) {
     info.destinationPubkey = details.destinationPubkey;
@@ -271,7 +288,10 @@ const METHODS: readonly WalletPaymentMethod[] = ['lightning', 'spark', 'deposit'
  * preimage, the invoice's node, paid Lightning address and comment, a parsed
  * zap request, transaction id and output); the screen does not show the node
  * key or the zap's key and note id. A blank note, description, or comment counts as
- * none; a zap request that is not valid kind-9734 JSON is left out.
+ * none; a zap request that is not valid kind-9734 JSON is left out. A gift
+ * memo, zap: plus 64 hex digits, is purpose gift with no description; those
+ * hex digits are the payment hash when htlcDetails has none. A shop memo,
+ * pos: plus a charge id, is purpose shop with no description.
  *
  * @param payment - Payment from the SDK's `listPayments`.
  * @returns The mapped payment.

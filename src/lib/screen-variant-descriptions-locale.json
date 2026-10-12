@@ -3970,9 +3970,9 @@
     "fil": "Naka-pin na fixture (?visual=history-empty, Playwright builds lang). Handang balanse, pagkatapos ang kard na Mga bayad na may Wala pang bayad., sa itaas ng Ipadala at Tanggapin."
   },
   "/wallet:history-rows": {
-    "de": "Fixierte Fixture (?visual=history-rows, nur Playwright-Builds; zehn synthetische Zahlungen, die netto das Guthaben von ₿21'000 ergeben). Zahlungen listet sie, neueste zuerst, jede Zeile ein Link mit einem Chevron zu ihrem Zahlungsbildschirm: Geschenk auf Ihren Beitrag +₿2'100 mit Great photo!, Gift to @alice −₿5'000, Coffee & croissant +₿12'500, bob@example.com −₿10'000 mit Thanks for dinner, Erhalten +₿21'000 mit Happy birthday!, Sticker pack #42 als Ausstehend markiert, Hardware wallet durchgestrichen und als Fehlgeschlagen markiert, On-chain-Einzahlung, On-chain-Auszahlung und Posting fee −₿1. Jede Zeile zeigt Datum und Uhrzeit und die Standard-Fiat. Die Aufnahme ist ans Ende der Liste gescrollt, daher sind Empfangen und Senden schmal (36 px); die übrigen /wallet-Aufnahmen oben auf der Seite zeigen sie in voller Grösse.",
-    "es": "Fixture fijado (?visual=history-rows, solo builds de Playwright; diez pagos sintéticos que suman en neto el saldo de ₿21'000). Pagos los enumera del más reciente al más antiguo, cada fila un enlace con un chevron a su pantalla de pago: Regalo en tu publicación +₿2'100 con Great photo!, Gift to @alice −₿5'000, Coffee & croissant +₿12'500, bob@example.com −₿10'000 con Thanks for dinner, Recibido +₿21'000 con Happy birthday!, Sticker pack #42 marcado Pendiente, Hardware wallet tachado y marcado Fallido, Depósito on-chain, Retiro on-chain y Posting fee −₿1. Cada fila muestra su fecha y hora y el fiat predeterminado. La captura está desplazada al final de la lista, así que Recibir y Enviar son delgados (36 px); las demás capturas de /wallet, arriba de la página, los muestran a tamaño completo.",
-    "fil": "Naka-pin na fixture (?visual=history-rows, Playwright builds lang; sampung synthetic na bayad na ang net ay ang balanseng ₿21'000). Inililista sila ng Mga bayad mula sa pinakabago, bawat hilera ay link na may chevron papunta sa screen ng bayad nito: Regalo sa post mo +₿2'100 na may Great photo!, Gift to @alice −₿5'000, Coffee & croissant +₿12'500, bob@example.com −₿10'000 na may Thanks for dinner, Natanggap +₿21'000 na may Happy birthday!, Sticker pack #42 na may markang Hinihintay, Hardware wallet na may guhit sa gitna at may markang Hindi natuloy, On-chain na deposito, On-chain na withdrawal, at Posting fee −₿1. Ipinapakita ng bawat hilera ang petsa at oras nito at ang default na fiat. Naka-scroll ang kuha sa dulo ng listahan, kaya manipis ang Tanggapin at Ipadala (36 px); ipinapakita sila sa buong laki ng iba pang kuha ng /wallet sa itaas ng pahina."
+    "de": "Fixierte Fixture (?visual=history-rows, nur Playwright-Builds; zehn synthetische Zahlungen, die netto das Guthaben von ₿21'000 ergeben). Zahlungen listet sie, neueste zuerst, jede Zeile ein Link mit einem Chevron zu ihrem Zahlungsbildschirm: Geschenk auf Ihren Beitrag +₿2'100 mit Great photo!, Geschenk −₿5'000, Coffee & croissant +₿12'500, bob@example.com −₿10'000 mit Thanks for dinner, Erhalten +₿21'000 mit Happy birthday!, Sticker pack #42 als Ausstehend markiert, Hardware wallet durchgestrichen und als Fehlgeschlagen markiert, On-chain-Einzahlung, On-chain-Auszahlung und Shop-Zahlung −₿1. Jede Zeile zeigt Datum und Uhrzeit und die Standard-Fiat. Die Aufnahme ist ans Ende der Liste gescrollt, daher sind Empfangen und Senden schmal (36 px); die übrigen /wallet-Aufnahmen oben auf der Seite zeigen sie in voller Grösse.",
+    "es": "Fixture fijado (?visual=history-rows, solo builds de Playwright; diez pagos sintéticos que suman en neto el saldo de ₿21'000). Pagos los enumera del más reciente al más antiguo, cada fila un enlace con un chevron a su pantalla de pago: Regalo en tu publicación +₿2'100 con Great photo!, Regalo −₿5'000, Coffee & croissant +₿12'500, bob@example.com −₿10'000 con Thanks for dinner, Recibido +₿21'000 con Happy birthday!, Sticker pack #42 marcado Pendiente, Hardware wallet tachado y marcado Fallido, Depósito on-chain, Retiro on-chain y Pago en tienda −₿1. Cada fila muestra su fecha y hora y el fiat predeterminado. La captura está desplazada al final de la lista, así que Recibir y Enviar son delgados (36 px); las demás capturas de /wallet, arriba de la página, los muestran a tamaño completo.",
+    "fil": "Naka-pin na fixture (?visual=history-rows, Playwright builds lang; sampung synthetic na bayad na ang net ay ang balanseng ₿21'000). Inililista sila ng Mga bayad mula sa pinakabago, bawat hilera ay link na may chevron papunta sa screen ng bayad nito: Regalo sa post mo +₿2'100 na may Great photo!, Regalo −₿5'000, Coffee & croissant +₿12'500, bob@example.com −₿10'000 na may Thanks for dinner, Natanggap +₿21'000 na may Happy birthday!, Sticker pack #42 na may markang Hinihintay, Hardware wallet na may guhit sa gitna at may markang Hindi natuloy, On-chain na deposito, On-chain na withdrawal, at Bayad sa shop −₿1. Ipinapakita ng bawat hilera ang petsa at oras nito at ang default na fiat. Naka-scroll ang kuha sa dulo ng listahan, kaya manipis ang Tanggapin at Ipadala (36 px); ipinapakita sila sa buong laki ng iba pang kuha ng /wallet sa itaas ng pahina."
   },
   "/wallet:history-error": {
     "de": "Fixierte Fixture (?visual=history-error, nur Playwright-Builds). Zahlungen zeigt Ihre Zahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen.",
@@ -4185,9 +4185,9 @@
     "fil": "Naka-pin na fixture (?visual=send-comment-long, sa mga Playwright build lang). Ang hakbang ng halaga para sa isang Lightning address sa ibang host (Para kay bob@example.com, ang mga hangganan nito, Mensahe (opsyonal)) pagkatapos tanggihan ng tatanggap ang mensahe dahil masyadong mahaba: ang alerto Masyadong mahaba ang mensaheng ito para sa tatanggap. sa itaas ng Magpatuloy."
   },
   "/wallet/payment:default": {
-    "de": "Angeheftete Fixture (?visual=history-rows mit der ID des Zaps, nur Playwright-Builds). Ein empfangener Zap: Geschenk auf Ihren Beitrag, +₿2'100 mit $2.10, Abgeschlossen, die Nachricht Great photo!, Art Sofortzahlung, Betrag, keine Gebührenzeile und unter Details die Zahlungsanforderung, der Zahlungs-Hash, der Zahlungsnachweis und die Zahlungs-ID.",
-    "es": "Fixture fijado (?visual=history-rows con el id del zap, solo builds de Playwright). Un zap recibido: Regalo en tu publicación, +₿2'100 con $2.10, Completado, el mensaje Great photo!, Tipo Pago instantáneo, Importe, sin fila de comisión y, bajo Detalles, la solicitud de pago, el hash del pago, la prueba de pago y el ID del pago.",
-    "fil": "Naka-pin na fixture (?visual=history-rows kasama ang id ng zap, sa mga Playwright build lang). Isang natanggap na zap: Regalo sa post mo, +₿2'100 na may $2.10, Tapos na, ang mensaheng Great photo!, Uri Instant na bayad, Halaga, walang hilera ng bayarin, at sa ilalim ng Mga detalye ang payment request, payment hash, patunay ng bayad, at payment ID."
+    "de": "Angeheftete Fixture (?visual=history-rows mit der ID des Zaps, nur Playwright-Builds). Ein empfangener Zap: Geschenk auf Ihren Beitrag, +₿2'100 mit $2.10, Abgeschlossen, die Nachricht Great photo!, Art Sofortzahlung, Betrag, keine Gebührenzeile, und Details ist geschlossen, sodass die Zahlungsanforderung, der Zahlungs-Hash, der Zahlungsnachweis und die Zahlungs-ID auf diesem Bildschirm nicht zu sehen sind.",
+    "es": "Fixture fijado (?visual=history-rows con el id del zap, solo builds de Playwright). Un zap recibido: Regalo en tu publicación, +₿2'100 con $2.10, Completado, el mensaje Great photo!, Tipo Pago instantáneo, Importe, sin fila de comisión, y Detalles está cerrado, así que la solicitud de pago, el hash del pago, la prueba de pago y el ID del pago no están en esta pantalla.",
+    "fil": "Naka-pin na fixture (?visual=history-rows kasama ang id ng zap, sa mga Playwright build lang). Isang natanggap na zap: Regalo sa post mo, +₿2'100 na may $2.10, Tapos na, ang mensaheng Great photo!, Uri Instant na bayad, Halaga, walang hilera ng bayarin, at sarado ang Mga detalye, kaya wala sa screen na ito ang payment request, payment hash, patunay ng bayad, at payment ID."
   },
   "/wallet/payment:address-send": {
     "de": "Eine Zahlung an die Lightning-Adresse bob@example.com mit dem Kommentar Thanks for dinner: −₿10'000, An bob@example.com, Gebühr ₿3, Gesamt ₿10'003 (jeweils mit Fiat).",
@@ -4195,9 +4195,19 @@
     "fil": "Isang bayad sa Lightning address na bob@example.com na may komentong Thanks for dinner: −₿10'000, Para kay bob@example.com, Bayarin ₿3, Kabuuan ₿10'003 (bawat isa ay may fiat)."
   },
   "/wallet/payment:spark-send": {
-    "de": "Eine Wallet-Überweisung von ₿5'000 mit der Beschreibung Gift to @alice: Art Wallet-Überweisung, Gebühr Kostenlos und keine Zeile Gesamt.",
-    "es": "Una transferencia de wallet de ₿5'000 con la descripción Gift to @alice: Tipo Transferencia de wallet, Comisión Gratis y sin fila Total.",
-    "fil": "Isang wallet transfer na ₿5'000 na may paglalarawang Gift to @alice: Uri Wallet transfer, Bayarin Libre, at walang hilera ng Kabuuan."
+    "de": "Ein gesendetes Geschenk von ₿5'000 mit dem Titel Geschenk, Art Wallet-Überweisung, An @alice, ein Link zum Profil dieser Person, Gebühr Kostenlos und keine Zeile Gesamt. Details ist geschlossen, sodass die Zahlungsanforderung, der Zahlungs-Hash aus dem Geschenk-Memo und die Zahlungs-ID auf diesem Bildschirm nicht zu sehen sind. Das Memo selbst wird nicht gezeigt.",
+    "es": "Un regalo enviado de ₿5'000 titulado Regalo, Tipo Transferencia de wallet, Para @alice, un enlace al perfil de esa persona, Comisión Gratis y sin fila Total. Detalles está cerrado, así que la solicitud de pago, el hash del pago del memo del regalo y el ID del pago no están en esta pantalla. El memo en sí no se muestra.",
+    "fil": "Isang ipinadalang regalo na ₿5'000 na may titulong Regalo, Uri Wallet transfer, Para kay @alice, isang link sa profile ng taong iyon, Bayarin Libre, at walang hilera ng Kabuuan. Sarado ang Mga detalye, kaya wala sa screen na ito ang payment request, ang payment hash mula sa memo ng regalo, at ang payment ID. Hindi ipinapakita ang memo mismo."
+  },
+  "/wallet/payment:details-open": {
+    "de": "Dasselbe gesendete Geschenk wie spark-send nach dem Drücken von Details, sodass die Zahlungsanforderung, der Zahlungs-Hash aus dem Geschenk-Memo und die Zahlungs-ID sichtbar sind; das Memo nicht.",
+    "es": "El mismo regalo enviado que spark-send tras pulsar Detalles, así que la solicitud de pago, el hash del pago del memo del regalo y el ID del pago están visibles; el memo no.",
+    "fil": "Ang parehong ipinadalang regalo tulad ng spark-send pagkatapos pindutin ang Mga detalye, kaya nakikita ang payment request, ang payment hash mula sa memo ng regalo, at ang payment ID; hindi ang memo."
+  },
+  "/wallet/payment:shop": {
+    "de": "Eine Shop-Zahlung von ₿1 mit dem Titel Shop-Zahlung, Art Wallet-Überweisung, Gebühr Kostenlos, keine Zeile Gesamt und kein Zahlungs-Hash. Details ist geschlossen, sodass die Zahlungsanforderung und die Zahlungs-ID auf diesem Bildschirm nicht zu sehen sind. Das Memo selbst wird nicht gezeigt.",
+    "es": "Un pago en tienda de ₿1 titulado Pago en tienda, Tipo Transferencia de wallet, Comisión Gratis, sin fila Total y sin hash del pago. Detalles está cerrado, así que la solicitud de pago y el ID del pago no están en esta pantalla. El memo en sí no se muestra.",
+    "fil": "Isang bayad sa shop na ₿1 na may titulong Bayad sa shop, Uri Wallet transfer, Bayarin Libre, walang hilera ng Kabuuan, at walang payment hash. Sarado ang Mga detalye, kaya wala sa screen na ito ang payment request at ang payment ID. Hindi ipinapakita ang memo mismo."
   },
   "/wallet/payment:pending": {
     "de": "Eine noch laufende Lightning-Zahlung (Sticker pack #42): die Pille Ausstehend mit Noch unterwegs. Der Betrag bleibt reserviert, bis die Zahlung ankommt oder zurückkommt., ihre Gebühr und Gesamtsumme und noch kein Zahlungsnachweis.",
@@ -4210,14 +4220,14 @@
     "fil": "Isang nabigong Lightning na padala (Hardware wallet): may guhit sa gitna ang halaga, ang pill na Hindi natuloy na may Walang lumabas sa wallet mo., at walang bayarin o kabuuan."
   },
   "/wallet/payment:deposit": {
-    "de": "Eine On-chain-Einzahlung: On-chain-Einzahlung, Gebühr ₿254, On-chain eingegangen ₿44'000, Transaktion und Output unter den Details und Auf mempool.space ansehen.",
-    "es": "Un depósito on-chain: Depósito on-chain, Comisión ₿254, Llegó on-chain ₿44'000, Transacción y Salida entre los detalles, y Ver en mempool.space.",
-    "fil": "Isang on-chain na deposito: On-chain na deposito, Bayarin ₿254, Dumating on-chain ₿44'000, ang Transaksyon at Output sa mga detalye, at Tingnan sa mempool.space."
+    "de": "Eine On-chain-Einzahlung: On-chain-Einzahlung, Gebühr ₿254, On-chain eingegangen ₿44'000. Details ist geschlossen, sodass Transaktion, Output und Auf mempool.space ansehen auf diesem Bildschirm nicht zu sehen sind.",
+    "es": "Un depósito on-chain: Depósito on-chain, Comisión ₿254, Llegó on-chain ₿44'000. Detalles está cerrado, así que Transacción, Salida y Ver en mempool.space no están en esta pantalla.",
+    "fil": "Isang on-chain na deposito: On-chain na deposito, Bayarin ₿254, Dumating on-chain ₿44'000. Sarado ang Mga detalye, kaya wala sa screen na ito ang Transaksyon, Output, at Tingnan sa mempool.space."
   },
   "/wallet/payment:withdraw": {
-    "de": "Eine On-chain-Auszahlung: On-chain-Auszahlung, −₿40'000, Gebühr ₿1'840, Gesamt ₿41'840, die Transaktion und Auf mempool.space ansehen.",
-    "es": "Un retiro on-chain: Retiro on-chain, −₿40'000, Comisión ₿1'840, Total ₿41'840, la Transacción y Ver en mempool.space.",
-    "fil": "Isang on-chain na withdrawal: On-chain na withdrawal, −₿40'000, Bayarin ₿1'840, Kabuuan ₿41'840, ang Transaksyon, at Tingnan sa mempool.space."
+    "de": "Eine On-chain-Auszahlung: On-chain-Auszahlung, −₿40'000, Gebühr ₿1'840, Gesamt ₿41'840. Details ist geschlossen, sodass die Transaktion und Auf mempool.space ansehen auf diesem Bildschirm nicht zu sehen sind.",
+    "es": "Un retiro on-chain: Retiro on-chain, −₿40'000, Comisión ₿1'840, Total ₿41'840. Detalles está cerrado, así que la Transacción y Ver en mempool.space no están en esta pantalla.",
+    "fil": "Isang on-chain na withdrawal: On-chain na withdrawal, −₿40'000, Bayarin ₿1'840, Kabuuan ₿41'840. Sarado ang Mga detalye, kaya wala sa screen na ito ang Transaksyon at Tingnan sa mempool.space."
   },
   "/wallet/payment:missing": {
     "de": "Eine ID, die die Wallet nicht kennt: nur Diese Zahlung wurde nicht gefunden.",
@@ -4230,14 +4240,14 @@
     "fil": "Bukas ang wallet pero nabigo ang pagbasa ng bayad (Playwright pin ?visual=history-error): Hindi ma-load ang bayad na ito. Pakisubukan ulit. sa kulay ng panganib, at Subukan ulit."
   },
   "/wallet/payment:copied": {
-    "de": "Die Einzahlung nach Kopieren bei Zahlungs-ID: das Symbol dieser Zeile wird für zwei Sekunden zu einem grünen Häkchen (und ein Screenreader hört Kopiert).",
-    "es": "El depósito tras Copiar en ID del pago: el icono de esa fila se convierte en una marca verde durante dos segundos (y un lector de pantalla oye Copiado).",
-    "fil": "Ang deposito pagkatapos ng Kopyahin sa Payment ID: nagiging berdeng tsek ang icon ng hilerang iyon nang dalawang segundo (at naririnig ng screen reader ang Nakopya)."
+    "de": "Die Einzahlung, nachdem Details geöffnet und dann Kopieren bei Zahlungs-ID gedrückt wurde: das Symbol dieser Zeile wird für zwei Sekunden zu einem grünen Häkchen (und ein Screenreader hört Kopiert).",
+    "es": "El depósito tras abrir Detalles y luego Copiar en ID del pago: el icono de esa fila se convierte en una marca verde durante dos segundos (y un lector de pantalla oye Copiado).",
+    "fil": "Ang deposito pagkatapos buksan ang Mga detalye, tapos Kopyahin sa Payment ID: nagiging berdeng tsek ang icon ng hilerang iyon nang dalawang segundo (at naririnig ng screen reader ang Nakopya)."
   },
   "/wallet/payment:external-link": {
-    "de": "Die Einzahlung nach Auf mempool.space ansehen: der Dialog Externe Seite öffnen? über dem Bildschirm mit Link öffnen und Schließen; nur Link öffnen verlässt 21.gifts.",
-    "es": "El depósito tras Ver en mempool.space: el diálogo ¿Abrir un enlace externo? sobre la pantalla, con Abrir enlace y Cerrar; solo Abrir enlace sale de 21.gifts.",
-    "fil": "Ang deposito pagkatapos ng Tingnan sa mempool.space: ang dialog na Buksan ang panlabas na link? sa ibabaw ng screen, na may Buksan ang link at Isara; tanging Buksan ang link ang umaalis sa 21.gifts."
+    "de": "Die Einzahlung, nachdem Details geöffnet und dann Auf mempool.space ansehen gedrückt wurde: der Dialog Externe Seite öffnen? über dem Bildschirm mit Link öffnen und Schließen; nur Link öffnen verlässt 21.gifts.",
+    "es": "El depósito tras abrir Detalles y luego Ver en mempool.space: el diálogo ¿Abrir un enlace externo? sobre la pantalla, con Abrir enlace y Cerrar; solo Abrir enlace sale de 21.gifts.",
+    "fil": "Ang deposito pagkatapos buksan ang Mga detalye, tapos Tingnan sa mempool.space: ang dialog na Buksan ang panlabas na link? sa ibabaw ng screen, na may Buksan ang link at Isara; tanging Buksan ang link ang umaalis sa 21.gifts."
   },
   "/wallet/payment:loading": {
     "de": "Der Bildschirm, während der Kurs noch unterwegs ist (die Zahlung selbst ist bekannt): nur der Rahmen und der Pfeil oben links, noch kein Betrag. Sobald das Lesen ohne verwendbaren Kurs abgeschlossen ist, erscheinen die ₿-Zahlen ohne ihre Fiat-Zeile.",

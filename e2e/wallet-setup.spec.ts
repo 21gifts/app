@@ -303,7 +303,10 @@ test.describe('wallet history', () => {
     await expect(rows.nth(0)).toContainText("+₿2'100");
     await expect(rows.nth(0)).toContainText('$2.10');
     await expect(rows.nth(0)).toContainText('Great photo!');
-    await expect(rows.nth(1)).toContainText('Gift to @alice');
+    await expect(rows.nth(1)).toContainText('Gift');
+    await expect(rows.nth(1)).not.toContainText('Gift to @alice');
+    await expect(rows.nth(1)).not.toContainText('@alice');
+    await expect(rows.nth(1)).not.toContainText('zap:');
     await expect(rows.nth(1)).toContainText("−₿5'000");
     await expect(rows.nth(3)).toContainText('bob@example.com');
     await expect(rows.nth(3)).toContainText('Thanks for dinner');
@@ -312,6 +315,22 @@ test.describe('wallet history', () => {
     await expect(rows.nth(6)).toContainText('Failed');
     await expect(rows.nth(7)).toContainText('On-chain deposit');
     await expect(rows.nth(8)).toContainText('On-chain withdrawal');
+  });
+
+  test('Function: toFixturePayment — a sent gift stays titled Gift and shows To @alice', async ({
+    page,
+  }) => {
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await page.goto('/wallet/payment?id=df98837c-6a12-4b15-94f8-375c33937a4e&visual=history-rows');
+    await expect(page.getByText('Gift', { exact: true })).toBeVisible();
+    await expect(page.getByText('@alice')).toBeVisible();
+    await expect(page.getByRole('link', { name: '@alice' })).toHaveAttribute(
+      'href',
+      '/members/acc_e2e',
+    );
+    await expect(page.getByText(/zap:/)).toHaveCount(0);
+    await expect(page.getByText('Gift to @alice')).toHaveCount(0);
+    await expect(page.getByText('Payment hash')).toHaveCount(0);
   });
 
   test('Function: WalletPaymentDetails — tapping a row opens its payment screen and the arrow returns to the list', async ({
@@ -379,6 +398,7 @@ test.describe('wallet history', () => {
     await page.getByRole('region', { name: 'Payments' }).getByRole('link').first().click();
     await expect(page.getByText('Gift on your post')).toBeVisible();
     await expect(page.getByText(/npub1|note1/)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Details' }).click();
     await page.getByRole('button', { name: 'Copy Payment ID' }).click();
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
       'f43f0362-edf9-4387-8edb-e18af9bb4dbc',
@@ -392,6 +412,7 @@ test.describe('wallet history', () => {
     await openWallet(page, '?visual=history-rows');
     await page.getByRole('region', { name: 'Payments' }).getByRole('link').nth(7).click();
     await expect(page).toHaveURL(/\/wallet\/payment\?id=9bc2f53d-/);
+    await page.getByRole('button', { name: 'Details' }).click();
     await page.getByRole('link', { name: 'View on mempool.space' }).click();
     await expect(page.getByRole('dialog', { name: 'Open external link?' })).toBeVisible();
     await page.getByRole('button', { name: 'Close' }).click();
@@ -403,7 +424,8 @@ test.describe('wallet history', () => {
     await openWallet(page, '?visual=history-rows');
     const rows = page.getByRole('region', { name: 'Payments' }).getByRole('link');
     await expect(rows.first()).toContainText('Gift on your post');
-    await expect(rows.nth(9)).toContainText('Posting fee');
+    await expect(rows.nth(9)).toContainText('Shop payment');
+    await expect(rows.nth(9)).not.toContainText('Posting fee');
   });
 
   test('Function: paymentMessage — the rows pin shows the message under each row', async ({
