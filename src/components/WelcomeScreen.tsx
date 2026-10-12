@@ -193,7 +193,9 @@ function PanelChromeBack({ onBack, over }: { onBack: () => void; over: boolean }
  * a gift sheet, a text reaction's pay slot) leaves both in place; the 80 px
  * clearance lets its controls scroll clear of the **+**. Both come back once
  * the focus has left the field; a focused field that disappears with its form
- * counts as left.
+ * counts as left. A press that takes the focus out of the field (a click on
+ * the form's **Post**) keeps both aside until its click has landed, so the
+ * **+** never comes back under a pointer that is still down.
  *
  * A signed-in member whose account has `walletIntroSeen: false` gets the
  * one-time {@link WalletTour} over the page; it waits while a wallet view or
@@ -215,23 +217,55 @@ export function WelcomeScreen(): ReactElement {
   });
   const shown = hasWallet ? panel.shown : 'none';
   const scroller = useAppShellScroller();
-  /** True while a text field in the page has the focus. */
+  /** True while a text field in the page has the focus, or a press that took it away is not over. */
   const [fieldFocused, setFieldFocused] = useState(false);
+  /** True from a pointer going down until the click of its release has landed. */
+  const pressing = useRef(false);
   useEffect(() => {
     if (scroller === null) {
       return;
     }
+    let released: number | undefined;
+    /** Takes over whether `node`, the element the focus is on or goes to, is a field of the page. */
+    const read = (node: unknown): void => {
+      const focused = isPageTextField(scroller, node);
+      // A press that takes the focus out of the field ends first, so its click reaches the
+      // control it went down on and not the + coming back under the pointer.
+      if (focused || !pressing.current) {
+        setFieldFocused(focused);
+      }
+    };
     const onFocusIn = (event: FocusEvent): void => {
-      setFieldFocused(isPageTextField(scroller, event.target));
+      read(event.target);
     };
     const onFocusOut = (event: FocusEvent): void => {
-      setFieldFocused(isPageTextField(scroller, event.relatedTarget));
+      read(event.relatedTarget);
+    };
+    const onPointerDown = (): void => {
+      window.clearTimeout(released);
+      pressing.current = true;
+    };
+    const onPointerEnd = (): void => {
+      // The click follows the release in the same task; a new task is past it.
+      window.clearTimeout(released);
+      released = window.setTimeout(() => {
+        pressing.current = false;
+        setFieldFocused(isPageTextField(scroller, document.activeElement));
+      }, 0);
     };
     scroller.addEventListener('focusin', onFocusIn);
     scroller.addEventListener('focusout', onFocusOut);
+    window.addEventListener('pointerdown', onPointerDown, true);
+    window.addEventListener('pointerup', onPointerEnd, true);
+    window.addEventListener('pointercancel', onPointerEnd, true);
     return () => {
+      window.clearTimeout(released);
+      pressing.current = false;
       scroller.removeEventListener('focusin', onFocusIn);
       scroller.removeEventListener('focusout', onFocusOut);
+      window.removeEventListener('pointerdown', onPointerDown, true);
+      window.removeEventListener('pointerup', onPointerEnd, true);
+      window.removeEventListener('pointercancel', onPointerEnd, true);
     };
   }, [scroller]);
   // A focused field removed with its form or a wallet view leaves without a focusout: while a
@@ -241,7 +275,9 @@ export function WelcomeScreen(): ReactElement {
       return;
     }
     const check = (): void => {
-      setFieldFocused(isPageTextField(scroller, document.activeElement));
+      if (!pressing.current) {
+        setFieldFocused(isPageTextField(scroller, document.activeElement));
+      }
     };
     check();
     const observer = new MutationObserver(check);

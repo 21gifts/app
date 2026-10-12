@@ -566,6 +566,66 @@ test.describe('forum home while reacting on a phone', () => {
     await expect(page.getByPlaceholder('Write a reaction')).toHaveValue('');
   });
 
+  test('Function: WelcomeScreen — a mouse click on Post where the + comes back reaches Post', async ({
+    page,
+  }) => {
+    await openHome(page, 'basis', 12);
+    const plus = page.getByRole('button', { name: 'Write a post' });
+    await page.getByRole('button', { name: 'React', exact: true }).nth(5).tap();
+    const reply = page.getByPlaceholder('Write a reaction');
+    await reply.fill('A click where the plus comes back');
+    await reply.focus();
+    await expect(plus).toBeHidden();
+    await expect.poll(() => footerHeight(page)).toBe(0);
+    const send = reactionForm(page).getByRole('button', { name: 'Post' });
+    // The faded + is out of the accessibility tree; its box is still where it comes back to.
+    const place = page.locator('button[aria-label="Write a post"]');
+    /** How far Post's centre lies below the centre of the hidden +, in px. */
+    const below = async (): Promise<number> => {
+      const post = (await send.boundingBox())!;
+      const box = (await place.boundingBox())!;
+      return post.y + post.height / 2 - (box.y + box.height / 2);
+    };
+    // Post under the place the + comes back to, with the field still focused.
+    await expect
+      .poll(async () => {
+        const delta = await below();
+        await pagePort(page).evaluate((node, by) => {
+          node.scrollTop += by;
+        }, delta);
+        return Math.abs(await below());
+      })
+      .toBeLessThan(1);
+    await expect(reply).toBeFocused();
+    const post = (await send.boundingBox())!;
+    const box = (await place.boundingBox())!;
+    const left = Math.max(post.x, box.x);
+    const right = Math.min(post.x + post.width, box.x + box.width);
+    expect(right - left).toBeGreaterThan(8);
+    const point = { x: (left + right) / 2, y: post.y + post.height / 2 };
+    const posted = page.waitForRequest(
+      (request) =>
+        request.method() === 'POST' &&
+        /\/messages(?:\?|$)/.test(request.url()) &&
+        (request.postData() ?? '').includes('A click where the plus comes back'),
+    );
+    // The press takes the focus out of the field; the + stays away until the click has landed.
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.down();
+    await expect(reply).not.toBeFocused();
+    await page.waitForTimeout(100);
+    const under = await send.evaluate((node, at) => {
+      const top = document.elementFromPoint(at.x, at.y);
+      return top !== null && node.contains(top);
+    }, point);
+    expect(under).toBe(true);
+    await page.mouse.up();
+    await posted;
+    await expect(writer(page)).toHaveCount(0);
+    await expect(reply).toHaveValue('');
+    await expect(plus).toBeVisible();
+  });
+
   test('Function: useLocalSunday — on the local Sunday an expanded post has no form, so the + and Receive / Send stay', async ({
     page,
   }) => {
