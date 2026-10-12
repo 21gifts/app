@@ -166,6 +166,27 @@ test.describe('POST /me/wallet/hearts', () => {
     expect((await request.post('/me/wallet/hearts', { data: { hashes: [] } })).status()).toBe(401);
   });
 
+  test('a signed-in lookup of the visual heart returns its post', async ({ request }) => {
+    const token = await newMember(request);
+    const paymentHash = 'c0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeeaaaa';
+    const res = await request.post('/me/wallet/hearts', {
+      headers: { authorization: `Bearer ${token}` },
+      data: { hashes: [paymentHash] },
+    });
+    expect(res.status()).toBe(200);
+    expect(await res.json()).toEqual({
+      hearts: [
+        {
+          paymentHash,
+          messageId: '11111111-1111-4111-8111-111111111111',
+          authorName: 'Ada',
+          text: 'Sunday lunch',
+          deleted: false,
+        },
+      ],
+    });
+  });
+
   test('Function: fetchHeartPosts — a signed-in lookup of an unknown hash returns no hearts', async ({
     request,
   }) => {

@@ -29,6 +29,36 @@ export function toFixturePayment(payment: Payment): WalletPayment {
   return { ...mapped, info: { ...mapped.info, ...recipient } };
 }
 
+/** Payment hash of the Playwright-only heart fixture. */
+export const HEART_VISUAL_HASH = 'c0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeeaaaa';
+/** Forum post id shown for that heart. */
+export const HEART_VISUAL_MESSAGE_ID = '11111111-1111-4111-8111-111111111111';
+/** Author name shown for that heart. */
+export const HEART_VISUAL_AUTHOR = 'Ada';
+/** Post text shown for that heart. */
+export const HEART_VISUAL_TEXT = 'Sunday lunch';
+/**
+ * One sent heart of 1 sat for the heart screenshot pins.
+ * Not one of {@link WALLET_PAYMENT_FIXTURES}.
+ */
+export const HEART_VISUAL_PAYMENT: Payment = {
+  id: 'b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42',
+  paymentType: 'send',
+  status: 'completed',
+  amount: BigInt(1),
+  fees: BigInt(0),
+  timestamp: 1767776401,
+  method: 'spark',
+  details: {
+    type: 'spark',
+    invoiceDetails: {
+      description: `zap:${HEART_VISUAL_HASH}`,
+      invoice:
+        'spark1gf5h90jgvam58xnlph0vmlrmtfcplprsneuw55vw47fucev5xw0yy6tjheyxwa6rnflsmhkdl3a45uqls3cfu7822x82ly7vvk2r88jzd9etujr8wape5lcdmmxlc766wq0cguy70r49rr40j0xxt9pnnch2rxx6',
+    },
+  },
+};
+
 /**
  * Synthetic wallet payments in the SDK's own `Payment` shape, newest first,
  * for the `?visual=history-rows` list and the payment screen pins (Playwright

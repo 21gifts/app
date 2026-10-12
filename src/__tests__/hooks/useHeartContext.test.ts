@@ -3,27 +3,73 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHeartContext } from '@/hooks/useHeartContext';
 import { useActiveSession } from '@/hooks/useActiveSession';
 import { fetchHeartPosts, type HeartPost } from '@/lib/wallet/heart-context';
+import {
+  HEART_VISUAL_AUTHOR,
+  HEART_VISUAL_HASH,
+  HEART_VISUAL_MESSAGE_ID,
+  HEART_VISUAL_TEXT,
+} from '@/lib/wallet/payment-fixtures';
 
 vi.mock('@/hooks/useActiveSession', () => ({ useActiveSession: vi.fn() }));
 vi.mock('@/lib/wallet/heart-context', () => ({ fetchHeartPosts: vi.fn() }));
 
 const HASH_A = 'a'.repeat(64);
 const HASH_B = 'b'.repeat(64);
+const originalHref = window.location.href;
+const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
 
 function heart(paymentHash: string, messageId = 'message-1'): HeartPost {
   return { paymentHash, messageId, authorName: 'Ada', text: 'Post', deleted: false };
 }
 
 beforeEach(() => {
+  window.history.replaceState({}, '', '/wallet');
+  delete process.env.NEXT_PUBLIC_E2E_NOW;
   vi.mocked(useActiveSession).mockReset().mockReturnValue('session');
   vi.mocked(fetchHeartPosts).mockReset();
 });
 
 afterEach(() => {
   cleanup();
+  window.history.replaceState({}, '', originalHref);
+  if (ORIGINAL_E2E_NOW === undefined) {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+  } else {
+    process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  }
 });
 
 describe('useHeartContext', () => {
+  it.each(['heart-payment', 'history-heart'])(
+    '%s injects the visual heart without a fetch',
+    (pin) => {
+      process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+      window.history.replaceState({}, '', `/wallet?visual=${pin}`);
+      const { result } = renderHook(() => useHeartContext([HEART_VISUAL_HASH]));
+      expect(result.current.byHash.get(HEART_VISUAL_HASH)).toEqual({
+        paymentHash: HEART_VISUAL_HASH,
+        messageId: HEART_VISUAL_MESSAGE_ID,
+        authorName: HEART_VISUAL_AUTHOR,
+        text: HEART_VISUAL_TEXT,
+        deleted: false,
+      });
+      expect([...result.current.pending]).toEqual([]);
+      expect(fetchHeartPosts).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['heart-payment', 'history-heart'])(
+    '%s does not inject the visual heart outside a Playwright build',
+    async (pin) => {
+      window.history.replaceState({}, '', `/wallet?visual=${pin}`);
+      vi.mocked(fetchHeartPosts).mockResolvedValue([]);
+      const { result } = renderHook(() => useHeartContext([HEART_VISUAL_HASH]));
+      expect(result.current.byHash.has(HEART_VISUAL_HASH)).toBe(false);
+      await waitFor(() => expect(result.current.pending.size).toBe(0));
+      expect(fetchHeartPosts).toHaveBeenCalledWith('session', [HEART_VISUAL_HASH]);
+    },
+  );
+
   it('does not fetch without a session or without hashes', async () => {
     vi.mocked(useActiveSession).mockReturnValue(null);
     const signedOut = renderHook(() => useHeartContext([HASH_A]));

@@ -2,10 +2,27 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useActiveSession } from '@/hooks/useActiveSession';
+import { visualPin } from '@/lib/visual-pin';
 import { fetchHeartPosts, type HeartPost } from '@/lib/wallet/heart-context';
+import {
+  HEART_VISUAL_AUTHOR,
+  HEART_VISUAL_HASH,
+  HEART_VISUAL_MESSAGE_ID,
+  HEART_VISUAL_TEXT,
+} from '@/lib/wallet/payment-fixtures';
 
 const EMPTY_MAP: ReadonlyMap<string, HeartPost> = new Map();
 const EMPTY_SET: ReadonlySet<string> = new Set();
+const HEART_VISUAL_POST: HeartPost = {
+  paymentHash: HEART_VISUAL_HASH,
+  messageId: HEART_VISUAL_MESSAGE_ID,
+  authorName: HEART_VISUAL_AUTHOR,
+  text: HEART_VISUAL_TEXT,
+  deleted: false,
+};
+const HEART_VISUAL_MAP: ReadonlyMap<string, HeartPost> = new Map([
+  [HEART_VISUAL_HASH, HEART_VISUAL_POST],
+]);
 
 interface HeartContextState {
   session: string;
@@ -27,6 +44,8 @@ export function useHeartContext(hashes: readonly string[]): {
   pending: ReadonlySet<string>;
 } {
   const session = useActiveSession();
+  const pin = visualPin();
+  const visualHeart = pin === 'heart-payment' || pin === 'history-heart';
   const hashKey = JSON.stringify([...new Set(hashes.map((hash) => hash.toLowerCase()))]);
   const uniqueHashes = useMemo(() => JSON.parse(hashKey) as string[], [hashKey]);
   const cacheSession = useRef<string | null>(null);
@@ -35,6 +54,9 @@ export function useHeartContext(hashes: readonly string[]): {
   const [state, setState] = useState<HeartContextState | null>(null);
 
   useEffect(() => {
+    if (visualHeart) {
+      return;
+    }
     if (cacheSession.current !== session) {
       cacheSession.current = session;
       cached.current = new Map();
@@ -90,7 +112,11 @@ export function useHeartContext(hashes: readonly string[]): {
     return () => {
       active = false;
     };
-  }, [hashKey, session, uniqueHashes]);
+  }, [hashKey, session, uniqueHashes, visualHeart]);
+
+  if (visualHeart) {
+    return { byHash: HEART_VISUAL_MAP, pending: EMPTY_SET };
+  }
 
   if (session === null || uniqueHashes.length === 0) {
     return { byHash: EMPTY_MAP, pending: EMPTY_SET };

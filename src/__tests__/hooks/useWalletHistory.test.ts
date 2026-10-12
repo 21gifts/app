@@ -3,7 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WALLET_HISTORY_PAGE_LIMIT, useWalletHistory } from '@/hooks/useWalletHistory';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { listWalletPayments } from '@/lib/wallet/wallet-service';
-import { toFixturePayment, WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
+import {
+  HEART_VISUAL_PAYMENT,
+  toFixturePayment,
+  WALLET_PAYMENT_FIXTURES,
+} from '@/lib/wallet/payment-fixtures';
 import { useWalletStore } from '@/stores/wallet-store';
 
 vi.mock('@/lib/wallet/wallet-service', () => ({
@@ -282,6 +286,7 @@ describe('useWalletHistory', () => {
   it.each([
     ['history-empty', 'ready', 0],
     ['history-rows', 'ready', 10],
+    ['history-heart', 'ready', 1],
     ['history-error', 'error', 0],
   ] as const)('pins %s in a Playwright build', (visual, status, count) => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
@@ -296,6 +301,9 @@ describe('useWalletHistory', () => {
       result.current.retry();
     });
     expect(listWalletPayments).not.toHaveBeenCalled();
+    if (visual === 'history-heart') {
+      expect(result.current.payments[0]?.id).toBe(HEART_VISUAL_PAYMENT.id);
+    }
   });
 
   it('the rows pin maps the synthetic SDK payments, newest first', () => {
@@ -310,6 +318,11 @@ describe('useWalletHistory', () => {
     window.history.replaceState({}, '', '/wallet?visual=history-rows');
     const { result } = renderHook(() => useWalletHistory());
     expect(result.current.status).toBe('loading');
+    cleanup();
+    window.history.replaceState({}, '', '/wallet?visual=history-heart');
+    const heart = renderHook(() => useWalletHistory());
+    expect(heart.result.current.status).toBe('loading');
+    cleanup();
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/wallet?visual=other');
     const second = renderHook(() => useWalletHistory());

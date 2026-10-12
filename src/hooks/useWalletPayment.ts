@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { visualPin } from '@/lib/visual-pin';
-import { toFixturePayment, WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
+import {
+  HEART_VISUAL_PAYMENT,
+  toFixturePayment,
+  WALLET_PAYMENT_FIXTURES,
+} from '@/lib/wallet/payment-fixtures';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { getWalletPayment } from '@/lib/wallet/wallet-service';
 import { useWalletStore } from '@/stores/wallet-store';
@@ -37,6 +41,11 @@ function pinnedPayment(id: string | null): WalletPaymentState | null {
   const pin = visualPin();
   if (pin === 'history-error') {
     return { status: 'error', retry: () => undefined };
+  }
+  if (pin === 'heart-payment') {
+    return id === HEART_VISUAL_PAYMENT.id
+      ? { status: 'ready', payment: toFixturePayment(HEART_VISUAL_PAYMENT) }
+      : { status: 'missing' };
   }
   if (pin !== 'history-rows') {
     return null;

@@ -409,6 +409,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'history-heart',
+    image: 'wallet-history-heart.png',
+    visual: 'state-wallet-history-heart',
+    needle: 'Sunday lunch',
+  },
+  {
+    route: '/wallet',
     id: 'history-error',
     image: 'wallet-history-error.png',
     visual: 'state-wallet-history-error',
@@ -890,6 +897,13 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-payment-shop-open.png',
     visual: 'state-wallet-payment-shop-open',
     needle: "shotScreen(page, 'state-wallet-payment-shop-open')",
+  },
+  {
+    route: '/wallet/payment',
+    id: 'heart-payment',
+    image: 'wallet-payment-heart.png',
+    visual: 'state-wallet-payment-heart',
+    needle: 'Sunday lunch',
   },
   {
     route: '/wallet/payment',

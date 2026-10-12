@@ -288,6 +288,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:history-heart",
+    "label": "/wallet history-heart",
+    "visual": "state-wallet-history-heart",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:history-error",
     "label": "/wallet history-error",
     "visual": "state-wallet-history-error",
@@ -699,6 +705,12 @@
     "id": "/wallet/payment:shop-open",
     "label": "/wallet/payment shop-open",
     "visual": "state-wallet-payment-shop-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:heart-payment",
+    "label": "/wallet/payment heart-payment",
+    "visual": "state-wallet-payment-heart",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

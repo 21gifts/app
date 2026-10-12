@@ -2725,8 +2725,27 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    // No stubbed heart rows: the wallet keeps the ordinary gift title.
-    json(res, 200, { hearts: [] });
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid JSON' });
+      return;
+    }
+    const heartHash = 'c0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeeaaaa';
+    const hearts =
+      Array.isArray(body?.hashes) && body.hashes.includes(heartHash)
+        ? [
+            {
+              paymentHash: heartHash,
+              messageId: '11111111-1111-4111-8111-111111111111',
+              authorName: 'Ada',
+              text: 'Sunday lunch',
+              deleted: false,
+            },
+          ]
+        : [];
+    json(res, 200, { hearts });
     return;
   }
 

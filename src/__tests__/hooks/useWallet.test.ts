@@ -70,6 +70,8 @@ const PINS = [
   ['balance-ready', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['history-empty', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['history-rows', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+  ['history-heart', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+  ['heart-payment', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['history-error', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['wallet-received', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['move-arrived', 'ready', WALLET_VISUAL_FIXTURE_SATS],
