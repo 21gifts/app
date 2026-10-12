@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
   deleteMessage,
+  OPEN_CREDIT_DELETE_ERROR,
   setMessagePlace,
   setMessageShopAccount,
   setMessageShopText,
@@ -5614,6 +5615,24 @@ describe('deleteMessage', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     await expect(deleteMessage('token', 'post')).rejects.toThrow('offline');
   });
+  it('throws the open-credit reason for that 409 body', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: OPEN_CREDIT_DELETE_ERROR }), { status: 409 }),
+      ),
+    );
+    await expect(deleteMessage('token', 'credit')).rejects.toThrow(
+      new Error('An open credit cannot be deleted'),
+    );
+  });
+  it.each(['{"error":"Conflict"}', 'not json'])(
+    'keeps the generic failure for another 409 body %s',
+    async (body) => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body, { status: 409 })));
+      await expect(deleteMessage('token', 'post')).rejects.toThrow('Message deletion failed');
+    },
+  );
 });
 
 describe('setMessagePlace', () => {

@@ -4579,7 +4579,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Inline moderator post or nested-reply deletion with confirmation, pending and error states.
 - **Inputs:** messageId, onDeleted, optional kind (`'post'` default, `'reply'` for nested replies); reads the current account and Bearer session.
-- **Returns / side effects:** Hidden for other roles; idle trash sits in the note footer icon row (parent) or the nested reply action row (`kind="reply"`); confirming wraps to the next line via `basis-full w-full` and renders `InlineConfirm`. Idle/confirm/error copy is `forum.delete*` for posts and `forum.deleteReply*` for replies. Calls deleteMessage on explicit confirmation, then onDeleted. Error keeps the post or reply and permits retry.
+- **Returns / side effects:** Hidden for other roles; idle trash sits in the note footer icon row (parent) or the nested reply action row (`kind="reply"`); confirming wraps to the next line via `basis-full w-full` and renders `InlineConfirm`. Idle/confirm/error copy is `forum.delete*` for posts and `forum.deleteReply*` for replies. Calls deleteMessage on explicit confirmation, then onDeleted. Error keeps the post or reply and permits retry. When deleteMessage throws `OPEN_CREDIT_DELETE_ERROR` (a credit post that has received sats and is not fully repaid), the alert is `forum.deleteOpenCreditError` instead of the retry error; Cancel clears it.
 - **Used by:** `ForumBoard` on the parent footer and on nested reply cards.
 
 ## Function: InlineConfirm
@@ -4593,7 +4593,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Send a moderator hide request for a forum message (top-level note or nested reply).
 - **Inputs:** sessionToken and messageId.
-- **Returns / side effects:** DELETE `/forum/messages/:id`; resolves on 204 or already-missing 404, throws on other statuses or network errors. Hide/omit semantics: the API keeps the row with `deleted_at` and omits it from GET.
+- **Returns / side effects:** DELETE `/forum/messages/:id`; resolves on 204 or already-missing 404. A 409 whose body error is exactly `OPEN_CREDIT_DELETE_ERROR` (`An open credit cannot be deleted`) throws an `Error` with that message, so the caller can name the reason. Other statuses throw `Message deletion failed`; network errors propagate. Hide/omit semantics: the API keeps the row with `deleted_at` and omits it from GET.
 - **Used by:** `DeletePostControl`.
 
 ## Function: setMessagePlace

@@ -14369,7 +14369,13 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('$0.02').first()).toBeVisible();
   }
 
-  for (const state of ['moderation', 'delete-confirm', 'deleting', 'delete-error'] as const) {
+  for (const state of [
+    'moderation',
+    'delete-confirm',
+    'deleting',
+    'delete-error',
+    'delete-open-credit',
+  ] as const) {
     test('welcome ' + state, async ({ page }) => {
       await seedAda(page, 'moderator');
       await fulfillMixedSatsMessages(page);
@@ -14380,11 +14386,15 @@ test.describe('welcome forum variants', () => {
             release = resolve;
           });
         }
-        await route.fulfill({
-          status: 503,
-          contentType: 'application/json',
-          body: '{"error":"Unavailable"}',
-        });
+        await route.fulfill(
+          state === 'delete-open-credit'
+            ? {
+                status: 409,
+                contentType: 'application/json',
+                body: '{"error":"An open credit cannot be deleted"}',
+              }
+            : { status: 503, contentType: 'application/json', body: '{"error":"Unavailable"}' },
+        );
       });
       await page.goto('/welcome');
       await chooseForumView(page, 'No gifts yet');
@@ -14395,7 +14405,7 @@ test.describe('welcome forum variants', () => {
           page.getByRole('group', { name: 'Delete this post and its reactions from 21.gifts?' }),
         ).toBeVisible();
       }
-      if (state === 'deleting' || state === 'delete-error') {
+      if (state === 'deleting' || state === 'delete-error' || state === 'delete-open-credit') {
         await page.getByRole('button', { name: 'Confirm deletion' }).click();
         if (state === 'deleting') {
           await expect(page.getByRole('button', { name: 'Confirm deletion' })).toBeDisabled();
@@ -14404,13 +14414,20 @@ test.describe('welcome forum variants', () => {
             page
               .getByRole('group', { name: 'Delete this post and its reactions from 21.gifts?' })
               .getByRole('alert'),
-          ).toHaveText('Could not delete the post. Please try again.');
+          ).toHaveText(
+            state === 'delete-open-credit'
+              ? 'This credit is not fully repaid yet and cannot be deleted.'
+              : 'Could not delete the post. Please try again.',
+          );
         }
       }
       if (state === 'moderation') await shotScreen(page, 'state-welcome-moderation');
       if (state === 'delete-confirm') await shotScreen(page, 'state-welcome-delete-confirm');
       if (state === 'deleting') await shotScreen(page, 'state-welcome-deleting');
       if (state === 'delete-error') await shotScreen(page, 'state-welcome-delete-error');
+      if (state === 'delete-open-credit') {
+        await shotScreen(page, 'state-welcome-delete-open-credit');
+      }
       release();
     });
   }
