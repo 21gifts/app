@@ -6,7 +6,7 @@ import { loanTimeZone } from './e2e/loan-zone';
  *
  * The loan harness starts this config against the local api. The screens are
  * the ones on staging: the welcome composer, a gift on the note, repayment-due
- * bill creation, pay-today and the repayment list, and the loan repayment page.
+ * bill creation, the repayment list, and the loan repayment page.
  */
 const desktopChrome = devices['Desktop Chrome'];
 const loanZone = loanTimeZone();

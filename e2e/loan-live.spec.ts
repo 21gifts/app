@@ -377,8 +377,8 @@ test('a borrower takes a credit, three people give, and every share is paid back
 
   const home = await openMember(browser, ui.borrower, '/welcome');
   await repayAll(home, messageId, ui);
-  await expect(home.getByRole('button', { name: "Pay today's repayment" })).toBeVisible();
   await expect(home.getByRole('link', { name: 'Repay your loan' })).toBeVisible();
+  await expect(home.getByRole('link', { name: 'Repayment list' })).toBeVisible();
   await home.getByRole('link', { name: 'Repayment list' }).click();
   await expect(home).toHaveURL(new RegExp(`/messages/${messageId}/repayment-list$`));
   const paidBack = home.getByRole('region', { name: 'Paid back' });
