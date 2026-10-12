@@ -607,6 +607,11 @@ export function AboutMeSection({
           <div className="flex flex-col items-stretch gap-3">
             <div className="flex flex-col gap-2">
               <div className="flex flex-wrap items-start gap-2">
+                <CameraPhotoButton
+                  label={t('camera.takePhoto')}
+                  disabled={saving || preparingPhoto}
+                  onChange={handleFileChange}
+                />
                 <IconButton
                   type="button"
                   variant="secondary"
@@ -628,13 +633,14 @@ export function AboutMeSection({
                   disabled={saving}
                   onChange={handleFileChange}
                 />
-                <CameraPhotoButton
-                  label={t('camera.takePhoto')}
-                  disabled={saving || preparingPhoto}
-                  onChange={handleFileChange}
-                />
                 {onSavePicture !== undefined ? (
                   <>
+                    <CameraPhotoButton
+                      label={t('profile.about.portraitCamera')}
+                      facing="user"
+                      disabled={saving || preparingPhoto}
+                      onChange={handlePictureChange}
+                    />
                     <IconButton
                       type="button"
                       variant="secondary"
@@ -656,16 +662,15 @@ export function AboutMeSection({
                       disabled={saving}
                       onChange={handlePictureChange}
                     />
-                    <CameraPhotoButton
-                      label={t('profile.about.portraitCamera')}
-                      facing="user"
-                      disabled={saving || preparingPhoto}
-                      onChange={handlePictureChange}
-                    />
                   </>
                 ) : null}
                 {onSaveBanner !== undefined ? (
                   <>
+                    <CameraPhotoButton
+                      label={t('profile.about.bannerCamera')}
+                      disabled={saving || preparingPhoto}
+                      onChange={handleBannerChange}
+                    />
                     <IconButton
                       type="button"
                       variant="secondary"
@@ -685,11 +690,6 @@ export function AboutMeSection({
                       accept="image/jpeg,image/png,image/webp"
                       className="hidden"
                       disabled={saving}
-                      onChange={handleBannerChange}
-                    />
-                    <CameraPhotoButton
-                      label={t('profile.about.bannerCamera')}
-                      disabled={saving || preparingPhoto}
                       onChange={handleBannerChange}
                     />
                   </>

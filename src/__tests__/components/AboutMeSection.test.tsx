@@ -1067,6 +1067,18 @@ describe('AboutMeSection', () => {
       expect(screen.getByRole('button', { name })).toBeTruthy();
       expect(screen.queryByText(name)).toBeNull();
     }
+    const pairs = [
+      ['Take a photo', 'Add a photo'],
+      ['Take a profile photo', 'Add a profile photo'],
+      ['Take a wide photo', 'Add a wide image'],
+    ] as const;
+    for (const [cameraName, attachName] of pairs) {
+      const cameraButton = screen.getByRole('button', { name: cameraName });
+      const attachButton = screen.getByRole('button', { name: attachName });
+      expect(
+        cameraButton.compareDocumentPosition(attachButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
     const cameras = [
       ...document.querySelectorAll('input[type="file"][capture]'),
     ] as HTMLInputElement[];

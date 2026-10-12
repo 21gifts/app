@@ -920,6 +920,17 @@ describe('ProfileScreen', () => {
     await screen.findByRole('button', { name: 'Add a profile photo' });
     expect(screen.queryByText('Take a profile photo')).toBeNull();
     expect(screen.queryByText('Take a wide photo')).toBeNull();
+    const slotPairs = [
+      ['Take a profile photo', 'Add a profile photo'],
+      ['Take a wide photo', 'Add a wide image'],
+    ] as const;
+    for (const [cameraName, attachName] of slotPairs) {
+      const cameraButton = screen.getByRole('button', { name: cameraName });
+      const attachButton = screen.getByRole('button', { name: attachName });
+      expect(
+        cameraButton.compareDocumentPosition(attachButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
     const selfie = document.querySelector('input[name="profile-photo-camera"]') as HTMLInputElement;
     const wide = document.querySelector('input[name="profile-banner-camera"]') as HTMLInputElement;
     expect(selfie.getAttribute('capture')).toBe('user');
