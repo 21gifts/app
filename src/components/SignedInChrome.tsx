@@ -20,7 +20,15 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useContext, useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { AppShellContext, useAppShellScroller } from '@/components/AppShell';
 import { HeaderBalance } from '@/components/HeaderBalance';
@@ -113,6 +121,13 @@ function SignedInMenu(): ReactElement {
   const [menuBox, setMenuBox] = useState<{ top: number; left: number; width: number } | null>(null);
   const [sheetBecauseTall, setSheetBecauseTall] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
+  // The move-funds sheet covers the page: the Menu closes in the same update that makes it inert.
+  const onMoveOpenChange = useCallback((next: boolean): void => {
+    setMoveOpen(next);
+    if (next) {
+      setOpen(false);
+    }
+  }, []);
   const tightRef = useRef(false);
   const menuLiftRef = useRef(0);
   const menuBoxRef = useRef(menuBox);
@@ -336,13 +351,6 @@ function SignedInMenu(): ReactElement {
     void resyncPushSubscription(session).catch(() => undefined);
   }, [session]);
 
-  useEffect(() => {
-    // The move-funds sheet covers the page: an open Menu would sit behind it.
-    if (moveOpen) {
-      setOpen(false);
-    }
-  }, [moveOpen]);
-
   // Stay in the sheet host while closed. Moving the portal back to the
   // trigger remounts the panel, and the iOS install sheet is state on
   // that panel. `rootEl` is null on the first render, so the server and
@@ -379,7 +387,7 @@ function SignedInMenu(): ReactElement {
     <div className="flex items-center">
       <HeaderBalance />
       <ReceivedNotice />
-      <MoveFundsSheet onOpenChange={setMoveOpen} />
+      <MoveFundsSheet onOpenChange={onMoveOpenChange} />
       {/* Behind the open move-funds sheet the Menu is out of reach, also by keyboard. */}
       <div ref={setRootEl} className="relative" inert={moveOpen}>
         <button
