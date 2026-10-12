@@ -196,7 +196,7 @@ function PanelChromeBack({ onBack, over }: { onBack: () => void; over: boolean }
  *
  * A signed-in member whose account has `walletIntroSeen: false` gets the
  * one-time {@link WalletTour} over the page; it waits while a wallet view or
- * the writer is open.
+ * the writer is open, or while Receive / Send are folded away.
  *
  * In a Playwright build only, a `?visual=send-…` pin opens the Send view.
  *
@@ -311,7 +311,7 @@ export function WelcomeScreen(): ReactElement {
 
   return (
     <>
-      {signedIn ? <WalletTour blocked={shown !== 'none' || writerOpen} /> : null}
+      {signedIn ? <WalletTour blocked={shown !== 'none' || writerOpen || aside} /> : null}
       {shown === 'none' ? null : <PanelChromeBack onBack={panel.stepBack} over />}
       {writerOpen ? <PanelChromeBack onBack={closeWriter} over={false} /> : null}
       {shown === 'none' ? null : (

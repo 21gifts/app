@@ -261,6 +261,24 @@ describe('WalletTour', () => {
     });
   });
 
+  it('never reports a step as shown whose target is gone by its turn', async () => {
+    addTarget('balance');
+    const receive = addTarget('receive');
+    addTarget('menu');
+    renderWithLocale(<WalletTour blocked={false} />);
+    receive.remove();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await vi.waitFor(() => expect(screen.getByText('3 of 3')).toBeTruthy());
+    const steps = vi
+      .mocked(logInteraction)
+      .mock.calls.filter(([name]) => name === 'wallet_tour_step')
+      .map(([, props]) => props);
+    expect(steps).toEqual([
+      { step: 1, target: 'balance' },
+      { step: 3, target: 'menu' },
+    ]);
+  });
+
   it('follows its target when the page changes or scrolls', async () => {
     const balance = addTarget('balance');
     renderWithLocale(<WalletTour blocked={false} />);
