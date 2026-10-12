@@ -525,6 +525,77 @@ describe('WelcomeScreen while a text field in the page has the focus', () => {
     expect(body.hasAttribute('data-footer-fold')).toBe(false);
   });
 
+  it('keeps them aside until a press that took the focus out of the field has ended', async () => {
+    const { body, plus } = renderInShell();
+    fireEvent.click(screen.getByRole('button', { name: 'Stub open form' }));
+    const field = screen.getByRole('textbox', { name: 'Stub form field' });
+    const close = screen.getByRole('button', { name: 'Stub close form' });
+    /** Lets the task after a release run. */
+    const afterRelease = async (): Promise<void> => {
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+    };
+    act(() => {
+      field.focus();
+    });
+    // The pointer goes down on a control of the form and takes the focus: still aside.
+    act(() => {
+      fireEvent.pointerDown(close);
+      close.focus();
+    });
+    expect(plusAside(plus())).toBe(true);
+    expect(body.dataset['footerFold']).toBe('');
+    // A change of the page under the held pointer does not bring them back either.
+    await act(async () => {
+      field.after(document.createElement('span'));
+      await Promise.resolve();
+    });
+    expect(plusAside(plus())).toBe(true);
+    // Released, and pressed again before the release counted: the new press holds them.
+    act(() => {
+      fireEvent.pointerUp(close);
+      fireEvent.pointerDown(close);
+    });
+    await afterRelease();
+    expect(plusAside(plus())).toBe(true);
+    // Released: after its click both are back.
+    act(() => {
+      fireEvent.pointerUp(close);
+    });
+    expect(plusAside(plus())).toBe(true);
+    await afterRelease();
+    expect(plusAside(plus())).toBe(false);
+    expect(body.hasAttribute('data-footer-fold')).toBe(false);
+
+    // A press from one field into another keeps them aside throughout.
+    const amount = screen.getByRole('textbox', { name: 'Stub amount' });
+    act(() => {
+      field.focus();
+    });
+    act(() => {
+      fireEvent.pointerDown(amount);
+      amount.focus();
+    });
+    expect(plusAside(plus())).toBe(true);
+    act(() => {
+      fireEvent.pointerUp(amount);
+    });
+    await afterRelease();
+    expect(plusAside(plus())).toBe(true);
+    // A cancelled press (a scroll) that took the focus ends the same way.
+    act(() => {
+      fireEvent.pointerDown(close);
+      amount.blur();
+    });
+    expect(plusAside(plus())).toBe(true);
+    act(() => {
+      fireEvent.pointerCancel(close);
+    });
+    await afterRelease();
+    expect(plusAside(plus())).toBe(false);
+  });
+
   it('moves them aside while a text field in the page has the focus, not for a checkbox', () => {
     const { body, plus } = renderInShell();
     act(() => {
