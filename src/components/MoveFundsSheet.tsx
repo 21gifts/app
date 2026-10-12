@@ -1,20 +1,20 @@
 'use client';
 
 import { Check, Copy, Loader2, X } from 'lucide-react';
-import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { AppShellOverlay } from '@/components/AppShell';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
+import { MoveFundsBack } from '@/components/MoveFundsBack';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { QrCode } from '@/components/QrCode';
-import { useChromeBack } from '@/components/ViewHistoryRoot';
 import { Button, IconButton } from '@/components/ui';
 import { useCopied } from '@/hooks/useCopied';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { MOVE_FUNDS_EVENT, takeMoveFundsRequest } from '@/lib/move-funds';
-import { logInteraction } from '@/lib/interaction-log';
+import { LOGOUT_EVENT, logInteraction } from '@/lib/interaction-log';
 import { nextOnboardingPath } from '@/lib/onboarding';
 import { isSmartphoneUserAgent } from '@/lib/payment-link';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
@@ -51,32 +51,10 @@ function previousStep(step: MoveStep): MoveStep | null {
   return step === 'waiting' ? 'go' : null;
 }
 
-/**
- * Registers the top-left arrow as the flow's one step back while it is open,
- * laid over the page's own steps.
- *
- * @param props - The step back.
- * @returns `null` (registration only).
- */
-function MoveFundsBack({ onBack }: { onBack: () => void }): null {
-  const { setOverride } = useChromeBack();
-  const backRef = useRef(onBack);
-  useLayoutEffect(() => {
-    backRef.current = onBack;
-  });
-  useLayoutEffect(() => {
-    setOverride({
-      labelKey: 'nav.back',
-      over: true,
-      onClick: () => {
-        backRef.current();
-      },
-    });
-    return () => {
-      setOverride(null);
-    };
-  }, [setOverride]);
-  return null;
+/** Props for {@link MoveFundsSheet}. */
+export interface MoveFundsSheetProps {
+  /** Told whether the sheet is open, so the chrome can take the Menu out of reach behind it. */
+  onOpenChange?: (open: boolean) => void;
 }
 
 /**
@@ -90,7 +68,9 @@ function MoveFundsBack({ onBack }: { onBack: () => void }): null {
  * member is signed in (session and account) and done with onboarding (the
  * next onboarding screen is `/welcome`) with a username, so the address
  * exists: a link opened signed out or during onboarding waits until then.
- * Four dots show the progress; the
+ * Signing out drops a request that is still waiting, so it never opens for
+ * the next member who signs in in this tab; a link a visitor opened before
+ * signing in still waits. Four dots show the progress; the
  * icon-only `X` (`moveFunds.close`) and Escape close it.
  *
  * 1. **Bring your Bitcoin here**, a short text, three numbered lines, **Start**.
@@ -114,12 +94,14 @@ function MoveFundsBack({ onBack }: { onBack: () => void }): null {
  * (`source` `receive` | `link`), `wallet_move_step` (`step` `go` | `waiting`
  * | `done`) each time one of those steps is entered, `wallet_move_copied`
  * (`step` `go`) after a successful copy, `wallet_move_closed` (`step` `intro`
- * | `go` | `waiting`) when it is closed before step 4, and `wallet_move_done`
- * (`amountSats`) when the payment arrived while it was open.
+ * | `go` | `waiting`) when it is closed before step 4 (also by **Log out**,
+ * recorded under the ending session through `LOGOUT_EVENT`), and
+ * `wallet_move_done` (`amountSats`) when the payment arrived while it was open.
  *
+ * @param props - See {@link MoveFundsSheetProps}.
  * @returns The sheet, or `null` while the flow is closed.
  */
-export function MoveFundsSheet(): ReactElement | null {
+export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): ReactElement | null {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
@@ -136,14 +118,26 @@ export function MoveFundsSheet(): ReactElement | null {
   const [smartphone, setSmartphone] = useState(true);
   const { copied, copy } = useCopied();
   const rateDay = useSpotRate(state !== null);
+  /** True while this sheet saw a member signed in, so only a sign-out drops a waiting request. */
+  const wasSignedIn = useRef(false);
+  const openChangeRef = useRef(onOpenChange);
+  useEffect(() => {
+    openChangeRef.current = onOpenChange;
+  });
 
   useEffect(() => {
     // A request waits until a member is signed in (the chrome also shows for a visitor), and
     // signing out ends an open flow, so it never comes back for the next sign-in.
     if (!signedIn) {
+      if (wasSignedIn.current) {
+        // A request still waiting (one followed during onboarding) belongs to the member who left.
+        takeMoveFundsRequest();
+      }
+      wasSignedIn.current = false;
       setState(null);
       return;
     }
+    wasSignedIn.current = true;
     // During onboarding the request stays stored: there is no address to move to yet.
     if (!onboarded) {
       return;
@@ -175,6 +169,33 @@ export function MoveFundsSheet(): ReactElement | null {
 
   const step = state?.step ?? null;
   const listening = signedIn && (step === 'go' || step === 'waiting');
+  const shown = signedIn && step !== null;
+
+  useEffect(() => {
+    openChangeRef.current?.(shown);
+  }, [shown]);
+
+  useEffect(
+    () => () => {
+      openChangeRef.current?.(false);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (step === null || step === 'done') {
+      return;
+    }
+    // Log out sends this while the ending session is still current, so the close is recorded under it.
+    const onLogout = (): void => {
+      logInteraction('wallet_move_closed', { step });
+      setState(null);
+    };
+    window.addEventListener(LOGOUT_EVENT, onLogout);
+    return () => {
+      window.removeEventListener(LOGOUT_EVENT, onLogout);
+    };
+  }, [step]);
 
   useEffect(() => {
     if (!listening) {

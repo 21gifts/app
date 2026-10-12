@@ -91,7 +91,10 @@ function targetOf(step: TourStep): Element | null {
 
 /** Props for {@link WalletTour}. */
 export interface WalletTourProps {
-  /** True while the page shows something else over the forum (a wallet view or the writer). */
+  /**
+   * True while the page shows something else over the forum (a wallet view or
+   * the writer) or has folded **Receive** / **Send** away: the tour waits.
+   */
   blocked: boolean;
 }
 
@@ -108,7 +111,8 @@ export interface WalletTourProps {
  * Shown only while the signed-in account's `walletIntroSeen` is `false` (a
  * missing field, from an older api, counts as seen), once the wallet is no
  * longer connecting, and while no other dialog, the open Menu, a wallet view,
- * or the writer is up. The steps are the ones whose target is on screen when
+ * or the writer is up, and while the page has not folded **Receive** / **Send**
+ * away (`blocked`), so a folded button is never highlighted. The steps are the ones whose target is on screen when
  * the tour starts; a target that is gone by its turn is skipped. **Skip** and
  * **Got it** set `walletIntroSeen` on the account at once, so the tour does
  * not come back in this session even when the request fails, and POST
@@ -117,7 +121,8 @@ export interface WalletTourProps {
  * Member events (`logInteraction`), each once: `wallet_tour_shown` (`steps`,
  * the number of steps found) when it starts, `wallet_tour_step` (`step`
  * 1-based, `target` `balance` | `receive` | `send` | `menu`) the first time
- * a step shows, and `wallet_tour_done` (`outcome` `completed` | `skipped`,
+ * a step shows with its own target measured (a step skipped because its
+ * target is gone is never reported), and `wallet_tour_done` (`outcome` `completed` | `skipped`,
  * `step` where it ended) when it ends.
  *
  * @param props - See {@link WalletTourProps}.
@@ -130,7 +135,8 @@ export function WalletTour({ blocked }: WalletTourProps): ReactElement | null {
   const walletSettled = useWallet().status !== 'connecting';
   const [steps, setSteps] = useState<readonly TourStep[] | null>(null);
   const [index, setIndex] = useState(0);
-  const [box, setBox] = useState<DOMRect | null>(null);
+  /** The measured target and the step it was measured for, so a box left over from the last step never counts. */
+  const [box, setBox] = useState<{ index: number; rect: DOMRect } | null>(null);
   const [otherModal, setOtherModal] = useState(false);
   const nextRef = useRef<HTMLButtonElement>(null);
   /** Steps already reported as shown, so a re-render or a resume reports none twice. */
@@ -194,12 +200,13 @@ export function WalletTour({ blocked }: WalletTourProps): ReactElement | null {
       const next = (targetOf(steps[at] as TourStep) as Element).getBoundingClientRect();
       setBox((previous) =>
         previous !== null &&
-        previous.top === next.top &&
-        previous.bottom === next.bottom &&
-        previous.left === next.left &&
-        previous.right === next.right
+        previous.index === at &&
+        previous.rect.top === next.top &&
+        previous.rect.bottom === next.bottom &&
+        previous.rect.left === next.left &&
+        previous.rect.right === next.right
           ? previous
-          : next,
+          : { index: at, rect: next },
       );
     };
     measure();
@@ -215,13 +222,15 @@ export function WalletTour({ blocked }: WalletTourProps): ReactElement | null {
   }, [eligible, steps, index, finish]);
 
   const showing = eligible && !otherModal && steps !== null && box !== null;
+  // The step's own target was measured: until then it may still be skipped, so it is not reported.
+  const measured = showing && box.index === index;
 
   useEffect(() => {
     if (!showing) {
       return;
     }
     nextRef.current?.focus({ preventScroll: true });
-    if (!shownSteps.current.has(index)) {
+    if (measured && !shownSteps.current.has(index)) {
       shownSteps.current.add(index);
       logInteraction('wallet_tour_step', {
         step: index + 1,
@@ -237,19 +246,20 @@ export function WalletTour({ blocked }: WalletTourProps): ReactElement | null {
     return () => {
       window.removeEventListener('keydown', onKey);
     };
-  }, [showing, index, steps, finish]);
+  }, [showing, measured, index, steps, finish]);
 
   if (!showing) {
     return null;
   }
   const step = steps[index] as TourStep;
   const last = index === steps.length - 1;
+  const { rect } = box;
   const height = window.innerHeight;
-  const below = box.top + box.height / 2 < height / 2;
-  const ringTop = Math.max(box.top - RING_PAD, 0);
-  const ringBottom = Math.max(height - box.bottom - RING_PAD, 0);
-  const ringLeft = Math.max(box.left - RING_PAD, 0);
-  const ringRight = Math.min(box.right + RING_PAD, window.innerWidth);
+  const below = rect.top + rect.height / 2 < height / 2;
+  const ringTop = Math.max(rect.top - RING_PAD, 0);
+  const ringBottom = Math.max(height - rect.bottom - RING_PAD, 0);
+  const ringLeft = Math.max(rect.left - RING_PAD, 0);
+  const ringRight = Math.min(rect.right + RING_PAD, window.innerWidth);
 
   return (
     <div className="fixed inset-0 z-[95]">

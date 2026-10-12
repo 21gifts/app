@@ -463,6 +463,33 @@ describe('logLogout', () => {
     ]);
   });
 
+  it('lets LOGOUT_EVENT listeners record under the ending session, sent before it ends', async () => {
+    const onLogout = (): void => {
+      expect(useAuthStore.getState().session).toBe('sess');
+      mod.logInteraction('wallet_move_closed', { step: 'go' });
+    };
+    window.addEventListener(mod.LOGOUT_EVENT, onLogout);
+    try {
+      await mod.logLogout();
+    } finally {
+      window.removeEventListener(mod.LOGOUT_EVENT, onLogout);
+    }
+    expect(batches()).toEqual([['wallet_move_closed'], ['logout']]);
+    expect(requests().map((request) => request.headers['Authorization'])).toEqual([
+      'Bearer sess',
+      'Bearer sess',
+    ]);
+  });
+
+  it('sends no LOGOUT_EVENT without a session', async () => {
+    useAuthStore.setState({ session: null });
+    const onLogout = vi.fn();
+    window.addEventListener(mod.LOGOUT_EVENT, onLogout);
+    await mod.logLogout();
+    window.removeEventListener(mod.LOGOUT_EVENT, onLogout);
+    expect(onLogout).not.toHaveBeenCalled();
+  });
+
   it('resolves only after every queued batch is sent', async () => {
     let release: () => void = () => undefined;
     fetchMock.mockImplementationOnce(

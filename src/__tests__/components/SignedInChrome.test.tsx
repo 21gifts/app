@@ -63,6 +63,14 @@ vi.mock('@/components/MenuAccountHeader', () => ({
     </button>
   ),
 }));
+/** The open-state callback the chrome gave the move-funds sheet. */
+const moveSheet = vi.hoisted(() => ({ onOpenChange: null as ((open: boolean) => void) | null }));
+vi.mock('@/components/MoveFundsSheet', () => ({
+  MoveFundsSheet: ({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) => {
+    moveSheet.onOpenChange = onOpenChange ?? null;
+    return null;
+  },
+}));
 vi.mock('@/lib/session-storage', () => ({
   loadSession: vi.fn(),
   saveSession: vi.fn(),
@@ -283,6 +291,24 @@ describe('SignedInChrome', () => {
     expectMenuOpen();
     fireEvent.click(screen.getByRole('button', { name: 'Account header' }));
     expectMenuClosed();
+  });
+
+  it('takes the Menu out of reach, also by keyboard, while the move-funds sheet is open', () => {
+    renderWithLocale(<SignedInChrome />);
+    const trigger = screen.getByRole('button', { name: 'Menu' });
+    const host = trigger.parentElement as HTMLElement;
+    expect(host.hasAttribute('inert')).toBe(false);
+    fireEvent.click(trigger);
+    expectMenuOpen();
+    act(() => {
+      moveSheet.onOpenChange?.(true);
+    });
+    expect(host.hasAttribute('inert')).toBe(true);
+    expectMenuClosed();
+    act(() => {
+      moveSheet.onOpenChange?.(false);
+    });
+    expect(host.hasAttribute('inert')).toBe(false);
   });
 
   it('leaves the account header out when signed out', () => {
