@@ -2610,7 +2610,9 @@ describe('ForumBoard', () => {
       />,
       'de',
     );
-    expect(screen.getByRole('button', { name: 'Schließen' })).toBeTruthy();
+    // The laws hint's dismiss reads Schließen too, so look inside the pay sheet.
+    const sheet = document.querySelector('[data-pay-sheet]') as HTMLElement;
+    expect(within(sheet).getByRole('button', { name: 'Schließen' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Zurück' })).toBeNull();
     expect(screen.queryByText('Zurück')).toBeNull();
     expect(screen.getByRole('status').textContent).toBe(
