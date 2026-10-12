@@ -447,7 +447,7 @@ test.describe('forum home while reacting on a phone', () => {
     expect(await footerHeight(page)).toBeGreaterThan(70);
 
     // An open form whose field does not have the focus leaves both in place.
-    await page.getByRole('button', { name: 'React' }).first().tap();
+    await page.getByRole('button', { name: 'React', exact: true }).first().tap();
     const reply = page.getByPlaceholder('Write a reaction');
     await expect(reply).toBeVisible();
     await expect(reply).not.toBeFocused();
@@ -588,7 +588,7 @@ test.describe('forum home while reacting on a phone', () => {
     await openHome(page);
     const plus = page.getByRole('button', { name: 'Write a post' });
     await expect(plus).toHaveCSS('transition-property', 'none');
-    await page.getByRole('button', { name: 'React' }).first().tap();
+    await page.getByRole('button', { name: 'React', exact: true }).first().tap();
     await page.getByPlaceholder('Write a reaction').tap();
     await expect(page.locator('[data-app-body]')).toHaveAttribute('data-footer-fold', '');
     await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-folding');
