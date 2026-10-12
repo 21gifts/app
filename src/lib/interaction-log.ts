@@ -420,12 +420,20 @@ async function sendQueue(session: string): Promise<boolean> {
   return true;
 }
 
+/**
+ * Event {@link logLogout} sends on `window` while the ending session is still
+ * the current one, before it sends the queue: a listener can still record an
+ * event under that session (the move-funds sheet records its close).
+ */
+export const LOGOUT_EVENT = '21gifts:logout';
+
 /** How long {@link logLogout} waits before it sends the logout event again. */
 export const LOGOUT_RETRY_MS = 500;
 
 /**
  * Records `logout` and sends it at once, in a request of its own with the
- * session that is ending, so the caller can clear the session afterwards; a
+ * session that is ending, after sending {@link LOGOUT_EVENT} so listeners can
+ * still record their own events under that session, so the caller can clear the session afterwards; a
  * flush already running does not hold it back. It also sends the queued
  * events, after any flush already running.
  * A failed request is sent again every {@link LOGOUT_RETRY_MS} while the
@@ -445,6 +453,7 @@ export async function logLogout(): Promise<void> {
   if (session === null) {
     return;
   }
+  window.dispatchEvent(new Event(LOGOUT_EVENT));
   const event = buildEvent('logout', {});
   if (event === null) {
     return;

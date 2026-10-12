@@ -30,8 +30,9 @@ import { useWalletStore } from '@/stores/wallet-store';
  * - waiting: sent; polling GET /me/loans for settlement. The UI still shows "Sending ₿X…".
  * - repaid: settlement seen for everything sent.
  * - unconfirmed: still not settled WALLET_PAY_CONFIRM_WAIT_MS after the last send.
- * - failed: the due request or a prepare failed before anything was sent (`errorKey` says why),
- *   or a send failed (then `sent` lists what did go out).
+ * - failed: the due request, a loans reload, or a prepare failed before anything was sent
+ *   (`errorKey` says why), also on a run that had nothing to send, or a send failed (then
+ *   `sent` lists what did go out).
  */
 export type LoanRepayPhase =
   | 'unavailable'
@@ -84,7 +85,8 @@ export interface LoanRepayResult {
    * for every loan it would pay, it prepares nothing, sends nothing, and ends `failed`.
    * When the set is given and none of those shares are still due, the run reloads, then
    * ends `unconfirmed` if one of the named shares is held by another run, `repaid` if
-   * nothing is due any more, otherwise `idle`.
+   * nothing is due any more, otherwise `idle`. On these runs that send nothing, a
+   * failed reload ends `failed` instead.
    *
    * @param loans - Current loans body in list order.
    * @param onlyShares - Optional exact share keys to pay; only those named shares are
@@ -239,7 +241,8 @@ const reservedShares = new Set<string>();
  * ends unconfirmed. When `onlyShares` is given and none of those shares are
  * still due, the run reloads, then ends `unconfirmed` if one of the named
  * shares is held by another run, `repaid` if nothing is due any more, otherwise
- * `idle`. The send-now link names at most 60 shares per loan (one due request's
+ * `idle`; a run that sends nothing and whose reload fails ends `failed` instead
+ * (`forum.payErrorRequest`). The send-now link names at most 60 shares per loan (one due request's
  * limit); if any named share is missing from the due answer, nothing is sent
  * and the screen reloads. After every due request the run reloads loans for a
  * fresh `repaidSats` baseline. Without a fresh body, or when any loan this run
@@ -434,8 +437,13 @@ export function useLoanRepay(options: {
           onlyShares !== undefined &&
           [...onlyShares].some((key) => !reservedShares.has(key) && !dueKeys.has(key));
         if (namedMissing || bills.length === 0) {
-          await options.reload();
+          const reloaded = await options.reload();
           if (!active()) {
+            return;
+          }
+          // Nothing was sent, but the screen cannot show where the loans stand: say so.
+          if (reloaded === null) {
+            failBeforeSend(new Error('reload'));
             return;
           }
           if (!namedMissing && skipped) {

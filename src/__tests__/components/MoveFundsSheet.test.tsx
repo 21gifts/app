@@ -22,7 +22,10 @@ vi.mock('@/lib/move-funds', () => ({
 }));
 vi.mock('@/lib/wallet/wallet-service', () => ({ onIncomingPayment: vi.fn() }));
 vi.mock('@/components/ViewHistoryRoot', () => ({ useChromeBack: vi.fn() }));
-vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
+vi.mock('@/lib/interaction-log', () => ({
+  LOGOUT_EVENT: '21gifts:logout',
+  logInteraction: vi.fn(),
+}));
 
 const RATE_DAY: FiatRateDay = {
   sats: 100_000_000,
@@ -328,6 +331,85 @@ describe('MoveFundsSheet', () => {
       });
     });
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('drops a request stored during onboarding when that member signs out', () => {
+    useAuthStore.setState({
+      account: { id: 'acc_1', name: 'Ada', username: null, setup: 'username' } as Account,
+    });
+    renderWithLocale(<MoveFundsSheet />);
+    act(() => {
+      window.dispatchEvent(new Event(MOVE_FUNDS_EVENT));
+    });
+    expect(takeMoveFundsRequest).not.toHaveBeenCalled();
+    act(() => {
+      useAuthStore.setState({ session: null, account: null });
+    });
+    // Taken and thrown away: nothing opens, nothing is reported.
+    expect(takeMoveFundsRequest).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(events()).toEqual([]);
+    act(() => {
+      useAuthStore.setState({
+        session: 'tok2',
+        account: { id: 'acc_2', name: 'Bo', username: 'bo', setup: null } as Account,
+      });
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('keeps a request a visitor followed before any sign-in', () => {
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(<MoveFundsSheet />);
+    act(() => {
+      window.dispatchEvent(new Event(MOVE_FUNDS_EVENT));
+    });
+    expect(takeMoveFundsRequest).not.toHaveBeenCalled();
+  });
+
+  it('reports the close once when Log out ends an open flow, under the ending session', () => {
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    vi.mocked(logInteraction).mockClear();
+    act(() => {
+      window.dispatchEvent(new Event('21gifts:logout'));
+    });
+    expect(events()).toEqual([['wallet_move_closed', { step: 'go' }]]);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    act(() => {
+      useAuthStore.setState({ session: null, account: null });
+    });
+    expect(events()).toHaveLength(1);
+  });
+
+  it('reports no close when Log out comes after the payment arrived', () => {
+    renderWithLocale(<MoveFundsSheet />);
+    openByRequest();
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    act(() => {
+      emit(received(500));
+    });
+    vi.mocked(logInteraction).mockClear();
+    act(() => {
+      window.dispatchEvent(new Event('21gifts:logout'));
+    });
+    expect(events()).toEqual([]);
+    expect(screen.getByRole('dialog', { name: '₿500 arrived' })).toBeTruthy();
+  });
+
+  it('tells the chrome whether it is open, and that it closed when it unmounts', () => {
+    const onOpenChange = vi.fn();
+    const { unmount } = renderWithLocale(<MoveFundsSheet onOpenChange={onOpenChange} />);
+    expect(onOpenChange.mock.calls).toEqual([[false]]);
+    openByRequest();
+    expect(onOpenChange).toHaveBeenLastCalledWith(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onOpenChange).toHaveBeenLastCalledWith(false);
+    openByRequest();
+    expect(onOpenChange).toHaveBeenLastCalledWith(true);
+    unmount();
+    expect(onOpenChange).toHaveBeenLastCalledWith(false);
   });
 
   it('stops listening for a payment as soon as the member signs out', () => {

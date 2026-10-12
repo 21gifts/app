@@ -85,15 +85,40 @@ export interface PaymentFailure {
 /** Reasons that are the member's state, not a fault: never sent to error reporting. */
 const MEMBER_STATE: ReadonlySet<PayReason> = new Set(['unlock', 'insufficient', 'below_minimum']);
 
-/** The only shape an error name may have on a report: a short identifier. */
-const ERROR_NAME = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
+/**
+ * The only error names a report may carry: the built-in error classes, the
+ * browser's `DOMException` names a payment can meet, the schema parser's, and
+ * the app's own error classes. Any other name is reported as `Error`, so a
+ * name set by code to something key-shaped never leaves the device.
+ */
+const ERROR_NAMES: ReadonlySet<string> = new Set([
+  'Error',
+  'TypeError',
+  'RangeError',
+  'SyntaxError',
+  'ReferenceError',
+  'AggregateError',
+  'AbortError',
+  'TimeoutError',
+  'NetworkError',
+  'ZodError',
+  'LnurlRelayError',
+  'WalletRequiredError',
+  'CannotReceiveError',
+  'PostFeeRequiredError',
+  'MissingRequirementsError',
+  'WrongAccountError',
+  'NoteDeletedError',
+  'UnknownCredentialError',
+  'PublicForumUnauthorizedError',
+]);
 
 /**
  * Name and code of a rejection, never its text. Free text from the SDK or the
  * api can carry an invoice, an address, or a key, so no part of a rejection's
  * message, and nothing converted from an unknown rejection, is reported. The
- * name is the `Error` subclass name when it is a short identifier (otherwise
- * `Error`), or the JavaScript type of anything that is not an `Error` (a
+ * name is the `Error` subclass name when it is one of {@link ERROR_NAMES}
+ * (otherwise `Error`), or the JavaScript type of anything that is not an `Error` (a
  * thrown string or byte array is just `string` or `object`). The code is the
  * api relay's `reason`, or the SDK's error kind at the start of its message
  * (`Network error: …` → `network`, letters only). An `Error` that cannot be
@@ -111,7 +136,7 @@ function errorFields(error: unknown): { errorName: string | null; errorCode: str
   }
   try {
     const { name, message } = error;
-    const errorName = typeof name === 'string' && ERROR_NAME.test(name) ? name : 'Error';
+    const errorName = typeof name === 'string' && ERROR_NAMES.has(name) ? name : 'Error';
     let errorCode: string | null = null;
     if (error instanceof LnurlRelayError) {
       errorCode = error.reason;

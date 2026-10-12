@@ -2883,6 +2883,8 @@ describe('useWalletSend failure report', () => {
     expect(reportPaymentFailure).toHaveBeenCalledWith(lnurlFailure, 'send', { session: 'sess' });
   });
 
+  const OPEN_CHARGE = { kind: 'invoice' as const, amountSats: 7_000, sparkInvoice: 'spark1shop' };
+
   it('reports a shop charge under pos, at prepare and at send', async () => {
     const charge = { kind: 'invoice' as const, amountSats: 7_000, sparkInvoice: 'spark1shop' };
     vi.mocked(fetchShopChargeInvoice).mockResolvedValue(charge);
@@ -2915,5 +2917,38 @@ describe('useWalletSend failure report', () => {
         sentLate: undefined,
       },
     );
+  });
+
+  it('reports an open charge whose Spark attempt and fallback both fail once, under pos', async () => {
+    vi.mocked(fetchShopChargeInvoice).mockResolvedValue(OPEN_CHARGE);
+    target({ ...LNURL, minSats: 7_000, maxSats: 7_000 } as WalletTarget);
+    const lnurlFailure: PaymentFailure = { ...FAILED, method: 'lnurl' };
+    vi.mocked(payFromWallet)
+      .mockResolvedValueOnce({ kind: 'failed', failure: { ...FAILED, method: 'spark' } })
+      .mockResolvedValueOnce({ kind: 'failed', failure: lnurlFailure });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, WALLET_SEND_VISUAL_FIXTURE.fixedLink);
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(reportPaymentFailure).toHaveBeenCalledTimes(1);
+    expect(reportPaymentFailure).toHaveBeenCalledWith(
+      { ...lnurlFailure, amountSats: 7_000 },
+      'pos',
+      { session: 'sess' },
+    );
+    expect(result.current.state).toEqual({ step: 'input', error: 'failed' });
+  });
+
+  it('reports a failed fallback of an open charge that reads as an invoice under pos', async () => {
+    vi.mocked(fetchShopChargeInvoice).mockResolvedValue(OPEN_CHARGE);
+    target({ type: 'request', input: 'lnbc1', amountSats: 7_000, recipient: 'Shop' });
+    vi.mocked(payFromWallet)
+      .mockResolvedValueOnce({ kind: 'failed', failure: { ...FAILED, method: 'spark' } })
+      .mockResolvedValueOnce({ kind: 'failed', failure: FAILED });
+    const { result } = renderHook(() => useWalletSend());
+    await typeAndSubmit(result, WALLET_SEND_VISUAL_FIXTURE.fixedLink);
+    expect(reportPaymentFailure).toHaveBeenCalledTimes(1);
+    expect(reportPaymentFailure).toHaveBeenCalledWith({ ...FAILED, amountSats: 7_000 }, 'pos', {
+      session: 'sess',
+    });
   });
 });

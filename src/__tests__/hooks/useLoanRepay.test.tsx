@@ -327,6 +327,27 @@ describe('useLoanRepay preparation', () => {
     expect(result.current.topUpOpen).toBe(false);
   });
 
+  it('ends failed when nothing is due and the loans reload fails, sending nothing', async () => {
+    const reload = vi.fn(async (): Promise<MyLoans | null> => null);
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [], waiting: [] });
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+    act(() => result.current.pay([loan()]));
+    await waitFor(() => expect(result.current.phase).toBe('failed'));
+    expect(result.current.errorKey).toBe('forum.payErrorRequest');
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('ends failed when a named share is no longer due and the loans reload fails', async () => {
+    const reload = vi.fn(async (): Promise<MyLoans | null> => null);
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [], waiting: [] });
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+    act(() => result.current.pay([loan()], new Set(['m1:0:gone'])));
+    await waitFor(() => expect(result.current.phase).toBe('failed'));
+    expect(result.current.errorKey).toBe('forum.payErrorRequest');
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
   it('ignores an empty-bills reload after the session changes', async () => {
     let resolveReload!: (loans: MyLoans) => void;
     const reload = vi.fn(

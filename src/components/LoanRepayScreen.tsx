@@ -62,9 +62,10 @@ const DUE_BILLS_PER_REQUEST = 60;
  * All-loans repayment screen: live due totals, recipients, one-tap wallet payment,
  * top-up controls, and per-loan progress. The send-now link names at most 60 shares
  * per loan (one due request's limit); if any named share is missing from the due
- * answer, nothing is sent and the screen reloads. The opened Who-gets-paid list
- * shows a muted loading line (with a spinner) while a funded loan's repayment list
- * is in flight, and a danger error line when that list failed to load.
+ * answer, nothing is sent and the screen reloads. For a funded loan with something
+ * due (payable or waiting) whose repayment list is missing, the opened Who-gets-paid
+ * list shows a muted loading line (with a spinner) while that list is in flight, and
+ * a danger error line when it failed to load; each list is applied as it arrives.
  *
  * @returns The repayment screen body.
  */
@@ -110,18 +111,14 @@ export function LoanRepayScreen(): ReactElement {
       return;
     }
     let live = true;
-    void Promise.all(
-      loanKey
-        .split('\u0000')
-        .map(async (messageId): Promise<readonly [string, RepaymentLedger | null]> => [
-          messageId,
-          await getRepayment(messageId),
-        ]),
-    ).then((entries) => {
-      if (live) {
-        setLedgerById(Object.fromEntries(entries));
-      }
-    });
+    // Each list is applied as it arrives, so a failed one shows its error line without waiting for the rest.
+    for (const messageId of loanKey.split('\u0000')) {
+      void getRepayment(messageId).then((ledger) => {
+        if (live) {
+          setLedgerById((current) => ({ ...current, [messageId]: ledger }));
+        }
+      });
+    }
     return () => {
       live = false;
     };

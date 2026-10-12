@@ -1,7 +1,7 @@
 import type { ErrorEvent } from '@sentry/nextjs';
 import { captureMessage } from '@sentry/nextjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { LnurlRelayError } from '@/lib/api';
+import { LnurlRelayError, WalletRequiredError } from '@/lib/api';
 import { logInteraction } from '@/lib/interaction-log';
 import { sentryOptions } from '@/lib/sentry';
 import {
@@ -133,6 +133,23 @@ describe('reportPaymentFailure', () => {
       'an Error whose name is not an identifier as Error',
       Object.assign(new Error('x'), { name: 'pay lnbc1secret failed' }),
       { errorName: 'Error', errorCode: null },
+    ],
+    [
+      'an Error whose name is an identifier outside the known classes as Error',
+      Object.assign(new Error('x'), {
+        name: 'KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn',
+      }),
+      { errorName: 'Error', errorCode: null },
+    ],
+    [
+      'a built-in error class by its name',
+      new TypeError('Failed to fetch'),
+      { errorName: 'TypeError', errorCode: null },
+    ],
+    [
+      'an app error class by its name',
+      new WalletRequiredError(),
+      { errorName: 'WalletRequiredError', errorCode: null },
     ],
     [
       'an Error whose message is not text without a code',

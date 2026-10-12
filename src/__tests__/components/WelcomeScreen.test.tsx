@@ -104,6 +104,11 @@ vi.mock('@/components/ForumLoader', async () => {
     ForumLoader: Forum,
   };
 });
+vi.mock('@/components/WalletTour', () => ({
+  WalletTour: ({ blocked }: { blocked: boolean }) => (
+    <p>{blocked ? 'Tour waits' : 'Tour may show'}</p>
+  ),
+}));
 vi.mock('@/components/WalletPanelView', () => ({
   WalletPanelView: ({ panel }: { panel: string }) => <p>Panel {panel}</p>,
 }));
@@ -460,6 +465,15 @@ describe('WelcomeScreen while a form in the feed is open', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Stub close form' }));
     expect(plusAside(plus())).toBe(false);
     expect(body.hasAttribute('data-footer-fold')).toBe(false);
+  });
+
+  it('holds the wallet tour back while Receive / Send are folded away', () => {
+    renderInShell();
+    expect(screen.getByText('Tour may show')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Stub open form' }));
+    expect(screen.getByText('Tour waits')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Stub close form' }));
+    expect(screen.getByText('Tour may show')).toBeTruthy();
   });
 
   it('counts a focused field that left with its form as left', () => {

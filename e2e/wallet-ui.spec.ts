@@ -243,6 +243,35 @@ test('Function: MoveFundsSheet — steps, the top-left arrow steps back, copy, a
   await expect(page).toHaveURL(/\/wallet\?visual=balance-ready$/);
 });
 
+test('Function: MoveFundsBack — the top-left arrow steps the open flow back and closes it on the first step', async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.goto('/wallet?move=1&visual=balance-ready');
+  await page.getByRole('button', { name: 'Start' }).click();
+  await expect(page.getByRole('dialog', { name: 'Send to your 21.gifts address' })).toBeVisible();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeVisible();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/wallet\?visual=balance-ready$/);
+});
+
+test('Function: SignedInChrome — the Menu is out of reach, also by keyboard, behind the open move-funds sheet', async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.goto('/wallet?move=1&visual=balance-ready');
+  await expect(page.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeVisible();
+  const menu = page.locator('#signed-in-menu-button');
+  await menu.focus();
+  await expect(menu).not.toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await menu.focus();
+  await expect(menu).toBeFocused();
+});
+
 test('Function: MoveFundsSheet — the arrived step shows the amount and the balance with fiat; Done closes', async ({
   page,
 }) => {
