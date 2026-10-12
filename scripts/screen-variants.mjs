@@ -1580,6 +1580,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'reaction-form',
+    image: 'welcome-reaction-form.png',
+    visual: 'state-welcome-reaction-form',
+    needle: "shotScreen(page, 'state-welcome-reaction-form')",
+  },
+  {
+    route: '/welcome',
     id: 'reaction-open',
     image: 'welcome-reaction-open.png',
     visual: 'state-welcome-reaction-open',

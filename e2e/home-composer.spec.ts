@@ -437,7 +437,7 @@ test.describe('forum home while reacting on a phone', () => {
     });
   }
 
-  test('Function: WelcomeScreen — a reaction form moves the + and Receive / Send aside; they come back once it closes and the focus left', async ({
+  test('Function: WelcomeScreen — only a focused field in a reaction form moves the + and Receive / Send aside; they come back once the focus left', async ({
     page,
   }) => {
     await drivenViewport(page);
@@ -446,9 +446,17 @@ test.describe('forum home while reacting on a phone', () => {
     const receive = page.getByRole('button', { name: 'Receive' });
     expect(await footerHeight(page)).toBeGreaterThan(70);
 
+    // An open form whose field does not have the focus leaves both in place.
     await page.getByRole('button', { name: 'React' }).first().tap();
     const reply = page.getByPlaceholder('Write a reaction');
     await expect(reply).toBeVisible();
+    await expect(reply).not.toBeFocused();
+    await expect(plus).toBeVisible();
+    await expect(receive).toBeVisible();
+    await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-fold');
+
+    // Its field taking the focus moves both aside.
+    await reply.tap();
     await expect(plus).toBeHidden();
     await expect(receive).toBeHidden();
     await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeHidden();
@@ -469,22 +477,17 @@ test.describe('forum home while reacting on a phone', () => {
     const body = (await page.locator('[data-app-body]').boundingBox())!;
     expect(port.y + port.height).toBeCloseTo(body.y + body.height, 0);
 
-    // Typing with the keyboard up: still aside, so the form has the whole height above it.
-    await reply.tap();
+    // Typing with the keyboard up, and from the text to the amount: still aside.
     await keyboard(page, 480);
     await reply.fill('Thank you');
     await page.getByLabel('Amount').tap();
     await expect(plus).toBeHidden();
     await expect(receive).toBeHidden();
+
+    // The focus leaves while the form stays open: both come back, and the buttons follow the scroll again.
     await page.getByLabel('Amount').blur();
     await keyboard(page, null);
-    // The form is still open: still aside.
-    await expect(plus).toBeHidden();
-    await expect(receive).toBeHidden();
-
-    // Closing the post brings both back, and the buttons follow the scroll again.
-    await page.getByRole('button', { name: 'Hide reactions' }).first().tap();
-    await expect(reply).toHaveCount(0);
+    await expect(reply).toBeVisible();
     await expect(plus).toBeVisible();
     await expect(receive).toBeVisible();
     await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-fold');
@@ -497,35 +500,54 @@ test.describe('forum home while reacting on a phone', () => {
     const slimPlus = (await plus.boundingBox())!;
     const slimReceive = (await receive.boundingBox())!;
     expect(slimReceive.y - (slimPlus.y + slimPlus.height)).toBeCloseTo(23, 0);
+
+    // React on the expanded post focuses its field: both move aside in that tap.
+    await page.getByRole('button', { name: 'React', exact: true }).first().tap();
+    await expect(reply).toBeFocused();
+    await expect(plus).toBeHidden();
+    await expect(receive).toBeHidden();
+    // Closing the post with the field focused counts as leaving it.
+    await page.getByRole('button', { name: 'Hide reactions' }).first().tap();
+    await expect(reply).toHaveCount(0);
+    await expect(plus).toBeVisible();
+    await expect(receive).toBeVisible();
   });
 
-  test('Function: ForumBoard — the reaction send is never under the +, and it posts', async ({
+  test('Function: ForumBoard — an open reaction form scrolls clear of the +, and it posts', async ({
     page,
   }) => {
     await openHome(page, 'basis', 12);
-    // At the end of the feed the last note's controls lie clear of the +.
+    /** Scrolls the page port to its end. */
     const toEnd = (): Promise<void> =>
       pagePort(page).evaluate((node) => {
         node.scrollTop = node.scrollHeight;
       });
-    await toEnd();
-    await expect.poll(() => collapse(page)).toBe(1);
-    // Slim buttons make the page port taller: go to its new end.
-    await toEnd();
-    await expect
-      .poll(() =>
-        pagePort(page).evaluate((node) => node.scrollHeight - node.clientHeight - node.scrollTop),
-      )
-      .toBeLessThan(1);
+    /** Scrolls to the end until the port no longer grows (slim buttons make it taller). */
+    const settleAtEnd = async (): Promise<void> => {
+      await toEnd();
+      await expect.poll(() => collapse(page)).toBe(1);
+      await expect
+        .poll(async () => {
+          await toEnd();
+          return pagePort(page).evaluate(
+            (node) => node.scrollHeight - node.clientHeight - node.scrollTop,
+          );
+        })
+        .toBeLessThan(1);
+    };
+    // At the end of the feed the last note's controls lie clear of the +.
+    await settleAtEnd();
     expect(await plusCoversNothing(page)).toBe(true);
-    await scrollPageTo(page, 0);
-    await page.getByRole('button', { name: 'React' }).first().tap();
-    await expect(page.getByRole('button', { name: 'Write a post' })).toBeHidden();
+    // The last note's reaction form, open with its field not focused: the + stays, and at the
+    // end of the feed every control of the form lies clear of it.
+    const plus = page.getByRole('button', { name: 'Write a post' });
+    await page.getByRole('button', { name: 'React', exact: true }).last().tap();
+    await expect(page.getByPlaceholder('Write a reaction')).toBeVisible();
+    await expect(page.getByPlaceholder('Write a reaction')).not.toBeFocused();
+    await expect(plus).toBeVisible();
+    await settleAtEnd();
+    expect(await plusCoversNothing(page)).toBe(true);
     const send = reactionForm(page).getByRole('button', { name: 'Post' });
-    // At the bottom right of the page, where the + floats while no form is open.
-    await send.evaluate((node) => {
-      node.scrollIntoView({ block: 'end', inline: 'nearest' });
-    });
     const onTop = await send.evaluate((node) => {
       const rect = node.getBoundingClientRect();
       const top = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
@@ -567,6 +589,7 @@ test.describe('forum home while reacting on a phone', () => {
     const plus = page.getByRole('button', { name: 'Write a post' });
     await expect(plus).toHaveCSS('transition-property', 'none');
     await page.getByRole('button', { name: 'React' }).first().tap();
+    await page.getByPlaceholder('Write a reaction').tap();
     await expect(page.locator('[data-app-body]')).toHaveAttribute('data-footer-fold', '');
     await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-folding');
     await expect(plus).toBeHidden();

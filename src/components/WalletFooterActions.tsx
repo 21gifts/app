@@ -26,7 +26,7 @@ export interface WalletFooterActionsProps {
   onSend: () => void;
   /** The button to focus when the buttons come back after a view closed, or `null`. */
   focus?: 'receive' | 'send' | null;
-  /** True while the buttons fold away for a form on the page (the forum home). Default false. */
+  /** True while the buttons fold away for a focused text field on the page (the forum home). Default false. */
   folded?: boolean;
 }
 
@@ -57,7 +57,7 @@ export interface WalletFooterActionsProps {
  * footer padding and a layer above the buttons (the forum home's **+**)
  * follow it too; `data-footer-snap` on that body marks the glide.
  *
- * With `folded` (the forum home while a form in its feed is open) the buttons
+ * With `folded` (the forum home while a text field in its page has the focus) the buttons
  * fold away: the footer, its padding included, closes to no height while the
  * buttons and their fade go transparent, and nothing in it can be pressed or
  * focused. The buttons are held at the bottom of the folding row, so while

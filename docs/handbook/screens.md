@@ -1617,9 +1617,15 @@ The same page scrolled down by more than 80 px: **Receive** and **Send** are sli
 
 ![21.gifts welcome with slim Receive and Send](images/welcome-wallet-buttons-slim.png)
 
+### Variant: reaction-form
+
+Signed in with the wallet open (`?visual=balance-ready`) after **React** on another member's post (Carol's): the post is expanded with its reaction form (**Amount** with the ₿ / fiat switch, **Write a reaction**, and the send button), and no field has the focus yet. The **+** and **Receive** / **Send** stay in place: only a focused field moves them aside. At the end of the feed the 80 px clearance lets the form's controls scroll clear of the **+**.
+
+![21.gifts welcome with a reaction form open and no field focused](images/welcome-reaction-form.png)
+
 ### Variant: reaction-open
 
-Signed in with the wallet open (`?visual=balance-ready`) after **React** on another member's post (Carol's): the post is expanded with its reaction form (**Amount** with the ₿ / fiat switch, **Write a reaction**, and the send button) and its text field has the focus. The **+** is gone and **Receive** / **Send** have folded away, so the page reaches down to the frame's bottom edge and nothing lies over the send button. Closing the post (**Hide reactions**) and leaving the field brings both back.
+Signed in with the wallet open (`?visual=balance-ready`) after **React** on another member's post (Carol's) and a tap into its text field: the post is expanded with its reaction form (**Amount** with the ₿ / fiat switch, **Write a reaction**, and the send button) and its text field has the focus. The **+** is gone and **Receive** / **Send** have folded away, so the page reaches down to the frame's bottom edge and nothing lies over the send button. Leaving the field brings both back, also while the form stays open.
 
 ![21.gifts welcome with a reaction form open](images/welcome-reaction-open.png)
 

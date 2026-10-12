@@ -48,14 +48,13 @@ vi.mock('@/components/ForumLoader', async () => {
    */
   function Forum({ writer }: { writer?: ForumWriter }): ReactNode {
     const [renders, setRenders] = useState(0);
-    const [form, setForm] = useState(false);
+    const [form, setForm] = useState<'closed' | 'open' | 'focused'>('closed');
     return (
       <>
         <button
           type="button"
           onClick={() => {
-            setForm(true);
-            writer?.onFeedForm?.(true);
+            setForm('open');
           }}
         >
           Stub open form
@@ -63,13 +62,22 @@ vi.mock('@/components/ForumLoader', async () => {
         <button
           type="button"
           onClick={() => {
-            setForm(false);
-            writer?.onFeedForm?.(false);
+            setForm('focused');
+          }}
+        >
+          Stub open form with its field focused
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setForm('closed');
           }}
         >
           Stub close form
         </button>
-        {form ? <textarea aria-label="Stub form field" /> : null}
+        {form === 'closed' ? null : (
+          <textarea aria-label="Stub form field" autoFocus={form === 'focused'} />
+        )}
         <textarea aria-label="Stub reaction" />
         <input aria-label="Stub amount" inputMode="decimal" />
         <input type="checkbox" aria-label="Stub check" />
@@ -435,7 +443,7 @@ function plusAside(plus: HTMLElement): boolean {
   return plus.className.endsWith(' pointer-events-none invisible opacity-0');
 }
 
-describe('WelcomeScreen while a form in the feed is open', () => {
+describe('WelcomeScreen while a text field in the page has the focus', () => {
   it('fades the + with the glide easing, at once with reduced motion', () => {
     const { plus } = renderInShell();
     expect(plus().className).toContain(
@@ -447,45 +455,70 @@ describe('WelcomeScreen while a form in the feed is open', () => {
     expect(plusAside(plus())).toBe(false);
   });
 
-  it('hides the + and folds Receive / Send while a form is open, and brings both back when it closes', () => {
+  it('leaves the + and Receive / Send in place while a form is open, and moves them aside only while its field has the focus', () => {
     const { body, plus } = renderInShell();
     expect(body.hasAttribute('data-footer-fold')).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: 'Stub open form' }));
-    expect(plusAside(plus())).toBe(true);
-    expect(body.dataset['footerFold']).toBe('');
-    // Its field taking the focus keeps them aside.
+    expect(plusAside(plus())).toBe(false);
+    expect(body.hasAttribute('data-footer-fold')).toBe(false);
     act(() => {
       screen.getByRole('textbox', { name: 'Stub form field' }).focus();
     });
     expect(plusAside(plus())).toBe(true);
+    expect(body.dataset['footerFold']).toBe('');
+    // The focus leaves while the form stays open: both come back.
     act(() => {
       screen.getByRole('textbox', { name: 'Stub form field' }).blur();
     });
-    expect(plusAside(plus())).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Stub close form' }));
     expect(plusAside(plus())).toBe(false);
     expect(body.hasAttribute('data-footer-fold')).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Stub close form' }));
+    expect(plusAside(plus())).toBe(false);
   });
 
   it('holds the wallet tour back while Receive / Send are folded away', () => {
     renderInShell();
     expect(screen.getByText('Tour may show')).toBeTruthy();
+    // An open form alone folds nothing: the tour may still show.
     fireEvent.click(screen.getByRole('button', { name: 'Stub open form' }));
+    expect(screen.getByText('Tour may show')).toBeTruthy();
+    act(() => {
+      screen.getByRole('textbox', { name: 'Stub form field' }).focus();
+    });
     expect(screen.getByText('Tour waits')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Stub close form' }));
+    act(() => {
+      screen.getByRole('textbox', { name: 'Stub form field' }).blur();
+    });
     expect(screen.getByText('Tour may show')).toBeTruthy();
   });
 
-  it('counts a focused field that left with its form as left', () => {
+  it('moves them aside when a form opens with its field focused', () => {
+    const { body, plus } = renderInShell();
+    fireEvent.click(screen.getByRole('button', { name: 'Stub open form with its field focused' }));
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Stub form field' }));
+    expect(plusAside(plus())).toBe(true);
+    expect(body.dataset['footerFold']).toBe('');
+  });
+
+  it('counts a focused field that left with its form as left', async () => {
     const { body, plus } = renderInShell();
     fireEvent.click(screen.getByRole('button', { name: 'Stub open form' }));
     const field = screen.getByRole('textbox', { name: 'Stub form field' });
     act(() => {
       field.focus();
     });
+    expect(plusAside(plus())).toBe(true);
+    // Another change of the page while the field keeps the focus: still aside.
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Forum re-render' }), { detail: 0 });
+      field.after(document.createElement('span'));
+      await Promise.resolve();
+    });
+    expect(plusAside(plus())).toBe(true);
     // The form closes under the focused field: no click, so the focus never moved.
-    act(() => {
+    await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Stub close form' }), { detail: 0 });
+      await Promise.resolve();
     });
     expect(field.isConnected).toBe(false);
     expect(plusAside(plus())).toBe(false);
@@ -536,7 +569,9 @@ describe('WelcomeScreen while a form in the feed is open', () => {
   it('hides the + also without Receive / Send', () => {
     const { body, plus } = renderInShell('disabled');
     expect(screen.queryByRole('button', { name: 'Receive' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Stub open form' }));
+    act(() => {
+      screen.getByRole('textbox', { name: 'Stub reaction' }).focus();
+    });
     expect(plusAside(plus())).toBe(true);
     expect(body.hasAttribute('data-footer-fold')).toBe(false);
   });
