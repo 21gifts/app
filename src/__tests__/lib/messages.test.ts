@@ -24,6 +24,21 @@ describe('getCatalog', () => {
     }
   });
 
+  it('keeps the shop-count plural copy in every catalog', () => {
+    expect(getCatalog('en')['profile.shopCount']).toBe(
+      '{count, plural, one {# shop} other {# shops}}',
+    );
+    expect(getCatalog('de')['profile.shopCount']).toBe(
+      '{count, plural, one {# Shop} other {# Shops}}',
+    );
+    expect(getCatalog('es')['profile.shopCount']).toBe(
+      '{count, plural, one {# tienda} other {# tiendas}}',
+    );
+    expect(getCatalog('fil')['profile.shopCount']).toBe(
+      '{count, plural, one {# tindahan} other {# tindahan}}',
+    );
+  });
+
   it('keeps product tokens untranslated in every locale', () => {
     expect(getCatalog('en')['forum.payOpenWallet']).toBe('Pay');
     expect(getCatalog('de')['forum.payOpenWallet']).toBe('Zahlen');

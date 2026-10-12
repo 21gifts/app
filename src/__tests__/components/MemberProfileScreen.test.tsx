@@ -10,6 +10,7 @@ import {
   fetchFxSpot,
   fetchMember,
   fetchMemberPosts,
+  fetchMemberShops,
   fetchShopNoteEdits,
   postTrustAppoint,
   setMessageShopText,
@@ -100,6 +101,7 @@ vi.mock('@/lib/api', () => ({
   fetchMessagePhoto: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
   fetchMemberPosts: vi.fn(),
+  fetchMemberShops: vi.fn(),
   fetchMemberReplies: vi.fn(),
   fetchReplies: vi.fn(),
   openConversation: vi.fn(),
@@ -357,6 +359,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   push.mockClear();
   vi.mocked(fetchMemberPosts).mockResolvedValue([]);
+  vi.mocked(fetchMemberShops).mockResolvedValue([]);
   vi.mocked(fetchMemberReplies).mockResolvedValue([]);
   vi.mocked(fetchReplies).mockResolvedValue([]);
   vi.mocked(openConversation).mockResolvedValue({
@@ -796,6 +799,74 @@ describe('MemberProfileScreen', () => {
     expect(replies.getAttribute('aria-pressed')).toBe('false');
     expect(posts.className).not.toContain('px-3 py-1');
     expect(replies.className).not.toContain('px-3 py-1');
+    expect(screen.queryByRole('button', { name: /^\d+ shops?$/ })).toBeNull();
+  });
+
+  it('hides a zero shop count', () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, shopCount: 0 }} received={[]} donated={[]} />,
+    );
+    expect(screen.queryByRole('button', { name: /^\d+ shops?$/ })).toBeNull();
+  });
+
+  it('shows shops after reactions and loads, truncates, collapses, and reopens once', async () => {
+    vi.mocked(fetchMemberShops).mockResolvedValue([secondPost]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, shopCount: 2 }} received={[]} donated={[]} />,
+    );
+    const reactions = screen.getByRole('button', { name: '0 reactions' });
+    const shops = screen.getByRole('button', { name: '2 shops', pressed: false });
+    const order = Array.from(reactions.parentElement?.querySelectorAll('button') ?? []).map(
+      (button) => button.textContent,
+    );
+    expect(order.indexOf(shops.textContent)).toBeGreaterThan(order.indexOf(reactions.textContent));
+
+    fireEvent.click(shops);
+    expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
+    expect(fetchMemberShops).toHaveBeenCalledWith('sess', profile.id);
+    expect(screen.getByText('Showing the latest 1 of 2.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '2 shops', pressed: true }));
+    expect(screen.queryByText('Second post from Carol.')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '2 shops', pressed: false }));
+    expect(screen.getByText('Second post from Carol.')).toBeTruthy();
+    expect(fetchMemberShops).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a failed shops feed', async () => {
+    vi.mocked(fetchMemberShops)
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockResolvedValueOnce([secondPost]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, shopCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Could not load messages. Please try again.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
+    expect(fetchMemberShops).toHaveBeenCalledTimes(2);
+  });
+
+  it('loads photos from the shops feed', async () => {
+    vi.mocked(fetchMemberShops).mockResolvedValue([
+      { ...secondPost, hasPhoto: true, photoCount: 1 },
+    ]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, shopCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalledWith('sess', secondPost.id, 0);
+    });
+  });
+
+  it('uses the forum empty state for an empty shops feed', async () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, shopCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
+    expect(await screen.findByText('No messages yet — be the first to write one.')).toBeTruthy();
   });
 
   it('opens and collapses the posts feed without a pinned forum bio', async () => {
@@ -4350,6 +4421,41 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '0 reactions', pressed: false }));
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
+    });
+  });
+
+  it('applies a moderator shop-note edit to the shops list', async () => {
+    const shopPost: ForumMessage = {
+      ...note,
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+    };
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(fetchMemberShops).mockResolvedValue([shopPost]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopPost,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, shopCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
+    await screen.findByText('Cafe Luna');
+    const card = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
+    expect(await within(card).findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(within(card).getByText('Cafe Sol')).toBeTruthy();
     });
   });
 

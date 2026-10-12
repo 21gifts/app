@@ -430,6 +430,17 @@ export async function proxyMembersPostsGet(request: Request, accountId: string):
 }
 
 /**
+ * Proxies GET /members/:accountId/shops to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param accountId - Member account id from the route.
+ * @returns The upstream response.
+ */
+export async function proxyMembersShopsGet(request: Request, accountId: string): Promise<Response> {
+  return proxyApiRequest(request, `/members/${encodeURIComponent(accountId)}/shops`);
+}
+
+/**
  * Proxies GET /members/:accountId/replies to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).
@@ -1019,6 +1030,22 @@ export async function proxyExternalAuthorPostsGet(
   messageId: string,
 ): Promise<Response> {
   return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/external-posts`);
+}
+
+/**
+ * Proxies GET /messages/:id/external-shops to the 21.gifts api (public; no auth).
+ *
+ * App path is `/public-messages/:id/external-shops`.
+ *
+ * @param request - Incoming App Router request.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyExternalAuthorShopsGet(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/external-shops`);
 }
 
 /**

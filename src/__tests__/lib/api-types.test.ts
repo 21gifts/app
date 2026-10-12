@@ -21,6 +21,7 @@ import {
   forumListSchema,
   forumMessageRowsSchema,
   forumMessageSchema,
+  externalAuthorProfileSchema,
   forumRepliesSchema,
   hiddenMessageSchema,
   giftStatsSchema,
@@ -97,6 +98,26 @@ describe('memberProfileSchema', () => {
     expect(() => memberProfileSchema.parse(profile)).toThrow();
     expect(() => memberProfileSchema.parse({ ...profile, postCount: 0 })).toThrow();
     expect(() => memberProfileSchema.parse({ ...profile, replyCount: 0 })).toThrow();
+  });
+
+  it('accepts optional shopCount and rejects invalid shop counts', () => {
+    const profile = {
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Carol',
+      location: null,
+      role: 'verified' as const,
+      lightningAddress: 'carol@walletofsatoshi.com',
+      createdAt: '2026-01-15T12:00:00.000Z',
+      aboutMe: null,
+      profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
+    };
+    expect(memberProfileSchema.parse(profile).shopCount).toBeUndefined();
+    expect(memberProfileSchema.parse({ ...profile, shopCount: 2 }).shopCount).toBe(2);
+    expect(() => memberProfileSchema.parse({ ...profile, shopCount: -1 })).toThrow();
+    expect(() => memberProfileSchema.parse({ ...profile, shopCount: 1.5 })).toThrow();
+    expect(() => memberProfileSchema.parse({ ...profile, shopCount: '2' })).toThrow();
   });
 
   it('defaults omitted aboutMeHasPhoto to false', () => {
@@ -317,6 +338,18 @@ describe('memberProfileSchema', () => {
         staffTag: null,
       }),
     ).toThrow();
+  });
+});
+
+describe('externalAuthorProfileSchema', () => {
+  const profile = { name: 'Robin', npub: 'npub1example' };
+
+  it('accepts optional shopCount and rejects invalid shop counts', () => {
+    expect(externalAuthorProfileSchema.parse(profile).shopCount).toBeUndefined();
+    expect(externalAuthorProfileSchema.parse({ ...profile, shopCount: 2 }).shopCount).toBe(2);
+    expect(() => externalAuthorProfileSchema.parse({ ...profile, shopCount: -1 })).toThrow();
+    expect(() => externalAuthorProfileSchema.parse({ ...profile, shopCount: 1.5 })).toThrow();
+    expect(() => externalAuthorProfileSchema.parse({ ...profile, shopCount: '2' })).toThrow();
   });
 });
 

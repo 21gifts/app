@@ -790,6 +790,14 @@ test('Function: proxyExternalAuthorPostsGet — GET /public-messages/[id]/extern
   ).toBeGreaterThanOrEqual(400);
 });
 
+test('Function: proxyExternalAuthorShopsGet — GET /public-messages/[id]/external-shops is reachable', async ({
+  request,
+}) => {
+  expect(
+    (await request.get('/public-messages/[id]/external-shops')).status(),
+  ).toBeGreaterThanOrEqual(400);
+});
+
 test('Function: proxyExternalAuthorRepliesGet — GET /public-messages/[id]/external-replies is reachable', async ({
   request,
 }) => {
@@ -990,6 +998,49 @@ test('Function: fetchExternalAuthorPosts — the page shows a post from the clie
   await page.goto('/messages/11111111-1111-4111-8111-111111111111/author?name=Robin');
   await page.getByRole('button', { name: '1 post' }).click();
   await expect(page.getByText('Robin wrote a note')).toBeVisible();
+});
+
+test('Function: fetchExternalAuthorShops — the page shows a shop from the client fetch', async ({
+  page,
+}) => {
+  await page.route('**/external-profile', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Robin',
+        npub: 'npub1example',
+        nip05: 'robin@nostr.example',
+        lud16: 'pay@ln.example',
+        postCount: 1,
+        replyCount: 1,
+        shopCount: 2,
+      }),
+    });
+  });
+  await page.route('**/external-shops', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '99999999-9999-4999-8999-999999999999',
+            name: 'Robin',
+            via: 'nostr',
+            text: 'Robin shared a distinct shop',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/messages/11111111-1111-4111-8111-111111111111/author?name=Robin');
+  await page.getByRole('button', { name: '2 shops' }).click();
+  await expect(page.getByText('Robin shared a distinct shop')).toBeVisible();
 });
 
 test('Function: fetchExternalAuthorReplies — the page shows a reaction from the client fetch', async ({
@@ -2463,6 +2514,18 @@ test('Function: proxyMembersPostsGet — GET /forum/members/:id/posts returns ca
   expect(JSON.stringify(await res.json())).toContain('Second post from Carol.');
 });
 
+test('Function: proxyMembersShopsGet — GET /forum/members/:id/shops returns canned shops', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  await request.post('/me/rules-agreement', { headers: { authorization: `Bearer ${token}` } });
+  const res = await request.get('/forum/members/22222222-2222-4222-8222-222222222222/shops', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(res.status()).toBe(200);
+  expect(JSON.stringify(await res.json())).toContain('A shop from Carol.');
+});
+
 test('Function: proxyMembersRepliesGet — GET /forum/members/:id/replies returns canned replies', async ({
   request,
 }) => {
@@ -2545,6 +2608,19 @@ test('Function: fetchMessages — one empty note on the All page leaves the othe
   await expect(page.getByText('Could not load messages. Please try again.')).toHaveCount(0);
   expect(served).toContainEqual(['']);
   expect(served).toContainEqual(['A post from Dana.', '']);
+});
+
+test('Function: fetchMemberShops — member shops open from the count', async ({ page, request }) => {
+  const memberId = '22222222-2222-4222-8222-222222222222';
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
+    const response = await route.fetch();
+    const body = (await response.json()) as Record<string, unknown>;
+    await route.fulfill({ response, json: { ...body, shopCount: 2 } });
+  });
+  await reachWelcome(page, request);
+  await page.goto(`/members/${memberId}`);
+  await page.getByRole('button', { name: '2 shops' }).click();
+  await expect(page.getByText('A shop from Carol.')).toBeVisible();
 });
 
 test('Function: fetchMemberReplies — member replies open from the count', async ({
@@ -3054,6 +3130,7 @@ test('e2e:check dynamic path token for /members/[accountId]', async ({ page, req
   await page.goto('/members/[accountId]/verify');
   await request.get('/forum/members/[accountId]');
   await request.get('/forum/members/[accountId]/posts');
+  await request.get('/forum/members/[accountId]/shops');
   await request.get('/forum/members/[accountId]/replies');
 });
 

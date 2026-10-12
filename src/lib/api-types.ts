@@ -898,8 +898,8 @@ export type ForumMessage = z.infer<typeof forumMessageSchema>;
 
 /**
  * Runtime schema for `GET /messages/:id/external-profile`.
- * `postCount` and `replyCount` are optional nonnegative integers so today's
- * API still parses.
+ * `postCount`, `replyCount`, and `shopCount` are optional nonnegative integers
+ * so today's API still parses.
  */
 export const externalAuthorProfileSchema = z.object({
   name: z.string(),
@@ -908,6 +908,7 @@ export const externalAuthorProfileSchema = z.object({
   lud16: z.string().optional(),
   postCount: z.number().int().nonnegative().optional(),
   replyCount: z.number().int().nonnegative().optional(),
+  shopCount: z.number().int().nonnegative().optional(),
 });
 
 /**
@@ -1244,7 +1245,8 @@ export type AccountTrust = z.infer<typeof accountTrustSchema>;
  *
  * `profileMessage` is the member's profile forum note when present (card Message
  * and posts-feed source, not a pinned ForumBoard card).
- * `postCount` / `replyCount` are uncapped totals; activity feeds are capped at 200.
+ * `postCount` / `replyCount` are required uncapped totals; optional `shopCount`
+ * is the shop-note total. Activity feeds are capped at 200.
  * `trust` defaults to all-null when an older api omits the field.
  * `staffTag` is an optional staff label; only `software_developer` is accepted.
  */
@@ -1264,6 +1266,7 @@ export const memberProfileSchema = z.object({
     .transform((note) => (note === null ? null : (keepForumMessageRows([note])[0] ?? null))),
   postCount: z.number().int().nonnegative(),
   replyCount: z.number().int().nonnegative(),
+  shopCount: z.number().int().nonnegative().optional(),
   /** About me note, or `null` when unfilled. */
   aboutMe: z.string().nullable(),
   /** True when the live profile note has a photo. Optional so older api bodies still parse. */

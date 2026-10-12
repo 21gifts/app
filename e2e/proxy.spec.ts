@@ -24,6 +24,9 @@ test('same-origin api proxy routes exist', async ({ request }) => {
     (await request.get('/public-messages/[id]/external-posts')).status(),
   ).toBeGreaterThanOrEqual(400);
   expect(
+    (await request.get('/public-messages/[id]/external-shops')).status(),
+  ).toBeGreaterThanOrEqual(400);
+  expect(
     (await request.get('/public-messages/[id]/external-replies')).status(),
   ).toBeGreaterThanOrEqual(400);
   expect((await request.get('/links/[code]')).status()).toBeGreaterThanOrEqual(400);

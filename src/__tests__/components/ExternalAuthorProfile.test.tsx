@@ -37,6 +37,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api', () => ({
   fetchExternalAuthorProfile: vi.fn(),
   fetchExternalAuthorPosts: vi.fn(),
+  fetchExternalAuthorShops: vi.fn(),
   fetchExternalAuthorReplies: vi.fn(),
   fetchFxSpot: vi
     .fn()
@@ -52,6 +53,7 @@ vi.mock('@/lib/api', () => ({
 
 import {
   fetchExternalAuthorPosts,
+  fetchExternalAuthorShops,
   fetchExternalAuthorProfile,
   fetchExternalAuthorReplies,
   fetchFxSpot,
@@ -60,6 +62,7 @@ import { ExternalAuthorProfile } from '@/components/ExternalAuthorProfile';
 
 const fetchProfile = vi.mocked(fetchExternalAuthorProfile);
 const fetchPosts = vi.mocked(fetchExternalAuthorPosts);
+const fetchShops = vi.mocked(fetchExternalAuthorShops);
 const fetchReplies = vi.mocked(fetchExternalAuthorReplies);
 
 const FEED_NOTE: ForumMessage = {
@@ -81,6 +84,7 @@ const FEED_NOTE: ForumMessage = {
 
 const COUNT_BUTTON = /^\d+ posts?$/;
 const REACTION_BUTTON = /^\d+ reactions?$/;
+const SHOP_BUTTON = /^\d+ shops?$/;
 
 const HINT =
   'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.';
@@ -96,6 +100,7 @@ afterEach(() => {
   vi.useRealTimers();
   push.mockClear();
   fetchPosts.mockReset();
+  fetchShops.mockReset();
   fetchReplies.mockReset();
 });
 
@@ -495,6 +500,7 @@ describe('ExternalAuthorProfile', () => {
     });
     expect(screen.queryByRole('button', { name: COUNT_BUTTON })).toBeNull();
     expect(screen.queryByRole('button', { name: REACTION_BUTTON })).toBeNull();
+    expect(screen.queryByRole('button', { name: SHOP_BUTTON })).toBeNull();
     expect(screen.queryByText(FEED_NOTE.text)).toBeNull();
     expect(screen.queryByRole('status')).toBeNull();
   });
@@ -511,6 +517,116 @@ describe('ExternalAuthorProfile', () => {
     });
     expect(screen.queryByRole('button', { name: COUNT_BUTTON })).toBeNull();
     expect(screen.queryByRole('button', { name: REACTION_BUTTON })).toBeNull();
+  });
+
+  it('hides a zero shop count', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      shopCount: 0,
+    });
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByText('npub1example')).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: SHOP_BUTTON })).toBeNull();
+  });
+
+  it('shows shops after reactions when all counts are present', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 1,
+      shopCount: 2,
+    });
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '2 shops' })).toBeTruthy();
+    });
+    const reactions = screen.getByRole('button', { name: '1 reaction' });
+    const shops = screen.getByRole('button', { name: '2 shops' });
+    const order = Array.from(reactions.parentElement?.querySelectorAll('button') ?? []).map(
+      (button) => button.textContent,
+    );
+    expect(order.indexOf(shops.textContent)).toBeGreaterThan(order.indexOf(reactions.textContent));
+  });
+
+  it('shows and loads shops alone when post or reply counts are absent', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      shopCount: 2,
+    });
+    fetchShops.mockResolvedValue([{ ...FEED_NOTE, text: 'Robin shop note' }]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '2 shops' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: COUNT_BUTTON })).toBeNull();
+    expect(screen.queryByRole('button', { name: REACTION_BUTTON })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '2 shops' }));
+    expect(await screen.findByText('Robin shop note')).toBeTruthy();
+    expect(fetchShops).toHaveBeenCalledWith('m1');
+    expect(screen.getByRole('status').textContent).toBe('Showing the latest 1 of 2.');
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(push).toHaveBeenCalledWith('/messages/note-1');
+  });
+
+  it('collapses and reopens loaded shops without fetching again', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      shopCount: 1,
+    });
+    fetchShops.mockResolvedValue([{ ...FEED_NOTE, text: 'Robin shop note' }]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 shop' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
+    expect(await screen.findByText('Robin shop note')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '1 shop', pressed: true }));
+    expect(screen.queryByText('Robin shop note')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '1 shop', pressed: false }));
+    expect(screen.getByText('Robin shop note')).toBeTruthy();
+    expect(fetchShops).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a failed shops feed', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      shopCount: 1,
+    });
+    fetchShops.mockRejectedValueOnce(new Error('fail')).mockResolvedValueOnce([FEED_NOTE]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 shop' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText(FEED_NOTE.text)).toBeTruthy();
+    expect(fetchShops).toHaveBeenCalledTimes(2);
+  });
+
+  it('uses the forum empty state for an empty shops feed', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      shopCount: 1,
+    });
+    fetchShops.mockResolvedValue([]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 shop' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
+    expect(await screen.findByText('No messages yet — be the first to write one.')).toBeTruthy();
   });
 
   it('shows 2 posts and 0 reactions without opening the feed', async () => {

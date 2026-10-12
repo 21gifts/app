@@ -51,6 +51,7 @@ import {
   proxyMembersActivityGet,
   proxyMembersGet,
   proxyMembersPostsGet,
+  proxyMembersShopsGet,
   proxyMembersRepliesGet,
   proxyContactPost,
   proxyLnurlInvoicePost,
@@ -84,6 +85,7 @@ import {
   proxyPublicMessageGet,
   proxyExternalAuthorProfileGet,
   proxyExternalAuthorPostsGet,
+  proxyExternalAuthorShopsGet,
   proxyExternalAuthorRepliesGet,
   proxyShortLinkGet,
   proxyPublicMessageRepliesGet,
@@ -426,6 +428,12 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/a%2Fb/posts');
   });
 
+  it('proxyMembersShopsGet encodes the id in GET /members/:id/shops', async () => {
+    const fetchMock = stubApi();
+    await proxyMembersShopsGet(new Request('http://localhost/forum/members/a%2Fb/shops'), 'a/b');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/members/a%2Fb/shops');
+  });
+
   it('proxyMembersRepliesGet encodes the id in GET /members/:id/replies', async () => {
     const fetchMock = stubApi();
     await proxyMembersRepliesGet(
@@ -604,6 +612,15 @@ describe('api proxy wrappers', () => {
       'm1',
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/external-posts');
+  });
+
+  it('proxyExternalAuthorShopsGet encodes the id in /messages/:id/external-shops', async () => {
+    const fetchMock = stubApi();
+    await proxyExternalAuthorShopsGet(
+      new Request('http://localhost/public-messages/a%2Fb/external-shops'),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/external-shops');
   });
 
   it('proxyExternalAuthorRepliesGet hits /messages/:id/external-replies', async () => {
