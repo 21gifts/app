@@ -264,15 +264,12 @@ test('Function: SignedInChrome — the Menu is out of reach, also by keyboard, b
   await page.goto('/wallet?move=1&visual=balance-ready');
   await expect(page.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeVisible();
   const menu = page.locator('#signed-in-menu-button');
-  const reachable = (): Promise<boolean> =>
-    menu.evaluate((element) => {
-      (element as HTMLElement).focus();
-      return document.activeElement === element;
-    });
-  expect(await reachable()).toBe(false);
+  await menu.focus();
+  await expect(menu).not.toBeFocused();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  expect(await reachable()).toBe(true);
+  await menu.focus();
+  await expect(menu).toBeFocused();
 });
 
 test('Function: MoveFundsSheet — the arrived step shows the amount and the balance with fiat; Done closes', async ({
