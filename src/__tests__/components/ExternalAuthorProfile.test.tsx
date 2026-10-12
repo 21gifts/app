@@ -38,6 +38,7 @@ vi.mock('@/lib/api', () => ({
   fetchExternalAuthorProfile: vi.fn(),
   fetchExternalAuthorPosts: vi.fn(),
   fetchExternalAuthorShops: vi.fn(),
+  fetchExternalAuthorCredits: vi.fn(),
   fetchExternalAuthorReplies: vi.fn(),
   fetchFxSpot: vi
     .fn()
@@ -54,6 +55,7 @@ vi.mock('@/lib/api', () => ({
 import {
   fetchExternalAuthorPosts,
   fetchExternalAuthorShops,
+  fetchExternalAuthorCredits,
   fetchExternalAuthorProfile,
   fetchExternalAuthorReplies,
   fetchFxSpot,
@@ -63,6 +65,7 @@ import { ExternalAuthorProfile } from '@/components/ExternalAuthorProfile';
 const fetchProfile = vi.mocked(fetchExternalAuthorProfile);
 const fetchPosts = vi.mocked(fetchExternalAuthorPosts);
 const fetchShops = vi.mocked(fetchExternalAuthorShops);
+const fetchCredits = vi.mocked(fetchExternalAuthorCredits);
 const fetchReplies = vi.mocked(fetchExternalAuthorReplies);
 
 const FEED_NOTE: ForumMessage = {
@@ -85,6 +88,7 @@ const FEED_NOTE: ForumMessage = {
 const COUNT_BUTTON = /^\d+ posts?$/;
 const REACTION_BUTTON = /^\d+ reactions?$/;
 const SHOP_BUTTON = /^\d+ shops?$/;
+const CREDIT_BUTTON = /^\d+ credits?$/;
 
 const HINT =
   'Wrote from another app, not from a 21.gifts account. Shown here because this person sent bitcoin to a post.';
@@ -101,6 +105,7 @@ afterEach(() => {
   push.mockClear();
   fetchPosts.mockReset();
   fetchShops.mockReset();
+  fetchCredits.mockReset();
   fetchReplies.mockReset();
 });
 
@@ -627,6 +632,156 @@ describe('ExternalAuthorProfile', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
     expect(await screen.findByText('No messages yet — be the first to write one.')).toBeTruthy();
+  });
+
+  it('hides a zero credit count', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      creditCount: 0,
+    });
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByText('npub1example')).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: CREDIT_BUTTON })).toBeNull();
+  });
+
+  it('hides credits when creditCount is absent', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 1,
+      shopCount: 1,
+    });
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 shop' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: CREDIT_BUTTON })).toBeNull();
+  });
+
+  it('shows credits after shops when all counts are present', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      postCount: 1,
+      replyCount: 1,
+      shopCount: 2,
+      creditCount: 3,
+    });
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '3 credits' })).toBeTruthy();
+    });
+    const posts = screen.getByRole('button', { name: '1 post' });
+    const reactions = screen.getByRole('button', { name: '1 reaction' });
+    const shops = screen.getByRole('button', { name: '2 shops' });
+    const credits = screen.getByRole('button', { name: '3 credits' });
+    const order = Array.from(posts.parentElement?.querySelectorAll('button') ?? []).map(
+      (button) => button.textContent,
+    );
+    expect(order).toEqual([
+      posts.textContent,
+      reactions.textContent,
+      shops.textContent,
+      credits.textContent,
+    ]);
+    expect(order.indexOf(credits.textContent)).toBeGreaterThan(order.indexOf(shops.textContent));
+  });
+
+  it('shows and loads credits alone when post or reply counts are absent', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      creditCount: 2,
+    });
+    fetchCredits.mockResolvedValue([{ ...FEED_NOTE, text: 'Robin credit note' }]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '2 credits' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: COUNT_BUTTON })).toBeNull();
+    expect(screen.queryByRole('button', { name: REACTION_BUTTON })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '2 credits' }));
+    expect(await screen.findByText('Robin credit note')).toBeTruthy();
+    expect(fetchCredits).toHaveBeenCalledWith('m1');
+    expect(fetchCredits).toHaveBeenCalledTimes(1);
+    expect(fetchShops).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(push).toHaveBeenCalledWith('/messages/note-1');
+    expect(screen.queryByRole('button', { name: 'React' })).toBeNull();
+  });
+
+  it('shows credits when shopCount is zero', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      shopCount: 0,
+      creditCount: 1,
+    });
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 credit' })).toBeTruthy();
+    });
+    expect(screen.queryByRole('button', { name: SHOP_BUTTON })).toBeNull();
+  });
+
+  it('collapses and reopens loaded credits without fetching again', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      creditCount: 1,
+    });
+    fetchCredits.mockResolvedValue([{ ...FEED_NOTE, text: 'Robin credit note' }]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 credit' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 credit' }));
+    expect(await screen.findByText('Robin credit note')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '1 credit', pressed: true }));
+    expect(screen.queryByText('Robin credit note')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '1 credit', pressed: false }));
+    expect(screen.getByText('Robin credit note')).toBeTruthy();
+    expect(fetchCredits).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a failed credits feed', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      creditCount: 1,
+    });
+    fetchCredits.mockRejectedValueOnce(new Error('fail')).mockResolvedValueOnce([FEED_NOTE]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 credit' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 credit' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText(FEED_NOTE.text)).toBeTruthy();
+    expect(fetchCredits).toHaveBeenCalledTimes(2);
+  });
+
+  it('uses the forum empty state for an empty credits feed', async () => {
+    fetchProfile.mockResolvedValue({
+      name: 'Robin',
+      npub: 'npub1example',
+      creditCount: 1,
+    });
+    fetchCredits.mockResolvedValue([]);
+    renderWithLocale(<ExternalAuthorProfile messageId="m1" fallbackName="Ada" />);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '1 credit' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 credit' }));
+    expect(await screen.findByText('No messages yet — be the first to write one.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'React' })).toBeNull();
   });
 
   it('shows 2 posts and 0 reactions without opening the feed', async () => {

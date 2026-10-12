@@ -721,11 +721,11 @@ export async function fetchMember(
 }
 
 /**
- * Fetches a member's top-level forum posts, replies, or shops (newest first).
+ * Fetches a member's top-level forum posts, replies, shops, or credits (newest first).
  *
  * @param sessionToken - Bearer session.
  * @param accountId - Member account id.
- * @param suffix - `posts`, `replies`, or `shops`.
+ * @param suffix - `posts`, `replies`, `shops`, or `credits`.
  * @returns The message list; rows that fail the note schema are dropped.
  * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
  * @throws Error with visitor-facing copy on other failures or an invalid envelope.
@@ -733,7 +733,7 @@ export async function fetchMember(
 async function fetchMemberForumList(
   sessionToken: string,
   accountId: string,
-  suffix: 'posts' | 'replies' | 'shops',
+  suffix: 'posts' | 'replies' | 'shops' | 'credits',
 ): Promise<ForumMessage[]> {
   try {
     const response = await fetch(`/forum/members/${encodeURIComponent(accountId)}/${suffix}`, {
@@ -794,6 +794,22 @@ export async function fetchMemberShops(
   accountId: string,
 ): Promise<ForumMessage[]> {
   return fetchMemberForumList(sessionToken, accountId, 'shops');
+}
+
+/**
+ * Fetches a member's top-level forum credit notes (newest first, api cap 200).
+ *
+ * @param sessionToken - Bearer session.
+ * @param accountId - Member account id.
+ * @returns The message list.
+ * @throws {@link MissingRequirementsError} on 409 `missing_requirements`.
+ * @throws Error with visitor-facing copy on other failures or schema mismatch.
+ */
+export async function fetchMemberCredits(
+  sessionToken: string,
+  accountId: string,
+): Promise<ForumMessage[]> {
+  return fetchMemberForumList(sessionToken, accountId, 'credits');
 }
 
 /**
@@ -2156,7 +2172,7 @@ export async function fetchExternalAuthorProfile(
 const EXTERNAL_AUTHOR_FEED_ERROR = 'Could not load messages. Please try again.';
 
 /**
- * GET `{ messages }` for an external author's public posts, replies, or shops.
+ * GET `{ messages }` for an external author's public posts, replies, shops, or credits.
  *
  * @param id - Forum message UUID.
  * @param kind - Path segment after the id.
@@ -2166,7 +2182,7 @@ const EXTERNAL_AUTHOR_FEED_ERROR = 'Could not load messages. Please try again.';
  */
 async function fetchExternalAuthorFeed(
   id: string,
-  kind: 'external-posts' | 'external-replies' | 'external-shops',
+  kind: 'external-posts' | 'external-replies' | 'external-shops' | 'external-credits',
 ): Promise<ForumMessage[]> {
   try {
     const response = await fetch(`/public-messages/${encodeURIComponent(id)}/${kind}`);
@@ -2220,6 +2236,23 @@ export async function fetchExternalAuthorPosts(id: string): Promise<ForumMessage
  */
 export async function fetchExternalAuthorShops(id: string): Promise<ForumMessage[]> {
   return fetchExternalAuthorFeed(id, 'external-shops');
+}
+
+/**
+ * Fetches this external author's public credit notes without a session.
+ *
+ * Items that fail {@link forumMessageSchema} are skipped; none surviving
+ * returns `[]`. HTTP 200 with an empty list returns `[]`. HTTP 404 is an
+ * error (not empty). Does not send Authorization.
+ *
+ * @param id - Forum message UUID.
+ * @returns Credit-note list.
+ * @throws Error with visitor-facing copy when the api is unavailable, the
+ * id is unknown (404), the body is not JSON, or the body is not
+ * `{ messages: array }`.
+ */
+export async function fetchExternalAuthorCredits(id: string): Promise<ForumMessage[]> {
+  return fetchExternalAuthorFeed(id, 'external-credits');
 }
 
 /**

@@ -11,6 +11,7 @@ import {
   fetchMember,
   fetchMemberPosts,
   fetchMemberShops,
+  fetchMemberCredits,
   fetchShopNoteEdits,
   postTrustAppoint,
   setMessageShopText,
@@ -102,6 +103,7 @@ vi.mock('@/lib/api', () => ({
   fetchPublicMessagePhoto: vi.fn(),
   fetchMemberPosts: vi.fn(),
   fetchMemberShops: vi.fn(),
+  fetchMemberCredits: vi.fn(),
   fetchMemberReplies: vi.fn(),
   fetchReplies: vi.fn(),
   openConversation: vi.fn(),
@@ -360,6 +362,7 @@ beforeEach(() => {
   push.mockClear();
   vi.mocked(fetchMemberPosts).mockResolvedValue([]);
   vi.mocked(fetchMemberShops).mockResolvedValue([]);
+  vi.mocked(fetchMemberCredits).mockResolvedValue([]);
   vi.mocked(fetchMemberReplies).mockResolvedValue([]);
   vi.mocked(fetchReplies).mockResolvedValue([]);
   vi.mocked(openConversation).mockResolvedValue({
@@ -866,6 +869,94 @@ describe('MemberProfileScreen', () => {
       <MemberProfileScreen profile={{ ...profile, shopCount: 1 }} received={[]} donated={[]} />,
     );
     fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
+    expect(await screen.findByText('No messages yet — be the first to write one.')).toBeTruthy();
+  });
+
+  it('hides a zero credit count', () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, creditCount: 0 }} received={[]} donated={[]} />,
+    );
+    expect(screen.queryByRole('button', { name: /^\d+ credits?$/ })).toBeNull();
+  });
+
+  it('hides credits when the profile has no creditCount field', () => {
+    renderWithLocale(<MemberProfileScreen profile={profile} received={[]} donated={[]} />);
+    expect(profile.creditCount).toBeUndefined();
+    expect(screen.queryByRole('button', { name: /^\d+ credits?$/ })).toBeNull();
+  });
+
+  it('shows credits after shops and loads, truncates, collapses, and reopens once', async () => {
+    const credit = { ...secondPost, text: 'A credit from Carol.' };
+    vi.mocked(fetchMemberCredits).mockResolvedValue([credit]);
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, shopCount: 1, creditCount: 2 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const posts = screen.getByRole('button', { name: '0 posts' });
+    const reactions = screen.getByRole('button', { name: '0 reactions' });
+    const shops = screen.getByRole('button', { name: '1 shop' });
+    const credits = screen.getByRole('button', { name: '2 credits', pressed: false });
+    const order = Array.from(posts.parentElement?.querySelectorAll('button') ?? []).map(
+      (button) => button.textContent,
+    );
+    expect(order).toEqual([
+      posts.textContent,
+      reactions.textContent,
+      shops.textContent,
+      credits.textContent,
+    ]);
+    expect(order.indexOf(credits.textContent)).toBeGreaterThan(order.indexOf(shops.textContent));
+
+    fireEvent.click(credits);
+    expect(await screen.findByText('A credit from Carol.')).toBeTruthy();
+    expect(fetchMemberCredits).toHaveBeenCalledWith('sess', profile.id);
+    expect(fetchMemberCredits).toHaveBeenCalledTimes(1);
+    expect(fetchMemberShops).not.toHaveBeenCalled();
+    expect(screen.getByText('Showing the latest 1 of 2.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: '2 credits', pressed: true }));
+    expect(screen.queryByText('A credit from Carol.')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '2 credits', pressed: false }));
+    expect(screen.getByText('A credit from Carol.')).toBeTruthy();
+    expect(fetchMemberCredits).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a failed credits feed', async () => {
+    const credit = { ...secondPost, text: 'A credit from Carol.' };
+    vi.mocked(fetchMemberCredits)
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockResolvedValueOnce([credit]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, creditCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 credit' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Could not load messages. Please try again.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('A credit from Carol.')).toBeTruthy();
+    expect(fetchMemberCredits).toHaveBeenCalledTimes(2);
+  });
+
+  it('loads photos from the credits feed', async () => {
+    const credit = { ...secondPost, text: 'A credit from Carol.', hasPhoto: true, photoCount: 1 };
+    vi.mocked(fetchMemberCredits).mockResolvedValue([credit]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, creditCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 credit' }));
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalledWith('sess', credit.id, 0);
+    });
+  });
+
+  it('uses the forum empty state for an empty credits feed', async () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, creditCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 credit' }));
     expect(await screen.findByText('No messages yet — be the first to write one.')).toBeTruthy();
   });
 
@@ -4457,6 +4548,23 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(within(card).getByText('Cafe Sol')).toBeTruthy();
     });
+  });
+
+  it('does not offer shop-note editing on the credits feed', async () => {
+    const creditPost: ForumMessage = {
+      ...note,
+      text: 'A credit from Carol.\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+    };
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    vi.mocked(fetchMemberCredits).mockResolvedValue([creditPost]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, creditCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 credit' }));
+    await screen.findByText(/A credit from Carol/);
+    expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
   });
 
   it('drops stored photo addresses when a shop post’s pictures change', async () => {

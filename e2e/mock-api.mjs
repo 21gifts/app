@@ -302,6 +302,23 @@ const E2E_MEMBER_SHOPS = [
   },
 ];
 
+const E2E_MEMBER_CREDITS = [
+  {
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    accountId: E2E_MEMBER_ID,
+    name: 'Carol',
+    text: 'A credit from Carol.',
+    createdAt: '2026-08-04T10:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified',
+    replyCount: 0,
+  },
+];
+
 const E2E_MEMBER_REPLIES = [
   {
     id: '66666666-6666-4666-8666-666666666666',
@@ -1778,6 +1795,31 @@ const server = http.createServer(async (req, res) => {
     const id = decodeURIComponent(memberShopsMatch[1]);
     if (id === E2E_MEMBER_ID) {
       json(res, 200, { messages: E2E_MEMBER_SHOPS });
+      return;
+    }
+    if (id === account.id) {
+      json(res, 200, { messages: [] });
+      return;
+    }
+    json(res, 404, { error: 'Not found' });
+    return;
+  }
+
+  const memberCreditsMatch = pathName.match(/^\/members\/([^/]+)\/credits$/);
+  if (method === 'GET' && memberCreditsMatch) {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (missingListRequirements(account)) {
+      json(res, 409, { error: 'missing_requirements', missing: account.missing });
+      return;
+    }
+    const id = decodeURIComponent(memberCreditsMatch[1]);
+    if (id === E2E_MEMBER_ID) {
+      json(res, 200, { messages: E2E_MEMBER_CREDITS });
       return;
     }
     if (id === account.id) {

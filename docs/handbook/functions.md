@@ -1643,7 +1643,7 @@ First post free: while the signed-in member is below verified and has no missing
 
 - **Purpose:** Loads a signed-in member profile by account id.
 - **Inputs:** Bearer session and `accountId`.
-- **Returns / side effects:** Validated `MemberProfile`, including `postCount`, `replyCount`, and optional `shopCount`, or `null` on 401/404. Throws `MissingRequirementsError` on 409. Hits `/forum/members/:id`. A `profileMessage` that fails `forumMessageSchema` (an About me saved empty: no text, no media, 0 sats) reads as `null`, so the profile renders with the About me empty state instead of failing; the drop is counted in one `console.warn` without content.
+- **Returns / side effects:** Validated `MemberProfile`, including `postCount`, `replyCount`, optional `shopCount`, and optional `creditCount`, or `null` on 401/404. Throws `MissingRequirementsError` on 409. Hits `/forum/members/:id`. A `profileMessage` that fails `forumMessageSchema` (an About me saved empty: no text, no media, 0 sats) reads as `null`, so the profile renders with the About me empty state instead of failing; the drop is counted in one `console.warn` without content.
 - **Used by:** `MemberProfileLoader`.
 
 ## Function: fetchMemberPosts
@@ -1660,6 +1660,13 @@ First post free: while the signed-in member is below verified and has no missing
 - **Returns / side effects:** Parses `forumListSchema` and returns the messages newest-first, capped by the api at 200. A 401/404 uses the same visitor-facing message-list failure as `fetchMessages`; a 409 `missing_requirements` throws `MissingRequirementsError` as in `fetchMember` / `fetchMessages`.
 - **Used by:** `MemberProfileScreen`.
 
+## Function: fetchMemberCredits
+
+- **Purpose:** Loads a member's top-level forum credit notes with `GET /forum/members/:id/credits`.
+- **Inputs:** Bearer session and `accountId`.
+- **Returns / side effects:** Parses `forumListSchema` and returns the messages newest-first, capped by the api at 200. A 401/404 uses the same visitor-facing message-list failure as `fetchMessages`; a 409 `missing_requirements` throws `MissingRequirementsError` as in `fetchMember` / `fetchMessages`.
+- **Used by:** `MemberProfileScreen`.
+
 ## Function: fetchMemberReplies
 
 - **Purpose:** Loads a member's forum replies with `GET /forum/members/:id/replies`.
@@ -1672,7 +1679,7 @@ First post free: while the signed-in member is below verified and has no missing
 - **Purpose:** Parses a 409 `{ error: 'missing_requirements', missing: [...] }` body.
 - **Inputs:** Unknown JSON body.
 - **Returns / side effects:** `MissingRequirementsError` or `null`.
-- **Used by:** `fetchMessages`, `postMessage`, `postMessageVideo`, `postContact`, `fetchMember`, `fetchMemberPosts`, `fetchMemberShops`, `fetchMemberReplies`.
+- **Used by:** `fetchMessages`, `postMessage`, `postMessageVideo`, `postContact`, `fetchMember`, `fetchMemberPosts`, `fetchMemberShops`, `fetchMemberCredits`, `fetchMemberReplies`.
 
 ## Function: MissingRequirementsError
 
@@ -1795,7 +1802,7 @@ First post free: while the signed-in member is below verified and has no missing
 
 ## Function: MemberProfileLoader
 
-- **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, then `fetchMemberActivity` even when the member has no wallet yet. It does not prefetch post/reply/shop feeds; `postCount`, `replyCount`, and optional `shopCount` arrive with the profile JSON.
+- **Purpose:** Client loader for `/members/[accountId]`: UUID check, `fetchMember`, then `fetchMemberActivity` even when the member has no wallet yet. It does not prefetch post/reply/shop/credit feeds; `postCount`, `replyCount`, optional `shopCount`, and optional `creditCount` arrive with the profile JSON.
 - **Inputs:** Route `accountId`; session from auth store.
 - **Returns / side effects:** Loading / missing (`view.missing`) / error+retry / `MemberProfileScreen`. `fetchMember` 409 `missing_requirements` → `/setup/rules` (`returnToView`). `fetchMemberActivity` 409 `missing_requirements` → `/setup/rules` (`returnToView`). Any other activity error (other than `MissingRequirementsError`) keeps the card and the chart shows `profile.chartError`. `MissingRequirementsError` still goes to `/setup/rules`.
 - **Used by:** `MemberProfilePage`.
@@ -1804,6 +1811,7 @@ First post free: while the signed-in member is below verified and has no missing
 
 - **Purpose:** Signed-in member identity card (chart from given and received activity, About me inside the card not as a forum post (**Translate**, Languages icon, when `profileMessage.id` is set), name, location, public `username@21.gifts` (`profile.giftsHeading`), role pill, optional funding-program icon-only button (pressing it reveals that one sentence; that result is the separate screenshot state `funding-program-open`) when `fundingReviewedAt` is a number, copy-profile-link, and post/reaction count toggles) plus stacked `ForumBoard` activity feeds loaded on demand. Location is read-only (`location.unset` when empty). Public `AboutMeSection` (`name={profile.name}`) shows filled text and/or photo, or omits the heading when neither. A labeled Message `Button` (`profile.message`) with a decorative Mail icon sits on the card when another member has a `profileMessage` — not on a post. Staff Trust Chain actions sit behind the closed **Moderator functions** disclosure when the viewer is a moderator and the subject is someone else. Clicking a count opens its feed below the card; clicking it again collapses it. There is no separately pinned profile-note `ForumBoard`; the posts feed lists that note when present. A feed shorter than its profile count gets a muted `profile.activityLatest` truncation line. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Nested Gift Continue looks up sats on the visible feed only (reactions-feed cards when activity is replies; expanded-thread replies otherwise). Collapsing or switching Posts/Reactions cancels a Gift whose target is in the expanded thread or the reactions feed; a parent composer invoice stays. Expanding a reply with `parentId` navigates to `/messages/{parentId}`. Verified members may `POST /messages` unpaid only when there is text and the amount is empty; empty text and an empty amount invoices 21 sats even for verified; everyone else invoices ≥ 1 sat with optional text; typed `0` is always billed as 1 sat even for exempt. When a note omits `accountId`, a text reply with an empty amount tries unpaid `POST /messages`; a payment 403 starts a 1-sat compose invoice to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note). Extra gifts and Gift-open stay on the card (`payHost: card`). Loads visible inline photos for posts and replies feeds via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards, retrying a transient fetch once, leaving the row text-only after a second failure, and revoking object URLs on unmount. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. Loads `rateDay` via `useSpotRate` (failure leaves `null`) and passes it to every `ForumBoard` so unsent previews can use the current spot rate; feed ₿ amounts show optional preferred-fiat `·` from the amount stored when the payment was made (a stored string as-is, a null or missing field on a passed `stored` object uses the spot rate) (no FiatPicker on the chart or the feed; member profiles are always signed-in). Uses `nextPostRequirement` so a missing name, username, wallet, or rules agreement opens `RequirementsOverlay` (no Skip) before a reply retries. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. When a username is set, a labeled **Shop sticker** `Button` under the QR opens `ShopStickerOverlay` with the same `openCryptoPayQrValue` and the public handle, including on a smartphone; Close and Escape unmount it. On the full member view, an own funded credit uses the `ForumBoard` **Repay your loan** link to `/loans/repay`; the post itself has no repayment payment state.
 - **Shop activity:** `profile.shopCount` appears after reactions only when optional `shopCount > 0` and loads the member shops feed on demand. It follows the posts feed behavior: top-level in-feed expansion, photos, truncation notice, empty state, shared pay/expand state, and moderator shop-note editing; edits update the shops list. Shop notes remain in the posts feed too.
+- **Credit activity:** `profile.creditCount` appears after shops only when optional `creditCount > 0` and loads an on-demand `ForumBoard` from `GET /forum/members/:id/credits`. It follows the posts feed, including top-level expansion, photos, truncation notice, empty state, and shared pay/expand state. This feed does not pass `shopNoteEdit`. Credit notes remain in Posts. Credits are not prefetched.
 - **Inputs:** `MemberProfile` (includes `aboutMe`, `aboutMeHasPhoto`, and `location`) plus received and donated series; optional `factsOnly` (default false); optional `activityFailed` (default false), passed to the chart as `failed`; session/account from the auth store. Public `AboutMeSection` `hasPhoto` from `aboutMeHasPhoto` / `profileMessage.hasPhoto` with `loadPhoto` (`fetchMessagePhoto`).
 - **Returns / side effects:** React tree with About me, copy-profile-link, optional Message, staff Trust Chain actions, and a read-only location row on the card; lazily fetches the selected member posts or replies; loads `GET /fx/spot` into `rateDay` via `useSpotRate`; fetches photos for displayed `hasPhoto` cards into blob URLs via `fetchMessagePhoto` and revokes them on unmount; may `POST` gift or posting-fee invoices, conversations, and replies and navigate to `/messages?c=` or a reply's `/messages/{parentId}`. When `activityFailed` is true and the series is empty, `profile.chartError`. `factsOnly` still has no chart. `factsOnly` returns only the role pill, the funding-program icon, the gifts address, QR, Shop sticker, count buttons, the activity feed, and `RequirementsOverlay` — no heading, chart, About me, name, location, Message, or staff block. `ProfileScreen` uses that mode so the member sees the same public facts. A `WalletRequiredError` (api `code` `wallet_required`) on a gift, a paid reply, or a posting fee opens the `RequirementsOverlay` `wallet` step. Gift and posting-fee invoices keep the api's `sparkInvoice` so the wallet pays it before the payment request. A reply to the viewer's own note (`isOwnNote`, as on `/profile`) has no **Amount** field and posts unpaid; an empty one sets `empty`. A `MissingRequirementsError` while loading a feed goes to `/setup/rules` with `returnToView`.
 - **Used by:** `MemberProfileLoader`, `ProfileScreen` (`factsOnly`).
@@ -1842,6 +1850,13 @@ First post free: while the signed-in member is below verified and has no missing
 - **Inputs:** App Router request and `accountId`.
 - **Returns / side effects:** Upstream response via `/members/${encodeURIComponent(accountId)}/shops`.
 - **Used by:** `/forum/members/[accountId]/shops` route.
+
+## Function: proxyMembersCreditsGet
+
+- **Purpose:** Proxies `GET /members/:accountId/credits` to the api.
+- **Inputs:** App Router request and `accountId`.
+- **Returns / side effects:** Upstream response via `/members/${encodeURIComponent(accountId)}/credits`.
+- **Used by:** `/forum/members/[accountId]/credits` route.
 
 ## Function: proxyMembersRepliesGet
 
@@ -2156,7 +2171,7 @@ First post free: while the signed-in member is below verified and has no missing
 
 - **Purpose:** GET `/public-messages/:id/external-profile` with no Authorization and parse `externalAuthorProfileSchema`.
 - **Inputs:** Forum message `id`.
-- **Returns / side effects:** `{ name, npub, nip05?, lud16? }`, plus optional `postCount`, `replyCount`, and `shopCount`, or `null` on 404, any other non-OK response, network failure, JSON failure, or schema mismatch. Does not throw.
+- **Returns / side effects:** `{ name, npub, nip05?, lud16? }`, plus optional `postCount`, `replyCount`, `shopCount`, and `creditCount`, or `null` on 404, any other non-OK response, network failure, JSON failure, or schema mismatch. Credits are not prefetched. Does not throw.
 - **Used by:** `ExternalAuthorProfile`.
 
 ## Function: fetchExternalAuthorPosts
@@ -2169,6 +2184,13 @@ First post free: while the signed-in member is below verified and has no missing
 ## Function: fetchExternalAuthorShops
 
 - **Purpose:** GET `/public-messages/:id/external-shops` with no Authorization. After HTTP OK, require `{ messages: array }`, `safeParse` each item with `forumMessageSchema`, skip invalid items.
+- **Inputs:** Forum message `id`.
+- **Returns / side effects:** `ForumMessage[]` (empty if none survive or the list is empty). Throws visitor copy (`Could not load messages. Please try again.`) on non-OK including 404, network, non-JSON, or a body that is not `{ messages: array }`. Does not throw `MissingRequirementsError`. No Bearer.
+- **Used by:** `ExternalAuthorProfile`.
+
+## Function: fetchExternalAuthorCredits
+
+- **Purpose:** GET `/public-messages/:id/external-credits` with no Authorization. After HTTP OK, require `{ messages: array }`, `safeParse` each item with `forumMessageSchema`, skip invalid items.
 - **Inputs:** Forum message `id`.
 - **Returns / side effects:** `ForumMessage[]` (empty if none survive or the list is empty). Throws visitor copy (`Could not load messages. Please try again.`) on non-OK including 404, network, non-JSON, or a body that is not `{ messages: array }`. Does not throw `MissingRequirementsError`. No Bearer.
 - **Used by:** `ExternalAuthorProfile`.
@@ -2430,6 +2452,7 @@ First post free: while the signed-in member is below verified and has no missing
 
 - **Purpose:** Profile card for a forum author with no 21.gifts account. Same fields and hide rules as the member card: heading `profile.title`, name with the External span, optional checked Nostr address, payment address only when it differs ignoring case, and the npub with a centered secondary IconButton copy control. It is not a dialog. Rendered by `ExternalAuthorPage` inside `PublicMessageChrome`. No image, payment, or outbound link. Copy uses the clipboard, then a hidden textarea. When both `postCount` and `replyCount` are numbers, the same count buttons as a member open a read-only feed under the card (no pay, no composer, no react). It shows no heart, because a read-only card without a viewer cannot send one. If either count is absent, no buttons.
 - **Shop activity:** The posts/reactions gate remains unchanged; the preceding absent-count rule applies to those two buttons. Independently, `profile.shopCount` appears after reactions only when optional `shopCount > 0`, so Shops can appear alone; it loads a read-only external shops feed and a shop note opens `/messages/{id}` like a post.
+- **Credit activity:** The posts/reactions gate is unchanged. Independently, `profile.creditCount` appears after shops only when optional `creditCount > 0`, including when `shopCount` is 0 or post and reply counts are absent. The feed is read-only; a credit note opens `/messages/{id}` like a post. No composer and no shop-note edit. Credits are not prefetched.
 - **Inputs:** `messageId`, `fallbackName`. Empty `fallbackName` shows `view.unnamed` until a profile loads, and when the fetch returns null.
 - **Returns / side effects:** The card. No `onClose`. Loading and a null fetch show the title, the fallback name (or Unnamed), and the External span, and omit the address sections. No overlay, portal, hint paragraph, or close control. Count buttons and the read-only feed render when both counts are numbers; a post click opens `/messages/{id}`; a reply click opens `/messages/{parentId}`; a shorter list shows `profile.activityLatest`; loading uses `forum.loading`; failure uses `forum.error` and `view.retry`.
 - **Used by:** `ExternalAuthorPage`.
@@ -3507,6 +3530,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`. Does not add a Bearer header.
 - **Used by:** Route GET `/public-messages/[id]/external-shops`.
+
+## Function: proxyExternalAuthorCreditsGet
+
+- **Purpose:** Public proxy GET `/messages/:id/external-credits` to the 21.gifts api (no auth). App path is `/public-messages/[id]/external-credits`. Returns the upstream response via `proxyApiRequest`. Does not add a Bearer header.
+- **Inputs:** Incoming `Request`, plus message `id` from the App Router segment.
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`. Does not add a Bearer header.
+- **Used by:** Route GET `/public-messages/[id]/external-credits`.
 
 ## Function: proxyExternalAuthorRepliesGet
 

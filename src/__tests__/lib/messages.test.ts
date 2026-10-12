@@ -39,6 +39,21 @@ describe('getCatalog', () => {
     );
   });
 
+  it('keeps the credit-count plural copy in every catalog', () => {
+    expect(getCatalog('en')['profile.creditCount']).toBe(
+      '{count, plural, one {# credit} other {# credits}}',
+    );
+    expect(getCatalog('de')['profile.creditCount']).toBe(
+      '{count, plural, one {# Kredit} other {# Kredite}}',
+    );
+    expect(getCatalog('es')['profile.creditCount']).toBe(
+      '{count, plural, one {# crédito} other {# créditos}}',
+    );
+    expect(getCatalog('fil')['profile.creditCount']).toBe(
+      '{count, plural, one {# utang} other {# utang}}',
+    );
+  });
+
   it('keeps product tokens untranslated in every locale', () => {
     expect(getCatalog('en')['forum.payOpenWallet']).toBe('Pay');
     expect(getCatalog('de')['forum.payOpenWallet']).toBe('Zahlen');

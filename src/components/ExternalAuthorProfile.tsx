@@ -18,6 +18,7 @@ import {
   fetchExternalAuthorProfile,
   fetchExternalAuthorReplies,
   fetchExternalAuthorShops,
+  fetchExternalAuthorCredits,
 } from '@/lib/api';
 import type {
   ExternalAuthorProfile as ExternalAuthorProfileData,
@@ -130,8 +131,8 @@ function hasAuthorCounts(
  * Same sections as the member card (name, optional addresses, npub to copy).
  * When both postCount and replyCount are numbers, the same count buttons as a
  * member open a read-only feed under the card. A positive shopCount adds its
- * button independently. Not a dialog: no overlay, portal, close control, or
- * hint paragraph.
+ * button independently. A positive creditCount adds its button independently.
+ * Not a dialog: no overlay, portal, close control, or hint paragraph.
  *
  * @param props - See {@link ExternalAuthorProfileProps}.
  * @returns The profile card, and the read-only feed while a count panel is open.
@@ -145,16 +146,19 @@ export function ExternalAuthorProfile({
   const rateDay = useSpotRate();
   const [profile, setProfile] = useState<ExternalAuthorProfileData | null>(null);
   const [copied, setCopied] = useState(false);
-  const [activity, setActivity] = useState<'posts' | 'replies' | 'shops' | null>(null);
+  const [activity, setActivity] = useState<'posts' | 'replies' | 'shops' | 'credits' | null>(null);
   const [posts, setPosts] = useState<ForumMessage[] | null>(null);
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
   const [shops, setShops] = useState<ForumMessage[] | null>(null);
+  const [credits, setCredits] = useState<ForumMessage[] | null>(null);
   const [postsLoading, setPostsLoading] = useState(false);
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [shopsLoading, setShopsLoading] = useState(false);
+  const [creditsLoading, setCreditsLoading] = useState(false);
   const [postsError, setPostsError] = useState(false);
   const [repliesError, setRepliesError] = useState(false);
   const [shopsError, setShopsError] = useState(false);
+  const [creditsError, setCreditsError] = useState(false);
   const [feedMessageId, setFeedMessageId] = useState(messageId);
   const copyMounted = useRef(true);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -162,6 +166,7 @@ export function ExternalAuthorProfile({
   const postsLoadGen = useRef(0);
   const repliesLoadGen = useRef(0);
   const shopsLoadGen = useRef(0);
+  const creditsLoadGen = useRef(0);
   const profileLoadGen = useRef(0);
 
   if (feedMessageId !== messageId) {
@@ -172,15 +177,19 @@ export function ExternalAuthorProfile({
     setPosts(null);
     setReplies(null);
     setShops(null);
+    setCredits(null);
     setPostsLoading(false);
     setRepliesLoading(false);
     setShopsLoading(false);
+    setCreditsLoading(false);
     setPostsError(false);
     setRepliesError(false);
     setShopsError(false);
+    setCreditsError(false);
     postsLoadGen.current += 1;
     repliesLoadGen.current += 1;
     shopsLoadGen.current += 1;
+    creditsLoadGen.current += 1;
     profileLoadGen.current += 1;
     copyGen.current += 1;
     if (copyTimer.current !== null) {
@@ -259,20 +268,47 @@ export function ExternalAuthorProfile({
     }
   };
 
-  const loadFeed = async (kind: 'posts' | 'replies' | 'shops'): Promise<void> => {
+  const loadFeed = async (kind: 'posts' | 'replies' | 'shops' | 'credits'): Promise<void> => {
     const setLoading =
-      kind === 'posts' ? setPostsLoading : kind === 'replies' ? setRepliesLoading : setShopsLoading;
+      kind === 'posts'
+        ? setPostsLoading
+        : kind === 'replies'
+          ? setRepliesLoading
+          : kind === 'credits'
+            ? setCreditsLoading
+            : setShopsLoading;
     const setError =
-      kind === 'posts' ? setPostsError : kind === 'replies' ? setRepliesError : setShopsError;
-    const setList = kind === 'posts' ? setPosts : kind === 'replies' ? setReplies : setShops;
+      kind === 'posts'
+        ? setPostsError
+        : kind === 'replies'
+          ? setRepliesError
+          : kind === 'credits'
+            ? setCreditsError
+            : setShopsError;
+    const setList =
+      kind === 'posts'
+        ? setPosts
+        : kind === 'replies'
+          ? setReplies
+          : kind === 'credits'
+            ? setCredits
+            : setShops;
     const fetchFn =
       kind === 'posts'
         ? fetchExternalAuthorPosts
         : kind === 'replies'
           ? fetchExternalAuthorReplies
-          : fetchExternalAuthorShops;
+          : kind === 'credits'
+            ? fetchExternalAuthorCredits
+            : fetchExternalAuthorShops;
     const loadGen =
-      kind === 'posts' ? postsLoadGen : kind === 'replies' ? repliesLoadGen : shopsLoadGen;
+      kind === 'posts'
+        ? postsLoadGen
+        : kind === 'replies'
+          ? repliesLoadGen
+          : kind === 'credits'
+            ? creditsLoadGen
+            : shopsLoadGen;
     const gen = ++loadGen.current;
     setLoading(true);
     setError(false);
@@ -292,7 +328,7 @@ export function ExternalAuthorProfile({
     }
   };
 
-  const openActivity = (next: 'posts' | 'replies' | 'shops'): void => {
+  const openActivity = (next: 'posts' | 'replies' | 'shops' | 'credits'): void => {
     if (activity === next) {
       setActivity(null);
       return;
@@ -310,6 +346,12 @@ export function ExternalAuthorProfile({
       }
       return;
     }
+    if (next === 'credits') {
+      if ((credits === null || creditsError) && !creditsLoading) {
+        void loadFeed('credits');
+      }
+      return;
+    }
     if ((shops === null || shopsError) && !shopsLoading) {
       void loadFeed('shops');
     }
@@ -318,21 +360,43 @@ export function ExternalAuthorProfile({
   const counted = hasAuthorCounts(profile) ? profile : null;
   const shopCount = typeof profile?.shopCount === 'number' ? profile.shopCount : 0;
   const hasShops = shopCount > 0;
+  const creditCount = typeof profile?.creditCount === 'number' ? profile.creditCount : 0;
+  const hasCredits = creditCount > 0;
   const activityMessages =
-    activity === 'posts' ? (posts ?? []) : activity === 'replies' ? (replies ?? []) : (shops ?? []);
+    activity === 'posts'
+      ? (posts ?? [])
+      : activity === 'replies'
+        ? (replies ?? [])
+        : activity === 'credits'
+          ? (credits ?? [])
+          : (shops ?? []);
   // Posts and replies open only while both counts are numbers, so `counted` is set.
   const activityCount =
     activity === 'posts'
       ? counted!.postCount
       : activity === 'replies'
         ? counted!.replyCount
-        : activity === 'shops'
-          ? shopCount
-          : 0;
+        : activity === 'credits'
+          ? creditCount
+          : activity === 'shops'
+            ? shopCount
+            : 0;
   const activityLoading =
-    activity === 'posts' ? postsLoading : activity === 'replies' ? repliesLoading : shopsLoading;
+    activity === 'posts'
+      ? postsLoading
+      : activity === 'replies'
+        ? repliesLoading
+        : activity === 'credits'
+          ? creditsLoading
+          : shopsLoading;
   const activityError =
-    activity === 'posts' ? postsError : activity === 'replies' ? repliesError : shopsError;
+    activity === 'posts'
+      ? postsError
+      : activity === 'replies'
+        ? repliesError
+        : activity === 'credits'
+          ? creditsError
+          : shopsError;
 
   return (
     <div className="flex w-full max-w-sm flex-col items-center gap-6">
@@ -395,7 +459,7 @@ export function ExternalAuthorProfile({
             </div>
           </div>
         ) : null}
-        {counted !== null || hasShops ? (
+        {counted !== null || hasShops || hasCredits ? (
           <div className="flex w-full flex-wrap justify-center gap-2 border-t border-app-border pt-6">
             {counted !== null ? (
               <>
@@ -430,10 +494,21 @@ export function ExternalAuthorProfile({
                 {t('profile.shopCount', { count: String(shopCount) })}
               </Button>
             ) : null}
+            {hasCredits ? (
+              <Button
+                type="button"
+                size="sm"
+                variant={activity === 'credits' ? 'primary' : 'secondary'}
+                aria-pressed={activity === 'credits'}
+                onClick={() => openActivity('credits')}
+              >
+                {t('profile.creditCount', { count: String(creditCount) })}
+              </Button>
+            ) : null}
           </div>
         ) : null}
       </Card>
-      {activity !== null && (activity === 'shops' || counted !== null) ? (
+      {activity !== null && (activity === 'shops' || activity === 'credits' || counted !== null) ? (
         activityLoading ? (
           <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>
         ) : activityError ? (
@@ -460,7 +535,7 @@ export function ExternalAuthorProfile({
               composerHidden
               modeSelector={false}
               onToggleExpand={(noteId) => {
-                if (activity === 'posts' || activity === 'shops') {
+                if (activity === 'posts' || activity === 'shops' || activity === 'credits') {
                   router.push(`/messages/${noteId}`);
                   return;
                 }

@@ -32,6 +32,7 @@ import {
   fetchMemberActivity,
   fetchMemberPosts,
   fetchMemberShops,
+  fetchMemberCredits,
   fetchMemberReplies,
   fetchTrustChain,
   fetchTrustProposals,
@@ -50,6 +51,7 @@ import {
   fetchExternalAuthorProfile,
   fetchExternalAuthorPosts,
   fetchExternalAuthorShops,
+  fetchExternalAuthorCredits,
   fetchExternalAuthorReplies,
   fetchPublicMessagePhoto,
   fetchPublicReplies,
@@ -519,6 +521,52 @@ describe('fetchMemberShops', () => {
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(fetchMemberShops('sess', accountId)).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchMemberCredits', () => {
+  const accountId = '22222222-2222-4222-8222-222222222222';
+  const credit = {
+    id: 'credit-1',
+    accountId,
+    name: 'Carol',
+    text: 'A credit from Carol.',
+    createdAt: '2026-08-02T10:00:00.000Z',
+    sats: 0,
+    payable: true,
+    hasPhoto: false,
+    photoCount: 0,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'verified' as const,
+    replyCount: 0,
+  };
+
+  it('returns the validated credit list', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { messages: [credit] } });
+    await expect(fetchMemberCredits('sess', accountId)).resolves.toEqual([credit]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/forum/members/${encodeURIComponent(accountId)}/credits`,
+      { headers: { Authorization: 'Bearer sess' } },
+    );
+  });
+
+  it('throws MissingRequirementsError on 409', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['rules'] },
+    });
+    await expect(fetchMemberCredits('sess', accountId)).rejects.toBeInstanceOf(
+      MissingRequirementsError,
+    );
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(fetchMemberCredits('sess', accountId)).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
   });
@@ -3747,6 +3795,26 @@ describe('fetchExternalAuthorShops', () => {
   it('throws visitor copy on failures', async () => {
     stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
     await expect(fetchExternalAuthorShops('parent')).rejects.toThrow(
+      'Could not load messages. Please try again.',
+    );
+  });
+});
+
+describe('fetchExternalAuthorCredits', () => {
+  it('GETs /public-messages/:id/external-credits without bearer and skips invalid items', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { messages: [forumMessage, { ...forumMessage, id: 'bad', name: '' }] },
+    });
+    await expect(fetchExternalAuthorCredits('parent')).resolves.toEqual([forumMessage]);
+    expect(fetchMock).toHaveBeenCalledWith('/public-messages/parent/external-credits');
+    expect(fetchMock.mock.calls[0]?.[1]).toBeUndefined();
+  });
+
+  it('throws visitor copy on failures', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchExternalAuthorCredits('parent')).rejects.toThrow(
       'Could not load messages. Please try again.',
     );
   });

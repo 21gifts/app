@@ -24,6 +24,7 @@ import {
   fetchMemberPosts,
   fetchMemberReplies,
   fetchMemberShops,
+  fetchMemberCredits,
   fetchMessagePhoto,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
@@ -209,13 +210,13 @@ function FundingProgramMark({
  * accessible name is participation since the date; pressing it reveals that
  * sentence; the resting shot does not cover the press) when `fundingReviewedAt`
  * is a number, copy-profile-link, optional Message, post/reply counts, optional
- * positive shop count, stacked activity feeds, and staff Trust Chain actions
+ * positive shop and credit counts, stacked activity feeds, and staff Trust Chain actions
  * when the viewer is a moderator and the subject is someone else. About me is
  * not a forum post.
  *
  * @param props - Member profile and both activity series for the chart.
  *   `factsOnly` (default false) keeps every hook and returns only the public
- *   pills, gifts block, post/reaction/shop counts, and activity feed.
+ *   pills, gifts block, post/reaction/shop/credit counts, and activity feed.
  *   `activityFailed` (default false) is passed to the chart as `failed`.
  * @returns The presentational member profile.
  */
@@ -269,7 +270,7 @@ export function MemberProfileScreen({
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const pendingComposeTextRef = useRef<string | null>(null);
   const [listedProfile, setListedProfile] = useState(profile);
-  const [activity, setActivity] = useState<null | 'posts' | 'replies' | 'shops'>(null);
+  const [activity, setActivity] = useState<null | 'posts' | 'replies' | 'shops' | 'credits'>(null);
   const [posts, setPosts] = useState<ForumMessage[] | null>(null);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsError, setPostsError] = useState(false);
@@ -279,6 +280,9 @@ export function MemberProfileScreen({
   const [shops, setShops] = useState<ForumMessage[] | null>(null);
   const [shopsLoading, setShopsLoading] = useState(false);
   const [shopsError, setShopsError] = useState(false);
+  const [credits, setCredits] = useState<ForumMessage[] | null>(null);
+  const [creditsLoading, setCreditsLoading] = useState(false);
+  const [creditsError, setCreditsError] = useState(false);
   const heartCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     const shown =
@@ -288,7 +292,9 @@ export function MemberProfileScreen({
           ? (activityReplies ?? [])
           : activity === 'shops'
             ? (shops ?? [])
-            : [];
+            : activity === 'credits'
+              ? (credits ?? [])
+              : [];
     for (const message of shown) {
       counts[message.id] = message.heartCount;
     }
@@ -299,7 +305,7 @@ export function MemberProfileScreen({
       }
     }
     return counts;
-  }, [activity, posts, activityReplies, shops, expandedId, replies]);
+  }, [activity, posts, activityReplies, shops, credits, expandedId, replies]);
   const { onHeartTip, heartTipViews } = useHeartTip({
     readOnly: session === null,
     heartCounts,
@@ -307,6 +313,7 @@ export function MemberProfileScreen({
   const postsLoadGen = useRef(0);
   const repliesLoadGen = useRef(0);
   const shopsLoadGen = useRef(0);
+  const creditsLoadGen = useRef(0);
   /* v8 ignore next -- SSR: no window */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
   const address = giftsLightningAddress(listedProfile.username, host);
@@ -344,6 +351,9 @@ export function MemberProfileScreen({
   }
   if (activity === 'shops' && shops !== null) {
     photoSource.push(...shops);
+  }
+  if (activity === 'credits' && credits !== null) {
+    photoSource.push(...credits);
   }
   if (replies !== null) {
     photoSource.push(...replies);
@@ -441,29 +451,49 @@ export function MemberProfileScreen({
     };
   }, []);
 
-  const loadActivityFeed = async (kind: 'posts' | 'replies' | 'shops'): Promise<void> => {
+  const loadActivityFeed = async (
+    kind: 'posts' | 'replies' | 'shops' | 'credits',
+  ): Promise<void> => {
     const setLoading =
       kind === 'posts'
         ? setPostsLoading
         : kind === 'replies'
           ? setActivityRepliesLoading
-          : setShopsLoading;
+          : kind === 'credits'
+            ? setCreditsLoading
+            : setShopsLoading;
     const setError =
       kind === 'posts'
         ? setPostsError
         : kind === 'replies'
           ? setActivityRepliesError
-          : setShopsError;
+          : kind === 'credits'
+            ? setCreditsError
+            : setShopsError;
     const setList =
-      kind === 'posts' ? setPosts : kind === 'replies' ? setActivityReplies : setShops;
+      kind === 'posts'
+        ? setPosts
+        : kind === 'replies'
+          ? setActivityReplies
+          : kind === 'credits'
+            ? setCredits
+            : setShops;
     const fetchFn =
       kind === 'posts'
         ? fetchMemberPosts
         : kind === 'replies'
           ? fetchMemberReplies
-          : fetchMemberShops;
+          : kind === 'credits'
+            ? fetchMemberCredits
+            : fetchMemberShops;
     const loadGen =
-      kind === 'posts' ? postsLoadGen : kind === 'replies' ? repliesLoadGen : shopsLoadGen;
+      kind === 'posts'
+        ? postsLoadGen
+        : kind === 'replies'
+          ? repliesLoadGen
+          : kind === 'credits'
+            ? creditsLoadGen
+            : shopsLoadGen;
     const gen = ++loadGen.current;
     setLoading(true);
     setError(false);
@@ -504,7 +534,7 @@ export function MemberProfileScreen({
     setReplyPosting(false);
   };
 
-  const openActivity = (next: 'posts' | 'replies' | 'shops'): void => {
+  const openActivity = (next: 'posts' | 'replies' | 'shops' | 'credits'): void => {
     if (
       payMessageId !== null &&
       ((replies !== null && replies.some((row) => row.id === payMessageId)) ||
@@ -526,6 +556,12 @@ export function MemberProfileScreen({
     if (next === 'replies') {
       if ((activityReplies === null || activityRepliesError) && !activityRepliesLoading) {
         void loadActivityFeed('replies');
+      }
+      return;
+    }
+    if (next === 'credits') {
+      if ((credits === null || creditsError) && !creditsLoading) {
+        void loadActivityFeed('credits');
       }
       return;
     }
@@ -1316,26 +1352,39 @@ export function MemberProfileScreen({
     heartTipViews,
   };
 
+  const creditCount = typeof profile.creditCount === 'number' ? profile.creditCount : 0;
   const activityMessages =
     activity === 'posts'
       ? (posts ?? [])
       : activity === 'replies'
         ? (activityReplies ?? [])
-        : (shops ?? []);
+        : activity === 'credits'
+          ? (credits ?? [])
+          : (shops ?? []);
   const activityCount =
     activity === 'posts'
       ? profile.postCount
       : activity === 'replies'
         ? profile.replyCount
-        : (profile.shopCount ?? 0);
+        : activity === 'credits'
+          ? creditCount
+          : (profile.shopCount ?? 0);
   const activityLoading =
     activity === 'posts'
       ? postsLoading
       : activity === 'replies'
         ? activityRepliesLoading
-        : shopsLoading;
+        : activity === 'credits'
+          ? creditsLoading
+          : shopsLoading;
   const activityError =
-    activity === 'posts' ? postsError : activity === 'replies' ? activityRepliesError : shopsError;
+    activity === 'posts'
+      ? postsError
+      : activity === 'replies'
+        ? activityRepliesError
+        : activity === 'credits'
+          ? creditsError
+          : shopsError;
   const profileMessagePhotoId =
     profile.profileMessage !== null && profile.profileMessage.hasPhoto
       ? profile.profileMessage.id
@@ -1410,10 +1459,24 @@ export function MemberProfileScreen({
           {t('profile.shopCount', { count: String(profile.shopCount) })}
         </Button>
       ) : null}
+      {creditCount > 0 ? (
+        <Button
+          type="button"
+          size="sm"
+          variant={activity === 'credits' ? 'primary' : 'secondary'}
+          aria-pressed={activity === 'credits'}
+          onClick={() => openActivity('credits')}
+        >
+          {t('profile.creditCount', { count: String(creditCount) })}
+        </Button>
+      ) : null}
     </div>
   );
   const activityFeed =
-    activity === 'posts' || activity === 'replies' || activity === 'shops' ? (
+    activity === 'posts' ||
+    activity === 'replies' ||
+    activity === 'shops' ||
+    activity === 'credits' ? (
       activityLoading ? (
         <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>
       ) : activityError ? (
@@ -1427,12 +1490,14 @@ export function MemberProfileScreen({
         </div>
       ) : (
         <>
-          {activity === 'posts' || activity === 'shops' ? (
+          {activity === 'posts' || activity === 'shops' || activity === 'credits' ? (
             <ForumBoard
               {...IDLE_BOARD}
               messages={activityMessages}
               {...sharedForumProps}
-              {...(account !== null && roleAtLeast(account.role, 'moderator')
+              {...(activity !== 'credits' &&
+              account !== null &&
+              roleAtLeast(account.role, 'moderator')
                 ? {
                     shopNoteEdit: true as const,
                     onShopNoteUpdated: (updated: ForumMessage) => {
