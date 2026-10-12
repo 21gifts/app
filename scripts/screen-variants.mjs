@@ -6628,6 +6628,13 @@ export const SCREEN_VARIANTS = [
     needle: "shotScreen(page, 'state-welcome-wallet-tour-short')",
   },
   {
+    route: '/welcome',
+    id: 'wallet-tour-error',
+    image: 'welcome-wallet-tour-error.png',
+    visual: 'state-welcome-wallet-tour-error',
+    needle: "shotScreen(page, 'state-welcome-wallet-tour-error')",
+  },
+  {
     route: '/shops',
     id: 'default',
     image: 'shops.png',

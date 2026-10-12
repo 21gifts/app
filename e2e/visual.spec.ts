@@ -5245,6 +5245,18 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-wallet-tour-short');
   });
 
+  test('welcome wallet-tour-error', async ({ page }) => {
+    await seedWelcomeWallet(page, { kind: 'blank' }, { walletIntroSeen: false });
+    await page.route(/\/me\/wallet-intro-seen$/, async (route) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    // A failed wallet shows no header balance, so the tour starts on Receive: 1 of 3.
+    await page.goto('/welcome?visual=balance-error');
+    await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Receive' })).toContainText('1 of 3');
+    await shotScreen(page, 'state-welcome-wallet-tour-error');
+  });
+
   test('welcome wallet-buttons', async ({ page }) => {
     await seedWelcomeWallet(page);
     await page.goto('/welcome?visual=balance-ready');
