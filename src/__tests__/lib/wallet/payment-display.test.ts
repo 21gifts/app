@@ -41,6 +41,22 @@ describe('paymentTitle', () => {
     expect(paymentTitle(payment({ info: { description: 'Coffee' } }))).toEqual({ text: 'Coffee' });
   });
 
+  it('names a gift or shop memo, with a zap still first', () => {
+    expect(paymentTitle(payment({ direction: 'sent', info: { purpose: 'gift' } }))).toEqual({
+      key: 'wallet.payment.gift',
+    });
+    expect(paymentTitle(payment({ direction: 'received', info: { purpose: 'gift' } }))).toEqual({
+      key: 'wallet.payment.giftOnPost',
+    });
+    expect(paymentTitle(payment({ info: { purpose: 'shop' } }))).toEqual({
+      key: 'wallet.payment.shop',
+    });
+    expect(paymentTitle(payment({ info: { zap: ZAP, purpose: 'gift' } }))).toEqual({
+      key: 'wallet.payment.giftOnPost',
+    });
+    expect(paymentTitle(payment({ info: { description: 'Coffee' } }))).toEqual({ text: 'Coffee' });
+  });
+
   it('names an on-chain payment by its direction, else Received or Sent', () => {
     expect(paymentTitle(payment({ method: 'deposit' }))).toEqual({
       key: 'wallet.payment.method.deposit',

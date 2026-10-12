@@ -606,6 +606,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:details-open",
+    "label": "/wallet/payment details-open",
+    "visual": "state-wallet-payment-details-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:shop",
+    "label": "/wallet/payment shop",
+    "visual": "state-wallet-payment-shop",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/payment:pending",
     "label": "/wallet/payment pending",
     "visual": "state-wallet-payment-pending",
