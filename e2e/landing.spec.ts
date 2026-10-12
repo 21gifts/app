@@ -7,6 +7,23 @@ test('landing shows the 21.gifts wordmark', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
 });
 
+test('Function: MarketingHeader — the root info page shows no back arrow, the other marketing pages keep it', async ({
+  page,
+}) => {
+  await page.goto('/about');
+  const header = page.locator('header');
+  await expect(header.getByRole('link', { name: 'Back to the forum' })).toHaveCount(1);
+  await header.getByRole('link', { name: '21.gifts' }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
+  await expect(header.getByRole('link', { name: 'Back', exact: true })).toHaveCount(0);
+  await expect(header.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
+  await expect(header.getByRole('button', { name: 'Back' })).toHaveCount(0);
+  await page.goto('/');
+  await expect(header.getByRole('link', { name: '21.gifts' })).toBeVisible();
+  await expect(header.getByRole('link', { name: /^Back/ })).toHaveCount(0);
+});
+
 test('landing shows the project donate address', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Donate to this project' })).toBeVisible();

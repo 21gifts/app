@@ -41,6 +41,7 @@ vi.mock('next/link', () => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: vi.fn() }),
+  usePathname: (): string => '/about',
 }));
 
 vi.mock('@/hooks/useHydrateSession', () => ({

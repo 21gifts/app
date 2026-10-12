@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { useLayoutEffect, type ReactElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MarketingHeader } from '@/components/MarketingHeader';
+import { ChromeBackProvider, useChromeBack } from '@/components/ViewHistoryRoot';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -21,8 +22,11 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+let pathname = '/about';
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: vi.fn() }),
+  usePathname: (): string => pathname,
 }));
 
 let hydrateReady = true;
@@ -33,12 +37,33 @@ vi.mock('@/hooks/useHydrateSession', () => ({
 
 beforeEach(() => {
   hydrateReady = true;
+  pathname = '/about';
   useAuthStore.setState({ session: null, account: null });
 });
 
 afterEach(cleanup);
 
 describe('MarketingHeader', () => {
+  it('shows no back arrow on the root info page, also for a wizard override', () => {
+    pathname = '/';
+    function Arm(): ReactElement {
+      const { setOverride } = useChromeBack();
+      useLayoutEffect(() => {
+        setOverride({ labelKey: 'forum.askBack', onClick: vi.fn() });
+      }, [setOverride]);
+      return <MarketingHeader />;
+    }
+    renderWithLocale(
+      <ChromeBackProvider>
+        <Arm />
+      </ChromeBackProvider>,
+    );
+    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Back' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');
+  });
+
   it('links the wordmark home and Log in to /login', () => {
     renderWithLocale(<MarketingHeader />);
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/');

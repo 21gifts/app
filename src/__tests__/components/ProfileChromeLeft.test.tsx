@@ -230,6 +230,48 @@ describe('ProfileChromeLeft', () => {
     expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
   });
 
+  it('shows no arrow at all, also for a wizard override, when hideOverride is set as well', () => {
+    const onClick = vi.fn();
+    function Arm(): ReactElement {
+      const { setOverride } = useChromeBack();
+      useLayoutEffect(() => {
+        setOverride({ labelKey: 'forum.askBack', onClick });
+      }, [setOverride]);
+      return <ProfileChromeLeft hideHistoryArrow hideOverride />;
+    }
+
+    renderWithLocale(
+      <ChromeBackProvider>
+        <Arm />
+      </ChromeBackProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Back to the forum' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Back' })).toBeNull();
+    expect(screen.getByRole('link', { name: '21.gifts' }).getAttribute('href')).toBe('/welcome');
+  });
+
+  it('keeps the history arrow when only hideOverride is set', () => {
+    const onClick = vi.fn();
+    function Arm(): ReactElement {
+      const { setOverride } = useChromeBack();
+      useLayoutEffect(() => {
+        setOverride({ labelKey: 'forum.askBack', onClick });
+      }, [setOverride]);
+      return <ProfileChromeLeft hideOverride />;
+    }
+
+    renderWithLocale(
+      <ChromeBackProvider>
+        <Arm />
+      </ChromeBackProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Back to the forum' }).getAttribute('href')).toBe(
+      '/welcome',
+    );
+  });
+
   it('keeps the ask-wizard button when hideHistoryArrow is set', () => {
     const onClick = vi.fn();
     function Arm(): ReactElement {

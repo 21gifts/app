@@ -33,6 +33,11 @@ export interface ProfileChromeLeftProps {
    * override still shows.
    */
   hideHistoryArrow?: boolean;
+  /**
+   * Also omit an ask or shop wizard override. The root info page `/` sets this
+   * with `hideHistoryArrow`, so its header never shows a back arrow.
+   */
+  hideOverride?: boolean;
 }
 
 /**
@@ -46,9 +51,10 @@ export interface ProfileChromeLeftProps {
  * document and the open wallet in tab memory stay. The first client render matches SSR (`/welcome`, `profile.back`). An
  * ask or shop wizard override replaces the history link with a button. The wordmark is
  * not the back control. `hideHistoryArrow` omits the history arrow; a wizard
- * override still shows.
+ * override still shows unless `hideOverride` is set as well, which leaves no
+ * arrow at all (the root info page `/`).
  *
- * @param props - Optional plain-click handler, wordmark, tone, and history hide.
+ * @param props - Optional plain-click handler, wordmark, tone, history hide, and override hide.
  * @returns The back control and wordmark.
  */
 export function ProfileChromeLeft({
@@ -57,6 +63,7 @@ export function ProfileChromeLeft({
   wordmark,
   tone = 'app',
   hideHistoryArrow = false,
+  hideOverride = false,
 }: ProfileChromeLeftProps = {}): ReactElement {
   const { t } = useTranslations();
   const { override, stepBack } = useChromeBack();
@@ -84,7 +91,7 @@ export function ProfileChromeLeft({
     );
   return (
     <>
-      {override !== null ? (
+      {override !== null && !hideOverride ? (
         <button
           type="button"
           className={arrowClass}
