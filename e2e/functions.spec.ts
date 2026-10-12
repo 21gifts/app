@@ -2127,6 +2127,7 @@ test('Function: CameraPhotoButton — the composer camera opens a photo-only cam
   request,
 }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   const camera = page.locator('input[type="file"][capture]');
   await expect(camera).toHaveCount(1);
   await expect(camera).toHaveAttribute('capture', 'environment');
@@ -2141,7 +2142,10 @@ test('Function: CameraPhotoButton — the composer camera opens a photo-only cam
   const cameraBox = await button.boundingBox();
   const attachBox = await page.getByRole('button', { name: 'Add a photo or video' }).boundingBox();
   const placeBox = await page.getByRole('button', { name: 'Add a place' }).boundingBox();
+  expect(cameraBox).not.toBeNull();
+  expect(attachBox).not.toBeNull();
   expect(cameraBox?.x ?? 0).toBeLessThan(attachBox?.x ?? 0);
+  expect(placeBox).not.toBeNull();
   expect(attachBox?.x ?? 0).toBeLessThan(placeBox?.x ?? 0);
   const chooserPromise = page.waitForEvent('filechooser');
   await button.click();
@@ -2155,6 +2159,7 @@ test('Function: CameraPhotoButton — the composer photo row fits a 320 px phone
   request,
 }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   await page.setViewportSize({ width: 320, height: 700 });
   for (const name of ['Add a photo or video', 'Take a photo', 'Add a place']) {
     const box = await page.getByRole('button', { name, exact: true }).boundingBox();
@@ -2170,7 +2175,10 @@ test('Function: CameraPhotoButton — the composer photo row fits a 320 px phone
   const placeBox = await page
     .getByRole('button', { name: 'Add a place', exact: true })
     .boundingBox();
+  expect(cameraBox).not.toBeNull();
+  expect(attachBox).not.toBeNull();
   expect(cameraBox?.x ?? 0).toBeLessThan(attachBox?.x ?? 0);
+  expect(placeBox).not.toBeNull();
   expect(attachBox?.x ?? 0).toBeLessThan(placeBox?.x ?? 0);
   const message = await page.getByLabel('Your message').boundingBox();
   expect(message?.width ?? 0).toBeGreaterThanOrEqual(120);
@@ -2182,6 +2190,7 @@ test('Function: CameraPhotoButton — a camera photo keeps its capture time and 
   request,
 }) => {
   await reachWelcomeVerified(page, request);
+  await openHomeWriter(page);
   const posted = page.waitForRequest((req) => {
     if (req.method() !== 'POST') {
       return false;
@@ -2205,6 +2214,7 @@ test('Function: CameraPhotoButton — gallery and camera photos share the limit 
   request,
 }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   await page
     .locator('input[type="file"]:not([capture])')
     .setInputFiles(Array.from({ length: 9 }, () => 'e2e/fixtures/tiny.jpg'));
@@ -2221,6 +2231,7 @@ test('Function: CameraPhotoButton — a camera photo this browser cannot read sh
   request,
 }) => {
   await reachWelcome(page, request);
+  await openHomeWriter(page);
   await page.locator('input[type="file"][capture]').setInputFiles({
     name: 'IMG_0001.HEIC',
     mimeType: 'image/heic',
@@ -4341,6 +4352,8 @@ test('Function: CameraPhotoButton — the inbox thread camera adds a photo throu
   const attachBox = await page
     .getByRole('button', { name: 'Add a photo', exact: true })
     .boundingBox();
+  expect(cameraBox).not.toBeNull();
+  expect(attachBox).not.toBeNull();
   expect(cameraBox?.x ?? 0).toBeLessThan(attachBox?.x ?? 0);
   const message = await page.getByLabel('Your message').boundingBox();
   expect(message?.width ?? 0).toBeGreaterThanOrEqual(120);
@@ -14470,6 +14483,8 @@ test('Function: CameraPhotoButton — the profile photo uses the front camera an
   const attachBox = await page
     .getByRole('button', { name: 'Add a profile photo', exact: true })
     .boundingBox();
+  expect(cameraBox).not.toBeNull();
+  expect(attachBox).not.toBeNull();
   expect(cameraBox?.x ?? 0).toBeLessThan(attachBox?.x ?? 0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   await chooser.setFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
