@@ -30,8 +30,9 @@ import { useWalletStore } from '@/stores/wallet-store';
  * - waiting: sent; polling GET /me/loans for settlement. The UI still shows "Sending ₿X…".
  * - repaid: settlement seen for everything sent.
  * - unconfirmed: still not settled WALLET_PAY_CONFIRM_WAIT_MS after the last send.
- * - failed: the due request or a prepare failed before anything was sent (`errorKey` says why),
- *   or a send failed (then `sent` lists what did go out).
+ * - failed: the due request, a loans reload, or a prepare failed before anything was sent
+ *   (`errorKey` says why), also on a run that had nothing to send, or a send failed (then
+ *   `sent` lists what did go out).
  */
 export type LoanRepayPhase =
   | 'unavailable'
