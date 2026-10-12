@@ -232,6 +232,12 @@ export function ShopAddWizard({
             onChange={pickFiles}
           />
           <div className="flex items-center gap-2">
+            <CameraPhotoButton
+              label={t('camera.takePhoto')}
+              size="lg"
+              disabled={posting}
+              onChange={pickFiles}
+            />
             <IconButton
               type="button"
               size="lg"
@@ -244,12 +250,6 @@ export function ShopAddWizard({
             >
               <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
             </IconButton>
-            <CameraPhotoButton
-              label={t('camera.takePhoto')}
-              size="lg"
-              disabled={posting}
-              onChange={pickFiles}
-            />
           </div>
           {keptMedia.map((item, index) =>
             item.kind === 'video' ? (

@@ -2138,6 +2138,11 @@ test('Function: CameraPhotoButton — the composer camera opens a photo-only cam
   const button = page.getByRole('button', { name: 'Take a photo' });
   await expect(button).toBeVisible();
   await expect(page.getByText('Take a photo')).toHaveCount(0);
+  const cameraBox = await button.boundingBox();
+  const attachBox = await page.getByRole('button', { name: 'Add a photo or video' }).boundingBox();
+  const placeBox = await page.getByRole('button', { name: 'Add a place' }).boundingBox();
+  expect(cameraBox?.x ?? 0).toBeLessThan(attachBox?.x ?? 0);
+  expect(attachBox?.x ?? 0).toBeLessThan(placeBox?.x ?? 0);
   const chooserPromise = page.waitForEvent('filechooser');
   await button.click();
   const chooser = await chooserPromise;
@@ -2156,6 +2161,17 @@ test('Function: CameraPhotoButton — the composer photo row fits a 320 px phone
     expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
   }
+  const cameraBox = await page
+    .getByRole('button', { name: 'Take a photo', exact: true })
+    .boundingBox();
+  const attachBox = await page
+    .getByRole('button', { name: 'Add a photo or video', exact: true })
+    .boundingBox();
+  const placeBox = await page
+    .getByRole('button', { name: 'Add a place', exact: true })
+    .boundingBox();
+  expect(cameraBox?.x ?? 0).toBeLessThan(attachBox?.x ?? 0);
+  expect(attachBox?.x ?? 0).toBeLessThan(placeBox?.x ?? 0);
   const message = await page.getByLabel('Your message').boundingBox();
   expect(message?.width ?? 0).toBeGreaterThanOrEqual(120);
   expect(await page.evaluate(pageFrameProblems)).toEqual([]);
@@ -4319,6 +4335,13 @@ test('Function: CameraPhotoButton — the inbox thread camera adds a photo throu
     const box = await page.getByRole('button', { name, exact: true }).boundingBox();
     expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
   }
+  const cameraBox = await page
+    .getByRole('button', { name: 'Take a photo', exact: true })
+    .boundingBox();
+  const attachBox = await page
+    .getByRole('button', { name: 'Add a photo', exact: true })
+    .boundingBox();
+  expect(cameraBox?.x ?? 0).toBeLessThan(attachBox?.x ?? 0);
   const message = await page.getByLabel('Your message').boundingBox();
   expect(message?.width ?? 0).toBeGreaterThanOrEqual(120);
   expect(await page.evaluate(pageFrameProblems)).toEqual([]);
@@ -14441,6 +14464,13 @@ test('Function: CameraPhotoButton — the profile photo uses the front camera an
       (frame?.x ?? 0) + (frame?.width ?? 320),
     );
   }
+  const cameraBox = await page
+    .getByRole('button', { name: 'Take a profile photo', exact: true })
+    .boundingBox();
+  const attachBox = await page
+    .getByRole('button', { name: 'Add a profile photo', exact: true })
+    .boundingBox();
+  expect(cameraBox?.x ?? 0).toBeLessThan(attachBox?.x ?? 0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
   await chooser.setFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
   await expect.poll(() => picturePuts.length, { timeout: 10_000 }).toBe(1);

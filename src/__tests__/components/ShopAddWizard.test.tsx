@@ -133,7 +133,7 @@ describe('ShopAddWizard', () => {
     expect(screen.queryByText('Remove video')).toBeNull();
     expect(screen.queryByText('Remove photo')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a photo or video' }));
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: null } });
     fireEvent.change(input, { target: { files: [] } });
     const file = new File(['a'], 'a.jpg', { type: 'image/jpeg' });
@@ -147,6 +147,11 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Take a photo' }));
     expect(cameraClick).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('Take a photo')).toBeNull();
+    const cameraButton = screen.getByRole('button', { name: 'Take a photo' });
+    const attachButton = screen.getByRole('button', { name: 'Add a photo or video' });
+    expect(
+      cameraButton.compareDocumentPosition(attachButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     const shot = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'image.jpg', {
       type: 'image/jpeg',
     });
@@ -265,9 +270,9 @@ describe('ShopAddWizard', () => {
     expect(screen.queryByRole('button', { name: 'Add a shop' })).toBeNull();
     expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
     expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:clip');
-    expect(document.querySelector('input[type="file"]')?.getAttribute('accept')).toBe(
-      'image/jpeg,image/png,image/webp',
-    );
+    expect(
+      document.querySelector('input[type="file"]:not([capture])')?.getAttribute('accept'),
+    ).toBe('image/jpeg,image/png,image/webp');
     fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
     expect(onRemoveKept).toHaveBeenCalledWith(0);
     expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:clip');

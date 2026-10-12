@@ -3573,7 +3573,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Your first post is free.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Remove video' })).toBeTruthy();

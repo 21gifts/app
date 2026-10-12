@@ -2056,7 +2056,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     expect(input.hasAttribute('multiple')).toBe(true);
     const clickSpy = vi.spyOn(input, 'click').mockImplementation(() => undefined);
     fireEvent.click(screen.getByLabelText('Add a photo or video'));
@@ -2074,6 +2074,15 @@ describe('ForumBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Take a photo' }));
     expect(cameraClick).toHaveBeenCalledTimes(1);
     expect(screen.queryByText('Take a photo')).toBeNull();
+    const cameraButton = screen.getByRole('button', { name: 'Take a photo' });
+    const attachButton = screen.getByRole('button', { name: 'Add a photo or video' });
+    const placeButton = screen.getByRole('button', { name: 'Add a place' });
+    expect(
+      cameraButton.compareDocumentPosition(attachButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      attachButton.compareDocumentPosition(placeButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     const shot = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'image.jpg', {
       type: 'image/jpeg',
     });

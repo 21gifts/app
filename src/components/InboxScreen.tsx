@@ -261,7 +261,7 @@ export interface InboxScreenProps {
   /** Current spot rate for unpaid invoice previews, or `null` without a usable rate. */
   rateDay?: FiatRateDay | null;
   /**
-   * Show the ImagePlus attach control, the camera, and photo drafts. Default false for
+   * Show the camera, the ImagePlus attach control, and photo drafts. Default false for
    * callers that omit it; InboxLoader passes true on an open thread; the
    * staff room still passes true.
    */
@@ -505,8 +505,8 @@ function ConversationListItem({
  * bubbles use `forum.giftReply`; text+sats show the amount under the body.
  * Non-empty bodies go through {@link ForumQuotedBody} so a pasted
  * `https://21.gifts/messages/<uuid>` unfurls as a nested quoted-note card.
- * `showAttach` (default false for callers that omit it) adds the forum
- * ImagePlus control and the camera (`CameraPhotoButton`) in a row above the
+ * `showAttach` (default false for callers that omit it) adds the camera
+ * (`CameraPhotoButton`) and the forum ImagePlus control in a row above the
  * message, still previews, and photo-only send for any caller
  * that passes true (`/messages` open threads and the staff room);
  * `photoUrls` renders attached stills on bubbles. Settled thread sats amounts
@@ -1095,6 +1095,12 @@ export function InboxScreen({
         <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
           {showAttach ? (
             <div className="flex items-center gap-2">
+              <CameraPhotoButton
+                label={t('camera.takePhoto')}
+                size="lg"
+                disabled={posting || messagesLoading}
+                onChange={handleFileChange}
+              />
               <IconButton
                 type="button"
                 size="lg"
@@ -1113,12 +1119,6 @@ export function InboxScreen({
                 multiple
                 accept="image/jpeg,image/png,image/webp"
                 className="hidden"
-                disabled={posting || messagesLoading}
-                onChange={handleFileChange}
-              />
-              <CameraPhotoButton
-                label={t('camera.takePhoto')}
-                size="lg"
                 disabled={posting || messagesLoading}
                 onChange={handleFileChange}
               />

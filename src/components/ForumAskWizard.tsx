@@ -300,6 +300,12 @@ export function ForumAskWizard({
       {step === 2 ? (
         <>
           <div className="flex items-center gap-2">
+            <CameraPhotoButton
+              label={t('camera.takePhoto')}
+              size="lg"
+              disabled={posting}
+              onChange={handleFiles}
+            />
             <IconButton
               type="button"
               size="lg"
@@ -318,12 +324,6 @@ export function ForumAskWizard({
               multiple
               accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
               className="hidden"
-              disabled={posting}
-              onChange={handleFiles}
-            />
-            <CameraPhotoButton
-              label={t('camera.takePhoto')}
-              size="lg"
               disabled={posting}
               onChange={handleFiles}
             />
