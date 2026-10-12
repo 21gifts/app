@@ -8635,7 +8635,16 @@ describe('ForumBoard writer', () => {
     expect(photoRow.contains(within(layer).getByRole('button', { name: 'Take a photo' }))).toBe(
       true,
     );
+    expect(
+      photoRow.contains(within(layer).getByRole('button', { name: 'Add a photo or video' })),
+    ).toBe(true);
     expect(photoRow.contains(field)).toBe(false);
+    const post = within(layer).getByRole('button', { name: 'Post' });
+    expect(photoRow.contains(post)).toBe(false);
+    const textRow = photoRow.nextElementSibling as HTMLElement;
+    expect(textRow.contains(field)).toBe(true);
+    expect(textRow.contains(post)).toBe(true);
+    expect(field.compareDocumentPosition(post) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(field.className).not.toContain('pointer-coarse:');
     expect(within(layer).getByRole('button', { name: 'Post' }).className).not.toContain(
       'pointer-coarse:',
