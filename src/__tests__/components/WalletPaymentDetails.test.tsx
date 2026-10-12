@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletPaymentDetails } from '@/components/WalletPaymentDetails';
 import { useSpotRateState } from '@/hooks/useSpotRate';
@@ -8,6 +8,7 @@ import { openInSystemBrowser } from '@/lib/in-app-browser';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { toFixturePayment, WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
+import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('next/navigation', () => ({
@@ -79,12 +80,15 @@ beforeEach(() => {
   vi.mocked(useSpotRateState).mockReset().mockReturnValue({ rateDay: RATE_DAY, loading: false });
   vi.mocked(openInSystemBrowser).mockReset();
   vi.mocked(useWallet).mockReturnValue(walletWith('ready'));
+  useAuthStore.setState({ session: null, account: null });
 });
 
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
   Reflect.deleteProperty(navigator, 'clipboard');
+  useAuthStore.setState({ session: null, account: null });
+  vi.unstubAllGlobals();
 });
 
 describe('WalletPaymentDetails', () => {
@@ -188,6 +192,90 @@ describe('WalletPaymentDetails', () => {
     showPayment(fixture(NOTE_RECEIVE));
     expect(screen.getByText('Happy birthday!')).toBeTruthy();
     expect(screen.getByText('Received')).toBeTruthy();
+  });
+
+  it('shows a sent heart with its filled accent icon and linked post instead of a gift title', async () => {
+    const payment = fixture(SPARK_SEND);
+    const paymentHash = payment.info.paymentHash as string;
+    useAuthStore.setState({ session: 'session', account: null });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json({
+          hearts: [
+            {
+              paymentHash: paymentHash.toLowerCase(),
+              messageId: 'message-21',
+              authorName: 'Ada',
+              text: 'A thoughtful post',
+              deleted: false,
+            },
+          ],
+        }),
+      ),
+    );
+
+    showPayment(payment);
+    const post = await screen.findByRole('link', { name: 'Ada A thoughtful post' });
+    expect(post.getAttribute('href')).toBe('/messages/message-21');
+    expect(screen.getByText('Ada')).toBeTruthy();
+    expect(screen.getByText('A thoughtful post').className).toContain('line-clamp-3');
+    const heartIcon = document.querySelector('.lucide-heart');
+    expect(heartIcon?.getAttribute('fill')).toBe('currentColor');
+    expect(heartIcon?.getAttribute('class')).toContain('text-app-accent');
+    expect(screen.queryByText('Gift')).toBeNull();
+    expect(screen.queryByText('Gift on your post')).toBeNull();
+  });
+
+  it('hides the gift title while the heart lookup is pending', () => {
+    const payment = fixture(SPARK_SEND);
+    useAuthStore.setState({ session: 'session', account: null });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>(() => undefined)),
+    );
+
+    showPayment(payment);
+    expect(screen.queryByText('Gift')).toBeNull();
+    expect(document.querySelector('.lucide-heart')).toBeNull();
+    expect(document.querySelector('.lucide-arrow-up-right')).toBeTruthy();
+  });
+
+  it('uses the message id as the accessible post name when author and text are empty', async () => {
+    const payment = fixture(SPARK_SEND);
+    const paymentHash = payment.info.paymentHash as string;
+    useAuthStore.setState({ session: 'session', account: null });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json({
+          hearts: [
+            {
+              paymentHash: paymentHash.toLowerCase(),
+              messageId: 'message-empty',
+              authorName: '',
+              text: '',
+              deleted: true,
+            },
+          ],
+        }),
+      ),
+    );
+
+    showPayment(payment);
+    const post = await screen.findByRole('link', { name: 'message-empty' });
+    expect(post.textContent).toBe('');
+    expect(screen.queryByText('Gift')).toBeNull();
+  });
+
+  it('keeps the gift title when the settled lookup has no heart', async () => {
+    useAuthStore.setState({ session: 'session', account: null });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ hearts: [] })));
+
+    showPayment(fixture(SPARK_SEND));
+    await waitFor(() => expect(screen.getByText('Gift')).toBeTruthy());
+    expect(document.querySelector('.lucide-heart')).toBeNull();
+    expect(document.querySelector('.lucide-arrow-up-right')).toBeTruthy();
   });
 
   it('shows a shop payment without a payment hash or the shop memo', () => {

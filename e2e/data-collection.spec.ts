@@ -161,6 +161,36 @@ test.describe('POST /me/wallet/report', () => {
   });
 });
 
+test.describe('POST /me/wallet/hearts', () => {
+  test('Function: proxyMeWalletHeartsPost — 401 without a session', async ({ request }) => {
+    expect((await request.post('/me/wallet/hearts', { data: { hashes: [] } })).status()).toBe(401);
+  });
+
+  test('Function: fetchHeartPosts — a signed-in lookup of an unknown hash returns no hearts', async ({
+    request,
+  }) => {
+    const token = await newMember(request);
+    const res = await request.post('/me/wallet/hearts', {
+      headers: { authorization: `Bearer ${token}` },
+      data: { hashes: ['a'.repeat(64)] },
+    });
+    expect(res.status()).toBe(200);
+    expect(await res.json()).toEqual({ hearts: [] });
+  });
+
+  test('Function: useHeartContext — a hash that is not a heart stays out of the lookup', async ({
+    request,
+  }) => {
+    const token = await newMember(request);
+    const res = await request.post('/me/wallet/hearts', {
+      headers: { authorization: `Bearer ${token}` },
+      data: { hashes: ['b'.repeat(64)] },
+    });
+    expect(res.status()).toBe(200);
+    expect(await res.json()).toEqual({ hearts: [] });
+  });
+});
+
 test.describe('POST /me/events', () => {
   test('Function: proxyMeEventsPost — 401 without a session, 204 with one', async ({ request }) => {
     expect((await request.post('/me/events', { data: { events: [] } })).status()).toBe(401);

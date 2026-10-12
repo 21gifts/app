@@ -2718,6 +2718,18 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/me/wallet/hearts') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    // No stubbed heart rows: the wallet keeps the ordinary gift title.
+    json(res, 200, { hearts: [] });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/me/events') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

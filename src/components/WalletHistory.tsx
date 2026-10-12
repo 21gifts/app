@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDownLeft, ArrowUpRight, ChevronRight } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -8,6 +8,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { Button, Card } from '@/components/ui';
+import { useHeartContext } from '@/hooks/useHeartContext';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWalletHistory } from '@/hooks/useWalletHistory';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
@@ -28,6 +29,13 @@ export function WalletHistory(): ReactElement | null {
   const { fiat } = useFiatPreference();
   const rateDay = useSpotRate();
   const { status, payments, hasMore, loadMore, retry } = useWalletHistory();
+  const heartContext = useHeartContext(
+    payments.flatMap((payment) =>
+      payment.info.purpose === 'gift' && typeof payment.info.paymentHash === 'string'
+        ? [payment.info.paymentHash]
+        : [],
+    ),
+  );
   const sentinel = useRef<HTMLLIElement>(null);
 
   useEffect(() => {
@@ -71,20 +79,45 @@ export function WalletHistory(): ReactElement | null {
           const Icon = received ? ArrowDownLeft : ArrowUpRight;
           const title = paymentTitle(payment);
           const message = paymentMessage(payment);
+          const heartHash =
+            payment.info.purpose === 'gift' && typeof payment.info.paymentHash === 'string'
+              ? payment.info.paymentHash.toLowerCase()
+              : null;
+          const heart = heartHash === null ? undefined : heartContext.byHash.get(heartHash);
+          const heartPending =
+            heartHash !== null && heart === undefined && heartContext.pending.has(heartHash);
+          const heartTitle =
+            heart === undefined
+              ? null
+              : heart.text.replace(/\r?\n|\r/g, ' ').trim() || heart.authorName;
           return (
             <li key={payment.id} className="w-full">
               <Link
                 href={paymentHref(payment.id)}
                 className="flex w-full items-center gap-3 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 text-app-fg no-underline transition hover:bg-app-hover"
               >
-                <Icon
-                  aria-hidden="true"
-                  className="h-4 w-4 shrink-0 self-start mt-0.5 text-app-muted"
-                />
+                {heart === undefined ? (
+                  <Icon
+                    aria-hidden="true"
+                    className="h-4 w-4 shrink-0 self-start mt-0.5 text-app-muted"
+                  />
+                ) : (
+                  <Heart
+                    aria-hidden="true"
+                    fill="currentColor"
+                    className="h-4 w-4 shrink-0 self-start mt-0.5 text-app-accent"
+                  />
+                )}
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex items-baseline justify-between gap-x-3">
                     <span className="min-w-0 truncate text-sm font-medium">
-                      {'text' in title ? title.text : t(title.key)}
+                      {heart !== undefined
+                        ? heartTitle
+                        : heartPending
+                          ? ''
+                          : 'text' in title
+                            ? title.text
+                            : t(title.key)}
                     </span>
                     <span
                       className={`shrink-0 text-sm tabular-nums lining-nums${payment.status === 'failed' ? ' text-app-subtle line-through' : ''}`}
