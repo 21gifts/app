@@ -482,6 +482,20 @@ describe('LoanRepayScreen', () => {
     expect(alert.className).toContain('text-app-danger');
   });
 
+  it('shows a failed list at once while a sibling list is still pending', async () => {
+    vi.mocked(getRepayment).mockImplementation((id) =>
+      id === 'loan-1' ? new Promise(() => undefined) : Promise.resolve(null),
+    );
+    show({
+      sundayRest: false,
+      loans: [loan(), loan({ messageId: 'loan-2', text: 'School books for my daughter' })],
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Could not load who gets paid for this loan.');
+    expect(screen.getByRole('status').textContent).toBe('Loading who gets paid…');
+  });
+
   it('shows rows for a loaded loan and an error line for a failed ledger', async () => {
     vi.mocked(getRepayment).mockImplementation(async (id) => (id === 'loan-1' ? ledger() : null));
     show({

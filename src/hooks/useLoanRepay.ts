@@ -84,7 +84,8 @@ export interface LoanRepayResult {
    * for every loan it would pay, it prepares nothing, sends nothing, and ends `failed`.
    * When the set is given and none of those shares are still due, the run reloads, then
    * ends `unconfirmed` if one of the named shares is held by another run, `repaid` if
-   * nothing is due any more, otherwise `idle`.
+   * nothing is due any more, otherwise `idle`. On these runs that send nothing, a
+   * failed reload ends `failed` instead.
    *
    * @param loans - Current loans body in list order.
    * @param onlyShares - Optional exact share keys to pay; only those named shares are
@@ -239,7 +240,8 @@ const reservedShares = new Set<string>();
  * ends unconfirmed. When `onlyShares` is given and none of those shares are
  * still due, the run reloads, then ends `unconfirmed` if one of the named
  * shares is held by another run, `repaid` if nothing is due any more, otherwise
- * `idle`. The send-now link names at most 60 shares per loan (one due request's
+ * `idle`; a run that sends nothing and whose reload fails ends `failed` instead
+ * (`forum.payErrorRequest`). The send-now link names at most 60 shares per loan (one due request's
  * limit); if any named share is missing from the due answer, nothing is sent
  * and the screen reloads. After every due request the run reloads loans for a
  * fresh `repaidSats` baseline. Without a fresh body, or when any loan this run
@@ -434,8 +436,13 @@ export function useLoanRepay(options: {
           onlyShares !== undefined &&
           [...onlyShares].some((key) => !reservedShares.has(key) && !dueKeys.has(key));
         if (namedMissing || bills.length === 0) {
-          await options.reload();
+          const reloaded = await options.reload();
           if (!active()) {
+            return;
+          }
+          // Nothing was sent, but the screen cannot show where the loans stand: say so.
+          if (reloaded === null) {
+            failBeforeSend(new Error('reload'));
             return;
           }
           if (!namedMissing && skipped) {
