@@ -71,6 +71,10 @@ function row(label: string): HTMLElement {
   return term.nextElementSibling as HTMLElement;
 }
 
+function openDetails(): void {
+  fireEvent.click(screen.getByText('Details'));
+}
+
 beforeEach(() => {
   vi.mocked(useSpotRateState).mockReset().mockReturnValue({ rateDay: RATE_DAY, loading: false });
   vi.mocked(openInSystemBrowser).mockReset();
@@ -139,11 +143,14 @@ describe('WalletPaymentDetails', () => {
     expect(screen.queryByText('From', { selector: 'dt' })).toBeNull();
     expect(screen.queryByText('Post', { selector: 'dt' })).toBeNull();
     expect(document.body.textContent).not.toMatch(/npub1|note1|Zap/);
-    expect(row('Payment request').textContent).toMatch(/^lnbc/);
     expect(row('Amount').textContent).toBe("₿2'100 · $2.10");
     // A fee-less receive has no fee row, and a received payment shows no recipient node.
     expect(screen.queryByText('Fee', { selector: 'dt' })).toBeNull();
     expect(screen.queryByText('Recipient node', { selector: 'dt' })).toBeNull();
+    expect(screen.queryByText('Payment request', { selector: 'dt' })).toBeNull();
+    expect(screen.queryByText('Proof of payment', { selector: 'dt' })).toBeNull();
+    openDetails();
+    expect(row('Payment request').textContent).toMatch(/^lnbc/);
     expect(row('Proof of payment').textContent).toContain('…');
     expect(screen.queryByText('View on mempool.space')).toBeNull();
   });
@@ -154,6 +161,7 @@ describe('WalletPaymentDetails', () => {
     expect(screen.getByText("−₿10'000")).toBeTruthy();
     expect(screen.getByText('Thanks for dinner')).toBeTruthy();
     expect(row('To').textContent).toBe('bob@example.com');
+    expect(within(row('To')).queryByRole('link')).toBeNull();
     expect(row('Fee').textContent).toBe('₿3 · $0.00');
     expect(row('Total').textContent).toBe("₿10'003 · $10.00");
     expect(screen.queryByText('Recipient node', { selector: 'dt' })).toBeNull();
@@ -165,10 +173,17 @@ describe('WalletPaymentDetails', () => {
     expect(screen.getByText('Gift')).toBeTruthy();
     expect(row('Type').textContent).toBe('Wallet transfer');
     expect(row('To').textContent).toBe('@alice');
+    const toLink = within(row('To')).getByRole('link', { name: '@alice' });
+    expect(toLink.getAttribute('href')).toBe('/members/acc_e2e');
     expect(row('Fee').textContent).toBe('Free');
     expect(screen.queryByText('Total', { selector: 'dt' })).toBeNull();
+    expect(screen.queryByText('Payment hash', { selector: 'dt' })).toBeNull();
+    expect(document.body.textContent).not.toMatch(/zap:/);
+    openDetails();
     expect(row('Payment hash').textContent).toBeTruthy();
     expect(document.body.textContent).not.toMatch(/zap:/);
+    openDetails();
+    expect(screen.queryByText('Payment hash', { selector: 'dt' })).toBeNull();
     cleanup();
     showPayment(fixture(NOTE_RECEIVE));
     expect(screen.getByText('Happy birthday!')).toBeTruthy();
@@ -178,6 +193,9 @@ describe('WalletPaymentDetails', () => {
   it('shows a shop payment without a payment hash or the shop memo', () => {
     showPayment(fixture('0c892d4e'));
     expect(screen.getByText('Shop payment')).toBeTruthy();
+    expect(screen.queryByText('Payment hash', { selector: 'dt' })).toBeNull();
+    expect(document.body.textContent).not.toMatch(/pos:/);
+    openDetails();
     expect(screen.queryByText('Payment hash', { selector: 'dt' })).toBeNull();
     expect(document.body.textContent).not.toMatch(/pos:/);
   });
@@ -207,6 +225,7 @@ describe('WalletPaymentDetails', () => {
     expect(screen.getByText('On-chain deposit', { selector: 'p' })).toBeTruthy();
     expect(row('Fee').textContent).toContain('₿254');
     expect(row('Arrived on-chain').textContent).toContain("₿44'000");
+    openDetails();
     expect(row('Output').textContent).toBe('1');
     expect(screen.getByRole('button', { name: 'Copy Output' })).toBeTruthy();
     expect(row('Transaction').textContent).toContain('…');
@@ -228,6 +247,8 @@ describe('WalletPaymentDetails', () => {
     showPayment(fixture(WITHDRAW));
     expect(screen.getByText('On-chain withdrawal', { selector: 'p' })).toBeTruthy();
     expect(row('Total').textContent).toContain("₿41'840");
+    expect(screen.queryByText('Output', { selector: 'dt' })).toBeNull();
+    openDetails();
     expect(screen.queryByText('Output', { selector: 'dt' })).toBeNull();
   });
 
@@ -268,6 +289,7 @@ describe('WalletPaymentDetails', () => {
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
     const payment = fixture(SPARK_SEND);
     showPayment(payment);
+    openDetails();
     const copy = screen.getByRole('button', { name: 'Copy Payment ID' });
     expect(copy.textContent).toBe('');
     await act(async () => {

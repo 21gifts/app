@@ -781,6 +781,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet/payment',
+    id: 'details-open',
+    image: 'wallet-payment-details-open.png',
+    visual: 'state-wallet-payment-details-open',
+    needle: "shotScreen(page, 'state-wallet-payment-details-open')",
+  },
+  {
+    route: '/wallet/payment',
     id: 'shop',
     image: 'wallet-payment-shop.png',
     visual: 'state-wallet-payment-shop',

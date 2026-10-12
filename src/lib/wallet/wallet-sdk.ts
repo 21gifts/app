@@ -112,6 +112,8 @@ export interface WalletPaymentInfo {
   destinationPubkey?: string;
   /** Lightning address that was paid. */
   lnAddress?: string;
+  /** Account id when To is that member. Absent for a Lightning address. */
+  memberAccountId?: string;
   /** Comment sent along with a Lightning-address payment. */
   lnurlComment?: string;
   /** Zap request of a received zap. */

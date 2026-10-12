@@ -608,31 +608,37 @@ Pinned fixture (`?visual=send-comment-long`, Playwright builds only). The amount
 ## Screen: /wallet/payment
 
 - **URL:** `/wallet/payment?id=<payment id>` — one payment of the signed-in member's wallet, opened from a row of the **Payments** list on `/wallet`.
-- **What the user sees:** The same frame as `/wallet`: one top-left arrow (the previous in-app view, the list when opened from it, or `/welcome` when this tab has none) and the wordmark, **Menu** top-right. The heading **Payment** is for screen readers only. At the top, centred: a round badge with the direction arrow, the title (a gift on your post, Gift when a gift memo was sent, Gift on your post when one was received, Shop payment for a shop memo, the paid Lightning address, the description, the on-chain direction, or Received / Sent; neither gift nor shop memo is shown as the description, and a gift memo's 64 hex digits are the payment hash when the payment has none of its own), the amount large with **+** or **−** (a failed payment struck through and muted), the default fiat under it, and a status pill: **Completed** in green, **Pending** in the notice colour, **Failed** in red. A pending send adds **Still on its way. The amount stays reserved until it arrives or comes back.**; a failed send adds **Nothing left your wallet.** A message that came with the payment (the payer's note, the zap message, or the comment sent to a Lightning address) follows in a soft box. A bordered list shows **Date**, **Type**, **To** (the paid Lightning address), **Description** (only when it is not already the title), **Amount**, **Fee** (**Free** at ₿0; left out for a fee-less receive and for a failed payment), **Total** (a send with a fee), and **Arrived on-chain** (a deposit whose claim fee was deducted); each Bitcoin figure there also shows the default fiat. Under **Details**, the technical values are shortened in the middle, each with a Copy icon: **Transaction** and **Output**, **Payment request**, **Payment hash**, **Proof of payment**, and **Payment ID**. An on-chain payment adds **View on mempool.space**, which first asks **Open external link?**. Nothing shows while the payment or the rate is still loading; when the rate read finds no usable rate, the Bitcoin amounts show without a fiat line. The screen reads the payment again after each wallet sync, so a pending payment updates in place. A missing or unknown id shows **This payment could not be found.**
-- **Actions:** Copy a technical value; open the transaction on mempool.space after the warning; go back to the previous in-app view (the list when opened from it) with the top-left arrow; open **Menu** (see **Signed-in header**).
+- **What the user sees:** The same frame as `/wallet`: one top-left arrow (the previous in-app view, the list when opened from it, or `/welcome` when this tab has none) and the wordmark, **Menu** top-right. The heading **Payment** is for screen readers only. At the top, centred: a round badge with the direction arrow, the title (a gift on your post, Gift when a gift memo was sent, Gift on your post when one was received, Shop payment for a shop memo, the paid Lightning address, the description, the on-chain direction, or Received / Sent; neither gift nor shop memo is shown as the description, and a gift memo's 64 hex digits are the payment hash when the payment has none of its own), the amount large with **+** or **−** (a failed payment struck through and muted), the default fiat under it, and a status pill: **Completed** in green, **Pending** in the notice colour, **Failed** in red. A pending send adds **Still on its way. The amount stays reserved until it arrives or comes back.**; a failed send adds **Nothing left your wallet.** A message that came with the payment (the payer's note, the zap message, or the comment sent to a Lightning address) follows in a soft box. A bordered list shows **Date**, **Type**, **To** (the paid Lightning address as plain text, or a link to that member's profile when the payment names a member), **Description** (only when it is not already the title), **Amount**, **Fee** (**Free** at ₿0; left out for a fee-less receive and for a failed payment), **Total** (a send with a fee), and **Arrived on-chain** (a deposit whose claim fee was deducted); each Bitcoin figure there also shows the default fiat. **Details** starts closed. A click shows the shortened technical values, each with a Copy icon: **Transaction** and **Output**, **Payment request**, **Payment hash**, **Proof of payment**, and **Payment ID**. An on-chain payment adds **View on mempool.space**, which first asks **Open external link?**. Nothing shows while the payment or the rate is still loading; when the rate read finds no usable rate, the Bitcoin amounts show without a fiat line. The screen reads the payment again after each wallet sync, so a pending payment updates in place. A missing or unknown id shows **This payment could not be found.**
+- **Actions:** Copy a technical value; open that profile from **To**; open the transaction on mempool.space after the warning; go back to the previous in-app view (the list when opened from it) with the top-left arrow; open **Menu** (see **Signed-in header**).
 - **Calls:** `AppShell`, `WalletChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletPaymentDetails`, `useWalletPayment`, `getWalletPayment`, `paymentTitle`, `paymentMessage`, `ExternalLinkWarning`, `openInSystemBrowser`, `useSpotRateState`.
 
 ### Variant: default
 
-Pinned fixture (`?visual=history-rows` with the zap's id, Playwright builds only). A received zap: **Gift on your post**, **+₿2'100** with **$2.10**, **Completed**, the message **Great photo!**, **Type** Instant payment, **Amount**, no fee row, and under **Details** the payment request, payment hash, proof of payment, and the payment id.
+Pinned fixture (`?visual=history-rows` with the zap's id, Playwright builds only). A received zap: **Gift on your post**, **+₿2'100** with **$2.10**, **Completed**, the message **Great photo!**, **Type** Instant payment, **Amount**, no fee row, and **Details** is closed, so the payment request, payment hash, proof of payment, and the payment id are not on this screen.
 
 ![21.gifts wallet payment zap](images/wallet-payment.png)
 
 ### Variant: address-send
 
-A payment to the Lightning address **bob@example.com** with the comment **Thanks for dinner**: **−₿10'000**, **To** bob@example.com, **Fee** ₿3, **Total** ₿10'003 (each with fiat).
+A payment to the Lightning address **bob@example.com** with the comment **Thanks for dinner**: **−₿10'000**, **To** bob@example.com as plain text, **Fee** ₿3, **Total** ₿10'003 (each with fiat).
 
 ![21.gifts wallet payment Lightning-address send](images/wallet-payment-address-send.png)
 
 ### Variant: spark-send
 
-A sent gift of **₿5'000** titled **Gift**, **Type** Wallet transfer, **To** @alice, **Fee** Free, and no **Total** row. Under **Details**, the payment request, the payment hash taken from the gift memo, and the payment id. The memo itself is not shown.
+A sent gift of **₿5'000** titled **Gift**, **Type** Wallet transfer, **To** @alice is a link to that member's profile, **Fee** Free, and no **Total** row. **Details** is closed, so the payment request, the payment hash from the gift memo, and the payment id are not on this screen. The memo itself is not shown.
 
 ![21.gifts wallet payment wallet transfer](images/wallet-payment-spark-send.png)
 
+### Variant: details-open
+
+The same sent gift as spark-send after pressing **Details**, so the payment request, the payment hash from the gift memo, and the payment id are visible; the memo is not.
+
+![21.gifts wallet payment details open](images/wallet-payment-details-open.png)
+
 ### Variant: shop
 
-A shop payment of **₿1** titled **Shop payment**, **Type** Wallet transfer, **Fee** Free, and no **Total** row and no payment hash. Under **Details**, the payment request and the payment id. The memo itself is not shown.
+A shop payment of **₿1** titled **Shop payment**, **Type** Wallet transfer, **Fee** Free, and no **Total** row and no payment hash. **Details** is closed, so the payment request and the payment id are not on this screen. The memo itself is not shown.
 
 ![21.gifts wallet payment shop](images/wallet-payment-shop.png)
 
@@ -650,13 +656,13 @@ A failed Lightning send (**Hardware wallet**): the amount struck through, the **
 
 ### Variant: deposit
 
-An on-chain deposit: **On-chain deposit**, **Fee** ₿254, **Arrived on-chain** ₿44'000, the **Transaction** and **Output** among the details, and **View on mempool.space**.
+An on-chain deposit: **On-chain deposit**, **Fee** ₿254, **Arrived on-chain** ₿44'000. **Details** is closed, so the **Transaction**, **Output**, and **View on mempool.space** are not on this screen.
 
 ![21.gifts wallet payment deposit](images/wallet-payment-deposit.png)
 
 ### Variant: withdraw
 
-An on-chain withdrawal: **On-chain withdrawal**, **−₿40'000**, **Fee** ₿1'840, **Total** ₿41'840, the **Transaction**, and **View on mempool.space**.
+An on-chain withdrawal: **On-chain withdrawal**, **−₿40'000**, **Fee** ₿1'840, **Total** ₿41'840. **Details** is closed, so the **Transaction** and **View on mempool.space** are not on this screen.
 
 ![21.gifts wallet payment withdrawal](images/wallet-payment-withdraw.png)
 
@@ -674,13 +680,13 @@ The wallet is open but reading the payment failed (Playwright pin `?visual=histo
 
 ### Variant: copied
 
-The deposit after **Copy** on **Payment ID**: that row's icon turns into a green check for two seconds (and a screen reader hears **Copied**).
+The deposit after **Details** was opened, then **Copy** on **Payment ID**: that row's icon turns into a green check for two seconds (and a screen reader hears **Copied**).
 
 ![21.gifts wallet payment copied](images/wallet-payment-copied.png)
 
 ### Variant: external-link
 
-The deposit after **View on mempool.space**: the **Open external link?** dialog over the screen, with **Open link** and **Close**; only **Open link** leaves 21.gifts.
+The deposit after **Details** was opened, then **View on mempool.space**: the **Open external link?** dialog over the screen, with **Open link** and **Close**; only **Open link** leaves 21.gifts.
 
 ![21.gifts wallet payment external link](images/wallet-payment-external-link.png)
 

@@ -3,11 +3,15 @@ import { toWalletPayment, type WalletPayment } from '@/lib/wallet/wallet-sdk';
 
 /**
  * Person a fixture payment was sent to, when the SDK record has no address.
- * The sent gift is to @alice; the title stays Gift and To shows the person.
+ * The sent gift is to the member alice; the title stays Gift and To shows the person.
  */
-const FIXTURE_RECIPIENT: Readonly<Record<string, string>> = {
-  'df98837c-6a12-4b15-94f8-375c33937a4e': '@alice',
-};
+const FIXTURE_RECIPIENT: Readonly<Record<string, { lnAddress: string; memberAccountId: string }>> =
+  {
+    'df98837c-6a12-4b15-94f8-375c33937a4e': {
+      lnAddress: '@alice',
+      memberAccountId: 'acc_e2e',
+    },
+  };
 
 /**
  * Maps a fixture payment for the pinned history and payment screens.
@@ -22,7 +26,7 @@ export function toFixturePayment(payment: Payment): WalletPayment {
   if (recipient === undefined) {
     return mapped;
   }
-  return { ...mapped, info: { ...mapped.info, lnAddress: recipient } };
+  return { ...mapped, info: { ...mapped.info, ...recipient } };
 }
 
 /**

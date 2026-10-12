@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowDownLeft, ArrowUpRight, Check, Copy, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
 import { ExternalLinkWarning } from '@/components/ExternalLinkWarning';
@@ -115,6 +116,7 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const [leaving, setLeaving] = useState(false);
+  const [open, setOpen] = useState(false);
   const received = payment.direction === 'received';
   const Icon = received ? ArrowDownLeft : ArrowUpRight;
   const title = paymentTitle(payment);
@@ -179,7 +181,16 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
         <Row label={t('wallet.payment.type')}>{t(METHOD_KEY[payment.method])}</Row>
         {info.lnAddress === undefined ? null : (
           <Row label={t('wallet.payment.to')}>
-            <span className="break-all">{info.lnAddress}</span>
+            {info.memberAccountId === undefined ? (
+              <span className="break-all">{info.lnAddress}</span>
+            ) : (
+              <Link
+                href={`/members/${info.memberAccountId}`}
+                className="break-all underline underline-offset-2"
+              >
+                {info.lnAddress}
+              </Link>
+            )}
           </Row>
         )}
         {info.description === undefined ||
@@ -204,43 +215,52 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
         ) : null}
       </dl>
 
-      <section aria-label={t('wallet.payment.technical')} className="flex flex-col gap-2">
-        <h2 className="text-center text-xs tracking-widest text-app-subtle uppercase">
-          {t('wallet.payment.technical')}
-        </h2>
-        <dl className="divide-y divide-app-border rounded-2xl border border-app-border px-4">
-          {info.txId === undefined ? null : (
-            <CopyRow label={t('wallet.payment.txid')} value={info.txId} />
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => {
+          setOpen((current) => !current);
+        }}
+        className="w-full cursor-pointer text-center text-xs tracking-widest text-app-subtle uppercase"
+      >
+        {t('wallet.payment.technical')}
+      </button>
+      {open ? (
+        <div className="mt-2 flex flex-col gap-2">
+          <dl className="divide-y divide-app-border rounded-2xl border border-app-border px-4">
+            {info.txId === undefined ? null : (
+              <CopyRow label={t('wallet.payment.txid')} value={info.txId} />
+            )}
+            {info.vout === undefined ? null : (
+              <CopyRow label={t('wallet.payment.output')} value={String(info.vout)} />
+            )}
+            {info.invoice === undefined ? null : (
+              <CopyRow label={t('wallet.payment.invoice')} value={info.invoice} />
+            )}
+            {info.paymentHash === undefined ? null : (
+              <CopyRow label={t('wallet.payment.paymentHash')} value={info.paymentHash} />
+            )}
+            {info.preimage === undefined ? null : (
+              <CopyRow label={t('wallet.payment.preimage')} value={info.preimage} />
+            )}
+            <CopyRow label={t('wallet.payment.id')} value={payment.id} />
+          </dl>
+          {txUrl === null ? null : (
+            <a
+              href={txUrl}
+              rel="noopener noreferrer"
+              onClick={(event) => {
+                event.preventDefault();
+                setLeaving(true);
+              }}
+              className="inline-flex items-center justify-center gap-1.5 self-center py-2 text-sm text-app-muted underline underline-offset-2 hover:text-app-fg"
+            >
+              {t('wallet.payment.viewTx')}
+              <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
+            </a>
           )}
-          {info.vout === undefined ? null : (
-            <CopyRow label={t('wallet.payment.output')} value={String(info.vout)} />
-          )}
-          {info.invoice === undefined ? null : (
-            <CopyRow label={t('wallet.payment.invoice')} value={info.invoice} />
-          )}
-          {info.paymentHash === undefined ? null : (
-            <CopyRow label={t('wallet.payment.paymentHash')} value={info.paymentHash} />
-          )}
-          {info.preimage === undefined ? null : (
-            <CopyRow label={t('wallet.payment.preimage')} value={info.preimage} />
-          )}
-          <CopyRow label={t('wallet.payment.id')} value={payment.id} />
-        </dl>
-        {txUrl === null ? null : (
-          <a
-            href={txUrl}
-            rel="noopener noreferrer"
-            onClick={(event) => {
-              event.preventDefault();
-              setLeaving(true);
-            }}
-            className="inline-flex items-center justify-center gap-1.5 self-center py-2 text-sm text-app-muted underline underline-offset-2 hover:text-app-fg"
-          >
-            {t('wallet.payment.viewTx')}
-            <ExternalLink aria-hidden="true" className="h-3.5 w-3.5" />
-          </a>
-        )}
-      </section>
+        </div>
+      ) : null}
       {txUrl !== null && leaving ? (
         <ExternalLinkWarning
           url={txUrl}
@@ -262,8 +282,9 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
  * direction, title, signed amount with the default fiat, status (with a hint
  * for a pending or failed send), the message, a summary list (date, type,
  * counterparty, description, amount, fee, total, what arrived on-chain), and
- * the technical details with Copy (transaction and output, payment request,
- * payment hash, proof of payment, payment id). Nothing shows until the rate
+ * a closed Details disclosure whose open list is those technical values with
+ * Copy (transaction and output, payment request, payment hash, proof of
+ * payment, payment id). Nothing shows until the rate
  * read has settled, so no amount appears without its fiat while the rate is
  * still loading. While the wallet is still connecting, could not be opened,
  * or its one-time setup gave up, it shows that state (`WalletBalance`) and
