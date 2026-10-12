@@ -5618,9 +5618,11 @@ describe('deleteMessage', () => {
   it('throws the open-credit reason for that 409 body', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ error: OPEN_CREDIT_DELETE_ERROR }), { status: 409 }),
-      ),
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ error: OPEN_CREDIT_DELETE_ERROR }), { status: 409 }),
+        ),
     );
     await expect(deleteMessage('token', 'credit')).rejects.toThrow(
       new Error('An open credit cannot be deleted'),

@@ -3668,7 +3668,8 @@ const fil = {
   'forum.deleteConfirmAction': 'Kumpirmahin ang pagbura',
   'forum.deleteCancel': 'Kanselahin ang pagbura',
   'forum.deleteError': 'Hindi mabura ang post. Pakisubukan muli.',
-  'forum.deleteOpenCreditError': 'Hindi pa buong nababayaran ang utang na ito, kaya hindi ito mabubura.',
+  'forum.deleteOpenCreditError':
+    'Hindi pa buong nababayaran ang utang na ito, kaya hindi ito mabubura.',
   'forum.deleteReply': 'Burahin ang reaksyon',
   'forum.deleteReplyConfirm': 'Burahin ang reaksyon na ito sa 21.gifts?',
   'forum.deleteReplyError': 'Hindi mabura ang reaksyon. Pakisubukan muli.',
