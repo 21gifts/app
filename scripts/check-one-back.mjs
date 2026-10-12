@@ -114,6 +114,12 @@ for (const file of files) {
   if (rel === 'src/components/MarketingHeader.tsx' && !source.includes('<ProfileChromeLeft')) {
     failures.push(`${rel}: the marketing header must use ProfileChromeLeft`);
   }
+  if (
+    rel === 'src/components/MarketingHeader.tsx' &&
+    !(source.includes('hideHistoryArrow={root}') && source.includes('hideOverride={root}'))
+  ) {
+    failures.push(`${rel}: the root info page / must not show a back arrow`);
+  }
   if (rel === 'src/app/welcome/page.tsx' && !source.includes('hideHistoryArrow')) {
     failures.push(`${rel}: /welcome must not show the history arrow`);
   }
