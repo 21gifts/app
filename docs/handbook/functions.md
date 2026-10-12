@@ -2225,7 +2225,7 @@ First post free: while the signed-in member is below verified and has no missing
 ## Function: isForumPhotoFile
 
 - **Purpose:** True when a browser `File` has mime type JPEG, PNG, WebP, HEIC, or HEIF, or has no mime type and a file name ending in one of those extensions. A phone camera can hand over HEIC or a file without a type. The browser decodes it and `prepareForumPhoto` or `WideImageCropper` turns it into a JPEG. A browser that cannot decode it shows the same unsupported-photo sentence as any other unusable file; the photo is never dropped without a sentence.
-- **Inputs:** `file` from `<input type="file">` (gallery or camera).
+- **Inputs:** `file` from `<input type="file">` (camera or gallery).
 - **Returns / side effects:** Boolean. No side effects.
 - **Used by:** `prepareForumPhoto`, and the wide-image pick in `AboutMeSection` and `ProfileScreen`.
 
@@ -2274,9 +2274,9 @@ First post free: while the signed-in member is below verified and has no missing
 ## Function: WideImageCropper
 
 - **Purpose:** In-app 5:2 frame for a picked wide profile image. The member drags, pinches, or scrolls the wheel, then confirms or cancels. A portrait, square, or 4:3 is framed here instead of rejected.
-- **Inputs:** `file` (any file `isForumPhotoFile` accepts, from the gallery or the camera), optional `busy`, `onConfirm` with `{ contentType: 'image/jpeg', data }`, `onCancel`, and `onError` (`'unsupported'` or `'tooLarge'`).
+- **Inputs:** `file` (any file `isForumPhotoFile` accepts, from the camera or the gallery), optional `busy`, `onConfirm` with `{ contentType: 'image/jpeg', data }`, `onCancel`, and `onError` (`'unsupported'` or `'tooLarge'`).
 - **Returns / side effects:** The frame (`profile.about.bannerCropHint` **Drag the photo to choose the wide image**), labeled **Use this crop**, and an X IconButton whose accessible name is **Cancel crop** (no visible cancel sentence). Confirm calls `encodeWideBanner` and `onConfirm`. Cancel calls `onCancel` and uploads nothing. A file that cannot be decoded calls `onError('unsupported')`. No network by itself.
-- **Used by:** `ProfileScreen` (empty wide-image slot, from the gallery or the camera; the cropper replaces the camera and **Add a wide image** and leaves **Add a profile photo**), `AboutMeSection` (editor, full width above the small wide-image preview).
+- **Used by:** `ProfileScreen` (empty wide-image slot, from the camera or the gallery; the cropper replaces the camera and **Add a wide image** and leaves **Add a profile photo**), `AboutMeSection` (editor, full width above the small wide-image preview).
 
 ## Function: parseNumberFormat
 

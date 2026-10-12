@@ -2209,7 +2209,7 @@ test('Function: CameraPhotoButton — a camera photo keeps its capture time and 
   expect(body.photos?.[0]?.takenAt).toBe('2020-01-01T00:00:00');
 });
 
-test('Function: CameraPhotoButton — gallery and camera photos share the limit of 10', async ({
+test('Function: CameraPhotoButton — camera and gallery photos share the limit of 10', async ({
   page,
   request,
 }) => {
