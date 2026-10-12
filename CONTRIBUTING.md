@@ -230,7 +230,7 @@ app/
 │   │   ├── WalletLoginCard.tsx  # LoginCard shown in place while a signed-in screen's wallet is not open in this tab
 │   │   ├── WalletScreen.tsx     # Wires useWallet + useWalletPhrase + useWalletSend into WalletScreenView (balance, payments list while ready, Receive/Send)
 │   │   ├── SettingsScreen.tsx   # Signed-in /settings (Wallet: recovery phrase, address, default amount; Display; Notifications; Account; About & legal)
-│   │   ├── MenuAccountHeader.tsx # Menu top card: photo, name, @username (profile link), balance link
+│   │   ├── MenuAccountHeader.tsx # Menu top card: photo, name, @username (profile link), balance link, payable loan row
 │   │   ├── HeaderBalance.tsx    # Signed-in header balance (₿ over fiat, link to /wallet, green bump on arrival)
 │   │   ├── ReceivedNotice.tsx   # In-app banner for a payment received while the app is open
 │   │   ├── WalletTour.tsx       # One-time wallet spotlight tour on /welcome (walletIntroSeen)

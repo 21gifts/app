@@ -863,7 +863,7 @@ See Layout and chrome. Trigger stays labeled. The panel starts with `MenuAccount
 
 #### Menu loan row
 
-When `summarizeLoans` says an amount is payable, `MenuAccountHeader` adds one `flex items-center justify-between gap-3 rounded-lg bg-app-card px-3 py-2` row under the three account totals. The left column uses `text-[11px]`: muted **Loan repayment due today**, or semibold `text-app-danger` **You're behind on your loan**; the amount below is `text-sm font-semibold tabular-nums lining-nums` with the preferred-fiat suffix and follows the same danger colour when behind. A labeled `ButtonLink size="sm"` **Send** sits right and uses `onNavigate` to close the Menu before `/loans/repay` opens. No payable amount means no row; it does not reserve empty space.
+When `summarizeLoans` says an amount is payable, `MenuAccountHeader` adds one `flex items-center justify-between gap-3 rounded-lg bg-app-card px-3 py-2` row under the card's first row (`gap-3`). The left column uses `text-[11px]`: muted **Loan repayment due today**, or semibold `text-app-danger` **You're behind on your loan**; the amount below is `text-sm font-semibold tabular-nums lining-nums` with the preferred-fiat suffix and follows the same danger colour when behind. A labeled `ButtonLink size="sm"` **Send** sits right and uses `onNavigate` to close the Menu before `/loans/repay` opens. No payable amount means no row; it does not reserve empty space.
 
 ### Loans card
 

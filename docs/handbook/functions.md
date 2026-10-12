@@ -1637,7 +1637,7 @@ First post free: while the signed-in member is below verified and has no missing
 - **Purpose:** Loads a signed-in member profile by account id.
 - **Inputs:** Bearer session and `accountId`.
 - **Returns / side effects:** Validated `MemberProfile`, including `postCount` and `replyCount`, or `null` on 401/404. Throws `MissingRequirementsError` on 409. Hits `/forum/members/:id`. A `profileMessage` that fails `forumMessageSchema` (an About me saved empty: no text, no media, 0 sats) reads as `null`, so the profile renders with the About me empty state instead of failing; the drop is counted in one `console.warn` without content.
-- **Used by:** `MemberProfileLoader`, `MenuAccountHeader`.
+- **Used by:** `MemberProfileLoader`.
 
 ## Function: fetchMemberPosts
 
@@ -2079,7 +2079,7 @@ First post free: while the signed-in member is below verified and has no missing
 - **Purpose:** GET `/me/activity` with Bearer and parse `accountActivitySchema` (given + received, house gifts + forum zaps).
 - **Inputs:** `sessionToken`.
 - **Returns / side effects:** `AccountActivity`. Throws visitor copy `Could not load gift stats. Please try again.` on non-2xx, network, or schema failure.
-- **Used by:** `useAccountTotals`, `MenuAccountHeader`.
+- **Used by:** `useAccountTotals`.
 
 ## Function: fetchMemberActivity
 

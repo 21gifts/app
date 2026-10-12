@@ -3700,14 +3700,14 @@
     "fil": "Ang kard ng maraming utang pagkatapos ng Ipakita ang mga utang. Sa ilalim ng pinagsamang 71% na bar at Bayaran ngayon ₿1'200 · $1.20, inuugnay ng listahan ang teksto ng makinang panahi na may 60% at ang teksto ng mga aklat na may 100%; nakikita ang Itago ang mga utang."
   },
   "/welcome:menu-loan-due": {
-    "de": "Das geöffnete Menu zeigt unter Erhalten / Gegeben / Beiträge die Zeile Kreditrückzahlung heute fällig, ₿1'000 · $1.00 und Senden. Senden schliesst das Menu und öffnet /loans/repay.",
-    "es": "El Menú abierto muestra bajo Recibido / Donado / Publicaciones la fila La devolución del préstamo vence hoy, ₿1'000 · $1.00 y Enviar. Enviar cierra el Menú y abre /loans/repay.",
-    "fil": "Ipinapakita ng bukas na Menu sa ilalim ng Natanggap / Ibinigay / Mga post ang hilerang Bayaran ngayon ang utang, ₿1'000 · $1.00 at Ipadala. Isinasara ng Ipadala ang Menu at binubuksan ang /loans/repay."
+    "de": "Das geöffnete Menu zeigt im Konto-Kopf unter der ersten Zeile die Zeile Kreditrückzahlung heute fällig, ₿1'000 · $1.00 und Senden. Senden schliesst das Menu und öffnet /loans/repay.",
+    "es": "El Menú abierto muestra en la cabecera de la cuenta, bajo su primera fila, la fila La devolución del préstamo vence hoy, ₿1'000 · $1.00 y Enviar. Enviar cierra el Menú y abre /loans/repay.",
+    "fil": "Ipinapakita ng bukas na Menu sa header ng account, sa ilalim ng unang hilera nito, ang hilerang Bayaran ngayon ang utang, ₿1'000 · $1.00 at Ipadala. Isinasara ng Ipadala ang Menu at binubuksan ang /loans/repay."
   },
   "/welcome:menu-loan-behind": {
-    "de": "Das geöffnete Menu zeigt unter Erhalten / Gegeben / Beiträge die rote Zeile Sie sind mit Ihrem Kredit im Rückstand, ₿3'000 · $3.00 und Senden.",
-    "es": "El Menú abierto muestra bajo Recibido / Donado / Publicaciones la fila roja Llevas retraso en tu préstamo, ₿3'000 · $3.00 y Enviar.",
-    "fil": "Ipinapakita ng bukas na Menu sa ilalim ng Natanggap / Ibinigay / Mga post ang pulang hilerang Huli ka sa pagbabayad ng utang mo, ₿3'000 · $3.00 at Ipadala."
+    "de": "Das geöffnete Menu zeigt im Konto-Kopf unter der ersten Zeile die rote Zeile Sie sind mit Ihrem Kredit im Rückstand, ₿3'000 · $3.00 und Senden.",
+    "es": "El Menú abierto muestra en la cabecera de la cuenta, bajo su primera fila, la fila roja Llevas retraso en tu préstamo, ₿3'000 · $3.00 y Enviar.",
+    "fil": "Ipinapakita ng bukas na Menu sa header ng account, sa ilalim ng unang hilera nito, ang pulang hilerang Huli ka sa pagbabayad ng utang mo, ₿3'000 · $3.00 at Ipadala."
   },
   "/welcome:software-developer": {
     "de": "Eine Autorenzeile im Willkommensforum. Neben dem Namen steht ein statisches Label Software-Entwickler (ein span, keine Schaltfläche und keine Rolle), nach einer vorhandenen Rollenpille. Der Rest entspricht dem kleinsten Willkommensbildschirm mit einer Notiz.",
