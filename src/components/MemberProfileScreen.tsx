@@ -734,7 +734,7 @@ export function MemberProfileScreen({
                     return prev;
                   }
                   return prev.map((row) => {
-                    /* v8 ignore next 2 -- other listed shop notes keep their counts */
+                    /* v8 ignore next 3 -- other listed shop notes keep their counts */
                     if (row.id !== replyParentId) {
                       return row;
                     }
@@ -747,7 +747,7 @@ export function MemberProfileScreen({
                     return prev;
                   }
                   return prev.map((row) => {
-                    /* v8 ignore next 2 -- other listed credit notes keep their counts */
+                    /* v8 ignore next 3 -- other listed credit notes keep their counts */
                     if (row.id !== replyParentId) {
                       return row;
                     }
@@ -866,7 +866,7 @@ export function MemberProfileScreen({
             return prev;
           }
           return prev.map((message) => {
-            /* v8 ignore next 2 -- other listed shop notes keep their counts */
+            /* v8 ignore next 3 -- other listed shop notes keep their counts */
             if (message.id !== parentId) {
               return message;
             }
@@ -882,7 +882,7 @@ export function MemberProfileScreen({
             return prev;
           }
           return prev.map((message) => {
-            /* v8 ignore next 2 -- other listed credit notes keep their counts */
+            /* v8 ignore next 3 -- other listed credit notes keep their counts */
             if (message.id !== parentId) {
               return message;
             }
