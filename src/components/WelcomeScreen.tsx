@@ -184,15 +184,16 @@ function PanelChromeBack({ onBack, over }: { onBack: () => void; over: boolean }
  * the last note's controls scroll clear of the **+** and of the space above
  * Receive / Send.
  *
- * While a form in the feed is open (an expanded post's reaction form, a gift
- * sheet, or a text reaction's pay slot on the page, as `ForumBoard` tells the
- * writer's `onFeedForm`), or while a text field in the page has the focus (a
- * reaction or reply text, an amount, a mention box), the **+** fades out
- * (250 ms; at once with reduced motion) and cannot be pressed, and Receive /
- * Send fold away (`WalletFooterActions` `folded`), so the form has the whole
- * height above the keyboard and the **+** never lies over its controls. Both
- * come back once the focus has left the field and no such form is open; a
- * focused field that disappears with its form counts as left.
+ * Only while a text field in the page has the focus (a reaction or reply
+ * text, an amount, a mention box) does the **+** fade out (250 ms; at once
+ * with reduced motion) and become unpressable, and Receive / Send fold away
+ * (`WalletFooterActions` `folded`), so the field has the whole height above
+ * the keyboard and the **+** never lies over the form being filled. An open
+ * form whose field does not have the focus (an expanded post's reaction form,
+ * a gift sheet, a text reaction's pay slot) leaves both in place; the 80 px
+ * clearance lets its controls scroll clear of the **+**. Both come back once
+ * the focus has left the field; a focused field that disappears with its form
+ * counts as left.
  *
  * A signed-in member whose account has `walletIntroSeen: false` gets the
  * one-time {@link WalletTour} over the page; it waits while a wallet view or
@@ -214,8 +215,6 @@ export function WelcomeScreen(): ReactElement {
   });
   const shown = hasWallet ? panel.shown : 'none';
   const scroller = useAppShellScroller();
-  /** True while a form in the feed is open (a reaction form, a gift sheet, a reaction's pay slot). */
-  const [feedForm, setFeedForm] = useState(false);
   /** True while a text field in the page has the focus. */
   const [fieldFocused, setFieldFocused] = useState(false);
   useEffect(() => {
@@ -235,13 +234,22 @@ export function WelcomeScreen(): ReactElement {
       scroller.removeEventListener('focusout', onFocusOut);
     };
   }, [scroller]);
-  // A focused field removed with its form or a wallet view leaves without a focusout: ask again.
+  // A focused field removed with its form or a wallet view leaves without a focusout: while a
+  // field has the focus, ask again on every change of the page and of the wallet view.
   useEffect(() => {
-    if (scroller !== null) {
-      setFieldFocused(isPageTextField(scroller, document.activeElement));
+    if (scroller === null || !fieldFocused) {
+      return;
     }
-  }, [scroller, feedForm, shown]);
-  const aside = feedForm || fieldFocused;
+    const check = (): void => {
+      setFieldFocused(isPageTextField(scroller, document.activeElement));
+    };
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(scroller, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+    };
+  }, [scroller, fieldFocused, shown]);
   const [writerOpen, setWriterOpen] = useState(false);
   /** Feed scroll position to show once the writer has closed, or null to leave the page as it is. */
   const feedScroll = useRef<number | null>(null);
@@ -283,7 +291,6 @@ export function WelcomeScreen(): ReactElement {
       open: writerOpen,
       onOpen: openWriter,
       onClose: closeAfterPost,
-      onFeedForm: setFeedForm,
     }),
     [writerOpen, openWriter, closeAfterPost],
   );
@@ -311,7 +318,7 @@ export function WelcomeScreen(): ReactElement {
 
   return (
     <>
-      {signedIn ? <WalletTour blocked={shown !== 'none' || writerOpen || aside} /> : null}
+      {signedIn ? <WalletTour blocked={shown !== 'none' || writerOpen || fieldFocused} /> : null}
       {shown === 'none' ? null : <PanelChromeBack onBack={panel.stepBack} over />}
       {writerOpen ? <PanelChromeBack onBack={closeWriter} over={false} /> : null}
       {shown === 'none' ? null : (
@@ -334,7 +341,7 @@ export function WelcomeScreen(): ReactElement {
           onReceive={panel.openReceive}
           onSend={panel.openSend}
           focus={panel.returnFocus}
-          folded={aside}
+          folded={fieldFocused}
         />
       ) : null}
       {signedIn && shown === 'none' && !writerOpen ? (
@@ -347,7 +354,7 @@ export function WelcomeScreen(): ReactElement {
               // Synchronously, so the writer's field takes the focus inside this tap.
               flushSync(openWriter);
             }}
-            className={`absolute right-[11px] bottom-6 z-30 shadow-lg transition-[opacity,visibility] duration-250 ease-glide motion-reduce:transition-none group-has-[[data-footer-actions]]/body:bottom-[calc(4.75rem+23px-1.75rem*var(--footer-collapse,0))] group-data-[footer-snap]/body:transition-[bottom,opacity,visibility] group-data-[footer-snap]/body:duration-320${aside ? ' pointer-events-none invisible opacity-0' : ''}`}
+            className={`absolute right-[11px] bottom-6 z-30 shadow-lg transition-[opacity,visibility] duration-250 ease-glide motion-reduce:transition-none group-has-[[data-footer-actions]]/body:bottom-[calc(4.75rem+23px-1.75rem*var(--footer-collapse,0))] group-data-[footer-snap]/body:transition-[bottom,opacity,visibility] group-data-[footer-snap]/body:duration-320${fieldFocused ? ' pointer-events-none invisible opacity-0' : ''}`}
           >
             <Plus aria-hidden="true" className="h-6 w-6" />
           </IconButton>
