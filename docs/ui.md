@@ -1304,7 +1304,7 @@ Centered column `flex w-full max-w-sm flex-col items-center gap-6` → `Card` `s
 Posts and Reactions remain gated on both `postCount` and `replyCount`; the preceding no-buttons rule applies to those two. Independently, `profile.shopCount` appears after Reactions only when `shopCount > 0`, can appear alone, and loads a read-only shops feed; shop notes open `/messages/{id}` like posts.
 Independently, `profile.creditCount` appears after Shops only when `creditCount > 0`, can appear alone, and loads a read-only credits feed; a credit note opens `/messages/{id}` like a post. Omitted or zero `creditCount` adds no control.
 
-Handbook states: default (signed-out loaded card), signed-in, loading, posts-open, replies-open, posts-loading, replies-loading, posts-error, replies-error, posts-truncated, replies-truncated, copied, posts-empty, replies-empty, posts-external, replies-external, posts-translate, posts-translate-loading, posts-translate-done, posts-translate-hidden, posts-translate-error, replies-translate, replies-translate-loading, replies-translate-done, replies-translate-hidden, replies-translate-error.
+Handbook states: default (signed-out loaded card), signed-in, loading, posts-open, replies-open, shops-open, credits-open, posts-loading, replies-loading, shops-loading, credits-loading, posts-error, replies-error, shops-error, credits-error, posts-truncated, replies-truncated, shops-truncated, credits-truncated, copied, posts-empty, replies-empty, posts-external, replies-external, posts-translate, posts-translate-loading, posts-translate-done, posts-translate-hidden, posts-translate-error, replies-translate, replies-translate-loading, replies-translate-done, replies-translate-hidden, replies-translate-error.
 
 ### `/view/[viewKey]`
 

@@ -3288,6 +3288,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:shops-open",
+    "label": "/profile shops-open",
+    "visual": "state-profile-shops-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:credits-open",
+    "label": "/profile credits-open",
+    "visual": "state-profile-credits-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:default",
     "label": "/members/[accountId] default",
     "visual": "screen-members-accountId",
@@ -3372,6 +3384,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:shops-open",
+    "label": "/members/[accountId] shops-open",
+    "visual": "state-members-shops-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:credits-open",
+    "label": "/members/[accountId] credits-open",
+    "visual": "state-members-credits-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-loading",
     "label": "/members/[accountId] posts-loading",
     "visual": "state-members-posts-loading",
@@ -3381,6 +3405,18 @@
     "id": "/members/[accountId]:replies-loading",
     "label": "/members/[accountId] replies-loading",
     "visual": "state-members-replies-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shops-loading",
+    "label": "/members/[accountId] shops-loading",
+    "visual": "state-members-shops-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:credits-loading",
+    "label": "/members/[accountId] credits-loading",
+    "visual": "state-members-credits-loading",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3396,6 +3432,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:shops-error",
+    "label": "/members/[accountId] shops-error",
+    "visual": "state-members-shops-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:credits-error",
+    "label": "/members/[accountId] credits-error",
+    "visual": "state-members-credits-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-truncated",
     "label": "/members/[accountId] posts-truncated",
     "visual": "state-members-posts-truncated",
@@ -3405,6 +3453,18 @@
     "id": "/members/[accountId]:replies-truncated",
     "label": "/members/[accountId] replies-truncated",
     "visual": "state-members-replies-truncated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shops-truncated",
+    "label": "/members/[accountId] shops-truncated",
+    "visual": "state-members-shops-truncated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:credits-truncated",
+    "label": "/members/[accountId] credits-truncated",
+    "visual": "state-members-credits-truncated",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -6450,6 +6510,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]/author:shops-open",
+    "label": "/messages/[id]/author shops-open",
+    "visual": "state-messages-id-author-shops-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:credits-open",
+    "label": "/messages/[id]/author credits-open",
+    "visual": "state-messages-id-author-credits-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]/author:posts-loading",
     "label": "/messages/[id]/author posts-loading",
     "visual": "state-messages-id-author-posts-loading",
@@ -6459,6 +6531,18 @@
     "id": "/messages/[id]/author:replies-loading",
     "label": "/messages/[id]/author replies-loading",
     "visual": "state-messages-id-author-replies-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:shops-loading",
+    "label": "/messages/[id]/author shops-loading",
+    "visual": "state-messages-id-author-shops-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:credits-loading",
+    "label": "/messages/[id]/author credits-loading",
+    "visual": "state-messages-id-author-credits-loading",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -6474,6 +6558,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]/author:shops-error",
+    "label": "/messages/[id]/author shops-error",
+    "visual": "state-messages-id-author-shops-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:credits-error",
+    "label": "/messages/[id]/author credits-error",
+    "visual": "state-messages-id-author-credits-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]/author:posts-truncated",
     "label": "/messages/[id]/author posts-truncated",
     "visual": "state-messages-id-author-posts-truncated",
@@ -6483,6 +6579,18 @@
     "id": "/messages/[id]/author:replies-truncated",
     "label": "/messages/[id]/author replies-truncated",
     "visual": "state-messages-id-author-replies-truncated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:shops-truncated",
+    "label": "/messages/[id]/author shops-truncated",
+    "visual": "state-messages-id-author-shops-truncated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:credits-truncated",
+    "label": "/messages/[id]/author credits-truncated",
+    "visual": "state-messages-id-author-credits-truncated",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

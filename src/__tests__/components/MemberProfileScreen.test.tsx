@@ -3410,6 +3410,266 @@ describe('MemberProfileScreen', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('requires a sat amount to reply on someone else’s shop note', async () => {
+    const shopNote = { ...note, text: 'A shop from Carol.', sats: 100 };
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(fetchMemberShops).mockResolvedValue([shopNote]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, shopCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
+    expect(await screen.findByText('A shop from Carol.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(fetchComposeTarget).toHaveBeenCalledWith('sess');
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${shopNote.id}\nreply`,
+        NO_RATE_SHOWN,
+      );
+    });
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('requires a sat amount to reply on someone else’s credit note', async () => {
+    const creditNote = { ...note, text: 'A credit from Carol.', sats: 100 };
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(fetchMemberCredits).mockResolvedValue([creditNote]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, creditCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 credit' }));
+    expect(await screen.findByText('A credit from Carol.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(fetchComposeTarget).toHaveBeenCalledWith('sess');
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${creditNote.id}\nreply`,
+        NO_RATE_SHOWN,
+      );
+    });
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('polls a shop note with its sats after a gift reply', async () => {
+    const shopNote = { ...note, text: 'A shop from Carol.', sats: 100 };
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...shopNote, sats: 121 });
+    vi.mocked(fetchMemberShops).mockResolvedValue([shopNote]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, shopCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
+    expect(await screen.findByText('A shop from Carol.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fillPaidReply('reply', '21');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalledWith(
+        shopNote.id,
+        expect.objectContaining({ sinceSats: 100 }),
+      );
+    });
+    await waitFor(() => {
+      expect(useAuthStore.getState().account?.hasPosted).toBe(true);
+    });
+  });
+
+  it('polls a credit note with its sats after a gift reply', async () => {
+    const creditNote = { ...note, text: 'A credit from Carol.', sats: 100 };
+    vi.mocked(fetchPublicMessage).mockResolvedValue({ ...creditNote, sats: 121 });
+    vi.mocked(fetchMemberCredits).mockResolvedValue([creditNote]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, creditCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 credit' }));
+    expect(await screen.findByText('A credit from Carol.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fillPaidReply('reply', '21');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(fetchPublicMessage).toHaveBeenCalledWith(
+        creditNote.id,
+        expect.objectContaining({ sinceSats: 100 }),
+      );
+    });
+    await waitFor(() => {
+      expect(useAuthStore.getState().account?.hasPosted).toBe(true);
+    });
+  });
+
+  it('raises the parent reply count after a compose-pay reply confirms on a shop note', async () => {
+    const shopNote = { ...note, text: 'A shop from Carol.', sats: 100 };
+    const paidReply = {
+      ...shopNote,
+      id: 'r-new',
+      parentId: shopNote.id,
+      name: 'Ada',
+      accountId: account.id,
+      text: 'reply',
+      sats: 0,
+      payable: false,
+      replyCount: 0,
+    };
+    vi.mocked(fetchReplies)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([paidReply]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(fetchMemberShops).mockResolvedValue([shopNote]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, shopCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
+    expect(await screen.findByText('A shop from Carol.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByText('reply')).toBeTruthy();
+      expect(screen.getAllByText('1 reaction').length).toBeGreaterThan(0);
+    });
+  });
+
+  it('raises the parent reply count after a compose-pay reply confirms on a credit note', async () => {
+    const creditNote = { ...note, text: 'A credit from Carol.', sats: 100 };
+    const paidReply = {
+      ...creditNote,
+      id: 'r-new',
+      parentId: creditNote.id,
+      name: 'Ada',
+      accountId: account.id,
+      text: 'reply',
+      sats: 0,
+      payable: false,
+      replyCount: 0,
+    };
+    vi.mocked(fetchReplies)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([paidReply]);
+    vi.mocked(fetchPublicMessage).mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(fetchMemberCredits).mockResolvedValue([creditNote]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, creditCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 credit' }));
+    expect(await screen.findByText('A credit from Carol.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByText('reply')).toBeTruthy();
+      expect(screen.getAllByText('1 reaction').length).toBeGreaterThan(0);
+    });
+  });
+
+  it('lets a verified member reply without paying on a shop note and raises the count', async () => {
+    const shopNote = { ...note, text: 'A shop from Carol.', sats: 100 };
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
+    vi.mocked(fetchMemberShops).mockResolvedValue([shopNote]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, shopCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
+    expect(await screen.findByText('A shop from Carol.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: shopNote.id });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getAllByText('1 reaction').length).toBeGreaterThan(0);
+    });
+  });
+
+  it('lets a verified member reply without paying on a credit note and raises the count', async () => {
+    const creditNote = { ...note, text: 'A credit from Carol.', sats: 100 };
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
+    vi.mocked(fetchMemberCredits).mockResolvedValue([creditNote]);
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, creditCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 credit' }));
+    expect(await screen.findByText('A credit from Carol.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', {
+        text: 'reply',
+        inReplyTo: creditNote.id,
+      });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getAllByText('1 reaction').length).toBeGreaterThan(0);
+    });
+    expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
+  });
+
   it('sets hasPosted after an unpaid founder reply', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     renderWithLocale(

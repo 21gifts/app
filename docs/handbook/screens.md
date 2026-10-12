@@ -4375,6 +4375,18 @@ Identity card; replies pressed; no pinned profile-note card; reply card 'A reply
 
 ![21.gifts member replies open](images/members-replies-open.png)
 
+### Variant: shops-open
+
+Identity card; **1 shop** pressed; no pinned profile-note card; shop card 'A shop from Carol.'
+
+![21.gifts member shops open](images/members-shops-open.png)
+
+### Variant: credits-open
+
+Identity card; **1 credit** pressed; no pinned profile-note card; credit card 'A credit from Carol.'
+
+![21.gifts member credits open](images/members-credits-open.png)
+
 ### Variant: posts-loading
 
 Identity card; posts count pressed; feed shows Loading…; no pinned profile-note card.
@@ -4386,6 +4398,18 @@ Identity card; posts count pressed; feed shows Loading…; no pinned profile-not
 Identity card; replies count pressed; feed shows Loading…; no pinned profile-note card.
 
 ![21.gifts member replies loading](images/members-replies-loading.png)
+
+### Variant: shops-loading
+
+Identity card; **1 shop** pressed; feed shows Loading…; no pinned profile-note card.
+
+![21.gifts member shops loading](images/members-shops-loading.png)
+
+### Variant: credits-loading
+
+Identity card; **1 credit** pressed; feed shows Loading…; no pinned profile-note card.
+
+![21.gifts member credits loading](images/members-credits-loading.png)
 
 ### Variant: posts-error
 
@@ -4399,6 +4423,18 @@ Identity card; replies count pressed; feed error and Try again; no pinned profil
 
 ![21.gifts member replies error](images/members-replies-error.png)
 
+### Variant: shops-error
+
+Identity card; **1 shop** pressed; feed error `Could not load messages. Please try again.` and Try again; no pinned profile-note card.
+
+![21.gifts member shops error](images/members-shops-error.png)
+
+### Variant: credits-error
+
+Identity card; **1 credit** pressed; feed error `Could not load messages. Please try again.` and Try again; no pinned profile-note card.
+
+![21.gifts member credits error](images/members-credits-error.png)
+
 ### Variant: posts-truncated
 
 Identity card; posts count 3 pressed; one listed post; muted `Showing the latest 1 of 3.`; no pinned profile-note card.
@@ -4410,6 +4446,18 @@ Identity card; posts count 3 pressed; one listed post; muted `Showing the latest
 Identity card; replies count 3 pressed; one listed reply; muted `Showing the latest 1 of 3.`; no pinned profile-note card.
 
 ![21.gifts member replies truncated](images/members-replies-truncated.png)
+
+### Variant: shops-truncated
+
+Identity card; **3 shops** pressed; one listed shop note; muted `Showing the latest 1 of 3.`; no pinned profile-note card.
+
+![21.gifts member shops truncated](images/members-shops-truncated.png)
+
+### Variant: credits-truncated
+
+Identity card; **3 credits** pressed; one listed credit note; muted `Showing the latest 1 of 3.`; no pinned profile-note card.
+
+![21.gifts member credits truncated](images/members-credits-truncated.png)
 
 ### Variant: note-null
 
@@ -4926,6 +4974,18 @@ Choosing `@ada` from that open list writes `@ada ` into the reaction field and c
 **1 reaction** is pressed and the feed shows **A reply from Ada.** Needle `A reply from Ada.`
 
 ![21.gifts profile reactions](images/profile-replies-open.png)
+
+### Variant: shops-open
+
+**1 shop** is pressed and the feed shows **A shop from Ada.** Needle `A shop from Ada.`
+
+![21.gifts profile shops](images/profile-shops-open.png)
+
+### Variant: credits-open
+
+**1 credit** is pressed and the feed shows **A credit from Ada.** Needle `A credit from Ada.`
+
+![21.gifts profile credits](images/profile-credits-open.png)
 
 ### Variant: receive
 
@@ -6750,6 +6810,18 @@ Pressed **1 reaction** button with the note text `Robin wrote a reaction` under 
 
 ![21.gifts external author replies open](images/messages-id-author-replies-open.png)
 
+### Variant: shops-open
+
+Pressed **1 shop** button with the note text `Robin wrote a shop note` under the card. The feed is read-only.
+
+![21.gifts external author shops open](images/messages-id-author-shops-open.png)
+
+### Variant: credits-open
+
+Pressed **1 credit** button with the note text `Robin wrote a credit note` under the card. The feed is read-only.
+
+![21.gifts external author credits open](images/messages-id-author-credits-open.png)
+
 ### Variant: posts-loading
 
 Pressed **1 post**. The feed under the card shows Loading…. No note text yet.
@@ -6761,6 +6833,18 @@ Pressed **1 post**. The feed under the card shows Loading…. No note text yet.
 Pressed **1 reaction**. The feed under the card shows Loading…. No note text yet.
 
 ![21.gifts external author replies loading](images/messages-id-author-replies-loading.png)
+
+### Variant: shops-loading
+
+Pressed **1 shop**. The feed under the card shows Loading…. No note text yet.
+
+![21.gifts external author shops loading](images/messages-id-author-shops-loading.png)
+
+### Variant: credits-loading
+
+Pressed **1 credit**. The feed under the card shows Loading…. No note text yet.
+
+![21.gifts external author credits loading](images/messages-id-author-credits-loading.png)
 
 ### Variant: posts-error
 
@@ -6774,6 +6858,18 @@ Pressed **1 reaction**. The feed shows `Could not load messages. Please try agai
 
 ![21.gifts external author replies error](images/messages-id-author-replies-error.png)
 
+### Variant: shops-error
+
+Pressed **1 shop**. The feed shows `Could not load messages. Please try again.` and **Try again**.
+
+![21.gifts external author shops error](images/messages-id-author-shops-error.png)
+
+### Variant: credits-error
+
+Pressed **1 credit**. The feed shows `Could not load messages. Please try again.` and **Try again**.
+
+![21.gifts external author credits error](images/messages-id-author-credits-error.png)
+
 ### Variant: posts-truncated
 
 Pressed **2 posts**. One note, `Robin wrote a note`, and the muted line `Showing the latest 1 of 2.`
@@ -6785,6 +6881,18 @@ Pressed **2 posts**. One note, `Robin wrote a note`, and the muted line `Showing
 Pressed **2 reactions**. One note, `Robin wrote a reaction`, and the muted line `Showing the latest 1 of 2.`
 
 ![21.gifts external author replies truncated](images/messages-id-author-replies-truncated.png)
+
+### Variant: shops-truncated
+
+Pressed **2 shops**. One note, `Robin wrote a shop note`, and the muted line `Showing the latest 1 of 2.`
+
+![21.gifts external author shops truncated](images/messages-id-author-shops-truncated.png)
+
+### Variant: credits-truncated
+
+Pressed **2 credits**. One note, `Robin wrote a credit note`, and the muted line `Showing the latest 1 of 2.`
+
+![21.gifts external author credits truncated](images/messages-id-author-credits-truncated.png)
 
 ### Variant: copied
 

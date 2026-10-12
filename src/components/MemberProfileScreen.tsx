@@ -656,6 +656,36 @@ export function MemberProfileScreen({
                     : row,
                 );
               });
+              setShops((prev) => {
+                /* v8 ignore next 3 -- shops list is null until that feed opens */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) =>
+                  row.id === next.id
+                    ? {
+                        ...row,
+                        ...next,
+                        replyCount: Math.max(row.replyCount, next.replyCount),
+                      }
+                    : row,
+                );
+              });
+              setCredits((prev) => {
+                /* v8 ignore next 3 -- credits list is null until that feed opens */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) =>
+                  row.id === next.id
+                    ? {
+                        ...row,
+                        ...next,
+                        replyCount: Math.max(row.replyCount, next.replyCount),
+                      }
+                    : row,
+                );
+              });
               setActivityReplies((prev) => {
                 if (prev === null) {
                   return prev;
@@ -697,6 +727,34 @@ export function MemberProfileScreen({
                     return { ...row, replyCount: row.replyCount + 1 };
                   });
                 });
+                /* v8 ignore stop */
+                setShops((prev) => {
+                  /* v8 ignore next 3 -- shops list is null until that feed opens */
+                  if (prev === null) {
+                    return prev;
+                  }
+                  return prev.map((row) => {
+                    /* v8 ignore next 2 -- other listed shop notes keep their counts */
+                    if (row.id !== replyParentId) {
+                      return row;
+                    }
+                    return { ...row, replyCount: row.replyCount + 1 };
+                  });
+                });
+                setCredits((prev) => {
+                  /* v8 ignore next 3 -- credits list is null until that feed opens */
+                  if (prev === null) {
+                    return prev;
+                  }
+                  return prev.map((row) => {
+                    /* v8 ignore next 2 -- other listed credit notes keep their counts */
+                    if (row.id !== replyParentId) {
+                      return row;
+                    }
+                    return { ...row, replyCount: row.replyCount + 1 };
+                  });
+                });
+                /* v8 ignore start -- compose-pay reply increment is asserted in tests; identity/empty-activity arms are fixture-only */
                 setActivityReplies((prev) => {
                   /* v8 ignore next 8 -- activity replies feed is empty on the posts-card path */
                   if (prev === null) {
@@ -801,6 +859,38 @@ export function MemberProfileScreen({
               ? { ...message, replyCount: Math.max(message.replyCount, message.replyCount + 1) }
               : message,
           );
+        });
+        setShops((prev) => {
+          /* v8 ignore next 3 -- shops list is null until that feed opens */
+          if (prev === null) {
+            return prev;
+          }
+          return prev.map((message) => {
+            /* v8 ignore next 2 -- other listed shop notes keep their counts */
+            if (message.id !== parentId) {
+              return message;
+            }
+            return {
+              ...message,
+              replyCount: Math.max(message.replyCount, message.replyCount + 1),
+            };
+          });
+        });
+        setCredits((prev) => {
+          /* v8 ignore next 3 -- credits list is null until that feed opens */
+          if (prev === null) {
+            return prev;
+          }
+          return prev.map((message) => {
+            /* v8 ignore next 2 -- other listed credit notes keep their counts */
+            if (message.id !== parentId) {
+              return message;
+            }
+            return {
+              ...message,
+              replyCount: Math.max(message.replyCount, message.replyCount + 1),
+            };
+          });
         });
       }
       setReplyAmountDraft('');
@@ -1231,7 +1321,8 @@ export function MemberProfileScreen({
     replyRateRef.current = rateDay;
     const token = session;
     const parentId = expandedId;
-    const parentRow = posts?.find((message) => message.id === parentId);
+    const parentList = activity === 'credits' ? credits : activity === 'shops' ? shops : posts;
+    const parentRow = parentList?.find((message) => message.id === parentId);
     const parentAccountId = parentRow?.accountId;
     const own = isOwnNote(account?.id, parentAccountId);
     const exempt = isReplyPaymentExempt(account, parentAccountId);
