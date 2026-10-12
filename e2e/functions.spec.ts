@@ -3369,9 +3369,13 @@ test('Function: MarketingLayout — landing has marketing chrome', async ({ page
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
 });
 
-test('Function: MarketingHeader — landing shows the wordmark', async ({ page }) => {
+test('Function: MarketingHeader — landing shows the wordmark and no back arrow', async ({
+  page,
+}) => {
   await page.goto('/');
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
+  await page.goto('/about');
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
     'href',
     '/welcome',
