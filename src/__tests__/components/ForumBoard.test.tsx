@@ -8549,13 +8549,16 @@ describe('ForumBoard writer', () => {
     expect(heading.compareDocumentPosition(pill) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(pill.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(document.activeElement).toBe(field);
-    // Phone shape on a touch device: field on top, photo and place left, send right.
-    expect(field.className).toContain('pointer-coarse:order-first pointer-coarse:basis-full');
-    expect(field.closest('form')!.firstElementChild!.className).toBe(
-      'flex items-center gap-2 pointer-coarse:flex-wrap',
+    // The same two rows on a touch device: the photo icon row, then the field with send.
+    const photoRow = field.closest('form')!.firstElementChild as HTMLElement;
+    expect(photoRow.className).toBe('flex items-center gap-2');
+    expect(photoRow.contains(within(layer).getByRole('button', { name: 'Take a photo' }))).toBe(
+      true,
     );
-    expect(within(layer).getByRole('button', { name: 'Post' }).className).toContain(
-      'pointer-coarse:ml-auto',
+    expect(photoRow.contains(field)).toBe(false);
+    expect(field.className).not.toContain('pointer-coarse:');
+    expect(within(layer).getByRole('button', { name: 'Post' }).className).not.toContain(
+      'pointer-coarse:',
     );
     expect(within(layer).getByRole('alert').textContent).toBe(getCatalog('en')['forum.errorEmpty']);
     // The feed stays on the page under the writer.

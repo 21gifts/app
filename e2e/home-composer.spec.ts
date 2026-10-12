@@ -265,20 +265,26 @@ test.describe('forum home writer on a phone', () => {
     await expect(page.getByLabel('Your message')).toHaveValue('Kept while the Menu is open');
   });
 
-  test('Function: ForumBoard — the writer keeps the phone shape: the field on top, photo and place left and send right below it', async ({
+  test('Function: ForumBoard — the writer on a phone: camera, photo and place in a row on top, the field and send below it', async ({
     page,
   }) => {
     await openHome(page);
     await page.getByRole('button', { name: 'Write a post' }).tap();
     const field = (await page.getByLabel('Your message').boundingBox())!;
+    const camera = (await page
+      .getByRole('button', { name: 'Take a photo', exact: true })
+      .boundingBox())!;
     const photo = (await page.getByRole('button', { name: 'Add a photo or video' }).boundingBox())!;
     const place = (await page.getByRole('button', { name: 'Add a place' }).boundingBox())!;
     const post = (await page.getByRole('button', { name: 'Post', exact: true }).boundingBox())!;
-    expect(photo.y).toBeGreaterThanOrEqual(field.y + field.height);
-    expect(Math.abs(photo.y - post.y)).toBeLessThan(1);
-    expect(Math.abs(place.y - post.y)).toBeLessThan(1);
+    expect(Math.abs(camera.y - photo.y)).toBeLessThan(1);
+    expect(Math.abs(place.y - photo.y)).toBeLessThan(1);
+    expect(camera.x).toBeLessThan(photo.x);
     expect(photo.x).toBeLessThan(place.x);
-    expect(Math.abs(post.x + post.width - (field.x + field.width))).toBeLessThan(1);
+    expect(field.y).toBeGreaterThanOrEqual(photo.y + photo.height);
+    expect(post.y).toBeGreaterThanOrEqual(photo.y + photo.height);
+    expect(post.x).toBeGreaterThanOrEqual(field.x + field.width);
+    expect(post.width).toBeGreaterThanOrEqual(44);
   });
 
   test('Function: ForumLoader — a post from the writer closes it, and the post appears on the home', async ({

@@ -672,9 +672,9 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * with the writer closed (a text reaction's fee), so closing or opening the
  * writer never moves or remounts it. Opening it focuses the text field in the same task, so a tap
  * brings up the keyboard. A compose request opens it first (or focuses its
- * field when it is already open). On a touch device its Post composer shows
- * the text field on top at full width and photo, place and send on one row
- * below it. The writer is marked `data-writing-composer` for
+ * field when it is already open). Its Post composer has the same two rows on
+ * every device: the photo icon row (camera, photo, place), then the text field
+ * with send on its right. The writer is marked `data-writing-composer` for
  * {@link useAppHeight}, and pull-to-refresh is off while it is open. While the
  * Menu is open as a sheet (`html[data-menu-sheet='1']`) the writer steps aside,
  * so the sheet in the page scrollport shows; it comes back when the Menu closes.
@@ -1939,8 +1939,6 @@ export function ForumBoard({
   }
 
   const showRefreshStatus = refreshing === true || pullArmed;
-  const phoneShape =
-    writer === undefined ? '' : ' pointer-coarse:order-first pointer-coarse:basis-full';
   const composerPay = payInvoice !== null && payHost === 'composer';
   // The forum home keeps an open composer pay slot where it opened (in the writer for a posting
   // fee, on the page for a text reaction's fee), so closing the writer never moves or remounts it.
@@ -2057,13 +2055,7 @@ export function ForumBoard({
       {postComposerShown ? (
         <SundayWritingGate>
           <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-            <div
-              className={
-                writer !== undefined
-                  ? 'flex items-center gap-2 pointer-coarse:flex-wrap'
-                  : 'flex items-center gap-2'
-              }
-            >
+            <div className="flex items-center gap-2">
               <CameraPhotoButton
                 label={t('camera.takePhoto')}
                 size="lg"
@@ -2105,8 +2097,8 @@ export function ForumBoard({
                 maxLength={composerMaxLength}
                 rows={2}
                 disabled={posting}
-                wrapperClassName={`relative min-w-0 flex-1${phoneShape}`}
-                className={`min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50${phoneShape}`}
+                wrapperClassName="relative min-w-0 flex-1"
+                className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
               />
               <IconButton
                 type="submit"
@@ -2114,7 +2106,6 @@ export function ForumBoard({
                 variant="primary"
                 disabled={posting}
                 aria-label={t('forum.post')}
-                {...(writer === undefined ? {} : { className: 'pointer-coarse:ml-auto' })}
               >
                 {posting ? (
                   <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />
