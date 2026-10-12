@@ -819,19 +819,19 @@ Credit, step **4 of 9**, for **21000** bitcoin over **30 days**. Heading **How r
 
 ### Variant: ask-credit-plan-fiat
 
-Credit, step **4 of 9**, for **1000** US dollars over **30 days**. Same heading and the same daily rule. The daily line is **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The same chart shows the daily bars and the debt falling from day 1 to the last day. The button is **Continue**.
+Credit, step **4 of 9**, for **1000** US dollars over **30 days**. Same heading and the same daily rule, including that repayment never starts before 1 November 2026. The daily line is **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The same chart shows the daily bars and the debt falling from day 1 to the last day. The button is **Continue**.
 
 ![21.gifts welcome ask credit plan fiat](images/welcome-ask-credit-plan-fiat.png)
 
 ### Variant: ask-credit-confirm-want
 
-Credit, step **5 of 9**, bitcoin. Heading **Take this credit**. The screen repeats every condition: **Amount owed: ₿21'000 · $21.00.** The bitcoin definition and the rising-price warning. **Repayment term: 30 days.** The daily rule with the day-11 example. **To repay per day: ₿700 · $0.70 per day for 30 days.** The chart is repeated. The button **I want to take this credit.** is the confirmation. There is no checkbox.
+Credit, step **5 of 9**, bitcoin. Heading **Take this credit**. The screen repeats every condition: **Amount owed: ₿21'000 · $21.00.** The bitcoin definition and the rising-price warning. **Repayment term: 30 days.** The daily rule with the day-11 example and that repayment never starts before 1 November 2026. **To repay per day: ₿700 · $0.70 per day for 30 days.** The chart is repeated. The button **I want to take this credit.** is the confirmation. There is no checkbox.
 
 ![21.gifts welcome ask credit confirm want](images/welcome-ask-credit-confirm-want.png)
 
 ### Variant: ask-credit-confirm-want-fiat
 
-Credit, step **5 of 9**, US dollars. Heading **Take this credit**. The screen repeats every condition: **Amount owed: $1'000.00.** The sentence that payments stay bitcoin and are only priced in US dollars at the rate of each payment, and that nothing is exchanged. The sentence that the author receives the amount in bitcoin and bears the full price risk if the price falls before they spend it. **Repayment term: 30 days.** The daily rule and **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The chart is repeated. The button **I want to take this credit.** is the confirmation. There is no checkbox.
+Credit, step **5 of 9**, US dollars. Heading **Take this credit**. The screen repeats every condition: **Amount owed: $1'000.00.** The sentence that payments stay bitcoin and are only priced in US dollars at the rate of each payment, and that nothing is exchanged. The sentence that the author receives the amount in bitcoin and bears the full price risk if the price falls before they spend it. **Repayment term: 30 days.** The daily rule, including that repayment never starts before 1 November 2026, and **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The chart is repeated. The button **I want to take this credit.** is the confirmation. There is no checkbox.
 
 ![21.gifts welcome ask credit confirm want fiat](images/welcome-ask-credit-confirm-want-fiat.png)
 
