@@ -154,26 +154,29 @@ describe('useWalletPayment', () => {
     });
   });
 
-  it('shows only the heart fixture under the heart-payment pin in a Playwright build', () => {
-    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
-    window.history.replaceState({}, '', '/wallet/payment?visual=heart-payment');
-    expect(renderHook(() => useWalletPayment(HEART_VISUAL_PAYMENT.id)).result.current).toEqual({
-      status: 'ready',
-      payment: toFixturePayment(HEART_VISUAL_PAYMENT),
-    });
-    expect(renderHook(() => useWalletPayment('nope')).result.current).toEqual({
-      status: 'missing',
-    });
-    expect(getWalletPayment).not.toHaveBeenCalled();
+  it.each(['heart-payment', 'heart-payment-pending'])(
+    'shows only the heart fixture under the %s pin in a Playwright build',
+    (pin) => {
+      process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+      window.history.replaceState({}, '', `/wallet/payment?visual=${pin}`);
+      expect(renderHook(() => useWalletPayment(HEART_VISUAL_PAYMENT.id)).result.current).toEqual({
+        status: 'ready',
+        payment: toFixturePayment(HEART_VISUAL_PAYMENT),
+      });
+      expect(renderHook(() => useWalletPayment('nope')).result.current).toEqual({
+        status: 'missing',
+      });
+      expect(getWalletPayment).not.toHaveBeenCalled();
 
-    cleanup();
-    delete process.env.NEXT_PUBLIC_E2E_NOW;
-    vi.mocked(getWalletPayment).mockReturnValue(new Promise(() => undefined));
-    expect(renderHook(() => useWalletPayment(HEART_VISUAL_PAYMENT.id)).result.current).toEqual({
-      status: 'loading',
-    });
-    expect(getWalletPayment).toHaveBeenCalledWith(HEART_VISUAL_PAYMENT.id);
-  });
+      cleanup();
+      delete process.env.NEXT_PUBLIC_E2E_NOW;
+      vi.mocked(getWalletPayment).mockReturnValue(new Promise(() => undefined));
+      expect(renderHook(() => useWalletPayment(HEART_VISUAL_PAYMENT.id)).result.current).toEqual({
+        status: 'loading',
+      });
+      expect(getWalletPayment).toHaveBeenCalledWith(HEART_VISUAL_PAYMENT.id);
+    },
+  );
 
   it('starts over for another id and never shows the previous payment under it', async () => {
     vi.mocked(getWalletPayment).mockResolvedValueOnce(PAYMENT);

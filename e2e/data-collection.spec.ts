@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import { fulfillSpot } from './fx-spot';
 
 /** The api stub, for reading what the app sent it. */
 const MOCK_API = 'http://127.0.0.1:3001';
@@ -161,6 +162,92 @@ test.describe('POST /me/wallet/report', () => {
   });
 });
 
+/** Spark hash of the sent-gift row in the history-rows fixture. */
+const GIFT_PAYMENT_HASH = '79d7ebca70b18b8a13cfb40e6c6055be64f9cacfcd79c706b29e80e1707b00dc';
+
+/**
+ * Signed-in wallet home that still asks the heart lookup. The heart pins
+ * return before that request, so these tests stay on `history-rows`.
+ *
+ * @param page - The page.
+ */
+async function stubHeartLookupWallet(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        username: 'ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        walletRequired: true,
+        walletBackupSeenAt: 1,
+        passkeyCredentialId: 'cred-seed',
+        sparkPubkey: null,
+        sparkWalletVerified: true,
+      }),
+    });
+  });
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [] }),
+    });
+  });
+  await fulfillSpot(page);
+}
+
+/**
+ * Answers the heart lookup with Sunday lunch only for the history-rows gift hash.
+ *
+ * @param page - The page.
+ * @returns The hashes the page submitted, filled when the request arrives.
+ */
+async function routeGiftHeart(page: Page): Promise<{ hashes: string[] }> {
+  const seen = { hashes: [] as string[] };
+  await page.route('**/me/wallet/hearts', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    const body = route.request().postDataJSON() as { hashes?: string[] };
+    seen.hashes = body.hashes ?? [];
+    const hearts = seen.hashes.includes(GIFT_PAYMENT_HASH)
+      ? [
+          {
+            paymentHash: GIFT_PAYMENT_HASH,
+            messageId: '11111111-1111-4111-8111-111111111111',
+            authorName: 'Ada',
+            text: 'Sunday lunch',
+            deleted: false,
+          },
+        ]
+      : [];
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ hearts }),
+    });
+  });
+  return seen;
+}
+
 test.describe('POST /me/wallet/hearts', () => {
   test('Function: proxyMeWalletHeartsPost — 401 without a session', async ({ request }) => {
     expect((await request.post('/me/wallet/hearts', { data: { hashes: [] } })).status()).toBe(401);
@@ -187,28 +274,30 @@ test.describe('POST /me/wallet/hearts', () => {
     });
   });
 
-  test('Function: fetchHeartPosts — a signed-in lookup of an unknown hash returns no hearts', async ({
-    request,
+  test('Function: fetchHeartPosts — the payment screen shows the post for a gift hash', async ({
+    page,
   }) => {
-    const token = await newMember(request);
-    const res = await request.post('/me/wallet/hearts', {
-      headers: { authorization: `Bearer ${token}` },
-      data: { hashes: ['a'.repeat(64)] },
-    });
-    expect(res.status()).toBe(200);
-    expect(await res.json()).toEqual({ hearts: [] });
+    const seen = await routeGiftHeart(page);
+    await stubHeartLookupWallet(page);
+    await page.goto('/wallet/payment?id=df98837c-6a12-4b15-94f8-375c33937a4e&visual=history-rows');
+    await expect(page.getByText('Sunday lunch')).toBeVisible();
+    await expect(page.getByText('Ada')).toBeVisible();
+    await expect(
+      page.locator('a[href="/messages/11111111-1111-4111-8111-111111111111"]'),
+    ).toBeVisible();
+    expect(seen.hashes).toContain(GIFT_PAYMENT_HASH);
+    await expect(page.getByText('Gift', { exact: true })).toHaveCount(0);
   });
 
-  test('Function: useHeartContext — a hash that is not a heart stays out of the lookup', async ({
-    request,
+  test('Function: useHeartContext — the history list shows the post for a gift hash', async ({
+    page,
   }) => {
-    const token = await newMember(request);
-    const res = await request.post('/me/wallet/hearts', {
-      headers: { authorization: `Bearer ${token}` },
-      data: { hashes: ['b'.repeat(64)] },
-    });
-    expect(res.status()).toBe(200);
-    expect(await res.json()).toEqual({ hearts: [] });
+    const seen = await routeGiftHeart(page);
+    await stubHeartLookupWallet(page);
+    await page.goto('/wallet?visual=history-rows');
+    await expect(page.getByText('Sunday lunch')).toBeVisible();
+    expect(seen.hashes).toContain(GIFT_PAYMENT_HASH);
+    await expect(page.getByText('Gift', { exact: true })).toHaveCount(0);
   });
 });
 

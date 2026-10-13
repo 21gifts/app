@@ -31,8 +31,9 @@ function isUnknownPayment(error: unknown): boolean {
 }
 
 /**
- * The fixture payment under the `?visual=history-rows` pin, and a failed read
- * under `?visual=history-error` (Playwright builds only).
+ * The fixture payment under the `?visual=history-rows` pin, the heart fixture
+ * under `?visual=heart-payment` and `?visual=heart-payment-pending`, and a
+ * failed read under `?visual=history-error` (Playwright builds only).
  *
  * @param id - Payment id from the address.
  * @returns The pinned state, or `null` without either pin.
@@ -42,7 +43,7 @@ function pinnedPayment(id: string | null): WalletPaymentState | null {
   if (pin === 'history-error') {
     return { status: 'error', retry: () => undefined };
   }
-  if (pin === 'heart-payment') {
+  if (pin === 'heart-payment' || pin === 'heart-payment-pending') {
     return id === HEART_VISUAL_PAYMENT.id
       ? { status: 'ready', payment: toFixturePayment(HEART_VISUAL_PAYMENT) }
       : { status: 'missing' };
@@ -65,8 +66,9 @@ function pinnedPayment(id: string | null): WalletPaymentState | null {
  * stops being ready drops it back to `loading`. The state belongs
  * to one id: another id starts at `loading` and never shows the previous
  * payment. Under the `?visual=history-rows` pin (Playwright builds only) it
- * shows the fixture payment with that id, and under `?visual=history-error`
- * a failed read.
+ * shows the fixture payment with that id, under `?visual=heart-payment` and
+ * `?visual=heart-payment-pending` the heart fixture when the id matches
+ * (otherwise missing), and under `?visual=history-error` a failed read.
  *
  * @param id - SDK payment id, or `null` when the address has none.
  * @returns The payment state.

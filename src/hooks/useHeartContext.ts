@@ -23,6 +23,7 @@ const HEART_VISUAL_POST: HeartPost = {
 const HEART_VISUAL_MAP: ReadonlyMap<string, HeartPost> = new Map([
   [HEART_VISUAL_HASH, HEART_VISUAL_POST],
 ]);
+const HEART_PENDING_SET: ReadonlySet<string> = new Set([HEART_VISUAL_HASH]);
 
 interface HeartContextState {
   session: string;
@@ -46,6 +47,7 @@ export function useHeartContext(hashes: readonly string[]): {
   const session = useActiveSession();
   const pin = visualPin();
   const visualHeart = pin === 'heart-payment' || pin === 'history-heart';
+  const visualHeartPending = pin === 'heart-payment-pending' || pin === 'history-heart-pending';
   const hashKey = JSON.stringify([...new Set(hashes.map((hash) => hash.toLowerCase()))]);
   const uniqueHashes = useMemo(() => JSON.parse(hashKey) as string[], [hashKey]);
   const cacheSession = useRef<string | null>(null);
@@ -54,7 +56,7 @@ export function useHeartContext(hashes: readonly string[]): {
   const [state, setState] = useState<HeartContextState | null>(null);
 
   useEffect(() => {
-    if (visualHeart) {
+    if (visualHeart || visualHeartPending) {
       return;
     }
     if (cacheSession.current !== session) {
@@ -112,10 +114,13 @@ export function useHeartContext(hashes: readonly string[]): {
     return () => {
       active = false;
     };
-  }, [hashKey, session, uniqueHashes, visualHeart]);
+  }, [hashKey, session, uniqueHashes, visualHeart, visualHeartPending]);
 
   if (visualHeart) {
     return { byHash: HEART_VISUAL_MAP, pending: EMPTY_SET };
+  }
+  if (visualHeartPending) {
+    return { byHash: EMPTY_MAP, pending: HEART_PENDING_SET };
   }
 
   if (session === null || uniqueHashes.length === 0) {

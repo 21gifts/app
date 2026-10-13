@@ -287,6 +287,7 @@ describe('useWalletHistory', () => {
     ['history-empty', 'ready', 0],
     ['history-rows', 'ready', 10],
     ['history-heart', 'ready', 1],
+    ['history-heart-pending', 'ready', 1],
     ['history-error', 'error', 0],
   ] as const)('pins %s in a Playwright build', (visual, status, count) => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
@@ -301,7 +302,7 @@ describe('useWalletHistory', () => {
       result.current.retry();
     });
     expect(listWalletPayments).not.toHaveBeenCalled();
-    if (visual === 'history-heart') {
+    if (visual === 'history-heart' || visual === 'history-heart-pending') {
       expect(result.current.payments[0]?.id).toBe(HEART_VISUAL_PAYMENT.id);
     }
   });

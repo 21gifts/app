@@ -335,6 +335,12 @@ Pinned with `?visual=history-heart` in a Playwright build only. The usual visual
 
 ![21.gifts wallet history heart](images/wallet-history-heart.png)
 
+### Variant: history-heart-pending
+
+Pinned with `?visual=history-heart-pending` in a Playwright build only. The usual visual balance stays, and **Payments** has one payment row while the post lookup has not returned: the sent direction icon, no title, and `−₿1`. There is no filled heart and no **Sunday lunch**.
+
+![21.gifts wallet history heart pending](images/wallet-history-heart-pending.png)
+
 ### Variant: history-error
 
 Pinned fixture (`?visual=history-error`, Playwright builds only). **Payments** shows **Your payments could not be loaded. Please try again.** and **Try again**.
@@ -737,6 +743,12 @@ The same shop payment as shop after pressing **Details**, so the payment request
 Pinned with `?visual=heart-payment` and id `b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42`. A filled accent heart replaces the direction badge, there is no **Gift** title, and a bordered post card shows author **Ada** and text **Sunday lunch**, linking to `/messages/11111111-1111-4111-8111-111111111111`. The amount is `−₿1`, **Type** is Wallet transfer, and **Fee** is Free.
 
 ![21.gifts wallet payment heart](images/wallet-payment-heart.png)
+
+### Variant: heart-payment-pending
+
+Pinned with `?visual=heart-payment-pending` and id `b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42`. The post lookup has not returned: the direction badge stays, there is no **Gift** title and no post card. The amount is `−₿1`, **Type** is Wallet transfer, and **Fee** is Free.
+
+![21.gifts wallet payment heart pending](images/wallet-payment-heart-pending.png)
 
 ### Variant: pending
 

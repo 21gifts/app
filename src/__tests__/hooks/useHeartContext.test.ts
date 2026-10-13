@@ -58,7 +58,19 @@ describe('useHeartContext', () => {
     },
   );
 
-  it.each(['heart-payment', 'history-heart'])(
+  it.each(['heart-payment-pending', 'history-heart-pending'])(
+    '%s keeps the visual heart pending without a fetch',
+    (pin) => {
+      process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+      window.history.replaceState({}, '', `/wallet?visual=${pin}`);
+      const { result } = renderHook(() => useHeartContext([HEART_VISUAL_HASH]));
+      expect(result.current.byHash.has(HEART_VISUAL_HASH)).toBe(false);
+      expect([...result.current.pending]).toEqual([HEART_VISUAL_HASH]);
+      expect(fetchHeartPosts).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['heart-payment', 'history-heart', 'heart-payment-pending', 'history-heart-pending'])(
     '%s does not inject the visual heart outside a Playwright build',
     async (pin) => {
       window.history.replaceState({}, '', `/wallet?visual=${pin}`);

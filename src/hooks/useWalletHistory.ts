@@ -54,6 +54,7 @@ function historyPin(): Pick<UseWalletHistoryResult, 'status' | 'payments'> | nul
     case 'history-rows':
       return { status: 'ready', payments: WALLET_PAYMENT_FIXTURES.map(toFixturePayment) };
     case 'history-heart':
+    case 'history-heart-pending':
       return { status: 'ready', payments: [toFixturePayment(HEART_VISUAL_PAYMENT)] };
     case 'history-error':
       return { status: 'error', payments: [] };

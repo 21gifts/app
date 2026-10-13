@@ -4194,6 +4194,11 @@
     "es": "Fixture fijado (?visual=history-heart, solo builds de Playwright). El saldo visual habitual se mantiene, y Pagos tiene una fila de pago: un corazón relleno, el título Sunday lunch y −₿1.",
     "fil": "Naka-pin na fixture (?visual=history-heart, Playwright builds lang). Nananatili ang karaniwang visual na balanse, at may isang hilera ng bayad ang Mga bayad: punong puso, ang pamagat na Sunday lunch, at −₿1."
   },
+  "/wallet:history-heart-pending": {
+    "de": "Fixierte Fixture (?visual=history-heart-pending, nur Playwright-Builds). Das übliche visuelle Guthaben bleibt, und Zahlungen hat eine Zahlungszeile: das Richtungszeichen einer Ausgabe, kein Titel und −₿1, solange die Beitragsabfrage noch nicht zurück ist.",
+    "es": "Fixture fijado (?visual=history-heart-pending, solo builds de Playwright). El saldo visual habitual se mantiene, y Pagos tiene una fila de pago: el icono de dirección de un envío, sin título y −₿1, mientras la consulta de la publicación aún no ha vuelto.",
+    "fil": "Naka-pin na fixture (?visual=history-heart-pending, Playwright builds lang). Nananatili ang karaniwang visual na balanse, at may isang hilera ng bayad ang Mga bayad: icon ng direksyon ng isang padala, walang pamagat, at −₿1, habang hindi pa bumabalik ang paghahanap ng post."
+  },
   "/wallet:history-error": {
     "de": "Fixierte Fixture (?visual=history-error, nur Playwright-Builds). Zahlungen zeigt Ihre Zahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen.",
     "es": "Fixture fijado (?visual=history-error, solo builds de Playwright). Pagos muestra No se pudieron cargar tus pagos. Inténtalo de nuevo. e Intentar de nuevo.",
@@ -4448,6 +4453,11 @@
     "de": "Angeheftet mit ?visual=heart-payment und der ID b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42. Ein gefülltes Herz in der Akzentfarbe ersetzt das Richtungsabzeichen, es gibt keinen Titel Geschenk, und eine umrandete Beitragskarte zeigt die Autorin Ada und den Text Sunday lunch mit einem Link auf /messages/11111111-1111-4111-8111-111111111111. Der Betrag ist −₿1, Art ist Wallet-Überweisung und Gebühr ist Kostenlos.",
     "es": "Fijado con ?visual=heart-payment y el id b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42. Un corazón de acento relleno sustituye la insignia de dirección, no hay título Regalo, y una tarjeta de publicación con borde muestra a la autora Ada y el texto Sunday lunch, enlazando a /messages/11111111-1111-4111-8111-111111111111. El importe es −₿1, el Tipo es Transferencia de wallet y la Comisión es Gratis.",
     "fil": "Naka-pin gamit ang ?visual=heart-payment at ang id na b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42. Pinapalitan ng punong accent na puso ang badge ng direksyon, walang pamagat na Regalo, at ang isang kard ng post na may border ay nagpapakita ng may-akdang Ada at ng tekstong Sunday lunch, na naka-link sa /messages/11111111-1111-4111-8111-111111111111. Ang halaga ay −₿1, ang Uri ay Wallet transfer, at ang Bayarin ay Libre."
+  },
+  "/wallet/payment:heart-payment-pending": {
+    "de": "Angeheftet mit ?visual=heart-payment-pending und der ID b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42. Die Beitragsabfrage ist noch nicht zurück: das Richtungsabzeichen bleibt, es gibt keinen Titel Geschenk und keine Beitragskarte. Der Betrag ist −₿1, Art ist Wallet-Überweisung und Gebühr ist Kostenlos.",
+    "es": "Fijado con ?visual=heart-payment-pending y el id b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42. La consulta de la publicación aún no ha vuelto: permanece la insignia de dirección, no hay título Regalo ni tarjeta de publicación. El importe es −₿1, el Tipo es Transferencia de wallet y la Comisión es Gratis.",
+    "fil": "Naka-pin gamit ang ?visual=heart-payment-pending at ang id na b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42. Hindi pa bumabalik ang paghahanap ng post: nananatili ang badge ng direksyon, walang pamagat na Regalo at walang kard ng post. Ang halaga ay −₿1, ang Uri ay Wallet transfer, at ang Bayarin ay Libre."
   },
   "/wallet/payment:pending": {
     "de": "Eine noch laufende Lightning-Zahlung (Sticker pack #42): die Pille Ausstehend mit Noch unterwegs. Der Betrag bleibt reserviert, bis die Zahlung ankommt oder zurückkommt., ihre Gebühr und Gesamtsumme und noch kein Zahlungsnachweis.",
