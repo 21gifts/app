@@ -4455,7 +4455,7 @@ Identity card; **3 shops** pressed; one listed shop note; muted `Showing the lat
 
 ### Variant: credits-truncated
 
-Identity card; **3 credits** pressed; one listed credit note; muted `Showing the latest 1 of 3.`; no pinned profile-note card.
+Identity card; **3 credits** pressed; one listed credit note `A credit from Carol.` with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, a **Loan** tag and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. The note offers **Repayment list**, a link to /messages/<id>/repayment-list. The day list is not on this card. Muted `Showing the latest 1 of 3.`; no pinned profile-note card.
 
 ![21.gifts member credits truncated](images/members-credits-truncated.png)
 

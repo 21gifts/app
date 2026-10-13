@@ -12480,6 +12480,9 @@ test.describe('onboarding screens', () => {
 
   test('state-members-credits-truncated', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -12542,7 +12545,10 @@ test.describe('onboarding screens', () => {
               name: 'Carol',
               text: 'A credit from Carol.',
               createdAt: '2026-08-02T10:00:00.000Z',
-              sats: 0,
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
               payable: true,
               hasPhoto: false,
               hasVideo: false,
@@ -12554,6 +12560,7 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
+    await fulfillRateDay(page);
     await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -12564,6 +12571,11 @@ test.describe('onboarding screens', () => {
     await page.goto(`/members/${memberId}`);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await page.getByRole('button', { name: '3 credits' }).click();
+    await expect(page.getByText('A credit from Carol.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
+    await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
+    await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
+    await expect(page.getByText('50%')).toBeVisible();
     await expect(page.getByText('Showing the latest 1 of 3.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('Showing the latest 1 of 3.').scrollIntoViewIfNeeded();
