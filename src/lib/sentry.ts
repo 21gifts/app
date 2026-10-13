@@ -23,16 +23,19 @@ import {
 export const SENTRY_TUNNEL_PATH = '/monitoring';
 
 /**
- * Largest envelope the tunnel forwards: one error or one transaction, no
+ * Largest envelope the tunnel forwards: errors and transactions only, no
  * attachments. The Sentry server accepts no larger event either.
  */
 const MAX_ENVELOPE_BYTES = 1024 * 1024;
 
 /**
- * Span data keys that describe page elements (web vitals: the LCP element and
- * its image URL, the CLS sources). Their DOM text can hold a member's name.
+ * Span data keys that describe page elements (web vitals: the LCP element,
+ * its image URL, its id, and its rendered size, and the CLS sources). Their
+ * DOM text can hold a member's name, and the size of a member's own text or
+ * image depends on what it holds.
  */
-const ELEMENT_DATA_KEY = /^(?:browser\.web_vital\.)?(?:lcp\.(?:element|url|id)|cls\.source\.\d+)$/;
+const ELEMENT_DATA_KEY =
+  /^(?:browser\.web_vital\.)?(?:lcp\.(?:element|url|id|size)|cls\.source\.\d+)$/;
 
 /**
  * Span data keys that hold the byte size of a request or response body, in
@@ -607,7 +610,8 @@ export function traceWallet<T>(
  * `length` is followed by that many payload bytes; without one the payload
  * ends at the next newline. A `length` that is not a whole number of bytes
  * inside the envelope (a string, `null`, a boolean, negative, fractional, or
- * past the end) makes the header broken.
+ * past the end), or one that does not end at a newline or at the end of the
+ * envelope, makes the header broken.
  *
  * @param envelope - Raw envelope bytes.
  * @returns The item types in order, or `null` when an item header is broken.
@@ -620,7 +624,8 @@ function envelopeItemTypes(envelope: Uint8Array): string[] | null {
     const lineEnd = envelope.indexOf(0x0a, offset);
     const end = lineEnd < 0 ? envelope.length : lineEnd;
     const line = envelope.subarray(offset, end);
-    offset = end + 1;
+    // A header that ends the envelope has no newline after it to step over.
+    offset = Math.min(end + 1, envelope.length);
     if (line.length === 0) {
       continue;
     }
@@ -647,7 +652,12 @@ function envelopeItemTypes(envelope: Uint8Array): string[] | null {
       ) {
         return null;
       }
-      offset += length + 1;
+      offset += length;
+      // Only a newline, or the end of the envelope, may follow the payload.
+      if (offset < envelope.length && envelope[offset] !== 0x0a) {
+        return null;
+      }
+      offset += 1;
     }
   }
   return types;
@@ -735,9 +745,10 @@ async function readCappedBody(request: Request): Promise<Uint8Array<ArrayBuffer>
  * @returns 404 when error reporting is off, 413 when larger than 1 MiB (by
  * `Content-Length`, or while reading, before the whole body is buffered), 400 when the
  * envelope names another DSN, has no item, has a broken item header (also a
- * `length` that is not a whole number of bytes inside the envelope), or has
- * an item that is neither an error nor a transaction, 502 when the Sentry
- * server cannot be reached, otherwise the upstream status with an empty body.
+ * `length` that is not a whole number of bytes inside the envelope, or that
+ * does not end at a newline or at the end of the envelope), or has an item
+ * that is neither an error nor a transaction, 502 when the Sentry server
+ * cannot be reached, otherwise the upstream status with an empty body.
  */
 export async function forwardSentryEnvelope(request: Request): Promise<Response> {
   const target = parseSentryDsn(getSentryDsn());

@@ -1008,7 +1008,7 @@ Privacy rules (this app holds wallets):
 - A transaction carries no span that reaches another origin than the page
   (the wallet asking a receiver's Lightning address server or a chain
   explorer would name the receiver or an address), no web-vital element
-  descriptor (`lcp.element`, `lcp.url`, `lcp.id`, `cls.source.N`), no request
+  descriptor (`lcp.element`, `lcp.url`, `lcp.id`, `lcp.size`, `cls.source.N`), no request
   or response body size (`http.response.body.size`, `http.request.body.size`,
   their older names, and `Content-Length` header keys; the exact size of a
   member's own response depends on what it holds), and no breadcrumbs (a
