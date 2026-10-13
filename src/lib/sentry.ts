@@ -734,9 +734,10 @@ async function readCappedBody(request: Request): Promise<Uint8Array<ArrayBuffer>
  * @param request - Incoming envelope POST.
  * @returns 404 when error reporting is off, 413 when larger than 1 MiB (by
  * `Content-Length`, or while reading, before the whole body is buffered), 400 when the
- * envelope names another DSN, has no item, or has an item that is neither an
- * error nor a transaction, 502 when the Sentry server cannot be reached,
- * otherwise the upstream status with an empty body.
+ * envelope names another DSN, has no item, has a broken item header (also a
+ * `length` that is not a whole number of bytes inside the envelope), or has
+ * an item that is neither an error nor a transaction, 502 when the Sentry
+ * server cannot be reached, otherwise the upstream status with an empty body.
  */
 export async function forwardSentryEnvelope(request: Request): Promise<Response> {
   const target = parseSentryDsn(getSentryDsn());
