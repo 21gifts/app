@@ -3349,20 +3349,83 @@ describe('ForumLoader', () => {
         },
       ]),
     );
-    photoMock.mockImplementationOnce(
-      () =>
-        new Promise((_, reject) => {
+    photoMock.mockImplementation((_session, id) => {
+      if (id === 'm1') {
+        return new Promise((_, reject) => {
           rejectFirst = reject;
-        }),
-    );
+        });
+      }
+      return new Promise(() => undefined);
+    });
     const view = renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledTimes(1);
+      expect(photoMock).toHaveBeenCalledWith('sess', 'm1', 0);
+      expect(photoMock).toHaveBeenCalledWith('sess', 'm2', 0);
     });
     view.unmount();
     rejectFirst?.(new Error('gone'));
     await Promise.resolve();
-    expect(photoMock).toHaveBeenCalledTimes(1);
+    expect(photoMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('starts every missing photo fetch before the first blob arrives', async () => {
+    let resolveFirst: ((value: Blob) => void) | undefined;
+    let resolveSecond: ((value: Blob) => void) | undefined;
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          id: 'm1',
+          name: 'Ada',
+          text: '',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 5,
+          payable: false,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+        {
+          id: 'm2',
+          name: 'Bob',
+          text: '',
+          createdAt: '2026-08-28T12:01:00.000Z',
+          sats: 5,
+          payable: false,
+          hasPhoto: true,
+          photoCount: 1,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'basis',
+          replyCount: 0,
+        },
+      ]),
+    );
+    photoMock.mockImplementation((_session, id) => {
+      if (id === 'm1') {
+        return new Promise((resolve) => {
+          resolveFirst = resolve;
+        });
+      }
+      return new Promise((resolve) => {
+        resolveSecond = resolve;
+      });
+    });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(photoMock).toHaveBeenCalledWith('sess', 'm1', 0);
+      expect(photoMock).toHaveBeenCalledWith('sess', 'm2', 0);
+    });
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+    expect(screen.queryByAltText('Photo from Bob')).toBeNull();
+    resolveFirst?.(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    resolveSecond?.(new Blob([new Uint8Array([2])], { type: 'image/jpeg' }));
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Ada')).toBeTruthy();
+      expect(screen.getByAltText('Photo from Bob')).toBeTruthy();
+    });
   });
 
   it('revokes a photo blob if unmount happens during createObjectURL', async () => {

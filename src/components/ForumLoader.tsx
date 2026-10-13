@@ -1238,11 +1238,11 @@ export function ForumLoader({
     if (missing.length === 0) {
       return;
     }
-    void (async () => {
-      for (const photo of missing) {
+    void Promise.all(
+      missing.map(async (photo) => {
         /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
         if (photoUrlsRef.current[photo.key] !== undefined) {
-          continue;
+          return;
         }
         /* v8 ignore stop */
         let blob: Blob;
@@ -1261,11 +1261,8 @@ export function ForumLoader({
                 ? await fetchPublicMessagePhoto(photo.id, photo.index)
                 : await fetchMessagePhoto(session, photo.id, photo.index);
           } catch {
-            if (cancelled) {
-              return;
-            }
             // Leave the row text-only when the photo cannot load.
-            continue;
+            return;
           }
         }
         if (cancelled) {
@@ -1285,8 +1282,8 @@ export function ForumLoader({
           /* v8 ignore stop */
           return { ...prev, [photo.key]: url };
         });
-      }
-    })();
+      }),
+    );
     return () => {
       cancelled = true;
     };
