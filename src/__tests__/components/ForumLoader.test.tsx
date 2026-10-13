@@ -1386,7 +1386,7 @@ describe('ForumLoader', () => {
       expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Remove video' })).toBeTruthy();
@@ -2408,7 +2408,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(prepareVideoMock).toHaveBeenCalledWith(file);
@@ -2455,7 +2455,7 @@ describe('ForumLoader', () => {
     });
     fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(prepareVideoMock).toHaveBeenCalledWith(file);
@@ -2497,7 +2497,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [first] } });
     fireEvent.change(input, { target: { files: [second] } });
     await waitFor(() => {
@@ -2525,7 +2525,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:video');
@@ -2550,7 +2550,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:video');
@@ -2582,7 +2582,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [first] } });
     await waitFor(() => {
       expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:first');
@@ -2612,7 +2612,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [clip] } });
     await waitFor(() => {
       expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:video');
@@ -2641,7 +2641,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [clip] } });
     await waitFor(() => {
       expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:video');
@@ -2671,7 +2671,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(document.querySelector('form video')?.getAttribute('src')).toBe('blob:video');
@@ -2702,7 +2702,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(prepareVideoMock).toHaveBeenCalledWith(file);
@@ -2728,7 +2728,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File([], 'a.mp4', { type: 'video/mp4' })] },
     });
@@ -2747,7 +2747,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File([new Uint8Array([1])], 'a.mp4', { type: 'video/mp4' })] },
     });
@@ -2774,7 +2774,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File([], 'a.jpg', { type: 'image/jpeg' })] },
     });
@@ -2799,7 +2799,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
     });
@@ -2831,7 +2831,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
     });
@@ -2874,7 +2874,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
     });
@@ -2903,7 +2903,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
     });
@@ -2938,7 +2938,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
     });
@@ -2970,7 +2970,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
     });
@@ -2999,7 +2999,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
     });
@@ -3042,7 +3042,7 @@ describe('ForumLoader', () => {
     });
     const first = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
     const second = new File([new Uint8Array([2])], 'b.png', { type: 'image/png' });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [first, second] } });
     await waitFor(() => {
       expect(screen.getAllByAltText('Selected photo')).toHaveLength(2);
@@ -3069,7 +3069,7 @@ describe('ForumLoader', () => {
       { length: 10 },
       (_, index) => new File([new Uint8Array([index])], `${index}.jpg`, { type: 'image/jpeg' }),
     );
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: firstTen } });
     await waitFor(() => {
       expect(screen.getAllByAltText('Selected photo')).toHaveLength(10);
@@ -3107,7 +3107,7 @@ describe('ForumLoader', () => {
       { length: 11 },
       (_, index) => new File([new Uint8Array([index])], `${index}.jpg`, { type: 'image/jpeg' }),
     );
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: eleven } });
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
@@ -3138,7 +3138,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [photo] } });
     await waitFor(() => {
       expect(screen.getByAltText('Selected photo')).toBeTruthy();
@@ -3168,7 +3168,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [photo] } });
     await waitFor(() => {
       expect(screen.getByAltText('Selected photo')).toBeTruthy();
@@ -3439,7 +3439,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
     });
@@ -3573,7 +3573,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('Your first post is free.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Remove video' })).toBeTruthy();
@@ -4048,7 +4048,7 @@ describe('ForumLoader', () => {
       ok: true,
       photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'blob:photo' },
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: {
         files: [new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' })],
@@ -4110,7 +4110,7 @@ describe('ForumLoader', () => {
         takenAt: '2026-09-22T11:40:00+08:00',
       },
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: {
         files: [new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' })],
@@ -4245,7 +4245,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(prepareVideoMock).toHaveBeenCalledWith(file);
@@ -4296,7 +4296,7 @@ describe('ForumLoader', () => {
       ok: true,
       photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'blob:photo' },
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: {
         files: [new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' })],
@@ -4424,7 +4424,7 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: '  Hello  ' } });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const first = new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' });
     const second = new File([new Uint8Array([2])], 'b.png', { type: 'image/png' });
     fireEvent.change(input, {
@@ -4480,7 +4480,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:existing');
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
     });
@@ -4517,7 +4517,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(prepareVideoMock).toHaveBeenCalled();
@@ -4569,7 +4569,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(prepareVideoMock).toHaveBeenCalledWith(file);

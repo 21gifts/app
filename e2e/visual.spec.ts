@@ -5365,8 +5365,13 @@ test.describe('onboarding screens', () => {
       await openWriter(page);
       await expect(page.getByRole('heading', { name: 'Send a post' })).toBeVisible();
       const field = (await page.getByLabel('Your message').boundingBox())!;
+      const camera = (await page
+        .getByRole('button', { name: 'Take a photo', exact: true })
+        .boundingBox())!;
       const post = (await page.getByRole('button', { name: 'Post', exact: true }).boundingBox())!;
-      expect(post.y).toBeGreaterThanOrEqual(field.y + field.height);
+      // The photo icon row is on top; the field and Post share the row below it.
+      expect(field.y).toBeGreaterThanOrEqual(camera.y + camera.height);
+      expect(post.x).toBeGreaterThanOrEqual(field.x + field.width);
       await shotScreen(page, 'state-welcome-writer');
     });
 
@@ -6265,6 +6270,114 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-summary');
+  });
+
+  async function openWelcomeShopEditor(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'moderator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-shop/edits', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByText('No edits yet')).toBeVisible();
+  }
+
+  test('welcome shop-edit-photo-busy', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+    await openWelcomeShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
+    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photo-busy');
+  });
+
+  test('welcome shop-edit-photo-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await openWelcomeShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
+    const sentence = page.getByText('Keep photos under 1 MB');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photo-too-large');
+  });
+
+  test('welcome shop-edit-photo-too-many', async ({ page }) => {
+    await openWelcomeShopEditor(page);
+    await page
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    const sentence = page.getByText('You can add up to 10 photos');
+    await expect(sentence).toBeVisible({ timeout: 15_000 });
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photo-too-many');
+  });
+
+  test('welcome shop-edit-photo-unsupported', async ({ page }) => {
+    await openWelcomeShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles({
+      name: 'note.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('x'),
+    });
+    const sentence = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photo-unsupported');
   });
 
   test('state /welcome laws', async ({ page }) => {
@@ -10054,6 +10167,144 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-summary');
+  });
+
+  async function openMembersShopEditor(page: Page): Promise<void> {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '55555555-5555-4555-8555-555555555555';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'moderator',
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/messages/${noteId}/edits`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByText('No edits yet')).toBeVisible();
+  }
+
+  test('state /members shop-edit-photo-busy', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+    await openMembersShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
+    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photo-busy');
+  });
+
+  test('state /members shop-edit-photo-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await openMembersShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
+    const sentence = page.getByText('Keep photos under 1 MB');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photo-too-large');
+  });
+
+  test('state /members shop-edit-photo-too-many', async ({ page }) => {
+    await openMembersShopEditor(page);
+    await page
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    const sentence = page.getByText('You can add up to 10 photos');
+    await expect(sentence).toBeVisible({ timeout: 15_000 });
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photo-too-many');
+  });
+
+  test('state /members shop-edit-photo-unsupported', async ({ page }) => {
+    await openMembersShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles({
+      name: 'note.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('x'),
+    });
+    const sentence = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photo-unsupported');
   });
 
   /** Posts open on Carol's profile, her note expanded, reaction field ready. */
@@ -14660,6 +14911,130 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-shop-edit-summary');
   });
 
+  async function openMessagesShopEditor(page: Page): Promise<void> {
+    const id = '12121212-1212-4121-8121-121212121212';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'moderator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/edits`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    });
+    const shopNote = {
+      id,
+      name: 'Ada',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+    };
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(shopNote),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname === `/forum/messages/${id}`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(shopNote),
+        });
+      },
+    );
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByText('No edits yet')).toBeVisible();
+  }
+
+  test('state /messages/[id] shop-edit-photo-busy', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+    await openMessagesShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
+    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-busy');
+  });
+
+  test('state /messages/[id] shop-edit-photo-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await openMessagesShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
+    const sentence = page.getByText('Keep photos under 1 MB');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-too-large');
+  });
+
+  test('state /messages/[id] shop-edit-photo-too-many', async ({ page }) => {
+    await openMessagesShopEditor(page);
+    await page
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    const sentence = page.getByText('You can add up to 10 photos');
+    await expect(sentence).toBeVisible({ timeout: 15_000 });
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-too-many');
+  });
+
+  test('state /messages/[id] shop-edit-photo-unsupported', async ({ page }) => {
+    await openMessagesShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles({
+      name: 'note.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('x'),
+    });
+    const sentence = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-unsupported');
+  });
+
   test('state /messages sunday', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111111';
     await page.addInitScript(() => {
@@ -16593,7 +16968,7 @@ test.describe('profile activity chart variants', () => {
     await page.getByRole('button', { name: 'Write your About me' }).click();
     await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
     await page
-      .locator('input[type="file"]:not([name])')
+      .locator('input[type="file"]:not([name]):not([capture])')
       .nth(2)
       .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
     await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
@@ -19557,7 +19932,9 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByLabel('Ask').fill('1000');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/ask-card.jpg');
+    await page
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/ask-card.jpg');
     await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByLabel('Your message').fill('Need help with a train ticket');
@@ -19584,7 +19961,9 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Ask for money' }).click();
     await page.getByLabel('Ask').fill('1000');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/ask-card.jpg');
+    await page
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/ask-card.jpg');
     await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByLabel('Your message').fill('Need help with a train ticket');
@@ -19676,7 +20055,7 @@ test.describe('welcome forum variants', () => {
     await beginAsk(page);
     await askAmount(page, '21000');
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
     await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
     await shotScreen(page, 'state-welcome-ask-several-photos');
@@ -19688,7 +20067,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await beginAsk(page);
     await askAmount(page, '21000');
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.mp4');
     await expect(page.locator('video')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole('button', { name: 'Remove video' })).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-video');
@@ -19701,7 +20080,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await beginAsk(page);
     await askAmount(page, '21000');
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-ask-preparing');
@@ -19728,7 +20107,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await beginAsk(page);
     await askAmount(page, '21000');
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep photos under 1 MB and videos under 32 MB')).toBeVisible();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-ask-too-large');
@@ -19741,7 +20120,7 @@ test.describe('welcome forum variants', () => {
     await beginAsk(page);
     await askAmount(page, '21000');
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
     await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 15_000 });
     await shotScreen(page, 'state-welcome-ask-too-many');
@@ -19782,16 +20161,20 @@ test.describe('welcome forum variants', () => {
       await askAmount(page);
     }
     if (options.video === true) {
-      await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+      await page
+        .locator('input[type="file"]:not([capture])')
+        .setInputFiles('e2e/fixtures/tiny.mp4');
       await expect(page.locator('video')).toBeVisible({ timeout: 10_000 });
     } else if (options.photo === 'card') {
-      await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/ask-card.jpg');
+      await page
+        .locator('input[type="file"]:not([capture])')
+        .setInputFiles('e2e/fixtures/ask-card.jpg');
       await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
     } else if (options.photo === 'one') {
       await attachTinyJpeg(page);
     } else if (options.photo === 'several') {
       await page
-        .locator('input[type="file"]')
+        .locator('input[type="file"]:not([capture])')
         .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
       await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
     }
@@ -20417,7 +20800,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Hello with this photo.');
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     const row = page.locator('li[data-message-id="m-both"]');
@@ -20547,7 +20930,7 @@ test.describe('welcome forum variants', () => {
   );
 
   async function attachGif(page: Page): Promise<void> {
-    await page.locator('input[type="file"]').setInputFiles({
+    await page.locator('input[type="file"]:not([capture])').setInputFiles({
       name: 'tiny.gif',
       mimeType: 'image/gif',
       buffer: TINY_GIF,
@@ -20555,12 +20938,12 @@ test.describe('welcome forum variants', () => {
   }
 
   async function attachTinyJpeg(page: Page): Promise<void> {
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
   }
 
   async function attachTinyMp4(page: Page): Promise<void> {
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.mp4');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.mp4');
     await expect(page.locator('form video')).toBeVisible({ timeout: 10_000 });
   }
 
@@ -20735,6 +21118,23 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-composer-place-confirm', false);
   });
 
+  /** The chosen place is a line of its own: under the photo row, above the field and Post. */
+  async function expectPlaceLineClear(page: Page, text: string): Promise<void> {
+    const line = await page.getByText(text, { exact: true }).locator('..').boundingBox();
+    const pin = await page.getByRole('button', { name: 'Add a place' }).boundingBox();
+    const field = await page.getByLabel('Your message').boundingBox();
+    const post = await page.getByRole('button', { name: 'Post', exact: true }).boundingBox();
+    expect(line).not.toBeNull();
+    expect(pin).not.toBeNull();
+    expect(field).not.toBeNull();
+    expect(post).not.toBeNull();
+    expect(line!.y).toBeGreaterThanOrEqual(pin!.y + pin!.height);
+    expect(line!.y + line!.height).toBeLessThanOrEqual(field!.y);
+    expect(line!.y + line!.height).toBeLessThanOrEqual(post!.y);
+    expect(line!.x).toBeGreaterThanOrEqual(field!.x - 1);
+    expect(line!.x + line!.width).toBeLessThanOrEqual(post!.x + post!.width + 1);
+  }
+
   test('welcome composer-place-set', async ({ page }) => {
     await installBaselineMap(page, { click: true });
     await seedAda(page);
@@ -20747,8 +21147,8 @@ test.describe('welcome forum variants', () => {
     await page.getByLabel('Place name').fill('Stall');
     await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(page.getByText('Stall', { exact: true })).toBeVisible();
-    // The preview sits above the writer: its Remove takes the tap.
     await page.getByRole('button', { name: 'Remove place' }).click({ trial: true });
+    await expectPlaceLineClear(page, 'Stall');
     await shotScreen(page, 'state-welcome-composer-place-set');
   });
 
@@ -20798,6 +21198,7 @@ test.describe('welcome forum variants', () => {
     await page.locator('.h-64').click();
     await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(page.getByText('14.50000, 120.90000', { exact: true })).toBeVisible();
+    await expectPlaceLineClear(page, '14.50000, 120.90000');
     await shotScreen(page, 'state-welcome-composer-place-set-coords');
   });
 
@@ -20808,7 +21209,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
     await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
     await shotScreen(page, 'state-welcome-composer-photos');
@@ -20835,7 +21236,7 @@ test.describe('welcome forum variants', () => {
     await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption with selected photos.');
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
     await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
     await expect(page.getByLabel('Your message')).toHaveValue('Caption with selected photos.');
@@ -20888,7 +21289,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Post', exact: true })).toBeDisabled();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-preparing-photo');
@@ -20902,7 +21303,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption while the photo is preparing.');
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByLabel('Your message')).toHaveValue(
       'Caption while the photo is preparing.',
     );
@@ -21085,7 +21486,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep photos under 1 MB and videos under 32 MB')).toBeVisible();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-error-too-large');
@@ -21098,7 +21499,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
     await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
     await shotScreen(page, 'state-welcome-error-too-many');
@@ -21112,7 +21513,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption with a photo that is too large.');
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep photos under 1 MB and videos under 32 MB')).toBeVisible();
     await expect(page.getByLabel('Your message')).toHaveValue(
       'Caption with a photo that is too large.',
@@ -21129,7 +21530,7 @@ test.describe('welcome forum variants', () => {
     await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Caption with too many photos.');
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
     await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByLabel('Your message')).toHaveValue('Caption with too many photos.');
@@ -22484,6 +22885,145 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-map-edit-summary');
   });
 
+  async function openShopsMapEditEditor(page: Page): Promise<void> {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          places: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              lat: 14.6,
+              lng: 120.98,
+              label: 'Happyland',
+              shop: true,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: null }),
+      });
+    });
+    await page.route(
+      (url) => {
+        const path = new URL(url).pathname;
+        return path === '/forum/messages/m-shop' || path === '/forum/messages/m-shop/edits';
+      },
+      async (route) => {
+        const path = new URL(route.request().url()).pathname;
+        if (path.endsWith('/edits')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ edits: [] }),
+          });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'm-shop',
+            name: 'Ada',
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+          }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Map' }).click();
+    await expect(page.getByRole('button', { name: 'Edit shop note' })).toBeVisible();
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByText('No edits yet')).toBeVisible();
+  }
+
+  test('shops map-edit-photo-busy', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+    await openShopsMapEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
+    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photo-busy');
+  });
+
+  test('shops map-edit-photo-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await openShopsMapEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/tiny.jpg');
+    const sentence = page.getByText('Keep photos under 1 MB');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photo-too-large');
+  });
+
+  test('shops map-edit-photo-too-many', async ({ page }) => {
+    await openShopsMapEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    const sentence = page.getByText('You can add up to 10 photos');
+    await expect(sentence).toBeVisible({ timeout: 15_000 });
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photo-too-many');
+  });
+
+  test('shops map-edit-photo-unsupported', async ({ page }) => {
+    await openShopsMapEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles({
+        name: 'note.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('x'),
+      });
+    const sentence = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photo-unsupported');
+  });
+
   test('shops map-edit-load-failed', async ({ page }) => {
     await seedAda(page, 'moderator');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -22789,6 +23329,111 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-table-edit-summary');
+  });
+
+  async function openShopsTableEditEditor(page: Page): Promise<void> {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+              shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-shop/edits', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByRole('button', { name: 'Edit shop note' })).toBeVisible();
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByText('No edits yet')).toBeVisible();
+  }
+
+  test('shops table-edit-photo-busy', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+    await openShopsTableEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
+    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photo-busy');
+  });
+
+  test('shops table-edit-photo-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await openShopsTableEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/tiny.jpg');
+    const sentence = page.getByText('Keep photos under 1 MB');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photo-too-large');
+  });
+
+  test('shops table-edit-photo-too-many', async ({ page }) => {
+    await openShopsTableEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    const sentence = page.getByText('You can add up to 10 photos');
+    await expect(sentence).toBeVisible({ timeout: 15_000 });
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photo-too-many');
+  });
+
+  test('shops table-edit-photo-unsupported', async ({ page }) => {
+    await openShopsTableEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles({
+        name: 'note.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('x'),
+      });
+    const sentence = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photo-unsupported');
   });
 
   const shopTableRow = {
@@ -23318,6 +23963,108 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-summary');
+  });
+
+  async function openShopsEditEditor(page: Page): Promise<void> {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-staff/edits', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByText('No edits yet')).toBeVisible();
+  }
+
+  test('shops edit-photo-busy', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+    await openShopsEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
+    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photo-busy');
+  });
+
+  test('shops edit-photo-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await openShopsEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/tiny.jpg');
+    const sentence = page.getByText('Keep photos under 1 MB');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photo-too-large');
+  });
+
+  test('shops edit-photo-too-many', async ({ page }) => {
+    await openShopsEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    const sentence = page.getByText('You can add up to 10 photos');
+    await expect(sentence).toBeVisible({ timeout: 15_000 });
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photo-too-many');
+  });
+
+  test('shops edit-photo-unsupported', async ({ page }) => {
+    await openShopsEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles({
+        name: 'note.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('x'),
+      });
+    const sentence = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photo-unsupported');
   });
 
   test('shops edit-save-error', async ({ page }) => {
@@ -25301,7 +26048,7 @@ test.describe('inbox screens', () => {
     });
     await page.goto('/messages?c=conv-bob');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({
       timeout: 10_000,
     });
@@ -25350,7 +26097,7 @@ test.describe('inbox screens', () => {
     await page.goto('/messages?c=conv-bob');
     await expect(page.getByLabel('Your message')).toBeVisible();
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
     await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
     await shotScreen(page, 'state-messages-thread-composer-photos');
@@ -25474,7 +26221,7 @@ test.describe('inbox screens', () => {
     await hangCreateImageBitmap(page);
     await page.goto('/messages?c=conv-bob');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-messages-thread-preparing-photo');
@@ -25485,7 +26232,7 @@ test.describe('inbox screens', () => {
     await mockBobThread(page);
     await page.goto('/messages?c=conv-bob');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles({
+    await page.locator('input[type="file"]:not([capture])').setInputFiles({
       name: 'tiny.gif',
       mimeType: 'image/gif',
       buffer: TINY_GIF,
@@ -25501,7 +26248,7 @@ test.describe('inbox screens', () => {
     await stubTooLargeJpeg(page);
     await page.goto('/messages?c=conv-bob');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
     await shotScreen(page, 'state-messages-thread-error-too-large');
   });
@@ -25512,7 +26259,7 @@ test.describe('inbox screens', () => {
     await page.goto('/messages?c=conv-bob');
     await expect(page.getByLabel('Your message')).toBeVisible();
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
     await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
     await shotScreen(page, 'state-messages-thread-error-too-many');
@@ -27075,7 +27822,7 @@ test.describe('moderate group screens', () => {
   );
 
   async function attachGif(page: Page): Promise<void> {
-    await page.locator('input[type="file"]').setInputFiles({
+    await page.locator('input[type="file"]:not([capture])').setInputFiles({
       name: 'tiny.gif',
       mimeType: 'image/gif',
       buffer: TINY_GIF,
@@ -27316,7 +28063,7 @@ test.describe('moderate group screens', () => {
     await mockThread(page, []);
     await page.goto('/moderate/group');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Remove photo' })).toBeVisible({
       timeout: 10_000,
     });
@@ -27330,7 +28077,7 @@ test.describe('moderate group screens', () => {
     await page.goto('/moderate/group');
     await expect(page.getByLabel('Your message')).toBeVisible();
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(['e2e/fixtures/tiny.jpg', 'e2e/fixtures/tiny.jpg']);
     await expect(page.getByAltText('Selected photo')).toHaveCount(2, { timeout: 10_000 });
     await shotScreen(page, 'state-moderate-group-composer-photos');
@@ -27413,7 +28160,7 @@ test.describe('moderate group screens', () => {
     await hangCreateImageBitmap(page);
     await page.goto('/moderate/group');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByRole('button', { name: 'Send' })).toBeDisabled();
     await expect(page.getByAltText('Selected photo')).toHaveCount(0);
     await shotScreen(page, 'state-moderate-group-preparing-photo');
@@ -27438,7 +28185,7 @@ test.describe('moderate group screens', () => {
     await stubTooLargeJpeg(page);
     await page.goto('/moderate/group');
     await expect(page.getByLabel('Your message')).toBeVisible();
-    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/tiny.jpg');
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
     await expect(page.getByText('Keep photos under 1 MB')).toBeVisible();
     await shotScreen(page, 'state-moderate-group-error-too-large');
   });
@@ -27450,7 +28197,7 @@ test.describe('moderate group screens', () => {
     await page.goto('/moderate/group');
     await expect(page.getByLabel('Your message')).toBeVisible();
     await page
-      .locator('input[type="file"]')
+      .locator('input[type="file"]:not([capture])')
       .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
     await expect(page.getByText('You can add up to 10 photos')).toBeVisible({ timeout: 10_000 });
     await shotScreen(page, 'state-moderate-group-error-too-many');

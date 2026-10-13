@@ -2056,7 +2056,7 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
       />,
     );
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     expect(input.hasAttribute('multiple')).toBe(true);
     const clickSpy = vi.spyOn(input, 'click').mockImplementation(() => undefined);
     fireEvent.click(screen.getByLabelText('Add a photo or video'));
@@ -2067,6 +2067,27 @@ describe('ForumBoard', () => {
     expect(onPickFiles).toHaveBeenCalledWith([first, second]);
     fireEvent.change(input, { target: { files: [] } });
     expect(onPickFiles).toHaveBeenCalledTimes(1);
+    const camera = document.querySelector('input[type="file"][capture]') as HTMLInputElement;
+    expect(camera.getAttribute('capture')).toBe('environment');
+    expect(camera.getAttribute('accept')).toBe('image/*');
+    const cameraClick = vi.spyOn(camera, 'click').mockImplementation(() => undefined);
+    fireEvent.click(screen.getByRole('button', { name: 'Take a photo' }));
+    expect(cameraClick).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Take a photo')).toBeNull();
+    const cameraButton = screen.getByRole('button', { name: 'Take a photo' });
+    const attachButton = screen.getByRole('button', { name: 'Add a photo or video' });
+    const placeButton = screen.getByRole('button', { name: 'Add a place' });
+    expect(
+      cameraButton.compareDocumentPosition(attachButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      attachButton.compareDocumentPosition(placeButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    const shot = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'image.jpg', {
+      type: 'image/jpeg',
+    });
+    fireEvent.change(camera, { target: { files: [shot] } });
+    expect(onPickFiles).toHaveBeenLastCalledWith([shot]);
   });
 
   it('renders the amount sheet and submits pay', async () => {
@@ -8528,18 +8549,57 @@ describe('ForumBoard writer', () => {
     expect(heading.compareDocumentPosition(pill) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(pill.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(document.activeElement).toBe(field);
-    // Phone shape on a touch device: field on top, photo and place left, send right.
-    expect(field.className).toContain('pointer-coarse:order-first pointer-coarse:basis-full');
-    expect(field.closest('form')!.firstElementChild!.className).toBe(
-      'flex items-center gap-2 pointer-coarse:flex-wrap',
+    // The same two rows on a touch device: the photo icon row, then the field with send.
+    const photoRow = field.closest('form')!.firstElementChild as HTMLElement;
+    expect(photoRow.className).toBe('flex items-center gap-2');
+    expect(photoRow.contains(within(layer).getByRole('button', { name: 'Take a photo' }))).toBe(
+      true,
     );
-    expect(within(layer).getByRole('button', { name: 'Post' }).className).toContain(
-      'pointer-coarse:ml-auto',
+    expect(
+      photoRow.contains(within(layer).getByRole('button', { name: 'Add a photo or video' })),
+    ).toBe(true);
+    expect(photoRow.contains(field)).toBe(false);
+    const post = within(layer).getByRole('button', { name: 'Post' });
+    expect(photoRow.contains(post)).toBe(false);
+    const textRow = [...(photoRow.parentElement?.children ?? [])].find((child) =>
+      child.contains(field),
+    ) as HTMLElement;
+    expect(textRow.contains(field)).toBe(true);
+    expect(textRow.contains(post)).toBe(true);
+    expect(field.compareDocumentPosition(post) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(field.className).not.toContain('pointer-coarse:');
+    expect(within(layer).getByRole('button', { name: 'Post' }).className).not.toContain(
+      'pointer-coarse:',
     );
     expect(within(layer).getByRole('alert').textContent).toBe(getCatalog('en')['forum.errorEmpty']);
     // The feed stays on the page under the writer.
     expect(layer.contains(screen.getByText(SAMPLE.text))).toBe(false);
     expect(document.querySelector('[data-scroll-page]')!.contains(layer)).toBe(false);
+  });
+
+  it('shows a chosen place on its own line between the photo row and the text field', () => {
+    const view = renderHome(
+      {
+        placeDraft: { lat: 1, lng: 2, label: 'Stall' },
+        onPlaceDraftChange: () => undefined,
+      },
+      true,
+    );
+    const layer = writerLayer(view.container)!;
+    const stall = within(layer).getByText('Stall');
+    const placeButton = within(layer).getByRole('button', { name: 'Add a place' });
+    const field = within(layer).getByRole('textbox', {
+      name: getCatalog('en')['forum.composerLabel'],
+    });
+    const form = field.closest('form')!;
+    const photoRow = form.firstElementChild as HTMLElement;
+    const textRow = [...form.children].find((child) => child.contains(field)) as HTMLElement;
+    expect(photoRow.contains(placeButton)).toBe(true);
+    expect(photoRow.compareDocumentPosition(stall) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(stall.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(form.contains(stall)).toBe(true);
+    expect(photoRow.contains(stall)).toBe(false);
+    expect(textRow.contains(stall)).toBe(false);
   });
 
   it('titles the writer Ask for money and shows the Ask wizard when Ask is chosen', () => {

@@ -29,6 +29,7 @@ import {
   type ReactElement,
 } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
+import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import {
   ForumPaySheet,
   type ForumPayError,
@@ -620,8 +621,10 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * is \> 0 and unpaid is not selected; omitted when `modeSelector` is false or
  * `composerHidden` is true), composer under the mode
  * filters above the newest-first list (new notes only; Post/Ask pill;
- * Post is attach + text + send, Ask is the four-step wizard), newest-first list (social
- * feed) or empty/loading/error, per-card expand for oldest-first replies +
+ * Post is a photo icon row (camera, attach, place), a chosen place on its own
+ * line between that row and the text field, then text + send, Ask is
+ * the four-step wizard), newest-first list (social feed) or
+ * empty/loading/error, per-card expand for oldest-first replies +
  * reply composer (amount and the bitcoin/fiat switch on one line, text and
  * send on the next; reply money is `ReplyDirectionAmounts`: gift-only rows
  * use `forum.giftReply`, text-plus-gift shows the bare amount under the
@@ -670,9 +673,10 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * with the writer closed (a text reaction's fee), so closing or opening the
  * writer never moves or remounts it. Opening it focuses the text field in the same task, so a tap
  * brings up the keyboard. A compose request opens it first (or focuses its
- * field when it is already open). On a touch device its Post composer shows
- * the text field on top at full width and photo, place and send on one row
- * below it. The writer is marked `data-writing-composer` for
+ * field when it is already open). Its Post composer has the same two rows on
+ * every device: the photo icon row (camera, photo, place), then the text field
+ * with send on its right; a chosen place shows on its own line between them.
+ * The writer is marked `data-writing-composer` for
  * {@link useAppHeight}, and pull-to-refresh is off while it is open. While the
  * Menu is open as a sheet (`html[data-menu-sheet='1']`) the writer steps aside,
  * so the sheet in the page scrollport shows; it comes back when the Menu closes.
@@ -791,6 +795,7 @@ export function ForumBoard({
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const [placeSlot, setPlaceSlot] = useState<HTMLDivElement | null>(null);
   const postComposerShown =
     !hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer;
   const writerOpen = writer !== undefined && writer.open;
@@ -1937,8 +1942,6 @@ export function ForumBoard({
   }
 
   const showRefreshStatus = refreshing === true || pullArmed;
-  const phoneShape =
-    writer === undefined ? '' : ' pointer-coarse:order-first pointer-coarse:basis-full';
   const composerPay = payInvoice !== null && payHost === 'composer';
   // The forum home keeps an open composer pay slot where it opened (in the writer for a posting
   // fee, on the page for a text reaction's fee), so closing the writer never moves or remounts it.
@@ -2055,13 +2058,13 @@ export function ForumBoard({
       {postComposerShown ? (
         <SundayWritingGate>
           <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-            <div
-              className={
-                writer !== undefined
-                  ? 'flex items-center gap-2 pointer-coarse:flex-wrap'
-                  : 'flex items-center gap-2'
-              }
-            >
+            <div className="flex items-center gap-2">
+              <CameraPhotoButton
+                label={t('camera.takePhoto')}
+                size="lg"
+                disabled={posting}
+                onChange={handleFileChange}
+              />
               <IconButton
                 type="button"
                 size="lg"
@@ -2074,9 +2077,6 @@ export function ForumBoard({
               >
                 <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
               </IconButton>
-              {onPlaceDraftChange !== undefined ? (
-                <PlaceField place={placeDraft} disabled={posting} onChange={onPlaceDraftChange} />
-              ) : null}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -2086,6 +2086,19 @@ export function ForumBoard({
                 disabled={posting}
                 onChange={handleFileChange}
               />
+              {onPlaceDraftChange !== undefined ? (
+                <PlaceField
+                  place={placeDraft}
+                  disabled={posting}
+                  onChange={onPlaceDraftChange}
+                  previewSlot={placeSlot}
+                />
+              ) : null}
+            </div>
+            {onPlaceDraftChange !== undefined ? (
+              <div ref={setPlaceSlot} className="empty:hidden" />
+            ) : null}
+            <div className="flex items-center gap-2">
               <MentionTextarea
                 textareaRef={composerRef}
                 ariaLabel={t('forum.composerLabel')}
@@ -2095,8 +2108,8 @@ export function ForumBoard({
                 maxLength={composerMaxLength}
                 rows={2}
                 disabled={posting}
-                wrapperClassName={`relative min-w-0 flex-1${phoneShape}`}
-                className={`min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50${phoneShape}`}
+                wrapperClassName="relative min-w-0 flex-1"
+                className="min-h-11 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg transition disabled:opacity-50"
               />
               <IconButton
                 type="submit"
@@ -2104,7 +2117,6 @@ export function ForumBoard({
                 variant="primary"
                 disabled={posting}
                 aria-label={t('forum.post')}
-                {...(writer === undefined ? {} : { className: 'pointer-coarse:ml-auto' })}
               >
                 {posting ? (
                   <Loader2 aria-hidden="true" className="block h-5 w-5 shrink-0 animate-spin" />

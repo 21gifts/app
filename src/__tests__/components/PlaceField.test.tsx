@@ -1153,4 +1153,84 @@ describe('PlaceField', () => {
       globalThis.ResizeObserver = previous;
     }
   });
+
+  it('renders the preview into previewSlot without floating', () => {
+    const slot = document.createElement('div');
+    document.body.appendChild(slot);
+    const onChange = vi.fn();
+    try {
+      renderWithLocale(
+        <PlaceField
+          place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+          disabled={false}
+          onChange={onChange}
+          previewSlot={slot}
+        />,
+      );
+      expect(slot.textContent).toContain('Happyland');
+      const wrapper = slot.firstElementChild as HTMLElement;
+      expect(wrapper.className.split(' ')).not.toContain('fixed');
+      expect(wrapper.className.split(' ')).not.toContain('absolute');
+      expect(wrapper.getAttribute('style') ?? '').toBe('');
+      fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
+      expect(onChange).toHaveBeenCalledWith(null);
+    } finally {
+      slot.remove();
+    }
+  });
+
+  it('renders no preview when previewSlot is null', () => {
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+        disabled={false}
+        onChange={() => undefined}
+        previewSlot={null}
+      />,
+    );
+    expect(screen.queryByText('Happyland')).toBeNull();
+  });
+
+  it('hides the slot preview while the panel is open', async () => {
+    const slot = document.createElement('div');
+    document.body.appendChild(slot);
+    stubMaps();
+    try {
+      renderWithLocale(
+        <PlaceField
+          place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+          disabled={false}
+          onChange={() => undefined}
+          previewSlot={slot}
+        />,
+      );
+      expect(slot.textContent).toContain('Happyland');
+      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+      expect(await screen.findByLabelText('Place name')).toBeTruthy();
+      expect(slot.textContent).toBe('');
+    } finally {
+      slot.remove();
+    }
+  });
+
+  it('renders nothing in the preview slot on the local Sunday', () => {
+    document.documentElement.dataset['localSunday'] = '1';
+    const slot = document.createElement('div');
+    document.body.appendChild(slot);
+    try {
+      renderWithLocale(
+        <PlaceField
+          place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+          disabled={false}
+          onChange={() => undefined}
+          previewSlot={slot}
+        />,
+      );
+      expect(slot.textContent).toBe('');
+      expect(screen.queryByText('Happyland')).toBeNull();
+    } finally {
+      delete document.documentElement.dataset['localSunday'];
+      slot.remove();
+    }
+  });
 });

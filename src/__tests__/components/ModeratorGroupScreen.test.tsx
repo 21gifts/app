@@ -435,7 +435,7 @@ describe('ModeratorGroupScreen', () => {
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -466,7 +466,7 @@ describe('ModeratorGroupScreen', () => {
     });
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -521,7 +521,7 @@ describe('ModeratorGroupScreen', () => {
     });
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const files = [
       new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' }),
       new File([new Uint8Array([0xff, 0xd8, 0xff])], 'b.jpg', { type: 'image/jpeg' }),
@@ -542,7 +542,7 @@ describe('ModeratorGroupScreen', () => {
   it('sets tooMany when more than 10 stills are chosen', async () => {
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const files = Array.from(
       { length: 11 },
       (_, i) => new File([new Uint8Array([0xff, 0xd8, 0xff])], `p${i}.jpg`, { type: 'image/jpeg' }),
@@ -558,7 +558,7 @@ describe('ModeratorGroupScreen', () => {
     prepareMock.mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File(['x'], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -571,7 +571,7 @@ describe('ModeratorGroupScreen', () => {
     prepareMock.mockRejectedValueOnce(new Error('decode'));
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File(['x'], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -698,7 +698,7 @@ describe('ModeratorGroupScreen', () => {
     });
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ChangeEvent, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
+import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import { LocationForm } from '@/components/LocationForm';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -30,7 +31,7 @@ import { useAuthStore } from '@/stores/auth-store';
 /**
  * Resting header for the signed-in profile. The round photo and the wide
  * image are different pictures, and neither is the About me note photo.
- * A slot that has no stored picture offers a labeled button to add one.
+ * A slot that has no stored picture offers an icon-only camera then a labeled button to add one.
  * An open wide-image crop stays while a profile photo saves. `imageEpoch`
  * only reloads the stored pictures; it does not remount this header.
  * A failed or empty reload clears that slot. Add buttons stay hidden until
@@ -160,7 +161,13 @@ function ProfileImages({
     setError(null);
     void (async () => {
       try {
-        const result = await prepareForumPhoto(file);
+        let result: Awaited<ReturnType<typeof prepareForumPhoto>>;
+        try {
+          result = await prepareForumPhoto(file);
+        } catch {
+          setError(t('profile.about.errorUnsupported'));
+          return;
+        }
         if (!result.ok) {
           setError(
             result.error === 'tooLarge'
@@ -256,18 +263,26 @@ function ProfileImages({
           ) : null}
         </div>
       ) : bannerSettled ? (
-        <Button
-          type="button"
-          variant="secondary"
-          size="lg"
-          disabled={saving !== null}
-          icon={<ImagePlus aria-hidden="true" className="h-4 w-4" />}
-          onClick={() => {
-            bannerInputRef.current?.click();
-          }}
-        >
-          {t('profile.about.banner')}
-        </Button>
+        <div className="flex w-full items-center gap-2">
+          <CameraPhotoButton
+            label={t('profile.about.bannerCamera')}
+            name="profile-banner-camera"
+            disabled={saving !== null}
+            onChange={onBannerFile}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="lg"
+            disabled={saving !== null}
+            icon={<ImagePlus aria-hidden="true" className="h-4 w-4" />}
+            onClick={() => {
+              bannerInputRef.current?.click();
+            }}
+          >
+            {t('profile.about.banner')}
+          </Button>
+        </div>
       ) : null}
       {pictureUrl !== null && bannerUrl === null ? (
         // eslint-disable-next-line @next/next/no-img-element -- blob URL from the profile photo
@@ -278,24 +293,33 @@ function ProfileImages({
         />
       ) : null}
       {pictureSettled && pictureUrl === null ? (
-        <Button
-          type="button"
-          variant="secondary"
-          size="md"
-          disabled={saving !== null}
-          icon={
-            saving === 'picture' ? (
-              <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-            ) : (
-              <ImagePlus aria-hidden="true" className="h-4 w-4" />
-            )
-          }
-          onClick={() => {
-            pictureInputRef.current?.click();
-          }}
-        >
-          {t('profile.about.portrait')}
-        </Button>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <CameraPhotoButton
+            label={t('profile.about.portraitCamera')}
+            facing="user"
+            name="profile-photo-camera"
+            disabled={saving !== null}
+            onChange={onPictureFile}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            disabled={saving !== null}
+            icon={
+              saving === 'picture' ? (
+                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+              ) : (
+                <ImagePlus aria-hidden="true" className="h-4 w-4" />
+              )
+            }
+            onClick={() => {
+              pictureInputRef.current?.click();
+            }}
+          >
+            {t('profile.about.portrait')}
+          </Button>
+        </div>
       ) : null}
       {error !== null ? (
         <p role="alert" className="text-center text-sm text-app-danger">
