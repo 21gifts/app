@@ -272,6 +272,50 @@ test('Function: SignedInChrome — the Menu is out of reach, also by keyboard, b
   await expect(menu).toBeFocused();
 });
 
+test('Function: SignedInChrome — the Menu trigger is a 44 px icon in the text colour with no visible word and the hover background on hover and while open', async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.goto('/welcome?visual=balance-ready');
+  const menu = page.getByRole('button', { name: 'Menu' });
+  await expect(menu).toHaveText('');
+  const box = (await menu.boundingBox())!;
+  expect(box.width).toBe(44);
+  expect(box.height).toBe(44);
+  const icon = (await menu.locator('svg').boundingBox())!;
+  expect(icon.width).toBe(24);
+  expect(icon.height).toBe(24);
+  const colours = await menu.evaluate((el) => {
+    const probe = document.createElement('span');
+    probe.className = 'text-app-fg';
+    document.body.append(probe);
+    const fg = getComputedStyle(probe).color;
+    probe.remove();
+    return { fg, trigger: getComputedStyle(el).color };
+  });
+  expect(colours.trigger).toBe(colours.fg);
+  const background = (): Promise<string> =>
+    menu.evaluate((el) => getComputedStyle(el).backgroundColor);
+  const hover = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.className = 'bg-app-hover';
+    document.body.append(probe);
+    const colour = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return colour;
+  });
+  const closed = await background();
+  expect(closed).not.toBe(hover);
+  await menu.hover();
+  await expect.poll(background).toBe(hover);
+  await page.mouse.move(0, 0);
+  await expect.poll(background).toBe(closed);
+  await menu.click();
+  await expect(menu).toHaveAttribute('aria-expanded', 'true');
+  await page.mouse.move(0, 0);
+  await expect.poll(background).toBe(hover);
+});
+
 test('Function: MoveFundsSheet — the arrived step shows the amount and the balance with fiat; Done closes', async ({
   page,
 }) => {

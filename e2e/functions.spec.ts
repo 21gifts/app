@@ -3369,13 +3369,15 @@ test('Function: MarketingLayout — landing has marketing chrome', async ({ page
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
 });
 
-test('Function: MarketingHeader — landing shows the wordmark', async ({ page }) => {
+test('Function: MarketingHeader — landing shows the wordmark and no back arrow', async ({
+  page,
+}) => {
   await page.goto('/');
   await expect(page.getByRole('link', { name: '21.gifts' }).first()).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
-    'href',
-    '/welcome',
-  );
+  await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
+  // `/` is now this tab's previous view, so the arrow on `/about` is Back, to `/`.
+  await page.goto('/about');
+  await expect(page.locator('header').getByRole('link', { name: /^Back/ })).toHaveCount(1);
 });
 
 test('Function: PwaInstall — iPhone Safari shows the install control', async ({ page }) => {

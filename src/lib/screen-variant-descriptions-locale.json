@@ -1,8 +1,8 @@
 {
   "/:default": {
-    "de": "Desktop-/Breitdarstellung (ab 1024px): Die Abschnittsnavigation ist in der Kopfzeile sichtbar (So funktioniert's, Happyland, Warum, FAQ, Über uns, Statistik, Handbuch, Anmelden). Happyland verweist auf /#happyland, auch von anderen Werbeseiten, und lässt unter der fixierten Kopfzeile Platz für die Abschnittsüberschrift. Kein Hamburger.",
-    "es": "Diseño de escritorio/ancho (desde 1024px): la navegación de secciones es visible en el encabezado (Cómo funciona, Happyland, Por qué, FAQ, Sobre nosotros, Estadísticas, Manual, Iniciar sesión). Happyland enlaza a /#happyland, también desde otras páginas promocionales, y deja espacio debajo del encabezado fijo para el título de la sección. Sin hamburguesa.",
-    "fil": "Ayos ng malawak na screen (mula 1024px): nakikita ang nabigasyon ng bahagi sa ulo ng pahina (Paano ito gumagana, Happyland, Bakit, FAQ, Tungkol sa amin, Stats, Handbook, Mag-log in). Ang Happyland ay nakaugnay sa /#happyland, kasama mula sa ibang mga pahina ng pampromosyon, at nag-iiwan ng puwang sa ibaba ng nakapirming ulo ng pahina para sa pamagat ng bahagi. Walang hamburger."
+    "de": "Desktop-/Breitdarstellung (ab 1024px): Die Abschnittsnavigation ist in der Kopfzeile sichtbar (So funktioniert's, Happyland, Warum, FAQ, Über uns, Statistik, Handbuch, Anmelden). Happyland verweist auf /#happyland, auch von anderen Werbeseiten, und lässt unter der fixierten Kopfzeile Platz für die Abschnittsüberschrift. Kein Hamburger. Kein Zurück-Pfeil in der Kopfzeile.",
+    "es": "Diseño de escritorio/ancho (desde 1024px): la navegación de secciones es visible en el encabezado (Cómo funciona, Happyland, Por qué, FAQ, Sobre nosotros, Estadísticas, Manual, Iniciar sesión). Happyland enlaza a /#happyland, también desde otras páginas promocionales, y deja espacio debajo del encabezado fijo para el título de la sección. Sin hamburguesa. Sin flecha de volver en el encabezado.",
+    "fil": "Ayos ng malawak na screen (mula 1024px): nakikita ang nabigasyon ng bahagi sa ulo ng pahina (Paano ito gumagana, Happyland, Bakit, FAQ, Tungkol sa amin, Stats, Handbook, Mag-log in). Ang Happyland ay nakaugnay sa /#happyland, kasama mula sa ibang mga pahina ng pampromosyon, at nag-iiwan ng puwang sa ibaba ng nakapirming ulo ng pahina para sa pamagat ng bahagi. Walang hamburger. Walang arrow na pabalik sa ulo ng pahina."
   },
   "/welcome:goal-credit": {
     "de": "Bei Alle: oberste Ada-Notiz mit sats: 10500, goalSats: 21000, goalRepayable: true und goalTermDays: 30. Die Anfrage ist in bitcoin definiert, daher zeigt die Leiste Anfragen ₿21'000 · $21.00 und den Notizbetrag ₿10'500 · $10.50. Ein Darlehen-Tag neben dem Namen erklärt den Kredit, wenn er gedrückt wird. Unter der Anfrage: Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 Tage. Fortschrittsbalken bei 50 %. Die Tagesliste steht nicht auf dieser Karte. Rückzahlungsliste öffnet /messages/<id>/repayment-list. Verfasser-Kapsel Post senden / Um Geld bitten sichtbar.",
@@ -5270,9 +5270,9 @@
     "fil": "Naka-pin na fixture (?visual=wallet-received, sa mga Playwright build lang): may dumating na ₿500 habang bukas ang app. Sa itaas na gitna ang banner na Nakatanggap ka ng ₿500 na may $0.50 sa ilalim, berdeng bilog na may palasong papasok sa kaliwa at Isara (X) sa kanan; sa header berde ang balanse (₿21'000 sa ibabaw ng fiat nito) na may +₿500 · $0.50 sa ilalim. Sa ilalim nito ang home ng wallet na may balanse."
   },
   "/welcome:wallet-tour-menu": {
-    "de": "Dieselbe Tour, der letzte Schritt: Menü oben rechts im Ring und die Karte darunter 4 von 4, Alles andere, Überspringen und Verstanden.",
-    "es": "El mismo tour, el último paso: Menú arriba a la derecha dentro del anillo y la tarjeta debajo 4 de 4, Todo lo demás, Omitir y Entendido.",
-    "fil": "Ang parehong tour, ang huling hakbang: ang Menu sa kanang itaas sa loob ng singsing at ang card sa ilalim nito 4 sa 4, Lahat ng iba pa, Laktawan at Sige."
+    "de": "Dieselbe Tour, der letzte Schritt: das Menü-Symbol oben rechts im Ring und die Karte darunter 4 von 4, Alles andere, Überspringen und Verstanden.",
+    "es": "El mismo tour, el último paso: el icono del Menú arriba a la derecha dentro del anillo y la tarjeta debajo 4 de 4, Todo lo demás, Omitir y Entendido.",
+    "fil": "Ang parehong tour, ang huling hakbang: ang icon ng Menu sa kanang itaas sa loob ng singsing at ang card sa ilalim nito 4 sa 4, Lahat ng iba pa, Laktawan at Sige."
   },
   "/welcome:wallet-tour-balance": {
     "de": "Ein Mitglied, das die Wallet-Tour noch nicht gesehen hat (walletIntroSeen: false), angemeldet mit geöffneter Wallet (?visual=balance-ready, nur Playwright-Builds), auf der Forum-Startseite: das Guthaben im Kopf (₿21'000 über dem Fiat-Betrag) in einem weißen Ring, der Rest abgedunkelt, darunter die Karte 1 von 4, 21.gifts ist jetzt dein Wallet, Überspringen und Weiter.",
@@ -5315,9 +5315,9 @@
     "fil": "Parehong unang hakbang gaya ng move-intro, binuksan gamit ang Ilipat ang Bitcoin mula sa ibang wallet sa view ng Tanggapin (account na may hadExternalWallet: true): nasa ibabaw ng view ng Tanggapin ang sheet sa halip na sa home ng wallet."
   },
   "/welcome:wallet-tour-short": {
-    "de": "Die Wallet-Tour, wenn ihre Ziele fehlen: ohne offenes Wallet gibt es kein Guthaben im Kopf und keine Empfangen- und Senden-Knöpfe, deshalb bleibt nur der Menü-Schritt: Menü oben rechts im Ring und die Karte 1 von 1, Alles andere, Überspringen und Verstanden.",
-    "es": "El tour de la wallet cuando faltan sus objetivos: sin wallet abierta no hay saldo en la cabecera ni botones Recibir y Enviar, así que solo queda el paso del Menú: Menú arriba a la derecha dentro del anillo y la tarjeta 1 de 1, Todo lo demás, Omitir y Entendido.",
-    "fil": "Ang tour ng wallet kapag wala ang mga target nito: kung walang bukas na wallet, walang balanse sa header at walang mga button na Tanggapin at Ipadala, kaya ang hakbang ng Menu na lang ang natitira: ang Menu sa itaas-kanan sa loob ng singsing at ang card na 1 sa 1, Lahat ng iba pa, Laktawan at Sige."
+    "de": "Die Wallet-Tour, wenn ihre Ziele fehlen: ohne offenes Wallet gibt es kein Guthaben im Kopf und keine Empfangen- und Senden-Knöpfe, deshalb bleibt nur der Menü-Schritt: das Menü-Symbol oben rechts im Ring und die Karte 1 von 1, Alles andere, Überspringen und Verstanden.",
+    "es": "El tour de la wallet cuando faltan sus objetivos: sin wallet abierta no hay saldo en la cabecera ni botones Recibir y Enviar, así que solo queda el paso del Menú: el icono del Menú arriba a la derecha dentro del anillo y la tarjeta 1 de 1, Todo lo demás, Omitir y Entendido.",
+    "fil": "Ang tour ng wallet kapag wala ang mga target nito: kung walang bukas na wallet, walang balanse sa header at walang mga button na Tanggapin at Ipadala, kaya ang hakbang ng Menu na lang ang natitira: ang icon ng Menu sa itaas-kanan sa loob ng singsing at ang card na 1 sa 1, Lahat ng iba pa, Laktawan at Sige."
   },
   "/welcome:wallet-tour-error": {
     "de": "Die Wallet-Tour, wenn sich das Wallet nicht öffnen ließ (?visual=balance-error, nur Playwright-Builds): Im Kopf steht kein Guthaben, deshalb fehlt dieser Schritt, während Empfangen und Senden unten bleiben. Die Tour beginnt mit Empfangen unten im weißen Ring und der Karte darüber: 1 von 3, Empfangen, der Text dazu, Überspringen und Weiter; Senden und Menü folgen als 2 und 3 von 3.",

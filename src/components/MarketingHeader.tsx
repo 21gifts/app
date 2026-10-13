@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState, type ReactElement } from 'react';
 import { HomeWordmark } from '@/components/HomeWordmark';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -10,15 +11,16 @@ import { PwaInstall } from '@/components/PwaInstall';
 import { ButtonLink } from '@/components/ui';
 
 /**
- * Sticky dark header for marketing pages: wordmark, section nav including Happyland, optional
- * PWA install control, language switcher, login CTA, and a mobile menu
- * toggle.
+ * Sticky dark header for marketing pages: the top-left back arrow and wordmark, section nav
+ * including Happyland, optional PWA install control, language switcher, login CTA, and a mobile
+ * menu toggle. The root info page `/` shows no back arrow, whatever this tab's view stack holds.
  *
  * @returns The header element.
  */
 export function MarketingHeader(): ReactElement {
   const [open, setOpen] = useState(false);
   const { t } = useTranslations();
+  const isRoot = usePathname() === '/';
 
   const closeMenu = (): void => {
     setOpen(false);
@@ -27,7 +29,12 @@ export function MarketingHeader(): ReactElement {
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between border-b border-paper/10 bg-ink/85 px-5 py-3.5 backdrop-blur-xl">
       <div className="flex items-center">
-        <ProfileChromeLeft tone="dark" wordmark={<HomeWordmark tone="dark" />} />
+        <ProfileChromeLeft
+          tone="dark"
+          wordmark={<HomeWordmark tone="dark" />}
+          hideHistoryArrow={isRoot}
+          hideOverride={isRoot}
+        />
       </div>
       <div className="flex items-center gap-4">
         <nav
