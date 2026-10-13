@@ -4314,10 +4314,20 @@
     "es": "Fixture fijado (?visual=history-rows con el id del zap, solo builds de Playwright). Un zap recibido: Regalo en tu publicación, +₿2'100 con $2.10, Completado, el mensaje Great photo!, Tipo Pago instantáneo, Importe, sin fila de comisión, y Detalles está cerrado, así que la solicitud de pago, el hash del pago, la prueba de pago y el ID del pago no están en esta pantalla.",
     "fil": "Naka-pin na fixture (?visual=history-rows kasama ang id ng zap, sa mga Playwright build lang). Isang natanggap na zap: Regalo sa post mo, +₿2'100 na may $2.10, Tapos na, ang mensaheng Great photo!, Uri Instant na bayad, Halaga, walang hilera ng bayarin, at sarado ang Mga detalye, kaya wala sa screen na ito ang payment request, payment hash, patunay ng bayad, at payment ID."
   },
+  "/wallet/payment:default-open": {
+    "de": "Derselbe empfangene Zap wie default nach dem Drücken von Details, sodass die Zahlungsanforderung, der Zahlungs-Hash, der Zahlungsnachweis und die Zahlungs-ID sichtbar sind. Geschenk auf Ihren Beitrag bleibt.",
+    "es": "El mismo zap recibido que default tras pulsar Detalles, así que la solicitud de pago, el hash del pago, la prueba de pago y el ID del pago están visibles. Regalo en tu publicación permanece.",
+    "fil": "Ang parehong natanggap na zap tulad ng default pagkatapos pindutin ang Mga detalye, kaya nakikita ang payment request, ang payment hash, ang patunay ng bayad, at ang payment ID. Nanatili ang Regalo sa post mo."
+  },
   "/wallet/payment:address-send": {
     "de": "Eine Zahlung an die Lightning-Adresse bob@example.com mit dem Kommentar Thanks for dinner: −₿10'000, An bob@example.com, Gebühr ₿3, Gesamt ₿10'003 (jeweils mit Fiat).",
     "es": "Un pago a la dirección Lightning bob@example.com con el comentario Thanks for dinner: −₿10'000, Para bob@example.com, Comisión ₿3, Total ₿10'003 (cada uno con fiat).",
     "fil": "Isang bayad sa Lightning address na bob@example.com na may komentong Thanks for dinner: −₿10'000, Para kay bob@example.com, Bayarin ₿3, Kabuuan ₿10'003 (bawat isa ay may fiat)."
+  },
+  "/wallet/payment:address-send-open": {
+    "de": "Dieselbe Zahlung an bob@example.com wie address-send nach dem Drücken von Details, sodass die Zahlungsanforderung, der Zahlungs-Hash, der Zahlungsnachweis und die Zahlungs-ID sichtbar sind. bob@example.com bleibt Klartext und kein Link.",
+    "es": "El mismo pago a bob@example.com que address-send tras pulsar Detalles, así que la solicitud de pago, el hash del pago, la prueba de pago y el ID del pago están visibles. bob@example.com sigue en texto plano y no es un enlace.",
+    "fil": "Ang parehong bayad kay bob@example.com tulad ng address-send pagkatapos pindutin ang Mga detalye, kaya nakikita ang payment request, ang payment hash, ang patunay ng bayad, at ang payment ID. Nananatiling plain text ang bob@example.com at hindi ito link."
   },
   "/wallet/payment:spark-send": {
     "de": "Ein gesendetes Geschenk von ₿5'000 mit dem Titel Geschenk, Art Wallet-Überweisung, An @alice, ein Link zum Profil dieser Person, Gebühr Kostenlos und keine Zeile Gesamt. Details ist geschlossen, sodass die Zahlungsanforderung, der Zahlungs-Hash aus dem Geschenk-Memo und die Zahlungs-ID auf diesem Bildschirm nicht zu sehen sind. Das Memo selbst wird nicht gezeigt.",
@@ -4334,25 +4344,50 @@
     "es": "Un pago en tienda de ₿1 titulado Pago en tienda, Tipo Transferencia de wallet, Comisión Gratis, sin fila Total y sin hash del pago. Detalles está cerrado, así que la solicitud de pago y el ID del pago no están en esta pantalla. El memo en sí no se muestra.",
     "fil": "Isang bayad sa shop na ₿1 na may titulong Bayad sa shop, Uri Wallet transfer, Bayarin Libre, walang hilera ng Kabuuan, at walang payment hash. Sarado ang Mga detalye, kaya wala sa screen na ito ang payment request at ang payment ID. Hindi ipinapakita ang memo mismo."
   },
+  "/wallet/payment:shop-open": {
+    "de": "Dieselbe Shop-Zahlung wie shop nach dem Drücken von Details, sodass die Zahlungsanforderung und die Zahlungs-ID sichtbar sind. Es gibt keinen Zahlungs-Hash. Das Memo wird nicht gezeigt.",
+    "es": "El mismo pago en tienda que shop tras pulsar Detalles, así que la solicitud de pago y el ID del pago están visibles. No hay hash del pago. El memo no se muestra.",
+    "fil": "Ang parehong bayad sa shop tulad ng shop pagkatapos pindutin ang Mga detalye, kaya nakikita ang payment request at ang payment ID. Walang payment hash. Hindi ipinapakita ang memo."
+  },
   "/wallet/payment:pending": {
     "de": "Eine noch laufende Lightning-Zahlung (Sticker pack #42): die Pille Ausstehend mit Noch unterwegs. Der Betrag bleibt reserviert, bis die Zahlung ankommt oder zurückkommt., ihre Gebühr und Gesamtsumme und noch kein Zahlungsnachweis.",
     "es": "Un envío Lightning aún en curso (Sticker pack #42): la píldora Pendiente con Todavía en camino. El importe queda reservado hasta que llegue o vuelva., su comisión y total, y aún sin prueba de pago.",
     "fil": "Isang Lightning na padala na papunta pa (Sticker pack #42): ang pill na Hinihintay na may Papunta pa. Nakareserba ang halaga hanggang dumating o bumalik., ang bayarin at kabuuan nito, at wala pang patunay ng bayad."
+  },
+  "/wallet/payment:pending-open": {
+    "de": "Dieselbe noch laufende Lightning-Zahlung wie pending nach dem Drücken von Details, sodass die Zahlungsanforderung, der Zahlungs-Hash und die Zahlungs-ID sichtbar sind. Es gibt keinen Zahlungsnachweis. Der Hinweis Noch unterwegs bleibt.",
+    "es": "El mismo envío Lightning en curso que pending tras pulsar Detalles, así que la solicitud de pago, el hash del pago y el ID del pago están visibles. No hay prueba de pago. El aviso Todavía en camino permanece.",
+    "fil": "Ang parehong Lightning na padala na papunta pa tulad ng pending pagkatapos pindutin ang Mga detalye, kaya nakikita ang payment request, ang payment hash, at ang payment ID. Walang patunay ng bayad. Nanatili ang paalalang Papunta pa."
   },
   "/wallet/payment:failed": {
     "de": "Eine fehlgeschlagene Lightning-Zahlung (Hardware wallet): der Betrag durchgestrichen, die Pille Fehlgeschlagen mit Nichts hat Ihre Wallet verlassen. und weder Gebühr noch Gesamtsumme.",
     "es": "Un envío Lightning fallido (Hardware wallet): el importe tachado, la píldora Fallido con No salió nada de tu wallet., y sin comisión ni total.",
     "fil": "Isang nabigong Lightning na padala (Hardware wallet): may guhit sa gitna ang halaga, ang pill na Hindi natuloy na may Walang lumabas sa wallet mo., at walang bayarin o kabuuan."
   },
+  "/wallet/payment:failed-open": {
+    "de": "Dieselbe fehlgeschlagene Lightning-Zahlung wie failed nach dem Drücken von Details, sodass die Zahlungsanforderung, der Zahlungs-Hash und die Zahlungs-ID sichtbar sind. Es gibt keinen Zahlungsnachweis. Nichts hat Ihre Wallet verlassen. bleibt sichtbar.",
+    "es": "El mismo envío Lightning fallido que failed tras pulsar Detalles, así que la solicitud de pago, el hash del pago y el ID del pago están visibles. No hay prueba de pago. No salió nada de tu wallet. sigue visible.",
+    "fil": "Ang parehong nabigong Lightning na padala tulad ng failed pagkatapos pindutin ang Mga detalye, kaya nakikita ang payment request, ang payment hash, at ang payment ID. Walang patunay ng bayad. Nanatiling nakikita ang Walang lumabas sa wallet mo."
+  },
   "/wallet/payment:deposit": {
     "de": "Eine On-chain-Einzahlung: On-chain-Einzahlung, Gebühr ₿254, On-chain eingegangen ₿44'000. Details ist geschlossen, sodass Transaktion, Output und Auf mempool.space ansehen auf diesem Bildschirm nicht zu sehen sind.",
     "es": "Un depósito on-chain: Depósito on-chain, Comisión ₿254, Llegó on-chain ₿44'000. Detalles está cerrado, así que Transacción, Salida y Ver en mempool.space no están en esta pantalla.",
     "fil": "Isang on-chain na deposito: On-chain na deposito, Bayarin ₿254, Dumating on-chain ₿44'000. Sarado ang Mga detalye, kaya wala sa screen na ito ang Transaksyon, Output, at Tingnan sa mempool.space."
   },
+  "/wallet/payment:deposit-open": {
+    "de": "Dieselbe On-chain-Einzahlung wie deposit nach dem Drücken von Details, sodass Transaktion, Output, die Zahlungs-ID und Auf mempool.space ansehen sichtbar sind. Es gibt keinen Zahlungs-Hash. Der Dialog ist nicht offen.",
+    "es": "El mismo depósito on-chain que deposit tras pulsar Detalles, así que Transacción, Salida, el ID del pago y Ver en mempool.space están visibles. No hay hash del pago. El diálogo no está abierto.",
+    "fil": "Ang parehong on-chain na deposito tulad ng deposit pagkatapos pindutin ang Mga detalye, kaya nakikita ang Transaksyon, ang Output, ang payment ID, at Tingnan sa mempool.space. Walang payment hash. Hindi bukas ang dialog."
+  },
   "/wallet/payment:withdraw": {
     "de": "Eine On-chain-Auszahlung: On-chain-Auszahlung, −₿40'000, Gebühr ₿1'840, Gesamt ₿41'840. Details ist geschlossen, sodass die Transaktion und Auf mempool.space ansehen auf diesem Bildschirm nicht zu sehen sind.",
     "es": "Un retiro on-chain: Retiro on-chain, −₿40'000, Comisión ₿1'840, Total ₿41'840. Detalles está cerrado, así que la Transacción y Ver en mempool.space no están en esta pantalla.",
     "fil": "Isang on-chain na withdrawal: On-chain na withdrawal, −₿40'000, Bayarin ₿1'840, Kabuuan ₿41'840. Sarado ang Mga detalye, kaya wala sa screen na ito ang Transaksyon at Tingnan sa mempool.space."
+  },
+  "/wallet/payment:withdraw-open": {
+    "de": "Dieselbe On-chain-Auszahlung wie withdraw nach dem Drücken von Details, sodass die Transaktion, die Zahlungs-ID und Auf mempool.space ansehen sichtbar sind. Es gibt keinen Output und keinen Zahlungs-Hash. Der Dialog ist nicht offen.",
+    "es": "El mismo retiro on-chain que withdraw tras pulsar Detalles, así que la Transacción, el ID del pago y Ver en mempool.space están visibles. No hay Salida ni hash del pago. El diálogo no está abierto.",
+    "fil": "Ang parehong on-chain na withdrawal tulad ng withdraw pagkatapos pindutin ang Mga detalye, kaya nakikita ang Transaksyon, ang payment ID, at Tingnan sa mempool.space. Walang Output at walang payment hash. Hindi bukas ang dialog."
   },
   "/wallet/payment:missing": {
     "de": "Eine ID, die die Wallet nicht kennt: nur Diese Zahlung wurde nicht gefunden.",

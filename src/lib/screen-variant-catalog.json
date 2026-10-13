@@ -654,9 +654,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:default-open",
+    "label": "/wallet/payment default-open",
+    "visual": "state-wallet-payment-default-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/payment:address-send",
     "label": "/wallet/payment address-send",
     "visual": "state-wallet-payment-address-send",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:address-send-open",
+    "label": "/wallet/payment address-send-open",
+    "visual": "state-wallet-payment-address-send-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -678,9 +690,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:shop-open",
+    "label": "/wallet/payment shop-open",
+    "visual": "state-wallet-payment-shop-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/payment:pending",
     "label": "/wallet/payment pending",
     "visual": "state-wallet-payment-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:pending-open",
+    "label": "/wallet/payment pending-open",
+    "visual": "state-wallet-payment-pending-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -690,15 +714,33 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:failed-open",
+    "label": "/wallet/payment failed-open",
+    "visual": "state-wallet-payment-failed-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/payment:deposit",
     "label": "/wallet/payment deposit",
     "visual": "state-wallet-payment-deposit",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:deposit-open",
+    "label": "/wallet/payment deposit-open",
+    "visual": "state-wallet-payment-deposit-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/payment:withdraw",
     "label": "/wallet/payment withdraw",
     "visual": "state-wallet-payment-withdraw",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:withdraw-open",
+    "label": "/wallet/payment withdraw-open",
+    "visual": "state-wallet-payment-withdraw-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

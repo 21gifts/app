@@ -186,7 +186,7 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
             ) : (
               <Link
                 href={`/members/${info.memberAccountId}`}
-                className="break-all underline underline-offset-2"
+                className="break-all text-app-fg font-medium underline underline-offset-2"
               >
                 {info.lnAddress}
               </Link>
@@ -282,7 +282,7 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
  * direction, title, signed amount with the default fiat, status (with a hint
  * for a pending or failed send), the message, a summary list (date, type,
  * counterparty, description, amount, fee, total, what arrived on-chain), and
- * a closed Details disclosure whose open list is those technical values with
+ * a Details button with aria-expanded, closed until pressed, whose open list is those technical values with
  * Copy (transaction and output, payment request, payment hash, proof of
  * payment, payment id). Nothing shows until the rate
  * read has settled, so no amount appears without its fiat while the rate is

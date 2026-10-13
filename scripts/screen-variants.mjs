@@ -837,10 +837,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet/payment',
+    id: 'default-open',
+    image: 'wallet-payment-default-open.png',
+    visual: 'state-wallet-payment-default-open',
+    needle: "shotScreen(page, 'state-wallet-payment-default-open')",
+  },
+  {
+    route: '/wallet/payment',
     id: 'address-send',
     image: 'wallet-payment-address-send.png',
     visual: 'state-wallet-payment-address-send',
     needle: "shotScreen(page, 'state-wallet-payment-address-send')",
+  },
+  {
+    route: '/wallet/payment',
+    id: 'address-send-open',
+    image: 'wallet-payment-address-send-open.png',
+    visual: 'state-wallet-payment-address-send-open',
+    needle: "shotScreen(page, 'state-wallet-payment-address-send-open')",
   },
   {
     route: '/wallet/payment',
@@ -865,10 +879,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet/payment',
+    id: 'shop-open',
+    image: 'wallet-payment-shop-open.png',
+    visual: 'state-wallet-payment-shop-open',
+    needle: "shotScreen(page, 'state-wallet-payment-shop-open')",
+  },
+  {
+    route: '/wallet/payment',
     id: 'pending',
     image: 'wallet-payment-pending.png',
     visual: 'state-wallet-payment-pending',
     needle: "shotScreen(page, 'state-wallet-payment-pending')",
+  },
+  {
+    route: '/wallet/payment',
+    id: 'pending-open',
+    image: 'wallet-payment-pending-open.png',
+    visual: 'state-wallet-payment-pending-open',
+    needle: "shotScreen(page, 'state-wallet-payment-pending-open')",
   },
   {
     route: '/wallet/payment',
@@ -879,6 +907,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet/payment',
+    id: 'failed-open',
+    image: 'wallet-payment-failed-open.png',
+    visual: 'state-wallet-payment-failed-open',
+    needle: "shotScreen(page, 'state-wallet-payment-failed-open')",
+  },
+  {
+    route: '/wallet/payment',
     id: 'deposit',
     image: 'wallet-payment-deposit.png',
     visual: 'state-wallet-payment-deposit',
@@ -886,10 +921,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet/payment',
+    id: 'deposit-open',
+    image: 'wallet-payment-deposit-open.png',
+    visual: 'state-wallet-payment-deposit-open',
+    needle: "shotScreen(page, 'state-wallet-payment-deposit-open')",
+  },
+  {
+    route: '/wallet/payment',
     id: 'withdraw',
     image: 'wallet-payment-withdraw.png',
     visual: 'state-wallet-payment-withdraw',
     needle: "shotScreen(page, 'state-wallet-payment-withdraw')",
+  },
+  {
+    route: '/wallet/payment',
+    id: 'withdraw-open',
+    image: 'wallet-payment-withdraw-open.png',
+    visual: 'state-wallet-payment-withdraw-open',
+    needle: "shotScreen(page, 'state-wallet-payment-withdraw-open')",
   },
   {
     route: '/wallet/payment',

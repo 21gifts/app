@@ -1983,12 +1983,35 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'screen-wallet-payment');
   });
 
+  test('state-wallet-payment-default-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=history-rows');
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment hash')).toBeVisible();
+    await expect(page.getByText('Proof of payment')).toBeVisible();
+    await expect(page.getByText('Gift on your post').first()).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-default-open');
+  });
+
   test('state-wallet-payment-address-send', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);
     await page.goto('/wallet/payment?id=abe077a7-b1b1-4d5b-ac14-77b6f9684698&visual=history-rows');
     await expect(page.getByText('Thanks for dinner').first()).toBeVisible();
     await shotScreen(page, 'state-wallet-payment-address-send');
+  });
+
+  test('state-wallet-payment-address-send-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=abe077a7-b1b1-4d5b-ac14-77b6f9684698&visual=history-rows');
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment hash')).toBeVisible();
+    await expect(page.getByText('Proof of payment')).toBeVisible();
+    await expect(page.getByText('bob@example.com').first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'bob@example.com' })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-payment-address-send-open');
   });
 
   test('state-wallet-payment-pending', async ({ page }) => {
@@ -2003,12 +2026,38 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-payment-pending');
   });
 
+  test('state-wallet-payment-pending-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=45c2cb5e-be0e-4e6a-bdfa-9b68d5f988c3&visual=history-rows');
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment hash')).toBeVisible();
+    await expect(page.getByText('Proof of payment')).toHaveCount(0);
+    await expect(
+      page
+        .getByText('Still on its way. The amount stays reserved until it arrives or comes back.')
+        .first(),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-pending-open');
+  });
+
   test('state-wallet-payment-failed', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);
     await page.goto('/wallet/payment?id=24c8b87e-0c86-4db2-bcbd-4b6198ad0f62&visual=history-rows');
     await expect(page.getByText('Nothing left your wallet.').first()).toBeVisible();
     await shotScreen(page, 'state-wallet-payment-failed');
+  });
+
+  test('state-wallet-payment-failed-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=24c8b87e-0c86-4db2-bcbd-4b6198ad0f62&visual=history-rows');
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment hash')).toBeVisible();
+    await expect(page.getByText('Proof of payment')).toHaveCount(0);
+    await expect(page.getByText('Nothing left your wallet.').first()).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-failed-open');
   });
 
   test('state-wallet-payment-spark-send', async ({ page }) => {
@@ -2047,6 +2096,17 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-payment-shop');
   });
 
+  test('state-wallet-payment-shop-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=0c892d4e-31d7-474f-80bc-8645b1edb343&visual=history-rows');
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toBeVisible();
+    await expect(page.getByText('Payment hash')).toHaveCount(0);
+    await expect(page.getByText(/pos:/)).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-payment-shop-open');
+  });
+
   test('state-wallet-payment-deposit', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);
@@ -2055,12 +2115,38 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-payment-deposit');
   });
 
+  test('state-wallet-payment-deposit-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=9bc2f53d-fe70-45e8-bc5d-92184b7b0e01&visual=history-rows');
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Transaction')).toBeVisible();
+    await expect(page.getByText('Output')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'View on mempool.space' })).toBeVisible();
+    await expect(page.getByText('Payment hash')).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-payment-deposit-open');
+  });
+
   test('state-wallet-payment-withdraw', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);
     await page.goto('/wallet/payment?id=71a0b382-78b2-4caa-9e32-c26615982801&visual=history-rows');
     await expect(page.getByText('On-chain withdrawal').first()).toBeVisible();
     await shotScreen(page, 'state-wallet-payment-withdraw');
+  });
+
+  test('state-wallet-payment-withdraw-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=71a0b382-78b2-4caa-9e32-c26615982801&visual=history-rows');
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Transaction')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'View on mempool.space' })).toBeVisible();
+    await expect(page.getByText('Output')).toHaveCount(0);
+    await expect(page.getByText('Payment hash')).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-payment-withdraw-open');
   });
 
   test('state-wallet-payment-missing', async ({ page }) => {
