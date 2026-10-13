@@ -41,7 +41,7 @@ const ELEMENT_DATA_KEY = /^(?:browser\.web_vital\.)?(?:lcp\.(?:element|url|id)|c
  * on what it holds.
  */
 const SIZE_DATA_KEY =
-  /^http\.(?:(?:request|response)\.(?:body\.(?:decoded_)?size|size|header\.content[-_]length)|(?:request|response)_content_length|response_transfer_size|decoded_response_content_length)$/i;
+  /^http\.(?:response\.body\.size|response\.size|response\.body\.decoded_size|response_content_length|response_transfer_size|decoded_response_content_length|request\.body\.size|request_content_length|(?:request|response)\.header\.content[-_]length)$/i;
 
 /** First absolute http(s) origin in a text, such as a span description. */
 const ABSOLUTE_ORIGIN = /\bhttps?:\/\/[^\s/?#"'<>]+/i;
