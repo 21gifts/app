@@ -32,7 +32,12 @@
     {
       "workflow": ".github/workflows/ci.yaml",
       "job": "e2e",
-      "reason": "This job runs Playwright end-to-end behavior tests inside the GitHub-hosted mcr.microsoft.com/playwright:v1.61.1-noble container against Linux Chromium baselines and is not measured locally as an A38 author report."
+      "reason": "This job runs Playwright end-to-end behavior tests as three GitHub-hosted matrix shards (1/3, 2/3, 3/3) inside the mcr.microsoft.com/playwright:v1.61.1-noble container against Linux Chromium baselines and is not measured locally as an A38 author report."
+    },
+    {
+      "workflow": ".github/workflows/ci.yaml",
+      "job": "e2e-behavior",
+      "reason": "This job runs no tests. It is the required check E2E (behavior) and only reports whether every behavior shard of the e2e job succeeded."
     },
     {
       "workflow": ".github/workflows/ci.yaml",
