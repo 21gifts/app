@@ -124,9 +124,7 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
   const message = paymentMessage(payment);
   const { info } = payment;
   const heartHash =
-    payment.status !== 'pending' &&
-    info.purpose === 'gift' &&
-    typeof info.paymentHash === 'string'
+    payment.status !== 'pending' && info.purpose === 'gift' && typeof info.paymentHash === 'string'
       ? info.paymentHash.toLowerCase()
       : null;
   const heartContext = useHeartContext(heartHash === null ? [] : [heartHash]);
