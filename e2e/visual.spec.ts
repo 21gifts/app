@@ -5302,7 +5302,8 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-wallet-buttons-slim');
   });
 
-  test('welcome reaction-open', async ({ page }) => {
+  /** Opens `/welcome` with the wallet and expands Carol's note with **React** (no field focused). */
+  async function openCarolReaction(page: Page): Promise<void> {
     await seedWelcomeWallet(page);
     await page.route('**/forum/messages/**/replies', async (route) => {
       await route.fulfill({
@@ -5319,11 +5320,28 @@ test.describe('onboarding screens', () => {
       .locator('li', { hasText: 'I can send a small gift tomorrow.' })
       .getByRole('button', { name: 'React', exact: true })
       .click();
-    const field = page.getByPlaceholder('Write a reaction');
-    await expect(field).toBeEnabled();
+    await expect(page.getByPlaceholder('Write a reaction')).toBeEnabled();
     await expect(page.getByLabel('Amount')).toBeVisible();
-    await field.focus();
-    // The + and Receive / Send have moved aside for the form.
+  }
+
+  test('welcome reaction-form', async ({ page }) => {
+    await openCarolReaction(page);
+    const field = page.getByPlaceholder('Write a reaction');
+    await expect(field).not.toBeFocused();
+    // No field has the focus: the + and Receive / Send stay.
+    await expect(page.getByRole('button', { name: 'Write a post' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Receive' })).toBeVisible();
+    await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-fold');
+    expect(await insideShell(field)).toBe(true);
+    await shotScreen(page, 'state-welcome-reaction-form');
+  });
+
+  test('welcome reaction-open', async ({ page }) => {
+    await openCarolReaction(page);
+    const field = page.getByPlaceholder('Write a reaction');
+    await field.click();
+    await expect(field).toBeFocused();
+    // The focused field has moved the + and Receive / Send aside.
     await expect(page.getByRole('button', { name: 'Write a post' })).toBeHidden();
     await expect(page.getByRole('button', { name: 'Receive' })).toBeHidden();
     await expect(page.locator('[data-app-body]')).not.toHaveAttribute('data-footer-folding');
