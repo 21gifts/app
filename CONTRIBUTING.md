@@ -1008,8 +1008,11 @@ Privacy rules (this app holds wallets):
 - A transaction carries no span that reaches another origin than the page
   (the wallet asking a receiver's Lightning address server or a chain
   explorer would name the receiver or an address), no web-vital element
-  descriptor (`lcp.element`, `lcp.url`, `lcp.id`, `cls.source.N`), and no
-  breadcrumbs (a click label can spell a typed amount).
+  descriptor (`lcp.element`, `lcp.url`, `lcp.id`, `cls.source.N`), no request
+  or response body size (`http.response.body.size`, `http.request.body.size`,
+  their older names, and `Content-Length` header keys; the exact size of a
+  member's own response depends on what it holds), and no breadcrumbs (a
+  click label can spell a typed amount). Status and timing stay.
 - Span names and attributes are fixed words. Never put an amount, invoice,
   address, Spark key, recovery word, PRF output, or token in one;
   `traceWallet` only accepts the names and attributes listed above.
