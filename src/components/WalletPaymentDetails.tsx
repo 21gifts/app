@@ -187,7 +187,7 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
       {heart === undefined ? null : (
         <Link
           href={`/messages/${heart.messageId}`}
-          aria-label={`${heart.authorName} ${heart.text}`.trim() || heart.messageId}
+          aria-label={`${heart.authorName} ${heart.text}`.trim() || t('shops.viewPost')}
           className="block rounded-2xl border border-app-border px-4 py-3 text-left"
         >
           {heart.authorName === '' ? null : (

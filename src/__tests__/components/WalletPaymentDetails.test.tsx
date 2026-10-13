@@ -241,7 +241,7 @@ describe('WalletPaymentDetails', () => {
     expect(document.querySelector('.lucide-arrow-up-right')).toBeTruthy();
   });
 
-  it('uses the message id as the accessible post name when author and text are empty', async () => {
+  it('names an empty heart post Post when the author and the text are empty', async () => {
     const payment = fixture(SPARK_SEND);
     const paymentHash = payment.info.paymentHash as string;
     useAuthStore.setState({ session: 'session', account: null });
@@ -263,9 +263,12 @@ describe('WalletPaymentDetails', () => {
     );
 
     showPayment(payment);
-    const post = await screen.findByRole('link', { name: 'message-empty' });
+    const post = await screen.findByRole('link', { name: 'Post' });
+    expect(post.getAttribute('href')).toBe('/messages/message-empty');
     expect(post.textContent).toBe('');
+    expect(screen.queryByRole('link', { name: 'message-empty' })).toBeNull();
     expect(screen.queryByText('Gift')).toBeNull();
+    expect(document.body.textContent).not.toContain('message-empty');
   });
 
   it('keeps the gift title when the settled lookup has no heart', async () => {
