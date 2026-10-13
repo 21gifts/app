@@ -1329,6 +1329,26 @@
     "es": "Siguiente otra vez. El paso 5 de 5 · Resumen está abierto. Guardar cambios es el botón en la tarjeta. Historial está bajo la tarjeta.",
     "fil": "Susunod ulit. Bukas ang hakbang 5 sa 5 · Buod. Ang I-save ang mga pagbabago ay ang pindutan sa kahon. Ang Kasaysayan ay nasa ilalim ng kahon."
   },
+  "/shops:edit-photo-busy": {
+    "de": "Eine Moderatorin hat in der Beitragsliste ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Galerie, Schließen und Weiter sind deaktiviert, bis es bereit ist.",
+    "es": "Una moderadora eligió una foto en el paso 1 de 5 · Fotos en la lista de publicaciones. La foto todavía se está preparando. Tomar una foto, galería, Cerrar y Siguiente están desactivados hasta que esté lista.",
+    "fil": "Nagpili ang isang moderator ng litrato sa hakbang 1 sa 5 · Mga larawan sa listahan ng post. Inihahanda pa ang litrato. Kumuha ng litrato, gallery, Isara, at Susunod ay naka-disable hanggang maging handa ito."
+  },
+  "/shops:edit-photo-unsupported": {
+    "de": "Eine Moderatorin hat in der Beitragsliste auf Schritt 1 von 5 · Bilder eine Datei gewählt, die kein JPEG, PNG oder WebP ist. JPEG, PNG oder WebP verwenden wird angezeigt. Es wurde kein Foto hinzugefügt.",
+    "es": "Una moderadora eligió un archivo que no es JPEG, PNG o WebP en el paso 1 de 5 · Fotos en la lista de publicaciones. Se muestra Usa una foto JPEG, PNG o WebP. No se añadió ninguna foto.",
+    "fil": "Nagpili ang isang moderator ng file na hindi JPEG, PNG, o WebP sa hakbang 1 sa 5 · Mga larawan sa listahan ng post. Ipinapakita ang Gumamit ng JPEG, PNG, o WebP na litrato. Walang naidagdag na litrato."
+  },
+  "/shops:edit-photo-too-large": {
+    "de": "Eine Moderatorin hat in der Beitragsliste auf Schritt 1 von 5 · Bilder ein Foto über 1 MB gewählt. Fotos unter 1 MB halten wird angezeigt. Es wurde kein Foto hinzugefügt.",
+    "es": "Una moderadora eligió una foto de más de 1 MB en el paso 1 de 5 · Fotos en la lista de publicaciones. Se muestra Mantén las fotos por debajo de 1 MB. No se añadió ninguna foto.",
+    "fil": "Nagpili ang isang moderator ng litrato na higit sa 1 MB sa hakbang 1 sa 5 · Mga larawan sa listahan ng post. Ipinapakita ang Panatilihing wala pang 1 MB ang mga litrato. Walang naidagdag na litrato."
+  },
+  "/shops:edit-photo-too-many": {
+    "de": "Eine Moderatorin hat in der Beitragsliste auf Schritt 1 von 5 · Bilder elf Fotos gewählt. Zehn wurden hinzugefügt. Das elfte nicht. Sie können bis zu 10 Fotos hinzufügen wird angezeigt.",
+    "es": "Una moderadora eligió once fotos en el paso 1 de 5 · Fotos en la lista de publicaciones. Se añadieron diez. La undécima no. Se muestra Puedes añadir hasta 10 fotos.",
+    "fil": "Nagpili ang isang moderator ng labing-isang litrato sa hakbang 1 sa 5 · Mga larawan sa listahan ng post. Sampung naidagdag. Ang ika-labing-isa ay hindi. Ipinapakita ang Pwede kang magdagdag ng hanggang 10 litrato."
+  },
   "/moderate/proposals:error": {
     "de": "Das Laden der Liste für das Personal (Moderatorin oder Moderator) ist fehlgeschlagen. Offene Vorschläge konnten nicht geladen werden. Bitte versuchen Sie es erneut. Schaltfläche Erneut versuchen.",
     "es": "Falló la carga de la lista para el personal (persona moderadora). No se pudieron cargar las propuestas abiertas. Inténtalo de nuevo. Botón Intentar de nuevo.",
@@ -1693,6 +1713,26 @@
     "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Änderungen speichern ist die Schaltfläche auf der Karte. Ort Happyland und Betreiber @luna bleiben.",
     "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. Guardar cambios es el botón de la tarjeta. Lugar Happyland y operador @luna permanecen.",
     "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. I-save ang mga pagbabago ang pindutan sa talaan. Lugar Happyland at Operator @luna ay nananatili."
+  },
+  "/shops:table-edit-photo-busy": {
+    "de": "Eine Moderatorin hat in der Tabellenzeile ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Galerie, Schließen und Weiter sind deaktiviert, bis es bereit ist.",
+    "es": "Una moderadora eligió una foto en el paso 1 de 5 · Fotos en la fila de la tabla. La foto todavía se está preparando. Tomar una foto, galería, Cerrar y Siguiente están desactivados hasta que esté lista.",
+    "fil": "Nagpili ang isang moderator ng litrato sa hakbang 1 sa 5 · Mga larawan sa hilera ng talahanayan. Inihahanda pa ang litrato. Kumuha ng litrato, gallery, Isara, at Susunod ay naka-disable hanggang maging handa ito."
+  },
+  "/shops:table-edit-photo-unsupported": {
+    "de": "Eine Moderatorin hat in der Tabellenzeile auf Schritt 1 von 5 · Bilder eine Datei gewählt, die kein JPEG, PNG oder WebP ist. JPEG, PNG oder WebP verwenden wird angezeigt. Es wurde kein Foto hinzugefügt.",
+    "es": "Una moderadora eligió un archivo que no es JPEG, PNG o WebP en el paso 1 de 5 · Fotos en la fila de la tabla. Se muestra Usa una foto JPEG, PNG o WebP. No se añadió ninguna foto.",
+    "fil": "Nagpili ang isang moderator ng file na hindi JPEG, PNG, o WebP sa hakbang 1 sa 5 · Mga larawan sa hilera ng talahanayan. Ipinapakita ang Gumamit ng JPEG, PNG, o WebP na litrato. Walang naidagdag na litrato."
+  },
+  "/shops:table-edit-photo-too-large": {
+    "de": "Eine Moderatorin hat in der Tabellenzeile auf Schritt 1 von 5 · Bilder ein Foto über 1 MB gewählt. Fotos unter 1 MB halten wird angezeigt. Es wurde kein Foto hinzugefügt.",
+    "es": "Una moderadora eligió una foto de más de 1 MB en el paso 1 de 5 · Fotos en la fila de la tabla. Se muestra Mantén las fotos por debajo de 1 MB. No se añadió ninguna foto.",
+    "fil": "Nagpili ang isang moderator ng litrato na higit sa 1 MB sa hakbang 1 sa 5 · Mga larawan sa hilera ng talahanayan. Ipinapakita ang Panatilihing wala pang 1 MB ang mga litrato. Walang naidagdag na litrato."
+  },
+  "/shops:table-edit-photo-too-many": {
+    "de": "Eine Moderatorin hat in der Tabellenzeile auf Schritt 1 von 5 · Bilder elf Fotos gewählt. Zehn wurden hinzugefügt. Das elfte nicht. Sie können bis zu 10 Fotos hinzufügen wird angezeigt.",
+    "es": "Una moderadora eligió once fotos en el paso 1 de 5 · Fotos en la fila de la tabla. Se añadieron diez. La undécima no. Se muestra Puedes añadir hasta 10 fotos.",
+    "fil": "Nagpili ang isang moderator ng labing-isang litrato sa hakbang 1 sa 5 · Mga larawan sa hilera ng talahanayan. Sampung naidagdag. Ang ika-labing-isa ay hindi. Ipinapakita ang Pwede kang magdagdag ng hanggang 10 litrato."
   },
   "/members/[accountId]:about-translate-loading": {
     "de": "Dieselbe deutsche Über mich nach Klick auf Übersetzen, während POST /translate hängt. Das Steuerelement ist beschäftigt (aria-busy) mit einem Spinner.",
@@ -2413,6 +2453,26 @@
     "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Bilder Keiner, Ort Keiner, Text Cafe Luna und 21.gifts-Nutzer Keiner. Karte bleibt ausgewählt. Keine zweite Karte-Überschrift.",
     "es": "Siguiente otra vez. Paso 5 de 5 · El resumen está abierto. La tarjeta enumera Fotos Ninguno, Lugar Ninguno, Texto Cafe Luna y Usuario de 21.gifts Ninguno. El mapa sigue seleccionado. No hay un segundo encabezado Mapa.",
     "fil": "Muli ang Susunod. Hakbang 5 sa 5 · Bukas ang Buod. Ang talaan ay naglilista ng Mga larawan Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala. Napili pa rin ang mapa. Walang pangalawang pamagat na Mapa."
+  },
+  "/shops:map-edit-photo-busy": {
+    "de": "Eine Moderatorin hat im Shop-Editor der Karte ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Galerie, Schließen und Weiter sind deaktiviert, bis es bereit ist.",
+    "es": "Una moderadora eligió una foto en el paso 1 de 5 · Fotos en el editor de la tienda del mapa. La foto todavía se está preparando. Tomar una foto, galería, Cerrar y Siguiente están desactivados hasta que esté lista.",
+    "fil": "Nagpili ang isang moderator ng litrato sa hakbang 1 sa 5 · Mga larawan sa editor ng shop ng mapa. Inihahanda pa ang litrato. Kumuha ng litrato, gallery, Isara, at Susunod ay naka-disable hanggang maging handa ito."
+  },
+  "/shops:map-edit-photo-unsupported": {
+    "de": "Eine Moderatorin hat im Shop-Editor der Karte auf Schritt 1 von 5 · Bilder eine Datei gewählt, die kein JPEG, PNG oder WebP ist. JPEG, PNG oder WebP verwenden wird angezeigt. Es wurde kein Foto hinzugefügt.",
+    "es": "Una moderadora eligió un archivo que no es JPEG, PNG o WebP en el paso 1 de 5 · Fotos en el editor de la tienda del mapa. Se muestra Usa una foto JPEG, PNG o WebP. No se añadió ninguna foto.",
+    "fil": "Nagpili ang isang moderator ng file na hindi JPEG, PNG, o WebP sa hakbang 1 sa 5 · Mga larawan sa editor ng shop ng mapa. Ipinapakita ang Gumamit ng JPEG, PNG, o WebP na litrato. Walang naidagdag na litrato."
+  },
+  "/shops:map-edit-photo-too-large": {
+    "de": "Eine Moderatorin hat im Shop-Editor der Karte auf Schritt 1 von 5 · Bilder ein Foto über 1 MB gewählt. Fotos unter 1 MB halten wird angezeigt. Es wurde kein Foto hinzugefügt.",
+    "es": "Una moderadora eligió una foto de más de 1 MB en el paso 1 de 5 · Fotos en el editor de la tienda del mapa. Se muestra Mantén las fotos por debajo de 1 MB. No se añadió ninguna foto.",
+    "fil": "Nagpili ang isang moderator ng litrato na higit sa 1 MB sa hakbang 1 sa 5 · Mga larawan sa editor ng shop ng mapa. Ipinapakita ang Panatilihing wala pang 1 MB ang mga litrato. Walang naidagdag na litrato."
+  },
+  "/shops:map-edit-photo-too-many": {
+    "de": "Eine Moderatorin hat im Shop-Editor der Karte auf Schritt 1 von 5 · Bilder elf Fotos gewählt. Zehn wurden hinzugefügt. Das elfte nicht. Sie können bis zu 10 Fotos hinzufügen wird angezeigt.",
+    "es": "Una moderadora eligió once fotos en el paso 1 de 5 · Fotos en el editor de la tienda del mapa. Se añadieron diez. La undécima no. Se muestra Puedes añadir hasta 10 fotos.",
+    "fil": "Nagpili ang isang moderator ng labing-isang litrato sa hakbang 1 sa 5 · Mga larawan sa editor ng shop ng mapa. Sampung naidagdag. Ang ika-labing-isa ay hindi. Ipinapakita ang Pwede kang magdagdag ng hanggang 10 litrato."
   },
   "/grants:no-applications": {
     "de": "Moderator auf /grants, wenn keine Förderbewerbung offen ist. Der Satz Keine offenen Bewerbungen. ist reiner Text, keine Schaltfläche und kein Verweis. Needle state-grants-no-applications.",
