@@ -1607,9 +1607,9 @@ export function MemberProfileScreen({
                         return changed ? next : prev;
                       });
                       setPhotoEpoch((n) => n + 1);
-                      const setList = activity === 'posts' ? setPosts : setShops;
-                      setList((prev) => {
-                        /* v8 ignore next 3 -- the pencil mounts only after the top-level list has loaded */
+                      const applyShopEdit = (
+                        prev: ForumMessage[] | null,
+                      ): ForumMessage[] | null => {
                         if (prev === null) {
                           return prev;
                         }
@@ -1636,7 +1636,9 @@ export function MemberProfileScreen({
                           }
                           return next;
                         });
-                      });
+                      };
+                      setPosts(applyShopEdit);
+                      setShops(applyShopEdit);
                     },
                   }
                 : {})}

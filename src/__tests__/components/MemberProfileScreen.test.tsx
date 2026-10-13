@@ -4814,6 +4814,51 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('keeps a shop-note edit on the posts list after the shops list was open', async () => {
+    const shopPost: ForumMessage = {
+      ...note,
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+    };
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(fetchMemberPosts).mockResolvedValue([shopPost]);
+    vi.mocked(fetchMemberShops).mockResolvedValue([shopPost]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopPost,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, postCount: 1, shopCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    await screen.findByText('Cafe Luna');
+    fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
+    await screen.findByText('Cafe Luna');
+    const card = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
+    expect(await within(card).findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(within(card).getByText('Cafe Sol')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    await screen.findByText('Cafe Sol');
+    expect(screen.queryByText('Cafe Luna')).toBeNull();
+  });
+
   it('does not offer shop-note editing on the credits feed', async () => {
     const creditPost: ForumMessage = {
       ...note,
