@@ -496,6 +496,8 @@ describe('fetchMemberShops', () => {
     videoContentType: null,
     role: 'verified' as const,
     replyCount: 0,
+    heartCount: 0,
+    hearted: false,
   };
 
   it('returns the validated shop list', async () => {
@@ -542,6 +544,8 @@ describe('fetchMemberCredits', () => {
     videoContentType: null,
     role: 'verified' as const,
     replyCount: 0,
+    heartCount: 0,
+    hearted: false,
   };
 
   it('returns the validated credit list', async () => {
