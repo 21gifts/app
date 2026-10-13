@@ -351,7 +351,14 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
  * note's notifications read (`markNotificationsReadForMessage`); collapsing
  * does not. A signed-in card fully inside the shell scrollport marks via
  * `markVisibleForumNoteRead` and does not mark replies that are not that card.
- * Renders nothing when there is no session.
+ * Renders nothing when there is no session. While no list is on screen, page 1
+ * is requested once immediately and then after 300 ms, 700 ms, and 1500 ms
+ * (`FORUM_FIRST_LOAD_RETRY_DELAYS_MS`) before the error flag is set. The board
+ * stays on the loading copy during those waits. A mode switch that already has
+ * a list tries page 1 once. `MissingRequirementsError` and a signed-out
+ * `PublicForumUnauthorizedError` are not repeated. A fetch failure sets the
+ * error flag without clearing an already-posted list; the board still shows
+ * Try again.
  *
  * @param feed - Optional `'living-room'` (default) or `'shops'`.
  * @returns The forum board, or `null` without a session.

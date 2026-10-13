@@ -2401,6 +2401,49 @@ describe('ForumLoader', () => {
     expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
   });
 
+  it('keeps a posted note and does not retry when a list appears during the first-load wait', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockRejectedValueOnce(new Error('Could not load messages. Please try again.'));
+    const created: ForumMessage = {
+      id: 'm-kept',
+      name: 'Ada',
+      text: 'Kept',
+      createdAt: '2026-08-28T14:00:00.000Z',
+      sats: 21,
+      payable: false,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    };
+    postMock.mockResolvedValue(created);
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Kept' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    for (let i = 0; i < 20 && screen.queryByText('Kept') === null; i += 1) {
+      await act(async () => {
+        await Promise.resolve();
+      });
+    }
+    expect(screen.getByText('Kept')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FORUM_FIRST_LOAD_RETRY_DELAYS_MS[0]);
+    });
+    expect(screen.getByText('Kept')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('ignores a stale fetch after unmount', async () => {
     let resolveStale: ((value: ReturnType<typeof forumPage>) => void) | undefined;
     fetchMock.mockImplementationOnce(
@@ -10027,6 +10070,58 @@ describe('forum feed pages', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(FORUM_FIRST_LOAD_RETRY_DELAYS_MS[0]);
     });
+    expect(screen.getByText('First page')).toBeTruthy();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+    expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
+    act(() => {
+      FakeIntersectionObserver.instances[0]?.trigger();
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Second page')).toBeTruthy();
+  });
+
+  it('sets the next cursor when a silent refresh is the first successful load', async () => {
+    vi.useFakeTimers();
+    const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
+    const second = paidMessage('page-2', 'Second page', '2026-08-28T14:00:00.000Z');
+    fetchMock
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'))
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'))
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'))
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'))
+      .mockResolvedValueOnce(forumPage([first], 'cur_2'))
+      .mockResolvedValue(forumPage([second]));
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(
+        FORUM_FIRST_LOAD_RETRY_DELAYS_MS.reduce((sum, delay) => sum + delay, 0),
+      );
+    });
+    expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    for (let i = 0; i < 20 && screen.queryByText('First page') === null; i += 1) {
+      await act(async () => {
+        await Promise.resolve();
+      });
+    }
     expect(screen.getByText('First page')).toBeTruthy();
     expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
     expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
