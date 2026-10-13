@@ -355,14 +355,15 @@ describe('beforeSendTransaction scrubber', () => {
       spans: [
         span('vital', {
           description: 'Main UI thread blocked',
-          data: { 'browser.web_vital.lcp.element': 'img', 'browser.web_vital.cls.source.2': 'p' },
+          data: {
+            'browser.web_vital.lcp.element': 'img',
+            'browser.web_vital.lcp.size': 24_000,
+            'browser.web_vital.cls.source.2': 'p',
+          },
         }),
       ],
     });
-    expect(scrubbed.contexts?.trace?.data).toEqual({
-      'lcp.size': 24_000,
-      'url.template': '/welcome',
-    });
+    expect(scrubbed.contexts?.trace?.data).toEqual({ 'url.template': '/welcome' });
     expect(scrubbed.spans?.[0]?.data).toEqual({});
   });
 
@@ -410,10 +411,7 @@ describe('beforeSendTransaction scrubber', () => {
         },
       ],
     });
-    expect(scrubbed.contexts?.trace?.data).toEqual({
-      'http.response.status_code': 200,
-      'lcp.size': 24_000,
-    });
+    expect(scrubbed.contexts?.trace?.data).toEqual({ 'http.response.status_code': 200 });
     expect(scrubbed.spans?.[0]).toMatchObject({
       description: 'GET /api/me',
       start_timestamp: 10.5,
@@ -919,6 +917,23 @@ describe('forwardSentryEnvelope', () => {
     ['an item with a length', items('{"type":"transaction","length":2}', '{}', '')],
     ['a length that ends the envelope', items('{"type":"event","length":2}', '{}')],
     ['an item without a payload', items('{"type":"event"}')],
+    [
+      'a length of 0 before another item',
+      items('{"type":"event","length":0}', '', '{"type":"transaction"}', '{}'),
+    ],
+    ['a length of 0 that ends the envelope', items('{"type":"event","length":0}')],
+    [
+      'a length counted in bytes',
+      items('{"type":"event","length":4}', '"é"', '{"type":"transaction"}', '{}'),
+    ],
+    [
+      'a payload with a raw newline inside its length',
+      items('{"type":"event","length":8}', '{"a":\n1}', '{"type":"transaction"}', '{}'),
+    ],
+    [
+      'a payload that holds another item header inside its length',
+      items('{"type":"event","length":21}', '{"type":"session"}\n{}'),
+    ],
   ])('forwards an envelope with %s', async (_label, request) => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
@@ -947,6 +962,23 @@ describe('forwardSentryEnvelope', () => {
     ['a string length', items('{"type":"event","length":"2"}', '{}')],
     ['a null length', items('{"type":"event","length":null}', '{}')],
     ['a boolean length', items('{"type":"event","length":true}', '{}')],
+    ['an object length', items('{"type":"event","length":{}}', '{}')],
+    ['an array length', items('{"type":"event","length":[2]}', '{}')],
+    ['an item header that is an array', items('[{"type":"event"}]', '{}')],
+    ['an item header that is a number', items('1', '{}')],
+    ['an item header that is a string', items('"event"', '{}')],
+    ['an item header that is a boolean', items('true', '{}')],
+    [
+      'another item after a payload with a raw newline inside its length',
+      items('{"type":"event","length":8}', '{"a":\n1}', '{"type":"session"}', '{}'),
+    ],
+    ['a raw newline in a payload without a length', items('{"type":"event"}', '{"a":', '1}')],
+    ['a length of 0 with a payload behind it', items('{"type":"event","length":0}', '{}')],
+    ['a length that ends inside the payload', items('{"type":"event","length":1}', '{}')],
+    [
+      'a length that ends one byte before the payload does',
+      items('{"type":"event","length":20}', '{"type":"session"}\n{}'),
+    ],
   ])('refuses an envelope with %s', async (_label, request) => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
