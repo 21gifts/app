@@ -14,7 +14,11 @@ import {
   type Notification,
   type NotificationList,
 } from '@/lib/api-types';
-import { FORUM_HOME_EVENT, FORUM_LIST_POLL_MS } from '@/lib/forum-feed';
+import {
+  FORUM_FIRST_LOAD_RETRY_DELAYS_MS,
+  FORUM_HOME_EVENT,
+  FORUM_LIST_POLL_MS,
+} from '@/lib/forum-feed';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -2260,47 +2264,141 @@ describe('ForumLoader', () => {
   });
 
   it('shows a fetch error and retries', async () => {
-    fetchMock.mockRejectedValueOnce(new Error('Could not load messages. Please try again.'));
+    vi.useFakeTimers();
+    const loadError = new Error('Could not load messages. Please try again.');
+    for (let i = 0; i < 1 + FORUM_FIRST_LOAD_RETRY_DELAYS_MS.length; i += 1) {
+      fetchMock.mockRejectedValueOnce(loadError);
+    }
     fetchMock.mockResolvedValueOnce(forumPage([])).mockResolvedValue(forumPage([]));
     renderWithLocale(<ForumLoader />);
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    await act(async () => {
+      await Promise.resolve();
     });
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(
+        FORUM_FIRST_LOAD_RETRY_DELAYS_MS.reduce((sum, delay) => sum + delay, 0),
+      );
+    });
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(4);
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-    await waitFor(() => {
-      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    await act(async () => {
+      await Promise.resolve();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(5);
   });
 
   it('uses the fallback error copy for a non-Error rejection', async () => {
-    fetchMock.mockRejectedValueOnce('nope');
+    vi.useFakeTimers();
+    fetchMock.mockRejectedValue('nope');
     renderWithLocale(<ForumLoader />);
-    await waitFor(() => {
-      expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(
+        FORUM_FIRST_LOAD_RETRY_DELAYS_MS.reduce((sum, delay) => sum + delay, 0),
+      );
     });
+    expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   it('does not render a raw Error.message as the load error', async () => {
-    fetchMock.mockRejectedValueOnce(new Error('SECRET internals'));
+    vi.useFakeTimers();
+    fetchMock.mockRejectedValue(new Error('SECRET internals'));
     renderWithLocale(<ForumLoader />);
-    await waitFor(() => {
-      expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(
+        FORUM_FIRST_LOAD_RETRY_DELAYS_MS.reduce((sum, delay) => sum + delay, 0),
+      );
     });
+    expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
     expect(screen.queryByText('SECRET internals')).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   it('localizes a fetch error', async () => {
-    fetchMock.mockRejectedValueOnce(new Error('SECRET internals'));
+    vi.useFakeTimers();
+    fetchMock.mockRejectedValue(new Error('SECRET internals'));
     renderWithLocale(<ForumLoader />, 'de');
-    await waitFor(() => {
-      expect(
-        screen.getByText(
-          'Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
-        ),
-      ).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(
+        FORUM_FIRST_LOAD_RETRY_DELAYS_MS.reduce((sum, delay) => sum + delay, 0),
+      );
     });
+    expect(
+      screen.getByText('Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut.'),
+    ).toBeTruthy();
     expect(screen.queryByText('SECRET internals')).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('loads the list when the second first-page attempt succeeds', async () => {
+    vi.useFakeTimers();
+    fetchMock
+      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'))
+      .mockResolvedValueOnce(forumPage([{ ...SAMPLE, sats: 21 }]));
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FORUM_FIRST_LOAD_RETRY_DELAYS_MS[0]);
+    });
+    expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not fetch again when the first load is missing requirements', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockRejectedValue(new MissingRequirementsError(['rules']));
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(replace).toHaveBeenCalledWith('/setup/rules');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FORUM_FIRST_LOAD_RETRY_DELAYS_MS[0]);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retry a signed-out 401', async () => {
+    vi.useFakeTimers();
+    useAuthStore.setState({ session: null, account });
+    publicListMock.mockRejectedValue(new PublicForumUnauthorizedError());
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(publicListMock).toHaveBeenCalledTimes(1);
+    expect(replace).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FORUM_FIRST_LOAD_RETRY_DELAYS_MS[0]);
+    });
+    expect(publicListMock).toHaveBeenCalledTimes(1);
+    expect(replace).not.toHaveBeenCalled();
+  });
+
+  it('does not retry after unmount during the first-load wait', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockRejectedValueOnce(new Error('Could not load messages. Please try again.'));
+    const view = renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    view.unmount();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FORUM_FIRST_LOAD_RETRY_DELAYS_MS[0]);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
   });
 
   it('ignores a stale fetch after unmount', async () => {
@@ -8340,14 +8438,16 @@ describe('ForumLoader', () => {
   });
 
   it('sets forum.error when a silent refresh fails before any list is loaded', async () => {
-    fetchMock
-      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'))
-      .mockRejectedValueOnce(new Error('Could not load messages. Please try again.'));
+    vi.useFakeTimers();
+    fetchMock.mockRejectedValue(new Error('Could not load messages. Please try again.'));
     renderWithLocale(<ForumLoader />);
-    await waitFor(() => {
-      expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(
+        FORUM_FIRST_LOAD_RETRY_DELAYS_MS.reduce((sum, delay) => sum + delay, 0),
+      );
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(4);
 
     Object.defineProperty(document, 'visibilityState', {
       configurable: true,
@@ -8364,9 +8464,10 @@ describe('ForumLoader', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
 
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      await Promise.resolve();
     });
+    expect(fetchMock).toHaveBeenCalledTimes(5);
     expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
   });
 
@@ -9704,10 +9805,17 @@ describe('forum feed pages', () => {
   });
 
   it('shows an error when the public page cannot load', async () => {
+    vi.useFakeTimers();
     useAuthStore.setState({ session: null, account });
     publicListMock.mockRejectedValue(new Error('down'));
     renderWithLocale(<ForumLoader />);
-    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(
+        FORUM_FIRST_LOAD_RETRY_DELAYS_MS.reduce((sum, delay) => sum + delay, 0),
+      );
+    });
+    expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(publicListMock).toHaveBeenCalledTimes(4);
   });
 
   it('keeps a signed-out note when the photo, reactions, and next page fail', async () => {
@@ -9904,6 +10012,7 @@ describe('forum feed pages', () => {
   });
 
   it('prefetches after a silent refresh is the first successful load', async () => {
+    vi.useFakeTimers();
     const first = paidMessage('page-1', 'First page', '2026-08-28T15:00:00.000Z');
     const second = paidMessage('page-2', 'Second page', '2026-08-28T14:00:00.000Z');
     fetchMock
@@ -9911,31 +10020,23 @@ describe('forum feed pages', () => {
       .mockResolvedValueOnce(forumPage([first], 'cur_2'))
       .mockResolvedValue(forumPage([second]));
     renderWithLocale(<ForumLoader />);
-    await waitFor(() => {
-      expect(screen.getByText('Could not load messages. Please try again.')).toBeTruthy();
+    await act(async () => {
+      await Promise.resolve();
     });
-    Object.defineProperty(document, 'visibilityState', {
-      configurable: true,
-      get: () => 'hidden',
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FORUM_FIRST_LOAD_RETRY_DELAYS_MS[0]);
     });
-    act(() => {
-      document.dispatchEvent(new Event('visibilitychange'));
-    });
-    Object.defineProperty(document, 'visibilityState', {
-      configurable: true,
-      get: () => 'visible',
-    });
-    act(() => {
-      document.dispatchEvent(new Event('visibilitychange'));
-    });
-    await screen.findByText('First page');
-    await waitFor(() => {
-      expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
-    });
+    expect(screen.getByText('First page')).toBeTruthy();
+    expect(screen.queryByText('Could not load messages. Please try again.')).toBeNull();
+    expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
     act(() => {
       FakeIntersectionObserver.instances[0]?.trigger();
     });
-    await screen.findByText('Second page');
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Second page')).toBeTruthy();
   });
 
   it('prefetches and appends the next cursor page while deduplicating ids', async () => {

@@ -56,6 +56,7 @@ import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge'
 import { isForumCardFullyVisible } from '@/lib/forum-card-visible';
 import {
   DEFAULT_FORUM_FEED_MODE,
+  FORUM_FIRST_LOAD_RETRY_DELAYS_MS,
   FORUM_HOME_EVENT,
   FORUM_LIST_POLL_MS,
   hasUnseenForumPosts,
@@ -956,6 +957,8 @@ export function ForumLoader({
       return;
     }
     let cancelled = false;
+    let waitTimer: ReturnType<typeof setTimeout> | undefined;
+    let wakeWait: (() => void) | undefined;
     paginationGeneration.current += 1;
     loadingMoreRef.current = false;
     nextCursorRef.current = null;
@@ -968,43 +971,76 @@ export function ForumLoader({
     setError(false);
     replaceInFlightRef.current = true;
     void (async () => {
-      const result =
-        session === null
-          ? await (async (): Promise<'ok' | 'error' | 'aborted'> => {
-              try {
-                const next = await fetchPublicForumMessages({ limit: FORUM_PAGE_LIMIT });
-                if (cancelled) {
-                  return 'aborted';
-                }
-                setMessages(next.messages.filter((row) => !deletedIds.current.has(row.id)));
-                nextCursorRef.current = next.nextCursor;
-                setNextCursor(next.nextCursor);
-                setNewPostsAvailable(false);
-                return 'ok';
-              } catch {
-                return cancelled ? 'aborted' : 'error';
-              }
-            })()
-          : await loadMessagesOnce(session, feedMode, () => !cancelled, false, true);
-      if (!cancelled && result === 'requirements') {
+      type FirstPageResult = 'ok' | 'error' | 'aborted' | 'requirements' | 'unauthorized';
+      const delays = initial ? [0, ...FORUM_FIRST_LOAD_RETRY_DELAYS_MS] : [0];
+      const loadFirstPage = async (): Promise<FirstPageResult> => {
+        if (session === null) {
+          try {
+            const next = await fetchPublicForumMessages({ limit: FORUM_PAGE_LIMIT });
+            if (cancelled) {
+              return 'aborted';
+            }
+            setMessages(next.messages.filter((row) => !deletedIds.current.has(row.id)));
+            nextCursorRef.current = next.nextCursor;
+            setNextCursor(next.nextCursor);
+            setNewPostsAvailable(false);
+            return 'ok';
+          } catch (err) {
+            if (cancelled) {
+              return 'aborted';
+            }
+            if (err instanceof PublicForumUnauthorizedError) {
+              return 'unauthorized';
+            }
+            return 'error';
+          }
+        }
+        return loadMessagesOnce(session, feedMode, () => !cancelled, false, true);
+      };
+      let result: FirstPageResult = 'error';
+      for (const delay of delays) {
+        if (delay > 0) {
+          await new Promise<void>((resolve) => {
+            wakeWait = resolve;
+            waitTimer = setTimeout(resolve, delay);
+          });
+          waitTimer = undefined;
+          wakeWait = undefined;
+          if (cancelled) {
+            return;
+          }
+          if (messagesRef.current !== null) {
+            result = 'ok';
+            break;
+          }
+        }
+        result = await loadFirstPage();
+        if (result !== 'error') {
+          break;
+        }
+      }
+      if (cancelled) {
+        return;
+      }
+      if (result === 'requirements') {
         router.replace('/setup/rules');
         return;
       }
-      if (!cancelled && result === 'error') {
+      if (result === 'error' || result === 'unauthorized') {
         setError(true);
       }
-      if (!cancelled) {
-        setLoading(false);
-      }
-      if (!cancelled) {
-        replaceInFlightRef.current = false;
-        if (pendingRefreshRef.current && mountedRef.current) {
-          refreshMessagesRef.current();
-        }
+      setLoading(false);
+      replaceInFlightRef.current = false;
+      if (pendingRefreshRef.current && mountedRef.current) {
+        refreshMessagesRef.current();
       }
     })();
     return () => {
       cancelled = true;
+      if (waitTimer !== undefined) {
+        clearTimeout(waitTimer);
+      }
+      wakeWait?.();
       replaceInFlightRef.current = false;
       paginationGeneration.current += 1;
       loadingMoreRef.current = false;

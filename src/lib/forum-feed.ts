@@ -57,6 +57,12 @@ export function consumeSkipIntroduceOverlay(): boolean {
 /** Visible-tab poll interval for GET /forum/messages (ms). */
 export const FORUM_LIST_POLL_MS = 30_000;
 
+/**
+ * Waits before each extra first-page attempt while no list is on screen.
+ * One immediate attempt plus these three; a single dropped fetch must not show the load error.
+ */
+export const FORUM_FIRST_LOAD_RETRY_DELAYS_MS = [300, 700, 1500] as const;
+
 /** Selector button order: Active, No gifts yet, All, Most popular. */
 export const FORUM_FEED_MODES: readonly ForumFeedMode[] = ['active', 'unpaid', 'all', 'popular'];
 
