@@ -30134,6 +30134,17 @@ test.describe('settings states', () => {
     await shotScreen(page, 'state-settings-default-amount-fiat');
   });
 
+  test('settings notification-level-gifted', async ({ page }) => {
+    await seedSettingsAccount(page, { notificationLevel: 'active' });
+    await openSettings(page);
+    const gifted = page
+      .getByRole('group', { name: 'Living room' })
+      .getByRole('button', { name: 'Only with a gift', exact: true });
+    await expect(gifted).toHaveAttribute('aria-pressed', 'true');
+    await gifted.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-notification-level-gifted');
+  });
+
   test('settings notification-level-error', async ({ page }) => {
     await seedSettingsAccount(page);
     await page.route('**/me/notification-level', async (route) => {

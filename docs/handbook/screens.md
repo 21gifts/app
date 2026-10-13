@@ -1197,6 +1197,12 @@ After pressing the fiat code under **Default amount**: it is pressed instead of 
 
 ![21.gifts settings default amount fiat](images/settings-default-amount-fiat.png)
 
+### Variant: notification-level-gifted
+
+**Notifications** section while the stored level is already active: Living room shows All, Only to me, Only with a gift, and Off, with Only with a gift pressed.
+
+![21.gifts settings living room only with a gift](images/settings-notification-level-gifted.png)
+
 ### Variant: notification-level-error
 
 **Notifications** section with `role="alert"` save error after stubbing POST /me/notification-level to 500 and clicking Off on Living room. Copy **Could not save notification level.**

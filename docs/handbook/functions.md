@@ -876,10 +876,10 @@
 
 ## Function: SegmentedControl
 
-- **Purpose:** Mutually exclusive option group with `tone` `gift` (compact ₿|USD cells, optional `shell` `app`/`dark`) or `neutral` (full-width pills for staff inbox and Settings notifications). Gift hit target is `min-h-11 min-w-11` on mobile and desktop. `shell` is ignored for `neutral`. Neutral `role="group"` is the pill; the forum composer Post/Ask `!grid grid-cols-2 !rounded-2xl` still lays out those option buttons via `className` on the group. The four forum view filters are `ForumModeSelect`, not this control. No `trailing` slot.
-- **Inputs:** `value`, `options` (`value` + `label`, optional `badge` / `badgeAriaLabel`; chip omitted when `badge` is missing or ≤ 0; optional `disabled`), `onChange`, `ariaLabel`, `tone`, optional `shell` (default `app`, gift only), optional `className` (on the group).
+- **Purpose:** Mutually exclusive option group with `tone` `gift` (compact ₿|USD cells, optional `shell` `app`/`dark`) or `neutral` (pills for staff inbox and Settings notifications). Optional `fullWidth` defaults to true and is ignored for `gift`; false makes the neutral track `inline-flex w-auto shrink-0` so the pill hugs its labels and can sit beside a row label. Gift hit target is `min-h-11 min-w-11` on mobile and desktop. `shell` is ignored for `neutral`. Neutral `role="group"` is the pill; the forum composer Post/Ask `!grid grid-cols-2 !rounded-2xl` still lays out those option buttons via `className` on the group. The four forum view filters are `ForumModeSelect`, not this control. No `trailing` slot.
+- **Inputs:** `value`, `options` (`value` + `label`, optional `badge` / `badgeAriaLabel`; chip omitted when `badge` is missing or ≤ 0; optional `disabled`), `onChange`, `ariaLabel`, `tone`, optional `fullWidth` (default true, ignored for `gift`), optional `shell` (default `app`, gift only), optional `className` (on the group).
 - **Returns / side effects:** A `role="group"` track of `type="button"` options with `aria-pressed`. A disabled option renders a native `disabled` button, dimmed with `disabled:opacity-50` in both tones, and pressing it does nothing. Neutral is that group as the pill (`className` lands there, including the composer Post/Ask `!grid grid-cols-2 !rounded-2xl`). No network.
-- **Used by:** `ForumBoard` (`tone="neutral"`), `PushToggle` (`tone="neutral"`, three times: level + hearts + device), `AccountActivityChart` (`tone="gift"`), `StatsDashboard` (`tone="gift" shell="dark"`), `AmountEntry` (`tone="gift"`, the fiat option disabled without an exchange rate).
+- **Used by:** `ForumBoard` (`tone="neutral"`), `PushToggle` (`tone="neutral"`, three times: Hearts, Living room with `fullWidth` false, and this device), `AccountActivityChart` (`tone="gift"`), `StatsDashboard` (`tone="gift" shell="dark"`), `AmountEntry` (`tone="gift"`, the fiat option disabled without an exchange rate).
 
 ## Function: ForumModeSelect
 
@@ -2864,7 +2864,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: postNotificationLevel
 
-- **Purpose:** POST `/me/notification-level` with JSON `{ level }` (`all` | `active` | `mentions`) and Bearer session.
+- **Purpose:** POST `/me/notification-level` with JSON `{ level }` (`all` | `active` | `mentions` | `none`) and Bearer session.
 - **Inputs:** `session` (bearer token), `level` (`NotificationLevel`).
 - **Returns / side effects:** Updated `Account`. Throws `'Could not save notification level.'` on a non-ok response; a 2xx body that fails `accountSchema` throws the schema error.
 - **Used by:** `PushToggle`.
@@ -2880,7 +2880,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Read `account.notificationLevel ?? 'all'` so omitted API fields still mean All.
 - **Inputs:** Parsed `Account` (the field may be missing).
-- **Returns / side effects:** `'all'`, `'active'`, or `'mentions'`. No network.
+- **Returns / side effects:** `'all'`, `'active'`, `'mentions'`, or `'none'`. No network.
 - **Used by:** `PushToggle`.
 
 ## Function: agreeToRules

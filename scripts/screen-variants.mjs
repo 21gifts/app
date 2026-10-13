@@ -1426,6 +1426,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/settings',
+    id: 'notification-level-gifted',
+    image: 'settings-notification-level-gifted.png',
+    visual: 'state-settings-notification-level-gifted',
+    needle: "shotScreen(page, 'state-settings-notification-level-gifted')",
+  },
+  {
+    route: '/settings',
     id: 'notification-level-error',
     image: 'settings-notification-level-error.png',
     visual: 'state-settings-notification-level-error',
