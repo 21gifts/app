@@ -6272,6 +6272,114 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-shop-edit-summary');
   });
 
+  async function openWelcomeShopEditor(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'moderator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-shop/edits', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByText('No edits yet')).toBeVisible();
+  }
+
+  test('welcome shop-edit-photo-busy', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+    await openWelcomeShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
+    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photo-busy');
+  });
+
+  test('welcome shop-edit-photo-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await openWelcomeShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
+    const sentence = page.getByText('Keep photos under 1 MB');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photo-too-large');
+  });
+
+  test('welcome shop-edit-photo-too-many', async ({ page }) => {
+    await openWelcomeShopEditor(page);
+    await page
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    const sentence = page.getByText('You can add up to 10 photos');
+    await expect(sentence).toBeVisible({ timeout: 15_000 });
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photo-too-many');
+  });
+
+  test('welcome shop-edit-photo-unsupported', async ({ page }) => {
+    await openWelcomeShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles({
+      name: 'note.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('x'),
+    });
+    const sentence = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-photo-unsupported');
+  });
+
   test('state /welcome laws', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -10059,6 +10167,144 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-summary');
+  });
+
+  async function openMembersShopEditor(page: Page): Promise<void> {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '55555555-5555-4555-8555-555555555555';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'moderator',
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/messages/${noteId}/edits`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByText('No edits yet')).toBeVisible();
+  }
+
+  test('state /members shop-edit-photo-busy', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+    await openMembersShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
+    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photo-busy');
+  });
+
+  test('state /members shop-edit-photo-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await openMembersShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
+    const sentence = page.getByText('Keep photos under 1 MB');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photo-too-large');
+  });
+
+  test('state /members shop-edit-photo-too-many', async ({ page }) => {
+    await openMembersShopEditor(page);
+    await page
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    const sentence = page.getByText('You can add up to 10 photos');
+    await expect(sentence).toBeVisible({ timeout: 15_000 });
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photo-too-many');
+  });
+
+  test('state /members shop-edit-photo-unsupported', async ({ page }) => {
+    await openMembersShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles({
+      name: 'note.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('x'),
+    });
+    const sentence = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-photo-unsupported');
   });
 
   /** Posts open on Carol's profile, her note expanded, reaction field ready. */
@@ -14667,6 +14913,130 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-summary');
+  });
+
+  async function openMessagesShopEditor(page: Page): Promise<void> {
+    const id = '12121212-1212-4121-8121-121212121212';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          role: 'moderator',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/edits`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    });
+    const shopNote = {
+      id,
+      name: 'Ada',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+    };
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(shopNote),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname === `/forum/messages/${id}`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(shopNote),
+        });
+      },
+    );
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByText('No edits yet')).toBeVisible();
+  }
+
+  test('state /messages/[id] shop-edit-photo-busy', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+    await openMessagesShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
+    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-busy');
+  });
+
+  test('state /messages/[id] shop-edit-photo-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await openMessagesShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
+    const sentence = page.getByText('Keep photos under 1 MB');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-too-large');
+  });
+
+  test('state /messages/[id] shop-edit-photo-too-many', async ({ page }) => {
+    await openMessagesShopEditor(page);
+    await page
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    const sentence = page.getByText('You can add up to 10 photos');
+    await expect(sentence).toBeVisible({ timeout: 15_000 });
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-too-many');
+  });
+
+  test('state /messages/[id] shop-edit-photo-unsupported', async ({ page }) => {
+    await openMessagesShopEditor(page);
+    await page.locator('input[type="file"]:not([capture])').setInputFiles({
+      name: 'note.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.from('x'),
+    });
+    const sentence = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-photo-unsupported');
   });
 
   test('state /messages sunday', async ({ page }) => {
@@ -20802,6 +21172,23 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-composer-place-confirm', false);
   });
 
+  /** The chosen place is a line of its own: under the photo row, above the field and Post. */
+  async function expectPlaceLineClear(page: Page, text: string): Promise<void> {
+    const line = await page.getByText(text, { exact: true }).locator('..').boundingBox();
+    const pin = await page.getByRole('button', { name: 'Add a place' }).boundingBox();
+    const field = await page.getByLabel('Your message').boundingBox();
+    const post = await page.getByRole('button', { name: 'Post', exact: true }).boundingBox();
+    expect(line).not.toBeNull();
+    expect(pin).not.toBeNull();
+    expect(field).not.toBeNull();
+    expect(post).not.toBeNull();
+    expect(line!.y).toBeGreaterThanOrEqual(pin!.y + pin!.height);
+    expect(line!.y + line!.height).toBeLessThanOrEqual(field!.y);
+    expect(line!.y + line!.height).toBeLessThanOrEqual(post!.y);
+    expect(line!.x).toBeGreaterThanOrEqual(field!.x - 1);
+    expect(line!.x + line!.width).toBeLessThanOrEqual(post!.x + post!.width + 1);
+  }
+
   test('welcome composer-place-set', async ({ page }) => {
     await installBaselineMap(page, { click: true });
     await seedAda(page);
@@ -20814,8 +21201,8 @@ test.describe('welcome forum variants', () => {
     await page.getByLabel('Place name').fill('Stall');
     await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(page.getByText('Stall', { exact: true })).toBeVisible();
-    // The preview sits above the writer: its Remove takes the tap.
     await page.getByRole('button', { name: 'Remove place' }).click({ trial: true });
+    await expectPlaceLineClear(page, 'Stall');
     await shotScreen(page, 'state-welcome-composer-place-set');
   });
 
@@ -20865,6 +21252,7 @@ test.describe('welcome forum variants', () => {
     await page.locator('.h-64').click();
     await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(page.getByText('14.50000, 120.90000', { exact: true })).toBeVisible();
+    await expectPlaceLineClear(page, '14.50000, 120.90000');
     await shotScreen(page, 'state-welcome-composer-place-set-coords');
   });
 

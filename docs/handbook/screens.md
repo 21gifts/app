@@ -2953,7 +2953,7 @@ One unpaid note on **All** whose place has no label. The card shows a MapPin lin
 
 ### Variant: composer-place-set
 
-A confirmed pin **Stall** sits under **Add a place** as a preview with **Remove place**. The panel is closed.
+A confirmed pin **Stall** shows on a line of its own between the photo row and the text field, with **Remove place** at its right end. It does not cover the text field or **Post**. The panel is closed.
 
 ![21.gifts welcome composer place set](images/welcome-composer-place-set.png)
 
@@ -2971,7 +2971,7 @@ A confirmed pin **Stall** sits under **Add a place** as a preview with **Remove 
 
 ### Variant: composer-place-set-coords
 
-A confirmed pin with no name sits under **Add a place** as **14.50000, 120.90000** with **Remove place**. The panel is closed.
+A confirmed pin with no name shows as **14.50000, 120.90000** on a line of its own between the photo row and the text field, with **Remove place** at its right end. The panel is closed.
 
 ![21.gifts welcome composer place set coordinates](images/welcome-composer-place-set-coords.png)
 
@@ -3325,6 +3325,30 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 **Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**.
 
 ![21.gifts welcome shop edit summary](images/welcome-shop-edit-summary.png)
+
+### Variant: shop-edit-photo-busy
+
+A moderator chose a photo on step **1 / 5 · Photos**. The photo is still being prepared. **Take a photo**, gallery, Close, and **Next** are disabled until it is ready.
+
+![21.gifts welcome shop edit photo busy](images/welcome-shop-edit-photo-busy.png)
+
+### Variant: shop-edit-photo-unsupported
+
+A moderator chose a file that is not a JPEG, PNG, or WebP on step **1 / 5 · Photos**. **Use a JPEG, PNG, or WebP photo** is shown. No photo was added.
+
+![21.gifts welcome shop edit photo unsupported](images/welcome-shop-edit-photo-unsupported.png)
+
+### Variant: shop-edit-photo-too-large
+
+A moderator chose a photo over 1 MB on step **1 / 5 · Photos**. **Keep photos under 1 MB** is shown. No photo was added.
+
+![21.gifts welcome shop edit photo too large](images/welcome-shop-edit-photo-too-large.png)
+
+### Variant: shop-edit-photo-too-many
+
+A moderator chose eleven photos on step **1 / 5 · Photos**. Ten were added. The eleventh was not. **You can add up to 10 photos** is shown.
+
+![21.gifts welcome shop edit photo too many](images/welcome-shop-edit-photo-too-many.png)
 
 ### Variant: wallet-tour-balance
 
@@ -4480,6 +4504,30 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 **Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**.
 
 ![21.gifts member shop edit summary](images/members-shop-edit-summary.png)
+
+### Variant: shop-edit-photo-busy
+
+The same moderator chose a photo on step **1 / 5 · Photos**. The photo is still being prepared. **Take a photo**, gallery, Close, and **Next** are disabled until it is ready. The closed pencil does not cover this result.
+
+![21.gifts member shop edit photo busy](images/members-shop-edit-photo-busy.png)
+
+### Variant: shop-edit-photo-unsupported
+
+The same moderator chose a file that is not a JPEG, PNG, or WebP on step **1 / 5 · Photos**. **Use a JPEG, PNG, or WebP photo** is shown. No photo was added. The closed pencil does not cover this result.
+
+![21.gifts member shop edit photo unsupported](images/members-shop-edit-photo-unsupported.png)
+
+### Variant: shop-edit-photo-too-large
+
+The same moderator chose a photo over 1 MB on step **1 / 5 · Photos**. **Keep photos under 1 MB** is shown. No photo was added. The closed pencil does not cover this result.
+
+![21.gifts member shop edit photo too large](images/members-shop-edit-photo-too-large.png)
+
+### Variant: shop-edit-photo-too-many
+
+The same moderator chose eleven photos on step **1 / 5 · Photos**. Ten were added. The eleventh was not. **You can add up to 10 photos** is shown. The closed pencil does not cover this result.
+
+![21.gifts member shop edit photo too many](images/members-shop-edit-photo-too-many.png)
 
 ## Screen: /members/[accountId]/verify
 
@@ -6391,6 +6439,30 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 **Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet.
 
 ![21.gifts public message shop edit summary](images/messages-id-shop-edit-summary.png)
+
+### Variant: shop-edit-photo-busy
+
+The same moderator chose a photo on step **1 / 5 · Photos**. The photo is still being prepared. **Take a photo**, gallery, Close, and **Next** are disabled until it is ready. The closed pencil does not cover this result.
+
+![21.gifts public message shop edit photo busy](images/messages-id-shop-edit-photo-busy.png)
+
+### Variant: shop-edit-photo-unsupported
+
+The same moderator chose a file that is not a JPEG, PNG, or WebP on step **1 / 5 · Photos**. **Use a JPEG, PNG, or WebP photo** is shown. No photo was added. The closed pencil does not cover this result.
+
+![21.gifts public message shop edit photo unsupported](images/messages-id-shop-edit-photo-unsupported.png)
+
+### Variant: shop-edit-photo-too-large
+
+The same moderator chose a photo over 1 MB on step **1 / 5 · Photos**. **Keep photos under 1 MB** is shown. No photo was added. The closed pencil does not cover this result.
+
+![21.gifts public message shop edit photo too large](images/messages-id-shop-edit-photo-too-large.png)
+
+### Variant: shop-edit-photo-too-many
+
+The same moderator chose eleven photos on step **1 / 5 · Photos**. Ten were added. The eleventh was not. **You can add up to 10 photos** is shown. The closed pencil does not cover this result.
+
+![21.gifts public message shop edit photo too many](images/messages-id-shop-edit-photo-too-many.png)
 
 ### Variant: sunday
 

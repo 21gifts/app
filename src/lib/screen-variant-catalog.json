@@ -3576,6 +3576,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:shop-edit-photo-busy",
+    "label": "/members/[accountId] shop-edit-photo-busy",
+    "visual": "state-members-shop-edit-photo-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shop-edit-photo-unsupported",
+    "label": "/members/[accountId] shop-edit-photo-unsupported",
+    "visual": "state-members-shop-edit-photo-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shop-edit-photo-too-large",
+    "label": "/members/[accountId] shop-edit-photo-too-large",
+    "visual": "state-members-shop-edit-photo-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shop-edit-photo-too-many",
+    "label": "/members/[accountId] shop-edit-photo-too-many",
+    "visual": "state-members-shop-edit-photo-too-many",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]/verify:default",
     "label": "/members/[accountId]/verify default",
     "visual": "screen-members-accountId-verify",
@@ -5280,6 +5304,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]:shop-edit-photo-busy",
+    "label": "/messages/[id] shop-edit-photo-busy",
+    "visual": "state-messages-id-shop-edit-photo-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit-photo-unsupported",
+    "label": "/messages/[id] shop-edit-photo-unsupported",
+    "visual": "state-messages-id-shop-edit-photo-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit-photo-too-large",
+    "label": "/messages/[id] shop-edit-photo-too-large",
+    "visual": "state-messages-id-shop-edit-photo-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit-photo-too-many",
+    "label": "/messages/[id] shop-edit-photo-too-many",
+    "visual": "state-messages-id-shop-edit-photo-too-many",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]:sunday",
     "label": "/messages/[id] sunday",
     "visual": "state-messages-id-sunday",
@@ -5589,6 +5637,30 @@
     "id": "/welcome:shop-edit-summary",
     "label": "/welcome shop-edit-summary",
     "visual": "state-welcome-shop-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:shop-edit-photo-busy",
+    "label": "/welcome shop-edit-photo-busy",
+    "visual": "state-welcome-shop-edit-photo-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:shop-edit-photo-unsupported",
+    "label": "/welcome shop-edit-photo-unsupported",
+    "visual": "state-welcome-shop-edit-photo-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:shop-edit-photo-too-large",
+    "label": "/welcome shop-edit-photo-too-large",
+    "visual": "state-welcome-shop-edit-photo-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:shop-edit-photo-too-many",
+    "label": "/welcome shop-edit-photo-too-many",
+    "visual": "state-welcome-shop-edit-photo-too-many",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
