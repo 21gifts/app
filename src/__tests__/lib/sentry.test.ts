@@ -366,6 +366,32 @@ describe('beforeSendTransaction scrubber', () => {
     expect(scrubbed.spans?.[0]?.data).toEqual({});
   });
 
+  it('keeps span and trace ids that start like a base-chain address', () => {
+    const traceId = `bc1${'a'.repeat(29)}`;
+    const spanId = `bc1${'a'.repeat(13)}`;
+    const event = scrubTransaction({
+      contexts: { trace: { trace_id: traceId, span_id: spanId } },
+      spans: [
+        {
+          span_id: spanId,
+          parent_span_id: spanId,
+          trace_id: traceId,
+          start_timestamp: 1,
+          status: 'ok',
+          description: `GET /pay/${spanId}`,
+          data: {},
+        },
+      ],
+    });
+    expect(event.contexts?.trace).toEqual({ trace_id: traceId, span_id: spanId });
+    expect(event.spans?.[0]).toMatchObject({
+      span_id: spanId,
+      parent_span_id: spanId,
+      trace_id: traceId,
+      description: 'GET /pay/[Filtered]',
+    });
+  });
+
   it('drops breadcrumbs, so click labels such as typed amount digits are not sent', () => {
     const crumbs: Breadcrumb[] = ['2', '1', '0'].map((digit) => ({
       category: 'ui.click',
@@ -498,13 +524,23 @@ describe('beforeSend scrubber', () => {
     expect(scrubText('sp1 short')).toBe('sp1 short');
   });
 
-  it('redacts base-chain addresses but not trace ids', () => {
-    const address = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
-    expect(scrubText(`pay ${address} now`)).toBe('pay [Filtered] now');
-    expect(scrubText(`pay ${address.toUpperCase()}`)).toBe('pay [Filtered]');
-    expect(scrubText('trace bc1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')).toBe(
-      'trace bc1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-    );
+  it('keeps the ids of an error event that start like a base-chain address', () => {
+    const traceId = `bc1${'a'.repeat(29)}`;
+    const spanId = `bc1${'a'.repeat(13)}`;
+    const event = on().beforeSend({
+      type: undefined,
+      event_id: traceId,
+      contexts: { trace: { trace_id: traceId, span_id: spanId, parent_span_id: spanId } },
+      extra: { span_id: `${spanId}0`, trace_id: 7, note: spanId },
+    });
+    expect(event.event_id).toBe(traceId);
+    expect(event.contexts?.trace).toEqual({
+      trace_id: traceId,
+      span_id: spanId,
+      parent_span_id: spanId,
+    });
+    // Only an id-shaped value under an id key is left alone.
+    expect(event.extra).toEqual({ span_id: '[Filtered]', trace_id: 7, note: '[Filtered]' });
   });
 
   it('redacts bearer tokens', () => {

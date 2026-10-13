@@ -993,17 +993,18 @@ Privacy rules (this app holds wallets):
   `lnbc…`/`lntb…`/`lnurl…` strings and BOLT12 `lno1…`/`lni1…` strings;
   `spark1…`/`sparkrt1…`/`sp1…`/`sprt1…`/`spt1…` addresses; Bitcoin base-chain
   addresses (bech32 `bc1…`/`tb1…`/`bcrt1…`, and mixed-case base58 with a
-  digit); Lightning and
-  e-mail addresses (`name@host.tld`); hex strings of 64+ digits; raw byte
-  arrays (typed arrays such as `Uint8Array`); bearer tokens and
-  `Authorization` headers; the stored session token (`21gifts.session`); URL
-  query strings and fragments (the path stays); and every value under keys
-  such as `mnemonic`, `phrase`, `words`, `seed`, `token`, `secret`, `prf`,
-  `invoice`, `pr`, `query`, or `fragment`. In a transaction that covers its
-  name, every span description, and all span data (`/pl/?lightning=…` is sent
-  as `/pl/`). Of the request it keeps method, path, User-Agent, and Referer.
-  Console breadcrumbs are dropped; `fetch`/`xhr` breadcrumbs keep method,
-  path, and status only.
+  digit); Lightning and e-mail addresses (`name@host.tld`); hex strings of
+  64+ digits; raw byte arrays (typed arrays such as `Uint8Array`); bearer
+  tokens and `Authorization` headers; the stored session token
+  (`21gifts.session`); URL query strings and fragments (the path stays); and
+  every value under keys such as `mnemonic`, `phrase`, `words`, `seed`,
+  `token`, `secret`, `prf`, `invoice`, `pr`, `query`, or `fragment`. In a
+  transaction that covers its name, every span description, and all span
+  data (`/pl/?lightning=…` is sent as `/pl/`). The SDK's own 16- or 32-digit
+  hex ids under `event_id`, `trace_id`, `span_id`, and `parent_span_id` stay
+  as they are (a random id can start with `bc1`). Of the request it keeps
+  method, path, User-Agent, and Referer. Console breadcrumbs are dropped;
+  `fetch`/`xhr` breadcrumbs keep method, path, and status only.
 - A transaction carries no span that reaches another origin than the page
   (the wallet asking a receiver's Lightning address server or a chain
   explorer would name the receiver or an address), no web-vital element

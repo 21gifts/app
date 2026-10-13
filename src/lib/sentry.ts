@@ -59,6 +59,12 @@ const DROPPED_INTEGRATIONS = new Set([
   'ConsoleLogs',
 ]);
 
+/** Keys under which the SDK writes its own event, trace, and span ids. */
+const SDK_ID_KEYS = new Set(['event_id', 'trace_id', 'span_id', 'parent_span_id']);
+
+/** An SDK id: 16 or 32 lower-case hex digits, shorter than any key or hash. */
+const SDK_ID = /^(?:[0-9a-f]{16}|[0-9a-f]{32})$/;
+
 /** Keys whose value is always removed, compared lower-case and exactly. */
 const SENSITIVE_KEYS = new Set(['pr', 'words', '21gifts.session']);
 
@@ -231,6 +237,17 @@ function isSensitiveKey(key: string): boolean {
 }
 
 /**
+ * Whether a value is an id the SDK wrote under one of its id keys.
+ *
+ * @param key - Object key.
+ * @param value - Value under that key.
+ * @returns `true` for a 16- or 32-digit hex id under an SDK id key.
+ */
+function isSdkId(key: string, value: unknown): boolean {
+  return SDK_ID_KEYS.has(key) && typeof value === 'string' && SDK_ID.test(value);
+}
+
+/**
  * Apply every value pattern to one string.
  *
  * @param value - Any string from an event or breadcrumb.
@@ -279,7 +296,14 @@ function scrubValue(value: unknown, depth: number): unknown {
   }
   const out: Record<string, unknown> = {};
   for (const [key, item] of Object.entries(value)) {
-    out[key] = isSensitiveKey(key) ? FILTERED : scrubValue(item, depth + 1);
+    if (isSensitiveKey(key)) {
+      out[key] = FILTERED;
+    } else if (isSdkId(key, item)) {
+      // A random id can start like a `bc1` address; replacing it would unlink the span.
+      out[key] = item;
+    } else {
+      out[key] = scrubValue(item, depth + 1);
+    }
   }
   return out;
 }
