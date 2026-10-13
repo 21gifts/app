@@ -944,6 +944,9 @@ describe('forwardSentryEnvelope', () => {
     ['a length past the end', items('{"type":"event","length":99}', '{}')],
     ['a negative length', items('{"type":"event","length":-1}', '{}')],
     ['a fractional length', items('{"type":"event","length":1.5}', '{}')],
+    ['a string length', items('{"type":"event","length":"2"}', '{}')],
+    ['a null length', items('{"type":"event","length":null}', '{}')],
+    ['a boolean length', items('{"type":"event","length":true}', '{}')],
   ])('refuses an envelope with %s', async (_label, request) => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);

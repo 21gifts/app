@@ -2698,7 +2698,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Same-origin tunnel behind `POST /monitoring`, so content blockers do not drop error reports and transactions. Forwards one browser envelope to the configured DSN's project.
 - **Inputs:** Incoming `Request` whose body is an envelope; its header line must name the configured DSN's host and project, and every item must be an error (`event`) or a `transaction`.
-- **Returns / side effects:** 404 while error reporting is off, 413 above 1 MiB (the largest event the Sentry server accepts), 400 for another host or project, a broken header, an envelope without items, a broken item header, or any other item type (session, client report, standalone span, replay, profile, log, feedback, attachment), 502 when the Sentry server cannot be reached, otherwise the upstream status with an empty body. Does not pass on the visitor's IP address, cookies, or headers.
+- **Returns / side effects:** 404 while error reporting is off, 413 above 1 MiB (the largest event the Sentry server accepts), 400 for another host or project, a broken header, an envelope without items, a broken item header (also a `length` that is not a whole number of bytes inside the envelope, such as a string, `null`, or a boolean), or any other item type (session, client report, standalone span, replay, profile, log, feedback, attachment), 502 when the Sentry server cannot be reached, otherwise the upstream status with an empty body. Does not pass on the visitor's IP address, cookies, or headers.
 - **Used by:** Route POST `/monitoring`.
 
 ## Function: traceWallet
