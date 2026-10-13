@@ -3548,6 +3548,8 @@ describe('MemberProfileScreen', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     vi.mocked(fetchMemberShops).mockResolvedValue([shopNote]);
@@ -3598,6 +3600,8 @@ describe('MemberProfileScreen', () => {
       videoContentType: null,
       role: 'basis',
       replyCount: 0,
+      heartCount: 0,
+      hearted: false,
     });
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
     vi.mocked(fetchMemberCredits).mockResolvedValue([creditNote]);
