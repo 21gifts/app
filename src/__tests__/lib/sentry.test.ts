@@ -366,6 +366,70 @@ describe('beforeSendTransaction scrubber', () => {
     expect(scrubbed.spans?.[0]?.data).toEqual({});
   });
 
+  it('removes request and response body sizes and keeps status and timing', () => {
+    const scrubbed = scrubTransaction({
+      transaction: '/me',
+      request: { url: 'https://app.example/me' },
+      start_timestamp: 10,
+      timestamp: 12,
+      contexts: {
+        trace: {
+          trace_id: 'a'.repeat(32),
+          span_id: 'b'.repeat(16),
+          data: {
+            'http.response.body.size': 1_234,
+            'http.response_content_length': 1_234,
+            'http.response.status_code': 200,
+            'lcp.size': 24_000,
+          },
+        },
+      },
+      spans: [
+        {
+          ...span('me', { description: 'GET /api/me' }),
+          op: 'http.client',
+          start_timestamp: 10.5,
+          timestamp: 11.25,
+          data: {
+            'http.response.body.size': 1_234,
+            'http.response.size': 1_300,
+            'http.response.body.decoded_size': 4_096,
+            'http.response_content_length': 1_234,
+            'http.response_transfer_size': 1_300,
+            'http.decoded_response_content_length': 4_096,
+            'http.request.body.size': 77,
+            'http.request_content_length': 77,
+            'http.request.header.content-length': '77',
+            'http.response.header.content-length': '1234',
+            'HTTP.Response.Header.Content_Length': '1234',
+            'http.response.status_code': 200,
+            'http.request.method': 'GET',
+            'http.request.fetch_start': 10.5,
+            'http.request.response_end': 11.25,
+          },
+        },
+      ],
+    });
+    expect(scrubbed.contexts?.trace?.data).toEqual({
+      'http.response.status_code': 200,
+      'lcp.size': 24_000,
+    });
+    expect(scrubbed.spans?.[0]).toMatchObject({
+      description: 'GET /api/me',
+      start_timestamp: 10.5,
+      timestamp: 11.25,
+      status: 'ok',
+      data: {
+        'http.response.status_code': 200,
+        'http.request.method': 'GET',
+        'http.request.fetch_start': 10.5,
+        'http.request.response_end': 11.25,
+      },
+    });
+    expect(Object.keys(scrubbed.spans?.[0]?.data ?? {})).toHaveLength(4);
+    expect(scrubbed).toMatchObject({ start_timestamp: 10, timestamp: 12 });
+  });
+
   it('keeps span and trace ids that start like a base-chain address', () => {
     const traceId = `bc1${'a'.repeat(29)}`;
     const spanId = `bc1${'a'.repeat(13)}`;

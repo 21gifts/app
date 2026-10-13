@@ -34,6 +34,15 @@ const MAX_ENVELOPE_BYTES = 1024 * 1024;
  */
 const ELEMENT_DATA_KEY = /^(?:browser\.web_vital\.)?(?:lcp\.(?:element|url|id)|cls\.source\.\d+)$/;
 
+/**
+ * Span data keys that hold the byte size of a request or response body, in
+ * the SDK's current and older names and as a `Content-Length` header. The
+ * exact size of a member's own response (their profile, a message) depends
+ * on what it holds.
+ */
+const SIZE_DATA_KEY =
+  /^http\.(?:(?:request|response)\.(?:body\.(?:decoded_)?size|size|header\.content[-_]length)|(?:request|response)_content_length|response_transfer_size|decoded_response_content_length)$/i;
+
 /** First absolute http(s) origin in a text, such as a span description. */
 const ABSOLUTE_ORIGIN = /\bhttps?:\/\/[^\s/?#"'<>]+/i;
 
@@ -474,22 +483,24 @@ function isForeignSpan(span: TransactionSpan, pageOrigin: string | null): boolea
 }
 
 /**
- * Span data without the element descriptors of web vitals.
+ * Span data without the element descriptors of web vitals and without the
+ * body sizes of requests and responses. Status and timing stay.
  *
  * @param data - Span or trace data.
  * @returns A copy without those keys.
  */
-function withoutElements<D extends Record<string, unknown>>(data: D): D {
+function withoutElementsAndSizes<D extends Record<string, unknown>>(data: D): D {
   return Object.fromEntries(
-    Object.entries(data).filter(([key]) => !ELEMENT_DATA_KEY.test(key)),
+    Object.entries(data).filter(([key]) => !ELEMENT_DATA_KEY.test(key) && !SIZE_DATA_KEY.test(key)),
   ) as D;
 }
 
 /**
  * Transaction filter: the event filter, after spans that reach another origin,
- * web-vital element descriptors, and breadcrumbs are removed. A transaction
- * needs none of them to show where time goes, and click breadcrumbs carry
- * control labels such as the digits of a typed amount.
+ * web-vital element descriptors, request and response body sizes, and
+ * breadcrumbs are removed. A transaction needs none of them to show where
+ * time goes, and click breadcrumbs carry control labels such as the digits of
+ * a typed amount.
  *
  * @param event - Transaction event about to be sent.
  * @returns The scrubbed transaction.
@@ -501,11 +512,14 @@ function scrubTransaction(event: TransactionEvent): TransactionEvent {
   if (copy.spans !== undefined) {
     copy.spans = copy.spans
       .filter((span) => !isForeignSpan(span, pageOrigin))
-      .map((span) => ({ ...span, data: withoutElements(span.data) }));
+      .map((span) => ({ ...span, data: withoutElementsAndSizes(span.data) }));
   }
   const trace = copy.contexts?.trace;
   if (trace?.data !== undefined) {
-    copy.contexts = { ...copy.contexts, trace: { ...trace, data: withoutElements(trace.data) } };
+    copy.contexts = {
+      ...copy.contexts,
+      trace: { ...trace, data: withoutElementsAndSizes(trace.data) },
+    };
   }
   return scrubEvent(copy);
 }
