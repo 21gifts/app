@@ -914,10 +914,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet/payment',
+    id: 'heart-payment-open',
+    image: 'wallet-payment-heart-open.png',
+    visual: 'state-wallet-payment-heart-open',
+    needle: "shotScreen(page, 'state-wallet-payment-heart-open')",
+  },
+  {
+    route: '/wallet/payment',
     id: 'heart-payment-pending',
     image: 'wallet-payment-heart-pending.png',
     visual: 'state-wallet-payment-heart-pending',
     needle: "shotScreen(page, 'state-wallet-payment-heart-pending')",
+  },
+  {
+    route: '/wallet/payment',
+    id: 'heart-payment-pending-open',
+    image: 'wallet-payment-heart-pending-open.png',
+    visual: 'state-wallet-payment-heart-pending-open',
+    needle: "shotScreen(page, 'state-wallet-payment-heart-pending-open')",
   },
   {
     route: '/wallet/payment',
