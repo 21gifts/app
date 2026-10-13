@@ -10719,7 +10719,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Each share is one bitcoin payment to that person.')).toBeVisible();
     await expect(
       page.getByText(
-        'The days are fixed once the credit is fully given. Repayment never starts before 1 November 2026. Until then this is the plan for what has been given.',
+        'The days are fixed once the credit is fully given. Repayment starts the day after that, but never before 1 November 2026. Until then this is the plan for what has been given.',
       ),
     ).toBeVisible();
     await expect(page.getByText('Due', { exact: true })).toHaveCount(0);
@@ -15218,7 +15218,7 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/day 11/)).toBeVisible();
+    await expect(page.getByText(/11 November/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-plan-btc');
   });
 
@@ -15257,7 +15257,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText(/fixed in bitcoin/)).toBeVisible();
     await expect(page.getByText(/rising bitcoin price/)).toBeVisible();
     await expect(page.getByText(/Repayment term: 30 days/)).toBeVisible();
-    await expect(page.getByText(/day 11/)).toBeVisible();
+    await expect(page.getByText(/11 November/)).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'I want to take this credit.' })).toBeVisible();
     await expect(page.getByRole('checkbox')).toHaveCount(0);

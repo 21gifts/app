@@ -513,7 +513,7 @@ describe('ForumAskWizard', () => {
     fireEvent.change(screen.getByLabelText('Number of days'), { target: { value: '10' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.queryByText(/Interest 0%/)).toBeNull();
-    expect(screen.getByText(/day 11/)).toBeTruthy();
+    expect(screen.getByText(/11 November/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.getByText(/Amount owed: ₿21'000/)).toBeTruthy();
     expect(screen.getByText(/fixed in bitcoin/)).toBeTruthy();
