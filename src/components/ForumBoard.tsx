@@ -622,7 +622,8 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * is \> 0 and unpaid is not selected; omitted when `modeSelector` is false or
  * `composerHidden` is true), composer under the mode
  * filters above the newest-first list (new notes only; Post/Ask pill;
- * Post is a photo icon row (camera, attach, place) above text + send, Ask is
+ * Post is a photo icon row (camera, attach, place), a chosen place on its own
+ * line between that row and the text field, then text + send, Ask is
  * the four-step wizard), newest-first list (social feed) or
  * empty/loading/error, per-card expand for oldest-first replies +
  * reply composer (amount and the bitcoin/fiat switch on one line, text and
@@ -675,7 +676,8 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
  * brings up the keyboard. A compose request opens it first (or focuses its
  * field when it is already open). Its Post composer has the same two rows on
  * every device: the photo icon row (camera, photo, place), then the text field
- * with send on its right. The writer is marked `data-writing-composer` for
+ * with send on its right; a chosen place shows on its own line between them.
+ * The writer is marked `data-writing-composer` for
  * {@link useAppHeight}, and pull-to-refresh is off while it is open. While the
  * Menu is open as a sheet (`html[data-menu-sheet='1']`) the writer steps aside,
  * so the sheet in the page scrollport shows; it comes back when the Menu closes.
@@ -794,6 +796,7 @@ export function ForumBoard({
   const rootRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const [placeSlot, setPlaceSlot] = useState<HTMLDivElement | null>(null);
   const postComposerShown =
     !hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer;
   const writerOpen = writer !== undefined && writer.open;
@@ -2092,9 +2095,17 @@ export function ForumBoard({
                 onChange={handleFileChange}
               />
               {onPlaceDraftChange !== undefined ? (
-                <PlaceField place={placeDraft} disabled={posting} onChange={onPlaceDraftChange} />
+                <PlaceField
+                  place={placeDraft}
+                  disabled={posting}
+                  onChange={onPlaceDraftChange}
+                  previewSlot={placeSlot}
+                />
               ) : null}
             </div>
+            {onPlaceDraftChange !== undefined ? (
+              <div ref={setPlaceSlot} className="empty:hidden" />
+            ) : null}
             <div className="flex items-center gap-2">
               <MentionTextarea
                 textareaRef={composerRef}

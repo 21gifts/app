@@ -8641,7 +8641,9 @@ describe('ForumBoard writer', () => {
     expect(photoRow.contains(field)).toBe(false);
     const post = within(layer).getByRole('button', { name: 'Post' });
     expect(photoRow.contains(post)).toBe(false);
-    const textRow = photoRow.nextElementSibling as HTMLElement;
+    const textRow = [...(photoRow.parentElement?.children ?? [])].find((child) =>
+      child.contains(field),
+    ) as HTMLElement;
     expect(textRow.contains(field)).toBe(true);
     expect(textRow.contains(post)).toBe(true);
     expect(field.compareDocumentPosition(post) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -8653,6 +8655,31 @@ describe('ForumBoard writer', () => {
     // The feed stays on the page under the writer.
     expect(layer.contains(screen.getByText(SAMPLE.text))).toBe(false);
     expect(document.querySelector('[data-scroll-page]')!.contains(layer)).toBe(false);
+  });
+
+  it('shows a chosen place on its own line between the photo row and the text field', () => {
+    const view = renderHome(
+      {
+        placeDraft: { lat: 1, lng: 2, label: 'Stall' },
+        onPlaceDraftChange: () => undefined,
+      },
+      true,
+    );
+    const layer = writerLayer(view.container)!;
+    const stall = within(layer).getByText('Stall');
+    const placeButton = within(layer).getByRole('button', { name: 'Add a place' });
+    const field = within(layer).getByRole('textbox', {
+      name: getCatalog('en')['forum.composerLabel'],
+    });
+    const form = field.closest('form')!;
+    const photoRow = form.firstElementChild as HTMLElement;
+    const textRow = [...form.children].find((child) => child.contains(field)) as HTMLElement;
+    expect(photoRow.contains(placeButton)).toBe(true);
+    expect(photoRow.compareDocumentPosition(stall) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(stall.compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(form.contains(stall)).toBe(true);
+    expect(photoRow.contains(stall)).toBe(false);
+    expect(textRow.contains(stall)).toBe(false);
   });
 
   it('titles the writer Ask for money and shows the Ask wizard when Ask is chosen', () => {
