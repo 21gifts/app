@@ -3322,7 +3322,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ### Variant: shop-edit-photo-busy
 
-A moderator chose a photo on step **1 / 5 · Photos**. The photo is still being prepared. **Take a photo**, gallery, Close, and **Next** are disabled until it is ready.
+A moderator chose a photo on step **1 / 5 · Photos**. The photo is still being prepared. **Take a photo**, **Add a photo or video**, Close (X), and **Next** are disabled until it is ready.
 
 ![21.gifts welcome shop edit photo busy](images/welcome-shop-edit-photo-busy.png)
 
@@ -3515,7 +3515,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open on the map.
 
 ### Variant: map-edit-photo-busy
 
-A moderator chose a photo on step **1 / 5 · Photos** in the map's shop editor. The photo is still being prepared. **Take a photo**, gallery, Close, and **Next** are disabled until it is ready.
+A moderator chose a photo on step **1 / 5 · Photos** in the map's shop editor. The photo is still being prepared. **Take a photo**, **Add a photo or video**, Close (X), and **Next** are disabled until it is ready.
 
 ![21.gifts shops map edit photo busy](images/shops-map-edit-photo-busy.png)
 
@@ -3629,7 +3629,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the tabl
 
 ### Variant: table-edit-photo-busy
 
-A moderator chose a photo on step **1 / 5 · Photos** in the table row. The photo is still being prepared. **Take a photo**, gallery, Close, and **Next** are disabled until it is ready.
+A moderator chose a photo on step **1 / 5 · Photos** in the table row. The photo is still being prepared. **Take a photo**, **Add a photo or video**, Close (X), and **Next** are disabled until it is ready.
 
 ![21.gifts shops table edit photo busy](images/shops-table-edit-photo-busy.png)
 
@@ -3851,7 +3851,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. The photo 
 
 ### Variant: edit-photo-busy
 
-A moderator chose a photo on step **1 / 5 · Photos** in the Post list. The photo is still being prepared. **Take a photo**, gallery, Close, and **Next** are disabled until it is ready.
+A moderator chose a photo on step **1 / 5 · Photos** in the Post list. The photo is still being prepared. **Take a photo**, **Add a photo or video**, Close (X), and **Next** are disabled until it is ready.
 
 ![21.gifts shops edit photo busy](images/shops-edit-photo-busy.png)
 
@@ -4573,7 +4573,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ### Variant: shop-edit-photo-busy
 
-The same moderator chose a photo on step **1 / 5 · Photos**. The photo is still being prepared. **Take a photo**, gallery, Close, and **Next** are disabled until it is ready. The closed pencil does not cover this result.
+The same moderator chose a photo on step **1 / 5 · Photos**. The photo is still being prepared. **Take a photo**, **Add a photo or video**, Close (X), and **Next** are disabled until it is ready. The closed pencil does not cover this result.
 
 ![21.gifts member shop edit photo busy](images/members-shop-edit-photo-busy.png)
 
@@ -6508,7 +6508,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ### Variant: shop-edit-photo-busy
 
-The same moderator chose a photo on step **1 / 5 · Photos**. The photo is still being prepared. **Take a photo**, gallery, Close, and **Next** are disabled until it is ready. The closed pencil does not cover this result.
+The same moderator chose a photo on step **1 / 5 · Photos**. The photo is still being prepared. **Take a photo**, **Add a photo or video**, Close (X), and **Next** are disabled until it is ready. The closed pencil does not cover this result.
 
 ![21.gifts public message shop edit photo busy](images/messages-id-shop-edit-photo-busy.png)
 
