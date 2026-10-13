@@ -1130,9 +1130,9 @@
     "fil": "Wala pang mensaheng nakatanggap ng Bitcoin. Napili ang Aktibo, nakatago ang hindi pa bayad na tala, nakikita ang + (walang kahon ng pagsulat sa pahina)."
   },
   "/welcome:composer-place-set": {
-    "de": "Eine bestätigte Stecknadel Stall sitzt unter Ort hinzufügen als Vorschau mit Ort entfernen. Das Feld ist geschlossen.",
-    "es": "Un pin confirmado Stall aparece bajo Añadir un lugar como vista previa con Quitar lugar. El panel está cerrado.",
-    "fil": "Ang kumpirmadong tulos na Stall ay nasa ilalim ng Magdagdag ng lugar bilang paunang tanaw na may Alisin ang lugar. Sarado ang panelo."
+    "de": "Eine bestätigte Stecknadel Stall steht in einer eigenen Zeile zwischen der Fotozeile und dem Textfeld, mit Ort entfernen am rechten Ende. Sie verdeckt weder das Textfeld noch Senden. Das Feld ist geschlossen.",
+    "es": "Un pin confirmado Stall aparece en una línea propia entre la fila de fotos y el campo de texto, con Quitar el lugar en su extremo derecho. No tapa el campo de texto ni Publicar. El panel está cerrado.",
+    "fil": "Ang kumpirmadong tulos na Stall ay nasa sariling linya sa pagitan ng hilera ng litrato at ng kahon ng teksto, na may Alisin ang lugar sa kanang dulo nito. Hindi nito tinatakpan ang kahon ng teksto o ang I-post. Sarado ang panelo."
   },
   "/shops:table-more": {
     "de": "Tabelle ist ausgewählt. Dieselbe Zeile wird angezeigt, und Mehr anzeigen steht unter der Tabelle. Der Eingabebereich ist weg.",
@@ -1470,9 +1470,9 @@
     "fil": "Pagkatapos ng Ipakita ang orihinal: nakatago ang isinaling katawan ng teksto, ang icon na Mga wika ay pinangalanang Ipakita ang pagsasalin at walang nakikitang teksto."
   },
   "/welcome:composer-place-set-coords": {
-    "de": "Eine bestätigte Stecknadel ohne Namen sitzt unter Ort hinzufügen als 14.50000, 120.90000 mit Ort entfernen. Die Leiste ist geschlossen.",
-    "es": "Una chincheta confirmada sin nombre queda bajo Añadir un lugar como 14.50000, 120.90000 con Quitar lugar. El panel está cerrado.",
-    "fil": "Ang isang kumpirmadong tuldok na walang pangalan ay nasa ilalim ng Magdagdag ng lugar bilang 14.50000, 120.90000 na may Alisin ang lugar. Sarado ang panig na panel."
+    "de": "Eine bestätigte Stecknadel ohne Namen steht als 14.50000, 120.90000 in einer eigenen Zeile zwischen der Fotozeile und dem Textfeld, mit Ort entfernen am rechten Ende. Die Leiste ist geschlossen.",
+    "es": "Una chincheta confirmada sin nombre aparece como 14.50000, 120.90000 en una línea propia entre la fila de fotos y el campo de texto, con Quitar el lugar en su extremo derecho. El panel está cerrado.",
+    "fil": "Ang isang kumpirmadong tuldok na walang pangalan ay makikita bilang 14.50000, 120.90000 sa sariling linya sa pagitan ng hilera ng litrato at ng kahon ng teksto, na may Alisin ang lugar sa kanang dulo nito. Sarado ang panig na panel."
   },
   "/members/[accountId]:translate-hidden": {
     "de": "Nach Original anzeigen: übersetzter Textkörper ausgeblendet, das Sprachen-Symbol heisst Übersetzung anzeigen und hat keinen sichtbaren Text.",
@@ -1629,10 +1629,50 @@
     "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguno, Lugar Ninguno, Texto Cafe Luna y usuario de 21.gifts Ninguno.",
     "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala."
   },
+  "/welcome:shop-edit-photo-busy": {
+    "de": "Eine Moderatorin hat ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Galerie, Schließen und Weiter sind deaktiviert, bis es bereit ist.",
+    "es": "Una moderadora eligió una foto en el paso 1 de 5 · Fotos. La foto todavía se está preparando. Tomar una foto, galería, Cerrar y Siguiente están desactivados hasta que esté lista.",
+    "fil": "Nagpili ang isang moderator ng litrato sa hakbang 1 sa 5 · Mga larawan. Inihahanda pa ang litrato. Kumuha ng litrato, gallery, Isara, at Susunod ay naka-disable hanggang maging handa ito."
+  },
+  "/welcome:shop-edit-photo-unsupported": {
+    "de": "Eine Moderatorin hat auf Schritt 1 von 5 · Bilder eine Datei gewählt, die kein JPEG, PNG oder WebP ist. JPEG, PNG oder WebP verwenden wird angezeigt. Es wurde kein Foto hinzugefügt.",
+    "es": "Una moderadora eligió un archivo que no es JPEG, PNG o WebP en el paso 1 de 5 · Fotos. Se muestra Usa una foto JPEG, PNG o WebP. No se añadió ninguna foto.",
+    "fil": "Nagpili ang isang moderator ng file na hindi JPEG, PNG, o WebP sa hakbang 1 sa 5 · Mga larawan. Ipinapakita ang Gumamit ng JPEG, PNG, o WebP na litrato. Walang naidagdag na litrato."
+  },
+  "/welcome:shop-edit-photo-too-large": {
+    "de": "Eine Moderatorin hat auf Schritt 1 von 5 · Bilder ein Foto über 1 MB gewählt. Fotos unter 1 MB halten wird angezeigt. Es wurde kein Foto hinzugefügt.",
+    "es": "Una moderadora eligió una foto de más de 1 MB en el paso 1 de 5 · Fotos. Se muestra Mantén las fotos por debajo de 1 MB. No se añadió ninguna foto.",
+    "fil": "Nagpili ang isang moderator ng litrato na higit sa 1 MB sa hakbang 1 sa 5 · Mga larawan. Ipinapakita ang Panatilihing wala pang 1 MB ang mga litrato. Walang naidagdag na litrato."
+  },
+  "/welcome:shop-edit-photo-too-many": {
+    "de": "Eine Moderatorin hat auf Schritt 1 von 5 · Bilder elf Fotos gewählt. Zehn wurden hinzugefügt. Das elfte nicht. Sie können bis zu 10 Fotos hinzufügen wird angezeigt.",
+    "es": "Una moderadora eligió once fotos en el paso 1 de 5 · Fotos. Se añadieron diez. La undécima no. Se muestra Puedes añadir hasta 10 fotos.",
+    "fil": "Nagpili ang isang moderator ng labing-isang litrato sa hakbang 1 sa 5 · Mga larawan. Sampung naidagdag. Ang ika-labing-isa ay hindi. Ipinapakita ang Pwede kang magdagdag ng hanggang 10 litrato."
+  },
   "/members/[accountId]:shop-edit-summary": {
     "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Die Karte listet Bilder Keiner, Ort Keiner, Text Cafe Luna und 21.gifts-Nutzer Keiner.",
     "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. La tarjeta enumera Fotos Ninguno, Lugar Ninguno, Texto Cafe Luna y usuario de 21.gifts Ninguno.",
     "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala."
+  },
+  "/members/[accountId]:shop-edit-photo-busy": {
+    "de": "Dieselbe Moderatorin hat ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Galerie, Schließen und Weiter sind deaktiviert, bis es bereit ist. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora eligió una foto en el paso 1 de 5 · Fotos. La foto todavía se está preparando. Tomar una foto, galería, Cerrar y Siguiente están desactivados hasta que esté lista. El lápiz cerrado no cubre este resultado.",
+    "fil": "Nagpili ang parehong moderator ng litrato sa hakbang 1 sa 5 · Mga larawan. Inihahanda pa ang litrato. Kumuha ng litrato, gallery, Isara, at Susunod ay naka-disable hanggang maging handa ito. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
+  },
+  "/members/[accountId]:shop-edit-photo-unsupported": {
+    "de": "Dieselbe Moderatorin hat auf Schritt 1 von 5 · Bilder eine Datei gewählt, die kein JPEG, PNG oder WebP ist. JPEG, PNG oder WebP verwenden wird angezeigt. Es wurde kein Foto hinzugefügt. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora eligió un archivo que no es JPEG, PNG o WebP en el paso 1 de 5 · Fotos. Se muestra Usa una foto JPEG, PNG o WebP. No se añadió ninguna foto. El lápiz cerrado no cubre este resultado.",
+    "fil": "Nagpili ang parehong moderator ng file na hindi JPEG, PNG, o WebP sa hakbang 1 sa 5 · Mga larawan. Ipinapakita ang Gumamit ng JPEG, PNG, o WebP na litrato. Walang naidagdag na litrato. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
+  },
+  "/members/[accountId]:shop-edit-photo-too-large": {
+    "de": "Dieselbe Moderatorin hat auf Schritt 1 von 5 · Bilder ein Foto über 1 MB gewählt. Fotos unter 1 MB halten wird angezeigt. Es wurde kein Foto hinzugefügt. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora eligió una foto de más de 1 MB en el paso 1 de 5 · Fotos. Se muestra Mantén las fotos por debajo de 1 MB. No se añadió ninguna foto. El lápiz cerrado no cubre este resultado.",
+    "fil": "Nagpili ang parehong moderator ng litrato na higit sa 1 MB sa hakbang 1 sa 5 · Mga larawan. Ipinapakita ang Panatilihing wala pang 1 MB ang mga litrato. Walang naidagdag na litrato. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
+  },
+  "/members/[accountId]:shop-edit-photo-too-many": {
+    "de": "Dieselbe Moderatorin hat auf Schritt 1 von 5 · Bilder elf Fotos gewählt. Zehn wurden hinzugefügt. Das elfte nicht. Sie können bis zu 10 Fotos hinzufügen wird angezeigt. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora eligió once fotos en el paso 1 de 5 · Fotos. Se añadieron diez. La undécima no. Se muestra Puedes añadir hasta 10 fotos. El lápiz cerrado no cubre este resultado.",
+    "fil": "Nagpili ang parehong moderator ng labing-isang litrato sa hakbang 1 sa 5 · Mga larawan. Sampung naidagdag. Ang ika-labing-isa ay hindi. Ipinapakita ang Pwede kang magdagdag ng hanggang 10 litrato. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
   },
   "/grants/payments/amounts:duplicate": {
     "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person bereits auf der Liste steht. Hinweis Diese Person steht bereits auf der Liste. Nadel Diese Person steht bereits auf der Liste.",
@@ -1733,6 +1773,26 @@
     "de": "Weiter erneut. Schritt 5 von 5 · Zusammenfassung ist offen. Änderungen speichern ist die Schaltfläche auf der Karte. Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
     "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. Guardar cambios es el botón en la tarjeta. Historial sigue diciendo que aún no hay ediciones.",
     "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. I-save ang mga pagbabago ang pindutan sa kard. Sinasabi pa ng Kasaysayan na wala pang mga pagbabago."
+  },
+  "/messages/[id]:shop-edit-photo-busy": {
+    "de": "Dieselbe Moderatorin hat ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Galerie, Schließen und Weiter sind deaktiviert, bis es bereit ist. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora eligió una foto en el paso 1 de 5 · Fotos. La foto todavía se está preparando. Tomar una foto, galería, Cerrar y Siguiente están desactivados hasta que esté lista. El lápiz cerrado no cubre este resultado.",
+    "fil": "Nagpili ang parehong moderator ng litrato sa hakbang 1 sa 5 · Mga larawan. Inihahanda pa ang litrato. Kumuha ng litrato, gallery, Isara, at Susunod ay naka-disable hanggang maging handa ito. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
+  },
+  "/messages/[id]:shop-edit-photo-unsupported": {
+    "de": "Dieselbe Moderatorin hat auf Schritt 1 von 5 · Bilder eine Datei gewählt, die kein JPEG, PNG oder WebP ist. JPEG, PNG oder WebP verwenden wird angezeigt. Es wurde kein Foto hinzugefügt. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora eligió un archivo que no es JPEG, PNG o WebP en el paso 1 de 5 · Fotos. Se muestra Usa una foto JPEG, PNG o WebP. No se añadió ninguna foto. El lápiz cerrado no cubre este resultado.",
+    "fil": "Nagpili ang parehong moderator ng file na hindi JPEG, PNG, o WebP sa hakbang 1 sa 5 · Mga larawan. Ipinapakita ang Gumamit ng JPEG, PNG, o WebP na litrato. Walang naidagdag na litrato. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
+  },
+  "/messages/[id]:shop-edit-photo-too-large": {
+    "de": "Dieselbe Moderatorin hat auf Schritt 1 von 5 · Bilder ein Foto über 1 MB gewählt. Fotos unter 1 MB halten wird angezeigt. Es wurde kein Foto hinzugefügt. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora eligió una foto de más de 1 MB en el paso 1 de 5 · Fotos. Se muestra Mantén las fotos por debajo de 1 MB. No se añadió ninguna foto. El lápiz cerrado no cubre este resultado.",
+    "fil": "Nagpili ang parehong moderator ng litrato na higit sa 1 MB sa hakbang 1 sa 5 · Mga larawan. Ipinapakita ang Panatilihing wala pang 1 MB ang mga litrato. Walang naidagdag na litrato. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
+  },
+  "/messages/[id]:shop-edit-photo-too-many": {
+    "de": "Dieselbe Moderatorin hat auf Schritt 1 von 5 · Bilder elf Fotos gewählt. Zehn wurden hinzugefügt. Das elfte nicht. Sie können bis zu 10 Fotos hinzufügen wird angezeigt. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora eligió once fotos en el paso 1 de 5 · Fotos. Se añadieron diez. La undécima no. Se muestra Puedes añadir hasta 10 fotos. El lápiz cerrado no cubre este resultado.",
+    "fil": "Nagpili ang parehong moderator ng labing-isang litrato sa hakbang 1 sa 5 · Mga larawan. Sampung naidagdag. Ang ika-labing-isa ay hindi. Ipinapakita ang Pwede kang magdagdag ng hanggang 10 litrato. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
   },
   "/shops:add-place": {
     "de": "Shop hinzufügen ist offen auf Schritt 2 von 5 · Ort. Einen Ort hinzufügen ist geschlossen. Weiter ist die einzige Schaltfläche auf der Karte. Die Shopliste ist leer.",
