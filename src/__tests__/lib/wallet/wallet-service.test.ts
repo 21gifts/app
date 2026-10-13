@@ -2319,8 +2319,14 @@ describe('wallet trace spans', () => {
       'lightning',
     ],
     [
-      'a URI the SDK pays over Lightning',
+      'a URI that offers a Lightning request',
       { type: 'input' as const, input: 'bitcoin:bc1q?lightning=lnbc1' },
+      'lightning',
+      'lightning',
+    ],
+    [
+      'a base-chain URI the SDK pays without a base-chain quote',
+      { type: 'input' as const, input: 'bitcoin:bc1q' },
       'onchain',
       'lightning',
     ],

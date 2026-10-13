@@ -784,20 +784,25 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
 }
 
 /**
- * How a payment travels, for its trace spans: a Spark invoice or address, a
- * Lightning request or LNURL receiver, or anything else (a base-chain address).
+ * How a payment travels, for its trace spans, from its {@link methodOf}
+ * method: an LNURL receiver is paid over Lightning, and a request the method
+ * does not know is a short Spark address (`sp1…`) or else counts as base chain.
  *
  * @param request - Payment to prepare.
+ * @param method - Its method.
  * @returns `spark`, `lightning`, or `onchain`.
  */
-function payRoute(request: WalletPayRequest): NonNullable<WalletSpanAttributes['route']> {
+function payRoute(
+  request: WalletPayRequest,
+  method: PayMethod,
+): NonNullable<WalletSpanAttributes['route']> {
   if (request.type === 'lnurl') {
     return 'lightning';
   }
-  if (/^(?:spark|sp(?:rt|t)?1)/i.test(request.input)) {
-    return 'spark';
+  if (method === 'spark' || method === 'lightning' || method === 'onchain') {
+    return method;
   }
-  return /^(?:lightning:)?ln/i.test(request.input) ? 'lightning' : 'onchain';
+  return /^sp(?:rt|t)?1/i.test(request.input.trim()) ? 'spark' : 'onchain';
 }
 
 /**
@@ -835,7 +840,7 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
   if (conn === null) {
     return { kind: 'unlock', failure: prepareFailure('unlock') };
   }
-  const route = payRoute(request);
+  const route = payRoute(request, requestMethod);
   let prepared;
   try {
     prepared = await traceWallet('wallet.prepare', () => conn.prepare(request), { route });
