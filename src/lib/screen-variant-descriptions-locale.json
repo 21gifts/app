@@ -1330,9 +1330,9 @@
     "fil": "Susunod ulit. Bukas ang hakbang 5 sa 5 · Buod. Ang I-save ang mga pagbabago ay ang pindutan sa kahon. Ang Kasaysayan ay nasa ilalim ng kahon."
   },
   "/shops:edit-photo-busy": {
-    "de": "Eine Moderatorin hat in der Beitragsliste ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Galerie, Schließen und Weiter sind deaktiviert, bis es bereit ist.",
-    "es": "Una moderadora eligió una foto en el paso 1 de 5 · Fotos en la lista de publicaciones. La foto todavía se está preparando. Tomar una foto, galería, Cerrar y Siguiente están desactivados hasta que esté lista.",
-    "fil": "Nagpili ang isang moderator ng litrato sa hakbang 1 sa 5 · Mga larawan sa listahan ng post. Inihahanda pa ang litrato. Kumuha ng litrato, gallery, Isara, at Susunod ay naka-disable hanggang maging handa ito."
+    "de": "Eine Moderatorin hat in der Beitragsliste ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Foto oder Video hinzufügen, Schließen (X) und Weiter sind deaktiviert, bis es bereit ist.",
+    "es": "Una moderadora eligió una foto en el paso 1 de 5 · Fotos en la lista de publicaciones. La foto todavía se está preparando. Tomar una foto, Añadir una foto o un vídeo, Cerrar (X) y Siguiente están desactivados hasta que esté lista.",
+    "fil": "Nagpili ang isang moderator ng litrato sa hakbang 1 sa 5 · Mga larawan sa listahan ng post. Inihahanda pa ang litrato. Kumuha ng litrato, Magdagdag ng litrato o bidyo, Isara (X), at Susunod ay naka-disable hanggang maging handa ito."
   },
   "/shops:edit-photo-unsupported": {
     "de": "Eine Moderatorin hat in der Beitragsliste auf Schritt 1 von 5 · Bilder eine Datei gewählt, die kein JPEG, PNG oder WebP ist. JPEG, PNG oder WebP verwenden wird angezeigt. Es wurde kein Foto hinzugefügt.",
@@ -1650,9 +1650,9 @@
     "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala."
   },
   "/welcome:shop-edit-photo-busy": {
-    "de": "Eine Moderatorin hat ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Galerie, Schließen und Weiter sind deaktiviert, bis es bereit ist.",
-    "es": "Una moderadora eligió una foto en el paso 1 de 5 · Fotos. La foto todavía se está preparando. Tomar una foto, galería, Cerrar y Siguiente están desactivados hasta que esté lista.",
-    "fil": "Nagpili ang isang moderator ng litrato sa hakbang 1 sa 5 · Mga larawan. Inihahanda pa ang litrato. Kumuha ng litrato, gallery, Isara, at Susunod ay naka-disable hanggang maging handa ito."
+    "de": "Eine Moderatorin hat ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Foto oder Video hinzufügen, Schließen (X) und Weiter sind deaktiviert, bis es bereit ist.",
+    "es": "Una moderadora eligió una foto en el paso 1 de 5 · Fotos. La foto todavía se está preparando. Tomar una foto, Añadir una foto o un vídeo, Cerrar (X) y Siguiente están desactivados hasta que esté lista.",
+    "fil": "Nagpili ang isang moderator ng litrato sa hakbang 1 sa 5 · Mga larawan. Inihahanda pa ang litrato. Kumuha ng litrato, Magdagdag ng litrato o bidyo, Isara (X), at Susunod ay naka-disable hanggang maging handa ito."
   },
   "/welcome:shop-edit-photo-unsupported": {
     "de": "Eine Moderatorin hat auf Schritt 1 von 5 · Bilder eine Datei gewählt, die kein JPEG, PNG oder WebP ist. JPEG, PNG oder WebP verwenden wird angezeigt. Es wurde kein Foto hinzugefügt.",
@@ -1675,9 +1675,9 @@
     "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. Niliista ng talaan ang Mga larawan Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala."
   },
   "/members/[accountId]:shop-edit-photo-busy": {
-    "de": "Dieselbe Moderatorin hat ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Galerie, Schließen und Weiter sind deaktiviert, bis es bereit ist. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
-    "es": "La misma moderadora eligió una foto en el paso 1 de 5 · Fotos. La foto todavía se está preparando. Tomar una foto, galería, Cerrar y Siguiente están desactivados hasta que esté lista. El lápiz cerrado no cubre este resultado.",
-    "fil": "Nagpili ang parehong moderator ng litrato sa hakbang 1 sa 5 · Mga larawan. Inihahanda pa ang litrato. Kumuha ng litrato, gallery, Isara, at Susunod ay naka-disable hanggang maging handa ito. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
+    "de": "Dieselbe Moderatorin hat ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Foto oder Video hinzufügen, Schließen (X) und Weiter sind deaktiviert, bis es bereit ist. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora eligió una foto en el paso 1 de 5 · Fotos. La foto todavía se está preparando. Tomar una foto, Añadir una foto o un vídeo, Cerrar (X) y Siguiente están desactivados hasta que esté lista. El lápiz cerrado no cubre este resultado.",
+    "fil": "Nagpili ang parehong moderator ng litrato sa hakbang 1 sa 5 · Mga larawan. Inihahanda pa ang litrato. Kumuha ng litrato, Magdagdag ng litrato o bidyo, Isara (X), at Susunod ay naka-disable hanggang maging handa ito. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
   },
   "/members/[accountId]:shop-edit-photo-unsupported": {
     "de": "Dieselbe Moderatorin hat auf Schritt 1 von 5 · Bilder eine Datei gewählt, die kein JPEG, PNG oder WebP ist. JPEG, PNG oder WebP verwenden wird angezeigt. Es wurde kein Foto hinzugefügt. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
@@ -1715,9 +1715,9 @@
     "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. I-save ang mga pagbabago ang pindutan sa talaan. Lugar Happyland at Operator @luna ay nananatili."
   },
   "/shops:table-edit-photo-busy": {
-    "de": "Eine Moderatorin hat in der Tabellenzeile ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Galerie, Schließen und Weiter sind deaktiviert, bis es bereit ist.",
-    "es": "Una moderadora eligió una foto en el paso 1 de 5 · Fotos en la fila de la tabla. La foto todavía se está preparando. Tomar una foto, galería, Cerrar y Siguiente están desactivados hasta que esté lista.",
-    "fil": "Nagpili ang isang moderator ng litrato sa hakbang 1 sa 5 · Mga larawan sa hilera ng talahanayan. Inihahanda pa ang litrato. Kumuha ng litrato, gallery, Isara, at Susunod ay naka-disable hanggang maging handa ito."
+    "de": "Eine Moderatorin hat in der Tabellenzeile ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Foto oder Video hinzufügen, Schließen (X) und Weiter sind deaktiviert, bis es bereit ist.",
+    "es": "Una moderadora eligió una foto en el paso 1 de 5 · Fotos en la fila de la tabla. La foto todavía se está preparando. Tomar una foto, Añadir una foto o un vídeo, Cerrar (X) y Siguiente están desactivados hasta que esté lista.",
+    "fil": "Nagpili ang isang moderator ng litrato sa hakbang 1 sa 5 · Mga larawan sa hilera ng talahanayan. Inihahanda pa ang litrato. Kumuha ng litrato, Magdagdag ng litrato o bidyo, Isara (X), at Susunod ay naka-disable hanggang maging handa ito."
   },
   "/shops:table-edit-photo-unsupported": {
     "de": "Eine Moderatorin hat in der Tabellenzeile auf Schritt 1 von 5 · Bilder eine Datei gewählt, die kein JPEG, PNG oder WebP ist. JPEG, PNG oder WebP verwenden wird angezeigt. Es wurde kein Foto hinzugefügt.",
@@ -1815,9 +1815,9 @@
     "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. I-save ang mga pagbabago ang pindutan sa kard. Sinasabi pa ng Kasaysayan na wala pang mga pagbabago."
   },
   "/messages/[id]:shop-edit-photo-busy": {
-    "de": "Dieselbe Moderatorin hat ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Galerie, Schließen und Weiter sind deaktiviert, bis es bereit ist. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
-    "es": "La misma moderadora eligió una foto en el paso 1 de 5 · Fotos. La foto todavía se está preparando. Tomar una foto, galería, Cerrar y Siguiente están desactivados hasta que esté lista. El lápiz cerrado no cubre este resultado.",
-    "fil": "Nagpili ang parehong moderator ng litrato sa hakbang 1 sa 5 · Mga larawan. Inihahanda pa ang litrato. Kumuha ng litrato, gallery, Isara, at Susunod ay naka-disable hanggang maging handa ito. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
+    "de": "Dieselbe Moderatorin hat ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Foto oder Video hinzufügen, Schließen (X) und Weiter sind deaktiviert, bis es bereit ist. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
+    "es": "La misma moderadora eligió una foto en el paso 1 de 5 · Fotos. La foto todavía se está preparando. Tomar una foto, Añadir una foto o un vídeo, Cerrar (X) y Siguiente están desactivados hasta que esté lista. El lápiz cerrado no cubre este resultado.",
+    "fil": "Nagpili ang parehong moderator ng litrato sa hakbang 1 sa 5 · Mga larawan. Inihahanda pa ang litrato. Kumuha ng litrato, Magdagdag ng litrato o bidyo, Isara (X), at Susunod ay naka-disable hanggang maging handa ito. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
   },
   "/messages/[id]:shop-edit-photo-unsupported": {
     "de": "Dieselbe Moderatorin hat auf Schritt 1 von 5 · Bilder eine Datei gewählt, die kein JPEG, PNG oder WebP ist. JPEG, PNG oder WebP verwenden wird angezeigt. Es wurde kein Foto hinzugefügt. Der geschlossene Stift deckt dieses Ergebnis nicht ab.",
@@ -2455,9 +2455,9 @@
     "fil": "Muli ang Susunod. Hakbang 5 sa 5 · Bukas ang Buod. Ang talaan ay naglilista ng Mga larawan Wala, Lugar Wala, Teksto Cafe Luna, at User ng 21.gifts Wala. Napili pa rin ang mapa. Walang pangalawang pamagat na Mapa."
   },
   "/shops:map-edit-photo-busy": {
-    "de": "Eine Moderatorin hat im Shop-Editor der Karte ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Galerie, Schließen und Weiter sind deaktiviert, bis es bereit ist.",
-    "es": "Una moderadora eligió una foto en el paso 1 de 5 · Fotos en el editor de la tienda del mapa. La foto todavía se está preparando. Tomar una foto, galería, Cerrar y Siguiente están desactivados hasta que esté lista.",
-    "fil": "Nagpili ang isang moderator ng litrato sa hakbang 1 sa 5 · Mga larawan sa editor ng shop ng mapa. Inihahanda pa ang litrato. Kumuha ng litrato, gallery, Isara, at Susunod ay naka-disable hanggang maging handa ito."
+    "de": "Eine Moderatorin hat im Shop-Editor der Karte ein Foto auf Schritt 1 von 5 · Bilder gewählt. Das Foto wird noch vorbereitet. Foto aufnehmen, Foto oder Video hinzufügen, Schließen (X) und Weiter sind deaktiviert, bis es bereit ist.",
+    "es": "Una moderadora eligió una foto en el paso 1 de 5 · Fotos en el editor de la tienda del mapa. La foto todavía se está preparando. Tomar una foto, Añadir una foto o un vídeo, Cerrar (X) y Siguiente están desactivados hasta que esté lista.",
+    "fil": "Nagpili ang isang moderator ng litrato sa hakbang 1 sa 5 · Mga larawan sa editor ng shop ng mapa. Inihahanda pa ang litrato. Kumuha ng litrato, Magdagdag ng litrato o bidyo, Isara (X), at Susunod ay naka-disable hanggang maging handa ito."
   },
   "/shops:map-edit-photo-unsupported": {
     "de": "Eine Moderatorin hat im Shop-Editor der Karte auf Schritt 1 von 5 · Bilder eine Datei gewählt, die kein JPEG, PNG oder WebP ist. JPEG, PNG oder WebP verwenden wird angezeigt. Es wurde kein Foto hinzugefügt.",
