@@ -550,6 +550,7 @@ export function ShopNoteEditControl({
                 void onPickFiles(files);
               }}
               onRemovePhoto={(index) => {
+                setPickError(null);
                 replacePhotoDrafts(
                   photoDraftsRef.current.filter((_, photoIndex) => photoIndex !== index),
                 );
@@ -572,6 +573,7 @@ export function ShopNoteEditControl({
               submitLabel={t('shops.saveChanges')}
               keptMedia={kept}
               onRemoveKept={(index) => {
+                setPickError(null);
                 replaceKept(keptRef.current.filter((_, keptIndex) => keptIndex !== index));
               }}
               imagesOnly

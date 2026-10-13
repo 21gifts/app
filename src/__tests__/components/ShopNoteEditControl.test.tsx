@@ -1201,6 +1201,59 @@ describe('ShopNoteEditControl', () => {
     });
     expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
     expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+    // Removing a still makes room again, so the sentence goes.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Remove photo' })[0] as HTMLElement);
+    expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(9);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('drops the too-many sentence when a kept still is removed', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(prepareForumPhoto).mockResolvedValue({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+        takenAt: '',
+      },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        blob: () =>
+          Promise.resolve({
+            type: 'image/jpeg',
+            arrayBuffer: () => Promise.resolve(Uint8Array.of(9).buffer),
+          }),
+      })),
+    );
+    mockOwnedPhotoUrls();
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, photoCount: 2 }}
+        existingPhotos={['blob:png', 'blob:jpeg']}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
+    const files = Array.from(
+      { length: 9 },
+      (_, index) => new File(['a'], `${index}.jpg`, { type: 'image/jpeg' }),
+    );
+    fireEvent.change(input, { target: { files } });
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(10);
+    });
+    expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
+    // The first two stills are the kept ones.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Remove photo' })[0] as HTMLElement);
+    expect(screen.getAllByRole('button', { name: 'Remove photo' })).toHaveLength(9);
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('counts room from the stills already added when two picks overlap', async () => {
