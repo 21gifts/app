@@ -734,8 +734,10 @@ and **fails the PR** if a screen has no matching `goto`, a variant has no
 no `test('Function: <Name> …')` title. Adding a `page.tsx`, `route.ts`, or other `src/` export without an e2e
 spec (`page.goto` / `request.<verb>` / `Function: <Name>`) in the **same PR**
 is an undeclared deviation and is rejected. CI runs `e2e:check` in the Check
-job, behavioral specs in the parallel E2E (behavior) job (`chromium` project),
-and pixel compare in four parallel visual combo jobs.
+job, behavioral specs in three parallel shard jobs (`chromium` project,
+`--shard=1/3` to `3/3`), and pixel compare in four parallel visual combo jobs.
+The E2E (behavior) job runs no tests: it is green only when every shard is
+green. `npm run e2e:behavior` still runs the whole suite locally.
 
 ### Screenshot baselines (hard requirement)
 
@@ -1027,14 +1029,14 @@ third-party analytics; error reporting stays errors-only.
 
 ## CI / CD
 
-| Workflow               | Trigger                                                           | Action                                                                                                                                                                                                                    |
-| ---------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + E2E (behavior) + four visual combo jobs; **10 minutes each**; Playwright `v1.61.1-noble` |
-| `deploy-dev.yaml`      | push to `develop`                                                 | Docker build → push `21gifts/app:beta` → notify → wait for deploy                                                                                                                                                         |
-| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` → notify → wait for deploy                                                                                           |
-| `deploy-prd.yaml`      | push to `main`                                                    | Docker build → push `21gifts/app:latest` → notify → wait for deploy                                                                                                                                                       |
-| `auto-release-pr.yaml` | push to `develop` or `staging`                                    | Open a missing release only (`staging → develop`, and `develop → main`). Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                    |
-| `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                |
+| Workflow               | Trigger                                                           | Action                                                                                                                                                                                                                                        |
+| ---------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + E2E (behavior) in three shard jobs + four visual combo jobs; **10 minutes each**; Playwright `v1.61.1-noble` |
+| `deploy-dev.yaml`      | push to `develop`                                                 | Docker build → push `21gifts/app:beta` → notify → wait for deploy                                                                                                                                                                             |
+| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` → notify → wait for deploy                                                                                                               |
+| `deploy-prd.yaml`      | push to `main`                                                    | Docker build → push `21gifts/app:latest` → notify → wait for deploy                                                                                                                                                                           |
+| `auto-release-pr.yaml` | push to `develop` or `staging`                                    | Open a missing release only (`staging → develop`, and `develop → main`). Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                                        |
+| `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                                    |
 
 Images target `linux/arm64`.
 
