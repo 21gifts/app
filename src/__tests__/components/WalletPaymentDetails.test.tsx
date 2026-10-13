@@ -271,6 +271,35 @@ describe('WalletPaymentDetails', () => {
     expect(document.body.textContent).not.toContain('message-empty');
   });
 
+  it('keeps the gift title on a pending payment even when the lookup would hit', () => {
+    const payment = { ...fixture(SPARK_SEND), status: 'pending' as const };
+    const paymentHash = payment.info.paymentHash as string;
+    useAuthStore.setState({ session: 'session', account: null });
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        hearts: [
+          {
+            paymentHash: paymentHash.toLowerCase(),
+            messageId: 'message-pending',
+            authorName: 'Ada',
+            text: 'Sunday lunch',
+            deleted: false,
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    showPayment(payment);
+    expect(screen.getByText('Gift')).toBeTruthy();
+    expect(screen.queryByText('Sunday lunch')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Ada Sunday lunch' })).toBeNull();
+    expect(document.body.textContent).not.toContain('message-pending');
+    expect(document.querySelector('.lucide-heart')).toBeNull();
+    expect(document.querySelector('.lucide-arrow-up-right')).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('keeps the gift title when the settled lookup has no heart', async () => {
     useAuthStore.setState({ session: 'session', account: null });
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ hearts: [] })));

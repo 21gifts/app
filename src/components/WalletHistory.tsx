@@ -31,7 +31,9 @@ export function WalletHistory(): ReactElement | null {
   const { status, payments, hasMore, loadMore, retry } = useWalletHistory();
   const heartContext = useHeartContext(
     payments.flatMap((payment) =>
-      payment.info.purpose === 'gift' && typeof payment.info.paymentHash === 'string'
+      payment.status !== 'pending' &&
+      payment.info.purpose === 'gift' &&
+      typeof payment.info.paymentHash === 'string'
         ? [payment.info.paymentHash]
         : [],
     ),
@@ -80,7 +82,9 @@ export function WalletHistory(): ReactElement | null {
           const title = paymentTitle(payment);
           const message = paymentMessage(payment);
           const heartHash =
-            payment.info.purpose === 'gift' && typeof payment.info.paymentHash === 'string'
+            payment.status !== 'pending' &&
+            payment.info.purpose === 'gift' &&
+            typeof payment.info.paymentHash === 'string'
               ? payment.info.paymentHash.toLowerCase()
               : null;
           const heart = heartHash === null ? undefined : heartContext.byHash.get(heartHash);

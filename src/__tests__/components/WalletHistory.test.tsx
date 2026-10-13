@@ -201,6 +201,68 @@ describe('WalletHistory', () => {
     const heartIcon = rows[0]?.querySelector('.lucide-heart');
     expect(heartIcon?.getAttribute('fill')).toBe('currentColor');
     expect(heartIcon?.getAttribute('class')).toContain('text-app-accent');
+    expect(rows[2]?.getAttribute('aria-label')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'message-23' })).toBeNull();
+    expect(rows[2]?.textContent).not.toContain('message-23');
+  });
+
+  it('shows Gift and no heart when a settled lookup has no post', async () => {
+    const paymentHash = 'f'.repeat(64);
+    useAuthStore.setState({ session: 'session', account: null });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ hearts: [] })));
+    show({
+      payments: [
+        payment({
+          id: 'miss',
+          direction: 'sent',
+          method: 'spark',
+          info: { purpose: 'gift', paymentHash },
+        }),
+      ],
+    });
+
+    await waitFor(() => expect(screen.getByRole('link').textContent).toContain('Gift'));
+    const row = screen.getByRole('link');
+    expect(row.querySelector('.lucide-heart')).toBeNull();
+    expect(row.querySelector('.lucide-arrow-up-right')).toBeTruthy();
+  });
+
+  it('keeps Gift and the direction icon when a pending payment would match a heart', () => {
+    const paymentHash = 'e'.repeat(64);
+    useAuthStore.setState({ session: 'session', account: null });
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        hearts: [
+          {
+            paymentHash,
+            messageId: 'message-pending',
+            authorName: 'Ada',
+            text: 'Sunday lunch',
+            deleted: false,
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    show({
+      payments: [
+        payment({
+          id: 'still-pending',
+          status: 'pending',
+          direction: 'sent',
+          method: 'spark',
+          info: { purpose: 'gift', paymentHash },
+        }),
+      ],
+    });
+
+    const row = screen.getByRole('link');
+    expect(row.textContent).toContain('Gift');
+    expect(row.textContent).not.toContain('Sunday lunch');
+    expect(row.textContent).not.toContain('message-pending');
+    expect(row.querySelector('.lucide-heart')).toBeNull();
+    expect(row.querySelector('.lucide-arrow-up-right')).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('keeps the direction icon and an empty title while a heart row is pending', () => {
