@@ -604,8 +604,10 @@ export function traceWallet<T>(
 
 /**
  * Types of the items after an envelope's header line. An item header with a
- * `length` is followed by that many payload bytes; otherwise the payload ends
- * at the next newline.
+ * `length` is followed by that many payload bytes; without one the payload
+ * ends at the next newline. A `length` that is not a whole number of bytes
+ * inside the envelope (a string, `null`, a boolean, negative, fractional, or
+ * past the end) makes the header broken.
  *
  * @param envelope - Raw envelope bytes.
  * @returns The item types in order, or `null` when an item header is broken.
@@ -633,14 +635,19 @@ function envelopeItemTypes(envelope: Uint8Array): string[] | null {
       return null;
     }
     types.push(type);
-    if (typeof length === 'number') {
-      if (!Number.isInteger(length) || length < 0 || offset + length > envelope.length) {
+    if (length === undefined) {
+      const payloadEnd = envelope.indexOf(0x0a, offset);
+      offset = payloadEnd < 0 ? envelope.length : payloadEnd + 1;
+    } else {
+      if (
+        typeof length !== 'number' ||
+        !Number.isInteger(length) ||
+        length < 0 ||
+        offset + length > envelope.length
+      ) {
         return null;
       }
       offset += length + 1;
-    } else {
-      const payloadEnd = envelope.indexOf(0x0a, offset);
-      offset = payloadEnd < 0 ? envelope.length : payloadEnd + 1;
     }
   }
   return types;
