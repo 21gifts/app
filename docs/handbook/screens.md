@@ -3513,6 +3513,30 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open on the map.
 
 ![21.gifts shops map edit summary](images/shops-map-edit-summary.png)
 
+### Variant: map-edit-photo-busy
+
+A moderator chose a photo on step **1 / 5 · Photos** in the map's shop editor. The photo is still being prepared. **Take a photo**, gallery, Close, and **Next** are disabled until it is ready.
+
+![21.gifts shops map edit photo busy](images/shops-map-edit-photo-busy.png)
+
+### Variant: map-edit-photo-unsupported
+
+A moderator chose a file that is not a JPEG, PNG, or WebP on step **1 / 5 · Photos** in the map's shop editor. **Use a JPEG, PNG, or WebP photo** is shown. No photo was added.
+
+![21.gifts shops map edit photo unsupported](images/shops-map-edit-photo-unsupported.png)
+
+### Variant: map-edit-photo-too-large
+
+A moderator chose a photo over 1 MB on step **1 / 5 · Photos** in the map's shop editor. **Keep photos under 1 MB** is shown. No photo was added.
+
+![21.gifts shops map edit photo too large](images/shops-map-edit-photo-too-large.png)
+
+### Variant: map-edit-photo-too-many
+
+A moderator chose eleven photos on step **1 / 5 · Photos** in the map's shop editor. Ten were added. The eleventh was not. **You can add up to 10 photos** is shown.
+
+![21.gifts shops map edit photo too many](images/shops-map-edit-photo-too-many.png)
+
 ### Variant: map-edit-load-failed
 
 A moderator clicked **Edit shop note** beside **Ada · Happyland**. The note did not load. The alert **Could not load this shop note** is visible. The editor is not open. **Map** stays selected. No second **Map** heading.
@@ -3602,6 +3626,30 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the tabl
 **Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. Place **Happyland** and operator **@luna** stay.
 
 ![21.gifts shops table edit summary](images/shops-table-edit-summary.png)
+
+### Variant: table-edit-photo-busy
+
+A moderator chose a photo on step **1 / 5 · Photos** in the table row. The photo is still being prepared. **Take a photo**, gallery, Close, and **Next** are disabled until it is ready.
+
+![21.gifts shops table edit photo busy](images/shops-table-edit-photo-busy.png)
+
+### Variant: table-edit-photo-unsupported
+
+A moderator chose a file that is not a JPEG, PNG, or WebP on step **1 / 5 · Photos** in the table row. **Use a JPEG, PNG, or WebP photo** is shown. No photo was added.
+
+![21.gifts shops table edit photo unsupported](images/shops-table-edit-photo-unsupported.png)
+
+### Variant: table-edit-photo-too-large
+
+A moderator chose a photo over 1 MB on step **1 / 5 · Photos** in the table row. **Keep photos under 1 MB** is shown. No photo was added.
+
+![21.gifts shops table edit photo too large](images/shops-table-edit-photo-too-large.png)
+
+### Variant: table-edit-photo-too-many
+
+A moderator chose eleven photos on step **1 / 5 · Photos** in the table row. Ten were added. The eleventh was not. **You can add up to 10 photos** is shown.
+
+![21.gifts shops table edit photo too many](images/shops-table-edit-photo-too-many.png)
 
 ### Variant: add-photos
 
@@ -3800,6 +3848,30 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. The photo 
 **Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** is under the card.
 
 ![21.gifts shops edit summary](images/shops-edit-summary.png)
+
+### Variant: edit-photo-busy
+
+A moderator chose a photo on step **1 / 5 · Photos** in the Post list. The photo is still being prepared. **Take a photo**, gallery, Close, and **Next** are disabled until it is ready.
+
+![21.gifts shops edit photo busy](images/shops-edit-photo-busy.png)
+
+### Variant: edit-photo-unsupported
+
+A moderator chose a file that is not a JPEG, PNG, or WebP on step **1 / 5 · Photos** in the Post list. **Use a JPEG, PNG, or WebP photo** is shown. No photo was added.
+
+![21.gifts shops edit photo unsupported](images/shops-edit-photo-unsupported.png)
+
+### Variant: edit-photo-too-large
+
+A moderator chose a photo over 1 MB on step **1 / 5 · Photos** in the Post list. **Keep photos under 1 MB** is shown. No photo was added.
+
+![21.gifts shops edit photo too large](images/shops-edit-photo-too-large.png)
+
+### Variant: edit-photo-too-many
+
+A moderator chose eleven photos on step **1 / 5 · Photos** in the Post list. Ten were added. The eleventh was not. **You can add up to 10 photos** is shown.
+
+![21.gifts shops edit photo too many](images/shops-edit-photo-too-many.png)
 
 ### Variant: edit-save-error
 

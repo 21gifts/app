@@ -5820,6 +5820,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:map-edit-photo-busy",
+    "label": "/shops map-edit-photo-busy",
+    "visual": "state-shops-map-edit-photo-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-edit-photo-unsupported",
+    "label": "/shops map-edit-photo-unsupported",
+    "visual": "state-shops-map-edit-photo-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-edit-photo-too-large",
+    "label": "/shops map-edit-photo-too-large",
+    "visual": "state-shops-map-edit-photo-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-edit-photo-too-many",
+    "label": "/shops map-edit-photo-too-many",
+    "visual": "state-shops-map-edit-photo-too-many",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:map-edit-load-failed",
     "label": "/shops map-edit-load-failed",
     "visual": "state-shops-map-edit-load-failed",
@@ -5907,6 +5931,30 @@
     "id": "/shops:table-edit-summary",
     "label": "/shops table-edit-summary",
     "visual": "state-shops-table-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-photo-busy",
+    "label": "/shops table-edit-photo-busy",
+    "visual": "state-shops-table-edit-photo-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-photo-unsupported",
+    "label": "/shops table-edit-photo-unsupported",
+    "visual": "state-shops-table-edit-photo-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-photo-too-large",
+    "label": "/shops table-edit-photo-too-large",
+    "visual": "state-shops-table-edit-photo-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-photo-too-many",
+    "label": "/shops table-edit-photo-too-many",
+    "visual": "state-shops-table-edit-photo-too-many",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -6105,6 +6153,30 @@
     "id": "/shops:edit-summary",
     "label": "/shops edit-summary",
     "visual": "state-shops-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-photo-busy",
+    "label": "/shops edit-photo-busy",
+    "visual": "state-shops-edit-photo-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-photo-unsupported",
+    "label": "/shops edit-photo-unsupported",
+    "visual": "state-shops-edit-photo-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-photo-too-large",
+    "label": "/shops edit-photo-too-large",
+    "visual": "state-shops-edit-photo-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-photo-too-many",
+    "label": "/shops edit-photo-too-many",
+    "visual": "state-shops-edit-photo-too-many",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

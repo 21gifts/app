@@ -22885,6 +22885,145 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-map-edit-summary');
   });
 
+  async function openShopsMapEditEditor(page: Page): Promise<void> {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route('**/forum/messages/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          places: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              lat: 14.6,
+              lng: 120.98,
+              label: 'Happyland',
+              shop: true,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/maps/key', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ key: null }),
+      });
+    });
+    await page.route(
+      (url) => {
+        const path = new URL(url).pathname;
+        return path === '/forum/messages/m-shop' || path === '/forum/messages/m-shop/edits';
+      },
+      async (route) => {
+        const path = new URL(route.request().url()).pathname;
+        if (path.endsWith('/edits')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ edits: [] }),
+          });
+          return;
+        }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'm-shop',
+            name: 'Ada',
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+          }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Map' }).click();
+    await expect(page.getByRole('button', { name: 'Edit shop note' })).toBeVisible();
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByText('No edits yet')).toBeVisible();
+  }
+
+  test('shops map-edit-photo-busy', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+    await openShopsMapEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
+    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photo-busy');
+  });
+
+  test('shops map-edit-photo-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await openShopsMapEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/tiny.jpg');
+    const sentence = page.getByText('Keep photos under 1 MB');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photo-too-large');
+  });
+
+  test('shops map-edit-photo-too-many', async ({ page }) => {
+    await openShopsMapEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    const sentence = page.getByText('You can add up to 10 photos');
+    await expect(sentence).toBeVisible({ timeout: 15_000 });
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photo-too-many');
+  });
+
+  test('shops map-edit-photo-unsupported', async ({ page }) => {
+    await openShopsMapEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles({
+        name: 'note.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('x'),
+      });
+    const sentence = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-map-edit-photo-unsupported');
+  });
+
   test('shops map-edit-load-failed', async ({ page }) => {
     await seedAda(page, 'moderator');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -23190,6 +23329,111 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-table-edit-summary');
+  });
+
+  async function openShopsTableEditEditor(page: Page): Promise<void> {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+              shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-shop/edits', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    });
+    await page.goto('/shops');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByRole('button', { name: 'Edit shop note' })).toBeVisible();
+    await page.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByText('No edits yet')).toBeVisible();
+  }
+
+  test('shops table-edit-photo-busy', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+    await openShopsTableEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
+    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photo-busy');
+  });
+
+  test('shops table-edit-photo-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await openShopsTableEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/tiny.jpg');
+    const sentence = page.getByText('Keep photos under 1 MB');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photo-too-large');
+  });
+
+  test('shops table-edit-photo-too-many', async ({ page }) => {
+    await openShopsTableEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    const sentence = page.getByText('You can add up to 10 photos');
+    await expect(sentence).toBeVisible({ timeout: 15_000 });
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photo-too-many');
+  });
+
+  test('shops table-edit-photo-unsupported', async ({ page }) => {
+    await openShopsTableEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles({
+        name: 'note.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('x'),
+      });
+    const sentence = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-table-edit-photo-unsupported');
   });
 
   const shopTableRow = {
@@ -23719,6 +23963,108 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-summary');
+  });
+
+  async function openShopsEditEditor(page: Page): Promise<void> {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-staff/edits', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await expect(page.getByText('No edits yet')).toBeVisible();
+  }
+
+  test('shops edit-photo-busy', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.createImageBitmap = () => new Promise(() => undefined);
+    });
+    await openShopsEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/tiny.jpg');
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Take a photo' })).toBeDisabled();
+    await page.getByText('1 / 5 · Photos').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photo-busy');
+  });
+
+  test('shops edit-photo-too-large', async ({ page }) => {
+    await page.addInitScript(() => {
+      HTMLCanvasElement.prototype.toDataURL = function toDataURL() {
+        return `data:image/jpeg;base64,${'A'.repeat(1_500_000)}`;
+      };
+    });
+    await openShopsEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles('e2e/fixtures/tiny.jpg');
+    const sentence = page.getByText('Keep photos under 1 MB');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photo-too-large');
+  });
+
+  test('shops edit-photo-too-many', async ({ page }) => {
+    await openShopsEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles(Array.from({ length: 11 }, () => 'e2e/fixtures/tiny.jpg'));
+    const sentence = page.getByText('You can add up to 10 photos');
+    await expect(sentence).toBeVisible({ timeout: 15_000 });
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photo-too-many');
+  });
+
+  test('shops edit-photo-unsupported', async ({ page }) => {
+    await openShopsEditEditor(page);
+    await page
+      .locator('form')
+      .filter({ hasText: '1 / 5 · Photos' })
+      .locator('input[type="file"]:not([capture])')
+      .setInputFiles({
+        name: 'note.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('x'),
+      });
+    const sentence = page.getByText('Use a JPEG, PNG, or WebP photo');
+    await expect(sentence).toBeVisible();
+    await expect(page.getByAltText('Selected photo')).toHaveCount(0);
+    await sentence.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-photo-unsupported');
   });
 
   test('shops edit-save-error', async ({ page }) => {
