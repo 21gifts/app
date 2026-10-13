@@ -116,7 +116,7 @@ for (const file of files) {
   }
   if (
     rel === 'src/components/MarketingHeader.tsx' &&
-    !(source.includes('hideHistoryArrow={root}') && source.includes('hideOverride={root}'))
+    !(source.includes('hideHistoryArrow={isRoot}') && source.includes('hideOverride={isRoot}'))
   ) {
     failures.push(`${rel}: the root info page / must not show a back arrow`);
   }

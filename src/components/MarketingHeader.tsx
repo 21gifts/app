@@ -20,7 +20,7 @@ import { ButtonLink } from '@/components/ui';
 export function MarketingHeader(): ReactElement {
   const [open, setOpen] = useState(false);
   const { t } = useTranslations();
-  const root = usePathname() === '/';
+  const isRoot = usePathname() === '/';
 
   const closeMenu = (): void => {
     setOpen(false);
@@ -32,8 +32,8 @@ export function MarketingHeader(): ReactElement {
         <ProfileChromeLeft
           tone="dark"
           wordmark={<HomeWordmark tone="dark" />}
-          hideHistoryArrow={root}
-          hideOverride={root}
+          hideHistoryArrow={isRoot}
+          hideOverride={isRoot}
         />
       </div>
       <div className="flex items-center gap-4">
