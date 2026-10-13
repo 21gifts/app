@@ -1,14 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
+import { loanTimeZone } from './e2e/loan-zone';
 
 /**
  * Live loan screens. Not part of `npm run e2e`.
  *
  * The loan harness starts this config against the local api. The screens are
  * the ones on staging: the welcome composer, a gift on the note, repayment-due
- * bill creation, and the ledger on that note. The separate repayment-list
- * page is not on staging, so this test does not open it.
+ * bill creation, the repayment list, and the loan repayment page.
  */
 const desktopChrome = devices['Desktop Chrome'];
+const loanZone = loanTimeZone();
 
 export default defineConfig({
   testDir: './e2e',
@@ -23,7 +24,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:3010',
     locale: 'en-US',
-    timezoneId: 'UTC',
+    timezoneId: loanZone,
     extraHTTPHeaders: { 'Accept-Language': 'en' },
     screenshot: 'only-on-failure',
     trace: 'off',
@@ -52,7 +53,7 @@ export default defineConfig({
       NEXT_PUBLIC_PLATFORM_USERNAME: '21gifts',
       NEXT_PUBLIC_SENTRY_DSN: '',
       NEXT_PUBLIC_SENTRY_ENVIRONMENT: '',
-      TZ: 'UTC',
+      TZ: loanZone,
     },
   },
 });
