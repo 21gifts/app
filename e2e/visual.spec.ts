@@ -14760,6 +14760,56 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-goal-credit');
   });
 
+  test('welcome delete-open-credit', async ({ page }) => {
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await seedAda(page, 'moderator');
+    await fulfillRateDay(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-credit',
+              name: 'Bob',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-goal-credit', async (route) => {
+      await route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: '{"error":"An open credit cannot be deleted"}',
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
+    await page.getByRole('button', { name: 'Delete post', exact: true }).click();
+    await page.getByRole('button', { name: 'Confirm deletion' }).click();
+    await expect(
+      page
+        .getByRole('group', { name: 'Delete this post and its reactions from 21.gifts?' })
+        .getByRole('alert'),
+    ).toHaveText('This credit is not fully repaid yet and cannot be deleted.');
+    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
+    await shotScreen(page, 'state-welcome-delete-open-credit');
+  });
+
   test('state /welcome loan-tag-open', async ({ page }) => {
     await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
       await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });

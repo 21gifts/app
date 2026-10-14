@@ -650,6 +650,12 @@ A failed deletion keeps the post and confirmation visible with an error and retr
 
 ![21.gifts delete-error](images/welcome-delete-error.png)
 
+### Variant: delete-open-credit
+
+A credit post that has received sats and is not fully repaid cannot be deleted. The api refuses with 409, and the confirmation stays open with This credit is not fully repaid yet and cannot be deleted. instead of the retry error. The post stays on the board.
+
+![21.gifts delete-open-credit](images/welcome-delete-open-credit.png)
+
 ### Variant: reply-moderation
 
 A moderator who expands a note sees an icon-only Delete reaction control on each nested reply. Ordinary members do not. Parent still has Delete post.

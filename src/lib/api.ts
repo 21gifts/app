@@ -82,6 +82,13 @@ import { shortLinkPath } from '@/lib/short-link';
 import type { FiatCode } from '@/lib/stats-money';
 
 /**
+ * Error text the api sends with HTTP 409 when a moderator tries to delete a
+ * credit post that has received sats and is not fully repaid.
+ * {@link deleteMessage} throws an `Error` with exactly this message.
+ */
+export const OPEN_CREDIT_DELETE_ERROR = 'An open credit cannot be deleted';
+
+/**
  * Exact api 400 body when a Wallet of Satoshi address fails the NIP-57 zap probe.
  * Matched literally (English) before visitor-facing rewrite.
  */
@@ -3709,13 +3716,17 @@ export async function postPasskeyRenewAck(sessionToken: string): Promise<Account
  * @param sessionToken - Bearer session.
  * @param messageId - Forum post UUID.
  * @returns Resolves after deletion (an already missing post is also complete).
- * @throws Error on denied or failed deletion.
+ * @throws Error with message {@link OPEN_CREDIT_DELETE_ERROR} when the post is a
+ * credit that is not fully repaid (HTTP 409), or on any other denied or failed deletion.
  */
 export async function deleteMessage(sessionToken: string, messageId: string): Promise<void> {
   const response = await fetch(`/forum/messages/${encodeURIComponent(messageId)}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
   });
+  if (response.status === 409 && (await readApiError(response)) === OPEN_CREDIT_DELETE_ERROR) {
+    throw new Error(OPEN_CREDIT_DELETE_ERROR);
+  }
   if (response.status !== 204 && response.status !== 404) {
     throw new Error('Message deletion failed');
   }

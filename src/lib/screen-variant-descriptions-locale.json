@@ -2059,6 +2059,11 @@
     "es": "Una eliminación fallida mantiene el mensaje y la confirmación visibles con un error y reintentar. Los mensajes ya ausentes (404) se quitan de la vista local.",
     "fil": "Ang nabigong pagtanggal ay pinananatiling nakikita ang post at kumpirmasyon na may mali at subukan muli. Ang mga post na wala na (404) ay inaalis sa lokal na tanaw."
   },
+  "/welcome:delete-open-credit": {
+    "de": "Ein Kredit-Beitrag, auf den Sats eingegangen sind und der nicht vollständig zurückgezahlt ist, kann nicht gelöscht werden. Die API lehnt mit 409 ab, und die Bestätigung bleibt offen mit Dieser Kredit ist noch nicht vollständig zurückgezahlt und kann nicht gelöscht werden. statt des Fehlers zum erneuten Versuchen. Der Beitrag bleibt sichtbar.",
+    "es": "Una publicación de crédito que recibió sats y no está devuelta por completo no se puede eliminar. La API la rechaza con 409, y la confirmación sigue abierta con Este crédito todavía no está devuelto por completo y no se puede eliminar. en lugar del error para reintentar. La publicación sigue visible.",
+    "fil": "Hindi mabubura ang post ng utang na nakatanggap na ng sats at hindi pa buong nababayaran. Tinatanggihan ito ng API gamit ang 409, at nananatiling bukas ang kumpirmasyon na may Hindi pa buong nababayaran ang utang na ito, kaya hindi ito mabubura. sa halip na ang mali para subukan muli. Nananatiling nakikita ang post."
+  },
   "/shops:map-pin-with-key": {
     "de": "/shops?pin=m-pin#map mit einem Kartenschlüssel. Karte ist ausgewählt. Die Platzhalter-Kartenfläche ist im Rahmen. Ada · Happyland ist halbfett. Keine zweite Überschrift Karte.",
     "es": "/shops?pin=m-pin#map con una clave del mapa. Mapa está seleccionado. La superficie del mapa de prueba está en el marco. Ada · Happyland está en seminegrita. No hay un segundo encabezado Mapa.",

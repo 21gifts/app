@@ -444,6 +444,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:delete-open-credit",
+    "label": "/welcome delete-open-credit",
+    "visual": "state-welcome-delete-open-credit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:reply-moderation",
     "label": "/welcome reply-moderation",
     "visual": "state-welcome-reply-moderation",

@@ -342,6 +342,7 @@ const en = {
   'forum.deleteConfirmAction': 'Confirm deletion',
   'forum.deleteCancel': 'Cancel deletion',
   'forum.deleteError': 'Could not delete the post. Please try again.',
+  'forum.deleteOpenCreditError': 'This credit is not fully repaid yet and cannot be deleted.',
   'forum.deleteReply': 'Delete reaction',
   'forum.deleteReplyConfirm': 'Delete this reaction from 21.gifts?',
   'forum.deleteReplyError': 'Could not delete the reaction. Please try again.',
@@ -1439,6 +1440,8 @@ const de = {
   'forum.deleteConfirmAction': 'Löschen bestätigen',
   'forum.deleteCancel': 'Löschen abbrechen',
   'forum.deleteError': 'Der Beitrag konnte nicht gelöscht werden. Bitte erneut versuchen.',
+  'forum.deleteOpenCreditError':
+    'Dieser Kredit ist noch nicht vollständig zurückgezahlt und kann nicht gelöscht werden.',
   'forum.deleteReply': 'Reaktion löschen',
   'forum.deleteReplyConfirm': 'Diese Reaktion von 21.gifts löschen?',
   'forum.deleteReplyError': 'Die Reaktion konnte nicht gelöscht werden. Bitte erneut versuchen.',
@@ -2559,6 +2562,8 @@ const es = {
   'forum.deleteConfirmAction': 'Confirmar eliminación',
   'forum.deleteCancel': 'Cancelar eliminación',
   'forum.deleteError': 'No se pudo eliminar la publicación. Inténtalo de nuevo.',
+  'forum.deleteOpenCreditError':
+    'Este crédito todavía no está devuelto por completo y no se puede eliminar.',
   'forum.deleteReply': 'Eliminar reacción',
   'forum.deleteReplyConfirm': '¿Eliminar esta reacción de 21.gifts?',
   'forum.deleteReplyError': 'No se pudo eliminar la reacción. Inténtalo de nuevo.',
@@ -3663,6 +3668,8 @@ const fil = {
   'forum.deleteConfirmAction': 'Kumpirmahin ang pagbura',
   'forum.deleteCancel': 'Kanselahin ang pagbura',
   'forum.deleteError': 'Hindi mabura ang post. Pakisubukan muli.',
+  'forum.deleteOpenCreditError':
+    'Hindi pa buong nababayaran ang utang na ito, kaya hindi ito mabubura.',
   'forum.deleteReply': 'Burahin ang reaksyon',
   'forum.deleteReplyConfirm': 'Burahin ang reaksyon na ito sa 21.gifts?',
   'forum.deleteReplyError': 'Hindi mabura ang reaksyon. Pakisubukan muli.',
