@@ -201,7 +201,7 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
               <span className="block text-sm font-medium text-app-fg">{heart.authorName}</span>
             )}
             {heart.text === '' ? null : (
-              <span className="mt-1 block whitespace-pre-wrap text-sm font-medium text-app-fg underline underline-offset-2 line-clamp-3">
+              <span className="mt-1 block whitespace-pre-wrap text-sm font-medium text-app-fg line-clamp-3">
                 {heart.text}
               </span>
             )}
