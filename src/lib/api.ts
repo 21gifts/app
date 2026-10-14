@@ -3554,7 +3554,7 @@ export async function fetchMessagePhoto(
 }
 
 /**
- * Fetches an indexed forum message photo without a session (public note page).
+ * Fetches an indexed forum message photo for `MemberProfileScreen` when the session is null; public stills use `forumPhotoSrc`.
  *
  * Private bytes stay as a blob. Public forum stills use `forumPhotoSrc` on an
  * `<img>` without Authorization.

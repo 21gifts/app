@@ -255,4 +255,15 @@ describe('ForumPhotoGallery', () => {
     fireEvent.click(photos[0] as HTMLElement);
     expect(onPhotoClick).toHaveBeenCalled();
   });
+
+  it('clamps the chip when photos shrinks below the active index', () => {
+    const view = renderWithLocale(<ForumPhotoGallery photos={PHOTOS} alt="Photo from Ada" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Photo 2 of 2' }));
+    expect(screen.getByText('2/2')).toBeTruthy();
+    view.rerender(
+      <ForumPhotoGallery photos={[{ index: 0, url: 'blob:g0' }]} alt="Photo from Ada" />,
+    );
+    expect(screen.getByText('1/1')).toBeTruthy();
+    expect(screen.queryByText('2/1')).toBeNull();
+  });
 });

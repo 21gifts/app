@@ -3,6 +3,7 @@ import path from 'node:path';
 import jsQR from 'jsqr';
 import { PNG } from 'pngjs';
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
+import { fetchPublicMessagePhoto } from '../src/lib/api';
 import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import { fulfillSpot, SPOT_RATES, spotRatesFromStats } from './fx-spot';
 import {
@@ -1882,6 +1883,7 @@ test('Function: proxyMessagesVideoGet — GET /messages/[id]/video.mp4 without a
 });
 
 test('Function: fetchMessagePhoto — photo-only row shows the image alt', async ({ page }) => {
+  const id = '11111111-1111-4111-8111-111111111111';
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -1891,14 +1893,14 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
       contentType: 'application/json',
       body: JSON.stringify({
         id: 'acc_e2e',
-        linkingKey: null,
-        role: 'basis',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'moderator',
         name: 'Ada',
         location: null,
         lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: false,
-        createdAt: 1,
+        createdAt: 1_700_000_000,
         rulesAgreedAt: 1_700_000_001,
         viewKey: 'a'.repeat(64),
         aboutMe: null,
@@ -1907,42 +1909,51 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
       }),
     });
   });
-  await page.route(/\/messages(?:\?|$)/, async (route) => {
+  await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.route(`**/forum/messages/${id}`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        messages: [
-          {
-            id: 'm-photo',
-            name: 'Ada',
-            text: '',
-            createdAt: '2026-08-28T12:00:00.000Z',
-            sats: 0,
-            payable: false,
-            hasPhoto: true,
-          },
-        ],
+        id,
+        name: 'Ada',
+        text: 'Hidden from the living room',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 0,
+        payable: false,
+        hasPhoto: true,
+        role: 'moderator',
+        replyCount: 0,
+        deletedAt: '2026-08-29T15:00:00.000Z',
+        deletedBy: { id: 'acc_mod', name: 'Marta', role: 'moderator' },
       }),
     });
   });
-  await page.route(/\/messages\/m-photo\/photo\.jpg$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'image/jpeg',
-      body: Buffer.from(
-        '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
-        'base64',
-      ),
-    });
+  await page.route(new RegExp(`/messages/${id}/photo$`), async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname !== `/messages/${id}/photo`) {
+      await route.fallback();
+      return;
+    }
+    if (route.request().headers()['authorization'] === 'Bearer sess-e2e') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/jpeg',
+        body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg')),
+      });
+      return;
+    }
+    await route.fulfill({ status: 401 });
   });
-  await page.goto('/welcome');
-  await chooseForumView(page, 'All');
+  await page.goto(`/messages/${id}`);
   await expect(page.getByAltText('Photo from Ada')).toBeVisible();
-  await expect(page.getByAltText('Photo from Ada')).toHaveAttribute(
-    'src',
-    /\/messages\/m-photo\/photo\.jpg/,
-  );
+  await expect(page.getByAltText('Photo from Ada')).toHaveAttribute('src', /^blob:/);
 });
 
 test('Function: forumPhotoSrc — welcome photo note uses photo.jpg', async ({ page }) => {
@@ -2238,7 +2249,7 @@ test('Function: isForumPhotoFile — photo-only post does not require text', asy
   await postAndExpectPhotoRow(page, handle);
 });
 
-test('Function: fetchMessagePhoto — text plus photo posts both', async ({ page, request }) => {
+test('Function: postMessage — text plus photo posts both', async ({ page, request }) => {
   const handle = await reachWelcomeVerified(page, request);
   const caption = `Caption ${Date.now()}`;
   await openHomeWriter(page);
@@ -11266,41 +11277,39 @@ test('Function: fetchForumMessage — staff hidden note loads via the bearer fet
   await expect(page.getByText('Hidden from the living room')).toBeVisible();
 });
 
-test('Function: fetchPublicMessagePhoto — public note with photo shows alt', async ({ page }) => {
-  const id = '11111111-1111-4111-8111-111111111111';
-  await page.route(`**/public-messages/${id}/replies`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ messages: [] }),
-    });
-  });
-  await page.route(`**/public-messages/${id}`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id,
-        name: 'Ada',
-        text: '',
-        createdAt: '2026-08-28T12:00:00.000Z',
-        sats: 0,
-        payable: false,
-        hasPhoto: true,
-        role: 'basis',
-        replyCount: 0,
-      }),
-    });
-  });
-  await page.route(`**/messages/${id}/photo.jpg`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'image/jpeg',
-      body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg')),
-    });
-  });
-  await page.goto(`/messages/${id}`);
-  await expect(page.getByAltText('Photo from Ada')).toBeVisible();
+test('Function: fetchPublicMessagePhoto — omitted index fetches /photo without Authorization', async ({
+  page,
+  request,
+}) => {
+  const handle = await reachWelcomeVerified(page, request);
+  await openHomeWriter(page);
+  await attachTinyJpeg(page);
+  const id = await postAndExpectPhotoRow(page, handle);
+  const originalFetch = globalThis.fetch;
+  let recordedUrl: string | undefined;
+  let recordedHeaders: HeadersInit | undefined;
+  globalThis.fetch = (input, init) => {
+    if (typeof input === 'string' && input.startsWith('/')) {
+      recordedUrl = input;
+      recordedHeaders = init?.headers;
+      return originalFetch(`http://localhost:3000${input}`, init);
+    }
+    return originalFetch(input, init);
+  };
+  try {
+    const blob = await fetchPublicMessagePhoto(id);
+    expect(blob.size).toBeGreaterThan(0);
+    expect(
+      recordedUrl === undefined
+        ? undefined
+        : new URL(recordedUrl, 'http://localhost:3000').pathname,
+    ).toBe(`/messages/${id}/photo`);
+    const authorization =
+      recordedHeaders == null ? null : new Headers(recordedHeaders).get('Authorization');
+    expect(authorization).toBeNull();
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('Function: fetchPublicReplies — public thread loads replies without bearer', async ({

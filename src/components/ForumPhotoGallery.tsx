@@ -97,6 +97,7 @@ export function ForumPhotoGallery({
     return null;
   }
 
+  const shown = Math.min(active, Math.max(0, photos.length - 1));
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
 
   return (
@@ -139,7 +140,7 @@ export function ForumPhotoGallery({
           className="pointer-events-none absolute right-2 top-2 rounded-full bg-app-card-muted/90 px-2 py-0.5 text-xs font-medium tabular-nums lining-nums text-app-fg"
           aria-hidden="true"
         >
-          {t('forum.galleryPosition', { current: active + 1, total: photos.length })}
+          {t('forum.galleryPosition', { current: shown + 1, total: photos.length })}
         </div>
       </div>
       {photos.length > 1 ? (
@@ -150,7 +151,7 @@ export function ForumPhotoGallery({
               size="sm"
               variant="ghost"
               aria-label={t('forum.galleryDot', { current: i + 1, total: photos.length })}
-              aria-current={i === active ? true : undefined}
+              aria-current={i === shown ? true : undefined}
               onClick={() => {
                 const scroller = scrollerRef.current;
                 /* v8 ignore next 3 -- dots only render beside the scroller */
@@ -169,7 +170,7 @@ export function ForumPhotoGallery({
             >
               <span
                 aria-hidden="true"
-                className={`block h-1.5 rounded-full ${i === active ? 'w-4 bg-app-fg' : 'w-1.5 bg-app-muted'}`}
+                className={`block h-1.5 rounded-full ${i === shown ? 'w-4 bg-app-fg' : 'w-1.5 bg-app-muted'}`}
               />
             </IconButton>
           ))}
