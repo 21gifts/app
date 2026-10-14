@@ -461,7 +461,7 @@ app/
 | `main`    | Production releases                | PRD           |
 
 - Open feature work through a **feature branch and a pull request**. The pull request targets `staging` unless another base was explicitly requested. It must not target `main`. The GitHub default branch stays `develop`; that does not change the pull-request base.
-- `main` is protected. A pull request against `main` is not allowed.
+- `main` is protected. A pull request against `main` is not allowed. Production still deploys when `main` itself is pushed.
 - **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. A change that is good there is released to `develop` by a release pull request (`Release: staging -> develop`). That release is the explicit request to target `develop`. `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
 - Never force-push, never amend published commits, except publishing a rebase of `staging` onto `develop` with `git push --force-with-lease` to `staging` only.
 
@@ -1087,7 +1087,7 @@ performance traces, both through its scrubber.
 | `deploy-dev.yaml`      | push to `develop`                                                 | Docker build → push `21gifts/app:beta` → notify → wait for deploy                                                                                                                                                                                                                                                                         |
 | `deploy-staging.yaml`  | push to `staging`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` → notify → wait for deploy                                                                                                                                                                                                           |
 | `deploy-prd.yaml`      | push to `main`                                                    | Docker build → push `21gifts/app:latest` → notify → wait for deploy                                                                                                                                                                                                                                                                       |
-| `auto-release-pr.yaml` | push to `develop` or `staging`                                    | Open a missing release only (`staging → develop`, and `develop → main`). Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                                                                                                                                    |
+| `auto-release-pr.yaml` | push to `develop` or `staging`                                    | Open a missing release only (`staging → develop`). Do not open a pull request against `main`. Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                                                                                                                  |
 | `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                                                                                                                                |
 
 Images target `linux/arm64`.
@@ -1104,7 +1104,7 @@ Deploy workflows require these GitHub Actions secrets:
 If `DISPATCH_TOKEN` or `DISPATCH_REPO` is missing, deploy fails loud (the image
 may already be on Hub). After `image-published`, the job waits for the
 infrastructure run whose title is `image-published 21gifts/app:<tag> <sha>`
-and fails if that run does not succeed. The wait is what makes a failed DEV deploy visible on the develop→main PR. A failed staging deploy fails that staging workflow, not the release pull request.
+and fails if that run does not succeed. The wait is what makes a failed DEV deploy visible on the develop deploy workflow. A failed staging deploy fails that staging workflow, not the release pull request.
 
 ## Breez SDK Spark
 
