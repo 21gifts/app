@@ -9,11 +9,11 @@ import type { RepaymentLedger } from '@/lib/api';
 
 type LoanBlockState = 'collecting' | 'funded' | 'repaying' | 'repaid';
 
-function loanBlockState(percent: number, ledger: RepaymentLedger | null): LoanBlockState {
-  if (percent < 100) {
+function loanBlockState(funded: boolean, ledger: RepaymentLedger | null): LoanBlockState {
+  if (!funded) {
     return 'collecting';
   }
-  if (ledger === null) {
+  if (ledger === null || ledger.fundedAt === null) {
     return 'funded';
   }
   return ledger.repayments.length > 0 && ledger.repayments.every((row) => row.status === 'paid')
@@ -42,13 +42,16 @@ function paidBackPercent(ledger: RepaymentLedger): number {
  * Loan block of a posted loan note: what is asked, how far it is, and the
  * **Lend** action while it collects.
  *
- * Collecting and funded come from the collected percent the note already
- * carries. The paid-back share and **Paid back** need the public ledger, which
- * only the open note passes; without it a full loan reads **Fully funded**.
+ * Collecting and funded follow the api: a loan is funded once its collected
+ * sats reach the asked sats, whatever the percent label (a fiat ask shows the
+ * percent in its own currency). The paid-back share and **Paid back** need the
+ * public ledger with its funding date, which only the open note passes;
+ * without it a full loan reads **Fully funded**.
  *
  * @param props - `messageId` (loan note id); `ask` (ask amount markup: defined
  *   fiat, bitcoin, visitor fiat); `collected` and `goal` (amounts with their
- *   fiat for the status line); `percent` (collected percent, uncapped);
+ *   fiat for the status line); `percent` (collected percent for the label,
+ *   uncapped); `funded` (collected sats reached the asked sats);
  *   `ledger` (public ledger, or `null` when it is not loaded here);
  *   `ledgerLink` (show the **Repayment list** link on feed and profile cards);
  *   `onLend` (opens the money reaction; omitted when the viewer cannot lend).
@@ -60,6 +63,7 @@ export function LoanBlock({
   collected,
   goal,
   percent,
+  funded,
   ledger,
   ledgerLink,
   onLend,
@@ -69,16 +73,20 @@ export function LoanBlock({
   collected: string;
   goal: string;
   percent: number;
+  funded: boolean;
   ledger: RepaymentLedger | null;
   ledgerLink: boolean;
   onLend?: (() => void) | undefined;
 }): ReactElement {
   const { t } = useTranslations();
-  const state = loanBlockState(percent, ledger);
+  const state = loanBlockState(funded, ledger);
   const paidShown = state === 'repaying' || state === 'repaid';
   const paid =
     ledger === null || !paidShown ? 0 : state === 'repaid' ? 100 : paidBackPercent(ledger);
-  const barPercent = paidShown ? paid : Math.min(100, Math.max(0, percent));
+  // A loan still collecting never reads 100% and a funded one never less, even when the
+  // percent of a fiat ask (its own currency) and the sats that decide funding drift apart.
+  const shownPercent = state === 'collecting' ? Math.min(99, percent) : Math.max(100, percent);
+  const barPercent = paidShown ? paid : Math.min(100, Math.max(0, shownPercent));
   const canLend = state === 'collecting' && onLend !== undefined;
   return (
     <section
@@ -103,7 +111,7 @@ export function LoanBlock({
           aria-label={
             paidShown
               ? t('forum.loan.paidBarAria', { percent: String(paid) })
-              : t('forum.goalBarAria', { percent: String(percent) })
+              : t('forum.goalBarAria', { percent: String(shownPercent) })
           }
           className="h-2 min-w-0 flex-1"
         >
@@ -120,7 +128,7 @@ export function LoanBlock({
           ) : null}
         </svg>
         <span className="shrink-0 tabular-nums text-xs text-app-muted">
-          {t('forum.goalPercent', { percent: String(paidShown ? paid : percent) })}
+          {t('forum.goalPercent', { percent: String(paidShown ? paid : shownPercent) })}
         </span>
       </div>
       {state === 'collecting' ? (
