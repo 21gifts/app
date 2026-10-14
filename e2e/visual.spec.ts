@@ -2034,7 +2034,7 @@ test.describe('screen baselines', () => {
     ).toBeVisible();
     await expect(page.getByText('−₿1').first()).toBeVisible();
     await expect(page.getByText('Sunday lunch')).toHaveCount(0);
-    await expect(page.getByText('Gift', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Gift', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-wallet-history-heart-pending');
   });
 
@@ -2207,7 +2207,7 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('Free')).toBeVisible();
     await expect(page.getByText('−₿1').first()).toBeVisible();
     await expect(page.getByText('Sunday lunch')).toHaveCount(0);
-    await expect(page.getByText('Gift', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Gift', { exact: true })).toBeVisible();
     await expect(page.getByText('Ada')).toHaveCount(0);
     await shotScreen(page, 'state-wallet-payment-heart-pending');
   });
@@ -2224,7 +2224,7 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('Payment hash')).toBeVisible();
     await expect(page.getByText('Payment ID')).toBeVisible();
     await expect(page.getByText(/zap:/)).toHaveCount(0);
-    await expect(page.getByText('Gift', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Gift', { exact: true })).toBeVisible();
     await expect(page.getByText('Ada')).toHaveCount(0);
     await shotScreen(page, 'state-wallet-payment-heart-pending-open');
   });

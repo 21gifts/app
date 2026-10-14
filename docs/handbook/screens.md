@@ -337,7 +337,7 @@ Pinned with `?visual=history-heart` in a Playwright build only. The usual visual
 
 ### Variant: history-heart-pending
 
-Pinned with `?visual=history-heart-pending` in a Playwright build only. The usual visual balance stays, and **Payments** has one payment row while the post lookup has not returned: the sent direction icon, no title, and `−₿1`. There is no filled heart and no **Sunday lunch**.
+Pinned with `?visual=history-heart-pending` in a Playwright build only. The usual visual balance stays, and **Payments** has one payment row while the post lookup has not returned: the sent direction icon, the title **Gift**, and `−₿1`. There is no filled heart and no **Sunday lunch**.
 
 ![21.gifts wallet history heart pending](images/wallet-history-heart-pending.png)
 
@@ -752,13 +752,13 @@ The same heart as heart-payment after pressing **Details**, so the payment reque
 
 ### Variant: heart-payment-pending
 
-Pinned with `?visual=heart-payment-pending` and id `b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42`. The post lookup has not returned: the direction badge stays, there is no **Gift** title and no post card. The amount is `−₿1`, **Type** is Wallet transfer, and **Fee** is Free. **Details** is closed, so the payment request, the payment hash, and the payment id are not on this screen.
+Pinned with `?visual=heart-payment-pending` and id `b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42`. The post lookup has not returned: the direction badge stays, the **Gift** title stays, and there is no post card. The amount is `−₿1`, **Type** is Wallet transfer, and **Fee** is Free. **Details** is closed, so the payment request, the payment hash, and the payment id are not on this screen.
 
 ![21.gifts wallet payment heart pending](images/wallet-payment-heart-pending.png)
 
 ### Variant: heart-payment-pending-open
 
-The same pending heart as heart-payment-pending after pressing **Details**, so the payment request, the payment hash from the gift memo, and the payment id are visible. The memo is not shown. The direction badge stays, and there is still no **Gift** title and no post card.
+The same pending heart as heart-payment-pending after pressing **Details**, so the payment request, the payment hash from the gift memo, and the payment id are visible. The memo is not shown. The direction badge stays, the **Gift** title stays, and there is no post card.
 
 ![21.gifts wallet payment heart pending open](images/wallet-payment-heart-pending-open.png)
 

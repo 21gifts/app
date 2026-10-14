@@ -129,8 +129,6 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
       : null;
   const heartContext = useHeartContext(heartHash === null ? [] : [heartHash]);
   const heart = heartHash === null ? undefined : heartContext.byHash.get(heartHash);
-  const heartPending =
-    heartHash !== null && heart === undefined && heartContext.pending.has(heartHash);
   /** A ₿ amount with the default fiat after it. */
   const amount = (sats: number): ReactElement => (
     <>
@@ -155,7 +153,7 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
             <Heart aria-hidden="true" fill="currentColor" className="h-5 w-5 text-app-accent" />
           )}
         </span>
-        {heart !== undefined || heartPending ? null : (
+        {heart !== undefined ? null : (
           <p className="max-w-full truncate text-sm text-app-muted">
             {'text' in title ? title.text : t(title.key)}
           </p>

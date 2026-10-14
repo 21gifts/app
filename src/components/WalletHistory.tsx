@@ -88,8 +88,6 @@ export function WalletHistory(): ReactElement | null {
               ? payment.info.paymentHash.toLowerCase()
               : null;
           const heart = heartHash === null ? undefined : heartContext.byHash.get(heartHash);
-          const heartPending =
-            heartHash !== null && heart === undefined && heartContext.pending.has(heartHash);
           const heartTitle =
             heart === undefined
               ? null
@@ -117,11 +115,9 @@ export function WalletHistory(): ReactElement | null {
                     <span className="min-w-0 truncate text-sm font-medium">
                       {heart !== undefined
                         ? heartTitle
-                        : heartPending
-                          ? ''
-                          : 'text' in title
-                            ? title.text
-                            : t(title.key)}
+                        : 'text' in title
+                          ? title.text
+                          : t(title.key)}
                     </span>
                     <span
                       className={`shrink-0 text-sm tabular-nums lining-nums${payment.status === 'failed' ? ' text-app-subtle line-through' : ''}`}

@@ -265,7 +265,7 @@ describe('WalletHistory', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('keeps the direction icon and an empty title while a heart row is pending', () => {
+  it('keeps Gift and the direction icon while a heart row is pending', () => {
     const paymentHash = 'd'.repeat(64);
     useAuthStore.setState({ session: 'session', account: null });
     vi.stubGlobal(
@@ -284,8 +284,9 @@ describe('WalletHistory', () => {
     });
 
     const row = screen.getByRole('link');
-    expect(row.textContent).not.toContain('Gift');
-    expect(row.querySelector('.min-w-0.truncate.text-sm.font-medium')?.textContent).toBe('');
+    expect(row.textContent).toContain('Gift');
+    expect(row.textContent).not.toContain('Sunday lunch');
+    expect(row.querySelector('.min-w-0.truncate.text-sm.font-medium')?.textContent).toBe('Gift');
     expect(row.querySelector('.lucide-heart')).toBeNull();
     expect(row.querySelector('.lucide-arrow-up-right')).toBeTruthy();
   });

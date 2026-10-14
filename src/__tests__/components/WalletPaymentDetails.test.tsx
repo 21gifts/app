@@ -227,7 +227,7 @@ describe('WalletPaymentDetails', () => {
     expect(screen.queryByText('Gift on your post')).toBeNull();
   });
 
-  it('hides the gift title while the heart lookup is pending', () => {
+  it('keeps the gift title while the heart lookup is pending', () => {
     const payment = fixture(SPARK_SEND);
     useAuthStore.setState({ session: 'session', account: null });
     vi.stubGlobal(
@@ -236,7 +236,9 @@ describe('WalletPaymentDetails', () => {
     );
 
     showPayment(payment);
-    expect(screen.queryByText('Gift')).toBeNull();
+    expect(screen.getByText('Gift')).toBeTruthy();
+    expect(screen.queryByText('Sunday lunch')).toBeNull();
+    expect(screen.queryByText('Ada')).toBeNull();
     expect(document.querySelector('.lucide-heart')).toBeNull();
     expect(document.querySelector('.lucide-arrow-up-right')).toBeTruthy();
   });
