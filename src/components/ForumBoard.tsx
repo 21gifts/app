@@ -79,6 +79,7 @@ import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
+import { verifiedChipHiddenByStaffTag } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 import { isSmartphoneUserAgent } from '@/lib/wos-deep-link';
@@ -919,7 +920,8 @@ export function ForumBoard({
               ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
               : undefined;
           const taggedRole = forumTaggedRole(message.role);
-          const roleKeys = taggedRole === null ? null : ROLE_TAG_KEYS[taggedRole];
+          const hideVerified = verifiedChipHiddenByStaffTag(message.role, message.staffTag);
+          const roleKeys = taggedRole === null || hideVerified ? null : ROLE_TAG_KEYS[taggedRole];
           const roleHintOpen = openRoleMessageId === message.id;
           const expanded = expandedId === message.id;
           const replyPayLocked =
@@ -1025,7 +1027,7 @@ export function ForumBoard({
                       >
                         {t(roleKeys.label)}
                       </button>
-                    ) : message.via === 'nostr' ? (
+                    ) : message.via === 'nostr' && !hideVerified ? (
                       <button
                         type="button"
                         aria-expanded={roleHintOpen}
@@ -1368,8 +1370,14 @@ export function ForumBoard({
                     <ul className="flex flex-col gap-3">
                       {(Array.isArray(replies) ? replies : []).map((reply) => {
                         const replyTaggedRole = forumTaggedRole(reply.role);
+                        const hideReplyVerified = verifiedChipHiddenByStaffTag(
+                          reply.role,
+                          reply.staffTag,
+                        );
                         const replyRoleKeys =
-                          replyTaggedRole === null ? null : ROLE_TAG_KEYS[replyTaggedRole];
+                          replyTaggedRole === null || hideReplyVerified
+                            ? null
+                            : ROLE_TAG_KEYS[replyTaggedRole];
                         const replyHintOpen = openRoleMessageId === reply.id;
                         return (
                           <li
@@ -1429,7 +1437,7 @@ export function ForumBoard({
                                   >
                                     {t(replyRoleKeys.label)}
                                   </button>
-                                ) : reply.via === 'nostr' ? (
+                                ) : reply.via === 'nostr' && !hideReplyVerified ? (
                                   <button
                                     type="button"
                                     aria-expanded={replyHintOpen}

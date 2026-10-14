@@ -1028,7 +1028,7 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText('Founder')).toBeNull();
   });
 
-  it('shows Verified and Software Developer on a quoted note with the staff tag', async () => {
+  it('hides Verified when Software Developer is shown on a quoted note with the staff tag', async () => {
     const tagged: ForumMessage = {
       ...quotedNote,
       role: 'verified',
@@ -1046,9 +1046,34 @@ describe('ForumQuotedBody', () => {
       />,
     );
     await waitFor(() => {
-      expect(screen.getByText('Verified')).toBeTruthy();
+      expect(screen.getByText('Software Developer')).toBeTruthy();
     });
-    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByText('Verified')).toBeNull();
+  });
+
+  it('hides Verified and External on a quoted verified nostr note with the staff tag', async () => {
+    const tagged: ForumMessage = {
+      ...quotedNote,
+      role: 'verified',
+      via: 'nostr',
+      staffTag: 'software_developer',
+      hasPhoto: false,
+      photoCount: 0,
+    };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[tagged]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('Software Developer')).toBeTruthy();
+    });
+    expect(screen.queryByText('Verified')).toBeNull();
+    expect(screen.queryByText('External')).toBeNull();
   });
 
   it('shows External and Software Developer on a quoted nostr note with the staff tag', async () => {

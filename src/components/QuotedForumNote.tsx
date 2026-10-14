@@ -19,6 +19,7 @@ import type { ForumMessage } from '@/lib/api-types';
 import { splitForumMessageQuotes, splitShortLinks } from '@/lib/forum-quote';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
+import { verifiedChipHiddenByStaffTag } from '@/lib/roles';
 import { formatBitcoin, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
 
 type ShortHit = { code: string; messageId: string };
@@ -94,8 +95,10 @@ function QuotedForumNote({
   }, [note.hasPhoto, note.id]);
 
   const fiatSuffix = preferredFiatSuffix(note.sats, rateDay, fiat, numberFormat, note);
-  const roleLabel = isQuotedTaggedRole(note.role) ? t(ROLE_LABEL_KEYS[note.role]) : null;
-  const viaLabel = note.via === 'nostr' ? t('forum.via.nostr') : null;
+  const hideVerified = verifiedChipHiddenByStaffTag(note.role, note.staffTag);
+  const roleLabel =
+    !hideVerified && isQuotedTaggedRole(note.role) ? t(ROLE_LABEL_KEYS[note.role]) : null;
+  const viaLabel = !hideVerified && note.via === 'nostr' ? t('forum.via.nostr') : null;
   const badgeLabel = roleLabel ?? viaLabel;
   const handleActivate = (event: { stopPropagation: () => void }): void => {
     onActivate?.(event);

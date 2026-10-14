@@ -4097,6 +4097,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** Boolean. Pure, no side effects; delegates to `roleAtLeast`.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`, `PublicMessageThread`.
 
+## Function: verifiedChipHiddenByStaffTag
+
+- **Purpose:** True only when a Verified role pill would be redundant beside the Software Developer staff label. A staff feature tag is shown only for someone already treated as verified, so the Verified pill is omitted. Founder, Moderator, and Initiator pills stay. An absent tag does not hide Verified. An External (Nostr) pill is not shown in place of a hidden Verified pill.
+- **Inputs:** `role` — live account role string; `staffTag` — staff feature tag when present, otherwise null or omitted. Only `software_developer` hides Verified.
+- **Returns / side effects:** Boolean. True only for role `verified` with staff tag `software_developer`. Pure, no side effects.
+- **Used by:** `ForumBoard`, `MemberProfileScreen`, `QuotedForumNote`.
+
 ## Function: utcDayFromMs
 
 - **Purpose:** UTC calendar day `YYYY-MM-DD` of an instant, taken from `toISOString` (the first ten characters of the ISO timestamp).

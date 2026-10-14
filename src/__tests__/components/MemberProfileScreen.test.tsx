@@ -509,7 +509,7 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByText('Software Developer')).toBeNull();
   });
 
-  it('keeps the Verified button and Software Developer label on a verified profile', () => {
+  it('hides the Verified button when Software Developer is shown on a verified profile', () => {
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, staffTag: 'software_developer' }}
@@ -517,7 +517,32 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+  });
+
+  it('factsOnly hides the Verified button when Software Developer is shown on a verified profile', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        factsOnly
+        profile={{ ...profile, staffTag: 'software_developer' }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+  });
+
+  it('keeps the Moderator button and Software Developer label on a moderator profile', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, role: 'moderator', staffTag: 'software_developer' }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Moderator' })).toBeTruthy();
     expect(screen.getByText('Software Developer')).toBeTruthy();
   });
 

@@ -13074,3 +13074,47 @@ test('Function: ReplyDirectionAmounts — sent and received stay apart', async (
   await expect(page.getByText('received \u20BF100')).toBeVisible();
   await expect(page.getByText("\u20BF21'100")).toHaveCount(0);
 });
+
+test('Function: verifiedChipHiddenByStaffTag — a verified author with the staff label has no Verified pill', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-staff-verified',
+            name: 'Ada',
+            text: 'Hello from the developer',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            role: 'verified',
+            staffTag: 'software_developer',
+          },
+          {
+            id: 'm-staff-moderator',
+            name: 'Bea',
+            text: 'Hello from the moderator',
+            createdAt: '2026-08-28T12:01:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            role: 'moderator',
+            staffTag: 'software_developer',
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await expect(page.getByText('Hello from the developer')).toBeVisible();
+  await expect(page.getByText('Software Developer')).toHaveCount(2);
+  await expect(page.getByRole('button', { name: 'Verified' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Moderator' })).toBeVisible();
+});
