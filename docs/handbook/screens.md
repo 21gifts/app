@@ -1199,7 +1199,7 @@ After pressing the fiat code under **Default amount**: it is pressed instead of 
 
 ### Variant: notification-level-gifted
 
-**Notifications** section while the stored level is already active: Posts shows All, Only to me, Only with a gift, and Off, with Only with a gift pressed.
+**Notifications** section while the stored level is already active: Posts shows All, Only to me, Only with a gift, and Off under the label, with Only with a gift pressed.
 
 ![21.gifts settings posts only with a gift](images/settings-notification-level-gifted.png)
 

@@ -30141,7 +30141,10 @@ test.describe('settings states', () => {
       .getByRole('group', { name: 'Posts' })
       .getByRole('button', { name: 'Only with a gift', exact: true });
     await expect(gifted).toHaveAttribute('aria-pressed', 'true');
-    await gifted.scrollIntoViewIfNeeded();
+    await page
+      .getByRole('group', { name: 'Posts' })
+      .getByRole('button', { name: 'Off', exact: true })
+      .scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-settings-notification-level-gifted');
   });
 

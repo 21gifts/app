@@ -5350,9 +5350,9 @@
     "fil": "Pagkatapos pindutin ang fiat code sa ilalim ng Default na halaga: ito na ang nakapindot sa halip na ₿, at nagsisimula na sa fiat ang mga field ng halaga."
   },
   "/settings:notification-level-gifted": {
-    "de": "Abschnitt Benachrichtigungen, solange die gespeicherte Stufe schon active ist: Beiträge zeigt Alles, Nur an mich, Nur mit Geschenk und Aus, und Nur mit Geschenk ist gedrückt.",
-    "es": "Sección de notificaciones mientras el nivel guardado ya es active: Publicaciones muestra Todo, Solo a mí, Solo con un regalo y Desactivado, con Solo con un regalo pulsado.",
-    "fil": "Bahagi ng mga abiso habang active na ang naka-store na antas: ipinapakita ng Mga post ang Lahat, Sa akin lang, May regalo lang at Naka-off, at nakapindot ang May regalo lang."
+    "de": "Abschnitt Benachrichtigungen, solange die gespeicherte Stufe schon active ist: Beiträge zeigt Alles, Nur an mich, Nur mit Geschenk und Aus unter der Beschriftung, und Nur mit Geschenk ist gedrückt.",
+    "es": "Sección de notificaciones mientras el nivel guardado ya es active: Publicaciones muestra Todo, Solo a mí, Solo con un regalo y Desactivado bajo la etiqueta, con Solo con un regalo pulsado.",
+    "fil": "Bahagi ng mga abiso habang active na ang naka-store na antas: ipinapakita ng Mga post ang Lahat, Sa akin lang, May regalo lang at Naka-off sa ilalim ng label, at nakapindot ang May regalo lang."
   },
   "/settings:notification-level-error": {
     "de": "Abschnitt Benachrichtigungen mit Speicherfehler role=\"alert\" nach dem Stubben von POST /me/notification-level auf 500 und dem Klick auf Aus bei Beiträge. Text Benachrichtigungsstufe konnte nicht gespeichert werden.",

@@ -41,7 +41,8 @@ function roomOptions(
 /**
  * Settings Notifications sections. Uppercase heading
  * `profile.notify.heading`, then Hearts On/Off and one compact Posts
- * pill on the same line as its label. Stored `active` adds Only with a gift;
+ * pill on the same line as its label. Stored `active` adds Only with a gift
+ * and moves that pill under the label so the label stays intact;
  * choosing another option posts that level and the extra option disappears.
  * A second bordered section, `profile.device.heading`, shows Notifications
  * On/Off when Push APIs are ready. That row's visible label and aria-label
@@ -220,6 +221,8 @@ export function PushToggle(): ReactElement | null {
   const onRoomPress = (next: NotificationLevel): void => {
     void onLevelChange(next);
   };
+  const room = roomOptions(selected, t);
+  const roomOnOwnLine = room.length > 3;
   const onOff = [
     { value: 'on' as const, label: t('profile.push.on') },
     { value: 'off' as const, label: t('profile.push.off') },
@@ -245,13 +248,20 @@ export function PushToggle(): ReactElement | null {
             ariaLabel={t('profile.heartNotify.label')}
           />
         </div>
-        <div className="flex items-center justify-between gap-3">
+        <div
+          className={
+            roomOnOwnLine
+              ? 'flex flex-col items-stretch gap-2'
+              : 'flex items-center justify-between gap-3'
+          }
+        >
           <span className="min-w-0 text-sm text-app-fg">{t('profile.notify.room')}</span>
           <SegmentedControl
             tone="neutral"
             fullWidth={false}
+            className={roomOnOwnLine ? 'self-end' : undefined}
             value={selected}
-            options={roomOptions(selected, t)}
+            options={room}
             onChange={onRoomPress}
             ariaLabel={t('profile.notify.room')}
           />
