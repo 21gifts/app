@@ -2266,6 +2266,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'loan-lend',
+    image: 'welcome-loan-lend.png',
+    visual: 'state-welcome-loan-lend',
+    needle: 'state /welcome loan-lend',
+  },
+  {
+    route: '/welcome',
+    id: 'loan-pay',
+    image: 'welcome-loan-pay.png',
+    visual: 'state-welcome-loan-pay',
+    needle: 'state /welcome loan-pay',
+  },
+  {
+    route: '/welcome',
+    id: 'loan-pay-full',
+    image: 'welcome-loan-pay-full.png',
+    visual: 'state-welcome-loan-pay-full',
+    needle: 'state /welcome loan-pay-full',
+  },
+  {
+    route: '/welcome',
     id: 'loans-collecting',
     image: 'welcome-loans-collecting.png',
     visual: 'state-welcome-loans-collecting',
@@ -6311,6 +6332,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-credit-ledger.png',
     visual: 'state-messages-id-credit-ledger',
     needle: 'state /messages/[id] credit-ledger',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'loan-repaid',
+    image: 'messages-id-loan-repaid.png',
+    visual: 'state-messages-id-loan-repaid',
+    needle: 'state /messages/[id] loan-repaid',
   },
   {
     route: '/messages/[id]',

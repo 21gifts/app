@@ -1,5 +1,5 @@
-import { cleanup, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import type { FiatRateDay } from '@/lib/stats-money';
@@ -12,7 +12,26 @@ const RATE_DAY: FiatRateDay = {
   php: '5600000.00',
 };
 
-afterEach(cleanup);
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: React.ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe('ForumGoalBar', () => {
   it('renders nothing when goalSats is 0 or negative', () => {
@@ -254,5 +273,128 @@ describe('ForumGoalBar', () => {
       <ForumGoalBar sats={0} goalSats={1} goalRepayable goalTermDays={30} goalCurrency="USD" />,
     );
     expect(screen.queryByText(/Interest 0%/)).toBeNull();
+  });
+});
+
+describe('ForumGoalBar on a posted loan', () => {
+  function noFetch(): ReturnType<typeof vi.fn> {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    return fetchMock;
+  }
+
+  it('shows the loan block with bitcoin and fiat, and loads no ledger in a feed card', () => {
+    const fetchMock = noFetch();
+    const onLend = vi.fn();
+    renderWithLocale(
+      <ForumGoalBar
+        sats={10_500}
+        goalSats={21_000}
+        rateDay={RATE_DAY}
+        goalRepayable
+        goalTermDays={30}
+        messageId="m1"
+        ledgerCollapsed
+        onLend={onLend}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'Loan request' })).toBeTruthy();
+    expect(screen.queryByText('Ask')).toBeNull();
+    expect(screen.queryByText(/per day/)).toBeNull();
+    expect(screen.getByText("₿10'500 · $10.50")).toBeTruthy();
+    expect(screen.getByText("of ₿21'000 · $21.00 lent")).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Repayment list' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    expect(onLend).toHaveBeenCalledTimes(1);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('uses the stored viewer figures before the spot rate', () => {
+    noFetch();
+    renderWithLocale(
+      <ForumGoalBar
+        sats={10_500}
+        goalSats={21_000}
+        rateDay={RATE_DAY}
+        goalAmountUsd="30.00"
+        amountUsd="12.00"
+        goalRepayable
+        messageId="m1"
+        ledgerCollapsed
+      />,
+    );
+    expect(screen.getByText("₿10'500 · $12.00")).toBeTruthy();
+    expect(screen.getByText("of ₿21'000 · $30.00 lent")).toBeTruthy();
+  });
+
+  it('shows bitcoin alone without a rate', () => {
+    noFetch();
+    renderWithLocale(
+      <ForumGoalBar sats={0} goalSats={21_000} goalRepayable messageId="m1" ledgerCollapsed />,
+    );
+    expect(screen.getByText('₿0')).toBeTruthy();
+    expect(screen.getByText("of ₿21'000 lent")).toBeTruthy();
+  });
+
+  it('counts a fiat loan in its own currency', () => {
+    noFetch();
+    renderWithLocale(
+      <ForumGoalBar
+        sats={12_500}
+        goalSats={25_000}
+        rateDay={RATE_DAY}
+        goalCurrency="CHF"
+        goalAmount="20"
+        amountChf="10.00"
+        goalRepayable
+        messageId="m1"
+        ledgerCollapsed
+      />,
+    );
+    expect(screen.getByText('CHF 10.00')).toBeTruthy();
+    expect(screen.getByText('of CHF 20.00 lent')).toBeTruthy();
+    expect(screen.getByText('50%')).toBeTruthy();
+  });
+
+  it('falls back to bitcoin when a fiat loan has no collected snapshot', () => {
+    noFetch();
+    renderWithLocale(
+      <ForumGoalBar
+        sats={12_500}
+        goalSats={25_000}
+        rateDay={RATE_DAY}
+        goalCurrency="CHF"
+        goalAmount="20"
+        goalRepayable
+        messageId="m1"
+        ledgerCollapsed
+      />,
+    );
+    expect(screen.getByText("₿12'500 · $12.50")).toBeTruthy();
+    expect(screen.getByText('of CHF 20.00 lent')).toBeTruthy();
+  });
+
+  it('reads Fully funded in a feed card once the loan is full', () => {
+    noFetch();
+    renderWithLocale(
+      <ForumGoalBar
+        sats={21_000}
+        goalSats={21_000}
+        goalRepayable
+        messageId="m1"
+        ledgerCollapsed
+        onLend={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Fully funded')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+  });
+
+  it('keeps the ask lines in the wizard preview', () => {
+    renderWithLocale(
+      <ForumGoalBar sats={0} goalSats={21_000} goalRepayable messageId="m1" preview />,
+    );
+    expect(screen.getByText('Ask')).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Loan request' })).toBeNull();
   });
 });

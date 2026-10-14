@@ -96,6 +96,47 @@ export function forumFiatGoalPercent(
   return Number(quotient);
 }
 
+/** Collected and asked amounts of a top-level note, as the api sends them. */
+export interface ForumAskProgress {
+  sats: number;
+  goalSats: number;
+  goalCurrency?: string | undefined;
+  goalAmount?: string | undefined;
+  amountUsd?: string | null | undefined;
+  amountChf?: string | null | undefined;
+  amountEur?: string | null | undefined;
+  amountPhp?: string | null | undefined;
+}
+
+const COLLECTED_BY_CODE = {
+  USD: 'amountUsd',
+  CHF: 'amountChf',
+  EUR: 'amountEur',
+  PHP: 'amountPhp',
+} as const;
+
+/**
+ * Integer percent of a note's Ask, in the unit it was defined in. Uncapped.
+ *
+ * A fiat Ask (USD, CHF, EUR, or PHP with a usable `goalAmount`) uses
+ * {@link forumFiatGoalPercent} of the payment snapshot in that code; every
+ * other Ask uses {@link forumGoalPercent} of the sats.
+ *
+ * @param note - Collected sats, goal, definition, and payment snapshots.
+ * @returns Floored percent for the label; 100 or more means fully funded.
+ */
+export function forumAskPercent(note: ForumAskProgress): number {
+  const code = note.goalCurrency;
+  if (
+    (code === 'USD' || code === 'CHF' || code === 'EUR' || code === 'PHP') &&
+    typeof note.goalAmount === 'string' &&
+    GOAL_AMOUNT_RE.test(note.goalAmount)
+  ) {
+    return forumFiatGoalPercent(note[COLLECTED_BY_CODE[code]], note.goalAmount);
+  }
+  return forumGoalPercent(note.sats, note.goalSats);
+}
+
 function groupIntegerDigits(digits: string, grouping: string): string {
   const parts: string[] = [];
   let remaining = digits;

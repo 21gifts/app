@@ -581,4 +581,40 @@ describe('CreditLedger', () => {
     expect(await screen.findByText(/Darlehen voll gegeben/)).toBeTruthy();
     expect(screen.queryByText(/Kredit/)).toBeNull();
   });
+
+  it('hands every loaded ledger to onLedger', async () => {
+    ledger(btc);
+    const onLedger = vi.fn();
+    renderWithLocale(<CreditLedger messageId="m1" onLedger={onLedger} />);
+    await waitFor(() => {
+      expect(onLedger).toHaveBeenCalled();
+    });
+    expect(onLedger.mock.calls.at(-1)?.[0].fundedAt).toBe(btc.fundedAt);
+  });
+
+  it('shows the paid-back share in the loan block of the open note from that one read', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo) => {
+      const url = String(input);
+      if (url.includes('/gifts/stats')) {
+        return new Response(JSON.stringify({ spendOverTime: [] }), { status: 200 });
+      }
+      return new Response(
+        JSON.stringify({
+          ...btc,
+          repayments: btc.repayments.map((row, index) => ({
+            ...row,
+            status: index === 0 ? 'paid' : 'scheduled',
+          })),
+        }),
+        { status: 200 },
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<ForumGoalBar sats={21} goalSats={21} goalRepayable messageId="m1" />);
+    expect(await screen.findByText('Fully funded · being repaid')).toBeTruthy();
+    expect(screen.getByRole('img', { name: '47% paid back' })).toBeTruthy();
+    expect(
+      fetchMock.mock.calls.filter(([input]) => String(input).includes('/repayment')),
+    ).toHaveLength(1);
+  });
 });

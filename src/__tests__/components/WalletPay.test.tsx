@@ -151,6 +151,24 @@ describe('WalletPay', () => {
     expect(screen.getByRole('button').textContent).toBe('Pay ₿21 and post');
   });
 
+  it('uses the confirm label instead of Send when one is given', () => {
+    const hook = hookWith('confirm', 0);
+    renderWithLocale(
+      <WalletPay
+        sparkInvoice="spark1x"
+        pr="lnbc210n1x"
+        amountSats={21}
+        rateDay={RATE_DAY}
+        flow="reaction"
+        confirmLabel="Lend ₿21 · $0.02"
+      />,
+    );
+    const button = screen.getByRole('button', { name: 'Lend ₿21 · $0.02' });
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+    fireEvent.click(button);
+    expect(hook.pay).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps Send when no rate is known', () => {
     hookWith('confirm', 0);
     renderWithLocale(

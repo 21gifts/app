@@ -32,6 +32,8 @@ export interface WalletPayProps {
    * says **Pay {amount} and post** instead of **Send**.
    */
   postsOnPay?: boolean;
+  /** Label of the confirm button instead of **Send**, e.g. **Lend** with the amount on a loan. */
+  confirmLabel?: string | undefined;
 }
 
 /**
@@ -63,6 +65,7 @@ export function WalletPay({
   rateDay,
   flow,
   postsOnPay = false,
+  confirmLabel,
 }: WalletPayProps): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -122,6 +125,8 @@ export function WalletPay({
               <span className="text-center">
                 {t('wallet.payAndPost', { amount: formatBitcoin(amountSats, numberFormat) })}
               </span>
+            ) : confirmLabel !== undefined ? (
+              <span className="text-center">{confirmLabel}</span>
             ) : (
               t('wallet.payFromWallet')
             )}
