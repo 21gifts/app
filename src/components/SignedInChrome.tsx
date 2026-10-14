@@ -52,7 +52,7 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Top-right signed-in page chrome: left of **Menu** the wallet balance
- * ({@link HeaderBalance}, only while the balance is known), the banner for a
+ * ({@link HeaderBalance}: the balance, or its skeleton while it is on its way), the banner for a
  * payment that arrives while the app is open ({@link ReceivedNotice}), the
  * move-funds flow ({@link MoveFundsSheet}, closed until asked for), and
  * one Menu disclosure; open, it starts with

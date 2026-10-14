@@ -82,8 +82,12 @@ export interface MenuAccountHeaderProps {
   open: boolean;
 }
 
-/** Loading bar in place of a value: same height as its text line. */
-const SKELETON_CLASS = 'block rounded bg-app-border animate-pulse motion-reduce:animate-none';
+/**
+ * Loading bar in place of a value: same height as its text line. Shared with
+ * the header balance, so there is one skeleton look.
+ */
+export const SKELETON_CLASS =
+  'block rounded bg-app-border animate-pulse motion-reduce:animate-none';
 
 /**
  * Card at the top of the signed-in Menu. The first row is the profile photo

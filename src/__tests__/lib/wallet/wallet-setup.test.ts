@@ -125,8 +125,14 @@ async function flush(): Promise<void> {
   }
 }
 
+/**
+ * Runs the pauses of one setup run. A wallet that failed to open keeps
+ * retrying without an end, so the timers cannot simply be run until none is left.
+ */
 async function finishRetries<T>(promise: Promise<T>): Promise<T> {
-  await vi.runAllTimersAsync();
+  for (const delay of WALLET_SETUP_RETRY_DELAYS_MS) {
+    await vi.advanceTimersByTimeAsync(delay);
+  }
   return promise;
 }
 
