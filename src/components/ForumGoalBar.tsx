@@ -272,7 +272,7 @@ export function ForumGoalBar({
         collectedByCode[COLLECTED_FIELD[fiat]],
       )}`;
     } else {
-      collected = formatFiatDisplay('0.00', definedCode, numberFormat);
+      collected = `${formatFiatDisplay('0.00', definedCode, numberFormat)} · ${withBitcoin(0, '0.00')}`;
     }
     const goalText =
       definedCode === null

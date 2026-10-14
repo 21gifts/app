@@ -392,7 +392,7 @@ describe('ForumGoalBar on a posted loan', () => {
         ledgerCollapsed
       />,
     );
-    expect(screen.getByText('CHF 0.00')).toBeTruthy();
+    expect(screen.getByText('CHF 0.00 · ₿0 · $0.00')).toBeTruthy();
     expect(screen.getByText("of CHF 20.00 · ₿25'000 · $25.00 lent")).toBeTruthy();
     expect(screen.getByText('0%')).toBeTruthy();
     expect(screen.queryByText(/₿12'500/)).toBeNull();
