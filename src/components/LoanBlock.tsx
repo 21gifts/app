@@ -13,12 +13,11 @@ function loanBlockState(funded: boolean, ledger: RepaymentLedger | null): LoanBl
   if (!funded) {
     return 'collecting';
   }
-  if (ledger === null || ledger.fundedAt === null) {
+  // Without a plan (no 21.gifts giver) nothing is repaid, so the loan stays plainly funded.
+  if (ledger === null || ledger.fundedAt === null || ledger.repayments.length === 0) {
     return 'funded';
   }
-  return ledger.repayments.length > 0 && ledger.repayments.every((row) => row.status === 'paid')
-    ? 'repaid'
-    : 'repaying';
+  return ledger.repayments.every((row) => row.status === 'paid') ? 'repaid' : 'repaying';
 }
 
 function paidBackPercent(ledger: RepaymentLedger): number {

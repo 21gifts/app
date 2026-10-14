@@ -187,9 +187,10 @@ describe('LoanBlock', () => {
     expect(screen.getByRole('img', { name: '100% paid back' })).toBeTruthy();
   });
 
-  it('keeps an empty ledger in the being-repaid state', () => {
+  it('reads Fully funded when the plan has no rows to repay', () => {
     block({ percent: 100, funded: true, ledger: ledgerOf([]) });
-    expect(section().getAttribute('data-loan-block')).toBe('repaying');
+    expect(section().getAttribute('data-loan-block')).toBe('funded');
+    expect(screen.getByText('Fully funded')).toBeTruthy();
   });
 
   it('follows the sats when the percent of a fiat ask says otherwise', () => {
