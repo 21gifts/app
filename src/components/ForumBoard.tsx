@@ -1,6 +1,6 @@
 'use client';
 
-import { revealInScrollport } from '@/lib/reveal-in-scrollport';
+import { revealInScrollport, SCROLL_FOLLOW_ATTR } from '@/lib/reveal-in-scrollport';
 
 import {
   ArrowUp,
@@ -45,7 +45,7 @@ import {
 } from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import type { LoanPayTarget } from '@/components/LoanPayNotice';
-import { Collapse, Swap } from '@/components/Motion';
+import { Collapse, MOTION_SETTLE_EVENT, Swap } from '@/components/Motion';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
 import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
@@ -655,6 +655,31 @@ export function revealPaySheet(scroller: HTMLElement | null, sheet: HTMLElement 
 }
 
 /**
+ * Whether `target` is still moving into its place: a fold around it is opening or about to open
+ * (`Collapse`), or a box around it is gliding to a new height (`AutoHeight`, for example after a
+ * `Swap`, or the replies block when its list arrives).
+ *
+ * @param target - The open pay sheet or the reaction form.
+ * @param ended - A box whose move has just ended (it still carries its moving mark), or null.
+ * @returns True while such a move runs.
+ */
+function movingIntoPlace(target: HTMLElement, ended: EventTarget | null = null): boolean {
+  // A fold still `closed` but not inert has just been told to open (its first frame).
+  const selector =
+    '[data-collapse="opening"], [data-collapse="closed"]:not([inert]), [data-auto-height][data-gliding]';
+  for (
+    let box = target.closest(selector);
+    box !== null;
+    box = box.parentElement?.closest(selector) ?? null
+  ) {
+    if (box !== ended) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * The open pay sheet inside the board, if one is mounted. A sheet that is folding away (inside an
  * `inert` `Collapse`) is already closed; a sheet whose view is swapping (`Swap`) is still open.
  *
@@ -867,11 +892,18 @@ export function ForumBoard({
   const shownReplies = replies === null ? -1 : replies.length;
   const scrollBeforeSheet = useRef<number | null>(null);
   const sheetWasOpen = useRef(false);
+  // Where the page last came to rest: the reveal at the end of a move starts from here.
+  const restTop = useRef(0);
   useEffect(() => {
     if (scroller === null) {
       return;
     }
     const remember = (): void => {
+      // A reveal that follows a move scrolls frame by frame: only where it comes to rest counts.
+      if (scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
+        return;
+      }
+      restTop.current = scroller.scrollTop;
       if (!sheetWasOpen.current) {
         scrollBeforeSheet.current = scroller.scrollTop;
       }
@@ -880,12 +912,13 @@ export function ForumBoard({
     scroller.addEventListener('scroll', remember);
     return () => {
       scroller.removeEventListener('scroll', remember);
+      scroller.toggleAttribute(SCROLL_FOLLOW_ATTR, false);
     };
   }, [scroller]);
   useLayoutEffect(() => {
     // Read the sheet and the form each time: the pay page and the reply form swap in steps
     // (`Swap`), so either one can mount after this effect ran.
-    const follow = (): void => {
+    const reveal = (): void => {
       const liveSheet = paySheetElement(rootRef.current);
       if (liveSheet !== null) {
         if (!sheetWasOpen.current && scroller !== null && scrollBeforeSheet.current !== null) {
@@ -899,6 +932,30 @@ export function ForumBoard({
       const liveField = replyComposerRef.current;
       revealReplyForm(scroller, liveField === null ? null : liveField.form);
     };
+    // While a move runs, each step reveals from where the page last rested. The target already
+    // sits at its final place inside the moving box (a fold clips its content, it does not squeeze
+    // it); only the room to scroll into grows. So every step lands on the same final position or
+    // as close to it as the page allows yet, whatever the frames in between did.
+    const follow = (): void => {
+      if (scroller !== null && scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
+        scroller.scrollTop = restTop.current;
+      }
+      reveal();
+    };
+    /** The open pay sheet, else the reaction form, as they are now. */
+    const liveTarget = (): HTMLElement | null => {
+      const liveField = replyComposerRef.current;
+      return paySheetElement(rootRef.current) ?? (liveField === null ? null : liveField.form);
+    };
+    // While the sheet or the form is still moving into place, the reveal follows the move frame by
+    // frame; the port carries `SCROLL_FOLLOW_ATTR` then, so the footer's slim/full progress and the
+    // scroll memory skip those in-between scrolls and count only where the page comes to rest.
+    // A run of this effect in the middle of a move keeps the rest position from before it.
+    const target = liveTarget();
+    if (scroller !== null && !scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
+      restTop.current = scroller.scrollTop;
+    }
+    scroller?.toggleAttribute(SCROLL_FOLLOW_ATTR, target !== null && movingIntoPlace(target));
     follow();
     if (scroller === null || typeof ResizeObserver === 'undefined') {
       return;
@@ -913,16 +970,50 @@ export function ForumBoard({
     if (form !== null) {
       observer.observe(form);
     }
-    // The fold around the sheet or the form eases open and glides when the reply form swaps for
-    // the pay page; follow that height, so the reveal tracks the move instead of its start.
+    // The fold around the sheet or the form eases open, and the box around them glides when the
+    // reply form swaps for the pay page; follow those moves, so the reveal tracks the move instead
+    // of its start. Other changes inside the fold (a reply above opening its own controls) do not
+    // move the page.
+    const foldObserver = new ResizeObserver(() => {
+      const moving = liveTarget();
+      if (moving !== null && movingIntoPlace(moving)) {
+        scroller.toggleAttribute(SCROLL_FOLLOW_ATTR, true);
+        follow();
+      }
+    });
+    // When a move around the target ends, place the page once more from where it last rested, by
+    // the final layout. The frames in between (and anything that scrolled during them) do not
+    // decide where the page comes to rest. Once nothing around the target moves any more, the
+    // marker goes and the board announces where the page rests with one scroll event of its own
+    // (the browser sends none when the placement lands where the last step already was), so the
+    // footer and the scroll memory count it as one move.
+    const root = rootRef.current as HTMLElement;
+    const onSettle = (event: Event): void => {
+      const settled = liveTarget();
+      const wasFollowing = scroller.hasAttribute(SCROLL_FOLLOW_ATTR);
+      scroller.toggleAttribute(
+        SCROLL_FOLLOW_ATTR,
+        settled !== null && movingIntoPlace(settled, event.target),
+      );
+      if (settled !== null && event.target instanceof Node && event.target.contains(settled)) {
+        scroller.scrollTop = restTop.current;
+        follow();
+      }
+      if (wasFollowing && !scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
+        scroller.dispatchEvent(new Event('scroll'));
+      }
+    };
+    root.addEventListener(MOTION_SETTLE_EVENT, onSettle);
     const folds = new Set([sheet, form].map((el) => el?.closest('[data-collapse]') ?? null));
     for (const fold of folds) {
       if (fold !== null) {
-        observer.observe(fold);
+        foldObserver.observe(fold);
       }
     }
     return () => {
       observer.disconnect();
+      foldObserver.disconnect();
+      root.removeEventListener(MOTION_SETTLE_EVENT, onSettle);
     };
   }, [expandedId, repliesLoading, scroller, shownReplies, payMessageId, payInvoice]);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
@@ -1710,8 +1801,10 @@ export function ForumBoard({
                 </SundayWritingGate>
               </Collapse>
 
-              {/* Built for the open card only; Collapse keeps the last view while it folds. */}
-              <Collapse show={expanded}>
+              {/* Built for the open card only; Collapse keeps the last view while it folds. When
+                  another card opens instead, this one closes at once, so there is only ever one
+                  reply form (one composer ref, one `forum-reply-amount`). */}
+              <Collapse show={expanded} instant={expandedId !== null}>
                 {expanded ? (
                   <div
                     onClick={stopCardToggle}

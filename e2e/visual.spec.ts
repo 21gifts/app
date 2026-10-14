@@ -5549,6 +5549,7 @@ test.describe('onboarding screens', () => {
       .click();
     await expect(page.getByPlaceholder('Write a reaction')).toBeEnabled();
     await expect(page.getByLabel('Amount')).toBeVisible();
+    await motionSettled(page);
   }
 
   test('welcome reaction-form', async ({ page }) => {
@@ -7160,6 +7161,8 @@ test.describe('onboarding screens', () => {
     await page.goto('/welcome');
     await page.getByText('Thank you both — that helps.').click();
     await expect(page.getByText('External', { exact: true }).first()).toBeVisible();
+    // The replies block eases open first: press the pill where it comes to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'External', exact: true }).first().click();
     await expect(
       page.getByText(
@@ -7325,6 +7328,8 @@ test.describe('onboarding screens', () => {
     await form.getByRole('button', { name: 'Post' }).click();
     const payPage = page.locator('[data-reply-pay-page]');
     await expect(payPage).toBeVisible();
+    // The pay page glides in after the form has faded out: scroll by where it comes to rest.
+    await motionSettled(page);
     await expect(payPage.getByText(REACTION_ANSWER)).toBeVisible();
     await expect(page.getByLabel('Your reaction')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Close' })).toBeVisible();
@@ -7354,6 +7359,8 @@ test.describe('onboarding screens', () => {
     await form.getByRole('button', { name: 'Post' }).click();
     const sheet = page.locator('[data-reply-pay-page]');
     await expect(sheet).toBeVisible();
+    // The pay page glides in after the form has faded out: scroll by where it comes to rest.
+    await motionSettled(page);
     await expect(sheet.getByText(REACTION_ANSWER)).toBeVisible();
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
@@ -7402,6 +7409,8 @@ test.describe('onboarding screens', () => {
     await form.getByRole('button', { name: 'Post' }).click();
     const sheet = page.locator('[data-reply-pay-page]');
     await expect(sheet).toBeVisible();
+    // The pay page glides in after the form has faded out: scroll by where it comes to rest.
+    await motionSettled(page);
     return sheet;
   }
 
@@ -7477,6 +7486,7 @@ test.describe('onboarding screens', () => {
     const payPage = page.locator('[data-reply-pay-page]');
     const preview = payPage.getByText(REACTION_ANSWER);
     await expect(preview).toBeVisible();
+    await motionSettled(page);
     expect(
       await preview.evaluate((node) => {
         return (
@@ -8839,6 +8849,8 @@ test.describe('onboarding screens', () => {
     await page.getByText('Second post from Ada.').click();
     const field = page.getByLabel('Your reaction');
     await expect(field).toBeEnabled();
+    // The reply block eases open first: scroll by where the field comes to rest.
+    await motionSettled(page);
     await field.scrollIntoViewIfNeeded();
     return field;
   }
@@ -10737,6 +10749,8 @@ test.describe('onboarding screens', () => {
     await page.getByText('Second post from Carol.').click();
     const field = page.getByLabel('Your reaction');
     await expect(field).toBeEnabled();
+    // The reply block eases open first: scroll by where the field comes to rest.
+    await motionSettled(page);
     await field.scrollIntoViewIfNeeded();
     return field;
   }
@@ -13138,7 +13152,12 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Hello from my profile note.')).toBeVisible();
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     await expect(page.getByLabel('Your reaction')).toBeVisible();
+    // Typing scrolls the field into view: wait until the reply block has eased open.
+    await motionSettled(page);
     await page.getByLabel('Your reaction').fill('Hello');
     await page.getByLabel('Amount').fill('1');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
@@ -13242,7 +13261,12 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Hello from my profile note.')).toBeVisible();
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     await expect(page.getByLabel('Your reaction')).toBeVisible();
+    // Typing scrolls the field into view: wait until the reply block has eased open.
+    await motionSettled(page);
     await page.getByLabel('Your reaction').fill('Hello');
     await page.getByLabel('Amount').fill('1');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
@@ -20149,6 +20173,7 @@ test.describe('welcome forum variants', () => {
   }
 
   async function submitPayAmount(page: Page): Promise<void> {
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
   }
 
@@ -20161,8 +20186,14 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(page.getByText('$0.02').first()).toBeVisible();
@@ -20177,8 +20208,14 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(page.getByText(PAY_UNAVAILABLE)).toBeVisible();
@@ -23769,8 +23806,14 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Pay', exact: true })).toHaveCount(0);
@@ -23917,8 +23960,14 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(
@@ -23995,8 +24044,14 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(page.getByText('This note was deleted.')).toBeVisible();
@@ -24428,6 +24483,8 @@ test.describe('shops screens', () => {
     await page.getByText('Cafe Luna').click();
     const field = page.getByLabel('Your reaction');
     await expect(field).toBeEnabled();
+    // The reply block eases open first: scroll by where the field comes to rest.
+    await motionSettled(page);
     await field.scrollIntoViewIfNeeded();
     return field;
   }
@@ -31071,6 +31128,9 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await expect(page.getByLabel('Amount')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await shotScreen(page, 'state-habit-tracker-donate');
@@ -31082,6 +31142,9 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     const cont = page.getByRole('button', { name: 'Continue' });
     await expect(cont).toBeDisabled();
     await cont.scrollIntoViewIfNeeded();
@@ -31114,6 +31177,9 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await page.getByLabel('Amount').fill('1000');
     await expect(page.getByText('$1.00')).toBeVisible();
     const saved = page.waitForResponse(
@@ -31149,6 +31215,8 @@ test.describe('habit tracker baselines', () => {
     await fulfillRateDay(page);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(
       page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
@@ -31162,6 +31230,9 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('0');
     await page.getByRole('button', { name: 'Continue' }).click();
@@ -31193,8 +31264,12 @@ test.describe('habit tracker baselines', () => {
     });
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     const requestAlert = page
       .getByRole('alert')
@@ -31222,9 +31297,13 @@ test.describe('habit tracker baselines', () => {
     });
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
     const cont = page.getByRole('button', { name: 'Continue' });
+    await motionSettled(page);
     await cont.click();
     await expect(cont).toBeDisabled();
     await expect(cont.locator('.animate-spin')).toBeVisible();
@@ -31256,8 +31335,12 @@ test.describe('habit tracker baselines', () => {
     });
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     const rateAlert = page.getByRole('alert').filter({
       hasText: 'Too many payments. Please wait a moment and try again.',
@@ -31291,8 +31374,12 @@ test.describe('habit tracker baselines', () => {
     });
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     const walletAlert = page.getByRole('alert').filter({
       hasText: "The author's wallet cannot receive this Bitcoin payment",

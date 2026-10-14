@@ -35,8 +35,9 @@
   --ease-glide: cubic-bezier(0.32, 0.72, 0, 1);
   /* The received-money banner sliding down from the top. */
   --animate-slide-down: slide-down 320ms var(--ease-glide) both;
-  /* A new reply easing into its thread. */
-  --animate-fade-in: fade-in 280ms var(--ease-glide) both;
+  /* A new reply easing into its thread. `backwards`, not `both`: once it has arrived nothing of
+     the animation stays on the reply (a kept transform would put its text on its own layer). */
+  --animate-fade-in: fade-in 280ms var(--ease-glide) backwards;
 
   @keyframes fade-in {
     from {

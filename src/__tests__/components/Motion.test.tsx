@@ -1,6 +1,15 @@
+import { useLayoutEffect } from 'react';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AutoHeight, Collapse, EASE_MS, FOLD_MS, SWAP_FADE_MS, Swap } from '@/components/Motion';
+import {
+  AutoHeight,
+  Collapse,
+  EASE_MS,
+  FOLD_MS,
+  MOTION_SETTLE_EVENT,
+  SWAP_FADE_MS,
+  Swap,
+} from '@/components/Motion';
 
 let reducedMotion = false;
 const originalMatchMedia = window.matchMedia;
@@ -76,6 +85,15 @@ function fakeLayout(): void {
   );
 }
 
+/** Fires the end of a CSS transition of `property` on `el`, as the browser does (it bubbles). */
+function endTransition(el: Element, property: string): void {
+  const event = new Event('transitionend', { bubbles: true });
+  Object.defineProperty(event, 'propertyName', { value: property });
+  act(() => {
+    el.dispatchEvent(event);
+  });
+}
+
 function fold(): HTMLElement {
   return document.querySelector('[data-collapse]') as HTMLElement;
 }
@@ -116,7 +134,14 @@ describe('Collapse', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('mounts closed in the same commit, eases open two frames later, and clips only while moving', () => {
+  it('mounts closed in the same commit, lays that out, then eases open and clips only while moving', () => {
+    const laidOut: string[] = [];
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      laidOut.push(`${String(this.getAttribute('data-collapse'))} ${this.className}`);
+      return 0;
+    });
     const view = render(
       <Collapse show={false}>
         <p>Body</p>
@@ -127,19 +152,102 @@ describe('Collapse', () => {
         <p>Body</p>
       </Collapse>,
     );
+    // The closed box was laid out before it opened, so the browser eases the change.
+    expect(laidOut).toHaveLength(1);
+    expect(laidOut[0]).toContain('closed');
+    expect(laidOut[0]).toContain('grid-rows-[0fr] opacity-0');
     expect(screen.getByText('Body')).toBeTruthy();
-    expect(fold().getAttribute('data-collapse')).toBe('closed');
-    expect(fold().className).toContain('grid-rows-[0fr] opacity-0');
-    expect(clip().className).toBe('min-h-0 overflow-hidden');
-    advance(16);
-    expect(fold().getAttribute('data-collapse')).toBe('closed');
-    advance(16);
     expect(fold().getAttribute('data-collapse')).toBe('opening');
     expect(fold().className).toContain('grid-rows-[1fr] opacity-100');
     expect(clip().className).toBe('min-h-0 overflow-hidden');
-    advance(FOLD_MS);
+    advance(FOLD_MS - 1);
+    expect(fold().getAttribute('data-collapse')).toBe('opening');
+    advance(1);
     expect(fold().getAttribute('data-collapse')).toBe('open');
     expect(clip().className).toBe('min-h-0');
+  });
+
+  it('settles when its own row transition ends, not on a transition of its content or of another property', () => {
+    const view = render(
+      <Collapse show={false}>
+        <p>Body</p>
+      </Collapse>,
+    );
+    view.rerender(
+      <Collapse show>
+        <p>Body</p>
+      </Collapse>,
+    );
+    endTransition(screen.getByText('Body'), 'grid-template-rows');
+    endTransition(fold(), 'opacity');
+    expect(fold().getAttribute('data-collapse')).toBe('opening');
+    endTransition(fold(), 'grid-template-rows');
+    expect(fold().getAttribute('data-collapse')).toBe('open');
+    expect(vi.getTimerCount()).toBe(0);
+    view.rerender(
+      <Collapse show={false}>
+        <p>Body</p>
+      </Collapse>,
+    );
+    expect(screen.getByText('Body')).toBeTruthy();
+    endTransition(fold(), 'grid-template-rows');
+    expect(screen.queryByText('Body')).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('announces that it has settled open before it reports itself open', () => {
+    const seen: string[] = [];
+    const onSettle = (event: Event): void => {
+      seen.push(String((event.target as HTMLElement).getAttribute('data-collapse')));
+    };
+    document.addEventListener(MOTION_SETTLE_EVENT, onSettle);
+    const view = render(
+      <Collapse show={false}>
+        <p>Body</p>
+      </Collapse>,
+    );
+    view.rerender(
+      <Collapse show>
+        <p>Body</p>
+      </Collapse>,
+    );
+    expect(seen).toEqual([]);
+    advance(FOLD_MS);
+    // The box was still `opening` when the event reached the document.
+    expect(seen).toEqual(['opening']);
+    expect(fold().getAttribute('data-collapse')).toBe('open');
+    document.removeEventListener(MOTION_SETTLE_EVENT, onSettle);
+  });
+
+  it('shows the open end in the same commit with reduced motion', () => {
+    reducedMotion = true;
+    const commits: string[] = [];
+    function Probe(): null {
+      // Runs in the same layout phase as the parent's code that measures.
+      useLayoutEffect(() => {
+        commits.push(
+          String(document.querySelector('[data-collapse]')?.getAttribute('data-collapse')),
+        );
+      });
+      return null;
+    }
+    const view = render(
+      <>
+        <Collapse show={false}>
+          <p>Body</p>
+        </Collapse>
+        <Probe />
+      </>,
+    );
+    view.rerender(
+      <>
+        <Collapse show>
+          <p>Body</p>
+        </Collapse>
+        <Probe />
+      </>,
+    );
+    expect(commits[1]).toBe('open');
   });
 
   it('keeps the last content, inert, until it has folded away', () => {
@@ -183,6 +291,47 @@ describe('Collapse', () => {
     expect(screen.getByText('Second')).toBeTruthy();
     expect(fold().getAttribute('data-collapse')).toBe('open');
     expect(clip().className).toBe('min-h-0');
+  });
+
+  it('closes at once with instant, and drops a fold in progress when instant turns on', () => {
+    const view = render(
+      <Collapse show instant>
+        <p>Body</p>
+      </Collapse>,
+    );
+    view.rerender(
+      <Collapse show={false} instant>
+        <p>Body</p>
+      </Collapse>,
+    );
+    expect(screen.queryByText('Body')).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+    view.rerender(
+      <Collapse show instant={false}>
+        <p>Again</p>
+      </Collapse>,
+    );
+    expect(fold().getAttribute('data-collapse')).toBe('opening');
+    advance(FOLD_MS);
+    view.rerender(
+      <Collapse show={false} instant={false}>
+        <p>Again</p>
+      </Collapse>,
+    );
+    expect(screen.getByText('Again')).toBeTruthy();
+    view.rerender(
+      <Collapse show={false} instant>
+        <p>Again</p>
+      </Collapse>,
+    );
+    expect(screen.queryByText('Again')).toBeNull();
+    // The dropped fold does not come back when instant turns off again.
+    view.rerender(
+      <Collapse show={false} instant={false}>
+        <p>Again</p>
+      </Collapse>,
+    );
+    expect(document.querySelector('[data-collapse]')).toBeNull();
   });
 
   it('drops its frames and timers when unmounted while opening', () => {
@@ -300,6 +449,46 @@ describe('AutoHeight', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('announces the end of its glide before it stops clipping', () => {
+    fakeLayout();
+    layoutHeight = 40;
+    render(
+      <AutoHeight>
+        <p>Body</p>
+      </AutoHeight>,
+    );
+    const box = screen.getByText('Body').parentElement?.parentElement as HTMLElement;
+    const seen: boolean[] = [];
+    const onSettle = (event: Event): void => {
+      seen.push((event.target as HTMLElement).hasAttribute('data-gliding'));
+    };
+    document.addEventListener(MOTION_SETTLE_EVENT, onSettle);
+    layoutHeight = 90;
+    (observers[0] as FakeResizeObserver).fire();
+    endTransition(box, 'height');
+    expect(seen).toEqual([true]);
+    expect(box.hasAttribute('data-gliding')).toBe(false);
+    document.removeEventListener(MOTION_SETTLE_EVENT, onSettle);
+  });
+
+  it('stops clipping when its height transition ends', () => {
+    fakeLayout();
+    layoutHeight = 40;
+    render(
+      <AutoHeight>
+        <p>Body</p>
+      </AutoHeight>,
+    );
+    const box = screen.getByText('Body').parentElement?.parentElement as HTMLElement;
+    layoutHeight = 90;
+    (observers[0] as FakeResizeObserver).fire();
+    expect(box.hasAttribute('data-gliding')).toBe(true);
+    endTransition(box, 'height');
+    expect(box.hasAttribute('data-gliding')).toBe(false);
+    expect(box.className).not.toContain('overflow-hidden');
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('follows a gliding box inside it at once instead of gliding behind it', () => {
     fakeLayout();
     layoutHeight = 40;
@@ -400,6 +589,22 @@ describe('Swap', () => {
     expect(view().className).toContain('opacity-100');
     expect(view().hasAttribute('inert')).toBe(false);
     expect(view().getAttribute('data-swap')).toBe('pay');
+  });
+
+  it('swaps as soon as the fade out ends', () => {
+    const swap = render(
+      <Swap viewKey="form">
+        <p>Form</p>
+      </Swap>,
+    );
+    swap.rerender(
+      <Swap viewKey="pay">
+        <p>Pay</p>
+      </Swap>,
+    );
+    endTransition(view(), 'opacity');
+    expect(screen.getByText('Pay')).toBeTruthy();
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   it('shows the current view again when its key comes back during the fade', () => {

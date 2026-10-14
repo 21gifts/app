@@ -5820,7 +5820,7 @@ test('Function: ForumReplyPayPage — paid reaction replaces the reply composer'
 });
 
 /**
- * Records, in order, each state the `Motion` boxes show from the first paint on: a `[data-swap]`
+ * Records, in order, each state the `Motion` boxes take from the first paint on: a `[data-swap]`
  * view as `swap:<key>`, a `[data-collapse]` fold that holds `holding` as `collapse:<open|closed>`,
  * each with `:faded` while at `opacity-0` and `:inert` while inert. Read it with {@link motionLog}.
  */
@@ -5828,23 +5828,55 @@ async function recordMotion(page: Page, holding: string): Promise<void> {
   await page.addInitScript((selector: string) => {
     const log: string[] = [];
     (window as unknown as { motionLog: string[] }).motionLog = log;
-    const note = (el: Element): void => {
-      const swap = el.getAttribute('data-swap');
-      const fold = el.getAttribute('data-collapse');
+    const watched = ['class', 'data-swap', 'data-collapse', 'inert'];
+    const entry = (el: Element, attrs: Map<string, string | null>): string | null => {
+      const swap = attrs.get('data-swap') ?? null;
+      const fold = attrs.get('data-collapse') ?? null;
       if (swap === null && (fold === null || el.querySelector(selector) === null)) {
-        return;
+        return null;
       }
-      const faded = el.className.split(' ').includes('opacity-0') ? ':faded' : '';
-      const inert = el.hasAttribute('inert') ? ':inert' : '';
-      const entry = `${swap === null ? `collapse:${String(fold)}` : `swap:${swap}`}${faded}${inert}`;
-      if (log[log.length - 1] !== entry) {
-        log.push(entry);
+      const faded = (attrs.get('class') ?? '').split(' ').includes('opacity-0') ? ':faded' : '';
+      const inert = attrs.get('inert') === null ? '' : ':inert';
+      return `${swap === null ? `collapse:${String(fold)}` : `swap:${swap}`}${faded}${inert}`;
+    };
+    const push = (value: string | null): void => {
+      if (value !== null && log[log.length - 1] !== value) {
+        log.push(value);
       }
     };
+    const current = (el: Element): Map<string, string | null> =>
+      new Map(watched.map((name) => [name, el.getAttribute(name)]));
+    // A late callback still sees every step: the value an attribute had after a change is the old
+    // value of the next change to it, or its value now.
     new MutationObserver((records) => {
-      for (const record of records) {
-        if (record.target instanceof Element) {
-          note(record.target);
+      const after = (index: number, el: Element, name: string): string | null => {
+        for (let next = index + 1; next < records.length; next += 1) {
+          const later = records[next]!;
+          if (later.type === 'attributes' && later.target === el && later.attributeName === name) {
+            return later.oldValue;
+          }
+        }
+        return el.getAttribute(name);
+      };
+      const states = new Map<Element, Map<string, string | null>>();
+      records.forEach((record, index) => {
+        if (record.type === 'attributes' && record.target instanceof Element) {
+          const el = record.target;
+          const state = states.get(el) ?? current(el);
+          if (!states.has(el)) {
+            // Start from the values before this batch.
+            for (const name of watched) {
+              const first = records.find(
+                (r) => r.type === 'attributes' && r.target === el && r.attributeName === name,
+              );
+              if (first !== undefined) {
+                state.set(name, first.oldValue);
+              }
+            }
+            states.set(el, state);
+          }
+          state.set(record.attributeName!, after(index, el, record.attributeName!));
+          push(entry(el, state));
         }
         for (const node of Array.from(record.addedNodes)) {
           if (node instanceof Element) {
@@ -5852,16 +5884,30 @@ async function recordMotion(page: Page, holding: string): Promise<void> {
               node,
               ...Array.from(node.querySelectorAll('[data-swap], [data-collapse]')),
             ]) {
-              note(el);
+              const state = new Map(
+                watched.map((name) => {
+                  const first = records.find(
+                    (r, i) =>
+                      i > index &&
+                      r.type === 'attributes' &&
+                      r.target === el &&
+                      r.attributeName === name,
+                  );
+                  return [name, first === undefined ? el.getAttribute(name) : first.oldValue];
+                }),
+              );
+              states.set(el, state);
+              push(entry(el, state));
             }
           }
         }
-      }
+      });
     }).observe(document, {
       subtree: true,
       childList: true,
       attributes: true,
-      attributeFilter: ['class', 'data-swap', 'data-collapse', 'inert'],
+      attributeOldValue: true,
+      attributeFilter: watched,
     });
   }, holding);
 }
@@ -5890,13 +5936,16 @@ test('Function: Swap — the reply form fades out in place, then the pay page fa
   const payPage = page.locator('[data-swap="pay"] [data-reply-pay-page]');
   await expect(payPage).toBeVisible();
   await expect(page.getByLabel('Your reaction')).toHaveCount(0);
-  expect(inOrder(await motionLog(page), ['swap:form', 'swap:form:faded:inert', 'swap:pay'])).toBe(
-    true,
-  );
+  const opened = await motionLog(page);
+  expect(
+    inOrder(opened, ['swap:form', 'swap:form:faded:inert', 'swap:pay']),
+    opened.join(' '),
+  ).toBe(true);
   await payPage.getByRole('button', { name: 'Close' }).click();
   await expect(page.locator('[data-swap="form"]').getByLabel('Your reaction')).toBeVisible();
   await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_PAY_ANSWER);
-  expect(inOrder(await motionLog(page), ['swap:pay', 'swap:pay:faded:inert', 'swap:form'])).toBe(
+  const closed = await motionLog(page);
+  expect(inOrder(closed, ['swap:pay', 'swap:pay:faded:inert', 'swap:form']), closed.join(' ')).toBe(
     true,
   );
 });
@@ -5932,12 +5981,7 @@ test('Function: Collapse — a gift sheet eases open and folds away, inert, befo
   await expect(fold).toHaveCount(0);
   const log = await motionLog(page);
   expect(
-    inOrder(log, [
-      'collapse:closed:faded',
-      'collapse:opening',
-      'collapse:open',
-      'collapse:closed:faded:inert',
-    ]),
+    inOrder(log, ['collapse:opening', 'collapse:open', 'collapse:closed:faded:inert']),
     log.join(' '),
   ).toBe(true);
 });
@@ -5960,9 +6004,14 @@ test('Function: Collapse — with reduced motion a gift sheet opens and closes a
   await expect(replyCard.getByRole('button', { name: 'Continue' })).toBeVisible();
   await replyCard.getByRole('button', { name: 'Close' }).click();
   await expect(replyCard.locator('[data-pay-sheet]')).toHaveCount(0);
+  // It never eases open and never folds: no opening step, no inert closed step.
   const log = await motionLog(page);
-  expect(log).toContain('collapse:open');
-  expect(log.some((entry) => entry.startsWith('collapse:closed'))).toBe(false);
+  expect(log, log.join(' ')).toContain('collapse:open');
+  expect(log, log.join(' ')).not.toContain('collapse:opening');
+  expect(
+    log.some((entry) => entry.startsWith('collapse:closed') && entry.endsWith(':inert')),
+    log.join(' '),
+  ).toBe(false);
 });
 
 test('Function: AutoHeight — the open reaction box glides to the height its content needs and clips only while moving', async ({
@@ -5986,10 +6035,27 @@ test('Function: AutoHeight — the open reaction box glides to the height its co
     Math.abs(state.height - state.content) < 0.01 && state.overflow === 'visible';
   await expect.poll(async () => atRest(await measure())).toBe(true);
   const before = await measure();
+  // Record every state the height boxes inside the fold take while the error line comes in.
+  await fold.evaluate((el) => {
+    const log: string[] = [];
+    (window as unknown as { glideLog: string[] }).glideLog = log;
+    new MutationObserver((records) => {
+      for (const record of records) {
+        const box = record.target;
+        if (box instanceof HTMLElement && box.hasAttribute('data-auto-height')) {
+          log.push(`${String(box.hasAttribute('data-gliding'))} ${getComputedStyle(box).overflow}`);
+        }
+      }
+    }).observe(el, { subtree: true, attributes: true, attributeFilter: ['class', 'data-gliding'] });
+  });
   await page.getByLabel('Your reaction').fill(REACTION_PAY_ANSWER);
   const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
   await form.getByRole('button', { name: 'Post' }).click();
   await expect(form.getByRole('alert')).toBeVisible();
+  // While the height moved, a box glided and clipped; at rest it clips no more (below).
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { glideLog: string[] }).glideLog))
+    .toContain('true hidden');
   await expect
     .poll(async () => {
       const after = await measure();

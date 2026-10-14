@@ -1,4 +1,12 @@
 /**
+ * Attribute on the scrollport while a reveal follows a moving target (a fold easing open) frame by
+ * frame. Code that reacts to the visitor's scrolling (the wallet footer's slim/full progress, the
+ * forum's scroll memory) skips scroll events while it is set; the scroll that places the page at
+ * the end of the move comes without it.
+ */
+export const SCROLL_FOLLOW_ATTR = 'data-scroll-follow';
+
+/**
  * Keeps a target visible inside the application's single active scrollport.
  *
  * @param scroller - The one active scrollport.

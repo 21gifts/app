@@ -15,14 +15,67 @@ export const EASE_MS = 280;
 /** Length of the fade out and of the fade in of a {@link Swap}, in ms (`duration-180` below). */
 export const SWAP_FADE_MS = 180;
 
-/** Extra wait after a CSS move before the box stops clipping or unmounts, in ms. */
+/** Extra wait after a CSS move before the fallback timer settles the box, in ms. */
 const SETTLE_MS = 40;
 
 /**
- * Time from the start of an opening, a fold, or a height glide until the box has settled, in ms:
- * it stops clipping, or a folded {@link Collapse} unmounts.
+ * Longest time from the start of an opening, a fold, or a height glide until the box has settled,
+ * in ms: it stops clipping, or a folded {@link Collapse} unmounts. A move settles when its CSS
+ * transition ends; this timer is the fallback for a transition that never runs.
  */
 export const FOLD_MS = EASE_MS + SETTLE_MS;
+
+/**
+ * Event a {@link Collapse} that has eased open, or an {@link AutoHeight} that has glided to its new
+ * height, sends from its box (it bubbles). It comes before the box reports itself settled, so code
+ * that places the page by the final layout (a reveal in the scrollport) runs first.
+ */
+export const MOTION_SETTLE_EVENT = 'motionsettle';
+
+/**
+ * Sends {@link MOTION_SETTLE_EVENT} from `el`.
+ *
+ * @param el - Box whose move has ended.
+ */
+function announceSettle(el: HTMLElement): void {
+  el.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
+}
+
+/**
+ * Calls `done` once, when `el`'s own transition of `property` ends or after `fallbackMs`, whichever
+ * comes first. The end of the transition counts first because the browser runs transitions on its
+ * own clock, also while a page's timers are held (a paused test clock, a throttled tab).
+ *
+ * @param el - Element whose transition settles the move.
+ * @param property - CSS property of that transition, as `transitionend` names it.
+ * @param fallbackMs - Wait before settling without a transition end.
+ * @param done - Settles the move.
+ * @returns Cancels the wait without calling `done`.
+ */
+function afterTransition(
+  el: HTMLElement,
+  property: string,
+  fallbackMs: number,
+  done: () => void,
+): () => void {
+  const onEnd = (event: TransitionEvent): void => {
+    // Transitions of the content bubble up here too; only this box's own move counts.
+    if (event.target === el && event.propertyName === property) {
+      stop();
+      done();
+    }
+  };
+  const timer = window.setTimeout(() => {
+    stop();
+    done();
+  }, fallbackMs);
+  el.addEventListener('transitionend', onEnd);
+  function stop(): void {
+    window.clearTimeout(timer);
+    el.removeEventListener('transitionend', onEnd);
+  }
+  return stop;
+}
 
 /**
  * Whether the visitor asked for reduced motion. The global CSS rule already makes every
@@ -44,6 +97,11 @@ export interface CollapseProps {
   children: ReactNode;
   /** Classes for the inner box (spacing that belongs to the content). */
   className?: string | undefined;
+  /**
+   * True closes at once instead of folding, for content whose place another one takes in the same
+   * step (a second copy of it must not stay mounted while the first folds). Opening still eases.
+   */
+  instant?: boolean | undefined;
 }
 
 /**
@@ -58,12 +116,20 @@ export interface CollapseProps {
  * @returns The folding box (`data-collapse` `closed`, `opening`, or `open` once settled), or
  * `null` while closed.
  */
-export function Collapse({ show, children, className }: CollapseProps): ReactElement | null {
+export function Collapse({
+  show,
+  children,
+  className,
+  instant = false,
+}: CollapseProps): ReactElement | null {
   const [mounted, setMounted] = useState(show);
   const [open, setOpen] = useState(show);
   const [settled, setSettled] = useState(show);
+  const box = useRef<HTMLDivElement>(null);
   const last = useRef<ReactNode>(children);
   const shown = useRef(show);
+  const closeAtOnce = useRef(instant);
+  closeAtOnce.current = instant;
   if (show) {
     last.current = children;
   }
@@ -76,49 +142,60 @@ export function Collapse({ show, children, className }: CollapseProps): ReactEle
     }
     shown.current = show;
     const reduced = prefersReducedMotion();
+    // The box is in the DOM: `show` mounts it in the same commit, and a fold keeps it.
+    const el = box.current as HTMLDivElement;
     if (show) {
       setMounted(true);
+      setOpen(true);
       if (reduced) {
-        setOpen(true);
         setSettled(true);
         return;
       }
       setSettled(false);
-      // Two frames, so the closed box is laid out before it opens and the browser eases the change.
-      let second = 0;
-      const first = requestAnimationFrame(() => {
-        second = requestAnimationFrame(() => setOpen(true));
+      // Lay the closed box out first, so the browser eases from closed to open.
+      void el.offsetHeight;
+      return afterTransition(el, 'grid-template-rows', FOLD_MS, () => {
+        announceSettle(el);
+        setSettled(true);
       });
-      const done = window.setTimeout(() => setSettled(true), FOLD_MS);
-      return () => {
-        cancelAnimationFrame(first);
-        cancelAnimationFrame(second);
-        window.clearTimeout(done);
-      };
     }
     setSettled(false);
     setOpen(false);
-    if (reduced) {
+    if (reduced || closeAtOnce.current) {
       setMounted(false);
       return;
     }
-    const gone = window.setTimeout(() => setMounted(false), FOLD_MS);
-    return () => window.clearTimeout(gone);
+    return afterTransition(el, 'grid-template-rows', FOLD_MS, () => setMounted(false));
   }, [show]);
 
-  // Shown content mounts in the same commit as `show`, so code that looks for it right after finds it.
-  if (!show && !mounted) {
+  // Another one took this place while it was folding: drop the folding copy now.
+  useLayoutEffect(() => {
+    if (!show && instant) {
+      setMounted(false);
+    }
+  }, [show, instant]);
+
+  // With reduced motion a change shows its end in the same commit (code that measures right after,
+  // a reveal in the scrollport, sees the final layout); the effect above then settles the state.
+  const atOnce = show !== shown.current && prefersReducedMotion();
+  const isOpen = open || (show && atOnce);
+  const isSettled = settled || (show && atOnce);
+
+  // Shown content mounts in the same commit as `show`, so code that looks for it right after finds
+  // it; an instant close removes it in the same commit too.
+  if (!show && (!mounted || instant || atOnce)) {
     return null;
   }
   return (
     <div
-      data-collapse={open ? (settled ? 'open' : 'opening') : 'closed'}
+      ref={box}
+      data-collapse={isOpen ? (isSettled ? 'open' : 'opening') : 'closed'}
       inert={!show}
       className={`grid grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity] duration-280 ease-glide motion-reduce:transition-none ${
-        open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
       }`}
     >
-      <div className={open && settled ? 'min-h-0' : 'min-h-0 overflow-hidden'}>
+      <div className={isOpen && isSettled ? 'min-h-0' : 'min-h-0 overflow-hidden'}>
         <AutoHeight className={className}>{show ? children : last.current}</AutoHeight>
       </div>
     </div>
@@ -154,7 +231,7 @@ export function AutoHeight({ children, className }: AutoHeightProps): ReactEleme
     if (typeof ResizeObserver === 'undefined') {
       return;
     }
-    let timer = 0;
+    let stopGlide = (): void => undefined;
     let prev: number | null = null;
     const observer = new ResizeObserver(() => {
       // Fractional, so a box at rest is exactly as tall as its content (no rounding shift).
@@ -166,11 +243,12 @@ export function AutoHeight({ children, className }: AutoHeightProps): ReactEleme
       if (prev !== null && prev !== next && !follow && !prefersReducedMotion()) {
         setMoving(true);
         box.toggleAttribute('data-gliding', true);
-        window.clearTimeout(timer);
-        timer = window.setTimeout(() => {
+        stopGlide();
+        stopGlide = afterTransition(box, 'height', FOLD_MS, () => {
+          announceSettle(box);
           setMoving(false);
           box.toggleAttribute('data-gliding', false);
-        }, FOLD_MS);
+        });
       }
       prev = next;
       box.style.height = `${String(next)}px`;
@@ -178,7 +256,7 @@ export function AutoHeight({ children, className }: AutoHeightProps): ReactEleme
     observer.observe(content);
     return () => {
       observer.disconnect();
-      window.clearTimeout(timer);
+      stopGlide();
       box.style.height = '';
     };
   }, []);
@@ -218,6 +296,7 @@ export interface SwapProps {
 export function Swap({ viewKey, children, className }: SwapProps): ReactElement {
   const [currentKey, setCurrentKey] = useState(viewKey);
   const [visible, setVisible] = useState(true);
+  const fading = useRef<HTMLDivElement>(null);
   const held = useRef<ReactNode>(children);
   const leaving = viewKey !== currentKey;
   const instant = leaving && prefersReducedMotion();
@@ -236,17 +315,17 @@ export function Swap({ viewKey, children, className }: SwapProps): ReactElement 
       return;
     }
     setVisible(false);
-    const timer = window.setTimeout(() => {
+    return afterTransition(fading.current as HTMLDivElement, 'opacity', SWAP_FADE_MS, () => {
       setCurrentKey(viewKey);
       setVisible(true);
-    }, SWAP_FADE_MS);
-    return () => window.clearTimeout(timer);
+    });
   }, [leaving, instant, viewKey]);
 
   const fade = visible || instant ? 'opacity-100' : 'opacity-0';
   return (
     <AutoHeight>
       <div
+        ref={fading}
         data-swap={currentKey}
         inert={!visible && !instant}
         className={`transition-opacity duration-180 ease-glide motion-reduce:transition-none ${fade}${

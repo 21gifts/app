@@ -2,7 +2,8 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { useState, type ReactElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
-import { SWAP_FADE_MS } from '@/components/Motion';
+import { FOLD_MS, MOTION_SETTLE_EVENT, SWAP_FADE_MS } from '@/components/Motion';
+import { SCROLL_FOLLOW_ATTR } from '@/lib/reveal-in-scrollport';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import {
@@ -8126,6 +8127,200 @@ describe('ForumBoard', () => {
 });
 
 describe('reply form size', () => {
+  it('places the page by the final layout when the reaction form has settled', () => {
+    class FakeResizeObserver {
+      observe(): void {}
+
+      disconnect(): void {}
+
+      unobserve(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    const board = (expandedId: string | null) => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={expandedId}
+          replies={[]}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const view = renderWithLocale(board(null));
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    port.scrollTop = 30;
+    port.dispatchEvent(new Event('scroll'));
+    view.rerender(board('m1'));
+    // The first reveal (jsdom: every box at 0, so it moves the port by its 12px margin). The fold
+    // is opening, so the port is marked while the reveal follows it.
+    expect(port.scrollTop).toBe(42);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    const form = screen.getByLabelText('Your reaction').closest('form') as HTMLFormElement;
+    const settle = (el: Element): void => {
+      act(() => {
+        el.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
+      });
+    };
+    // In-between scrolls do not move the rest position.
+    port.scrollTop = 200;
+    port.dispatchEvent(new Event('scroll'));
+    // The box around the form glides too: its settle places the page, the mark stays for the fold.
+    const glide = form.closest('[data-auto-height]') as HTMLElement;
+    glide.toggleAttribute('data-gliding', true);
+    const fold = form.closest('[data-collapse]') as HTMLElement;
+    port.scrollTop = 200;
+    settle(fold);
+    expect(port.scrollTop).toBe(42);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    // The fold marks itself open after its settle event (its timer is not run here).
+    fold.setAttribute('data-collapse', 'open');
+    // The last move ends: placed from the rest position by the final layout, mark gone.
+    port.scrollTop = 200;
+    settle(glide);
+    expect(port.scrollTop).toBe(42);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+    glide.toggleAttribute('data-gliding', false);
+    // A box settling that does not hold the form does not move the page.
+    const other = document.createElement('div');
+    (form.closest('li') as HTMLElement).append(other);
+    port.scrollTop = 200;
+    settle(other);
+    expect(port.scrollTop).toBe(200);
+    globalThis.ResizeObserver = previous;
+  });
+
+  it('ignores a settle when no reaction form or sheet is open', () => {
+    class FakeResizeObserver {
+      observe(): void {}
+
+      disconnect(): void {}
+
+      unobserve(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    renderWithLocale(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={null}
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    port.scrollTop = 200;
+    act(() => {
+      port.querySelector('li')?.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
+    });
+    expect(port.scrollTop).toBe(200);
+    globalThis.ResizeObserver = previous;
+  });
+
+  it('follows the fold only while the reaction form moves into place', () => {
+    const made: { onResize: ResizeObserverCallback; observed: Element[] }[] = [];
+    class FakeResizeObserver {
+      readonly entry: { onResize: ResizeObserverCallback; observed: Element[] };
+
+      constructor(onResize: ResizeObserverCallback) {
+        this.entry = { onResize, observed: [] };
+        made.push(this.entry);
+      }
+
+      observe(target: Element): void {
+        this.entry.observed.push(target);
+      }
+
+      disconnect(): void {}
+
+      unobserve(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    vi.useFakeTimers();
+    const board = (expandedId: string | null) => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={expandedId}
+          replies={[]}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const view = renderWithLocale(board(null));
+    view.rerender(board('m1'));
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    const foldWatch = made.find((entry) =>
+      entry.observed.some((node) => node.hasAttribute('data-collapse')),
+    );
+    if (foldWatch === undefined) {
+      throw new Error('the fold is not observed');
+    }
+    const resize = (): void => {
+      act(() => {
+        foldWatch.onResize([], {} as ResizeObserver);
+      });
+    };
+    // The fold is still opening: the reveal follows it (in jsdom every box is at 0, so the
+    // reveal of the form always moves the port by its 12px margin).
+    port.scrollTop = 0;
+    resize();
+    expect(port.scrollTop).toBe(12);
+    act(() => {
+      vi.advanceTimersByTime(FOLD_MS);
+    });
+    // Open and at rest: a change elsewhere in the fold does not move the page.
+    port.scrollTop = 0;
+    port.dispatchEvent(new Event('scroll'));
+    resize();
+    expect(port.scrollTop).toBe(0);
+    // The box right around the form glides (a view swap): the reveal follows again.
+    const form = screen.getByLabelText('Your reaction').closest('form') as HTMLFormElement;
+    const box = form.closest('[data-auto-height]') as HTMLElement;
+    box.toggleAttribute('data-gliding', true);
+    resize();
+    expect(port.scrollTop).toBe(12);
+    // Closed card: nothing left to reveal.
+    view.rerender(board(null));
+    act(() => {
+      vi.advanceTimersByTime(FOLD_MS);
+    });
+    port.scrollTop = 0;
+    resize();
+    expect(port.scrollTop).toBe(0);
+    vi.useRealTimers();
+    globalThis.ResizeObserver = previous;
+  });
+
   it('scrolls again when the open reply form changes size', () => {
     const observed: Element[] = [];
     let disconnected = false;
@@ -8227,6 +8422,68 @@ describe('reply form size', () => {
     expect(screen.getByText('Hi Bob')).toBeTruthy();
     expect(screen.queryByLabelText('Your reaction')).toBeNull();
     globalThis.ResizeObserver = previous;
+  });
+
+  it('does not take the in-between scrolls of a followed move as the reader position', () => {
+    const board = (withSheet: boolean) => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={withSheet ? 'm1' : null}
+          replies={[]}
+          {...(withSheet
+            ? {
+                payMessageId: 'm1' as const,
+                payHost: 'card' as const,
+                payInvoice: { messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 },
+              }
+            : {})}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const view = renderWithLocale(board(false));
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    port.scrollTop = 30;
+    port.dispatchEvent(new Event('scroll'));
+    // Opening the card reveals its reaction form (jsdom: the port moves by its 12px margin).
+    view.rerender(
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[]}
+          {...modeProps('all')}
+        />
+      </AppShell>,
+    );
+    expect(port.scrollTop).toBe(42);
+    // The reveal follows the opening fold: its scroll events are not the reader's position.
+    port.dispatchEvent(new Event('scroll'));
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    view.rerender(board(true));
+    expect(port.scrollTop).toBe(30);
+    view.unmount();
+    // Leaving the page takes the mark off the port.
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
   });
 
   it('restores the scroll position when the pay sheet opens', () => {

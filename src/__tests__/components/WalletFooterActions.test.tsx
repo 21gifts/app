@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
 import { WalletFooterActions } from '@/components/WalletFooterActions';
+import { SCROLL_FOLLOW_ATTR } from '@/lib/reveal-in-scrollport';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 afterEach(() => {
@@ -143,6 +144,19 @@ describe('WalletFooterActions', () => {
     expect(collapse(body)).toBe('1');
     scrollTo(port, 200);
     expect(collapse(body)).toBe('1');
+  });
+
+  it('skips the scrolls of a reveal that follows a move and counts where it ends as one move', () => {
+    stubMotion(false);
+    const { port, body } = renderInShell();
+    port.toggleAttribute(SCROLL_FOLLOW_ATTR, true);
+    scrollTo(port, 15);
+    scrollTo(port, 40);
+    expect(collapse(body)).toBe('');
+    port.toggleAttribute(SCROLL_FOLLOW_ATTR, false);
+    // From the top to 60 in one move: 60 of the 80 px.
+    scrollTo(port, 60);
+    expect(collapse(body)).toBe('0.75');
   });
 
   it('clamps an overscroll to the page, so a bounce past either end does not count', () => {

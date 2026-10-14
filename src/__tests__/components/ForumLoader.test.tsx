@@ -6540,12 +6540,8 @@ describe('ForumLoader', () => {
       expect(screen.getByText('A reply')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(screen.queryByText('A reply')).toBeNull();
     expect(screen.getByText('Loading reactions…')).toBeTruthy();
-    // The stale list folds away, inert, under the note that was open; the new note never shows it.
-    expect(screen.getByText('A reply').closest('[inert]')).not.toBeNull();
-    await waitFor(() => {
-      expect(screen.queryByText('A reply')).toBeNull();
-    });
   });
 
   // Composer is disabled while replies are missing/loading (submit never
