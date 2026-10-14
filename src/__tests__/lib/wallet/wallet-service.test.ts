@@ -1282,6 +1282,109 @@ describe('automatic retries after a failed open', () => {
     expect(captureMessage).not.toHaveBeenCalled();
   });
 
+  /**
+   * A wallet that connects but whose first balance read fails, and whose
+   * disconnect only finishes when the test says so.
+   */
+  function slowClosingSdk(): ReturnType<typeof createFakeSdk> & { finishDisconnect: () => void } {
+    const pending: Array<() => void> = [];
+    const sdk = createFakeSdk({
+      getInfo: async () => {
+        throw new Error('read failed');
+      },
+      disconnect: () =>
+        new Promise<void>((resolve) => {
+          pending.push(resolve);
+        }),
+    });
+    return {
+      ...sdk,
+      finishDisconnect: () => {
+        for (const resolve of pending.splice(0)) {
+          resolve();
+        }
+      },
+    };
+  }
+
+  it('plans no retry and lets no trigger open a connection while the failed one is still disconnecting', async () => {
+    const sdk = slowClosingSdk();
+    void connectWallet(sdk.loadSdk);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sdk.connect).toHaveBeenCalledTimes(1);
+    expect(sdk.connection.disconnect).toHaveBeenCalledTimes(1);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
+    // The disconnect is still running: no pause has started, however long it takes.
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(1);
+    window.dispatchEvent(new Event('online'));
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(1);
+    expect(sdk.loadSdk).toHaveBeenCalledTimes(1);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
+    // Once it has finished, the first pause starts from there.
+    sdk.finishDisconnect();
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(sdk.connect).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(sdk.connect).toHaveBeenCalledTimes(2);
+    // The retry failed the same way: its trigger waits for its own disconnect too.
+    expect(sdk.connection.disconnect).toHaveBeenCalledTimes(2);
+    window.dispatchEvent(new Event('online'));
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(2);
+    sdk.finishDisconnect();
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(3);
+  });
+
+  it('retries at once on a trigger that arrives after the disconnect has finished', async () => {
+    const sdk = slowClosingSdk();
+    void connectWallet(sdk.loadSdk);
+    await vi.advanceTimersByTimeAsync(0);
+    sdk.finishDisconnect();
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(1);
+    window.dispatchEvent(new Event('online'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sdk.connect).toHaveBeenCalledTimes(2);
+  });
+
+  it('plans no retry when the member signs out while the failed connection is still disconnecting', async () => {
+    const sdk = slowClosingSdk();
+    void connectWallet(sdk.loadSdk);
+    await vi.advanceTimersByTimeAsync(0);
+    await disconnectWallet();
+    expect(useWalletStore.getState()).toMatchObject({ status: 'locked', retrying: false });
+    sdk.finishDisconnect();
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'locked', retrying: false });
+  });
+
+  it('Try again does not wait for that disconnect, and the old plan is dropped', async () => {
+    const sdk = slowClosingSdk();
+    void connectWallet(sdk.loadSdk);
+    await vi.advanceTimersByTimeAsync(0);
+    const fresh = createFakeSdk({
+      getInfo: async () => ({ balanceSats: 99_000, identityPubkey: IDENTITY }),
+    });
+    await connectWallet(fresh.loadSdk);
+    expect(useWalletStore.getState()).toMatchObject({
+      status: 'ready',
+      balanceSats: 99_000,
+      retrying: false,
+    });
+    sdk.finishDisconnect();
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(1);
+    expect(fresh.connect).toHaveBeenCalledTimes(1);
+    expect(fresh.connection.disconnect).not.toHaveBeenCalled();
+    expect(useWalletStore.getState().status).toBe('ready');
+  });
+
   it('lets ensureWalletConnected open the wallet itself while a retry is waiting', async () => {
     const sdk = createFakeSdk();
     sdk.connect.mockRejectedValueOnce(new Error('unreachable'));
