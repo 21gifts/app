@@ -740,25 +740,25 @@ The same shop payment as shop after pressing **Details**, so the payment request
 
 ### Variant: heart-payment
 
-Pinned with `?visual=heart-payment` and id `b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42`. A filled accent heart replaces the direction badge, there is no **Gift** title, and a bordered post card shows author **Ada** and the text **Sunday lunch**, with a chevron, linking to `/messages/11111111-1111-4111-8111-111111111111`. The amount is `−₿1`, **Type** is Wallet transfer, and **Fee** is Free. **Details** is closed, so the payment request, the payment hash, and the payment id are not on this screen.
+Pinned with `?visual=heart-payment` and id `b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42`. A filled accent heart replaces the direction badge, there is no **Gift** title, and a bordered post card shows author **Ada** and the text **Sunday lunch**, with a chevron, linking to `/messages/11111111-1111-4111-8111-111111111111`. The amount is `−₿1`, **Type** is Wallet transfer, **To** @ada is a link to that member's profile, and **Fee** is Free. **Details** is closed, so the payment request, the payment hash, and the payment id are not on this screen.
 
 ![21.gifts wallet payment heart](images/wallet-payment-heart.png)
 
 ### Variant: heart-payment-open
 
-The same heart as heart-payment after pressing **Details**, so the payment request, the payment hash from the gift memo, and the payment id are visible. The memo is not shown. Author **Ada** and the text **Sunday lunch** stay, with the chevron, and there is still no **Gift** title.
+The same heart as heart-payment after pressing **Details**, so the payment request, the payment hash from the gift memo, and the payment id are visible. The memo is not shown. Author **Ada** and the text **Sunday lunch** stay, with the chevron, **To** @ada stays a link to that member's profile, and there is still no **Gift** title.
 
 ![21.gifts wallet payment heart open](images/wallet-payment-heart-open.png)
 
 ### Variant: heart-payment-pending
 
-Pinned with `?visual=heart-payment-pending` and id `b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42`. The post lookup has not returned: the direction badge stays, the **Gift** title stays, and there is no post card. The amount is `−₿1`, **Type** is Wallet transfer, and **Fee** is Free. **Details** is closed, so the payment request, the payment hash, and the payment id are not on this screen.
+Pinned with `?visual=heart-payment-pending` and id `b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42`. The post lookup has not returned: the direction badge stays, the **Gift** title stays, and there is no post card. The amount is `−₿1`, **Type** is Wallet transfer, **To** @ada is a link to that member's profile, and **Fee** is Free. **Details** is closed, so the payment request, the payment hash, and the payment id are not on this screen.
 
 ![21.gifts wallet payment heart pending](images/wallet-payment-heart-pending.png)
 
 ### Variant: heart-payment-pending-open
 
-The same pending heart as heart-payment-pending after pressing **Details**, so the payment request, the payment hash from the gift memo, and the payment id are visible. The memo is not shown. The direction badge stays, the **Gift** title stays, and there is no post card.
+The same pending heart as heart-payment-pending after pressing **Details**, so the payment request, the payment hash from the gift memo, and the payment id are visible. The memo is not shown. The direction badge stays, the **Gift** title stays, **To** @ada stays a link to that member's profile, and there is no post card.
 
 ![21.gifts wallet payment heart pending open](images/wallet-payment-heart-pending-open.png)
 

@@ -3,13 +3,18 @@ import { toWalletPayment, type WalletPayment } from '@/lib/wallet/wallet-sdk';
 
 /**
  * Person a fixture payment was sent to, when the SDK record has no address.
- * The sent gift is to the member alice; the title stays Gift and To shows the person.
+ * The sent gift is to the member alice, and the sent heart is to the member ada.
+ * The title stays Gift and To shows the person.
  */
 const FIXTURE_RECIPIENT: Readonly<Record<string, { lnAddress: string; memberAccountId: string }>> =
   {
     'df98837c-6a12-4b15-94f8-375c33937a4e': {
       lnAddress: '@alice',
       memberAccountId: 'acc_e2e',
+    },
+    'b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42': {
+      lnAddress: '@ada',
+      memberAccountId: 'acc_ada',
     },
   };
 

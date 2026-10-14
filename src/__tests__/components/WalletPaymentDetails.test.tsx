@@ -227,6 +227,10 @@ describe('WalletPaymentDetails', () => {
     expect(heartIcon?.getAttribute('class')).toContain('text-app-accent');
     expect(screen.queryByText('Gift')).toBeNull();
     expect(screen.queryByText('Gift on your post')).toBeNull();
+    expect(row('To').textContent).toBe('@alice');
+    expect(within(row('To')).getByRole('link', { name: '@alice' }).getAttribute('href')).toBe(
+      '/members/acc_e2e',
+    );
   });
 
   it('keeps the gift title while the heart lookup is pending', () => {
@@ -239,6 +243,7 @@ describe('WalletPaymentDetails', () => {
 
     showPayment(payment);
     expect(screen.getByText('Gift')).toBeTruthy();
+    expect(row('To').textContent).toBe('@alice');
     expect(screen.queryByText('Sunday lunch')).toBeNull();
     expect(screen.queryByText('Ada')).toBeNull();
     expect(document.querySelector('.lucide-heart')).toBeNull();

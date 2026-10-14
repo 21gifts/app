@@ -2175,7 +2175,11 @@ test.describe('screen baselines', () => {
     await fulfillRateDay(page);
     await page.goto('/wallet/payment?id=b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42&visual=heart-payment');
     await expect(page.getByText('Sunday lunch')).toBeVisible();
-    await expect(page.getByText('Ada')).toBeVisible();
+    await expect(page.getByText('Ada', { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: '@ada' })).toHaveAttribute(
+      'href',
+      '/members/acc_ada',
+    );
     await expect(page.getByText('Gift', { exact: true })).toHaveCount(0);
     await expect(
       page.locator('a[href="/messages/11111111-1111-4111-8111-111111111111"]'),
@@ -2194,6 +2198,10 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('Payment ID')).toBeVisible();
     await expect(page.getByText(/zap:/)).toHaveCount(0);
     await expect(page.getByText('Gift', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: '@ada' })).toHaveAttribute(
+      'href',
+      '/members/acc_ada',
+    );
     await shotScreen(page, 'state-wallet-payment-heart-open');
   });
 
@@ -2208,7 +2216,11 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('−₿1').first()).toBeVisible();
     await expect(page.getByText('Sunday lunch')).toHaveCount(0);
     await expect(page.getByText('Gift', { exact: true })).toBeVisible();
-    await expect(page.getByText('Ada')).toHaveCount(0);
+    await expect(page.getByText('Ada', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: '@ada' })).toHaveAttribute(
+      'href',
+      '/members/acc_ada',
+    );
     await shotScreen(page, 'state-wallet-payment-heart-pending');
   });
 
@@ -2225,7 +2237,11 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('Payment ID')).toBeVisible();
     await expect(page.getByText(/zap:/)).toHaveCount(0);
     await expect(page.getByText('Gift', { exact: true })).toBeVisible();
-    await expect(page.getByText('Ada')).toHaveCount(0);
+    await expect(page.getByText('Ada', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: '@ada' })).toHaveAttribute(
+      'href',
+      '/members/acc_ada',
+    );
     await shotScreen(page, 'state-wallet-payment-heart-pending-open');
   });
 
