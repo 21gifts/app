@@ -55,7 +55,8 @@ export interface CollapseProps {
  * focus rings and pop-up lists stay visible at rest, and it never grows wider than its parent.
  *
  * @param props - `show`, the content, and optional inner classes.
- * @returns The folding box, or `null` while closed.
+ * @returns The folding box (`data-collapse` `closed`, `opening`, or `open` once settled), or
+ * `null` while closed.
  */
 export function Collapse({ show, children, className }: CollapseProps): ReactElement | null {
   const [mounted, setMounted] = useState(show);
@@ -111,7 +112,7 @@ export function Collapse({ show, children, className }: CollapseProps): ReactEle
   }
   return (
     <div
-      data-collapse={open ? 'open' : 'closed'}
+      data-collapse={open ? (settled ? 'open' : 'opening') : 'closed'}
       inert={!show}
       className={`grid grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity] duration-280 ease-glide motion-reduce:transition-none ${
         open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
@@ -135,8 +136,9 @@ export interface AutoHeightProps {
  * Glides its height whenever the content's height changes (one view swapped for another, a line
  * added), so the content below follows smoothly. The height is written on the box from a
  * `ResizeObserver`, before the frame is painted. The box clips only while the height moves, so
- * focus rings and pop-up lists stay visible at rest. Without `ResizeObserver` the box keeps its
- * natural height.
+ * focus rings and pop-up lists stay visible at rest. While a box inside it is still gliding, it
+ * follows that glide at once instead of gliding behind it. Without `ResizeObserver` the box keeps
+ * its natural height.
  *
  * @param props - The content and optional inner classes.
  * @returns The gliding box.
@@ -157,10 +159,18 @@ export function AutoHeight({ children, className }: AutoHeightProps): ReactEleme
     const observer = new ResizeObserver(() => {
       // Fractional, so a box at rest is exactly as tall as its content (no rounding shift).
       const next = content.getBoundingClientRect().height;
-      if (prev !== null && prev !== next && !prefersReducedMotion()) {
+      // A box inside that is still gliding changes this content frame by frame: follow it at
+      // once (`data-follow` turns the transition off) instead of gliding a second time behind it.
+      const follow = content.querySelector('[data-auto-height][data-gliding]') !== null;
+      box.toggleAttribute('data-follow', follow);
+      if (prev !== null && prev !== next && !follow && !prefersReducedMotion()) {
         setMoving(true);
+        box.toggleAttribute('data-gliding', true);
         window.clearTimeout(timer);
-        timer = window.setTimeout(() => setMoving(false), FOLD_MS);
+        timer = window.setTimeout(() => {
+          setMoving(false);
+          box.toggleAttribute('data-gliding', false);
+        }, FOLD_MS);
       }
       prev = next;
       box.style.height = `${String(next)}px`;
@@ -176,7 +186,8 @@ export function AutoHeight({ children, className }: AutoHeightProps): ReactEleme
   return (
     <div
       ref={outer}
-      className={`w-full min-w-0 transition-[height] duration-280 ease-glide motion-reduce:transition-none${
+      data-auto-height=""
+      className={`w-full min-w-0 transition-[height] duration-280 ease-glide motion-reduce:transition-none data-[follow]:transition-none${
         moving ? ' overflow-hidden' : ''
       }`}
     >

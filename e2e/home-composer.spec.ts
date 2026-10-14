@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { motionSettled } from './motion';
 
 /** First living-room law, shown in the laws hint above the composer. */
 const LAWS_1 = '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.';
@@ -530,6 +531,8 @@ test.describe('forum home while reacting on a phone', () => {
       });
     /** Scrolls to the end until the port no longer grows (slim buttons make it taller). */
     const settleAtEnd = async (): Promise<void> => {
+      // The reaction form eases open; measure the end of the page once it has.
+      await motionSettled(page);
       await toEnd();
       await expect.poll(() => collapse(page)).toBe(1);
       await expect

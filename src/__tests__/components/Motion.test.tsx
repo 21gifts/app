@@ -134,10 +134,11 @@ describe('Collapse', () => {
     advance(16);
     expect(fold().getAttribute('data-collapse')).toBe('closed');
     advance(16);
-    expect(fold().getAttribute('data-collapse')).toBe('open');
+    expect(fold().getAttribute('data-collapse')).toBe('opening');
     expect(fold().className).toContain('grid-rows-[1fr] opacity-100');
     expect(clip().className).toBe('min-h-0 overflow-hidden');
     advance(FOLD_MS);
+    expect(fold().getAttribute('data-collapse')).toBe('open');
     expect(clip().className).toBe('min-h-0');
   });
 
@@ -297,6 +298,39 @@ describe('AutoHeight', () => {
     expect(observer.disconnected).toBe(true);
     expect(box.style.height).toBe('');
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('follows a gliding box inside it at once instead of gliding behind it', () => {
+    fakeLayout();
+    layoutHeight = 40;
+    render(
+      <AutoHeight className="outer">
+        <AutoHeight className="inner">
+          <p>Body</p>
+        </AutoHeight>
+      </AutoHeight>,
+    );
+    const innerBox = screen.getByText('Body').parentElement?.parentElement as HTMLElement;
+    const outerBox = innerBox.parentElement?.parentElement as HTMLElement;
+    expect(outerBox.className).toContain('data-[follow]:transition-none');
+    // Effects run inside out, so the inner observer is the first one, as in the browser.
+    const [innerObserver, outerObserver] = observers as [FakeResizeObserver, FakeResizeObserver];
+    layoutHeight = 90;
+    innerObserver.fire();
+    expect(innerBox.hasAttribute('data-gliding')).toBe(true);
+    expect(innerBox.hasAttribute('data-follow')).toBe(false);
+    outerObserver.fire();
+    expect(outerBox.hasAttribute('data-follow')).toBe(true);
+    expect(outerBox.hasAttribute('data-gliding')).toBe(false);
+    expect(outerBox.className).not.toContain('overflow-hidden');
+    expect(outerBox.style.height).toBe('90px');
+    advance(FOLD_MS);
+    expect(innerBox.hasAttribute('data-gliding')).toBe(false);
+    layoutHeight = 120;
+    outerObserver.fire();
+    expect(outerBox.hasAttribute('data-follow')).toBe(false);
+    expect(outerBox.hasAttribute('data-gliding')).toBe(true);
+    expect(outerBox.className).toContain('overflow-hidden');
   });
 
   it('follows the height without clipping or waiting with reduced motion', () => {

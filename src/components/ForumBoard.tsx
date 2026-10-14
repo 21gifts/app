@@ -655,14 +655,14 @@ export function revealPaySheet(scroller: HTMLElement | null, sheet: HTMLElement 
 }
 
 /**
- * The open pay sheet inside the board, if one is mounted. A sheet that is folding away or fading
- * out (inside an `inert` box, see `Motion`) is already closed.
+ * The open pay sheet inside the board, if one is mounted. A sheet that is folding away (inside an
+ * `inert` `Collapse`) is already closed; a sheet whose view is swapping (`Swap`) is still open.
  *
  * @param root - Board root, or null before mount.
  * @returns The sheet element, or null.
  */
 function paySheetElement(root: HTMLElement | null): HTMLElement | null {
-  return root?.querySelector<HTMLElement>('[data-pay-sheet]:not([inert] *)') ?? null;
+  return root?.querySelector<HTMLElement>('[data-pay-sheet]:not([data-collapse][inert] *)') ?? null;
 }
 
 /**

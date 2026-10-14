@@ -11,6 +11,7 @@ import {
 } from './no-prf';
 import { pageFrameProblems } from '../src/lib/page-frame';
 import { fulfillSpot, spotRatesFromStats } from './fx-spot';
+import { motionSettled } from './motion';
 import {
   fulfillLedger,
   fulfillMyLoans,
@@ -790,6 +791,8 @@ async function scrollAddFormIntoShot(page: Page): Promise<void> {
 }
 
 async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
+  // Folds, swaps and height glides finish on timers; never capture one of them halfway.
+  await motionSettled(page);
   // Receive / Send settle at full or slim 140 ms after a scroll; never capture in between.
   await expect
     .poll(() =>
@@ -7206,6 +7209,7 @@ test.describe('onboarding screens', () => {
 
   /** True when `locator` lies fully inside the app scrollport. */
   async function insideShell(locator: Locator): Promise<boolean> {
+    await motionSettled(locator.page());
     return locator.evaluate((node) => {
       const scroller = node.closest('[data-scrollport]');
       if (!(scroller instanceof HTMLElement)) {
@@ -7751,6 +7755,7 @@ test.describe('onboarding screens', () => {
       )
       .toBe(true);
     const parentName = page.getByText('Riana Rosello').first();
+    await motionSettled(page);
     await parentName.evaluate((el: HTMLElement) => {
       el.scrollIntoView({ block: 'start' });
     });
