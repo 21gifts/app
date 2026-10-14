@@ -11285,31 +11285,25 @@ test('Function: fetchPublicMessagePhoto — omitted index fetches /photo without
   await openHomeWriter(page);
   await attachTinyJpeg(page);
   const id = await postAndExpectPhotoRow(page, handle);
-  const originalFetch = globalThis.fetch;
-  let recordedUrl: string | undefined;
-  let recordedHeaders: HeadersInit | undefined;
-  globalThis.fetch = (input, init) => {
-    if (typeof input === 'string' && input.startsWith('/')) {
-      recordedUrl = input;
-      recordedHeaders = init?.headers;
-      return originalFetch(`http://localhost:3000${input}`, init);
+  const photoRequests: { pathname: string; authorization: string | undefined }[] = [];
+  page.on('request', (req) => {
+    const pathname = new URL(req.url()).pathname;
+    if (pathname !== `/messages/${id}/photo`) {
+      return;
     }
-    return originalFetch(input, init);
-  };
-  try {
-    const blob = await fetchPublicMessagePhoto(id);
-    expect(blob.size).toBeGreaterThan(0);
-    expect(
-      recordedUrl === undefined
-        ? undefined
-        : new URL(recordedUrl, 'http://localhost:3000').pathname,
-    ).toBe(`/messages/${id}/photo`);
-    const authorization =
-      recordedHeaders == null ? null : new Headers(recordedHeaders).get('Authorization');
-    expect(authorization).toBeNull();
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
+    photoRequests.push({ pathname, authorization: req.headers()['authorization'] });
+  });
+  const blob = await page.evaluateHandle(fetchPublicMessagePhoto, id);
+  const size = await blob.evaluate((value) => (value as Blob).size);
+  await blob.dispose();
+  expect(size).toBeGreaterThan(0);
+  expect(
+    photoRequests.some(
+      (recorded) =>
+        recorded.pathname === `/messages/${id}/photo` &&
+        (recorded.authorization === undefined || recorded.authorization === ''),
+    ),
+  ).toBe(true);
 });
 
 test('Function: fetchPublicReplies — public thread loads replies without bearer', async ({
