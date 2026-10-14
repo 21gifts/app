@@ -103,6 +103,7 @@ export function ForumPhotoGallery({
         Math.max(0, Math.round(scroller.scrollLeft / stride)),
       );
       const photo = photos[next];
+      /* v8 ignore next 3 -- next is clamped to a slot that exists */
       if (photo === undefined) {
         return;
       }

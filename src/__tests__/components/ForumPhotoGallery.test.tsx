@@ -301,4 +301,50 @@ describe('ForumPhotoGallery', () => {
     expect(photos[0]?.getAttribute('data-photo-index')).toBe('1');
     expect(photos[1]?.getAttribute('data-photo-index')).toBe('2');
   });
+
+  it('scrolls the row onto the same still when an earlier photo disappears', () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 200,
+      height: 10,
+      top: 0,
+      left: 0,
+      bottom: 10,
+      right: 200,
+      x: 0,
+      y: 0,
+      toJSON: () => undefined,
+    });
+    const three = [
+      { index: 0, url: 'blob:g0' },
+      { index: 1, url: 'blob:g1' },
+      { index: 2, url: 'blob:g2' },
+    ];
+    const view = renderWithLocale(<ForumPhotoGallery photos={three} alt="Photo from Ada" />);
+    const scroller = screen.getAllByAltText('Photo from Ada')[0]?.parentElement
+      ?.parentElement as HTMLElement;
+    expect(scroller.scrollLeft).toBe(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Photo 2 of 3' }));
+    view.rerender(
+      <ForumPhotoGallery
+        photos={[
+          { index: 1, url: 'blob:g1' },
+          { index: 2, url: 'blob:g2' },
+        ]}
+        alt="Photo from Ada"
+      />,
+    );
+    expect(scroller.scrollLeft).toBe(0);
+    expect(screen.getByText('1/2')).toBeTruthy();
+    view.rerender(
+      <ForumPhotoGallery
+        photos={[
+          { index: 0, url: 'blob:g0' },
+          { index: 2, url: 'blob:g2' },
+        ]}
+        alt="Photo from Ada"
+      />,
+    );
+    expect(scroller.scrollLeft).toBe(200);
+    expect(screen.getByText('2/2')).toBeTruthy();
+  });
 });
