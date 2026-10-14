@@ -8,11 +8,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
-import {
-  fetchForumMessage,
-  fetchPublicMessage,
-  fetchShortLink,
-} from '@/lib/api';
+import { fetchForumMessage, fetchPublicMessage, fetchShortLink } from '@/lib/api';
 import { useActiveSession } from '@/hooks/useActiveSession';
 import type { ForumMessage } from '@/lib/api-types';
 import { forumPhotoSrc } from '@/lib/forum-photo';

@@ -164,6 +164,13 @@ function editStillUrls(
   return found;
 }
 
+/** Dead-still set key; includes version so a new `?v=` is not treated as the failed load. */
+function deadStillKey(messageId: string, photoIndex: number, version: string | undefined): string {
+  return version === undefined
+    ? `${messageId}:${photoIndex}`
+    : `${messageId}:${photoIndex}:${version}`;
+}
+
 /** Roles that show a clickable tag beside the author name. */
 type ForumTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
 
@@ -1169,7 +1176,7 @@ export function ForumBoard({
           const versionToken =
             rawVersion !== undefined && rawVersion !== '' ? rawVersion : undefined;
           const loadedPhotoUrls = Array.from({ length: photoCount }, (_, photoIndex) => {
-            if (deadPhotoKeys.has(`${message.id}:${photoIndex}`)) {
+            if (deadPhotoKeys.has(deadStillKey(message.id, photoIndex, versionToken))) {
               return null;
             }
             const url = displayStillSrc(message, photoIndex, photoUrls, versionToken);
@@ -1191,7 +1198,7 @@ export function ForumBoard({
           const firstStill = loadedPhotoUrls[0];
           const hasStill = message.hasPhoto || photoCount >= 1;
           const posterSrc =
-            hasStill && !deadPhotoKeys.has(`${message.id}:0`)
+            hasStill && !deadPhotoKeys.has(deadStillKey(message.id, 0, versionToken))
               ? displayStillSrc(message, 0, photoUrls, versionToken)
               : undefined;
           const videoSrc =
@@ -1360,7 +1367,9 @@ export function ForumBoard({
                     fetchPriority={firstStill.fetchPriority}
                     onClick={stopCardToggle}
                     onError={() => {
-                      setDeadPhotoKeys((prev) => new Set(prev).add(`${message.id}:0`));
+                      setDeadPhotoKeys((prev) =>
+                        new Set(prev).add(deadStillKey(message.id, 0, versionToken)),
+                      );
                     }}
                   />
                 ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
@@ -1370,7 +1379,9 @@ export function ForumBoard({
                     className="mt-2"
                     onPhotoClick={stopCardToggle}
                     onPhotoError={(photoIndex) => {
-                      setDeadPhotoKeys((prev) => new Set(prev).add(`${message.id}:${photoIndex}`));
+                      setDeadPhotoKeys((prev) =>
+                        new Set(prev).add(deadStillKey(message.id, photoIndex, versionToken)),
+                      );
                     }}
                   />
                 ) : null}

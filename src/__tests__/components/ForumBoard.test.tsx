@@ -2006,6 +2006,46 @@ describe('ForumBoard', () => {
     expect(screen.queryByAltText('Photo from Ada')).toBeNull();
   });
 
+  it('shows a new still version after a failed load', () => {
+    const { rerender } = renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-photo', hasPhoto: true, photoCount: 1, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoVersions={{ 'm-photo': '1' }}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.error(screen.getByAltText('Photo from Ada'));
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+    rerender(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-photo', hasPhoto: true, photoCount: 1, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoVersions={{ 'm-photo': '2' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      '/messages/m-photo/photo.jpg?v=2',
+    );
+  });
+
   it('omits a dead gallery slide and drops the gallery when none remain', () => {
     renderWithLocale(
       <ForumBoard
