@@ -5,6 +5,7 @@ import { type FormEvent, type MouseEvent, type ReactElement } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Collapse, Swap } from '@/components/Motion';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { LoanPayNotice, type LoanPayTarget } from '@/components/LoanPayNotice';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
@@ -37,7 +38,8 @@ export interface ForumPayInvoice {
 }
 
 /**
- * Amount form and invoice card for one payable note, reply, or habit comment.
+ * Amount form and invoice card for one payable note, reply, or habit comment. The form gives way
+ * to the card in steps ({@link Swap}), and a pay error folds in and out ({@link Collapse}).
  *
  * On a loan that still collects, the invoice card reads **You lend**, the
  * confirm button **Lend** with the amount, and {@link LoanPayNotice} says how it
@@ -100,34 +102,34 @@ export function ForumPaySheet({
     void Promise.resolve(onPaySubmit());
   };
 
-  if (invoiceForCard === null) {
-    return (
-      <form
-        onSubmit={handlePaySubmit}
-        onClick={onInteract}
-        data-pay-sheet=""
-        className="relative mt-3 flex flex-col gap-3 rounded-xl border border-app-border bg-app-card p-3 pl-12 pt-12"
-      >
-        <div className="absolute left-3 top-3">
-          <IconButton
-            type="button"
-            size="sm"
-            variant="ghost"
-            aria-label={t('forum.payClose')}
-            onClick={onPayCancel}
-          >
-            <X aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-        </div>
-        <AmountEntry
-          label={t('forum.payAmountLabel')}
-          placeholder={t('forum.payAmountPlaceholder')}
-          value={payDraft}
-          disabled={payBusy}
-          rateDay={rateDay}
-          onValueChange={onPayDraftChange}
-          {...(onPayUnitChange === undefined ? {} : { onUnitChange: onPayUnitChange })}
-        />
+  const amountForm = (
+    <form
+      onSubmit={handlePaySubmit}
+      onClick={onInteract}
+      data-pay-sheet=""
+      className="relative mt-3 flex flex-col gap-3 rounded-xl border border-app-border bg-app-card p-3 pl-12 pt-12"
+    >
+      <div className="absolute left-3 top-3">
+        <IconButton
+          type="button"
+          size="sm"
+          variant="ghost"
+          aria-label={t('forum.payClose')}
+          onClick={onPayCancel}
+        >
+          <X aria-hidden="true" className="h-4 w-4" />
+        </IconButton>
+      </div>
+      <AmountEntry
+        label={t('forum.payAmountLabel')}
+        placeholder={t('forum.payAmountPlaceholder')}
+        value={payDraft}
+        disabled={payBusy}
+        rateDay={rateDay}
+        onValueChange={onPayDraftChange}
+        {...(onPayUnitChange === undefined ? {} : { onUnitChange: onPayUnitChange })}
+      />
+      <Collapse show={payError !== null}>
         {payError === 'amount' ? (
           <p role="alert" className="text-sm text-app-danger">
             {t('forum.payErrorAmount')}
@@ -158,63 +160,66 @@ export function ForumPaySheet({
             {t('forum.errorNoteDeleted')}
           </p>
         ) : null}
-        <Button
-          type="submit"
-          disabled={payBusy || ratePending}
-          icon={
-            payBusy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined
+      </Collapse>
+      <Button
+        type="submit"
+        disabled={payBusy || ratePending}
+        icon={payBusy ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : undefined}
+      >
+        {t('forum.payContinue')}
+      </Button>
+    </form>
+  );
+
+  const invoiceCard =
+    invoiceForCard === null ? null : (
+      <div
+        onClick={onInteract}
+        data-pay-sheet=""
+        className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4"
+      >
+        <div className="absolute left-3 top-3">
+          <IconButton
+            type="button"
+            size="sm"
+            variant="ghost"
+            aria-label={t('forum.payClose')}
+            onClick={onPayCancel}
+          >
+            <X aria-hidden="true" className="h-4 w-4" />
+          </IconButton>
+        </div>
+        <p className="px-10 text-center text-sm text-app-muted">
+          {t(lending ? 'forum.loan.payAmount' : 'forum.payConfirm', {
+            amount: formatBitcoin(invoiceForCard.amountSats, numberFormat),
+          })}
+          {preferredFiatSuffix(invoiceForCard.amountSats, rateDay, fiat, numberFormat)}
+        </p>
+        {loan !== undefined && invoiceForCard.postsOnPay !== true ? (
+          <LoanPayNotice {...loan} />
+        ) : null}
+        <WalletPay
+          sparkInvoice={invoiceForCard.sparkInvoice}
+          pr={invoiceForCard.pr}
+          amountSats={invoiceForCard.amountSats}
+          rateDay={rateDay}
+          postsOnPay={invoiceForCard.postsOnPay === true}
+          flow={invoiceForCard.postsOnPay === true ? 'post_fee' : 'gift'}
+          confirmLabel={
+            lending
+              ? t('forum.loan.payLend', { amount: amountWithFiat(invoiceForCard.amountSats) })
+              : undefined
           }
-        >
-          {t('forum.payContinue')}
-        </Button>
-      </form>
+        />
+        {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
+        {payWaiting ? (
+          <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>
+        ) : null}
+        {/* v8 ignore stop */}
+      </div>
     );
-  }
 
   return (
-    <div
-      onClick={onInteract}
-      data-pay-sheet=""
-      className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4"
-    >
-      <div className="absolute left-3 top-3">
-        <IconButton
-          type="button"
-          size="sm"
-          variant="ghost"
-          aria-label={t('forum.payClose')}
-          onClick={onPayCancel}
-        >
-          <X aria-hidden="true" className="h-4 w-4" />
-        </IconButton>
-      </div>
-      <p className="px-10 text-center text-sm text-app-muted">
-        {t(lending ? 'forum.loan.payAmount' : 'forum.payConfirm', {
-          amount: formatBitcoin(invoiceForCard.amountSats, numberFormat),
-        })}
-        {preferredFiatSuffix(invoiceForCard.amountSats, rateDay, fiat, numberFormat)}
-      </p>
-      {loan !== undefined && invoiceForCard.postsOnPay !== true ? (
-        <LoanPayNotice {...loan} />
-      ) : null}
-      <WalletPay
-        sparkInvoice={invoiceForCard.sparkInvoice}
-        pr={invoiceForCard.pr}
-        amountSats={invoiceForCard.amountSats}
-        rateDay={rateDay}
-        postsOnPay={invoiceForCard.postsOnPay === true}
-        flow={invoiceForCard.postsOnPay === true ? 'post_fee' : 'gift'}
-        confirmLabel={
-          lending
-            ? t('forum.loan.payLend', { amount: amountWithFiat(invoiceForCard.amountSats) })
-            : undefined
-        }
-      />
-      {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
-      {payWaiting ? (
-        <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>
-      ) : null}
-      {/* v8 ignore stop */}
-    </div>
+    <Swap viewKey={invoiceCard === null ? 'amount' : 'invoice'}>{invoiceCard ?? amountForm}</Swap>
   );
 }

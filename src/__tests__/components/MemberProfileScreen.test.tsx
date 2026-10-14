@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
+import { FOLD_MS, SWAP_FADE_MS } from '@/components/Motion';
 import {
   agreeToRules,
   CannotReceiveError,
@@ -1112,9 +1113,17 @@ describe('MemberProfileScreen', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
+    // The view swaps in after the old one has faded out.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SWAP_FADE_MS);
+    });
     expect(within(replyCard).getByText('Pay ₿21')).toBeTruthy();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
+    });
+    // The closed sheet folds away before it unmounts.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FOLD_MS);
     });
     expect(within(replyCard).queryByText('Pay ₿21')).toBeNull();
   });
@@ -1679,7 +1688,9 @@ describe('MemberProfileScreen', () => {
     );
     await expandNote();
     fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
-    expect(screen.queryByLabelText('Your reaction')).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Your reaction')).toBeNull();
+    });
   });
 
   it('cancels an open pay sheet', async () => {
@@ -1693,8 +1704,10 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     expect(within(replyCard).getByLabelText('Amount')).toBeTruthy();
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
-    expect(within(replyCard).queryByRole('button', { name: 'Continue' })).toBeNull();
-    expect(within(replyCard).queryByRole('button', { name: 'Close' })).toBeNull();
+    await waitFor(() => {
+      expect(within(replyCard).queryByRole('button', { name: 'Continue' })).toBeNull();
+      expect(within(replyCard).queryByRole('button', { name: 'Close' })).toBeNull();
+    });
   });
 
   it('uses expanded-thread sats for nested Gift, not a stale reactions copy', async () => {
@@ -1887,7 +1900,9 @@ describe('MemberProfileScreen', () => {
     expect(
       within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
     ).toBe('/wallet');
-    expect(screen.queryByRole('alert')).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
     expect(postMessageInvoice).toHaveBeenCalledTimes(2);
   });
 
@@ -2205,7 +2220,9 @@ describe('MemberProfileScreen', () => {
     });
     expect(within(secondReplyCard).getByLabelText('Amount')).toBeTruthy();
     expect((within(secondReplyCard).getByLabelText('Amount') as HTMLInputElement).value).toBe('7');
-    expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
+    });
   });
 
   it('drops a late paid-reply invoice after Gift is opened', async () => {

@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { useState, type ReactElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
+import { SWAP_FADE_MS } from '@/components/Motion';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import {
@@ -8258,6 +8259,21 @@ describe('reply form size', () => {
         />
       </AppShell>
     );
+    const resized: ResizeObserverCallback[] = [];
+    class FakeResizeObserver {
+      constructor(private readonly onResize: ResizeObserverCallback) {
+        resized.push(onResize);
+      }
+
+      observe(): void {}
+
+      disconnect(): void {}
+
+      unobserve(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    vi.useFakeTimers();
     const view = renderWithLocale(board(false, []));
     const port = document.querySelector('[data-scrollport]');
     if (!(port instanceof HTMLElement)) {
@@ -8266,9 +8282,23 @@ describe('reply form size', () => {
     port.scrollTop = 48;
     port.dispatchEvent(new Event('scroll'));
     view.rerender(board(true, []));
+    // The reply form fades out first; the pay page mounts after the swap fade.
+    expect(document.querySelector('[data-reply-pay-page]')).toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(SWAP_FADE_MS);
+    });
+    expect(document.querySelector('[data-reply-pay-page]')).not.toBeNull();
+    // The box glides to the pay page's height, and the observer of the fold hears it.
+    act(() => {
+      for (const onResize of resized) {
+        onResize([], {} as ResizeObserver);
+      }
+    });
     expect(port.scrollTop).toBe(48);
     view.rerender(board(true, [{ ...SAMPLE, id: 'r-extra', text: 'Later' }]));
     expect(port.scrollTop).toBe(48);
+    vi.useRealTimers();
+    globalThis.ResizeObserver = previous;
   });
 
   it('keeps the card pay sheet under a note when the reaction pay preview is absent', () => {

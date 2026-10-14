@@ -4,6 +4,7 @@ import { Delete } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Collapse } from '@/components/Motion';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, SegmentedControl } from '@/components/ui';
 import { useActiveSession } from '@/hooks/useActiveSession';
@@ -406,9 +407,9 @@ export function AmountEntry({
         <p id={fieldId} aria-label={label} className={`${amountClass} text-center`}>
           {shown === '' ? (placeholder ?? '') : shown}
         </p>
-        {counter !== null ? (
+        <Collapse show={counter !== null}>
           <p className="text-sm tabular-nums lining-nums text-app-muted">{counter}</p>
-        ) : null}
+        </Collapse>
         <div className="grid w-full grid-cols-3 gap-2">
           {digits.map((digit, index) =>
             digit === null ? (
@@ -478,9 +479,9 @@ export function AmountEntry({
           {unitSwitch}
           {amountInput}
         </div>
-        {counter !== null ? (
+        <Collapse show={counter !== null}>
           <p className="ps-24 text-xs tabular-nums lining-nums text-app-muted">{counter}</p>
-        ) : null}
+        </Collapse>
       </div>
     );
   }
@@ -495,9 +496,9 @@ export function AmountEntry({
           {amountInput}
           {unitSwitch}
         </div>
-        {counter !== null ? (
+        <Collapse show={counter !== null}>
           <p className="text-sm tabular-nums lining-nums text-app-muted">{counter}</p>
-        ) : null}
+        </Collapse>
       </div>
     );
   }
@@ -511,9 +512,9 @@ export function AmountEntry({
         {unitSwitch}
       </div>
       {amountInput}
-      {counter !== null ? (
+      <Collapse show={counter !== null}>
         <p className="text-sm tabular-nums lining-nums text-app-muted">{counter}</p>
-      ) : null}
+      </Collapse>
     </div>
   );
 }

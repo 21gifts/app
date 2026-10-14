@@ -45,6 +45,7 @@ import {
 } from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import type { LoanPayTarget } from '@/components/LoanPayNotice';
+import { Collapse, Swap } from '@/components/Motion';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
 import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
@@ -654,13 +655,14 @@ export function revealPaySheet(scroller: HTMLElement | null, sheet: HTMLElement 
 }
 
 /**
- * The open pay sheet inside the board, if one is mounted.
+ * The open pay sheet inside the board, if one is mounted. A sheet that is folding away or fading
+ * out (inside an `inert` box, see `Motion`) is already closed.
  *
  * @param root - Board root, or null before mount.
  * @returns The sheet element, or null.
  */
 function paySheetElement(root: HTMLElement | null): HTMLElement | null {
-  return root?.querySelector<HTMLElement>('[data-pay-sheet]') ?? null;
+  return root?.querySelector<HTMLElement>('[data-pay-sheet]:not([inert] *)') ?? null;
 }
 
 /**
@@ -881,35 +883,43 @@ export function ForumBoard({
     };
   }, [scroller]);
   useLayoutEffect(() => {
-    const field = replyComposerRef.current;
-    const form = field === null ? null : field.form;
-    const sheet = paySheetElement(rootRef.current);
-    if (sheet !== null) {
-      if (!sheetWasOpen.current && scroller !== null && scrollBeforeSheet.current !== null) {
-        scroller.scrollTop = scrollBeforeSheet.current;
-      }
-      sheetWasOpen.current = true;
-      revealPaySheet(scroller, sheet);
-    } else {
-      sheetWasOpen.current = false;
-      revealReplyForm(scroller, form);
-    }
-    if (scroller === null || typeof ResizeObserver === 'undefined') {
-      return;
-    }
-    const observer = new ResizeObserver(() => {
+    // Read the sheet and the form each time: the pay page and the reply form swap in steps
+    // (`Swap`), so either one can mount after this effect ran.
+    const follow = (): void => {
       const liveSheet = paySheetElement(rootRef.current);
       if (liveSheet !== null) {
+        if (!sheetWasOpen.current && scroller !== null && scrollBeforeSheet.current !== null) {
+          scroller.scrollTop = scrollBeforeSheet.current;
+        }
+        sheetWasOpen.current = true;
         revealPaySheet(scroller, liveSheet);
         return;
       }
-      revealReplyForm(scroller, form);
-    });
+      sheetWasOpen.current = false;
+      const liveField = replyComposerRef.current;
+      revealReplyForm(scroller, liveField === null ? null : liveField.form);
+    };
+    follow();
+    if (scroller === null || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    const field = replyComposerRef.current;
+    const form = field === null ? null : field.form;
+    const sheet = paySheetElement(rootRef.current);
+    const observer = new ResizeObserver(follow);
     if (sheet !== null) {
       observer.observe(sheet);
     }
     if (form !== null) {
       observer.observe(form);
+    }
+    // The fold around the sheet or the form eases open and glides when the reply form swaps for
+    // the pay page; follow that height, so the reveal tracks the move instead of its start.
+    const folds = new Set([sheet, form].map((el) => el?.closest('[data-collapse]') ?? null));
+    for (const fold of folds) {
+      if (fold !== null) {
+        observer.observe(fold);
+      }
     }
     return () => {
       observer.disconnect();
@@ -1678,7 +1688,9 @@ export function ForumBoard({
                 </div>
               </div>
 
-              {!reactionPayPage && payMessageId === message.id && payHost !== 'composer' ? (
+              <Collapse
+                show={!reactionPayPage && payMessageId === message.id && payHost !== 'composer'}
+              >
                 <SundayWritingGate notice="zap">
                   <ForumPaySheet
                     {...(loanOfCard === null ? {} : { loan: loanOfCard })}
@@ -1696,395 +1708,407 @@ export function ForumBoard({
                     onInteract={stopCardToggle}
                   />
                 </SundayWritingGate>
-              ) : null}
+              </Collapse>
 
-              {expanded ? (
-                <div
-                  onClick={stopCardToggle}
-                  className="mt-3 flex flex-col gap-3 border-t border-app-border pt-3"
-                >
-                  {repliesLoading ? (
-                    <p className="text-center text-sm text-app-muted">
-                      {t('forum.repliesLoading')}
-                    </p>
-                  ) : null}
-                  {repliesError ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <p role="alert" className="text-center text-sm text-app-danger">
-                        {t('forum.repliesError')}
+              {/* Built for the open card only; Collapse keeps the last view while it folds. */}
+              <Collapse show={expanded}>
+                {expanded ? (
+                  <div
+                    onClick={stopCardToggle}
+                    className="mt-3 flex flex-col gap-3 border-t border-app-border pt-3"
+                  >
+                    {repliesLoading && replies === null ? (
+                      <p className="text-center text-sm text-app-muted">
+                        {t('forum.repliesLoading')}
                       </p>
-                      <Button type="button" variant="secondary" onClick={onRetryReplies}>
-                        {t('forum.retry')}
-                      </Button>
-                    </div>
-                  ) : null}
-                  {replies !== null && !repliesLoading && !repliesError ? (
-                    <ul className="flex flex-col gap-3">
-                      {(Array.isArray(replies) ? replies : []).map((reply) => {
-                        const replyTaggedRole = forumTaggedRole(reply.role);
-                        const hideReplyVerified = verifiedChipHiddenByStaffTag(
-                          reply.role,
-                          reply.staffTag,
-                        );
-                        const replyRoleKeys =
-                          replyTaggedRole === null || hideReplyVerified
-                            ? null
-                            : ROLE_TAG_KEYS[replyTaggedRole];
-                        const replyHintOpen = openRoleMessageId === reply.id;
-                        return (
-                          <li
-                            key={reply.id}
-                            data-reply-id={reply.id}
-                            {...(permalinkTargetId === reply.id
-                              ? { 'data-permalink-target': 'true' }
-                              : {})}
-                            className={
-                              permalinkTargetId === reply.id
-                                ? 'rounded-xl border border-app-border bg-app-card px-3 py-2 ring-1 ring-app-fg'
-                                : 'rounded-xl border border-app-border bg-app-card px-3 py-2'
-                            }
-                          >
-                            <div className="flex flex-wrap items-baseline justify-between gap-2">
-                              <div className="flex flex-wrap items-center gap-2">
-                                {typeof reply.accountId === 'string' && reply.accountId !== '' ? (
-                                  <button
-                                    type="button"
-                                    aria-label={t('forum.authorProfile')}
-                                    className="text-sm font-medium text-app-fg underline underline-offset-2"
-                                    onClick={(event) => {
-                                      stopCardToggle(event);
-                                      router.push(`/members/${reply.accountId}`);
-                                    }}
-                                  >
-                                    {reply.name}
-                                  </button>
-                                ) : reply.via === 'nostr' ? (
-                                  <button
-                                    type="button"
-                                    aria-label={t('forum.authorProfile')}
-                                    className="text-sm font-medium text-app-fg underline underline-offset-2"
-                                    onClick={(event) => {
-                                      stopCardToggle(event);
-                                      router.push(
-                                        `/messages/${reply.id}/author?name=${encodeURIComponent(reply.name)}`,
-                                      );
-                                    }}
-                                  >
-                                    {reply.name}
-                                  </button>
-                                ) : (
-                                  <span className="text-sm font-medium text-app-fg">
-                                    {reply.name}
-                                  </span>
-                                )}
-                                {replyRoleKeys !== null ? (
-                                  <button
-                                    type="button"
-                                    aria-expanded={replyHintOpen}
-                                    onClick={(event) => {
-                                      stopCardToggle(event);
-                                      setOpenRoleMessageId(replyHintOpen ? null : reply.id);
-                                    }}
-                                    className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                                  >
-                                    {t(replyRoleKeys.label)}
-                                  </button>
-                                ) : reply.via === 'nostr' && !hideReplyVerified ? (
-                                  <button
-                                    type="button"
-                                    aria-expanded={replyHintOpen}
-                                    onClick={(event) => {
-                                      stopCardToggle(event);
-                                      setOpenRoleMessageId(replyHintOpen ? null : reply.id);
-                                    }}
-                                    className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                                  >
-                                    {t('forum.via.nostr')}
-                                  </button>
-                                ) : null}
-                                {reply.staffTag === 'software_developer' ? (
-                                  <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                                    {t('forum.staff.softwareDeveloper')}
-                                  </span>
-                                ) : null}
-                              </div>
-                              <time dateTime={reply.createdAt} className="text-xs text-app-subtle">
-                                {formatForumTime(reply.createdAt, locale)}
-                              </time>
-                            </div>
-                            {replyHintOpen && replyRoleKeys !== null ? (
-                              <p role="status" className="mt-1 text-xs text-app-muted">
-                                {t(replyRoleKeys.hint)}
-                              </p>
-                            ) : replyHintOpen && reply.via === 'nostr' ? (
-                              <p role="status" className="mt-1 text-xs text-app-muted">
-                                {t('forum.via.nostrHint')}
-                              </p>
-                            ) : null}
-                            {reply.text !== '' ? (
-                              <div className="mt-1">
-                                {reply.via === 'nostr' ? (
-                                  <TranslatableNoteBody
-                                    messageId={reply.id}
-                                    plain
-                                    text={reply.text}
-                                    truncate={truncate}
-                                    className="whitespace-pre-wrap text-sm text-app-fg"
-                                    controlSlotId={`note-translate-${reply.id}`}
-                                    {...(!readOnly &&
-                                    typeof reply.accountId === 'string' &&
-                                    reply.accountId !== '' &&
-                                    reply.mentions !== undefined
-                                      ? { mentions: reply.mentions }
-                                      : {})}
-                                  />
-                                ) : (
-                                  <ForumQuotedBody
-                                    text={reply.text}
-                                    knownNotes={[...messages, ...replies]}
-                                    excludeId={reply.id}
-                                    rateDay={rateDay ?? null}
-                                    fiat={fiat}
-                                    truncate={truncate}
-                                    controlSlotId={`note-translate-${reply.id}`}
-                                    {...(!readOnly &&
-                                    typeof reply.accountId === 'string' &&
-                                    reply.accountId !== '' &&
-                                    reply.mentions !== undefined
-                                      ? { mentions: reply.mentions }
-                                      : {})}
-                                    onActivate={(event) => {
-                                      event.stopPropagation();
-                                    }}
-                                  />
-                                )}
-                              </div>
-                            ) : null}
-                            <ReplyDirectionAmounts
-                              text={reply.text}
-                              sats={reply.sats}
-                              receivedSats={reply.receivedSats}
-                              rateDay={rateDay ?? null}
-                              fiat={fiat}
-                              numberFormat={numberFormat}
-                              sent={reply}
-                              received={{
-                                amountUsd: reply.receivedAmountUsd,
-                                amountChf: reply.receivedAmountChf,
-                                amountEur: reply.receivedAmountEur,
-                                amountPhp: reply.receivedAmountPhp,
-                              }}
-                            />
-                            <div className="mt-2 flex flex-wrap items-center gap-5">
-                              <div id={`note-translate-${reply.id}`} className="contents" />
-                              <ForumHeartControl
-                                messageId={reply.id}
-                                accountId={reply.accountId}
-                                deletedAt={reply.deletedAt}
-                                payable={reply.payable}
-                                heartViewerId={heartViewerId}
-                                heartCount={reply.heartCount}
-                                hearted={reply.hearted}
-                                view={
-                                  heartTipViews === undefined ? undefined : heartTipViews[reply.id]
-                                }
-                                onHeartTip={onHeartTip}
-                              />
-                              {reply.deletedAt === undefined &&
-                              reply.payable &&
-                              !readOnly &&
-                              !isOwnNote(viewerAccountId, reply.accountId) ? (
-                                <SundayWritingGate notice="zap">
-                                  <IconButton
-                                    type="button"
-                                    size="sm"
-                                    variant="ghost"
-                                    aria-label={t('forum.pay')}
-                                    disabled={payBusy}
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      onPayOpen(reply.id);
-                                    }}
-                                  >
-                                    <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
-                                  </IconButton>
-                                </SundayWritingGate>
-                              ) : null}
-                              <IconButton
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                aria-label={t('forum.copyReplyLink')}
-                                title={t('forum.copyReplyLink')}
-                                data-copied={copiedId === reply.id ? 'true' : undefined}
-                                onClick={(event) => {
-                                  stopCardToggle(event);
-                                  void copyMessageLink(reply.id);
-                                }}
-                              >
-                                {copiedId === reply.id ? (
-                                  <Check aria-hidden="true" className="h-3.5 w-3.5" />
-                                ) : (
-                                  <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
-                                )}
-                              </IconButton>
-                              {reply.deletedAt === undefined && onDeleted !== undefined ? (
-                                <DeletePostControl
-                                  kind="reply"
-                                  messageId={reply.id}
-                                  onDeleted={onDeleted}
-                                />
-                              ) : null}
-                            </div>
-                            {payMessageId === reply.id && payHost !== 'composer' ? (
-                              <SundayWritingGate notice="zap">
-                                <ForumPaySheet
-                                  messageId={reply.id}
-                                  payDraft={payDraft}
-                                  payBusy={payBusy}
-                                  payError={payError}
-                                  payInvoice={payInvoice}
-                                  payWaiting={payWaiting}
-                                  onPayDraftChange={onPayDraftChange}
-                                  {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
-                                  onPaySubmit={onPaySubmit}
-                                  onPayCancel={onPayCancel}
-                                  rateDay={rateDay}
-                                  onInteract={stopCardToggle}
-                                />
-                              </SundayWritingGate>
-                            ) : null}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : null}
-                  {!readOnly && message.deletedAt === undefined ? (
-                    reactionPay !== null ? (
-                      <SundayWritingGate notice="zap">
-                        <ForumReplyPayPage
-                          {...(loanOfCard === null ? {} : { loan: loanOfCard })}
-                          preview={reactionPay.preview}
-                          amountSats={reactionPay.amountSats}
-                          pr={reactionPay.pr}
-                          sparkInvoice={reactionPay.sparkInvoice}
-                          payWaiting={payWaiting}
-                          rateDay={rateDay}
-                          onCancel={onPayCancel}
-                        />
-                      </SundayWritingGate>
-                    ) : (
-                      <SundayWritingGate>
-                        <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
-                          {/* On your own note the reply is free: no amount to gift yourself. */}
-                          {isOwnNote(viewerAccountId, message.accountId) ? null : (
-                            <AmountEntry
-                              id="forum-reply-amount"
-                              layout="inline"
-                              label={t(
-                                loanOfCard !== null && !loanOfCard.full
-                                  ? 'forum.loan.amountLabel'
-                                  : 'forum.replyAmountLabel',
-                              )}
-                              placeholder={t('forum.payAmountPlaceholder')}
-                              value={replyAmountDraft}
-                              disabled={
-                                replyPayLocked ||
-                                replyPosting ||
-                                repliesLoading ||
-                                repliesError ||
-                                replies === null
+                    ) : null}
+                    {repliesError ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <p role="alert" className="text-center text-sm text-app-danger">
+                          {t('forum.repliesError')}
+                        </p>
+                        <Button type="button" variant="secondary" onClick={onRetryReplies}>
+                          {t('forum.retry')}
+                        </Button>
+                      </div>
+                    ) : null}
+                    {replies !== null && !repliesError ? (
+                      <ul className="flex flex-col gap-3">
+                        {(Array.isArray(replies) ? replies : []).map((reply) => {
+                          const replyTaggedRole = forumTaggedRole(reply.role);
+                          const hideReplyVerified = verifiedChipHiddenByStaffTag(
+                            reply.role,
+                            reply.staffTag,
+                          );
+                          const replyRoleKeys =
+                            replyTaggedRole === null || hideReplyVerified
+                              ? null
+                              : ROLE_TAG_KEYS[replyTaggedRole];
+                          const replyHintOpen = openRoleMessageId === reply.id;
+                          return (
+                            <li
+                              key={reply.id}
+                              data-reply-id={reply.id}
+                              {...(permalinkTargetId === reply.id
+                                ? { 'data-permalink-target': 'true' }
+                                : {})}
+                              className={
+                                permalinkTargetId === reply.id
+                                  ? 'animate-fade-in rounded-xl border border-app-border bg-app-card px-3 py-2 ring-1 ring-app-fg'
+                                  : 'animate-fade-in rounded-xl border border-app-border bg-app-card px-3 py-2'
                               }
-                              rateDay={rateDay}
-                              onValueChange={(next) => onReplyAmountDraftChange?.(next)}
-                              {...(onReplyUnitChange === undefined
-                                ? {}
-                                : { onUnitChange: onReplyUnitChange })}
-                            />
-                          )}
-                          <div className="flex items-center gap-2">
-                            <MentionTextarea
-                              textareaRef={replyComposerRef}
-                              ariaLabel={t('forum.replyComposerLabel')}
-                              placeholder={t('forum.replyPlaceholder')}
-                              value={replyDraft}
-                              onChange={onReplyDraftChange}
-                              maxLength={FORUM_MESSAGE_MAX_LENGTH}
-                              rows={1}
-                              disabled={
-                                replyPayLocked ||
-                                replyPosting ||
-                                repliesLoading ||
-                                repliesError ||
-                                replies === null
-                              }
-                              wrapperClassName="relative min-w-0 flex-1"
-                              className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
-                            />
-                            <IconButton
-                              type="submit"
-                              size="lg"
-                              variant="primary"
-                              disabled={
-                                replyPayLocked ||
-                                replyPosting ||
-                                repliesLoading ||
-                                repliesError ||
-                                replies === null
-                              }
-                              aria-label={t('forum.post')}
                             >
-                              {replyPosting ? (
-                                <Loader2
-                                  aria-hidden="true"
-                                  className="block h-5 w-5 shrink-0 animate-spin"
+                              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {typeof reply.accountId === 'string' && reply.accountId !== '' ? (
+                                    <button
+                                      type="button"
+                                      aria-label={t('forum.authorProfile')}
+                                      className="text-sm font-medium text-app-fg underline underline-offset-2"
+                                      onClick={(event) => {
+                                        stopCardToggle(event);
+                                        router.push(`/members/${reply.accountId}`);
+                                      }}
+                                    >
+                                      {reply.name}
+                                    </button>
+                                  ) : reply.via === 'nostr' ? (
+                                    <button
+                                      type="button"
+                                      aria-label={t('forum.authorProfile')}
+                                      className="text-sm font-medium text-app-fg underline underline-offset-2"
+                                      onClick={(event) => {
+                                        stopCardToggle(event);
+                                        router.push(
+                                          `/messages/${reply.id}/author?name=${encodeURIComponent(reply.name)}`,
+                                        );
+                                      }}
+                                    >
+                                      {reply.name}
+                                    </button>
+                                  ) : (
+                                    <span className="text-sm font-medium text-app-fg">
+                                      {reply.name}
+                                    </span>
+                                  )}
+                                  {replyRoleKeys !== null ? (
+                                    <button
+                                      type="button"
+                                      aria-expanded={replyHintOpen}
+                                      onClick={(event) => {
+                                        stopCardToggle(event);
+                                        setOpenRoleMessageId(replyHintOpen ? null : reply.id);
+                                      }}
+                                      className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+                                    >
+                                      {t(replyRoleKeys.label)}
+                                    </button>
+                                  ) : reply.via === 'nostr' && !hideReplyVerified ? (
+                                    <button
+                                      type="button"
+                                      aria-expanded={replyHintOpen}
+                                      onClick={(event) => {
+                                        stopCardToggle(event);
+                                        setOpenRoleMessageId(replyHintOpen ? null : reply.id);
+                                      }}
+                                      className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
+                                    >
+                                      {t('forum.via.nostr')}
+                                    </button>
+                                  ) : null}
+                                  {reply.staffTag === 'software_developer' ? (
+                                    <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
+                                      {t('forum.staff.softwareDeveloper')}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <time
+                                  dateTime={reply.createdAt}
+                                  className="text-xs text-app-subtle"
+                                >
+                                  {formatForumTime(reply.createdAt, locale)}
+                                </time>
+                              </div>
+                              {replyHintOpen && replyRoleKeys !== null ? (
+                                <p role="status" className="mt-1 text-xs text-app-muted">
+                                  {t(replyRoleKeys.hint)}
+                                </p>
+                              ) : replyHintOpen && reply.via === 'nostr' ? (
+                                <p role="status" className="mt-1 text-xs text-app-muted">
+                                  {t('forum.via.nostrHint')}
+                                </p>
+                              ) : null}
+                              {reply.text !== '' ? (
+                                <div className="mt-1">
+                                  {reply.via === 'nostr' ? (
+                                    <TranslatableNoteBody
+                                      messageId={reply.id}
+                                      plain
+                                      text={reply.text}
+                                      truncate={truncate}
+                                      className="whitespace-pre-wrap text-sm text-app-fg"
+                                      controlSlotId={`note-translate-${reply.id}`}
+                                      {...(!readOnly &&
+                                      typeof reply.accountId === 'string' &&
+                                      reply.accountId !== '' &&
+                                      reply.mentions !== undefined
+                                        ? { mentions: reply.mentions }
+                                        : {})}
+                                    />
+                                  ) : (
+                                    <ForumQuotedBody
+                                      text={reply.text}
+                                      knownNotes={[...messages, ...replies]}
+                                      excludeId={reply.id}
+                                      rateDay={rateDay ?? null}
+                                      fiat={fiat}
+                                      truncate={truncate}
+                                      controlSlotId={`note-translate-${reply.id}`}
+                                      {...(!readOnly &&
+                                      typeof reply.accountId === 'string' &&
+                                      reply.accountId !== '' &&
+                                      reply.mentions !== undefined
+                                        ? { mentions: reply.mentions }
+                                        : {})}
+                                      onActivate={(event) => {
+                                        event.stopPropagation();
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                              ) : null}
+                              <ReplyDirectionAmounts
+                                text={reply.text}
+                                sats={reply.sats}
+                                receivedSats={reply.receivedSats}
+                                rateDay={rateDay ?? null}
+                                fiat={fiat}
+                                numberFormat={numberFormat}
+                                sent={reply}
+                                received={{
+                                  amountUsd: reply.receivedAmountUsd,
+                                  amountChf: reply.receivedAmountChf,
+                                  amountEur: reply.receivedAmountEur,
+                                  amountPhp: reply.receivedAmountPhp,
+                                }}
+                              />
+                              <div className="mt-2 flex flex-wrap items-center gap-5">
+                                <div id={`note-translate-${reply.id}`} className="contents" />
+                                <ForumHeartControl
+                                  messageId={reply.id}
+                                  accountId={reply.accountId}
+                                  deletedAt={reply.deletedAt}
+                                  payable={reply.payable}
+                                  heartViewerId={heartViewerId}
+                                  heartCount={reply.heartCount}
+                                  hearted={reply.hearted}
+                                  view={
+                                    heartTipViews === undefined
+                                      ? undefined
+                                      : heartTipViews[reply.id]
+                                  }
+                                  onHeartTip={onHeartTip}
                                 />
-                              ) : (
-                                <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+                                {reply.deletedAt === undefined &&
+                                reply.payable &&
+                                !readOnly &&
+                                !isOwnNote(viewerAccountId, reply.accountId) ? (
+                                  <SundayWritingGate notice="zap">
+                                    <IconButton
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      aria-label={t('forum.pay')}
+                                      disabled={payBusy}
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        onPayOpen(reply.id);
+                                      }}
+                                    >
+                                      <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                                    </IconButton>
+                                  </SundayWritingGate>
+                                ) : null}
+                                <IconButton
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  aria-label={t('forum.copyReplyLink')}
+                                  title={t('forum.copyReplyLink')}
+                                  data-copied={copiedId === reply.id ? 'true' : undefined}
+                                  onClick={(event) => {
+                                    stopCardToggle(event);
+                                    void copyMessageLink(reply.id);
+                                  }}
+                                >
+                                  {copiedId === reply.id ? (
+                                    <Check aria-hidden="true" className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <Link2 aria-hidden="true" className="h-3.5 w-3.5" />
+                                  )}
+                                </IconButton>
+                                {reply.deletedAt === undefined && onDeleted !== undefined ? (
+                                  <DeletePostControl
+                                    kind="reply"
+                                    messageId={reply.id}
+                                    onDeleted={onDeleted}
+                                  />
+                                ) : null}
+                              </div>
+                              <Collapse show={payMessageId === reply.id && payHost !== 'composer'}>
+                                <SundayWritingGate notice="zap">
+                                  <ForumPaySheet
+                                    messageId={reply.id}
+                                    payDraft={payDraft}
+                                    payBusy={payBusy}
+                                    payError={payError}
+                                    payInvoice={payInvoice}
+                                    payWaiting={payWaiting}
+                                    onPayDraftChange={onPayDraftChange}
+                                    {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
+                                    onPaySubmit={onPaySubmit}
+                                    onPayCancel={onPayCancel}
+                                    rateDay={rateDay}
+                                    onInteract={stopCardToggle}
+                                  />
+                                </SundayWritingGate>
+                              </Collapse>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : null}
+                    {!readOnly && message.deletedAt === undefined ? (
+                      <Swap viewKey={reactionPay !== null ? 'pay' : 'form'}>
+                        {reactionPay !== null ? (
+                          <SundayWritingGate notice="zap">
+                            <ForumReplyPayPage
+                              {...(loanOfCard === null ? {} : { loan: loanOfCard })}
+                              preview={reactionPay.preview}
+                              amountSats={reactionPay.amountSats}
+                              pr={reactionPay.pr}
+                              sparkInvoice={reactionPay.sparkInvoice}
+                              payWaiting={payWaiting}
+                              rateDay={rateDay}
+                              onCancel={onPayCancel}
+                            />
+                          </SundayWritingGate>
+                        ) : (
+                          <SundayWritingGate>
+                            <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
+                              {/* On your own note the reply is free: no amount to gift yourself. */}
+                              {isOwnNote(viewerAccountId, message.accountId) ? null : (
+                                <AmountEntry
+                                  id="forum-reply-amount"
+                                  layout="inline"
+                                  label={t(
+                                    loanOfCard !== null && !loanOfCard.full
+                                      ? 'forum.loan.amountLabel'
+                                      : 'forum.replyAmountLabel',
+                                  )}
+                                  placeholder={t('forum.payAmountPlaceholder')}
+                                  value={replyAmountDraft}
+                                  disabled={
+                                    replyPayLocked ||
+                                    replyPosting ||
+                                    repliesLoading ||
+                                    repliesError ||
+                                    replies === null
+                                  }
+                                  rateDay={rateDay}
+                                  onValueChange={(next) => onReplyAmountDraftChange?.(next)}
+                                  {...(onReplyUnitChange === undefined
+                                    ? {}
+                                    : { onUnitChange: onReplyUnitChange })}
+                                />
                               )}
-                            </IconButton>
-                          </div>
-                          {replyFormError === 'empty' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.errorEmpty')}
-                            </p>
-                          ) : null}
-                          {replyFormError === 'amount' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.errorReplyPayment')}
-                            </p>
-                          ) : null}
-                          {replyFormError === 'tooLong' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.errorTooLong')}
-                            </p>
-                          ) : null}
-                          {replyFormError === 'request' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.errorRequest')}
-                            </p>
-                          ) : null}
-                          {replyFormError === 'rateLimit' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.errorRateLimit')}
-                            </p>
-                          ) : null}
-                          {replyFormError === 'deleted' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.errorNoteDeleted')}
-                            </p>
-                          ) : null}
-                          {replyFormError === 'authorWallet' ? (
-                            <p role="alert" className="text-center text-sm text-app-danger">
-                              {t('forum.payErrorAuthorWallet')}
-                            </p>
-                          ) : null}
-                        </form>
-                      </SundayWritingGate>
-                    )
-                  ) : null}
-                </div>
-              ) : null}
+                              <div className="flex items-center gap-2">
+                                <MentionTextarea
+                                  textareaRef={replyComposerRef}
+                                  ariaLabel={t('forum.replyComposerLabel')}
+                                  placeholder={t('forum.replyPlaceholder')}
+                                  value={replyDraft}
+                                  onChange={onReplyDraftChange}
+                                  maxLength={FORUM_MESSAGE_MAX_LENGTH}
+                                  rows={1}
+                                  disabled={
+                                    replyPayLocked ||
+                                    replyPosting ||
+                                    repliesLoading ||
+                                    repliesError ||
+                                    replies === null
+                                  }
+                                  wrapperClassName="relative min-w-0 flex-1"
+                                  className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
+                                />
+                                <IconButton
+                                  type="submit"
+                                  size="lg"
+                                  variant="primary"
+                                  disabled={
+                                    replyPayLocked ||
+                                    replyPosting ||
+                                    repliesLoading ||
+                                    repliesError ||
+                                    replies === null
+                                  }
+                                  aria-label={t('forum.post')}
+                                >
+                                  {replyPosting ? (
+                                    <Loader2
+                                      aria-hidden="true"
+                                      className="block h-5 w-5 shrink-0 animate-spin"
+                                    />
+                                  ) : (
+                                    <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+                                  )}
+                                </IconButton>
+                              </div>
+                              <Collapse show={replyFormError !== null}>
+                                {replyFormError === 'empty' ? (
+                                  <p role="alert" className="text-center text-sm text-app-danger">
+                                    {t('forum.errorEmpty')}
+                                  </p>
+                                ) : null}
+                                {replyFormError === 'amount' ? (
+                                  <p role="alert" className="text-center text-sm text-app-danger">
+                                    {t('forum.errorReplyPayment')}
+                                  </p>
+                                ) : null}
+                                {replyFormError === 'tooLong' ? (
+                                  <p role="alert" className="text-center text-sm text-app-danger">
+                                    {t('forum.errorTooLong')}
+                                  </p>
+                                ) : null}
+                                {replyFormError === 'request' ? (
+                                  <p role="alert" className="text-center text-sm text-app-danger">
+                                    {t('forum.errorRequest')}
+                                  </p>
+                                ) : null}
+                                {replyFormError === 'rateLimit' ? (
+                                  <p role="alert" className="text-center text-sm text-app-danger">
+                                    {t('forum.errorRateLimit')}
+                                  </p>
+                                ) : null}
+                                {replyFormError === 'deleted' ? (
+                                  <p role="alert" className="text-center text-sm text-app-danger">
+                                    {t('forum.errorNoteDeleted')}
+                                  </p>
+                                ) : null}
+                                {replyFormError === 'authorWallet' ? (
+                                  <p role="alert" className="text-center text-sm text-app-danger">
+                                    {t('forum.payErrorAuthorWallet')}
+                                  </p>
+                                ) : null}
+                              </Collapse>
+                            </form>
+                          </SundayWritingGate>
+                        )}
+                      </Swap>
+                    ) : null}
+                  </div>
+                ) : null}
+              </Collapse>
             </li>
           );
         })}
@@ -2353,7 +2377,9 @@ export function ForumBoard({
         </SundayWritingGate>
       ) : null}
 
-      {(writer === undefined ? composerPay || loosePay : payInWriter) ? paySheet : null}
+      <Collapse show={writer === undefined ? composerPay || loosePay : payInWriter}>
+        {paySheet}
+      </Collapse>
 
       <div className="sunday-write-field">
         {!hideCompose && formError === 'empty' ? (
@@ -2515,7 +2541,9 @@ export function ForumBoard({
 
       {composeSection}
 
-      {writer !== undefined && (loosePay || (composerPay && !payInWriter)) ? paySheet : null}
+      <Collapse show={writer !== undefined && (loosePay || (composerPay && !payInWriter))}>
+        {paySheet}
+      </Collapse>
 
       {middle}
       {error && messages !== null ? errorBlock : null}

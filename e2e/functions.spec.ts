@@ -5704,6 +5704,15 @@ const REACTION_PAY_NOTE = 'Thank you so much to all donors.';
 
 /** Signed-in welcome, one foreign note, a paid reaction invoice that stays waiting. */
 async function openReactionPayPage(page: Page, invoiceStatus: number = 200): Promise<void> {
+  await openReactionForm(page, invoiceStatus);
+  await page.getByLabel('Amount').fill('21');
+  await page.getByLabel('Your reaction').fill(REACTION_PAY_ANSWER);
+  const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+  await form.getByRole('button', { name: 'Post' }).click();
+}
+
+/** Signed-in welcome with one foreign note open on its reaction form. */
+async function openReactionForm(page: Page, invoiceStatus: number = 200): Promise<void> {
   await seedAdaSession(page);
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
@@ -5793,12 +5802,7 @@ async function openReactionPayPage(page: Page, invoiceStatus: number = 200): Pro
   });
   await page.goto('/welcome');
   await page.getByText(REACTION_PAY_NOTE).click();
-  const field = page.getByLabel('Your reaction');
-  await expect(field).toBeVisible();
-  await page.getByLabel('Amount').fill('21');
-  await field.fill(REACTION_PAY_ANSWER);
-  const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
-  await form.getByRole('button', { name: 'Post' }).click();
+  await expect(page.getByLabel('Your reaction')).toBeVisible();
 }
 
 test('Function: ForumReplyPayPage — paid reaction replaces the reply composer', async ({
@@ -5813,6 +5817,178 @@ test('Function: ForumReplyPayPage — paid reaction replaces the reply composer'
   await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
   await expect(page.getByLabel('Your reaction')).toHaveCount(0);
+});
+
+/**
+ * Records, in order, each state the `Motion` boxes show from the first paint on: a `[data-swap]`
+ * view as `swap:<key>`, a `[data-collapse]` fold that holds `holding` as `collapse:<open|closed>`,
+ * each with `:faded` while at `opacity-0` and `:inert` while inert. Read it with {@link motionLog}.
+ */
+async function recordMotion(page: Page, holding: string): Promise<void> {
+  await page.addInitScript((selector: string) => {
+    const log: string[] = [];
+    (window as unknown as { motionLog: string[] }).motionLog = log;
+    const note = (el: Element): void => {
+      const swap = el.getAttribute('data-swap');
+      const fold = el.getAttribute('data-collapse');
+      if (swap === null && (fold === null || el.querySelector(selector) === null)) {
+        return;
+      }
+      const faded = el.className.split(' ').includes('opacity-0') ? ':faded' : '';
+      const inert = el.hasAttribute('inert') ? ':inert' : '';
+      const entry = `${swap === null ? `collapse:${String(fold)}` : `swap:${swap}`}${faded}${inert}`;
+      if (log[log.length - 1] !== entry) {
+        log.push(entry);
+      }
+    };
+    new MutationObserver((records) => {
+      for (const record of records) {
+        if (record.target instanceof Element) {
+          note(record.target);
+        }
+        for (const node of Array.from(record.addedNodes)) {
+          if (node instanceof Element) {
+            for (const el of [
+              node,
+              ...Array.from(node.querySelectorAll('[data-swap], [data-collapse]')),
+            ]) {
+              note(el);
+            }
+          }
+        }
+      }
+    }).observe(document, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ['class', 'data-swap', 'data-collapse', 'inert'],
+    });
+  }, holding);
+}
+
+/** States recorded by {@link recordMotion} so far. */
+async function motionLog(page: Page): Promise<string[]> {
+  return page.evaluate(() => (window as unknown as { motionLog: string[] }).motionLog);
+}
+
+/** True when `wanted` appears in `log` in this order, other entries in between allowed. */
+function inOrder(log: string[], wanted: string[]): boolean {
+  let at = 0;
+  for (const entry of log) {
+    if (entry === wanted[at]) {
+      at += 1;
+    }
+  }
+  return at === wanted.length;
+}
+
+test('Function: Swap — the reply form fades out in place, then the pay page fades in, and Close swaps back', async ({
+  page,
+}) => {
+  await recordMotion(page, '[data-pay-sheet]');
+  await openReactionPayPage(page);
+  const payPage = page.locator('[data-swap="pay"] [data-reply-pay-page]');
+  await expect(payPage).toBeVisible();
+  await expect(page.getByLabel('Your reaction')).toHaveCount(0);
+  expect(inOrder(await motionLog(page), ['swap:form', 'swap:form:faded:inert', 'swap:pay'])).toBe(
+    true,
+  );
+  await payPage.getByRole('button', { name: 'Close' }).click();
+  await expect(page.locator('[data-swap="form"]').getByLabel('Your reaction')).toBeVisible();
+  await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_PAY_ANSWER);
+  expect(inOrder(await motionLog(page), ['swap:pay', 'swap:pay:faded:inert', 'swap:form'])).toBe(
+    true,
+  );
+});
+
+test('Function: Swap — with reduced motion the pay page replaces the reply form at once', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await recordMotion(page, '[data-pay-sheet]');
+  await openReactionPayPage(page);
+  await expect(page.locator('[data-swap="pay"] [data-reply-pay-page]')).toBeVisible();
+  expect(await motionLog(page)).not.toContain('swap:form:faded:inert');
+});
+
+test('Function: Collapse — a gift sheet eases open and folds away, inert, before it unmounts', async ({
+  page,
+  request,
+}) => {
+  await recordMotion(page, '[data-pay-sheet]');
+  await stubPayableNote(page);
+  await signInViaStub(page, request);
+  await agreeToLivingRoomRules(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await markWalletVerified(page);
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  const fold = replyCard.locator('[data-collapse]', { has: page.locator('[data-pay-sheet]') });
+  await expect(fold).toHaveAttribute('data-collapse', 'open');
+  await expect(fold.getByRole('button', { name: 'Continue' })).toBeVisible();
+  await fold.getByRole('button', { name: 'Close' }).click();
+  await expect(fold).toHaveCount(0);
+  expect(
+    inOrder(await motionLog(page), ['collapse:closed', 'collapse:open', 'collapse:closed:inert']),
+  ).toBe(true);
+});
+
+test('Function: Collapse — with reduced motion a gift sheet opens and closes at once', async ({
+  page,
+  request,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await recordMotion(page, '[data-pay-sheet]');
+  await stubPayableNote(page);
+  await signInViaStub(page, request);
+  await agreeToLivingRoomRules(page);
+  await expect(page).toHaveURL(/\/welcome/);
+  await markWalletVerified(page);
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await expect(replyCard.getByRole('button', { name: 'Continue' })).toBeVisible();
+  await replyCard.getByRole('button', { name: 'Close' }).click();
+  await expect(replyCard.locator('[data-pay-sheet]')).toHaveCount(0);
+  const log = await motionLog(page);
+  expect(log).toContain('collapse:open');
+  expect(log.some((entry) => entry.startsWith('collapse:closed'))).toBe(false);
+});
+
+test('Function: AutoHeight — the open reaction box glides to the height its content needs and clips only while moving', async ({
+  page,
+}) => {
+  await openReactionForm(page);
+  const fold = page.locator('[data-collapse]', { has: page.getByLabel('Your reaction') }).first();
+  await expect(fold).toHaveAttribute('data-collapse', 'open');
+  const measure = (): Promise<{ height: number; content: number; overflow: string }> =>
+    fold.evaluate((el) => {
+      const box = el.firstElementChild?.firstElementChild as HTMLElement;
+      const content = box.firstElementChild as HTMLElement;
+      return {
+        height: Number.parseFloat(box.style.height),
+        content: content.getBoundingClientRect().height,
+        overflow: getComputedStyle(box).overflow,
+      };
+    });
+  /** True when the box is at rest: as tall as its content and not clipping. */
+  const atRest = (state: { height: number; content: number; overflow: string }): boolean =>
+    Math.abs(state.height - state.content) < 0.01 && state.overflow === 'visible';
+  await expect.poll(async () => atRest(await measure())).toBe(true);
+  const before = await measure();
+  await page.getByLabel('Your reaction').fill(REACTION_PAY_ANSWER);
+  const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+  await form.getByRole('button', { name: 'Post' }).click();
+  await expect(form.getByRole('alert')).toHaveText('Send at least ₿1 with your reaction');
+  await expect
+    .poll(async () => {
+      const after = await measure();
+      return atRest(after) ? after.content : 0;
+    })
+    .toBeGreaterThan(before.content);
 });
 
 test('Function: isSmartphoneUserAgent — an iPhone pay link has no invoice QR, only the Pay link', async ({

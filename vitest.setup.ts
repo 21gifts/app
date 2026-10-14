@@ -9,7 +9,13 @@
  * module's server guard.
  */
 
+import { configure } from '@testing-library/react';
 import { vi } from 'vitest';
+
+// Sheets and views ease in and out (`src/components/Motion.tsx`): a pay flow can wait for two
+// 180 ms swaps and a 320 ms fold. The default 1 s for `findBy…` and `waitFor` is too tight for that
+// on a busy runner; a failing wait only takes longer to report.
+configure({ asyncUtilTimeout: 3000 });
 
 // The interaction log queues events in module state and sends them with
 // `fetch`. Left real, a full queue in one test would post to `/me/events` and

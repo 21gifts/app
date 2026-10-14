@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
+import { FOLD_MS, SWAP_FADE_MS } from '@/components/Motion';
 import { ForumLoader } from '@/components/ForumLoader';
 import { SPOT_REFRESH_MS } from '@/hooks/useSpotRate';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -3748,7 +3749,9 @@ describe('ForumLoader', () => {
     expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe(
       'Hello gifts',
     );
-    expect(screen.queryByText(WALLET_UNAVAILABLE)).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByText(WALLET_UNAVAILABLE)).toBeNull();
+    });
   });
 
   it('switches to All after a compose-pay confirms', async () => {
@@ -5046,8 +5049,10 @@ describe('ForumLoader', () => {
     const replyCard = clickGiftOnReply();
     expect(within(replyCard).getByLabelText('Amount')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
-    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
+    });
   });
 
   it('clears the pay sheet when a public fetch returns more sats', async () => {
@@ -5229,9 +5234,17 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
+    // The view swaps in after the old one has faded out.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SWAP_FADE_MS);
+    });
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
+    });
+    // The closed sheet folds away before it unmounts.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FOLD_MS);
     });
     expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
@@ -5306,10 +5319,11 @@ describe('ForumLoader', () => {
     fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
+    // The fetch fails just after the invoice card has swapped in, so Close comes first.
     publicFetchMock.mockImplementationOnce(
       () =>
         new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('poll failed')), 1);
+          setTimeout(() => reject(new Error('poll failed')), SWAP_FADE_MS + 1);
         }),
     );
     publicFetchMock.mockResolvedValue({ ...PAYABLE_REPLY, sats: 21 });
@@ -5327,6 +5341,10 @@ describe('ForumLoader', () => {
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
     await act(async () => {
       await Promise.resolve();
+    });
+    // The view swaps in after the old one has faded out.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SWAP_FADE_MS);
     });
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
@@ -5396,6 +5414,10 @@ describe('ForumLoader', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
+    // The closed sheet folds away before it unmounts.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FOLD_MS);
+    });
     expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
 
@@ -5454,7 +5476,9 @@ describe('ForumLoader', () => {
     await clickReplyGift();
     fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
     chooseForumMode('Active');
-    expect(screen.queryByLabelText('Amount')).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Amount')).toBeNull();
+    });
   });
 
   it('clears a parent-composer invoice when Active hides the unpaid parent', async () => {
@@ -5690,7 +5714,9 @@ describe('ForumLoader', () => {
     expect(
       within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
     ).toBe('/wallet');
-    expect(screen.queryByRole('alert')).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
     expect(invoiceMock).toHaveBeenCalledTimes(2);
   });
 
@@ -6175,7 +6201,9 @@ describe('ForumLoader', () => {
       expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
-    expect(screen.queryByLabelText('Your reaction')).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Your reaction')).toBeNull();
+    });
   });
 
   it('marks the note read when expanded and not when collapsed', async () => {
@@ -6512,8 +6540,12 @@ describe('ForumLoader', () => {
       expect(screen.getByText('A reply')).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
-    expect(screen.queryByText('A reply')).toBeNull();
     expect(screen.getByText('Loading reactions…')).toBeTruthy();
+    // The stale list folds away, inert, under the note that was open; the new note never shows it.
+    expect(screen.getByText('A reply').closest('[inert]')).not.toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByText('A reply')).toBeNull();
+    });
   });
 
   // Composer is disabled while replies are missing/loading (submit never
@@ -7185,9 +7217,11 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21, 'Hi Bob', NO_RATE_SHOWN);
     });
-    expect(document.querySelector('[data-reply-pay-page]')?.textContent).toContain('Hi Bob');
-    expect(screen.queryByLabelText('Your reaction')).toBeNull();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
+    await waitFor(() => {
+      expect(document.querySelector('[data-reply-pay-page]')?.textContent).toContain('Hi Bob');
+      expect(screen.queryByLabelText('Your reaction')).toBeNull();
+      expect(screen.queryByLabelText('Amount')).toBeNull();
+    });
     await act(async () => {
       resolvePublic({ ...FOREIGN, sats: 21, replyCount: 1 });
     });
@@ -7219,9 +7253,11 @@ describe('ForumLoader', () => {
       expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
     });
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(document.querySelector('[data-reply-pay-page]')).toBeNull();
-    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('Hi Bob');
-    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('21');
+    await waitFor(() => {
+      expect(document.querySelector('[data-reply-pay-page]')).toBeNull();
+      expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('Hi Bob');
+      expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('21');
+    });
     expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(false);
   });
 
@@ -10237,10 +10273,18 @@ it('keeps a reply pay sheet until receivedSats rises', async () => {
       signal: expect.any(AbortSignal),
     }),
   );
+  // The view swaps in after the old one has faded out.
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(SWAP_FADE_MS);
+  });
   expect(within(replyCard).getByText('Pay ₿21')).toBeTruthy();
   publicFetchMock.mockResolvedValue({ ...payableReply, sats: 5, receivedSats: 21 });
   await act(async () => {
     await vi.advanceTimersByTimeAsync(2000);
+  });
+  // The closed sheet folds away before it unmounts.
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(FOLD_MS);
   });
   expect(within(replyCard).queryByText('Pay ₿21')).toBeNull();
 });

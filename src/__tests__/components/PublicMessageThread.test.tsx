@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMessageThread } from '@/components/PublicMessageThread';
+import { FOLD_MS, SWAP_FADE_MS } from '@/components/Motion';
 import {
   agreeToRules,
   CannotReceiveError,
@@ -464,7 +465,9 @@ describe('PublicMessageThread', () => {
     expect(
       within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
     ).toBe('/wallet');
-    expect(screen.queryByRole('alert')).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
     expect(postMessageInvoice).toHaveBeenCalledTimes(2);
   });
 
@@ -565,9 +568,17 @@ describe('PublicMessageThread', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
+    // The view swaps in after the old one has faded out.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SWAP_FADE_MS);
+    });
     expect(screen.getByText(PAY_UNAVAILABLE)).toBeTruthy();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
+    });
+    // The closed sheet folds away before it unmounts.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FOLD_MS);
     });
     expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
   });
@@ -593,8 +604,10 @@ describe('PublicMessageThread', () => {
     await openNestedPaySheet();
     expect(payAmountInput()).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(screen.getAllByLabelText('Amount')).toHaveLength(1);
-    expect(replyAmountInput().id).toBe('forum-reply-amount');
+    await waitFor(() => {
+      expect(screen.getAllByLabelText('Amount')).toHaveLength(1);
+      expect(replyAmountInput().id).toBe('forum-reply-amount');
+    });
   });
 
   it('opens the overlay when pay is missing a wallet', async () => {
@@ -677,6 +690,10 @@ describe('PublicMessageThread', () => {
     expect(screen.getByText(PAY_UNAVAILABLE)).toBeTruthy();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
+    });
+    // The closed sheet folds away before it unmounts.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(FOLD_MS);
     });
     expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
   });

@@ -1,9 +1,10 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
+import { Swap } from '@/components/Motion';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { WalletOwnAddress } from '@/components/WalletOwnAddress';
@@ -79,81 +80,94 @@ export function WalletPay({
   const username = useAuthStore((state) => state.account?.username ?? null);
   const hasAddress = giftsLightningAddress(username) !== null;
 
-  switch (view) {
-    case 'unavailable':
-      return (
-        <p role="status" className="px-6 text-center text-sm text-app-muted">
-          {t('wallet.payUnavailable')}
-        </p>
-      );
-    case 'failed':
-      return (
-        <>
-          <p role="alert" className="px-6 text-center text-sm text-app-danger">
-            {t('wallet.payFailed')}
+  const body = ((): ReactNode => {
+    switch (view) {
+      case 'unavailable':
+        return (
+          <p role="status" className="px-6 text-center text-sm text-app-muted">
+            {t('wallet.payUnavailable')}
           </p>
-          <Button type="button" variant="secondary" onClick={retry}>
-            {t('wallet.payRetry')}
-          </Button>
-        </>
-      );
-    case 'setupFailed':
-      return <WalletSetupNote />;
-    case 'preparing':
-    case 'paying':
-      return (
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 aria-hidden="true" className="h-6 w-6 animate-spin text-app-subtle" />
-          <p role="status" className="text-center text-sm text-app-muted">
-            {t(view === 'preparing' ? 'wallet.payPreparing' : 'wallet.paying')}
-          </p>
-        </div>
-      );
-    case 'confirm': {
-      /* v8 ignore next -- confirm is reached only after the fee is set */
-      const fee = feeSats ?? 0;
-      return (
-        <>
-          {fee > 0 ? (
-            <p className="text-center text-xs tabular-nums lining-nums text-app-muted">
-              {t('wallet.payFee', { amount: formatBitcoin(fee, numberFormat) })}
-              {preferredFiatSuffix(fee, rateDay, fiat, numberFormat)}
+        );
+      case 'failed':
+        return (
+          <>
+            <p role="alert" className="px-6 text-center text-sm text-app-danger">
+              {t('wallet.payFailed')}
             </p>
-          ) : null}
-          <Button type="button" variant="primary" onClick={pay}>
-            {postsOnPay ? (
-              <span className="text-center">
-                {t('wallet.payAndPost', { amount: formatBitcoin(amountSats, numberFormat) })}
-              </span>
-            ) : confirmLabel !== undefined ? (
-              <span className="text-center">{confirmLabel}</span>
-            ) : (
-              t('wallet.payFromWallet')
+            <Button type="button" variant="secondary" onClick={retry}>
+              {t('wallet.payRetry')}
+            </Button>
+          </>
+        );
+      case 'setupFailed':
+        return <WalletSetupNote />;
+      case 'preparing':
+      case 'paying':
+        return (
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 aria-hidden="true" className="h-6 w-6 animate-spin text-app-subtle" />
+            <p role="status" className="text-center text-sm text-app-muted">
+              {t(view === 'preparing' ? 'wallet.payPreparing' : 'wallet.paying')}
+            </p>
+          </div>
+        );
+      case 'confirm': {
+        /* v8 ignore next -- confirm is reached only after the fee is set */
+        const fee = feeSats ?? 0;
+        return (
+          <>
+            {fee > 0 ? (
+              <p className="text-center text-xs tabular-nums lining-nums text-app-muted">
+                {t('wallet.payFee', { amount: formatBitcoin(fee, numberFormat) })}
+                {preferredFiatSuffix(fee, rateDay, fiat, numberFormat)}
+              </p>
+            ) : null}
+            <Button type="button" variant="primary" onClick={pay}>
+              {postsOnPay ? (
+                <span className="text-center">
+                  {t('wallet.payAndPost', { amount: formatBitcoin(amountSats, numberFormat) })}
+                </span>
+              ) : confirmLabel !== undefined ? (
+                <span className="text-center">{confirmLabel}</span>
+              ) : (
+                t('wallet.payFromWallet')
+              )}
+            </Button>
+          </>
+        );
+      }
+      case 'insufficient':
+        return (
+          <>
+            <p role="alert" className="text-center text-sm text-app-danger">
+              {t('wallet.payInsufficient')}
+            </p>
+            {missingSats === null ? null : (
+              <p className="text-center text-sm tabular-nums lining-nums text-app-fg">
+                {t('wallet.payMissing', { amount: formatBitcoin(missingSats, numberFormat) })}
+                {preferredFiatSuffix(missingSats, rateDay, fiat, numberFormat)}
+              </p>
             )}
-          </Button>
-        </>
-      );
-    }
-    case 'insufficient':
-      return (
-        <>
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {t('wallet.payInsufficient')}
+            {hasAddress && username !== null ? <WalletOwnAddress username={username} /> : null}
+          </>
+        );
+      default:
+        return (
+          <p role="status" className="px-6 text-center text-sm text-app-muted">
+            {t('wallet.payUnconfirmed')}
           </p>
-          {missingSats === null ? null : (
-            <p className="text-center text-sm tabular-nums lining-nums text-app-fg">
-              {t('wallet.payMissing', { amount: formatBitcoin(missingSats, numberFormat) })}
-              {preferredFiatSuffix(missingSats, rateDay, fiat, numberFormat)}
-            </p>
-          )}
-          {hasAddress && username !== null ? <WalletOwnAddress username={username} /> : null}
-        </>
-      );
-    default:
-      return (
-        <p role="status" className="px-6 text-center text-sm text-app-muted">
-          {t('wallet.payUnconfirmed')}
-        </p>
-      );
-  }
+        );
+    }
+  })();
+
+  // The states sit in the sheet's flex column; the box keeps that column and its gap. Preparing
+  // and paying are one view, so only their line changes.
+  return (
+    <Swap
+      viewKey={view === 'paying' ? 'preparing' : view}
+      className="flex w-full flex-col items-center gap-3"
+    >
+      {body}
+    </Swap>
+  );
 }
