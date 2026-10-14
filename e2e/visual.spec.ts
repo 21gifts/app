@@ -1967,7 +1967,7 @@ test.describe('screen baselines', () => {
     await expect(
       page.getByText('Your wallet could not be opened. Please try again.'),
     ).toBeVisible();
-    await expect(page.getByRole('status', { name: 'Opening your wallet…' })).toBeVisible();
+    await expect(page.locator('[data-balance-skeleton]')).toBeVisible();
     await shotScreen(page, 'state-wallet-balance-reopening');
   });
 
