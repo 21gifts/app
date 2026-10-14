@@ -520,7 +520,7 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 
 ### Variant: software-developer
 
-One author row on the welcome forum. Beside the name, a static Software Developer label (a span, not a button and not a role) sits after any role pill. The rest of this state matches the smallest one-note welcome screen.
+One author row on the welcome forum. Beside the name, a static Software Developer label (a span, not a button and not a role) sits after a Founder, Moderator, or Initiator pill. A Verified pill is not shown beside this label, and an External pill is not shown in its place. The rest of this state matches the smallest one-note welcome screen.
 
 ![21.gifts welcome software developer](images/welcome-software-developer.png)
 
@@ -2497,7 +2497,7 @@ Member identity card with About me inside the card when `aboutMe` is set; read-o
 
 ### Variant: software-developer
 
-Basis member identity card. Beside the name, a static Software Developer label (a span, not a button and not a role). There is no role pill. About me and Message stay as on the default member card.
+Basis member identity card. Beside the name, a static Software Developer label (a span, not a button and not a role). There is no role pill. A verified member with this label also has no Verified pill. About me and Message stay as on the default member card.
 
 ![21.gifts member software developer](images/members-software-developer.png)
 

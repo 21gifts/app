@@ -47,7 +47,7 @@ import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shopStickerLangFromLocation } from '@/lib/shop-sticker';
 import { shortResourceUrl } from '@/lib/short-link';
-import { isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { isReplyPaymentExempt, roleAtLeast, verifiedChipHiddenByStaffTag } from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import {
@@ -1003,7 +1003,10 @@ export function MemberProfileScreen({
   const [roleHintOpen, setRoleHintOpen] = useState(false);
   const [fundingHintOpen, setFundingHintOpen] = useState(false);
   const tagged = isMemberTaggedRole(listedProfile.role) ? listedProfile.role : null;
-  const roleKeys = tagged !== null ? ROLE_TAG_KEYS[tagged] : null;
+  const roleKeys =
+    tagged !== null && !verifiedChipHiddenByStaffTag(listedProfile.role, listedProfile.staffTag)
+      ? ROLE_TAG_KEYS[tagged]
+      : null;
   const fundingReviewedAt = listedProfile.fundingReviewedAt;
   const showFundingReviewed = typeof fundingReviewedAt === 'number';
   const showMessage =

@@ -5,6 +5,7 @@ import {
   isReplyPaymentExempt,
   roleAtLeast,
   roleRank,
+  verifiedChipHiddenByStaffTag,
   type Role,
 } from '@/lib/roles';
 
@@ -96,5 +97,29 @@ describe('isReplyPaymentExempt', () => {
   it('is false for a basis account that is not the parent author', () => {
     expect(isReplyPaymentExempt(account('basis'), 'other')).toBe(false);
     expect(isReplyPaymentExempt(account('basis'), undefined)).toBe(false);
+  });
+});
+
+describe('verifiedChipHiddenByStaffTag', () => {
+  it('is true for verified with the software_developer staff tag', () => {
+    expect(verifiedChipHiddenByStaffTag('verified', 'software_developer')).toBe(true);
+  });
+
+  it.each([undefined, null, ''] as const)(
+    'is false for verified when the staff tag is %j',
+    (staffTag) => {
+      expect(verifiedChipHiddenByStaffTag('verified', staffTag)).toBe(false);
+    },
+  );
+
+  it.each(['basis', 'moderator', 'initiator', 'founder'] as const)(
+    'is false for %s with the software_developer staff tag',
+    (role) => {
+      expect(verifiedChipHiddenByStaffTag(role, 'software_developer')).toBe(false);
+    },
+  );
+
+  it('is false for moderator when the staff tag is omitted', () => {
+    expect(verifiedChipHiddenByStaffTag('moderator')).toBe(false);
   });
 });
