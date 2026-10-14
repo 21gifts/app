@@ -460,10 +460,9 @@ app/
 | `staging` | Experimental testing               | staging       |
 | `main`    | Production releases                | PRD           |
 
-- Push to `develop` via **feature branch + PR**
-- `main` is protected — updates flow via an auto-generated Release PR (`develop → main`)
-- **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. A change that is good there is released to `develop` first (`Release: staging -> develop`). `main` receives changes only from `develop` (`Release: develop -> main`). `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
-- Feature pull requests always target `develop`, not `staging` and not `main`. Developers rebase `staging` onto `develop` regularly, because those pull requests land on `develop` and do not update `staging`.
+- Open feature work through a **feature branch and a pull request**. The pull request targets `staging` unless another base was explicitly requested. It must not target `main`. The GitHub default branch stays `develop`; that does not change the pull-request base.
+- `main` is protected. A pull request against `main` is not allowed.
+- **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. A change that is good there is released to `develop` by a release pull request (`Release: staging -> develop`). That release is the explicit request to target `develop`. `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
 - Never force-push, never amend published commits, except publishing a rebase of `staging` onto `develop` with `git push --force-with-lease` to `staging` only.
 
 ### Commit messages
