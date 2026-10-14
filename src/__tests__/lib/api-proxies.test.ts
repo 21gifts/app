@@ -80,6 +80,7 @@ import {
   proxyMessagesInvoicePost,
   proxyMessagesRepaymentDuePost,
   proxyMessagesPhotoGet,
+  proxyMessagesPhotoExtGet,
   proxyMessagesPost,
   proxyMessagesRepliesGet,
   proxyMessagesVideoGet,
@@ -862,6 +863,55 @@ describe('api proxy wrappers', () => {
       '1.jpg',
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/photo/1.jpg');
+  });
+
+  it('proxyMessagesPhotoExtGet hits /messages/:id/photo.jpg without Authorization', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesPhotoExtGet(
+      new Request('http://localhost/messages/m1/photo.jpg?v=1', {
+        headers: { Authorization: 'Bearer secret' },
+      }),
+      'm1',
+      'jpg',
+    );
+    const destination = fetchMock.mock.calls[0]?.[0] as URL;
+    expect(destination.pathname).toBe('/messages/m1/photo.jpg');
+    expect(destination.pathname).not.toBe('/messages/m1/photo');
+    expect(destination.search).toBe('?v=1');
+    const headers = new Headers((fetchMock.mock.calls[0]?.[1] as RequestInit).headers);
+    expect(headers.get('authorization')).toBeNull();
+  });
+
+  it('proxyMessagesPhotoExtGet encodes the id', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesPhotoExtGet(
+      new Request('http://localhost/messages/a%2Fb/photo.jpg'),
+      'a/b',
+      'jpg',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/photo.jpg');
+  });
+
+  it('proxyMessagesPhotoExtGet hits jpeg png and webp pathnames', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesPhotoExtGet(
+      new Request('http://localhost/messages/m1/photo.jpeg'),
+      'm1',
+      'jpeg',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/photo.jpeg');
+    await proxyMessagesPhotoExtGet(
+      new Request('http://localhost/messages/m1/photo.png'),
+      'm1',
+      'png',
+    );
+    expect((fetchMock.mock.calls[1]?.[0] as URL).pathname).toBe('/messages/m1/photo.png');
+    await proxyMessagesPhotoExtGet(
+      new Request('http://localhost/messages/m1/photo.webp'),
+      'm1',
+      'webp',
+    );
+    expect((fetchMock.mock.calls[2]?.[0] as URL).pathname).toBe('/messages/m1/photo.webp');
   });
 
   it('proxyMessagesVideoGet hits /messages/m1/video.mp4', async () => {

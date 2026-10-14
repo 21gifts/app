@@ -225,7 +225,7 @@ export function PublicMessageThread(props: {
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
-  const [photoEpoch, setPhotoEpoch] = useState(0);
+  const [photoVersions, setPhotoVersions] = useState<Record<string, string>>({});
 
   const photoSource: ForumMessage[] = [note];
   if (replies !== null) {
@@ -233,7 +233,8 @@ export function PublicMessageThread(props: {
   }
   const photoSourceRef = useRef(photoSource);
   photoSourceRef.current = photoSource;
-  const photoIdsKey = photoSource
+  const deletedPhotoIdsKey = photoSource
+    .filter((message) => message.deletedAt !== undefined)
     .map((message) => ({
       id: message.id,
       count: message.photoCount ?? (message.hasPhoto ? 1 : 0),
@@ -244,12 +245,15 @@ export function PublicMessageThread(props: {
     .join('\0');
 
   useEffect(() => {
-    if (session === null || photoIdsKey === '') {
+    if (session === null || deletedPhotoIdsKey === '') {
       return;
     }
     const listed = photoSourceRef.current;
     let cancelled = false;
     const missing = listed.flatMap((message) => {
+      if (message.deletedAt === undefined) {
+        return [];
+      }
       const count = message.photoCount ?? (message.hasPhoto ? 1 : 0);
       return Array.from({ length: count }, (_, index) => ({
         id: message.id,
@@ -310,7 +314,7 @@ export function PublicMessageThread(props: {
     return () => {
       cancelled = true;
     };
-  }, [photoEpoch, photoIdsKey, session]);
+  }, [deletedPhotoIdsKey, session]);
 
   useEffect(() => {
     return () => {
@@ -1096,21 +1100,7 @@ export function PublicMessageThread(props: {
           ? {
               shopNoteEdit: true as const,
               onShopNoteUpdated: (updated: ForumMessage) => {
-                setPhotoUrls((prev) => {
-                  const prefix = `${updated.id}:`;
-                  let changed = false;
-                  const next = { ...prev };
-                  for (const [key, url] of Object.entries(next)) {
-                    if (!key.startsWith(prefix)) {
-                      continue;
-                    }
-                    URL.revokeObjectURL(url);
-                    delete next[key];
-                    changed = true;
-                  }
-                  return changed ? next : prev;
-                });
-                setPhotoEpoch((n) => n + 1);
+                setPhotoVersions((prev) => ({ ...prev, [updated.id]: String(Date.now()) }));
                 setNote((prev) => {
                   /* v8 ignore next 3 -- the thread pencil edits only the note on screen */
                   if (prev.id !== updated.id) {
@@ -1139,6 +1129,7 @@ export function PublicMessageThread(props: {
             }
           : {})}
         photoUrls={photoUrls}
+        photoVersions={photoVersions}
         rateDay={rateDay}
         payMessageId={payMessageId}
         payHost={payHost}

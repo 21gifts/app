@@ -1856,17 +1856,14 @@ describe('PublicMessageThread', () => {
   });
 
   it('falls back to hasPhoto when photoCount is omitted', async () => {
-    vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
     signIn();
     renderThread({
       root: { ...root, hasPhoto: true, text: '', photoCount: undefined as unknown as number },
     });
-    await waitFor(() => {
-      expect(fetchMessagePhoto).toHaveBeenCalledWith('sess', MESSAGE_ID, 0);
-    });
-    await waitFor(() => {
-      expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
-    });
+    expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe(
+      `/messages/${MESSAGE_ID}/photo.jpg`,
+    );
+    expect(fetchMessagePhoto).not.toHaveBeenCalled();
   });
 
   it('does not fetch a photo for a no-photo reply when photoCount is omitted', async () => {
@@ -1880,52 +1877,130 @@ describe('PublicMessageThread', () => {
     ]);
     signIn();
     renderThread({ root: { ...root, hasPhoto: true, photoCount: 1 } });
-    await waitFor(() => {
-      expect(fetchMessagePhoto).toHaveBeenCalledWith('sess', MESSAGE_ID, 0);
-    });
-    await waitFor(() => {
-      expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
-    });
+    expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe(
+      `/messages/${MESSAGE_ID}/photo.jpg`,
+    );
     await waitFor(() => {
       expect(screen.getByText('Pater Severin')).toBeTruthy();
     });
     useAuthStore.setState({ session: 'sess-2', account });
-    await waitFor(() => {
-      expect(fetchMessagePhoto).toHaveBeenCalledTimes(1);
-    });
+    expect(fetchMessagePhoto).not.toHaveBeenCalled();
     expect(fetchMessagePhoto).not.toHaveBeenCalledWith('sess', REPLY_ID, 0);
     expect(fetchMessagePhoto).not.toHaveBeenCalledWith('sess-2', REPLY_ID, 0);
   });
 
-  it('loads a photo blob URL when the root has a photo', async () => {
-    vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+  it('renders a public still when the root has a photo', async () => {
     signIn();
     renderThread({ root: { ...root, hasPhoto: true, photoCount: 1 } });
+    expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe(
+      `/messages/${MESSAGE_ID}/photo.jpg`,
+    );
+    expect(fetchMessagePhoto).not.toHaveBeenCalled();
+  });
+
+  it('does not fetch a live photo when the session token changes', async () => {
+    signIn();
+    renderThread({ root: { ...root, hasPhoto: true, photoCount: 1 } });
+    expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
+    useAuthStore.setState({ session: 'sess-2', account });
+    expect(fetchMessagePhoto).not.toHaveBeenCalled();
+  });
+
+  it('loads a deleted still with Bearer and keeps a live still on the public path', async () => {
+    vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:hidden');
+    vi.mocked(fetchReplies).mockResolvedValue([
+      { ...root, id: REPLY_ID, hasPhoto: true, photoCount: 1, text: 'live reply' },
+    ]);
+    signIn();
+    renderThread({
+      root: {
+        ...root,
+        hasPhoto: true,
+        photoCount: 1,
+        text: '',
+        deletedAt: '2026-08-29T15:00:00.000Z',
+      },
+    });
     await waitFor(() => {
       expect(fetchMessagePhoto).toHaveBeenCalledWith('sess', MESSAGE_ID, 0);
     });
     await waitFor(() => {
-      expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
+      expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe('blob:hidden');
     });
-  });
-
-  it('does not refetch a photo when the session token changes', async () => {
-    vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
-    signIn();
-    renderThread({ root: { ...root, hasPhoto: true, photoCount: 1 } });
-    await waitFor(() => {
-      expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
-    });
+    expect(fetchMessagePhoto).not.toHaveBeenCalledWith('sess', REPLY_ID, 0);
     useAuthStore.setState({ session: 'sess-2', account });
     await waitFor(() => {
       expect(fetchMessagePhoto).toHaveBeenCalledTimes(1);
     });
   });
 
-  it('leaves the row text-only when the photo cannot load', async () => {
+  it('loads a deleted still when photoCount is omitted', async () => {
+    vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:omitted');
+    signIn();
+    renderThread({
+      root: {
+        ...root,
+        hasPhoto: true,
+        photoCount: undefined as unknown as number,
+        text: '',
+        deletedAt: '2026-08-29T15:00:00.000Z',
+      },
+    });
+    await waitFor(() => {
+      expect(fetchMessagePhoto).toHaveBeenCalledWith('sess', MESSAGE_ID, 0);
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe('blob:omitted');
+    });
+  });
+
+  it('does not fetch a still for a deleted reply without a photo', async () => {
+    vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob(['x'], { type: 'image/jpeg' }));
+    vi.mocked(fetchReplies).mockResolvedValue([
+      {
+        ...root,
+        id: REPLY_ID,
+        hasPhoto: false,
+        photoCount: undefined as unknown as number,
+        text: 'no still',
+        deletedAt: '2026-08-29T15:00:00.000Z',
+      },
+    ]);
+    signIn();
+    renderThread({
+      root: {
+        ...root,
+        hasPhoto: true,
+        photoCount: 1,
+        text: '',
+        deletedAt: '2026-08-29T15:00:00.000Z',
+      },
+    });
+    await waitFor(() => {
+      expect(fetchMessagePhoto).toHaveBeenCalledWith('sess', MESSAGE_ID, 0);
+    });
+    await waitFor(() => {
+      expect(screen.getByText('no still')).toBeTruthy();
+    });
+    await act(async () => {
+      useAuthStore.setState({ session: 'sess-2', account });
+    });
+    expect(fetchMessagePhoto).not.toHaveBeenCalledWith('sess', REPLY_ID, 0);
+  });
+
+  it('leaves a deleted row without a still when the photo cannot load', async () => {
     vi.mocked(fetchMessagePhoto).mockRejectedValue(new Error('offline'));
     signIn();
-    renderThread({ root: { ...root, hasPhoto: true, photoCount: 1 } });
+    renderThread({
+      root: {
+        ...root,
+        hasPhoto: true,
+        photoCount: 1,
+        deletedAt: '2026-08-29T15:00:00.000Z',
+      },
+    });
     await waitFor(() => {
       expect(fetchMessagePhoto).toHaveBeenCalled();
     });
@@ -2100,14 +2175,23 @@ describe('PublicMessageThread', () => {
     });
   });
 
-  it('loads a photo after the first fetch fails', async () => {
+  it('loads a deleted still after the first fetch fails', async () => {
     vi.mocked(fetchMessagePhoto)
       .mockRejectedValueOnce(new Error('offline'))
       .mockResolvedValueOnce(new Blob(['x'], { type: 'image/jpeg' }));
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:hidden');
     signIn();
-    renderThread({ root: { ...root, hasPhoto: true, photoCount: 1 } });
+    renderThread({
+      root: {
+        ...root,
+        hasPhoto: true,
+        photoCount: 1,
+        text: '',
+        deletedAt: '2026-08-29T15:00:00.000Z',
+      },
+    });
     await waitFor(() => {
-      expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
+      expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe('blob:hidden');
     });
   });
 
@@ -2210,35 +2294,16 @@ describe('PublicMessageThread', () => {
       },
     ]);
     stubShopPhotoFetch();
-    let photoUrl = 0;
-    vi.mocked(URL.createObjectURL).mockImplementation(() => `blob:thread-${photoUrl++}`);
-    vi.mocked(fetchMessagePhoto).mockResolvedValue(
-      new Blob([new Uint8Array([1])], { type: 'image/jpeg' }),
-    );
+    vi.spyOn(Date, 'now').mockReturnValue(1_714_000_000_000);
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...shopRoot,
       text: 'Cafe Sol\n\n#21GiftsShop',
     });
     renderThread({ root: shopRoot });
-    await waitFor(() => {
-      expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toMatch(/^blob:thread-/);
-      expect(screen.getByText('A photo reply')).toBeTruthy();
-      expect(fetchMessagePhoto).toHaveBeenCalledWith(
-        'sess',
-        '99999999-9999-4999-8999-999999999999',
-        0,
-      );
-      expect(vi.mocked(URL.createObjectURL).mock.calls.length).toBeGreaterThanOrEqual(2);
-    });
-    const shopSrc = screen.getByAltText('Photo from Carol').getAttribute('src');
-    // The reply still is stored, but that card does not paint an img. Keep every
-    // address created before the editor except the shop photo on screen.
-    const otherSrcs = vi
-      .mocked(URL.createObjectURL)
-      .mock.results.map((result) => String(result.value))
-      .filter((src) => src !== shopSrc);
-    expect(otherSrcs.length).toBeGreaterThan(0);
-    vi.mocked(URL.revokeObjectURL).mockClear();
+    expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe(
+      `/messages/${MESSAGE_ID}/photo.jpg`,
+    );
+    expect(fetchMessagePhoto).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -2250,14 +2315,11 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(URL.revokeObjectURL).toHaveBeenCalledWith(shopSrc);
+      expect(screen.getByText('Cafe Sol')).toBeTruthy();
     });
-    for (const src of otherSrcs) {
-      expect(URL.revokeObjectURL).not.toHaveBeenCalledWith(src);
-    }
-    expect(
-      vi.mocked(URL.revokeObjectURL).mock.calls.filter((call) => call[0] === shopSrc),
-    ).toHaveLength(1);
+    expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe(
+      `/messages/${MESSAGE_ID}/photo.jpg?v=1714000000000`,
+    );
   });
 });
 

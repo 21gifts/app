@@ -8,8 +8,12 @@ import { IconButton } from '@/components/ui';
 export type ForumPhotoGalleryItem = {
   /** Original still index (`data-photo-index`). */
   index: number;
-  /** Object/blob URL. */
+  /** Object/blob URL or same-origin public still path. */
   url: string;
+  /** `<img>` loading. Default `lazy`. */
+  loading?: 'eager' | 'lazy';
+  /** `<img>` fetch priority. Default `low`. */
+  fetchPriority?: 'high' | 'low' | 'auto';
 };
 
 /** Props for {@link ForumPhotoGallery}. */
@@ -22,6 +26,8 @@ export type ForumPhotoGalleryProps = {
   className?: string;
   /** Stop card expand/collapse when tapping or keying the gallery. */
   onPhotoClick?: (event: { stopPropagation(): void }) => void;
+  /** Called when one still fails so the parent can drop that index. */
+  onPhotoError?: (index: number) => void;
 };
 
 /**
@@ -66,6 +72,7 @@ export function ForumPhotoGallery({
   alt,
   className,
   onPhotoClick,
+  onPhotoError,
 }: ForumPhotoGalleryProps): ReactElement | null {
   const { t } = useTranslations();
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -107,17 +114,23 @@ export function ForumPhotoGallery({
             updateActive(event.currentTarget);
           }}
         >
-          {photos.map(({ index, url }, i) => (
+          {photos.map(({ index, url, loading, fetchPriority }, i) => (
             <div
               key={`${index}:${url}`}
               className={`shrink-0 snap-start ${i === photos.length - 1 ? 'w-full min-w-full' : 'w-[88%] min-w-[88%]'}`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from message photo fetches */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- same-origin photo URL, not next/image */}
               <img
                 src={url}
                 alt={alt}
                 className="block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
+                decoding="async"
+                loading={loading ?? 'lazy'}
+                fetchPriority={fetchPriority ?? 'low'}
                 data-photo-index={index}
+                onError={() => {
+                  onPhotoError?.(index);
+                }}
               />
             </div>
           ))}

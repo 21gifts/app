@@ -1738,6 +1738,297 @@ describe('ForumBoard', () => {
     );
   });
 
+  it('renders a public photo.jpg src without a blob URL', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-photo', hasPhoto: true, photoCount: 1, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const img = screen.getByAltText('Photo from Ada');
+    expect(img.getAttribute('src')).toBe('/messages/m-photo/photo.jpg');
+    expect(img.getAttribute('loading')).toBe('eager');
+    expect(img.getAttribute('fetchpriority')).toBe('high');
+    expect(img.getAttribute('decoding')).toBe('async');
+  });
+
+  it('keeps a data URL composer preview ahead of the public still path', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-photo', hasPhoto: true, photoCount: 1, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-photo:0': 'data:image/jpeg;base64,abc' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      'data:image/jpeg;base64,abc',
+    );
+  });
+
+  it('keeps a blob photo URL ahead of the public still path', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-photo', hasPhoto: true, photoCount: 1, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-photo:0': 'blob:photo' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:photo');
+  });
+
+  it('renders extra stills as photo/{n}.jpg when photoCount is greater than one', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-gallery', hasPhoto: true, photoCount: 2, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const photos = screen.getAllByAltText('Photo from Ada');
+    expect(photos[0]?.getAttribute('src')).toBe('/messages/m-gallery/photo.jpg');
+    expect(photos[1]?.getAttribute('src')).toBe('/messages/m-gallery/photo/1.jpg');
+    expect(photos[0]?.getAttribute('loading')).toBe('eager');
+    expect(photos[0]?.getAttribute('fetchpriority')).toBe('high');
+    expect(photos[1]?.getAttribute('loading')).toBe('lazy');
+    expect(photos[1]?.getAttribute('fetchpriority')).toBe('low');
+  });
+
+  it('does not render a public still for a deleted row', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'm-hidden',
+            hasPhoto: true,
+            photoCount: 1,
+            text: '',
+            deletedAt: '2026-08-29T15:00:00.000Z',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+  });
+
+  it('keeps a blob still on a deleted row', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'm-hidden',
+            hasPhoto: true,
+            photoCount: 1,
+            text: '',
+            deletedAt: '2026-08-29T15:00:00.000Z',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-hidden:0': 'blob:hidden' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:hidden');
+  });
+
+  it('appends ?v= from photoVersions only on that note', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          { ...SAMPLE, id: 'm-a', hasPhoto: true, photoCount: 1, text: '', sats: 5 },
+          { ...SAMPLE, id: 'm-b', name: 'Bob', hasPhoto: true, photoCount: 1, text: '', sats: 5 },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoVersions={{ 'm-a': '2', 'm-b': '' }}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      '/messages/m-a/photo.jpg?v=2',
+    );
+    expect(screen.getByAltText('Photo from Bob').getAttribute('src')).toBe(
+      '/messages/m-b/photo.jpg',
+    );
+  });
+
+  it('uses lazy low priority for the third card still', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          { ...SAMPLE, id: 'm-0', hasPhoto: true, photoCount: 1, text: 'one', sats: 5 },
+          {
+            ...SAMPLE,
+            id: 'm-1',
+            name: 'Bob',
+            hasPhoto: true,
+            photoCount: 1,
+            text: 'two',
+            sats: 5,
+          },
+          {
+            ...SAMPLE,
+            id: 'm-2',
+            name: 'Carol',
+            hasPhoto: true,
+            photoCount: 1,
+            text: 'three',
+            sats: 5,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const third = screen.getByAltText('Photo from Carol');
+    expect(third.getAttribute('loading')).toBe('lazy');
+    expect(third.getAttribute('fetchpriority')).toBe('low');
+  });
+
+  it('does not pass a public still into the shop editor for a deleted row', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'm-shop',
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            hasPhoto: true,
+            photoCount: 1,
+            deletedAt: '2026-08-29T15:00:00.000Z',
+            sats: 5,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        shopNoteEdit
+        onShopNoteUpdated={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
+  });
+
+  it('removes a still after img error', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-photo', hasPhoto: true, photoCount: 1, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.error(screen.getByAltText('Photo from Ada'));
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+  });
+
+  it('omits a dead gallery slide and drops the gallery when none remain', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, id: 'm-gallery', hasPhoto: true, photoCount: 2, text: '' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    const photos = screen.getAllByAltText('Photo from Ada');
+    fireEvent.error(photos[1] as HTMLElement);
+    expect(screen.getAllByAltText('Photo from Ada')).toHaveLength(1);
+    fireEvent.error(screen.getByAltText('Photo from Ada'));
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+  });
+
   it('omits Send Bitcoin when payable is false', () => {
     const onPayOpen = vi.fn();
     renderWithLocale(
@@ -4398,6 +4689,36 @@ describe('ForumBoard', () => {
       />,
     );
     expect(document.querySelector('video')?.getAttribute('src')).toBe('blob:preview');
+  });
+
+  it('uses the public still as the video poster when both are present', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'vid-poster',
+            hasPhoto: true,
+            photoCount: 1,
+            hasVideo: true,
+            videoContentType: 'video/mp4',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(document.querySelector('video')?.getAttribute('poster')).toBe(
+      '/messages/vid-poster/photo.jpg',
+    );
   });
 
   it('uses the photo URL as the video poster when both are present', () => {

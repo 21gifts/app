@@ -337,103 +337,7 @@ export function MemberProfileScreen({
   const rateDay = useSpotRate();
   /** The rate the last reply amount was read with, so a retry stores fiat from that same rate. */
   const replyRateRef = useRef(rateDay);
-  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
-  const photoUrlsRef = useRef(photoUrls);
-  photoUrlsRef.current = photoUrls;
-  const [photoEpoch, setPhotoEpoch] = useState(0);
-
-  const photoSource: ForumMessage[] = [];
-  if (activity === 'posts' && posts !== null) {
-    photoSource.push(...posts);
-  }
-  if (activity === 'replies' && activityReplies !== null) {
-    photoSource.push(...activityReplies);
-  }
-  if (activity === 'shops' && shops !== null) {
-    photoSource.push(...shops);
-  }
-  if (activity === 'credits' && credits !== null) {
-    photoSource.push(...credits);
-  }
-  if (replies !== null) {
-    photoSource.push(...replies);
-  }
-  const photoSourceRef = useRef(photoSource);
-  photoSourceRef.current = photoSource;
-  const photoIdsKey = photoSource
-    .map((message) => ({
-      id: message.id,
-      count: message.photoCount ?? (message.hasPhoto ? 1 : 0),
-    }))
-    .filter(({ count }) => count > 0)
-    .map(({ id, count }) => `${id}:${count}`)
-    .sort()
-    .join('\0');
-
-  useEffect(() => {
-    if (session === null || photoIdsKey === '') {
-      return;
-    }
-    const listed = photoSourceRef.current;
-    let cancelled = false;
-    const missing = listed.flatMap((message) => {
-      const count = message.photoCount ?? (message.hasPhoto ? 1 : 0);
-      return Array.from({ length: count }, (_, index) => ({
-        id: message.id,
-        index,
-        key: `${message.id}:${index}`,
-      })).filter(({ key }) => photoUrlsRef.current[key] === undefined);
-    });
-    if (missing.length === 0) {
-      return;
-    }
-    void (async () => {
-      for (const photo of missing) {
-        /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
-        if (photoUrlsRef.current[photo.key] !== undefined) {
-          continue;
-        }
-        /* v8 ignore stop */
-        let blob: Blob;
-        try {
-          blob = await fetchMessagePhoto(session, photo.id, photo.index);
-        } catch {
-          if (cancelled) {
-            return;
-          }
-          try {
-            blob = await fetchMessagePhoto(session, photo.id, photo.index);
-          } catch {
-            if (cancelled) {
-              return;
-            }
-            // Leave the row text-only when the photo cannot load.
-            continue;
-          }
-        }
-        if (cancelled) {
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        if (cancelled) {
-          URL.revokeObjectURL(url);
-          return;
-        }
-        setPhotoUrls((prev) => {
-          /* v8 ignore start -- race if the same id was filled while the fetch was in flight */
-          if (prev[photo.key] !== undefined) {
-            URL.revokeObjectURL(url);
-            return prev;
-          }
-          /* v8 ignore stop */
-          return { ...prev, [photo.key]: url };
-        });
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [photoEpoch, photoIdsKey, session]);
+  const [photoVersions, setPhotoVersions] = useState<Record<string, string>>({});
 
   const bumpPayPollGeneration = (): number => {
     payPollAbortRef.current?.abort();
@@ -444,9 +348,6 @@ export function MemberProfileScreen({
 
   useEffect(() => {
     return () => {
-      for (const url of Object.values(photoUrlsRef.current)) {
-        URL.revokeObjectURL(url);
-      }
       bumpPayPollGeneration();
     };
   }, []);
@@ -1395,7 +1296,8 @@ export function MemberProfileScreen({
   };
 
   const sharedForumProps = {
-    photoUrls,
+    photoUrls: {},
+    photoVersions,
     rateDay,
     payMessageId,
     payHost,
@@ -1592,24 +1494,11 @@ export function MemberProfileScreen({
                 ? {
                     shopNoteEdit: true as const,
                     onShopNoteUpdated: (updated: ForumMessage) => {
-                      setPhotoUrls((prev) => {
-                        const prefix = `${updated.id}:`;
-                        let changed = false;
-                        const next = { ...prev };
-                        for (const [key, url] of Object.entries(next)) {
-                          if (!key.startsWith(prefix)) {
-                            continue;
-                          }
-                          URL.revokeObjectURL(url);
-                          delete next[key];
-                          changed = true;
-                        }
-                        return changed ? next : prev;
-                      });
-                      setPhotoEpoch((n) => n + 1);
+                      setPhotoVersions((prev) => ({ ...prev, [updated.id]: String(Date.now()) }));
                       const applyShopEdit = (
                         prev: ForumMessage[] | null,
                       ): ForumMessage[] | null => {
+                        /* v8 ignore next 3 -- the pencil mounts only after the post list has loaded */
                         if (prev === null) {
                           return prev;
                         }

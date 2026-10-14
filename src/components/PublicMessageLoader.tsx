@@ -22,18 +22,28 @@ import { useSpotRate } from '@/hooks/useSpotRate';
 import {
   fetchForumMessage,
   fetchPublicMessage,
-  fetchPublicMessagePhoto,
   fetchPublicReplies,
   fetchReplies,
   markNotificationsReadForMessage,
 } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
+import { forumPhotoSrc } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
 import { formatBitcoin, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function publicStillPriority(index: number): {
+  loading: 'eager' | 'lazy';
+  fetchPriority: 'high' | 'low';
+} {
+  if (index === 0) {
+    return { loading: 'eager', fetchPriority: 'high' };
+  }
+  return { loading: 'lazy', fetchPriority: 'low' };
+}
 
 function PublicThreadCard({
   note,
@@ -52,52 +62,33 @@ function PublicThreadCard({
 }): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const [photoUrls, setPhotoUrls] = useState<Record<number, string>>({});
+  const [deadPhotoKeys, setDeadPhotoKeys] = useState<ReadonlySet<string>>(() => new Set());
   const [videoFailed, setVideoFailed] = useState(false);
   const photoCount = note.photoCount ?? (note.hasPhoto ? 1 : 0);
-
-  useEffect(() => {
-    if (photoCount === 0) {
-      setPhotoUrls({});
-      return;
+  const loadedPhotoUrls = Array.from({ length: photoCount }, (_, index) => {
+    if (deadPhotoKeys.has(`${note.id}:${index}`)) {
+      return null;
     }
-
-    let cancelled = false;
-    const objectUrls: string[] = [];
-
-    void (async () => {
-      const next: Record<number, string> = {};
-      for (let index = 0; index < photoCount; index += 1) {
-        try {
-          const blob = await fetchPublicMessagePhoto(note.id, index);
-          if (cancelled) {
-            return;
-          }
-          const objectUrl = URL.createObjectURL(blob);
-          objectUrls.push(objectUrl);
-          next[index] = objectUrl;
-        } catch {
-          // Leave only this image out when its public photo request fails.
-        }
-      }
-      if (!cancelled) {
-        setPhotoUrls(next);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      for (const objectUrl of objectUrls) {
-        URL.revokeObjectURL(objectUrl);
-      }
+    return {
+      index,
+      url: forumPhotoSrc(note.id, index),
+      ...publicStillPriority(index),
     };
-  }, [note.id, photoCount]);
-
-  const photoUrl = photoUrls[0];
-  const loadedPhotoUrls = Array.from({ length: photoCount }, (_, index) => ({
-    index,
-    url: photoUrls[index],
-  })).filter((photo): photo is { index: number; url: string } => photo.url !== undefined);
+  }).filter(
+    (
+      photo,
+    ): photo is {
+      index: number;
+      url: string;
+      loading: 'eager' | 'lazy';
+      fetchPriority: 'high' | 'low';
+    } => photo !== null,
+  );
+  const photoUrl = loadedPhotoUrls[0]?.url;
+  const posterSrc =
+    (note.hasPhoto || photoCount >= 1) && !deadPhotoKeys.has(`${note.id}:0`)
+      ? forumPhotoSrc(note.id, 0)
+      : undefined;
   const fiatSuffix = preferredFiatSuffix(note.sats, rateDay, fiat, numberFormat, note);
 
   const card = (
@@ -138,7 +129,7 @@ function PublicThreadCard({
       {note.hasVideo && !videoFailed ? (
         <ForumVideo
           src={forumVideoSrc(note.id, note.videoContentType)}
-          poster={photoUrl ?? undefined}
+          poster={posterSrc}
           preload="metadata"
           className="mx-auto block h-auto w-auto max-h-80 max-w-full shrink-0 rounded-xl object-contain"
           onError={() => {
@@ -146,16 +137,25 @@ function PublicThreadCard({
           }}
         />
       ) : photoCount <= 1 && photoUrl !== undefined ? (
-        /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
+        /* eslint-disable-next-line @next/next/no-img-element -- same-origin photo URL, not next/image */
         <img
           src={photoUrl}
           alt={t('forum.photoAlt', { name: note.name })}
           className="block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
+          decoding="async"
+          loading="eager"
+          fetchPriority="high"
+          onError={() => {
+            setDeadPhotoKeys((prev) => new Set(prev).add(`${note.id}:0`));
+          }}
         />
       ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
         <ForumPhotoGallery
           photos={loadedPhotoUrls}
           alt={t('forum.photoAlt', { name: note.name })}
+          onPhotoError={(index) => {
+            setDeadPhotoKeys((prev) => new Set(prev).add(`${note.id}:${index}`));
+          }}
         />
       ) : null}
       {note.text !== '' ? (

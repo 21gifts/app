@@ -863,7 +863,7 @@ test('quoted public note hides the raw URL and opens the linked note', async ({ 
       body: JSON.stringify(quotedNote),
     });
   });
-  await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+  await page.route(`**/messages/${QUOTED_ID}/photo.jpg`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'image/jpeg',

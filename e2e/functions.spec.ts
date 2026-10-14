@@ -1865,6 +1865,16 @@ test('Function: proxyMessagesPhotoGet — GET /messages/[id]/photo without a fil
   expect((await request.get('/messages/m1/photo/1.jpg')).status()).toBe(404);
 });
 
+test('Function: proxyMessagesPhotoExtGet — GET /messages/[id]/photo.jpg without a file is 404', async ({
+  request,
+}) => {
+  expect((await request.get('/messages/[id]/photo.jpg')).status()).toBe(404);
+  expect((await request.get('/messages/m1/photo.jpg')).status()).toBe(404);
+  expect((await request.get('/messages/m1/photo.jpeg')).status()).toBe(404);
+  expect((await request.get('/messages/m1/photo.png')).status()).toBe(404);
+  expect((await request.get('/messages/m1/photo.webp')).status()).toBe(404);
+});
+
 test('Function: proxyMessagesVideoGet — GET /messages/[id]/video.mp4 without a file is 404', async ({
   request,
 }) => {
@@ -1916,7 +1926,7 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
       }),
     });
   });
-  await page.route(/\/messages\/m-photo\/photo$/, async (route) => {
+  await page.route(/\/messages\/m-photo\/photo\.jpg$/, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'image/jpeg',
@@ -1929,6 +1939,74 @@ test('Function: fetchMessagePhoto — photo-only row shows the image alt', async
   await page.goto('/welcome');
   await chooseForumView(page, 'All');
   await expect(page.getByAltText('Photo from Ada')).toBeVisible();
+  await expect(page.getByAltText('Photo from Ada')).toHaveAttribute(
+    'src',
+    /\/messages\/m-photo\/photo\.jpg/,
+  );
+});
+
+test('Function: forumPhotoSrc — welcome photo note uses photo.jpg', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: 'm-photo',
+            name: 'Ada',
+            text: '',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: true,
+          },
+        ],
+      }),
+    });
+  });
+  await page.route(/\/messages\/m-photo\/photo\.jpg$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/jpeg',
+      body: Buffer.from(
+        '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAGfAP/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAQUCf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQMBAT8Bf//EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQIBAT8Bf//Z',
+        'base64',
+      ),
+    });
+  });
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await expect(page.getByAltText('Photo from Ada')).toBeVisible();
+  await expect(page.getByAltText('Photo from Ada')).toHaveAttribute(
+    'src',
+    /\/messages\/m-photo\/photo\.jpg/,
+  );
 });
 
 test('Function: prepareForumPhoto — attach control is visible on welcome', async ({ page }) => {
@@ -11214,7 +11292,7 @@ test('Function: fetchPublicMessagePhoto — public note with photo shows alt', a
       }),
     });
   });
-  await page.route(`**/messages/${id}/photo`, async (route) => {
+  await page.route(`**/messages/${id}/photo.jpg`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'image/jpeg',
@@ -13494,7 +13572,7 @@ test('Function: splitForumMessageQuotes — quoted public note hides the raw URL
       body: JSON.stringify(quotedNote),
     });
   });
-  await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+  await page.route(`**/messages/${QUOTED_ID}/photo.jpg`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'image/jpeg',
@@ -13565,7 +13643,7 @@ test('Function: ForumQuotedBody — welcome reply shows the nested post', async 
       body: JSON.stringify(quotedNote),
     });
   });
-  await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+  await page.route(`**/messages/${QUOTED_ID}/photo.jpg`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'image/jpeg',
@@ -13715,7 +13793,7 @@ test('Function: splitNoteLinks — welcome note autolinks an internal url and st
       body: JSON.stringify(quotedNote),
     });
   });
-  await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+  await page.route(`**/messages/${QUOTED_ID}/photo.jpg`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'image/jpeg',

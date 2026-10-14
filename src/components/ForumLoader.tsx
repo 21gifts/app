@@ -29,12 +29,10 @@ import {
   CannotReceiveError,
   dismissForumLaws,
   fetchComposeTarget,
-  fetchMessagePhoto,
   fetchMessages,
   fetchNotifications,
   fetchPublicForumMessages,
   fetchPublicMessage,
-  fetchPublicMessagePhoto,
   fetchPublicReplies,
   fetchReplies,
   markNotificationRead,
@@ -428,9 +426,9 @@ export function ForumLoader({
   const [shopUsername, setShopUsername] = useState('');
   const [shopResetToken, setShopResetToken] = useState(0);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
-  const [photoEpoch, setPhotoEpoch] = useState(0);
   const photoUrlsRef = useRef(photoUrls);
   photoUrlsRef.current = photoUrls;
+  const [photoVersions, setPhotoVersions] = useState<Record<string, string>>({});
   const [videoUrls, setVideoUrls] = useState<Record<string, string>>({});
   const videoUrlsRef = useRef(videoUrls);
   videoUrlsRef.current = videoUrls;
@@ -626,19 +624,6 @@ export function ForumLoader({
   payMessageIdRef.current = payMessageId;
   const replyPostingRef = useRef(replyPosting);
   replyPostingRef.current = replyPosting;
-  const photoIdsKey =
-    messages === null
-      ? ''
-      : visibleForumMessages(messages, feedMode)
-          .map((message) => ({
-            id: message.id,
-            count: message.photoCount ?? (message.hasPhoto ? 1 : 0),
-          }))
-          .filter(({ count }) => count > 0)
-          .map(({ id, count }) => `${id}:${count}`)
-          .sort()
-          .join('\0');
-
   const feedHashtag = feed === 'shops' ? SHOP_HASHTAG : undefined;
   const feedCountry = feed === 'shops' && country !== null ? country : undefined;
   const forumPageArgs = (
@@ -1214,80 +1199,6 @@ export function ForumLoader({
       }
     };
   }, [feedMode, renderedMessageIdsKey, scroller, session]);
-
-  useEffect(() => {
-    if (photoIdsKey === '' || (session === null && feed === 'shops')) {
-      return;
-    }
-    const listed = messagesRef.current;
-    /* v8 ignore start -- photoIdsKey is empty when messages is null */
-    if (listed === null) {
-      return;
-    }
-    /* v8 ignore stop */
-    let cancelled = false;
-    const visible = visibleForumMessages(listed, feedMode);
-    const missing = visible.flatMap((message) => {
-      const count = message.photoCount ?? (message.hasPhoto ? 1 : 0);
-      return Array.from({ length: count }, (_, index) => ({
-        id: message.id,
-        index,
-        key: `${message.id}:${index}`,
-      })).filter(({ key }) => photoUrlsRef.current[key] === undefined);
-    });
-    if (missing.length === 0) {
-      return;
-    }
-    void Promise.all(
-      missing.map(async (photo) => {
-        /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
-        if (photoUrlsRef.current[photo.key] !== undefined) {
-          return;
-        }
-        /* v8 ignore stop */
-        let blob: Blob;
-        try {
-          blob =
-            session === null
-              ? await fetchPublicMessagePhoto(photo.id, photo.index)
-              : await fetchMessagePhoto(session, photo.id, photo.index);
-        } catch {
-          if (cancelled) {
-            return;
-          }
-          try {
-            blob =
-              session === null
-                ? await fetchPublicMessagePhoto(photo.id, photo.index)
-                : await fetchMessagePhoto(session, photo.id, photo.index);
-          } catch {
-            // Leave the row text-only when the photo cannot load.
-            return;
-          }
-        }
-        if (cancelled) {
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        if (cancelled) {
-          URL.revokeObjectURL(url);
-          return;
-        }
-        setPhotoUrls((prev) => {
-          /* v8 ignore start -- race if the same id was filled while the fetch was in flight */
-          if (prev[photo.key] !== undefined) {
-            URL.revokeObjectURL(url);
-            return prev;
-          }
-          /* v8 ignore stop */
-          return { ...prev, [photo.key]: url };
-        });
-      }),
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [feed, photoEpoch, photoIdsKey, session]);
 
   useEffect(() => {
     return () => {
@@ -2749,7 +2660,7 @@ export function ForumLoader({
                   }
                   return changed ? next : prev;
                 });
-                setPhotoEpoch((n) => n + 1);
+                setPhotoVersions((prev) => ({ ...prev, [updated.id]: String(Date.now()) }));
                 setMessages((prev) =>
                   prev!.map((row) => {
                     if (row.id !== updated.id) {
@@ -2894,6 +2805,7 @@ export function ForumLoader({
           setFormError(null);
         }}
         photoUrls={photoUrls}
+        photoVersions={photoVersions}
         videoUrls={videoUrls}
         payMessageId={payMessageId}
         payHost={payHost}

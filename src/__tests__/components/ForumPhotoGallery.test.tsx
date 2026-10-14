@@ -14,6 +14,35 @@ describe('ForumPhotoGallery', () => {
     vi.restoreAllMocks();
   });
 
+  it('defaults loading and fetchPriority when the item omits them', () => {
+    renderWithLocale(<ForumPhotoGallery photos={PHOTOS} alt="Photo from Ada" />);
+    const photos = screen.getAllByAltText('Photo from Ada');
+    expect(photos[0]?.getAttribute('loading')).toBe('lazy');
+    expect(photos[0]?.getAttribute('fetchpriority')).toBe('low');
+    expect(photos[0]?.getAttribute('decoding')).toBe('async');
+    fireEvent.error(photos[0] as HTMLElement);
+  });
+
+  it('sets loading, fetchPriority, and reports img error', () => {
+    const onPhotoError = vi.fn();
+    renderWithLocale(
+      <ForumPhotoGallery
+        photos={[
+          { index: 0, url: 'blob:g0', loading: 'eager', fetchPriority: 'high' },
+          { index: 1, url: 'blob:g1', loading: 'lazy', fetchPriority: 'auto' },
+        ]}
+        alt="Photo from Ada"
+        onPhotoError={onPhotoError}
+      />,
+    );
+    const photos = screen.getAllByAltText('Photo from Ada');
+    expect(photos[0]?.getAttribute('loading')).toBe('eager');
+    expect(photos[0]?.getAttribute('fetchpriority')).toBe('high');
+    expect(photos[1]?.getAttribute('fetchpriority')).toBe('auto');
+    fireEvent.error(photos[1] as HTMLElement);
+    expect(onPhotoError).toHaveBeenCalledWith(1);
+  });
+
   it('returns null when there are no stills', () => {
     const { container } = renderWithLocale(<ForumPhotoGallery photos={[]} alt="Photo from Ada" />);
     expect(container.querySelector('img')).toBeNull();

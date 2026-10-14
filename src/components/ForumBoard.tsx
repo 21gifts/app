@@ -76,7 +76,7 @@ import {
   type ForumFeedMode,
   visibleForumMessages,
 } from '@/lib/forum-feed';
-import type { ForumPhotoPayload } from '@/lib/forum-photo';
+import { forumPhotoSrc, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
 import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
 import { isOwnNote } from '@/lib/roles';
@@ -112,16 +112,52 @@ export type ForumFormError =
  */
 export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted' | 'authorWallet';
 
+/** Local composer preview or public still for one index. Never a public URL on a deleted row. */
+function displayStillSrc(
+  message: ForumMessage,
+  index: number,
+  photoUrls: Readonly<Record<string, string>>,
+  version: string | undefined,
+): string | undefined {
+  const local = photoUrls[`${message.id}:${index}`];
+  if (typeof local === 'string' && local.startsWith('blob:')) {
+    return local;
+  }
+  if (message.deletedAt !== undefined) {
+    return undefined;
+  }
+  if (typeof local === 'string' && local.startsWith('data:')) {
+    return local;
+  }
+  return forumPhotoSrc(
+    message.id,
+    index,
+    version !== undefined && version !== '' ? version : undefined,
+  );
+}
+
+/** Eager first stills on the first two cards; everything else is lazy. */
+function stillPriority(
+  cardIndex: number,
+  photoIndex: number,
+): { loading: 'eager' | 'lazy'; fetchPriority: 'high' | 'low' } {
+  if ((cardIndex === 0 || cardIndex === 1) && photoIndex === 0) {
+    return { loading: 'eager', fetchPriority: 'high' };
+  }
+  return { loading: 'lazy', fetchPriority: 'low' };
+}
+
 /** Loaded still URLs for one note, in gallery order. Missing slots are skipped. */
 function editStillUrls(
-  messageId: string,
+  message: ForumMessage,
   photoCount: number,
   photoUrls: Readonly<Record<string, string>>,
+  version: string | undefined,
 ): string[] {
   const found: string[] = [];
   for (let index = 0; index < photoCount; index += 1) {
-    const url = photoUrls[`${messageId}:${index}`];
-    if (typeof url === 'string') {
+    const url = displayStillSrc(message, index, photoUrls, version);
+    if (url !== undefined) {
       found.push(url);
     }
   }
@@ -327,8 +363,10 @@ export interface ForumBoardProps {
   onRemovePhoto: (index: number) => void;
   /** Clears the pending video and photos. */
   onClearPhoto: () => void;
-  /** Message id plus index → blob/object URL for inline photos already loaded. */
+  /** Message id plus index → local blob/data URL for a composer preview or a deleted staff still. */
   photoUrls: Readonly<Record<string, string>>;
+  /** Message id → cache-busting token appended as `?v=` on the public still path. Default `{}`. */
+  photoVersions?: Readonly<Record<string, string>>;
   /** Message id → blob/object URL for a just-posted video (local preview). */
   videoUrls?: Readonly<Record<string, string>>;
   /** Expanded note id, or `null` when all cards are collapsed. */
@@ -752,6 +790,7 @@ export function ForumBoard({
   onRemovePhoto,
   onClearPhoto,
   photoUrls,
+  photoVersions = {},
   videoUrls = {},
   expandedId,
   onToggleExpand,
@@ -868,6 +907,7 @@ export function ForumBoard({
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deadVideoIds, setDeadVideoIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [deadPhotoKeys, setDeadPhotoKeys] = useState<ReadonlySet<string>>(() => new Set());
   const [pullArmed, setPullArmed] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copyMounted = useRef(true);
@@ -1125,11 +1165,35 @@ export function ForumBoard({
       >
         {displayed.map((message, index) => {
           const photoCount = message.photoCount ?? (message.hasPhoto ? 1 : 0);
-          const loadedPhotoUrls = Array.from({ length: photoCount }, (_, index) => ({
-            index,
-            url: photoUrls[`${message.id}:${index}`],
-          })).filter((photo): photo is { index: number; url: string } => photo.url !== undefined);
-          const photoUrl = photoUrls[`${message.id}:0`];
+          const rawVersion = photoVersions[message.id];
+          const versionToken =
+            rawVersion !== undefined && rawVersion !== '' ? rawVersion : undefined;
+          const loadedPhotoUrls = Array.from({ length: photoCount }, (_, photoIndex) => {
+            if (deadPhotoKeys.has(`${message.id}:${photoIndex}`)) {
+              return null;
+            }
+            const url = displayStillSrc(message, photoIndex, photoUrls, versionToken);
+            if (url === undefined) {
+              return null;
+            }
+            const priority = stillPriority(index, photoIndex);
+            return { index: photoIndex, url, ...priority };
+          }).filter(
+            (
+              photo,
+            ): photo is {
+              index: number;
+              url: string;
+              loading: 'eager' | 'lazy';
+              fetchPriority: 'high' | 'low';
+            } => photo !== null,
+          );
+          const firstStill = loadedPhotoUrls[0];
+          const hasStill = message.hasPhoto || photoCount >= 1;
+          const posterSrc =
+            hasStill && !deadPhotoKeys.has(`${message.id}:0`)
+              ? displayStillSrc(message, 0, photoUrls, versionToken)
+              : undefined;
           const videoSrc =
             message.hasVideo && !deadVideoIds.has(message.id)
               ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
@@ -1277,7 +1341,7 @@ export function ForumBoard({
                 {videoSrc !== undefined ? (
                   <ForumVideo
                     src={videoSrc}
-                    poster={photoUrl}
+                    poster={posterSrc}
                     preload="metadata"
                     className="mt-2 mx-auto block h-auto w-auto max-h-80 max-w-full shrink-0 rounded-xl object-contain"
                     onClick={stopCardToggle}
@@ -1285,13 +1349,19 @@ export function ForumBoard({
                       setDeadVideoIds((prev) => new Set(prev).add(message.id));
                     }}
                   />
-                ) : photoCount <= 1 && photoUrl !== undefined ? (
-                  /* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from fetchMessagePhoto */
+                ) : photoCount <= 1 && firstStill !== undefined ? (
+                  /* eslint-disable-next-line @next/next/no-img-element -- same-origin photo URL, not next/image */
                   <img
-                    src={photoUrl}
+                    src={firstStill.url}
                     alt={t('forum.photoAlt', { name: message.name })}
                     className="mt-2 block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
+                    decoding="async"
+                    loading={firstStill.loading}
+                    fetchPriority={firstStill.fetchPriority}
                     onClick={stopCardToggle}
+                    onError={() => {
+                      setDeadPhotoKeys((prev) => new Set(prev).add(`${message.id}:0`));
+                    }}
                   />
                 ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
                   <ForumPhotoGallery
@@ -1299,6 +1369,9 @@ export function ForumBoard({
                     alt={t('forum.photoAlt', { name: message.name })}
                     className="mt-2"
                     onPhotoClick={stopCardToggle}
+                    onPhotoError={(photoIndex) => {
+                      setDeadPhotoKeys((prev) => new Set(prev).add(`${message.id}:${photoIndex}`));
+                    }}
                   />
                 ) : null}
                 {displayText !== '' ? (
@@ -1515,7 +1588,7 @@ export function ForumBoard({
                       message={message}
                       onUpdated={onShopNoteUpdated}
                       {...(onShopNoteSaved !== undefined ? { onSaved: onShopNoteSaved } : {})}
-                      existingPhotos={editStillUrls(message.id, photoCount, photoUrls)}
+                      existingPhotos={editStillUrls(message, photoCount, photoUrls, versionToken)}
                       {...(videoSrc !== undefined ? { existingVideoUrl: videoSrc } : {})}
                     />
                   ) : null}

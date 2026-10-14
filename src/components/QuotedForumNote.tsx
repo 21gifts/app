@@ -11,11 +11,11 @@ import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import {
   fetchForumMessage,
   fetchPublicMessage,
-  fetchPublicMessagePhoto,
   fetchShortLink,
 } from '@/lib/api';
 import { useActiveSession } from '@/hooks/useActiveSession';
 import type { ForumMessage } from '@/lib/api-types';
+import { forumPhotoSrc } from '@/lib/forum-photo';
 import { splitForumMessageQuotes, splitShortLinks } from '@/lib/forum-quote';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
@@ -59,39 +59,7 @@ function QuotedForumNote({
 }): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!note.hasPhoto) {
-      setPhotoUrl(null);
-      return;
-    }
-
-    let cancelled = false;
-    let objectUrl: string | null = null;
-
-    void (async () => {
-      try {
-        const blob = await fetchPublicMessagePhoto(note.id);
-        if (cancelled) {
-          return;
-        }
-        objectUrl = URL.createObjectURL(blob);
-        setPhotoUrl(objectUrl);
-      } catch {
-        if (!cancelled) {
-          setPhotoUrl(null);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      if (objectUrl !== null) {
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
-  }, [note.hasPhoto, note.id]);
+  const [deadPhotoId, setDeadPhotoId] = useState<string | null>(null);
 
   const fiatSuffix = preferredFiatSuffix(note.sats, rateDay, fiat, numberFormat, note);
   const roleLabel = isQuotedTaggedRole(note.role) ? t(ROLE_LABEL_KEYS[note.role]) : null;
@@ -161,13 +129,19 @@ function QuotedForumNote({
             {formatForumTime(note.createdAt, locale)}
           </time>
         </div>
-        {photoUrl !== null ? (
-          /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
+        {note.hasPhoto && deadPhotoId !== note.id ? (
+          /* eslint-disable-next-line @next/next/no-img-element -- same-origin photo URL, not next/image */
           <img
-            src={photoUrl}
+            src={forumPhotoSrc(note.id)}
             alt={t('forum.photoAlt', { name: note.name })}
             className="mt-2 block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
+            loading="lazy"
+            fetchPriority="low"
+            decoding="async"
             draggable={false}
+            onError={() => {
+              setDeadPhotoId(note.id);
+            }}
           />
         ) : null}
         {note.text !== '' ? (
