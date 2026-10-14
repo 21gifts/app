@@ -30138,7 +30138,7 @@ test.describe('settings states', () => {
     await seedSettingsAccount(page, { notificationLevel: 'active' });
     await openSettings(page);
     const gifted = page
-      .getByRole('group', { name: 'Living room' })
+      .getByRole('group', { name: 'Posts' })
       .getByRole('button', { name: 'Only with a gift', exact: true });
     await expect(gifted).toHaveAttribute('aria-pressed', 'true');
     await gifted.scrollIntoViewIfNeeded();
@@ -30156,7 +30156,7 @@ test.describe('settings states', () => {
     });
     await openSettings(page);
     await page
-      .getByRole('group', { name: 'Living room' })
+      .getByRole('group', { name: 'Posts' })
       .getByRole('button', { name: 'Off', exact: true })
       .click();
     await expect(page.getByText('Could not save notification level.')).toBeVisible();

@@ -162,7 +162,7 @@ describe('PushToggle', () => {
       value: undefined,
     });
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     expect(within(room).getByRole('button', { name: /^All$/ })).toBeTruthy();
     expect(screen.queryByText('On this device')).toBeNull();
     await waitFor(() => {
@@ -183,7 +183,7 @@ describe('PushToggle', () => {
     expect(onButton.getAttribute('aria-pressed')).toBe('false');
     expect(offButton.className).toContain('bg-app-btn');
     expect(onButton.className).not.toContain('bg-app-btn');
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     expect(room.className).toContain('w-auto');
     expect(room.className).not.toContain('w-full');
     expect(within(room).queryByRole('button', { name: 'Only with a gift' })).toBeNull();
@@ -279,7 +279,7 @@ describe('PushToggle', () => {
 
   it('selects All on the living room when the level field is missing', () => {
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     expect(within(room).getByRole('button', { name: /^All$/ }).getAttribute('aria-pressed')).toBe(
       'true',
     );
@@ -300,7 +300,7 @@ describe('PushToggle', () => {
   it('selects Only to me when the account stores mentions', () => {
     useAuthStore.setState({ account: accountWithLevel('mentions') });
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     expect(
       within(room)
         .getByRole('button', { name: /^Only to me$/ })
@@ -311,7 +311,7 @@ describe('PushToggle', () => {
 
   it('posts none when Off is chosen on the living room', async () => {
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     fireEvent.click(within(room).getByRole('button', { name: /^Off$/ }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'none');
@@ -324,7 +324,7 @@ describe('PushToggle', () => {
 
   it('does not post when All is already selected', () => {
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     fireEvent.click(within(room).getByRole('button', { name: /^All$/ }));
     expect(postNotificationLevel).not.toHaveBeenCalled();
   });
@@ -332,7 +332,7 @@ describe('PushToggle', () => {
   it('keeps All selected and shows an error when the level POST fails', async () => {
     vi.mocked(postNotificationLevel).mockRejectedValue(new Error('boom'));
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     fireEvent.click(within(room).getByRole('button', { name: /^Off$/ }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByText('Could not save notification level.')).toBeTruthy();
@@ -351,7 +351,7 @@ describe('PushToggle', () => {
         }),
     );
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     fireEvent.click(within(room).getByRole('button', { name: /^Off$/ }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledTimes(1);
@@ -361,7 +361,7 @@ describe('PushToggle', () => {
     resolvePost?.(accountWithLevel('none'));
     await waitFor(() => {
       expect(
-        within(screen.getByRole('group', { name: 'Living room' }))
+        within(screen.getByRole('group', { name: 'Posts' }))
           .getByRole('button', { name: /^Off$/ })
           .getAttribute('aria-pressed'),
       ).toBe('true');
@@ -377,7 +377,7 @@ describe('PushToggle', () => {
         }),
     );
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     fireEvent.click(within(room).getByRole('button', { name: /^Only to me$/ }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledTimes(1);
@@ -401,7 +401,7 @@ describe('PushToggle', () => {
         }),
     );
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     fireEvent.click(within(room).getByRole('button', { name: /^Off$/ }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'none');
@@ -424,7 +424,7 @@ describe('PushToggle', () => {
     );
     const setAccountSpy = vi.spyOn(useAuthStore.getState(), 'setAccount');
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     fireEvent.click(within(room).getByRole('button', { name: /^Only to me$/ }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'mentions');
@@ -442,7 +442,7 @@ describe('PushToggle', () => {
   it('uses the posted level when the response omits notificationLevel', async () => {
     vi.mocked(postNotificationLevel).mockResolvedValueOnce(ACCOUNT);
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     fireEvent.click(within(room).getByRole('button', { name: /^Only to me$/ }));
     await waitFor(() => {
       expect(useAuthStore.getState().account?.notificationLevel).toBe('mentions');
@@ -453,7 +453,7 @@ describe('PushToggle', () => {
     useAuthStore.setState({ account: null, session: 'tok' });
     renderWithLocale(<PushToggle />);
     expect(screen.getByText('Notify me about:')).toBeTruthy();
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     expect(within(room).getByRole('button', { name: /^All$/ }).getAttribute('aria-pressed')).toBe(
       'true',
     );
@@ -463,7 +463,7 @@ describe('PushToggle', () => {
   it('selects Off when the account stores none', () => {
     useAuthStore.setState({ account: accountWithLevel('none') });
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     expect(within(room).getByRole('button', { name: /^Off$/ }).getAttribute('aria-pressed')).toBe(
       'true',
     );
@@ -473,7 +473,7 @@ describe('PushToggle', () => {
   it('shows Only with a gift when the account stores active', () => {
     useAuthStore.setState({ account: accountWithLevel('active') });
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     expect(
       within(room)
         .getByRole('button', { name: /^Only with a gift$/ })
@@ -495,7 +495,7 @@ describe('PushToggle', () => {
   it('does not post when Only with a gift is pressed again', () => {
     useAuthStore.setState({ account: accountWithLevel('active') });
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     fireEvent.click(within(room).getByRole('button', { name: /^Only with a gift$/ }));
     expect(postNotificationLevel).not.toHaveBeenCalled();
   });
@@ -504,14 +504,14 @@ describe('PushToggle', () => {
     useAuthStore.setState({ account: accountWithLevel('active') });
     renderWithLocale(<PushToggle />);
     fireEvent.click(
-      within(screen.getByRole('group', { name: 'Living room' })).getByRole('button', {
+      within(screen.getByRole('group', { name: 'Posts' })).getByRole('button', {
         name: /^All$/,
       }),
     );
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'all');
       expect(
-        within(screen.getByRole('group', { name: 'Living room' })).queryByRole('button', {
+        within(screen.getByRole('group', { name: 'Posts' })).queryByRole('button', {
           name: 'Only with a gift',
         }),
       ).toBeNull();
@@ -522,14 +522,14 @@ describe('PushToggle', () => {
     useAuthStore.setState({ account: accountWithLevel('active') });
     renderWithLocale(<PushToggle />);
     fireEvent.click(
-      within(screen.getByRole('group', { name: 'Living room' })).getByRole('button', {
+      within(screen.getByRole('group', { name: 'Posts' })).getByRole('button', {
         name: /^Only to me$/,
       }),
     );
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'mentions');
       expect(
-        within(screen.getByRole('group', { name: 'Living room' })).queryByRole('button', {
+        within(screen.getByRole('group', { name: 'Posts' })).queryByRole('button', {
           name: 'Only with a gift',
         }),
       ).toBeNull();
@@ -540,14 +540,14 @@ describe('PushToggle', () => {
     useAuthStore.setState({ account: accountWithLevel('active') });
     renderWithLocale(<PushToggle />);
     fireEvent.click(
-      within(screen.getByRole('group', { name: 'Living room' })).getByRole('button', {
+      within(screen.getByRole('group', { name: 'Posts' })).getByRole('button', {
         name: /^Off$/,
       }),
     );
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'none');
       expect(
-        within(screen.getByRole('group', { name: 'Living room' })).queryByRole('button', {
+        within(screen.getByRole('group', { name: 'Posts' })).queryByRole('button', {
           name: 'Only with a gift',
         }),
       ).toBeNull();
@@ -557,7 +557,7 @@ describe('PushToggle', () => {
   it('posts all when All is chosen from stored none', async () => {
     useAuthStore.setState({ account: accountWithLevel('none') });
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     fireEvent.click(within(room).getByRole('button', { name: /^All$/ }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'all');
@@ -567,7 +567,7 @@ describe('PushToggle', () => {
   it('posts mentions when Only to me is chosen from stored none', async () => {
     useAuthStore.setState({ account: accountWithLevel('none') });
     renderWithLocale(<PushToggle />);
-    const room = screen.getByRole('group', { name: 'Living room' });
+    const room = screen.getByRole('group', { name: 'Posts' });
     fireEvent.click(within(room).getByRole('button', { name: /^Only to me$/ }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'mentions');

@@ -14,7 +14,7 @@ type PushTogglePhase = 'checking' | 'unsupported' | 'ready';
 type DevicePushValue = 'on' | 'off';
 
 /**
- * Living-room options for the stored level.
+ * Post options for the stored level.
  *
  * All, Only to me, then Only with a gift only when `level` is already
  * `active`, then Off. The value posted is the selected option.
@@ -40,7 +40,7 @@ function roomOptions(
 
 /**
  * Settings Notifications sections. Uppercase heading
- * `profile.notify.heading`, then Hearts On/Off and one compact Living room
+ * `profile.notify.heading`, then Hearts On/Off and one compact Posts
  * pill on the same line as its label. Stored `active` adds Only with a gift;
  * choosing another option posts that level and the extra option disappears.
  * A second bordered section, `profile.device.heading`, shows Notifications

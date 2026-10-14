@@ -11972,7 +11972,7 @@ test('Function: deletePushSubscription — DELETE /me/push-subscriptions with be
   expect(((await res.json()) as { ok: boolean }).ok).toBe(true);
 });
 
-test('Function: postNotificationLevel — settings Off on Living room posts the level', async ({
+test('Function: postNotificationLevel — settings Off under Posts posts the level', async ({
   page,
   request,
 }) => {
@@ -11982,7 +11982,7 @@ test('Function: postNotificationLevel — settings Off on Living room posts the 
   if (await intro.isVisible()) {
     await page.getByRole('button', { name: 'Close' }).click();
   }
-  const room = page.getByRole('group', { name: 'Living room' });
+  const room = page.getByRole('group', { name: 'Posts' });
   await expect(room.getByRole('button', { name: 'All', exact: true })).toBeVisible();
   await expect(room.getByRole('button', { name: 'Only to me', exact: true })).toBeVisible();
   await expect(room.getByRole('button', { name: 'Off', exact: true })).toBeVisible();
@@ -12304,9 +12304,7 @@ test('Function: accountNotificationLevel — settings selects All when the field
   await seedAdaSession(page);
   await page.goto('/settings');
   await expect(
-    page
-      .getByRole('group', { name: 'Living room' })
-      .getByRole('button', { name: 'All', exact: true }),
+    page.getByRole('group', { name: 'Posts' }).getByRole('button', { name: 'All', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true');
 });
 
