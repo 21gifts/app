@@ -604,14 +604,36 @@ describe('CreditLedger', () => {
     expect(screen.queryByText(/Kredit/)).toBeNull();
   });
 
-  it('hands every loaded ledger to onLedger', async () => {
-    ledger(btc);
-    const onLedger = vi.fn();
-    renderWithLocale(<CreditLedger messageId="m1" onLedger={onLedger} />);
-    await waitFor(() => {
+  it('hands every loaded ledger to onLedger, the first read and each refresh', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    try {
+      ledger(btc);
+      const onLedger = vi.fn();
+      renderWithLocale(<CreditLedger messageId="m1" onLedger={onLedger} />);
+      expect(await screen.findByText('Given')).toBeTruthy();
       expect(onLedger).toHaveBeenCalled();
-    });
-    expect(onLedger.mock.calls.at(-1)?.[0].fundedAt).toBe(btc.fundedAt);
+      expect(
+        onLedger.mock.calls
+          .at(-1)?.[0]
+          .repayments.some((row: { status: string }) => row.status === 'due'),
+      ).toBe(true);
+      ledger({
+        ...btc,
+        repayments: btc.repayments.map((row) =>
+          row.status === 'due' ? { ...row, status: 'paid' as const } : row,
+        ),
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4000);
+      });
+      expect(
+        onLedger.mock.calls
+          .at(-1)?.[0]
+          .repayments.every((row: { status: string }) => row.status !== 'due'),
+      ).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('shows the paid-back share in the loan block of the open note from that one read', async () => {
