@@ -40,7 +40,8 @@ function ledger(body: unknown): void {
 
 const btc = {
   currency: 'BTC',
-  fundedAt: '2026-09-26T12:00:00.000Z',
+  fundedAt: '2026-10-09T12:00:00.000Z',
+  startsOn: '2026-11-01',
   termDays: 2,
   daysDue: 1,
   daysPaid: 0,
@@ -78,7 +79,7 @@ const btc = {
   repayments: [
     {
       dayIndex: 0,
-      dueOn: '2026-09-27',
+      dueOn: '2026-11-01',
       accountId: '11111111-1111-4111-8111-111111111111',
       name: 'Bea',
       username: 'bea',
@@ -89,7 +90,7 @@ const btc = {
     },
     {
       dayIndex: 1,
-      dueOn: '2026-09-28',
+      dueOn: '2026-11-02',
       accountId: '11111111-1111-4111-8111-111111111111',
       name: 'Bea',
       username: 'bea',
@@ -100,7 +101,7 @@ const btc = {
     },
     {
       dayIndex: 1,
-      dueOn: '2026-09-28',
+      dueOn: '2026-11-02',
       accountId: '22222222-2222-4222-8222-222222222222',
       name: 'Ada',
       username: null,
@@ -114,6 +115,24 @@ const btc = {
 };
 
 describe('CreditLedger', () => {
+  it('shows the first repayment day when the plan has a start', async () => {
+    ledger(btc);
+    renderWithLocale(<CreditLedger messageId="m1" />);
+    expect(await screen.findByText('First repayment day: November 1, 2026.')).toBeTruthy();
+  });
+
+  it('shows no first repayment day while the start is unknown', async () => {
+    ledger({
+      ...btc,
+      fundedAt: null,
+      startsOn: null,
+      repayments: btc.repayments.map((row) => ({ ...row, dueOn: null, status: 'scheduled' })),
+    });
+    renderWithLocale(<CreditLedger messageId="m1" />);
+    expect((await screen.findAllByText('Bea @bea')).length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toContain('First repayment day');
+  });
+
   it('lists givers and each bitcoin repayment', async () => {
     ledger(btc);
     renderWithLocale(<CreditLedger messageId="m1" list="page" />);
@@ -128,8 +147,8 @@ describe('CreditLedger', () => {
     expect(document.body.textContent).toContain('₿10');
     expect(document.body.textContent).toContain('has no 21.gifts account');
     expect(document.body.textContent).toContain('bitcoin payment');
-    const chart = screen.getByRole('img', { name: /Sep 27/ });
-    expect(chart.getAttribute('aria-label')).toContain('Sep 28');
+    const chart = screen.getByRole('img', { name: /Nov 1/ });
+    expect(chart.getAttribute('aria-label')).toContain('Nov 2');
     expect(chart.querySelectorAll('[data-testid="repayment-plan-bar"]').length).toBe(2);
     expect(chart.querySelector('[data-testid="repayment-plan-debt"]')).toBeTruthy();
     expect(screen.getByText('Per day')).toBeTruthy();
@@ -193,7 +212,7 @@ describe('CreditLedger', () => {
           repayments: [
             {
               dayIndex: 0,
-              dueOn: '2026-09-27',
+              dueOn: '2026-11-01',
               accountId,
               name,
               username,
@@ -275,6 +294,7 @@ describe('CreditLedger', () => {
       ...btc,
       currency: 'USD',
       fundedAt: null,
+      startsOn: null,
       unassignedSats: 0,
       givers: [
         {
@@ -337,6 +357,7 @@ describe('CreditLedger', () => {
     ledger({
       currency: 'USD',
       fundedAt: null,
+      startsOn: null,
       termDays: 1,
       daysDue: 0,
       daysPaid: 0,
@@ -426,7 +447,7 @@ describe('CreditLedger', () => {
       repayments: [
         {
           dayIndex: 0,
-          dueOn: '2026-09-27',
+          dueOn: '2026-11-01',
           accountId: '11111111-1111-4111-8111-111111111111',
           name: 'Bea',
           username: 'bea',
@@ -493,7 +514,7 @@ describe('CreditLedger', () => {
       }),
     );
     renderWithLocale(<CreditLedger messageId="m1" />);
-    const chart = await screen.findByRole('img', { name: /Sep 27/ });
+    const chart = await screen.findByRole('img', { name: /Nov 1/ });
     await waitFor(() => {
       expect(chart.textContent).toContain('·');
       expect(chart.textContent).toContain('$0.02');
@@ -526,6 +547,7 @@ describe('CreditLedger', () => {
     ledger({
       ...btc,
       fundedAt: null,
+      startsOn: null,
       repayments: [
         {
           dayIndex: 2,
@@ -577,7 +599,7 @@ describe('CreditLedger', () => {
         },
         {
           dayIndex: 1,
-          dueOn: '2026-09-28',
+          dueOn: '2026-11-02',
           accountId: '11111111-1111-4111-8111-111111111111',
           name: 'Bea',
           username: 'bea',
@@ -588,7 +610,7 @@ describe('CreditLedger', () => {
         },
         {
           dayIndex: 2,
-          dueOn: '2026-09-29',
+          dueOn: '2026-11-03',
           accountId: '11111111-1111-4111-8111-111111111111',
           name: 'Bea',
           username: 'bea',
@@ -608,7 +630,7 @@ describe('CreditLedger', () => {
   });
 
   it('calls an open German plan a Darlehen', async () => {
-    ledger({ ...btc, fundedAt: null });
+    ledger({ ...btc, fundedAt: null, startsOn: null });
     renderWithLocale(<CreditLedger messageId="m1" />, 'de');
     expect(await screen.findByText(/Darlehen voll gegeben/)).toBeTruthy();
     expect(screen.queryByText(/Kredit/)).toBeNull();

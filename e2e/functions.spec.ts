@@ -12614,7 +12614,8 @@ test('Function: CreditLedger — a credit note lists who gave and who is paid ba
       contentType: 'application/json',
       body: JSON.stringify({
         currency: 'BTC',
-        fundedAt: '2026-09-26T12:00:00.000Z',
+        fundedAt: '2026-10-09T12:00:00.000Z',
+        startsOn: '2026-11-01',
         termDays: 1,
         daysDue: 1,
         daysPaid: 0,
@@ -12631,7 +12632,7 @@ test('Function: CreditLedger — a credit note lists who gave and who is paid ba
         repayments: [
           {
             dayIndex: 0,
-            dueOn: '2026-09-27',
+            dueOn: '2026-11-01',
             accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
             name: 'Bea',
             username: 'bea',
@@ -12649,7 +12650,8 @@ test('Function: CreditLedger — a credit note lists who gave and who is paid ba
   await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
   await expect(page.getByLabel('Paid back')).toBeVisible();
   await expect(page.getByText(/Each share is one bitcoin payment/)).toBeVisible();
-  await expect(page.getByRole('img', { name: /Sep 27/ })).toBeVisible();
+  await expect(page.getByRole('img', { name: /Nov 1/ })).toBeVisible();
+  await expect(page.getByText('First repayment day: November 1, 2026.')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Repayment list' })).toBeVisible();
   await expect(page.getByText('Due', { exact: true })).toHaveCount(0);
   await page.goto(`/messages/${id}/repayment-list`);
@@ -12679,7 +12681,8 @@ test('Function: RepaymentListPage — day rows render on the repayment list', as
       contentType: 'application/json',
       body: JSON.stringify({
         currency: 'BTC',
-        fundedAt: '2026-09-26T12:00:00.000Z',
+        fundedAt: '2026-10-09T12:00:00.000Z',
+        startsOn: '2026-11-01',
         termDays: 1,
         daysDue: 1,
         daysPaid: 0,
@@ -12696,7 +12699,7 @@ test('Function: RepaymentListPage — day rows render on the repayment list', as
         repayments: [
           {
             dayIndex: 0,
-            dueOn: '2026-09-27',
+            dueOn: '2026-11-01',
             accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
             name: 'Bea',
             username: 'bea',
@@ -12759,7 +12762,8 @@ test('Function: RepaymentPlanChart — dates run from the first day to the last'
       contentType: 'application/json',
       body: JSON.stringify({
         currency: 'BTC',
-        fundedAt: '2026-09-26T12:00:00.000Z',
+        fundedAt: '2026-11-09T12:00:00.000Z',
+        startsOn: '2026-11-10',
         termDays: 2,
         daysDue: 1,
         daysPaid: 0,
@@ -12768,7 +12772,7 @@ test('Function: RepaymentPlanChart — dates run from the first day to the last'
         repayments: [
           {
             dayIndex: 0,
-            dueOn: '2026-09-27',
+            dueOn: '2026-11-10',
             accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
             name: 'Bea',
             username: 'bea',
@@ -12779,7 +12783,7 @@ test('Function: RepaymentPlanChart — dates run from the first day to the last'
           },
           {
             dayIndex: 1,
-            dueOn: '2026-09-28',
+            dueOn: '2026-11-11',
             accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
             name: 'Bea',
             username: 'bea',
@@ -12796,8 +12800,9 @@ test('Function: RepaymentPlanChart — dates run from the first day to the last'
   await page.goto(`/messages/${id}`);
   const chart = page.getByRole('img', { name: /Repayment from/ });
   await expect(chart).toBeVisible();
-  await expect(chart).toContainText('Sep 27');
-  await expect(chart).toContainText('Sep 28');
+  await expect(chart).toContainText('Nov 10');
+  await expect(chart).toContainText('Nov 11');
+  await expect(page.getByText('First repayment day: November 10, 2026.')).toBeVisible();
   await expect(page.getByText('Per day', { exact: true })).toBeVisible();
   await expect(page.getByText('Still owed', { exact: true })).toBeVisible();
 });

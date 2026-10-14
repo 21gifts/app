@@ -123,6 +123,11 @@ export function CreditLedger({
       <section aria-label={t('forum.creditBack')} className="mt-3">
         <h3 className="text-xs font-medium text-app-fg">{t('forum.creditBack')}</h3>
         <p className="mt-1 text-xs text-app-muted">{t('forum.creditBackHow')}</p>
+        {typeof ledger.startsOn === 'string' ? (
+          <p className="mt-1 text-xs font-medium text-app-fg">
+            {t('forum.creditStartsOn', { date: formatLongDay(ledger.startsOn, locale) })}
+          </p>
+        ) : null}
         {ledger.fundedAt === null ? (
           <p className="mt-1 text-xs text-app-muted">{t('forum.creditBackOpen')}</p>
         ) : null}
@@ -264,6 +269,15 @@ function formatAxisDay(dueOn: string, locale: string, withYear: boolean): string
     month: 'short',
     ...(withYear ? { year: 'numeric' as const } : {}),
   }).format(new Date(`${dueOn}T00:00:00Z`));
+}
+
+function formatLongDay(day: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: 'UTC',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(`${day}T00:00:00Z`));
 }
 
 function formatUtcDay(dueOn: string, locale: string): string {

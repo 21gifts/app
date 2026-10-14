@@ -819,25 +819,25 @@ Credit, step **3 of 9**, with **Custom** pressed. Heading **How long is the cred
 
 ### Variant: ask-credit-plan-btc
 
-Credit, step **4 of 9**, for **21000** bitcoin over **30 days**. Heading **How repayment works**. The screen says: **Repayment is due every day. It starts the day after the credit has been paid in full. If it takes 10 days for the credit to be given, repayment starts on day 11.** Then: **To repay per day: ₿700 · $0.70 per day for 30 days.** A chart draws each day as a bar and the debt as a line from day 1 down to the last day. The button is **Continue**. Any remainder that does not divide evenly is added to the last day. There is no checkbox.
+Credit, step **4 of 9**, for **21000** bitcoin over **30 days**. Heading **How repayment works**. The screen says: **Repayment is due every day. It starts the day after the credit has been fully given, but never before November 1, 2026. A credit fully given before November starts repaying on November 1. A credit fully given on November 10 starts repaying on November 11.** Then: **To repay per day: ₿700 · $0.70 per day for 30 days.** A chart draws each day as a bar and the debt as a line from day 1 down to the last day. The button is **Continue**. Any remainder that does not divide evenly is added to the last day. There is no checkbox.
 
 ![21.gifts welcome ask credit plan btc](images/welcome-ask-credit-plan-btc.png)
 
 ### Variant: ask-credit-plan-fiat
 
-Credit, step **4 of 9**, for **1000** US dollars over **30 days**. Same heading and the same daily rule. The daily line is **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The same chart shows the daily bars and the debt falling from day 1 to the last day. The button is **Continue**.
+Credit, step **4 of 9**, for **1000** US dollars over **30 days**. Same heading and the same start rule with the November 1, 2026 floor and both November examples. The daily line is **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The same chart shows the daily bars and the debt falling from day 1 to the last day. The button is **Continue**.
 
 ![21.gifts welcome ask credit plan fiat](images/welcome-ask-credit-plan-fiat.png)
 
 ### Variant: ask-credit-confirm-want
 
-Credit, step **5 of 9**, bitcoin. Heading **Take this credit**. The screen repeats every condition: **Amount owed: ₿21'000 · $21.00.** The bitcoin definition and the rising-price warning. **Repayment term: 30 days.** The daily rule with the day-11 example. **To repay per day: ₿700 · $0.70 per day for 30 days.** The chart is repeated. The button **I want to take this credit.** is the confirmation. There is no checkbox.
+Credit, step **5 of 9**, bitcoin. Heading **Take this credit**. The screen repeats every condition: **Amount owed: ₿21'000 · $21.00.** The bitcoin definition and the rising-price warning. **Repayment term: 30 days.** The start rule: the day after the credit is fully given, never before November 1, 2026, with both November examples. **To repay per day: ₿700 · $0.70 per day for 30 days.** The chart is repeated. The button **I want to take this credit.** is the confirmation. There is no checkbox.
 
 ![21.gifts welcome ask credit confirm want](images/welcome-ask-credit-confirm-want.png)
 
 ### Variant: ask-credit-confirm-want-fiat
 
-Credit, step **5 of 9**, US dollars. Heading **Take this credit**. The screen repeats every condition: **Amount owed: $1'000.00.** The sentence that payments stay bitcoin and are only priced in US dollars at the rate of each payment, and that nothing is exchanged. The sentence that the author receives the amount in bitcoin and bears the full price risk if the price falls before they spend it. **Repayment term: 30 days.** The daily rule and **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The chart is repeated. The button **I want to take this credit.** is the confirmation. There is no checkbox.
+Credit, step **5 of 9**, US dollars. Heading **Take this credit**. The screen repeats every condition: **Amount owed: $1'000.00.** The sentence that payments stay bitcoin and are only priced in US dollars at the rate of each payment, and that nothing is exchanged. The sentence that the author receives the amount in bitcoin and bears the full price risk if the price falls before they spend it. **Repayment term: 30 days.** The start rule with the November 1, 2026 floor and both November examples, and **To repay per day: $33.33 per day for 29 days, then $33.43 on the last day.** The chart is repeated. The button **I want to take this credit.** is the confirmation. There is no checkbox.
 
 ![21.gifts welcome ask credit confirm want fiat](images/welcome-ask-credit-confirm-want-fiat.png)
 
@@ -4606,7 +4606,7 @@ Same unsigned note as **goal-110**, after **Donation** is pressed. A line under 
 
 ### Variant: credit-ledger
 
-Unsigned permalink of a filled credit. Under the ask, **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows a chart from 27 Sep 2026 to 28 Sep 2026, bars for each day's amount and a line from the whole debt down to zero, and **Each share is one bitcoin payment to that person.** The day rows are not on this page. **Repayment list** links to /messages/<id>/repayment-list.
+Unsigned permalink of a filled credit. Under the ask, **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows a chart from 1 Nov 2026 to 2 Nov 2026, bars for each day's amount and a line from the whole debt down to zero, and **Each share is one bitcoin payment to that person.** **First repayment day: November 1, 2026.** The day rows are not on this page. **Repayment list** links to /messages/<id>/repayment-list.
 
 ![21.gifts public message credit ledger](images/messages-id-credit-ledger.png)
 
@@ -4770,13 +4770,13 @@ Unsigned permalink of Cyrill's reply **You got it right.** The parent **Hello fr
 
 ### Variant: default
 
-Unsigned. **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows the chart from 27 Sep 2026 to 28 Sep 2026, then **Each share is one bitcoin payment to that person.**, then 27 Sep 2026 with Bea's ₿10 **Due**, and 28 Sep 2026 with Bea's ₿10 and Cara's ₿1 **Scheduled**. This page has no **Repayment list** link.
+Unsigned. **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows the chart from 1 Nov 2026 to 2 Nov 2026, then **Each share is one bitcoin payment to that person.** **First repayment day: November 1, 2026.**, then 1 Nov 2026 with Bea's ₿10 **Due**, and 2 Nov 2026 with Bea's ₿10 and Cara's ₿1 **Scheduled**. This page has no **Repayment list** link.
 
 ![21.gifts repayment list](images/messages-id-repayment-list.png)
 
 ### Variant: signed-in
 
-Same loaded list as the default, with the **Menu** control. **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows the chart from 27 Sep 2026 to 28 Sep 2026, then **Each share is one bitcoin payment to that person.**, then 27 Sep 2026 with Bea's ₿10 **Due**, and 28 Sep 2026 with Bea's ₿10 and Cara's ₿1 **Scheduled**. This page has no **Repayment list** link.
+Same loaded list as the default, with the **Menu** control. **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows the chart from 1 Nov 2026 to 2 Nov 2026, then **Each share is one bitcoin payment to that person.** **First repayment day: November 1, 2026.**, then 1 Nov 2026 with Bea's ₿10 **Due**, and 2 Nov 2026 with Bea's ₿10 and Cara's ₿1 **Scheduled**. This page has no **Repayment list** link.
 
 ![21.gifts repayment list signed in](images/messages-id-repayment-list-signed-in.png)
 
@@ -4788,7 +4788,7 @@ Unsigned chrome only. The repayment request has not returned, so **Given**, the 
 
 ### Variant: empty
 
-Unsigned. The ledger loaded with no givers and no repayment rows. **Given** shows **No one has given yet.** **Paid back** shows **Each share is one bitcoin payment to that person.** and **The days are fixed once the credit is fully given. Until then this is the plan for what has been given.** No chart and no day rows.
+Unsigned. The ledger loaded with no givers and no repayment rows. **Given** shows **No one has given yet.** **Paid back** shows **Each share is one bitcoin payment to that person.** and **The days are fixed once the credit is fully given. Repayment starts the day after that, but never before November 1, 2026. Until then this is the plan for what has been given.** No chart and no day rows.
 
 ![21.gifts repayment list empty](images/messages-id-repayment-list-empty.png)
 
