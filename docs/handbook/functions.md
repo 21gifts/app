@@ -1247,7 +1247,7 @@
 
 - **Purpose:** Horizontal snap row for a note with `photoCount > 1`. Earlier slides are 88% wide so the next still peeks; the last slide is full width. The row is `data-scroll-x` (sideways only, vertical axis clipped) and is not a second page scroll. A `current/total` chip (`forum.galleryPosition`) sits on the visible still. Dots (`gap-5`, `IconButton` `sm` ghost, `forum.galleryDot`) scroll that row. Empty `photos` returns `null`. Single still has the chip and no dots. The capture time is stored, not shown.
 - **Inputs:** `photos` (`{ index, url, loading?, fetchPriority? }[]`), `alt`, optional `className` (ForumBoard passes `mt-2`), optional `onPhotoClick` (ForumBoard `stopCardToggle`), optional `onPhotoError` (the parent drops that index). `url` is a blob or data URL, or a same-origin public still path. `loading` defaults to `lazy`. `fetchPriority` defaults to `low`.
-- **Returns / side effects:** React element. Local scroll index only. No network. The `<img>` uses the URL the parent passed (a public still path, or a blob or data URL).
+- **Returns / side effects:** React element. Local scroll index only. No network. The `<img>` uses the URL the parent passed (a public still path, or a blob or data URL). When an earlier still disappears, the chip stays on the same photo index and the row scrolls to that still's new slot; if that still is gone, the chip clamps to the last remaining still. The clamp is derived during render.
 - **Used by:** `ForumBoard`, `PublicThreadCard` in `PublicMessageLoader`.
 
 ## Function: ShopAddWizard

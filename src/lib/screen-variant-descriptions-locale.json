@@ -2930,9 +2930,9 @@
     "fil": "Tauhan (moderator): Nabigo ang Tanggihan sa isang hilera na sila mismo ang nagmungkahi. Teksto Naghihintay ng kumpirmasyon mula sa ibang moderator. at Hindi ma-update ang miyembrong ito. Subukan ulit. Walang pindutan na Kumpirmahin. Nakikita ang Tanggihan."
   },
   "/welcome:photo-loading": {
-    "de": "Forumszeile für Ada mit der Bildunterschrift Caption waiting for the photo to load. und hasPhoto, Bilddaten noch nicht geladen, daher kein <img>. Ein fehlgeschlagener Fotoabruf sieht gleich aus (nur-Text-Zeile) — keine eigene Variante.",
-    "es": "Fila del foro de Ada con el pie Caption waiting for the photo to load. y hasPhoto, los bytes de la imagen aún no cargados así que no hay <img>. Una obtención fallida de la foto se ve igual (fila solo de texto) — no es una variante aparte.",
-    "fil": "Hilera sa forum para kay Ada na may palabas na Caption waiting for the photo to load. at hasPhoto, hindi pa na-load ang mga byte ng larawan kaya walang <img>. Magkapareho ang hitsura ng nabigong pagkuha ng larawan (hilera ng teksto lang) — hindi ito hiwalay na baryante."
+    "de": "Forumszeile für Ada mit der Bildunterschrift Caption waiting for the photo to load. und hasPhoto. Das Standbild ist schon ein <img>, dessen src /messages/{id}/photo.jpg ist, während die Bytes laden. Ein fehlgeschlagener Ladevorgang entfernt dieses Bild, die Zeile ist dann nur Text — keine eigene Variante.",
+    "es": "Fila del foro de Ada con el pie Caption waiting for the photo to load. y hasPhoto. La imagen fija ya es un <img> cuyo src es /messages/{id}/photo.jpg mientras cargan los bytes. Una carga fallida quita esa imagen, así que la fila queda solo con texto — no es una variante aparte.",
+    "fil": "Hilera sa forum para kay Ada na may palabas na Caption waiting for the photo to load. at hasPhoto. Ang still ay isang <img> na ang src ay /messages/{id}/photo.jpg habang naglo-load ang mga byte. Ang nabigong pag-load ay nag-aalis ng larawang iyon, kaya teksto na lang ang hilera — hindi ito hiwalay na baryante."
   },
   "/shops:composer-place-set-coords": {
     "de": "Eine namenlose Stecknadel wurde bestätigt, dann schloss sich Ort hinzufügen. 14.50000, 120.90000 wird nicht angezeigt. Ort entfernen erscheint erst, nachdem die Stecknadel erneut geöffnet wurde. Weiter bleibt verfügbar. Die Shopliste ist weiterhin leer.",

@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useRef, useState, type ReactElement, type UIEvent } from 'react';
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type UIEvent,
+} from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { IconButton } from '@/components/ui';
 
@@ -76,7 +83,14 @@ export function ForumPhotoGallery({
 }: ForumPhotoGalleryProps): ReactElement | null {
   const { t } = useTranslations();
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(() => {
+    const first = photos[0];
+    return first === undefined ? 0 : first.index;
+  });
+  const photosRef = useRef(photos);
+  const activeRef = useRef(active);
+  photosRef.current = photos;
+  activeRef.current = active;
 
   const updateActive = useCallback(
     (scroller: HTMLElement) => {
@@ -88,16 +102,39 @@ export function ForumPhotoGallery({
         photos.length - 1,
         Math.max(0, Math.round(scroller.scrollLeft / stride)),
       );
-      setActive(next);
+      const photo = photos[next];
+      if (photo === undefined) {
+        return;
+      }
+      setActive(photo.index);
     },
-    [photos.length],
+    [photos],
   );
+
+  const photoIndexes = photos.map((photo) => photo.index).join(',');
+  // Ordered indexes, not photos identity or the remembered index.
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current;
+    if (scroller === null) {
+      return;
+    }
+    const stride = slideStride(scroller);
+    if (stride === 0) {
+      return;
+    }
+    const currentPhotos = photosRef.current;
+    const remembered = activeRef.current;
+    const found = currentPhotos.findIndex((photo) => photo.index === remembered);
+    const slot = found === -1 ? currentPhotos.length - 1 : found;
+    scroller.scrollLeft = stride * slot;
+  }, [photoIndexes]);
 
   if (photos.length === 0) {
     return null;
   }
 
-  const shown = Math.min(active, Math.max(0, photos.length - 1));
+  const found = photos.findIndex((photo) => photo.index === active);
+  const shown = found === -1 ? photos.length - 1 : found;
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
 
   return (
@@ -165,7 +202,7 @@ export function ForumPhotoGallery({
                 } else {
                   scroller.scrollLeft = left;
                 }
-                setActive(i);
+                setActive(photo.index);
               }}
             >
               <span

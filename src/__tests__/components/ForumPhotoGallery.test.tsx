@@ -266,4 +266,39 @@ describe('ForumPhotoGallery', () => {
     expect(screen.getByText('1/1')).toBeTruthy();
     expect(screen.queryByText('2/1')).toBeNull();
   });
+
+  it('keeps the chip on the same photo index when an earlier still disappears', () => {
+    const view = renderWithLocale(
+      <ForumPhotoGallery
+        photos={[
+          { index: 0, url: 'blob:g0' },
+          { index: 1, url: 'blob:g1' },
+          { index: 2, url: 'blob:g2' },
+        ]}
+        alt="Photo from Ada"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Photo 2 of 3' }));
+    expect(screen.getByText('2/3')).toBeTruthy();
+    view.rerender(
+      <ForumPhotoGallery
+        photos={[
+          { index: 1, url: 'blob:g1' },
+          { index: 2, url: 'blob:g2' },
+        ]}
+        alt="Photo from Ada"
+      />,
+    );
+    expect(screen.getByText('1/2')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Photo 1 of 2' }).getAttribute('aria-current')).toBe(
+      'true',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Photo 2 of 2' }).getAttribute('aria-current'),
+    ).toBeNull();
+    expect(screen.queryByText('2/2')).toBeNull();
+    const photos = screen.getAllByAltText('Photo from Ada');
+    expect(photos[0]?.getAttribute('data-photo-index')).toBe('1');
+    expect(photos[1]?.getAttribute('data-photo-index')).toBe('2');
+  });
 });
