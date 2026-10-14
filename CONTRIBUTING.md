@@ -79,6 +79,7 @@ app/
 │   │   │   ├── wallet-backup-seen/route.ts  # POST /me/wallet-backup-seen
 │   │   │   ├── wallet/route.ts  # PUT /me/wallet (claim the in-app wallet key)
 │   │   │   ├── wallet/report/route.ts  # POST /me/wallet/report (wallet data report)
+│   │   │   ├── wallet/hearts/route.ts  # POST /me/wallet/hearts (heart payment lookup)
 │   │   │   ├── events/route.ts  # POST /me/events (interaction log batch)
 │   │   │   └── activity/route.ts  # GET /me/activity → api GET /me/activity
 │   │   ├── push/
@@ -318,6 +319,7 @@ app/
 │   │   ├── useWallet.ts         # /wallet balance status, receive availability, and retry
 │   │   ├── useActiveSession.ts  # Session token public pages may act with (null while a login's wallet is opening)
 │   │   ├── useWalletOpen.ts     # Whether the account's wallet phrase is open in this tab
+│   │   ├── useHeartContext.ts   # Gift payment hashes resolved to the heart's forum post
 │   │   ├── useWalletHistory.ts  # /wallet payment pages, reloaded on every wallet sync
 │   │   ├── useWalletSetup.ts    # Inline setup-failure state, screenshot pins, and retry
 │   │   ├── useWalletPay.ts      # In-app pay path of one invoice (prepare, confirm, send, 60 s wait)
@@ -352,6 +354,7 @@ app/
 │   │   │   ├── wallet-phrase.ts # rememberPhraseFromPrf, unlockWalletPhrase, canUnlockWallet
 │   │   │   ├── payment-display.ts # Payment title, message, and screen link for the list and /wallet/payment
 │   │   │   ├── payment-fixtures.ts # Synthetic SDK payments for the history-rows pin (invariants unit-tested)
+│   │   │   ├── heart-context.ts # fetchHeartPosts: gift payment hashes → POST /me/wallet/hearts
 │   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
 │   │   │   ├── payment-failure.ts # reportPaymentFailure: payment_failed event + `Payment failed` error report
 │   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
@@ -415,7 +418,7 @@ app/
 │   ├── contact.spec.ts          # /contact composer, validation, success
 │   ├── login.spec.ts            # /login Log in + Open a new account + signed-in forms
 │   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, Send (camera), Receive, and Function titles
-│   ├── data-collection.spec.ts  # POST /me/wallet/report and /me/events proxies, interaction log in the browser
+│   ├── data-collection.spec.ts  # POST /me/wallet/report, /me/wallet/hearts, and /me/events proxies, interaction log in the browser
 │   ├── camera.ts                # Stubbed getUserMedia (black stream, QR stream, blocked, none) for wallet specs
 │   ├── no-prf.ts                # Stubbed passkeys without PRF output + the one no-wallet sentence
 │   ├── wallet-pay.spec.ts       # In-app wallet pay slot on the gift pay sheet (pins, unavailable and failed states)
@@ -802,7 +805,7 @@ switch that makes a screen show fixture data or a forced state) is honoured
 **only in a Playwright build**: check `getE2eNow()` (`NEXT_PUBLIC_E2E_NOW`,
 unset in every deployed build) before reading the pin. `visualPin` does that
 for `useWallet` (including `?visual=balance-reopening`), `useWalletPay`, `useWalletSetup`, the login card's
-wallet gate, `sendHeartTip`, and `useHeartTip`; `useWalletHistory`, `useWalletSend`, `useWalletPhrase`, and
+wallet gate, `sendHeartTip`, `useHeartTip`, and `useHeartContext`; `useWalletHistory`, `useWalletSend`, `useWalletPhrase`, and
 `PasskeyRenewNotice` check it themselves. Inline scripts that run before
 React check for the `e2e-now` meta tag, which only a Playwright build renders.
 Do not add a second mechanism. A production build must ignore every pin, and a

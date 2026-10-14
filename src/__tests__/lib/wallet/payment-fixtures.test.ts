@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { WALLET_VISUAL_FIXTURE_SATS } from '@/hooks/useWallet';
-import { toFixturePayment, WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
+import {
+  HEART_VISUAL_PAYMENT,
+  toFixturePayment,
+  WALLET_PAYMENT_FIXTURES,
+} from '@/lib/wallet/payment-fixtures';
+import { paymentTitle } from '@/lib/wallet/payment-display';
 import { toWalletPayment } from '@/lib/wallet/wallet-sdk';
 
 const CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
@@ -152,7 +157,13 @@ describe('WALLET_PAYMENT_FIXTURES', () => {
       const shown = toFixturePayment(source);
       expect(shown.info.purpose).toBe('gift');
       expect(shown.info.lnAddress).toBe('@alice');
+      expect(shown.info.memberAccountId).toBe('acc_e2e');
     }
+    const heart = toFixturePayment(HEART_VISUAL_PAYMENT);
+    expect(heart.info.purpose).toBe('gift');
+    expect(heart.info.lnAddress).toBe('@ada');
+    expect(heart.info.memberAccountId).toBe('acc_ada');
+    expect(paymentTitle(heart)).toEqual({ key: 'wallet.payment.gift' });
     const shops = mapped.filter((payment) => payment.info.purpose === 'shop');
     expect(shops).toHaveLength(1);
     for (const payment of shops) {

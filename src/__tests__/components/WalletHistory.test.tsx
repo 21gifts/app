@@ -1,10 +1,11 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WalletHistory } from '@/components/WalletHistory';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWalletHistory, type UseWalletHistoryResult } from '@/hooks/useWalletHistory';
 import type { FiatRateDay } from '@/lib/stats-money';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
+import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/hooks/useSpotRate', () => ({ useSpotRate: vi.fn() }));
@@ -55,6 +56,7 @@ beforeEach(() => {
   loadMore.mockReset();
   retry.mockReset();
   vi.mocked(useSpotRate).mockReset().mockReturnValue(RATE_DAY);
+  useAuthStore.setState({ session: null, account: null });
   observers.length = 0;
   vi.stubGlobal(
     'IntersectionObserver',
@@ -70,6 +72,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  useAuthStore.setState({ session: null, account: null });
   vi.unstubAllGlobals();
 });
 
@@ -132,6 +135,160 @@ describe('WalletHistory', () => {
     vi.mocked(useSpotRate).mockReturnValue(null);
     show({ payments: [payment({})] });
     expect(screen.getByRole('listitem').textContent).not.toContain('$');
+  });
+
+  it('shows a heart row with one line of post text instead of the gift title', async () => {
+    const paymentHashes = ['a'.repeat(64), 'b'.repeat(64), 'c'.repeat(64)] as const;
+    useAuthStore.setState({ session: 'session', account: null });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json({
+          hearts: [
+            {
+              paymentHash: paymentHashes[0],
+              messageId: 'message-21',
+              authorName: 'Ada',
+              text: 'First line\nsecond line',
+              deleted: true,
+            },
+            {
+              paymentHash: paymentHashes[1],
+              messageId: 'message-22',
+              authorName: 'Bea',
+              text: '   ',
+              deleted: false,
+            },
+            {
+              paymentHash: paymentHashes[2],
+              messageId: 'message-23',
+              authorName: '',
+              text: '',
+              deleted: false,
+            },
+          ],
+        }),
+      ),
+    );
+    show({
+      payments: [
+        payment({
+          id: 'heart',
+          direction: 'sent',
+          method: 'spark',
+          info: { purpose: 'gift', paymentHash: paymentHashes[0] },
+        }),
+        payment({
+          id: 'heart-author',
+          direction: 'sent',
+          method: 'spark',
+          info: { purpose: 'gift', paymentHash: paymentHashes[1] },
+        }),
+        payment({
+          id: 'heart-empty',
+          direction: 'sent',
+          method: 'spark',
+          info: { purpose: 'gift', paymentHash: paymentHashes[2] },
+        }),
+      ],
+    });
+
+    await waitFor(() => expect(screen.getByText('First line second line')).toBeTruthy());
+    expect(screen.getByText('Bea')).toBeTruthy();
+    const rows = screen.getAllByRole('link');
+    expect(rows[0]?.getAttribute('href')).toBe('/wallet/payment?id=heart');
+    expect(rows.every((row) => !row.textContent?.includes('Gift'))).toBe(true);
+    const heartIcon = rows[0]?.querySelector('.lucide-heart');
+    expect(heartIcon?.getAttribute('fill')).toBe('currentColor');
+    expect(heartIcon?.getAttribute('class')).toContain('text-app-accent');
+    expect(rows[2]?.getAttribute('aria-label')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'message-23' })).toBeNull();
+    expect(rows[2]?.textContent).not.toContain('message-23');
+  });
+
+  it('shows Gift and no heart when a settled lookup has no post', async () => {
+    const paymentHash = 'f'.repeat(64);
+    useAuthStore.setState({ session: 'session', account: null });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ hearts: [] })));
+    show({
+      payments: [
+        payment({
+          id: 'miss',
+          direction: 'sent',
+          method: 'spark',
+          info: { purpose: 'gift', paymentHash },
+        }),
+      ],
+    });
+
+    await waitFor(() => expect(screen.getByRole('link').textContent).toContain('Gift'));
+    const row = screen.getByRole('link');
+    expect(row.querySelector('.lucide-heart')).toBeNull();
+    expect(row.querySelector('.lucide-arrow-up-right')).toBeTruthy();
+  });
+
+  it('keeps Gift and the direction icon when a pending payment would match a heart', () => {
+    const paymentHash = 'e'.repeat(64);
+    useAuthStore.setState({ session: 'session', account: null });
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        hearts: [
+          {
+            paymentHash,
+            messageId: 'message-pending',
+            authorName: 'Ada',
+            text: 'Sunday lunch',
+            deleted: false,
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    show({
+      payments: [
+        payment({
+          id: 'still-pending',
+          status: 'pending',
+          direction: 'sent',
+          method: 'spark',
+          info: { purpose: 'gift', paymentHash },
+        }),
+      ],
+    });
+
+    const row = screen.getByRole('link');
+    expect(row.textContent).toContain('Gift');
+    expect(row.textContent).not.toContain('Sunday lunch');
+    expect(row.textContent).not.toContain('message-pending');
+    expect(row.querySelector('.lucide-heart')).toBeNull();
+    expect(row.querySelector('.lucide-arrow-up-right')).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps Gift and the direction icon while a heart row is pending', () => {
+    const paymentHash = 'd'.repeat(64);
+    useAuthStore.setState({ session: 'session', account: null });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>(() => undefined)),
+    );
+    show({
+      payments: [
+        payment({
+          id: 'heart-pending',
+          direction: 'sent',
+          method: 'spark',
+          info: { purpose: 'gift', paymentHash },
+        }),
+      ],
+    });
+
+    const row = screen.getByRole('link');
+    expect(row.textContent).toContain('Gift');
+    expect(row.textContent).not.toContain('Sunday lunch');
+    expect(row.querySelector('.min-w-0.truncate.text-sm.font-medium')?.textContent).toBe('Gift');
+    expect(row.querySelector('.lucide-heart')).toBeNull();
+    expect(row.querySelector('.lucide-arrow-up-right')).toBeTruthy();
   });
 
   it('loads the next page when the end of the list comes into view', () => {
