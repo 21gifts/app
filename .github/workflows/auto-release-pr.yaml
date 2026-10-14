@@ -25,6 +25,7 @@ jobs:
 
       - name: Fetch release branches
         run: |
+          git fetch origin main || true
           git fetch origin develop || true
           git fetch origin staging || true
 
@@ -78,5 +79,7 @@ jobs:
               --body-file "/tmp/pr-body-${head}.md"
           }
           # Hard requirement: staging is experimental testing. Release it
-          # into develop. A pull request must not target main.
+          # into develop, and release develop into main. Never open a
+          # release from staging directly into main.
+          open_release develop main production false
           open_release staging develop develop true
