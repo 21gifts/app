@@ -870,26 +870,21 @@ export function ForumBoard({
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   // Lend opens the card's money reaction and puts the focus in its amount field once it is enabled.
-  // A card closed again before its form was ready drops the intent, so a later open does not focus.
+  // Every host opens the card in the same click, so a card that is not open (refused, or closed
+  // again before its form was ready) drops the intent, and a later open does not take the focus.
   const [lendIntentId, setLendIntentId] = useState<string | null>(null);
-  const lendIntentOpened = useRef(false);
   const sunday = useLocalSunday();
   useEffect(() => {
     if (lendIntentId === null) {
       return;
     }
     if (lendIntentId !== expandedId) {
-      if (lendIntentOpened.current) {
-        lendIntentOpened.current = false;
-        setLendIntentId(null);
-      }
+      setLendIntentId(null);
       return;
     }
-    lendIntentOpened.current = true;
     if (repliesLoading || replies === null) {
       return;
     }
-    lendIntentOpened.current = false;
     setLendIntentId(null);
     const field = document.getElementById('forum-reply-amount');
     if (field instanceof HTMLInputElement && !field.disabled) {
@@ -1446,9 +1441,6 @@ export function ForumBoard({
                     message.deletedAt === undefined &&
                     !isOwnNote(viewerAccountId, message.accountId)
                       ? () => {
-                          if (lendIntentId !== message.id) {
-                            lendIntentOpened.current = false;
-                          }
                           setLendIntentId(message.id);
                           if (expandedId !== message.id) {
                             onToggleExpand(message.id);

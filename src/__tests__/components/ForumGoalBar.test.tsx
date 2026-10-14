@@ -351,9 +351,31 @@ describe('ForumGoalBar on a posted loan', () => {
         ledgerCollapsed
       />,
     );
-    expect(screen.getByText('CHF 10.00')).toBeTruthy();
-    expect(screen.getByText('of CHF 20.00 lent')).toBeTruthy();
+    expect(screen.getByText("CHF 10.00 · ₿25'000 · $25.00")).toBeTruthy();
+    expect(screen.getByText("of CHF 20.00 · ₿25'000 · $25.00 lent")).toBeTruthy();
     expect(screen.getByText('50%')).toBeTruthy();
+  });
+
+  it('leaves out a second copy of the fiat when the visitor uses the loan currency', () => {
+    noFetch();
+    renderWithLocale(
+      <ForumGoalBar
+        sats={25_000}
+        goalSats={25_000}
+        rateDay={RATE_DAY}
+        goalCurrency="CHF"
+        goalAmount="20"
+        amountChf="10.00"
+        goalRepayable
+        messageId="m1"
+        ledgerCollapsed
+      />,
+      'en',
+      'ch',
+      'CHF',
+    );
+    expect(screen.getByText("CHF 10.00 · ₿25'000")).toBeTruthy();
+    expect(screen.getByText("of CHF 20.00 · ₿25'000 lent")).toBeTruthy();
   });
 
   it('counts zero in the loan currency when a fiat loan has no collected snapshot', () => {
@@ -371,7 +393,7 @@ describe('ForumGoalBar on a posted loan', () => {
       />,
     );
     expect(screen.getByText('CHF 0.00')).toBeTruthy();
-    expect(screen.getByText('of CHF 20.00 lent')).toBeTruthy();
+    expect(screen.getByText("of CHF 20.00 · ₿25'000 · $25.00 lent")).toBeTruthy();
     expect(screen.getByText('0%')).toBeTruthy();
     expect(screen.queryByText(/₿12'500/)).toBeNull();
   });
