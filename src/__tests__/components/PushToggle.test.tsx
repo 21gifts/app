@@ -186,7 +186,9 @@ describe('PushToggle', () => {
     const room = screen.getByRole('group', { name: 'Posts' });
     expect(room.className).toContain('w-auto');
     expect(room.className).not.toContain('w-full');
-    expect(within(room).queryByRole('button', { name: 'Only with a gift' })).toBeNull();
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
   });
 
   it('shows the iOS install hint when Safari is not standalone', async () => {
@@ -291,7 +293,9 @@ describe('PushToggle', () => {
     expect(within(room).getByRole('button', { name: /^Off$/ }).getAttribute('aria-pressed')).toBe(
       'false',
     );
-    expect(within(room).queryByRole('button', { name: 'Only with a gift' })).toBeNull();
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
     expect(screen.getByText('Notify me about:')).toBeTruthy();
     expect(room.className).toContain('w-auto');
     expect(room.className).not.toContain('w-full');
@@ -306,7 +310,9 @@ describe('PushToggle', () => {
         .getByRole('button', { name: /^Only to me$/ })
         .getAttribute('aria-pressed'),
     ).toBe('true');
-    expect(within(room).queryByRole('button', { name: 'Only with a gift' })).toBeNull();
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
   });
 
   it('posts none when Off is chosen on the living room', async () => {
@@ -457,7 +463,9 @@ describe('PushToggle', () => {
     expect(within(room).getByRole('button', { name: /^All$/ }).getAttribute('aria-pressed')).toBe(
       'true',
     );
-    expect(within(room).queryByRole('button', { name: 'Only with a gift' })).toBeNull();
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
   });
 
   it('selects Off when the account stores none', () => {
@@ -467,7 +475,9 @@ describe('PushToggle', () => {
     expect(within(room).getByRole('button', { name: /^Off$/ }).getAttribute('aria-pressed')).toBe(
       'true',
     );
-    expect(within(room).queryByRole('button', { name: 'Only with a gift' })).toBeNull();
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
   });
 
   it('shows Only with a gift when the account stores active', () => {
@@ -500,58 +510,68 @@ describe('PushToggle', () => {
     expect(postNotificationLevel).not.toHaveBeenCalled();
   });
 
-  it('posts all from stored active and drops Only with a gift', async () => {
+  it('posts active when Only with a gift is chosen', async () => {
+    renderWithLocale(<PushToggle />);
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Only with a gift$/ }));
+    await waitFor(() => {
+      expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'active');
+    });
+    expect(
+      within(room)
+        .getByRole('button', { name: /^Only with a gift$/ })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+  });
+
+  it('posts all from stored active and keeps Only with a gift', async () => {
     useAuthStore.setState({ account: accountWithLevel('active') });
     renderWithLocale(<PushToggle />);
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Posts' })).getByRole('button', {
-        name: /^All$/,
-      }),
-    );
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^All$/ }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'all');
-      expect(
-        within(screen.getByRole('group', { name: 'Posts' })).queryByRole('button', {
-          name: 'Only with a gift',
-        }),
-      ).toBeNull();
     });
+    expect(within(room).getByRole('button', { name: /^All$/ }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
   });
 
-  it('posts mentions from stored active and drops Only with a gift', async () => {
+  it('posts mentions from stored active and keeps Only with a gift', async () => {
     useAuthStore.setState({ account: accountWithLevel('active') });
     renderWithLocale(<PushToggle />);
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Posts' })).getByRole('button', {
-        name: /^Only to me$/,
-      }),
-    );
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Only to me$/ }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'mentions');
-      expect(
-        within(screen.getByRole('group', { name: 'Posts' })).queryByRole('button', {
-          name: 'Only with a gift',
-        }),
-      ).toBeNull();
     });
+    expect(
+      within(room)
+        .getByRole('button', { name: /^Only to me$/ })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
   });
 
-  it('posts none from stored active and drops Only with a gift', async () => {
+  it('posts none from stored active and keeps Only with a gift', async () => {
     useAuthStore.setState({ account: accountWithLevel('active') });
     renderWithLocale(<PushToggle />);
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Posts' })).getByRole('button', {
-        name: /^Off$/,
-      }),
-    );
+    const room = screen.getByRole('group', { name: 'Posts' });
+    fireEvent.click(within(room).getByRole('button', { name: /^Off$/ }));
     await waitFor(() => {
       expect(postNotificationLevel).toHaveBeenCalledWith('tok', 'none');
-      expect(
-        within(screen.getByRole('group', { name: 'Posts' })).queryByRole('button', {
-          name: 'Only with a gift',
-        }),
-      ).toBeNull();
     });
+    expect(within(room).getByRole('button', { name: /^Off$/ }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(
+      within(room).getByRole('button', { name: 'Only with a gift' }).getAttribute('aria-pressed'),
+    ).toBe('false');
   });
 
   it('posts all when All is chosen from stored none', async () => {

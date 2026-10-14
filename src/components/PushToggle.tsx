@@ -14,37 +14,32 @@ type PushTogglePhase = 'checking' | 'unsupported' | 'ready';
 type DevicePushValue = 'on' | 'off';
 
 /**
- * Post options for the stored level.
+ * Post options. Always the same four, in this order.
  *
- * All, Only to me, then Only with a gift only when `level` is already
- * `active`, then Off. The value posted is the selected option.
+ * All, Only to me, Only with a gift, then Off. The value posted is the
+ * selected option.
  *
- * @param level - Stored notification level, including a missing field as `all`.
  * @param t - Catalog lookup.
  * @returns The pill options in display order.
  */
 function roomOptions(
-  level: NotificationLevel,
   t: (key: MessageKey, vars?: Record<string, string | number>) => string,
 ): SegmentedControlOption<NotificationLevel>[] {
-  const options: SegmentedControlOption<NotificationLevel>[] = [
+  return [
     { value: 'all', label: t('profile.notify.room.all') },
     { value: 'mentions', label: t('profile.notify.room.mine') },
+    { value: 'active', label: t('profile.notify.room.gifted') },
+    { value: 'none', label: t('profile.notify.room.off') },
   ];
-  if (level === 'active') {
-    options.push({ value: 'active', label: t('profile.notify.room.gifted') });
-  }
-  options.push({ value: 'none', label: t('profile.notify.room.off') });
-  return options;
 }
 
 /**
  * Settings Notifications sections. Uppercase heading
  * `profile.notify.heading`, then Hearts On/Off and one compact Posts
- * pill on the same line as its label, right-aligned. Stored `active` adds
- * Only with a gift on that same line. The label does not shrink; the pill
- * wraps under it only when the row is too narrow. Choosing another option
- * posts that level and the extra option disappears.
+ * pill on the same line as its label, right-aligned. The options are always
+ * All, Only to me, Only with a gift, and Off. The label does not shrink; the
+ * pill wraps under it only when the row is too narrow. Choosing another
+ * option posts that level.
  * A second bordered section, `profile.device.heading`, shows Notifications
  * On/Off when Push APIs are ready. That row's visible label and aria-label
  * are `profile.device.label`, not `aria.push`. Renders nothing without a
@@ -222,7 +217,7 @@ export function PushToggle(): ReactElement | null {
   const onRoomPress = (next: NotificationLevel): void => {
     void onLevelChange(next);
   };
-  const room = roomOptions(selected, t);
+  const room = roomOptions(t);
   const onOff = [
     { value: 'on' as const, label: t('profile.push.on') },
     { value: 'off' as const, label: t('profile.push.off') },
