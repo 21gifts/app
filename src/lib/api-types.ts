@@ -130,9 +130,16 @@ export const accountSchema = z.object({
   hasPosted: z.boolean().optional(),
   /**
    * In-app and Web Push filter. Optional so current develop api bodies still
-   * parse; missing means {@link accountNotificationLevel} returns `all`.
+   * parse; missing or an unknown string, including the dropped value
+   * `messages`, means {@link accountNotificationLevel} returns `all`.
    */
-  notificationLevel: z.enum(NOTIFICATION_LEVELS).optional(),
+  notificationLevel: z.preprocess(
+    (value) =>
+      typeof value === 'string' && !(NOTIFICATION_LEVELS as readonly string[]).includes(value)
+        ? undefined
+        : value,
+    z.enum(NOTIFICATION_LEVELS).optional(),
+  ),
   /**
    * True when the owner wants a notification for each received heart. Optional
    * so older api bodies still parse; missing means true in the UI.
@@ -209,7 +216,8 @@ export const accountSchema = z.object({
  * `active` (only posts with a gift), `mentions` (replies to the owner, gifts
  * they receive, and @username marks), or `none` (none of that living-room
  * stream, including the dedicated @username channel). Omitted on older api
- * builds; treat as `all`.
+ * builds and on an unknown string, including the dropped value `messages`;
+ * treat as `all`.
  * `notifyHearts` is true when the owner wants a notification for each received
  * heart. Omitted on older api builds; treat as true.
  * `amountUnit` is `btc` or `fiat` for amount fields. Omitted on older api

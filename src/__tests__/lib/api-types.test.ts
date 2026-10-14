@@ -1630,10 +1630,15 @@ describe('accountSchema', () => {
     );
   });
 
-  it('rejects a garbage notificationLevel', () => {
-    expect(() => accountSchema.parse({ ...account, notificationLevel: 'nope' })).toThrow();
-    expect(() => accountSchema.parse({ ...account, notificationLevel: 'messages' })).toThrow();
+  it('treats an unknown string notificationLevel as omitted', () => {
+    const messages = accountSchema.parse({ ...account, notificationLevel: 'messages' });
+    expect(messages.notificationLevel).toBeUndefined();
+    expect(accountNotificationLevel(messages)).toBe('all');
+    const nope = accountSchema.parse({ ...account, notificationLevel: 'nope' });
+    expect(nope.notificationLevel).toBeUndefined();
+    expect(accountNotificationLevel(nope)).toBe('all');
     expect(() => accountSchema.parse({ ...account, notificationLevel: 1 })).toThrow();
+    expect(() => accountSchema.parse({ ...account, notificationLevel: null })).toThrow();
   });
 
   it('accepts omitted funding', () => {
