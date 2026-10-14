@@ -8892,19 +8892,42 @@ describe('ForumBoard loan block', () => {
     delete document.documentElement.dataset['localSunday'];
   });
 
+  /** A host that opens and closes the card in the same click, unless it refuses to. */
+  function Host({
+    refuse = false,
+    repliesLoading = false,
+    replies = null,
+  }: {
+    refuse?: boolean;
+    repliesLoading?: boolean;
+    replies?: ForumMessage[] | null;
+  }): ReactElement {
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    return board({
+      expandedId,
+      repliesLoading,
+      replies,
+      onToggleExpand: (id) => {
+        if (!refuse) {
+          setExpandedId((current) => (current === id ? null : id));
+        }
+      },
+    });
+  }
+
+  function amountField(): HTMLElement | null {
+    return document.getElementById('forum-reply-amount');
+  }
+
   it('opens the money reaction from Lend and puts the focus in its amount field', () => {
-    const onToggleExpand = vi.fn();
-    const view = renderWithLocale(board({ onToggleExpand }));
+    const view = renderWithLocale(<Host repliesLoading />);
     expect(screen.getByRole('region', { name: 'Loan request' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
-    expect(onToggleExpand).toHaveBeenCalledWith('loan1');
-    view.rerender(board({ onToggleExpand, expandedId: 'loan1', repliesLoading: true }));
-    expect(document.activeElement).not.toBe(document.getElementById('forum-reply-amount'));
-    view.rerender(board({ onToggleExpand, expandedId: 'loan1', replies: [] }));
-    const field = document.getElementById('forum-reply-amount');
-    expect(document.activeElement).toBe(field);
-    expect(screen.getByLabelText('Amount to lend')).toBe(field);
-    expect(onToggleExpand).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Hide reactions' })).toBeTruthy();
+    expect(document.activeElement).not.toBe(amountField());
+    view.rerender(<Host replies={[]} />);
+    expect(document.activeElement).toBe(amountField());
+    expect(screen.getByLabelText('Amount to lend')).toBe(amountField());
   });
 
   it('focuses the amount field of an open card and reveals its form in the scrollport', () => {
@@ -8914,28 +8937,49 @@ describe('ForumBoard loan block', () => {
         {board({ onToggleExpand, expandedId: 'loan1', replies: [] })}
       </AppShell>,
     );
+    const port = document.querySelector('[data-scrollport]');
+    if (!(port instanceof HTMLElement)) {
+      throw new Error('missing scrollport');
+    }
+    const form = amountField()?.closest('form');
+    if (!(form instanceof HTMLElement)) {
+      throw new Error('missing reaction form');
+    }
+    vi.spyOn(port, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 400, 300));
+    vi.spyOn(form, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 500, 400, 100));
+    let top = 0;
+    Object.defineProperty(port, 'scrollTop', {
+      configurable: true,
+      get: () => top,
+      set: (value: number) => {
+        top = value;
+      },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
     expect(onToggleExpand).not.toHaveBeenCalled();
-    expect(document.activeElement).toBe(document.getElementById('forum-reply-amount'));
+    expect(document.activeElement).toBe(amountField());
+    expect(top).toBeGreaterThan(0);
   });
 
   it('drops the Lend intent when the card is closed before its form is ready', () => {
-    const view = renderWithLocale(board());
+    const view = renderWithLocale(<Host repliesLoading />);
     fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
-    view.rerender(board({ expandedId: 'loan1', repliesLoading: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
-    view.rerender(board({ expandedId: null }));
-    view.rerender(board({ expandedId: 'loan1', replies: [] }));
-    expect(document.getElementById('forum-reply-amount')).not.toBeNull();
-    expect(document.activeElement).not.toBe(document.getElementById('forum-reply-amount'));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    view.rerender(<Host replies={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(amountField()).not.toBeNull();
+    expect(document.activeElement).not.toBe(amountField());
   });
 
-  it('keeps the Lend intent while the card has not opened yet', () => {
-    const view = renderWithLocale(board());
+  it('drops the Lend intent when the host refuses to open the card', () => {
+    const view = renderWithLocale(<Host refuse replies={[]} />);
     fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
-    view.rerender(board({ expandedId: null }));
-    view.rerender(board({ expandedId: 'loan1', replies: [] }));
-    expect(document.activeElement).toBe(document.getElementById('forum-reply-amount'));
+    expect(amountField()).toBeNull();
+    view.rerender(<Host replies={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(amountField()).not.toBeNull();
+    expect(document.activeElement).not.toBe(amountField());
   });
 
   it('drops the Lend focus when the amount field cannot take it', () => {

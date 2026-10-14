@@ -253,31 +253,38 @@ export function ForumGoalBar({
         ? bitcoin
         : `${bitcoin} · ${formatFiatDisplay(priced, fiat, numberFormat)}`;
     };
-    // A fiat loan counts in its own currency, like its percent: a missing snapshot is 0.
+    const collectedSats = Number.isFinite(sats) && sats > 0 ? sats : 0;
+    // Like the ask: the defined fiat, then bitcoin, then the visitor's fiat unless it is the defined one.
+    const withBitcoin = (amountSats: number, stored: string | null | undefined): string =>
+      definedInViewerFiat
+        ? formatBitcoin(amountSats, numberFormat)
+        : withViewerFiat(amountSats, stored);
+    const definedCode = defined !== '' && isFiatGoalCurrency(goalCurrency) ? goalCurrency : null;
     const collectedDefined =
-      defined !== '' && isFiatGoalCurrency(goalCurrency)
-        ? collectedByCode[COLLECTED_FIELD[goalCurrency]]
-        : undefined;
-    const collected =
-      defined !== '' && isFiatGoalCurrency(goalCurrency)
-        ? formatFiatDisplay(
-            typeof collectedDefined === 'string' && COLLECTED_FIAT_RE.test(collectedDefined)
-              ? collectedDefined
-              : '0.00',
-            goalCurrency,
-            numberFormat,
-          )
-        : withViewerFiat(
-            Number.isFinite(sats) && sats > 0 ? sats : 0,
-            collectedByCode[COLLECTED_FIELD[fiat]],
-          );
+      definedCode === null ? undefined : collectedByCode[COLLECTED_FIELD[definedCode]];
+    // A fiat loan counts in its own currency, like its percent: a missing snapshot is zero.
+    let collected: string;
+    if (definedCode === null) {
+      collected = withViewerFiat(collectedSats, collectedByCode[COLLECTED_FIELD[fiat]]);
+    } else if (typeof collectedDefined === 'string' && COLLECTED_FIAT_RE.test(collectedDefined)) {
+      collected = `${formatFiatDisplay(collectedDefined, definedCode, numberFormat)} · ${withBitcoin(
+        collectedSats,
+        collectedByCode[COLLECTED_FIELD[fiat]],
+      )}`;
+    } else {
+      collected = formatFiatDisplay('0.00', definedCode, numberFormat);
+    }
+    const goalText =
+      definedCode === null
+        ? withViewerFiat(goalSats, viewerSnapshot)
+        : `${defined} · ${withBitcoin(goalSats, viewerSnapshot)}`;
     return (
       <>
         <LoanBlock
           messageId={messageId}
           ask={askAmount}
           collected={collected}
-          goal={defined !== '' ? defined : withViewerFiat(goalSats, viewerSnapshot)}
+          goal={goalText}
           percent={percent}
           ledger={loaded !== null && loaded.messageId === messageId ? loaded.ledger : null}
           ledgerLink={ledgerCollapsed}

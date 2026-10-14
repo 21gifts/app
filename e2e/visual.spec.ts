@@ -20323,7 +20323,8 @@ test.describe('welcome forum variants', () => {
           messages: [
             {
               id: 'm-goal-credit',
-              name: 'Ada',
+              accountId: 'acc_maria',
+              name: 'Maria',
               text: 'Need help with a train ticket',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 10500,
@@ -20412,7 +20413,8 @@ test.describe('welcome forum variants', () => {
           messages: [
             {
               id: 'm-goal-credit',
-              name: 'Ada',
+              accountId: 'acc_maria',
+              name: 'Maria',
               text: 'Need help with a train ticket',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 10500,
