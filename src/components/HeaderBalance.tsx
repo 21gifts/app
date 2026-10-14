@@ -24,8 +24,9 @@ const HEADER_BALANCE_BUMP_MS = 2400;
  * way (the wallet is connecting, is ready without a balance yet, or failed to
  * open and is opened again in the background), a skeleton stands in its
  * place: the same box with two bars as tall as the two text lines
- * (`role="status"`, named `wallet.connecting`, not a link), so nothing in the
- * header moves when the amount replaces it. Nothing is rendered without a
+ * (`aria-hidden`, not a link: the screens that need the wallet announce its
+ * state themselves), so nothing in the header moves when the amount replaces
+ * it. Nothing is rendered without a
  * wallet, or after a failure that is not retried. When a received payment completes while the app
  * is open, the block turns the success colour for 2.4 s and shows the
  * amount with its fiat
@@ -47,8 +48,8 @@ export function HeaderBalance(): ReactElement | null {
     const loading = wallet.status === 'connecting' || wallet.status === 'ready' || wallet.retrying;
     return loading ? (
       <div
-        role="status"
-        aria-label={t('wallet.connecting')}
+        aria-hidden="true"
+        data-balance-skeleton=""
         className="mr-1 flex min-h-9 shrink-0 flex-col items-end justify-center px-2"
       >
         <span className="flex h-[17.5px] items-center">

@@ -76,8 +76,9 @@ test('Function: HeaderBalance — a skeleton while the wallet opens, nothing aft
   await page.goto('/welcome?visual=balance-connecting');
   const menu = page.getByRole('button', { name: 'Menu' });
   await expect(menu).toBeVisible();
-  const skeleton = page.getByRole('status', { name: 'Opening your wallet…' });
+  const skeleton = page.locator('[data-balance-skeleton]');
   await expect(skeleton).toBeVisible();
+  await expect(skeleton).toHaveAttribute('aria-hidden', 'true');
   await expect(page.locator('[data-wallet-tour="balance"]')).toHaveCount(0);
   const box = await skeleton.boundingBox();
   const menuBox = await menu.boundingBox();
@@ -102,7 +103,7 @@ test('Function: HeaderBalance — the amount replaces the skeleton without movin
   await page.clock.pauseAt(now + 1_000);
   await page.goto('/welcome?visual=balance-reopening');
   const menu = page.getByRole('button', { name: 'Menu' });
-  const skeleton = page.getByRole('status', { name: 'Opening your wallet…' });
+  const skeleton = page.locator('[data-balance-skeleton]');
   await expect(skeleton).toBeVisible();
   const before = await skeleton.boundingBox();
   const menuBefore = await menu.boundingBox();
@@ -136,7 +137,7 @@ test('Function: useWallet — a wallet that failed to open becomes ready by itse
     'Your wallet could not be opened. Please try again.',
   );
   await expect(region.getByRole('button', { name: 'Try again' })).toBeVisible();
-  await expect(page.getByRole('status', { name: 'Opening your wallet…' })).toBeVisible();
+  await expect(page.locator('[data-balance-skeleton]')).toBeVisible();
   await expect(page.locator('[data-wallet-tour="balance"]')).toHaveCount(0);
   await page.clock.runFor(3_900);
   await expect(region.getByRole('alert')).toBeVisible();
@@ -146,7 +147,7 @@ test('Function: useWallet — a wallet that failed to open becomes ready by itse
   await expect(region).toContainText("₿21'000");
   await expect(region).toContainText('$21.00');
   await expect(page.getByRole('link', { name: "Balance ₿21'000 $21.00" })).toBeVisible();
-  await expect(page.getByRole('status', { name: 'Opening your wallet…' })).toHaveCount(0);
+  await expect(page.locator('[data-balance-skeleton]')).toHaveCount(0);
 });
 
 test('Function: ReceivedNotice — a payment that arrived shows the banner and the green header amount; X closes it', async ({

@@ -71,9 +71,12 @@ describe('HeaderBalance', () => {
     'shows the skeleton while the wallet is %s without a balance (retrying: %s)',
     (status, retrying) => {
       wallet(status, null, retrying);
-      renderWithLocale(<HeaderBalance />);
-      const skeleton = screen.getByRole('status', { name: 'Opening your wallet…' });
+      const { container } = renderWithLocale(<HeaderBalance />);
+      const skeleton = container.querySelector('[data-balance-skeleton]') as HTMLElement;
       expect(skeleton.tagName).toBe('DIV');
+      // The screens that need the wallet announce its state; the header does not repeat it.
+      expect(skeleton.getAttribute('aria-hidden')).toBe('true');
+      expect(screen.queryByRole('status')).toBeNull();
       expect(skeleton.getAttribute('data-wallet-tour')).toBeNull();
       expect(screen.queryByRole('link')).toBeNull();
       const bars = skeleton.querySelectorAll('.animate-pulse');
@@ -88,7 +91,7 @@ describe('HeaderBalance', () => {
   it('gives the skeleton the box of the balance link, so the header does not move', () => {
     wallet('connecting', null);
     const loading = renderWithLocale(<HeaderBalance />);
-    const skeleton = screen.getByRole('status');
+    const skeleton = loading.container.querySelector('[data-balance-skeleton]') as HTMLElement;
     const [first, second] = Array.from(skeleton.children);
     // text-sm and text-[10px] at leading-tight: 17.5 px and 12.5 px lines.
     expect(first?.className).toContain('h-[17.5px]');
