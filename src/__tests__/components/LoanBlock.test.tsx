@@ -157,12 +157,12 @@ describe('LoanBlock', () => {
   });
 
   it('counts a fiat ledger in cents and skips rows without an amount', () => {
-    const paid = { ...line(0, 'paid', null), amount: '2.50' };
-    const open = { ...line(1, 'due', null), amount: '7.50' };
+    const paid = { ...line(0, 'paid', null), amount: '1.00' };
+    const open = { ...line(1, 'due', null), amount: '9.00' };
     const empty = { ...line(2, 'scheduled', null), amount: null };
     const broken = { ...line(3, 'scheduled', null), amount: 'x' };
     block({ percent: 100, ledger: ledgerOf([paid, open, empty, broken], 'USD') });
-    expect(screen.getByRole('img', { name: '25% paid back' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: '10% paid back' })).toBeTruthy();
   });
 
   it('shows 0% paid back when the ledger has no amounts yet', () => {
