@@ -286,6 +286,7 @@ export function ForumGoalBar({
           collected={collected}
           goal={goalText}
           percent={percent}
+          funded={Number.isFinite(sats) && sats >= goalSats}
           ledger={loaded !== null && loaded.messageId === messageId ? loaded.ledger : null}
           ledgerLink={ledgerCollapsed}
           onLend={onLend}

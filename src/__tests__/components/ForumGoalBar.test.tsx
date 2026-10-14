@@ -340,7 +340,7 @@ describe('ForumGoalBar on a posted loan', () => {
     noFetch();
     renderWithLocale(
       <ForumGoalBar
-        sats={25_000}
+        sats={5_000}
         goalSats={25_000}
         rateDay={RATE_DAY}
         goalCurrency="CHF"
@@ -351,7 +351,7 @@ describe('ForumGoalBar on a posted loan', () => {
         ledgerCollapsed
       />,
     );
-    expect(screen.getByText("CHF 10.00 · ₿25'000 · $25.00")).toBeTruthy();
+    expect(screen.getByText("CHF 10.00 · ₿5'000 · $5.00")).toBeTruthy();
     expect(screen.getByText("of CHF 20.00 · ₿25'000 · $25.00 lent")).toBeTruthy();
     expect(screen.getByText('50%')).toBeTruthy();
   });
@@ -360,7 +360,7 @@ describe('ForumGoalBar on a posted loan', () => {
     noFetch();
     renderWithLocale(
       <ForumGoalBar
-        sats={25_000}
+        sats={5_000}
         goalSats={25_000}
         rateDay={RATE_DAY}
         goalCurrency="CHF"
@@ -374,7 +374,7 @@ describe('ForumGoalBar on a posted loan', () => {
       'ch',
       'CHF',
     );
-    expect(screen.getByText("CHF 10.00 · ₿25'000")).toBeTruthy();
+    expect(screen.getByText("CHF 10.00 · ₿5'000")).toBeTruthy();
     expect(screen.getByText("of CHF 20.00 · ₿25'000 lent")).toBeTruthy();
   });
 
@@ -396,6 +396,27 @@ describe('ForumGoalBar on a posted loan', () => {
     expect(screen.getByText("of CHF 20.00 · ₿25'000 · $25.00 lent")).toBeTruthy();
     expect(screen.getByText('0%')).toBeTruthy();
     expect(screen.queryByText(/₿12'500/)).toBeNull();
+  });
+
+  it('reads a fiat loan as funded once its sats are full, whatever its percent', () => {
+    noFetch();
+    renderWithLocale(
+      <ForumGoalBar
+        sats={25_000}
+        goalSats={25_000}
+        rateDay={RATE_DAY}
+        goalCurrency="CHF"
+        goalAmount="20"
+        amountChf="10.00"
+        goalRepayable
+        messageId="m1"
+        ledgerCollapsed
+        onLend={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Fully funded')).toBeTruthy();
+    expect(screen.getByText('100%')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
   });
 
   it('reads Fully funded in a feed card once the loan is full', () => {

@@ -45,7 +45,6 @@ import {
 } from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import type { LoanPayTarget } from '@/components/LoanPayNotice';
-import { forumAskPercent } from '@/lib/forum-goal';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
 import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
@@ -1192,17 +1191,8 @@ export function ForumBoard({
               ? {
                   name: message.name,
                   days: message.goalTermDays,
-                  full:
-                    forumAskPercent({
-                      sats: message.sats,
-                      goalSats: message.goalSats,
-                      goalCurrency: message.goalCurrency,
-                      goalAmount: message.goalAmount,
-                      amountUsd: message.amountUsd,
-                      amountChf: message.amountChf,
-                      amountEur: message.amountEur,
-                      amountPhp: message.amountPhp,
-                    }) >= 100,
+                  // Funded as the api counts it: collected sats reached the asked sats.
+                  full: message.sats >= message.goalSats,
                 }
               : null;
           const copied = copiedId === message.id;

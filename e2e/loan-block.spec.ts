@@ -103,25 +103,25 @@ test('Function: LoanBlock — a feed loan shows what is lent and reads no repaym
   expect(ledgerReads).toEqual([]);
 });
 
-test('Function: forumAskPercent — the card decides between lending and a gift', async ({
+test('Function: forumAskPercent — a fiat loan shows its own percent while its sats decide lending', async ({
   page,
 }) => {
   await signIn(page);
   await fulfillSpot(page);
+  const fiatLoan = { ...COLLECTING, goalCurrency: 'USD', goalAmount: '20' };
   await feedOf(page, [
-    {
-      ...COLLECTING,
-      goalCurrency: 'USD',
-      goalAmount: '20',
-      sats: 999_999,
-      amountUsd: '10.00',
-    },
+    { ...fiatLoan, sats: 5_000, amountUsd: '10.00' },
+    { ...fiatLoan, id: '7d3a9e4c-5b6f-4a0c-9e8d-4f9b0c3a6e52', sats: 21_000, amountUsd: '10.00' },
   ]);
   await openAll(page);
-  const block = page.getByRole('region', { name: 'Loan request' });
-  await expect(block).toHaveAttribute('data-loan-block', 'collecting');
-  await expect(block.getByText('50%')).toBeVisible();
-  await block.getByRole('button', { name: 'Lend' }).click();
+  const blocks = page.getByRole('region', { name: 'Loan request' });
+  await expect(blocks).toHaveCount(2);
+  await expect(blocks.first()).toHaveAttribute('data-loan-block', 'collecting');
+  await expect(blocks.first().getByText('50%')).toBeVisible();
+  await expect(blocks.nth(1)).toHaveAttribute('data-loan-block', 'funded');
+  await expect(blocks.nth(1).getByText('Fully funded', { exact: true })).toBeVisible();
+  await expect(blocks.nth(1).getByRole('button', { name: 'Lend' })).toHaveCount(0);
+  await blocks.first().getByRole('button', { name: 'Lend' }).click();
   await expect(page.getByLabel('Amount to lend')).toBeFocused();
 });
 

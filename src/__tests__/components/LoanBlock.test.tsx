@@ -66,6 +66,7 @@ function block(props: Partial<Parameters<typeof LoanBlock>[0]> = {}): void {
       collected="₿10'500 · $10.50"
       goal="₿21'000 · $21.00"
       percent={50}
+      funded={false}
       ledger={null}
       ledgerLink
       {...props}
@@ -112,6 +113,7 @@ describe('LoanBlock', () => {
           collected="₿0"
           goal="₿21'000"
           percent={0}
+          funded={false}
           ledger={null}
           ledgerLink={false}
           onLend={onLend}
@@ -133,7 +135,7 @@ describe('LoanBlock', () => {
   });
 
   it('reads Fully funded without a ledger and hides Lend', () => {
-    block({ percent: 120, onLend: vi.fn(), ledgerLink: false });
+    block({ percent: 120, funded: true, onLend: vi.fn(), ledgerLink: false });
     expect(section().getAttribute('data-loan-block')).toBe('funded');
     expect(screen.getByText('Fully funded')).toBeTruthy();
     expect(screen.getByText('120%')).toBeTruthy();
@@ -146,6 +148,7 @@ describe('LoanBlock', () => {
   it('shows the paid-back share in green while it is being repaid', () => {
     block({
       percent: 100,
+      funded: true,
       ledger: ledgerOf([line(0, 'paid', 30), line(1, 'due', 30), line(2, 'scheduled', 40)]),
     });
     expect(section().getAttribute('data-loan-block')).toBe('repaying');
@@ -161,18 +164,22 @@ describe('LoanBlock', () => {
     const open = { ...line(1, 'due', null), amount: '9.00' };
     const empty = { ...line(2, 'scheduled', null), amount: null };
     const broken = { ...line(3, 'scheduled', null), amount: 'x' };
-    block({ percent: 100, ledger: ledgerOf([paid, open, empty, broken], 'USD') });
+    block({ percent: 100, funded: true, ledger: ledgerOf([paid, open, empty, broken], 'USD') });
     expect(screen.getByRole('img', { name: '10% paid back' })).toBeTruthy();
   });
 
   it('shows 0% paid back when the ledger has no amounts yet', () => {
-    block({ percent: 100, ledger: ledgerOf([line(0, 'due', null)]) });
+    block({ percent: 100, funded: true, ledger: ledgerOf([line(0, 'due', null)]) });
     expect(screen.getByRole('img', { name: '0% paid back' })).toBeTruthy();
     expect(document.querySelector('rect.fill-app-success')).toBeNull();
   });
 
   it('shows Paid back with a check once every share is paid', () => {
-    block({ percent: 100, ledger: ledgerOf([line(0, 'paid', 50), line(1, 'paid', 50)]) });
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf([line(0, 'paid', 50), line(1, 'paid', 50)]),
+    });
     expect(section().getAttribute('data-loan-block')).toBe('repaid');
     const status = screen.getByText('Paid back');
     expect(status.className).toContain('text-app-success');
@@ -181,12 +188,35 @@ describe('LoanBlock', () => {
   });
 
   it('keeps an empty ledger in the being-repaid state', () => {
-    block({ percent: 100, ledger: ledgerOf([]) });
+    block({ percent: 100, funded: true, ledger: ledgerOf([]) });
     expect(section().getAttribute('data-loan-block')).toBe('repaying');
   });
 
+  it('follows the sats when the percent of a fiat ask says otherwise', () => {
+    block({ percent: 120, funded: false, onLend: vi.fn() });
+    expect(section().getAttribute('data-loan-block')).toBe('collecting');
+    expect(screen.getByText('99%')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Lend' })).toBeTruthy();
+    cleanup();
+    block({ percent: 80, funded: true, onLend: vi.fn() });
+    expect(section().getAttribute('data-loan-block')).toBe('funded');
+    expect(screen.getByText('100%')).toBeTruthy();
+    expect(document.querySelector('rect.fill-app-accent')?.getAttribute('width')).toBe('100');
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+  });
+
+  it('reads Fully funded while the ledger has no funding date yet', () => {
+    block({
+      percent: 100,
+      funded: true,
+      ledger: { ...ledgerOf([line(0, 'due', 50)]), fundedAt: null },
+    });
+    expect(section().getAttribute('data-loan-block')).toBe('funded');
+    expect(screen.getByText('Fully funded')).toBeTruthy();
+  });
+
   it('stays collecting below 100% even when a ledger is passed', () => {
-    block({ percent: 99, ledger: ledgerOf([line(0, 'paid', 50)]) });
+    block({ percent: 99, funded: false, ledger: ledgerOf([line(0, 'paid', 50)]) });
     expect(section().getAttribute('data-loan-block')).toBe('collecting');
   });
 });

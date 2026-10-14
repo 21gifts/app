@@ -9015,6 +9015,34 @@ describe('ForumBoard loan block', () => {
     expect(screen.queryByLabelText('Amount to lend')).toBeNull();
   });
 
+  it('lets the sats, not the fiat percent, decide between lending and a gift', () => {
+    const fiatLoan = {
+      ...LOAN,
+      goalCurrency: 'USD' as const,
+      goalAmount: '20',
+    };
+    const view = renderWithLocale(
+      board({
+        messages: [{ ...fiatLoan, sats: 21_000, amountUsd: '10.00' }],
+        expandedId: 'loan1',
+        replies: [],
+      }),
+    );
+    expect(screen.getByLabelText('Amount')).toBe(document.getElementById('forum-reply-amount'));
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+    view.rerender(
+      board({
+        messages: [{ ...fiatLoan, sats: 5_000, amountUsd: '25.00' }],
+        expandedId: 'loan1',
+        replies: [],
+      }),
+    );
+    expect(screen.getByLabelText('Amount to lend')).toBe(
+      document.getElementById('forum-reply-amount'),
+    );
+    expect(screen.getByRole('button', { name: 'Lend' })).toBeTruthy();
+  });
+
   it('words the reaction pay page of a loan as lending', () => {
     renderWithLocale(
       board({
