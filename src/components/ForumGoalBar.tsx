@@ -253,17 +253,24 @@ export function ForumGoalBar({
         ? bitcoin
         : `${bitcoin} · ${formatFiatDisplay(priced, fiat, numberFormat)}`;
     };
-    const collectedSats = Number.isFinite(sats) && sats > 0 ? sats : 0;
+    // A fiat loan counts in its own currency, like its percent: a missing snapshot is 0.
     const collectedDefined =
       defined !== '' && isFiatGoalCurrency(goalCurrency)
         ? collectedByCode[COLLECTED_FIELD[goalCurrency]]
         : undefined;
     const collected =
-      isFiatGoalCurrency(goalCurrency) &&
-      typeof collectedDefined === 'string' &&
-      COLLECTED_FIAT_RE.test(collectedDefined)
-        ? formatFiatDisplay(collectedDefined, goalCurrency, numberFormat)
-        : withViewerFiat(collectedSats, collectedByCode[COLLECTED_FIELD[fiat]]);
+      defined !== '' && isFiatGoalCurrency(goalCurrency)
+        ? formatFiatDisplay(
+            typeof collectedDefined === 'string' && COLLECTED_FIAT_RE.test(collectedDefined)
+              ? collectedDefined
+              : '0.00',
+            goalCurrency,
+            numberFormat,
+          )
+        : withViewerFiat(
+            Number.isFinite(sats) && sats > 0 ? sats : 0,
+            collectedByCode[COLLECTED_FIELD[fiat]],
+          );
     return (
       <>
         <LoanBlock

@@ -8839,6 +8839,24 @@ describe('ForumBoard loan block', () => {
     expect(document.activeElement).toBe(document.getElementById('forum-reply-amount'));
   });
 
+  it('drops the Lend intent when the card is closed before its form is ready', () => {
+    const view = renderWithLocale(board());
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    view.rerender(board({ expandedId: 'loan1', repliesLoading: true }));
+    view.rerender(board({ expandedId: null }));
+    view.rerender(board({ expandedId: 'loan1', replies: [] }));
+    expect(document.getElementById('forum-reply-amount')).not.toBeNull();
+    expect(document.activeElement).not.toBe(document.getElementById('forum-reply-amount'));
+  });
+
+  it('keeps the Lend intent while the card has not opened yet', () => {
+    const view = renderWithLocale(board());
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    view.rerender(board({ expandedId: null }));
+    view.rerender(board({ expandedId: 'loan1', replies: [] }));
+    expect(document.activeElement).toBe(document.getElementById('forum-reply-amount'));
+  });
+
   it('drops the Lend focus when the amount field cannot take it', () => {
     const view = renderWithLocale(board({ expandedId: 'loan1', replies: [], replyPosting: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Lend' }));

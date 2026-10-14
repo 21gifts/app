@@ -152,9 +152,10 @@ describe('forumAskPercent', () => {
           goalSats: 1,
           goalCurrency: code,
           goalAmount: '20',
-          [field]: '20.00',
+          [field]: '10.00',
+          amountUsd: code === 'USD' ? '10.00' : '20.00',
         }),
-      ).toBe(100);
+      ).toBe(50);
     }
     expect(forumAskPercent({ sats: 999, goalSats: 1, goalCurrency: 'USD', goalAmount: '20' })).toBe(
       0,

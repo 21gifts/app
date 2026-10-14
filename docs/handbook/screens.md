@@ -4479,7 +4479,7 @@ Identity card; **3 shops** pressed; one listed shop note; muted `Showing the lat
 
 ### Variant: credits-truncated
 
-Identity card; **3 credits** pressed; one listed credit note `A credit from Carol.` with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the loan block under the text: a small muted **Loan request** label with the hand-and-coins icon and the ask **₿21'000 · $21.00** on the right, the orange bar at **50%**, and **₿10'500 · $10.50 of ₿21'000 · $21.00 lent**, the note amount **₿10'500 · $10.50**, and a **Loan** tag. The block offers **Repayment list**, a link to /messages/<id>/repayment-list. The repayment plan and the day list are not on this card. Muted `Showing the latest 1 of 3.`; no pinned profile-note card.
+Identity card; **3 credits** pressed; one listed credit note `A credit from Carol.` with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the loan block under the text: a small muted **Loan request** label with the hand-and-coins icon and the ask **₿21'000 · $21.00** on the right, the orange bar at **50%**, and **₿10'500 · $10.50 of ₿21'000 · $21.00 lent**, the note amount **₿10'500 · $10.50**, and a **Loan** tag. The block offers **Repayment list**, a link to /messages/<id>/repayment-list, and **Lend**. The repayment plan and the day list are not on this card. Muted `Showing the latest 1 of 3.`; no pinned profile-note card.
 
 ![21.gifts member credits truncated](images/members-credits-truncated.png)
 

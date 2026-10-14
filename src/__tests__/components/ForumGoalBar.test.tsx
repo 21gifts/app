@@ -336,11 +336,11 @@ describe('ForumGoalBar on a posted loan', () => {
     expect(screen.getByText("of ₿21'000 lent")).toBeTruthy();
   });
 
-  it('counts a fiat loan in its own currency', () => {
+  it('counts a fiat loan in its own currency, not in sats', () => {
     noFetch();
     renderWithLocale(
       <ForumGoalBar
-        sats={12_500}
+        sats={25_000}
         goalSats={25_000}
         rateDay={RATE_DAY}
         goalCurrency="CHF"
@@ -356,7 +356,7 @@ describe('ForumGoalBar on a posted loan', () => {
     expect(screen.getByText('50%')).toBeTruthy();
   });
 
-  it('falls back to bitcoin when a fiat loan has no collected snapshot', () => {
+  it('counts zero in the loan currency when a fiat loan has no collected snapshot', () => {
     noFetch();
     renderWithLocale(
       <ForumGoalBar
@@ -370,8 +370,10 @@ describe('ForumGoalBar on a posted loan', () => {
         ledgerCollapsed
       />,
     );
-    expect(screen.getByText("₿12'500 · $12.50")).toBeTruthy();
+    expect(screen.getByText('CHF 0.00')).toBeTruthy();
     expect(screen.getByText('of CHF 20.00 lent')).toBeTruthy();
+    expect(screen.getByText('0%')).toBeTruthy();
+    expect(screen.queryByText(/₿12'500/)).toBeNull();
   });
 
   it('reads Fully funded in a feed card once the loan is full', () => {
