@@ -1676,7 +1676,7 @@ describe('accountSchema', () => {
     expect(accountSchema.parse({ ...account, notifyHearts: false }).notifyHearts).toBe(false);
   });
 
-  it('accepts all, active, and mentions notification levels', () => {
+  it('accepts all, active, mentions, and none notification levels', () => {
     expect(accountSchema.parse({ ...account, notificationLevel: 'all' }).notificationLevel).toBe(
       'all',
     );
@@ -1686,11 +1686,20 @@ describe('accountSchema', () => {
     expect(
       accountSchema.parse({ ...account, notificationLevel: 'mentions' }).notificationLevel,
     ).toBe('mentions');
+    expect(accountSchema.parse({ ...account, notificationLevel: 'none' }).notificationLevel).toBe(
+      'none',
+    );
   });
 
-  it('rejects a garbage notificationLevel', () => {
-    expect(() => accountSchema.parse({ ...account, notificationLevel: 'nope' })).toThrow();
+  it('treats an unknown string notificationLevel as omitted', () => {
+    const messages = accountSchema.parse({ ...account, notificationLevel: 'messages' });
+    expect(messages.notificationLevel).toBeUndefined();
+    expect(accountNotificationLevel(messages)).toBe('all');
+    const nope = accountSchema.parse({ ...account, notificationLevel: 'nope' });
+    expect(nope.notificationLevel).toBeUndefined();
+    expect(accountNotificationLevel(nope)).toBe('all');
     expect(() => accountSchema.parse({ ...account, notificationLevel: 1 })).toThrow();
+    expect(() => accountSchema.parse({ ...account, notificationLevel: null })).toThrow();
   });
 
   it('accepts omitted funding', () => {

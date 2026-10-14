@@ -6312,6 +6312,7 @@ describe('ForumLoader', () => {
     emptyCard.setAttribute('data-message-id', '');
     scroller.appendChild(emptyCard);
     scroller.dispatchEvent(new Event('scroll'));
+    await flushPaint();
     await waitFor(() => {
       expect(markVisibleForumNoteReadMock).toHaveBeenCalledWith('sess', 'm1');
     });

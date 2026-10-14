@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { SegmentedControl } from '@/components/ui';
+import { SegmentedControl, type SegmentedControlOption } from '@/components/ui';
 import { postHeartNotifications, postNotificationLevel } from '@/lib/api';
 import { accountNotificationLevel, type NotificationLevel } from '@/lib/api-types';
+import type { MessageKey } from '@/lib/messages';
 import { disablePush, enablePush, isIosSafari, isStandaloneDisplay } from '@/lib/push';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -13,19 +14,41 @@ type PushTogglePhase = 'checking' | 'unsupported' | 'ready';
 type DevicePushValue = 'on' | 'off';
 
 /**
- * Settings Notifications rows: the uppercase level label, a three-stage
- * `SegmentedControl` (All / Active / Mentions) whenever a session exists, a
- * Hearts On / Off `SegmentedControl` under that level, and a This-device On / Off
- * `SegmentedControl` (`aria.push`) when Push/Service Worker APIs are ready. The
- * level control stays visible while Push APIs are inspected and when they are
- * missing (in-app list still uses the level). Renders nothing without a session.
- * On iPhone Safari outside standalone, also shows an install hint under the
- * device pill. A successful level POST merges `notificationLevel` into the
- * current store account and ignores the response if the session no longer
- * matches. Hearts default on when `notifyHearts` is omitted; a successful POST
- * `/me/heart-notifications` merges `notifyHearts`.
+ * Post options. Always the same four, in this order.
  *
- * @returns The notifications section, or `null` without a session.
+ * All, Only to me, Only with a gift, then Off. The value posted is the
+ * selected option.
+ *
+ * @param t - Catalog lookup.
+ * @returns The pill options in display order.
+ */
+function roomOptions(
+  t: (key: MessageKey, vars?: Record<string, string | number>) => string,
+): SegmentedControlOption<NotificationLevel>[] {
+  return [
+    { value: 'all', label: t('profile.notify.room.all') },
+    { value: 'mentions', label: t('profile.notify.room.mine') },
+    { value: 'active', label: t('profile.notify.room.gifted') },
+    { value: 'none', label: t('profile.notify.room.off') },
+  ];
+}
+
+/**
+ * Settings Notifications sections. Uppercase heading
+ * `profile.notify.heading`, then Hearts On/Off and one compact Posts
+ * pill on the same line as its label, right-aligned. The options are always
+ * All, Only to me, Only with a gift, and Off. The label does not shrink; the
+ * pill wraps under it only when the row is too narrow. Choosing another
+ * option posts that level.
+ * A second bordered section, `profile.device.heading`, shows Notifications
+ * On/Off when Push APIs are ready. That row's visible label and aria-label
+ * are `profile.device.label`, not `aria.push`. Renders nothing without a
+ * session. On iPhone Safari outside standalone, an install hint sits under
+ * the device row. A successful level POST merges `notificationLevel`; a
+ * successful heart POST merges `notifyHearts`. A response after the session
+ * changed is ignored.
+ *
+ * @returns The notification sections, or `null` without a session.
  */
 export function PushToggle(): ReactElement | null {
   const { t } = useTranslations();
@@ -188,77 +211,87 @@ export function PushToggle(): ReactElement | null {
     return null;
   }
 
-  const levelOptions = [
-    { value: 'all' as const, label: t('profile.push.level.all') },
-    { value: 'active' as const, label: t('profile.push.level.active') },
-    { value: 'mentions' as const, label: t('profile.push.level.mentions') },
-  ];
-  const onLevelPress = (next: NotificationLevel): void => {
-    void onLevelChange(next);
-  };
   const onDevicePress = (next: DevicePushValue): void => {
     void onDeviceChange(next);
   };
+  const onRoomPress = (next: NotificationLevel): void => {
+    void onLevelChange(next);
+  };
+  const room = roomOptions(t);
+  const onOff = [
+    { value: 'on' as const, label: t('profile.push.on') },
+    { value: 'off' as const, label: t('profile.push.off') },
+  ];
+  const sectionClass = 'flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6';
 
   return (
-    <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
-      <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-        {t('profile.push.level.label')}
-      </p>
-      <SegmentedControl
-        tone="neutral"
-        value={selected}
-        options={levelOptions}
-        onChange={onLevelPress}
-        ariaLabel={t('profile.push.level.label')}
-      />
-      <p className="text-sm text-app-muted">{t('profile.push.level.hint')}</p>
-      {levelError ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('profile.push.level.error')}
+    <>
+      <div className={sectionClass}>
+        <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+          {t('profile.notify.heading')}
         </p>
-      ) : null}
-      <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-        {t('profile.heartNotify.label')}
-      </p>
-      <SegmentedControl
-        tone="neutral"
-        value={heartsEnabled ? 'on' : 'off'}
-        options={[
-          { value: 'on' as const, label: t('profile.push.on') },
-          { value: 'off' as const, label: t('profile.push.off') },
-        ]}
-        onChange={(next) => {
-          void onHeartNotifyChange(next);
-        }}
-        ariaLabel={t('profile.heartNotify.label')}
-      />
-      <p className="text-sm text-app-muted">{t('profile.heartNotify.hint')}</p>
-      {heartError ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t('profile.heartNotify.error')}
-        </p>
-      ) : null}
+        <div className="flex items-center justify-between gap-3">
+          <span className="min-w-0 text-sm text-app-fg">{t('profile.heartNotify.label')}</span>
+          <SegmentedControl
+            tone="neutral"
+            fullWidth={false}
+            value={heartsEnabled ? 'on' : 'off'}
+            options={onOff}
+            onChange={(next) => {
+              void onHeartNotifyChange(next);
+            }}
+            ariaLabel={t('profile.heartNotify.label')}
+          />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <span className="shrink-0 text-sm text-app-fg">{t('profile.notify.room')}</span>
+          <SegmentedControl
+            tone="neutral"
+            fullWidth={false}
+            className="ml-auto"
+            value={selected}
+            options={room}
+            onChange={onRoomPress}
+            ariaLabel={t('profile.notify.room')}
+          />
+        </div>
+        {levelError ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('profile.push.level.error')}
+          </p>
+        ) : null}
+        {heartError ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('profile.heartNotify.error')}
+          </p>
+        ) : null}
+      </div>
       {phase === 'ready' ? (
-        <SegmentedControl
-          tone="neutral"
-          value={subscribed ? 'on' : 'off'}
-          options={[
-            { value: 'on' as const, label: t('profile.push.on') },
-            { value: 'off' as const, label: t('profile.push.off') },
-          ]}
-          onChange={onDevicePress}
-          ariaLabel={t('aria.push')}
-        />
+        <div className={sectionClass}>
+          <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+            {t('profile.device.heading')}
+          </p>
+          <div className="flex items-center justify-between gap-3">
+            <span className="min-w-0 text-sm text-app-fg">{t('profile.device.label')}</span>
+            <SegmentedControl
+              tone="neutral"
+              fullWidth={false}
+              value={subscribed ? 'on' : 'off'}
+              options={onOff}
+              onChange={onDevicePress}
+              ariaLabel={t('profile.device.label')}
+            />
+          </div>
+          {showInstallHint ? (
+            <p className="text-sm text-app-muted">{t('profile.push.installHint')}</p>
+          ) : null}
+          {errorKey !== null ? (
+            <p role="alert" className="text-center text-sm text-app-danger">
+              {t(errorKey)}
+            </p>
+          ) : null}
+        </div>
       ) : null}
-      {phase === 'ready' && showInstallHint ? (
-        <p className="text-sm text-app-muted">{t('profile.push.installHint')}</p>
-      ) : null}
-      {phase === 'ready' && errorKey !== null ? (
-        <p role="alert" className="text-center text-sm text-app-danger">
-          {t(errorKey)}
-        </p>
-      ) : null}
-    </div>
+    </>
   );
 }
