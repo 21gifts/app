@@ -1,6 +1,14 @@
 'use client';
 
-import { ArrowDownLeft, ArrowUpRight, Check, Copy, ExternalLink } from 'lucide-react';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Check,
+  ChevronRight,
+  Copy,
+  ExternalLink,
+  Heart,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
@@ -11,6 +19,7 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { WalletBalance } from '@/components/WalletBalance';
 import { Button, Card, IconButton } from '@/components/ui';
+import { useHeartContext } from '@/hooks/useHeartContext';
 import { useSpotRateState } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
@@ -122,6 +131,12 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
   const title = paymentTitle(payment);
   const message = paymentMessage(payment);
   const { info } = payment;
+  const heartHash =
+    payment.status !== 'pending' && info.purpose === 'gift' && typeof info.paymentHash === 'string'
+      ? info.paymentHash.toLowerCase()
+      : null;
+  const heartContext = useHeartContext(heartHash === null ? [] : [heartHash]);
+  const heart = heartHash === null ? undefined : heartContext.byHash.get(heartHash);
   /** A ₿ amount with the default fiat after it. */
   const amount = (sats: number): ReactElement => (
     <>
@@ -140,11 +155,17 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
     <div className="flex w-full flex-col gap-5">
       <div className="flex flex-col items-center gap-2 text-center">
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-app-card-muted">
-          <Icon aria-hidden="true" className="h-5 w-5 text-app-fg" />
+          {heart === undefined ? (
+            <Icon aria-hidden="true" className="h-5 w-5 text-app-fg" />
+          ) : (
+            <Heart aria-hidden="true" fill="currentColor" className="h-5 w-5 text-app-accent" />
+          )}
         </span>
-        <p className="max-w-full truncate text-sm text-app-muted">
-          {'text' in title ? title.text : t(title.key)}
-        </p>
+        {heart !== undefined ? null : (
+          <p className="max-w-full truncate text-sm text-app-muted">
+            {'text' in title ? title.text : t(title.key)}
+          </p>
+        )}
         <p
           className={`text-3xl font-semibold tabular-nums lining-nums${failed ? ' text-app-subtle line-through' : ' text-app-fg'}`}
         >
@@ -168,6 +189,26 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
           <p className="text-xs text-app-muted">{t('wallet.payment.failedHint')}</p>
         ) : null}
       </div>
+
+      {heart === undefined ? null : (
+        <Link
+          href={`/messages/${heart.messageId}`}
+          aria-label={`${heart.authorName} ${heart.text}`.trim() || t('shops.viewPost')}
+          className="flex w-full items-center gap-3 rounded-2xl border border-app-border px-4 py-3 text-left text-app-fg no-underline transition hover:bg-app-hover"
+        >
+          <span className="min-w-0 flex-1">
+            {heart.authorName === '' ? null : (
+              <span className="block text-sm font-medium text-app-fg">{heart.authorName}</span>
+            )}
+            {heart.text === '' ? null : (
+              <span className="mt-1 block whitespace-pre-wrap text-sm font-medium text-app-fg line-clamp-3">
+                {heart.text}
+              </span>
+            )}
+          </span>
+          <ChevronRight aria-hidden="true" className="h-4 w-4 shrink-0 text-app-subtle" />
+        </Link>
+      )}
 
       {message === null ? null : (
         <div className="rounded-2xl bg-app-card-muted px-4 py-3 text-sm text-app-fg">

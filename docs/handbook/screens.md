@@ -329,6 +329,18 @@ Pinned fixture (`?visual=history-empty`, Playwright builds only). Ready balance,
 Pinned fixture (`?visual=history-rows`, Playwright builds only; ten synthetic payments that net to the ₿21'000 balance). **Payments** lists them newest first, each row a link with a chevron to its payment screen: **Gift on your post** `+₿2'100` with **Great photo!**, **Gift** `−₿5'000`, **Coffee & croissant** `+₿12'500`, **bob@example.com** `−₿10'000` with **Thanks for dinner**, **Received** `+₿21'000` with **Happy birthday!**, **Sticker pack #42** marked **Pending**, **Hardware wallet** struck through and marked **Failed**, **On-chain deposit**, **On-chain withdrawal**, and **Shop payment** `−₿1`. Each row shows its date and time and the default fiat. The shot is scrolled to the end of the list, so **Receive** and **Send** are slim (36 px); the other `/wallet` home shots, at the top, show them full size.
 ![21.gifts wallet history rows](images/wallet-history-rows.png)
 
+### Variant: history-heart
+
+Pinned with `?visual=history-heart` in a Playwright build only. The usual visual balance stays, and **Payments** has one payment row: a filled heart, the title **Sunday lunch**, and `−₿1`.
+
+![21.gifts wallet history heart](images/wallet-history-heart.png)
+
+### Variant: history-heart-pending
+
+Pinned with `?visual=history-heart-pending` in a Playwright build only. The usual visual balance stays, and **Payments** has one payment row while the post lookup has not returned: the sent direction icon, the title **Gift**, and `−₿1`. There is no filled heart and no **Sunday lunch**.
+
+![21.gifts wallet history heart pending](images/wallet-history-heart-pending.png)
+
 ### Variant: history-error
 
 Pinned fixture (`?visual=history-error`, Playwright builds only). **Payments** shows **Your payments could not be loaded. Please try again.** and **Try again**.
@@ -674,7 +686,7 @@ Pinned fixture (`?visual=move-arrived`, Playwright builds only): the last step a
 ## Screen: /wallet/payment
 
 - **URL:** `/wallet/payment?id=<payment id>` — one payment of the signed-in member's wallet, opened from a row of the **Payments** list on `/wallet`.
-- **What the user sees:** The same frame as `/wallet`: one top-left arrow (the previous in-app view, the list when opened from it, or `/welcome` when this tab has none) and the wordmark, **Menu** top-right. The heading **Payment** is for screen readers only. At the top, centred: a round badge with the direction arrow, the title (a gift on your post, Gift when a gift memo was sent, Gift on your post when one was received, Shop payment for a shop memo, the paid Lightning address, the description, the on-chain direction, or Received / Sent; neither gift nor shop memo is shown as the description, and a gift memo's 64 hex digits are the payment hash when the payment has none of its own), the amount large with **+** or **−** (a failed payment struck through and muted), the default fiat under it, and a status pill: **Completed** in green, **Pending** in the notice colour, **Failed** in red. A pending send adds **Still on its way. The amount stays reserved until it arrives or comes back.**; a failed send adds **Nothing left your wallet.** A message that came with the payment (the payer's note, the zap message, or the comment sent to a Lightning address) follows in a soft box. A bordered list shows **Date**, **Type**, **To** (the paid Lightning address as plain text, or a link to that member's profile when the payment names a member), **Description** (only when it is not already the title), **Amount**, **Fee** (**Free** at ₿0; left out for a fee-less receive and for a failed payment), **Total** (a send with a fee), and **Arrived on-chain** (a deposit whose claim fee was deducted); each Bitcoin figure there also shows the default fiat. Details is a button that starts closed. Pressing it shows the shortened technical values, each with a Copy icon: **Transaction** and **Output**, **Payment request**, **Payment hash**, **Proof of payment**, and **Payment ID**. An on-chain payment adds **View on mempool.space**, which first asks **Open external link?**. Nothing shows while the payment or the rate is still loading; when the rate read finds no usable rate, the Bitcoin amounts show without a fiat line. The screen reads the payment again after each wallet sync, so a pending payment updates in place. A missing or unknown id shows **This payment could not be found.**
+- **What the user sees:** The same frame as `/wallet`: one top-left arrow (the previous in-app view, the list when opened from it, or `/welcome` when this tab has none) and the wordmark, **Menu** top-right. The heading **Payment** is for screen readers only. At the top, centred: a round badge with the direction arrow, the title (a gift on your post, Gift when a gift memo was sent, Gift on your post when one was received, Shop payment for a shop memo, the paid Lightning address, the description, the on-chain direction, or Received / Sent; neither gift nor shop memo is shown as the description, and a gift memo's 64 hex digits are the payment hash when the payment has none of its own), the amount large with **+** or **−** (a failed payment struck through and muted), the default fiat under it, and a status pill: **Completed** in green, **Pending** in the notice colour, **Failed** in red. A resolved heart replaces the direction badge and the **Gift** title with the filled heart and that post card. A payment that is still pending keeps the direction arrow and the **Gift** title and is not looked up. A pending send adds **Still on its way. The amount stays reserved until it arrives or comes back.**; a failed send adds **Nothing left your wallet.** A message that came with the payment (the payer's note, the zap message, or the comment sent to a Lightning address) follows in a soft box. A bordered list shows **Date**, **Type**, **To** (the paid Lightning address as plain text, or a link to that member's profile when the payment names a member), **Description** (only when it is not already the title), **Amount**, **Fee** (**Free** at ₿0; left out for a fee-less receive and for a failed payment), **Total** (a send with a fee), and **Arrived on-chain** (a deposit whose claim fee was deducted); each Bitcoin figure there also shows the default fiat. Details is a button that starts closed. Pressing it shows the shortened technical values, each with a Copy icon: **Transaction** and **Output**, **Payment request**, **Payment hash**, **Proof of payment**, and **Payment ID**. An on-chain payment adds **View on mempool.space**, which first asks **Open external link?**. Nothing shows while the payment or the rate is still loading; when the rate read finds no usable rate, the Bitcoin amounts show without a fiat line. The screen reads the payment again after each wallet sync, so a pending payment updates in place. A missing or unknown id shows **This payment could not be found.**
 - **Actions:** Copy a technical value; open that profile from **To**; open the transaction on mempool.space after the warning; go back to the previous in-app view (the list when opened from it) with the top-left arrow; open **Menu** (see **Signed-in header**).
 - **Calls:** `AppShell`, `WalletChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletPaymentDetails`, `useWalletPayment`, `getWalletPayment`, `paymentTitle`, `paymentMessage`, `ExternalLinkWarning`, `openInSystemBrowser`, `useSpotRateState`.
 
@@ -725,6 +737,30 @@ A shop payment of **₿1** titled **Shop payment**, **Type** Wallet transfer, **
 The same shop payment as shop after pressing **Details**, so the payment request and the payment id are visible. There is no payment hash. The memo is not shown.
 
 ![21.gifts wallet payment shop open](images/wallet-payment-shop-open.png)
+
+### Variant: heart-payment
+
+Pinned with `?visual=heart-payment` and id `b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42`. A filled accent heart replaces the direction badge, there is no **Gift** title, and a bordered post card shows author **Ada** and the text **Sunday lunch**, with a chevron, linking to `/messages/11111111-1111-4111-8111-111111111111`. The amount is `−₿1`, **Type** is Wallet transfer, **To** @ada is a link to that member's profile, and **Fee** is Free. **Details** is closed, so the payment request, the payment hash, and the payment id are not on this screen.
+
+![21.gifts wallet payment heart](images/wallet-payment-heart.png)
+
+### Variant: heart-payment-open
+
+The same heart as heart-payment after pressing **Details**, so the payment request, the payment hash from the gift memo, and the payment id are visible. The memo is not shown. Author **Ada** and the text **Sunday lunch** stay, with the chevron, **To** @ada stays a link to that member's profile, and there is still no **Gift** title.
+
+![21.gifts wallet payment heart open](images/wallet-payment-heart-open.png)
+
+### Variant: heart-payment-pending
+
+Pinned with `?visual=heart-payment-pending` and id `b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42`. The post lookup has not returned: the direction badge stays, the **Gift** title stays, and there is no post card. The amount is `−₿1`, **Type** is Wallet transfer, **To** @ada is a link to that member's profile, and **Fee** is Free. **Details** is closed, so the payment request, the payment hash, and the payment id are not on this screen.
+
+![21.gifts wallet payment heart pending](images/wallet-payment-heart-pending.png)
+
+### Variant: heart-payment-pending-open
+
+The same pending heart as heart-payment-pending after pressing **Details**, so the payment request, the payment hash from the gift memo, and the payment id are visible. The memo is not shown. The direction badge stays, the **Gift** title stays, **To** @ada stays a link to that member's profile, and there is no post card.
+
+![21.gifts wallet payment heart pending open](images/wallet-payment-heart-pending-open.png)
 
 ### Variant: pending
 

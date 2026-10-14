@@ -66,6 +66,10 @@ function visualStatus(reopened: boolean): WalletViewStatus | null {
     case 'balance-ready':
     case 'history-empty':
     case 'history-rows':
+    case 'history-heart':
+    case 'history-heart-pending':
+    case 'heart-payment':
+    case 'heart-payment-pending':
     case 'history-error':
     case 'wallet-received':
     case 'move-arrived':
@@ -89,9 +93,13 @@ function visualStatus(reopened: boolean): WalletViewStatus | null {
  * in the background, and turns `ready` on its own. While the wallet code needs
  * a page reload (`walletNeedsReload`) no automatic attempt runs, `retrying` is
  * false, and retry reloads the page. Visual pins (`?visual=balance-…`,
- * `?visual=history-…`, `?visual=wallet-received` and `?visual=move-arrived` as ready, `?visual=setup-pending` as connecting, and the
- * `?visual=send-…` pins as ready, and `?visual=balance-reopening` as a failed open with `retrying`
- * that turns ready after {@link WALLET_VISUAL_REOPEN_MS}) are honoured only in a Playwright build
+ * `?visual=history-…` including `history-heart` and `history-heart-pending`,
+ * `?visual=heart-payment` and `?visual=heart-payment-pending`,
+ * `?visual=wallet-received` and `?visual=move-arrived` as ready,
+ * `?visual=setup-pending` as connecting, and the `?visual=send-…` pins as ready,
+ * and `?visual=balance-reopening` as a failed open with `retrying` that turns
+ * ready after {@link WALLET_VISUAL_REOPEN_MS}) are honoured only in a Playwright
+ * build
  * (`getE2eNow()` set) and leave retry inert while pinned.
  *
  * @returns Wallet balance state and a stable retry for `/wallet`.

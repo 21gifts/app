@@ -282,6 +282,16 @@ export async function proxyMeWalletReportPost(request: Request): Promise<Respons
 }
 
 /**
+ * Proxies POST /me/wallet/hearts (heart payment lookup) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ hashes }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletHeartsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet/hearts');
+}
+
+/**
  * Proxies POST /me/events (interaction log batch) to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON `{ events }`).

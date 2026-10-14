@@ -2718,6 +2718,37 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/me/wallet/hearts') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid JSON' });
+      return;
+    }
+    const heartHash = 'c0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ffeeaaaa';
+    const hearts =
+      Array.isArray(body?.hashes) && body.hashes.includes(heartHash)
+        ? [
+            {
+              paymentHash: heartHash,
+              messageId: '11111111-1111-4111-8111-111111111111',
+              authorName: 'Ada',
+              text: 'Sunday lunch',
+              deleted: false,
+            },
+          ]
+        : [];
+    json(res, 200, { hearts });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/me/events') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

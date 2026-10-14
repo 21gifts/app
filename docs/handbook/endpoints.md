@@ -262,6 +262,14 @@
 - **Used by:** `postWalletReport` (from `reportWallet`).
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/wallet/hearts
+
+- **Purpose:** Same-origin proxy of api `POST /me/wallet/hearts`. Looks up the forum posts attached to 1–32 lowercase Spark payment hashes for the signed-in member.
+- **Returns:** Upstream `{ hearts }`, whose rows contain `paymentHash`, `messageId`, `authorName`, `text`, and `deleted`; hashes that are not this member's hearts are absent.
+- **Errors:** Upstream 400, 401, 413, or 502 if the api is unreachable. The wallet UI keeps its ordinary gift title when the lookup fails or has a bad body.
+- **Used by:** `fetchHeartPosts` (from `useHeartContext`).
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/events
 
 - **Purpose:** Same-origin proxy of api `POST /me/events`. Sends a batch of at most 50 interaction events of the signed-in member, each `{ name, at, path, props }`.

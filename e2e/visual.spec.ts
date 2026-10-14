@@ -2016,6 +2016,28 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-history-rows');
   });
 
+  test('wallet history-heart', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet?visual=history-heart');
+    await expect(page.getByText('Sunday lunch')).toBeVisible();
+    await expect(page.getByText('Gift', { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-history-heart');
+  });
+
+  test('wallet history-heart-pending', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet?visual=history-heart-pending');
+    await expect(
+      page.getByRole('region', { name: 'Payments' }).getByRole('listitem'),
+    ).toBeVisible();
+    await expect(page.getByText('−₿1').first()).toBeVisible();
+    await expect(page.getByText('Sunday lunch')).toHaveCount(0);
+    await expect(page.getByText('Gift', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-wallet-history-heart-pending');
+  });
+
   test('screen-wallet-payment', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);
@@ -2146,6 +2168,81 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('Payment hash')).toHaveCount(0);
     await expect(page.getByText(/pos:/)).toHaveCount(0);
     await shotScreen(page, 'state-wallet-payment-shop-open');
+  });
+
+  test('state-wallet-payment-heart', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42&visual=heart-payment');
+    await expect(page.getByText('Sunday lunch')).toBeVisible();
+    await expect(page.getByText('Ada', { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: '@ada' })).toHaveAttribute(
+      'href',
+      '/members/acc_ada',
+    );
+    await expect(page.getByText('Gift', { exact: true })).toHaveCount(0);
+    await expect(
+      page.locator('a[href="/messages/11111111-1111-4111-8111-111111111111"]'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-heart');
+  });
+
+  test('state-wallet-payment-heart-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet/payment?id=b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42&visual=heart-payment');
+    await expect(page.getByText('Sunday lunch')).toBeVisible();
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toBeVisible();
+    await expect(page.getByText('Payment hash')).toBeVisible();
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await expect(page.getByText(/zap:/)).toHaveCount(0);
+    await expect(page.getByText('Gift', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: '@ada' })).toHaveAttribute(
+      'href',
+      '/members/acc_ada',
+    );
+    await shotScreen(page, 'state-wallet-payment-heart-open');
+  });
+
+  test('state-wallet-payment-heart-pending', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42&visual=heart-payment-pending',
+    );
+    await expect(page.getByText('Wallet transfer')).toBeVisible();
+    await expect(page.getByText('Free')).toBeVisible();
+    await expect(page.getByText('−₿1').first()).toBeVisible();
+    await expect(page.getByText('Sunday lunch')).toHaveCount(0);
+    await expect(page.getByText('Gift', { exact: true })).toBeVisible();
+    await expect(page.getByText('Ada', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: '@ada' })).toHaveAttribute(
+      'href',
+      '/members/acc_ada',
+    );
+    await shotScreen(page, 'state-wallet-payment-heart-pending');
+  });
+
+  test('state-wallet-payment-heart-pending-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42&visual=heart-payment-pending',
+    );
+    await expect(page.getByText('Sunday lunch')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toBeVisible();
+    await expect(page.getByText('Payment hash')).toBeVisible();
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await expect(page.getByText(/zap:/)).toHaveCount(0);
+    await expect(page.getByText('Gift', { exact: true })).toBeVisible();
+    await expect(page.getByText('Ada', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: '@ada' })).toHaveAttribute(
+      'href',
+      '/members/acc_ada',
+    );
+    await shotScreen(page, 'state-wallet-payment-heart-pending-open');
   });
 
   test('state-wallet-payment-deposit', async ({ page }) => {

@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getE2eNow } from '@/lib/config';
-import { toFixturePayment, WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
+import {
+  HEART_VISUAL_PAYMENT,
+  toFixturePayment,
+  WALLET_PAYMENT_FIXTURES,
+} from '@/lib/wallet/payment-fixtures';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { listWalletPayments } from '@/lib/wallet/wallet-service';
 import { useWalletStore } from '@/stores/wallet-store';
@@ -49,6 +53,9 @@ function historyPin(): Pick<UseWalletHistoryResult, 'status' | 'payments'> | nul
       return { status: 'ready', payments: [] };
     case 'history-rows':
       return { status: 'ready', payments: WALLET_PAYMENT_FIXTURES.map(toFixturePayment) };
+    case 'history-heart':
+    case 'history-heart-pending':
+      return { status: 'ready', payments: [toFixturePayment(HEART_VISUAL_PAYMENT)] };
     case 'history-error':
       return { status: 'error', payments: [] };
     default:
