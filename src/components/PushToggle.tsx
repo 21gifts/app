@@ -41,9 +41,10 @@ function roomOptions(
 /**
  * Settings Notifications sections. Uppercase heading
  * `profile.notify.heading`, then Hearts On/Off and one compact Posts
- * pill on the same line as its label. Stored `active` adds Only with a gift
- * and moves that pill under the label so the label stays intact;
- * choosing another option posts that level and the extra option disappears.
+ * pill on the same line as its label, right-aligned. Stored `active` adds
+ * Only with a gift on that same line. The label does not shrink; the pill
+ * wraps under it only when the row is too narrow. Choosing another option
+ * posts that level and the extra option disappears.
  * A second bordered section, `profile.device.heading`, shows Notifications
  * On/Off when Push APIs are ready. That row's visible label and aria-label
  * are `profile.device.label`, not `aria.push`. Renders nothing without a
@@ -222,7 +223,6 @@ export function PushToggle(): ReactElement | null {
     void onLevelChange(next);
   };
   const room = roomOptions(selected, t);
-  const roomOnOwnLine = room.length > 3;
   const onOff = [
     { value: 'on' as const, label: t('profile.push.on') },
     { value: 'off' as const, label: t('profile.push.off') },
@@ -248,18 +248,12 @@ export function PushToggle(): ReactElement | null {
             ariaLabel={t('profile.heartNotify.label')}
           />
         </div>
-        <div
-          className={
-            roomOnOwnLine
-              ? 'flex flex-col items-stretch gap-2'
-              : 'flex items-center justify-between gap-3'
-          }
-        >
-          <span className="min-w-0 text-sm text-app-fg">{t('profile.notify.room')}</span>
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <span className="shrink-0 text-sm text-app-fg">{t('profile.notify.room')}</span>
           <SegmentedControl
             tone="neutral"
             fullWidth={false}
-            className={roomOnOwnLine ? 'self-end' : ''}
+            className="ml-auto"
             value={selected}
             options={room}
             onChange={onRoomPress}
