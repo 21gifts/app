@@ -93,7 +93,7 @@ describe('LoanBlock', () => {
     expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
   });
 
-  it('draws no fill at 0% and caps an overfull collecting bar', () => {
+  it('draws no fill at 0% or below', () => {
     block({ percent: 0 });
     expect(document.querySelector('rect.fill-app-accent')).toBeNull();
     cleanup();
