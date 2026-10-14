@@ -1625,7 +1625,9 @@ describe('ForumLoader', () => {
     expect(photoMock).toHaveBeenCalledWith('sess', 'shop1', 0);
     expect(photoMock).not.toHaveBeenCalledWith('sess', 'shop2', expect.anything());
     expect(publicPhotoMock).not.toHaveBeenCalled();
-    expect(fetchSpy.mock.calls.some((call) => String(call[0]).includes('/messages/'))).toBe(false);
+    expect(fetchSpy.mock.calls.some((call) => String(call.at(0)).includes('/messages/'))).toBe(
+      false,
+    );
     expect(shopsChanged).toHaveBeenCalled();
   });
 
