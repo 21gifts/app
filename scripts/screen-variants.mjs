@@ -374,6 +374,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'balance-reopening',
+    image: 'wallet-balance-reopening.png',
+    visual: 'state-wallet-balance-reopening',
+    needle: "shotScreen(page, 'state-wallet-balance-reopening')",
+  },
+  {
+    route: '/wallet',
     id: 'setup-failed',
     image: 'wallet-setup-failed.png',
     visual: 'state-wallet-setup-failed',

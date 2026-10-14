@@ -300,6 +300,12 @@ Pinned fixture (`?visual=balance-error`, Playwright builds only), not a live wal
 
 ![21.gifts wallet balance error](images/wallet-balance-error.png)
 
+### Variant: balance-reopening
+
+Pinned fixture (`?visual=balance-reopening`, Playwright builds only), not a live wallet: the wallet could not be opened and is opened again in the background. Region **Balance** shows the open-failed sentence and labeled **Try again**; the header shows the balance skeleton left of **Menu**. After four seconds the fixture shows the balance on its own, without a press.
+
+![21.gifts wallet balance error while the wallet is opened again](images/wallet-balance-reopening.png)
+
 ### Variant: setup-failed
 
 Pinned fixture (`?visual=balance-setup-failed`, Playwright builds only), not a live wallet. The account still needs wallet verification after the background setup exhausted its quiet retries. Region **Balance** shows the alert **Your wallet could not be set up yet.** (`walletSetup.error`) followed by a secondary **Try again** button under it. The note does not cover or block the page; **Receive** and **Send** stay at the bottom, enabled.

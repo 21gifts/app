@@ -47,7 +47,13 @@ let emit: (payment: WalletPayment) => void = () => undefined;
 const unsubscribe = vi.fn();
 
 function wallet(status: UseWalletResult['status'], balanceSats: number | null): void {
-  vi.mocked(useWallet).mockReturnValue({ status, balanceSats, retry: vi.fn(), setupFailed: false });
+  vi.mocked(useWallet).mockReturnValue({
+    status,
+    balanceSats,
+    retry: vi.fn(),
+    setupFailed: false,
+    retrying: false,
+  });
 }
 
 function userAgent(value: string): void {

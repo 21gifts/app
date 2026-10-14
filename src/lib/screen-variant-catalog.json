@@ -258,6 +258,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:balance-reopening",
+    "label": "/wallet balance-reopening",
+    "visual": "state-wallet-balance-reopening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:setup-failed",
     "label": "/wallet setup-failed",
     "visual": "state-wallet-setup-failed",

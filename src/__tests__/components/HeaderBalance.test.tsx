@@ -32,8 +32,18 @@ const PAYMENT: WalletPayment = {
   info: {},
 };
 
-function wallet(status: UseWalletResult['status'], balanceSats: number | null): void {
-  vi.mocked(useWallet).mockReturnValue({ status, balanceSats, retry: vi.fn(), setupFailed: false });
+function wallet(
+  status: UseWalletResult['status'],
+  balanceSats: number | null,
+  retrying = false,
+): void {
+  vi.mocked(useWallet).mockReturnValue({
+    status,
+    balanceSats,
+    retry: vi.fn(),
+    setupFailed: false,
+    retrying,
+  });
 }
 
 beforeEach(() => {
@@ -45,14 +55,56 @@ afterEach(cleanup);
 
 describe('HeaderBalance', () => {
   it.each([
-    ['connecting', null],
     ['error', null],
     ['disabled', null],
-    ['ready', null],
-  ] as const)('renders nothing while the wallet is %s without a balance', (status, sats) => {
+  ] as const)('renders nothing while the wallet is %s and not retried', (status, sats) => {
     wallet(status, sats);
     const { container } = renderWithLocale(<HeaderBalance />);
     expect(container.firstChild).toBeNull();
+  });
+
+  it.each([
+    ['connecting', false],
+    ['ready', false],
+    ['error', true],
+  ] as const)(
+    'shows the skeleton while the wallet is %s without a balance (retrying: %s)',
+    (status, retrying) => {
+      wallet(status, null, retrying);
+      renderWithLocale(<HeaderBalance />);
+      const skeleton = screen.getByRole('status', { name: 'Opening your wallet…' });
+      expect(skeleton.tagName).toBe('DIV');
+      expect(skeleton.getAttribute('data-wallet-tour')).toBeNull();
+      expect(screen.queryByRole('link')).toBeNull();
+      const bars = skeleton.querySelectorAll('.animate-pulse');
+      expect(bars).toHaveLength(2);
+      for (const bar of bars) {
+        expect(bar.className).toContain('bg-app-border');
+        expect(bar.className).toContain('motion-reduce:animate-none');
+      }
+    },
+  );
+
+  it('gives the skeleton the box of the balance link, so the header does not move', () => {
+    wallet('connecting', null);
+    const loading = renderWithLocale(<HeaderBalance />);
+    const skeleton = screen.getByRole('status');
+    const [first, second] = Array.from(skeleton.children);
+    // text-sm and text-[10px] at leading-tight: 17.5 px and 12.5 px lines.
+    expect(first?.className).toContain('h-[17.5px]');
+    expect(second?.className).toContain('h-[12.5px]');
+    const box = ['mr-1', 'min-h-9', 'shrink-0', 'flex-col', 'items-end', 'justify-center', 'px-2'];
+    for (const name of box) {
+      expect(skeleton.className.split(' ')).toContain(name);
+    }
+    loading.unmount();
+    wallet('ready', 21_000);
+    renderWithLocale(<HeaderBalance />);
+    const link = screen.getByRole('link');
+    for (const name of box) {
+      expect(link.className.split(' ')).toContain(name);
+    }
+    expect(link.className).toContain('leading-tight');
   });
 
   it('links the ₿ balance and its fiat to /wallet', () => {

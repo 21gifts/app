@@ -13,16 +13,20 @@ import {
   payFromWallet,
   refreshWallet,
   registerWalletAddress,
+  WALLET_RETRY_BASE_MS,
+  WALLET_RETRY_CAP_MS,
+  WALLET_RETRY_JITTER,
   WALLET_SEND_TIMEOUT_MS,
   type WalletSdkLoader,
   WALLET_QUOTE_MARGIN_MS,
 } from '@/lib/wallet/wallet-service';
-import type {
-  WalletConnection,
-  WalletPayment,
-  WalletPreparedPayment,
-  WalletSdk,
-  WalletTarget,
+import {
+  walletNeedsReload,
+  type WalletConnection,
+  type WalletPayment,
+  type WalletPreparedPayment,
+  type WalletSdk,
+  type WalletTarget,
 } from '@/lib/wallet/wallet-sdk';
 import { captureMessage } from '@sentry/nextjs';
 import { logInteraction } from '@/lib/interaction-log';
@@ -33,6 +37,10 @@ vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 vi.mock('@sentry/nextjs', () => ({ captureMessage: vi.fn() }));
 vi.mock('@/lib/sentry', () => ({
   traceWallet: vi.fn((_name: string, work: () => Promise<unknown>) => work()),
+}));
+vi.mock('@/lib/wallet/wallet-sdk', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/wallet/wallet-sdk')>()),
+  walletNeedsReload: vi.fn(() => false),
 }));
 import { useWalletStore } from '@/stores/wallet-store';
 
@@ -111,6 +119,7 @@ beforeEach(() => {
   ssrImport.mockClear();
   vi.mocked(captureMessage).mockClear();
   vi.mocked(logInteraction).mockClear();
+  vi.mocked(walletNeedsReload).mockReset().mockReturnValue(false);
 });
 
 /**
@@ -880,6 +889,407 @@ describe('connectWallet', () => {
     await expect(pending).resolves.toBeUndefined();
     expect(connection.getInfo).not.toHaveBeenCalled();
     expect(useWalletStore.getState().status).toBe('locked');
+  });
+});
+
+describe('automatic retries after a failed open', () => {
+  /** Nominal pauses of the first retries: doubling from the base, then the cap. */
+  const NOMINAL_MS = [2_000, 4_000, 8_000, 16_000, 32_000, 60_000, 60_000];
+  let random: ReturnType<typeof vi.spyOn>;
+
+  /** A loader whose every connect is refused, so each attempt fails at once. */
+  function refusingSdk(): ReturnType<typeof createFakeSdk> {
+    return createFakeSdk({
+      connect: async () => {
+        throw new Error('unreachable');
+      },
+    });
+  }
+
+  function setOnline(online: boolean): void {
+    Object.defineProperty(window.navigator, 'onLine', { configurable: true, get: () => online });
+  }
+
+  function setVisibility(state: 'visible' | 'hidden'): void {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    // No jitter unless a test asks for it: every pause is the nominal one.
+    random = vi.spyOn(Math, 'random').mockReturnValue(0);
+    rememberSessionPhrase(MNEMONIC);
+  });
+
+  afterEach(async () => {
+    await disconnectWallet();
+    random.mockRestore();
+    Reflect.deleteProperty(window.navigator, 'onLine');
+    Reflect.deleteProperty(document, 'visibilityState');
+    vi.useRealTimers();
+  });
+
+  it('states the backoff values', () => {
+    expect(WALLET_RETRY_BASE_MS).toBe(2_000);
+    expect(WALLET_RETRY_CAP_MS).toBe(60_000);
+    expect(WALLET_RETRY_JITTER).toBe(0.2);
+  });
+
+  it('retries with doubling pauses up to the cap and keeps the error state', async () => {
+    const { loadSdk } = refusingSdk();
+    await connectWallet(loadSdk);
+    expect(loadSdk).toHaveBeenCalledTimes(1);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
+    const statuses: string[] = [];
+    const unsub = useWalletStore.subscribe((state) => {
+      statuses.push(state.status);
+    });
+    let attempts = 1;
+    for (const pause of NOMINAL_MS) {
+      await vi.advanceTimersByTimeAsync(pause - 1);
+      expect(loadSdk).toHaveBeenCalledTimes(attempts);
+      await vi.advanceTimersByTimeAsync(1);
+      attempts += 1;
+      expect(loadSdk).toHaveBeenCalledTimes(attempts);
+      expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
+    }
+    unsub();
+    expect(statuses.every((status) => status === 'error')).toBe(true);
+    expectWalletOpenReport('error');
+    expect(logInteraction).toHaveBeenCalledTimes(1);
+  });
+
+  it('shortens each pause by the jitter and never exceeds the cap', async () => {
+    random.mockReturnValue(1);
+    const { loadSdk } = refusingSdk();
+    await connectWallet(loadSdk);
+    await vi.advanceTimersByTimeAsync(1_599);
+    expect(loadSdk).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(loadSdk).toHaveBeenCalledTimes(2);
+    // 3 200, 6 400, 12 800, 25 600, then the capped pause of 48 000.
+    await vi.advanceTimersByTimeAsync(3_200 + 6_400 + 12_800 + 25_600);
+    expect(loadSdk).toHaveBeenCalledTimes(6);
+    await vi.advanceTimersByTimeAsync(47_999);
+    expect(loadSdk).toHaveBeenCalledTimes(6);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(loadSdk).toHaveBeenCalledTimes(7);
+  });
+
+  it('becomes ready by itself, ends the cycle, and reports the next failed open again', async () => {
+    const sdk = createFakeSdk();
+    sdk.connect.mockRejectedValueOnce(new Error('unreachable'));
+    sdk.connect.mockRejectedValueOnce(new Error('unreachable'));
+    const removeWindow = vi.spyOn(window, 'removeEventListener');
+    const removeDocument = vi.spyOn(document, 'removeEventListener');
+    await connectWallet(sdk.loadSdk);
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
+    await vi.advanceTimersByTimeAsync(4_000);
+    expect(useWalletStore.getState()).toMatchObject({
+      status: 'ready',
+      balanceSats: 21_000,
+      retrying: false,
+    });
+    expect(sdk.connect).toHaveBeenCalledTimes(3);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(removeWindow).toHaveBeenCalledWith('online', expect.any(Function));
+    expect(removeDocument).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
+    expect(captureMessage).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(3);
+    removeWindow.mockRestore();
+    removeDocument.mockRestore();
+
+    await connectWallet(refusingSdk().loadSdk);
+    expect(captureMessage).toHaveBeenCalledTimes(2);
+    expect(logInteraction).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports a timeout once and stays silent while later retries time out', async () => {
+    const loadSdk: WalletSdkLoader = vi.fn(() => new Promise<WalletSdk>(() => undefined));
+    const pending = connectWallet(loadSdk);
+    await vi.advanceTimersByTimeAsync(30_000);
+    await pending;
+    expectWalletOpenReport('timeout');
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(loadSdk).toHaveBeenCalledTimes(2);
+    // The retry runs into its own 30 s deadline, then waits 4 s for the next one.
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
+    await vi.advanceTimersByTimeAsync(3_999);
+    expect(loadSdk).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(loadSdk).toHaveBeenCalledTimes(3);
+    expect(captureMessage).toHaveBeenCalledTimes(1);
+    expect(logInteraction).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not report again after Try again while the wallet was never ready', async () => {
+    const { loadSdk } = refusingSdk();
+    await connectWallet(loadSdk);
+    await connectWallet(loadSdk);
+    await connectWallet(loadSdk);
+    expect(captureMessage).toHaveBeenCalledTimes(1);
+    expect(logInteraction).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports the first failed open of the next sign-in', async () => {
+    const { loadSdk } = refusingSdk();
+    await connectWallet(loadSdk);
+    await disconnectWallet();
+    await connectWallet(loadSdk);
+    expect(captureMessage).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries at once and starts the backoff again when the browser is online again', async () => {
+    const { loadSdk } = refusingSdk();
+    await connectWallet(loadSdk);
+    await vi.advanceTimersByTimeAsync(2_000 + 4_000);
+    expect(loadSdk).toHaveBeenCalledTimes(3);
+    // The next retry would follow after 8 s.
+    await vi.advanceTimersByTimeAsync(1_000);
+    window.dispatchEvent(new Event('online'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(loadSdk).toHaveBeenCalledTimes(4);
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(loadSdk).toHaveBeenCalledTimes(4);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(loadSdk).toHaveBeenCalledTimes(5);
+  });
+
+  it('waits while the browser is offline and continues on the online event', async () => {
+    const { loadSdk } = refusingSdk();
+    await connectWallet(loadSdk);
+    setOnline(false);
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(loadSdk).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
+    window.dispatchEvent(new Event('online'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(loadSdk).toHaveBeenCalledTimes(1);
+    setOnline(true);
+    window.dispatchEvent(new Event('online'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(loadSdk).toHaveBeenCalledTimes(2);
+  });
+
+  it('waits while the tab is hidden and retries at once when it is visible again', async () => {
+    const { loadSdk } = refusingSdk();
+    await connectWallet(loadSdk);
+    await vi.advanceTimersByTimeAsync(2_000 + 4_000);
+    expect(loadSdk).toHaveBeenCalledTimes(3);
+    setVisibility('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(loadSdk).toHaveBeenCalledTimes(3);
+    expect(vi.getTimerCount()).toBe(0);
+    setVisibility('visible');
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(loadSdk).toHaveBeenCalledTimes(4);
+    // The backoff started again: the next retry follows after 2 s, not 8 s.
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(loadSdk).toHaveBeenCalledTimes(5);
+  });
+
+  it('does not start a second attempt when a trigger arrives while a retry runs', async () => {
+    let refuse!: (reason: Error) => void;
+    const sdk = createFakeSdk();
+    sdk.connect.mockRejectedValueOnce(new Error('unreachable'));
+    sdk.connect.mockRejectedValueOnce(new Error('unreachable'));
+    sdk.connect.mockImplementationOnce(
+      () =>
+        new Promise<WalletConnection>((_resolve, reject) => {
+          refuse = reject;
+        }),
+    );
+    sdk.connect.mockRejectedValue(new Error('unreachable'));
+    await connectWallet(sdk.loadSdk);
+    await vi.advanceTimersByTimeAsync(2_000 + 4_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(3);
+    window.dispatchEvent(new Event('online'));
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sdk.connect).toHaveBeenCalledTimes(3);
+    refuse(new Error('unreachable'));
+    await vi.advanceTimersByTimeAsync(0);
+    // The trigger reset the backoff, so the retry after this failure follows after 2 s.
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(sdk.connect).toHaveBeenCalledTimes(3);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(sdk.connect).toHaveBeenCalledTimes(4);
+  });
+
+  it('stops on sign-out: no timer, no listener, no further attempt', async () => {
+    const { loadSdk } = refusingSdk();
+    await connectWallet(loadSdk);
+    expect(vi.getTimerCount()).toBe(1);
+    await disconnectWallet();
+    expect(vi.getTimerCount()).toBe(0);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'locked', retrying: false });
+    window.dispatchEvent(new Event('online'));
+    document.dispatchEvent(new Event('visibilitychange'));
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(loadSdk).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the connection of a retry that was still running at sign-out', async () => {
+    let open!: (connection: WalletConnection) => void;
+    const sdk = createFakeSdk();
+    sdk.connect.mockRejectedValueOnce(new Error('unreachable'));
+    sdk.connect.mockImplementationOnce(
+      () =>
+        new Promise<WalletConnection>((resolve) => {
+          open = resolve;
+        }),
+    );
+    await connectWallet(sdk.loadSdk);
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(2);
+    await disconnectWallet();
+    open(sdk.connection as unknown as WalletConnection);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sdk.connection.disconnect).toHaveBeenCalledTimes(1);
+    expect(sdk.connection.getInfo).not.toHaveBeenCalled();
+    expect(useWalletStore.getState()).toMatchObject({ status: 'locked', retrying: false });
+    // Only the deadline of that closed attempt is left; it starts nothing.
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('Try again supersedes a waiting retry and starts the cycle over', async () => {
+    const { loadSdk } = refusingSdk();
+    await connectWallet(loadSdk);
+    await vi.advanceTimersByTimeAsync(2_000 + 4_000);
+    expect(loadSdk).toHaveBeenCalledTimes(3);
+    const statuses: string[] = [];
+    const unsub = useWalletStore.subscribe((state) => {
+      statuses.push(`${state.status}:${String(state.retrying)}`);
+    });
+    await connectWallet(loadSdk);
+    unsub();
+    expect(statuses).toContain('connecting:false');
+    expect(loadSdk).toHaveBeenCalledTimes(4);
+    expect(vi.getTimerCount()).toBe(1);
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(loadSdk).toHaveBeenCalledTimes(4);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(loadSdk).toHaveBeenCalledTimes(5);
+  });
+
+  it('a newer run supersedes a running retry, whose late connection is closed', async () => {
+    let open!: (connection: WalletConnection) => void;
+    const stale = createFakeSdk();
+    stale.connect.mockRejectedValueOnce(new Error('unreachable'));
+    stale.connect.mockImplementationOnce(
+      () =>
+        new Promise<WalletConnection>((resolve) => {
+          open = resolve;
+        }),
+    );
+    await connectWallet(stale.loadSdk);
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(stale.connect).toHaveBeenCalledTimes(2);
+    const fresh = createFakeSdk({
+      getInfo: async () => ({ balanceSats: 99_000, identityPubkey: IDENTITY }),
+    });
+    await connectWallet(fresh.loadSdk);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'ready', balanceSats: 99_000 });
+    open(stale.connection as unknown as WalletConnection);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(stale.connection.disconnect).toHaveBeenCalledTimes(1);
+    expect(fresh.connection.disconnect).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(600_000);
+    expect(stale.connect).toHaveBeenCalledTimes(2);
+    expect(fresh.connect).toHaveBeenCalledTimes(1);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'ready', balanceSats: 99_000 });
+    expect(captureMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('ends the cycle when the phrase or the key is gone at the next retry', async () => {
+    const { loadSdk } = refusingSdk();
+    await connectWallet(loadSdk);
+    clearSessionPhrase();
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(loadSdk).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(useWalletStore.getState().retrying).toBe(false);
+
+    rememberSessionPhrase(MNEMONIC);
+    await connectWallet(loadSdk);
+    expect(useWalletStore.getState().retrying).toBe(true);
+    delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(loadSdk).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(useWalletStore.getState().retrying).toBe(false);
+  });
+
+  it('plans no retry when the phrase or the key is gone at the failure', async () => {
+    for (const remove of [
+      (): void => clearSessionPhrase(),
+      (): void => {
+        delete process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+      },
+    ]) {
+      process.env.NEXT_PUBLIC_BREEZ_API_KEY = API_KEY;
+      rememberSessionPhrase(MNEMONIC);
+      let refuse!: (reason: Error) => void;
+      const sdk = createFakeSdk({
+        connect: () =>
+          new Promise<WalletConnection>((_resolve, reject) => {
+            refuse = reject;
+          }),
+      });
+      const pending = connectWallet(sdk.loadSdk);
+      await vi.advanceTimersByTimeAsync(0);
+      remove();
+      refuse(new Error('unreachable'));
+      await pending;
+      expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: false });
+      expect(vi.getTimerCount()).toBe(0);
+    }
+  });
+
+  it('only checks again, without an attempt, while the wallet code needs a page reload', async () => {
+    const { loadSdk } = refusingSdk();
+    vi.mocked(walletNeedsReload).mockReturnValue(true);
+    await connectWallet(loadSdk);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: false });
+    await vi.advanceTimersByTimeAsync(2_000 + 4_000);
+    expect(loadSdk).toHaveBeenCalledTimes(1);
+    expect(useWalletStore.getState().retrying).toBe(false);
+    vi.mocked(walletNeedsReload).mockReturnValue(false);
+    await vi.advanceTimersByTimeAsync(8_000);
+    expect(loadSdk).toHaveBeenCalledTimes(2);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
+  });
+
+  it('opens the wallet again after a balance read failed', async () => {
+    const sdk = createFakeSdk();
+    await connectWallet(sdk.loadSdk);
+    expect(useWalletStore.getState().status).toBe('ready');
+    sdk.connection.getInfo.mockRejectedValueOnce(new Error('read failed'));
+    await refreshWallet();
+    expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
+    expect(captureMessage).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(2);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'ready', retrying: false });
+    expect(captureMessage).not.toHaveBeenCalled();
+  });
+
+  it('lets ensureWalletConnected open the wallet itself while a retry is waiting', async () => {
+    const sdk = createFakeSdk();
+    sdk.connect.mockRejectedValueOnce(new Error('unreachable'));
+    await connectWallet(sdk.loadSdk);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
+    await expect(ensureWalletConnected(sdk.loadSdk)).resolves.toBe(IDENTITY);
+    expect(sdk.connect).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });
 

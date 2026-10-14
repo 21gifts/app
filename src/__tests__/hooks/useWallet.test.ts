@@ -1,6 +1,6 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { WALLET_VISUAL_FIXTURE_SATS, useWallet } from '@/hooks/useWallet';
+import { WALLET_VISUAL_FIXTURE_SATS, WALLET_VISUAL_REOPEN_MS, useWallet } from '@/hooks/useWallet';
 import type { Account } from '@/lib/api-types';
 import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { connectWallet } from '@/lib/wallet/wallet-service';
@@ -50,7 +50,7 @@ beforeEach(() => {
   delete process.env.NEXT_PUBLIC_E2E_NOW;
   process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-key';
   useAuthStore.setState({ session: 'token', account, lockedSession: null });
-  useWalletStore.setState({ setupFailedSession: null });
+  useWalletStore.setState({ setupFailedSession: null, retrying: false });
   setWallet('locked');
   vi.mocked(connectWallet).mockReset().mockResolvedValue(undefined);
   vi.mocked(walletNeedsReload).mockReset().mockReturnValue(false);
@@ -78,6 +78,7 @@ const PINS = [
   ['send-input', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['send-confirm', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['setup-pending', 'connecting', null],
+  ['balance-reopening', 'error', null],
 ] as const;
 
 describe('useWallet visual pins', () => {
@@ -88,6 +89,62 @@ describe('useWallet visual pins', () => {
     expect(result.current.status).toBe(status);
     expect(result.current.balanceSats).toBe(balanceSats);
     expect(result.current.setupFailed).toBe(visual === 'balance-setup-failed');
+    expect(result.current.retrying).toBe(visual === 'balance-reopening');
+  });
+
+  it('turns the balance-reopening pin ready by itself after its time', () => {
+    vi.useFakeTimers();
+    try {
+      setPlaywrightBuild();
+      window.history.replaceState({}, '', '/wallet?visual=balance-reopening');
+      const { result, unmount } = renderHook(() => useWallet());
+      act(() => {
+        vi.advanceTimersByTime(WALLET_VISUAL_REOPEN_MS - 1);
+      });
+      expect(result.current).toMatchObject({ status: 'error', balanceSats: null, retrying: true });
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(result.current).toMatchObject({
+        status: 'ready',
+        balanceSats: WALLET_VISUAL_FIXTURE_SATS,
+        retrying: false,
+      });
+      unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('drops the balance-reopening timer when it unmounts first', () => {
+    vi.useFakeTimers();
+    try {
+      setPlaywrightBuild();
+      window.history.replaceState({}, '', '/wallet?visual=balance-reopening');
+      const { unmount } = renderHook(() => useWallet());
+      expect(vi.getTimerCount()).toBe(1);
+      unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('starts no timer for balance-reopening in a production build', () => {
+    vi.useFakeTimers();
+    try {
+      window.history.replaceState({}, '', '/wallet?visual=balance-reopening');
+      setWallet('error');
+      const { result } = renderHook(() => useWallet());
+      expect(vi.getTimerCount()).toBe(0);
+      act(() => {
+        vi.advanceTimersByTime(WALLET_VISUAL_REOPEN_MS);
+      });
+      expect(result.current).toMatchObject({ status: 'error', retrying: false });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it.each(PINS.map(([visual]) => visual))('ignores %s in a production build', (visual) => {
@@ -162,6 +219,23 @@ describe('useWallet live state', () => {
       balanceSats: null,
       setupFailed: true,
     });
+  });
+
+  it('reports retrying only while the store is at error with a retry on its way', () => {
+    useWalletStore.setState({ status: 'error', retrying: true });
+    const { result } = renderHook(() => useWallet());
+    expect(result.current).toMatchObject({ status: 'error', retrying: true, setupFailed: false });
+    act(() => useWalletStore.setState({ retrying: false }));
+    expect(result.current.retrying).toBe(false);
+    act(() => useWalletStore.setState({ status: 'connecting', retrying: true }));
+    expect(result.current.retrying).toBe(false);
+  });
+
+  it('does not report retrying while the setup error shows', () => {
+    useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
+    useWalletStore.setState({ status: 'error', setupFailedSession: 'token', retrying: true });
+    const { result } = renderHook(() => useWallet());
+    expect(result.current).toMatchObject({ status: 'error', setupFailed: true, retrying: false });
   });
 
   it('retries by connecting when no reload is required', () => {

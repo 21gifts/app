@@ -73,6 +73,26 @@ describe('useWalletStore', () => {
     expect(state.identityPubkey).toBeNull();
   });
 
+  it('setRetrying records a retry on its way; ready, connecting, and reset clear it', () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    useWalletStore.getState().reset();
+    expect(useWalletStore.getState().retrying).toBe(false);
+    for (const clear of [
+      (): void => useWalletStore.getState().setReady(21_000, IDENTITY),
+      (): void => useWalletStore.getState().setConnecting(),
+      (): void => useWalletStore.getState().reset(),
+    ]) {
+      useWalletStore.getState().setError();
+      useWalletStore.getState().setRetrying(true);
+      expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
+      clear();
+      expect(useWalletStore.getState().retrying).toBe(false);
+    }
+    useWalletStore.getState().setRetrying(true);
+    useWalletStore.getState().setRetrying(false);
+    expect(useWalletStore.getState().retrying).toBe(false);
+  });
+
   it('reset returns to the resting status for the current key', () => {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
     useWalletStore.getState().setReady(21_000, IDENTITY);
