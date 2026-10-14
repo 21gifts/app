@@ -4429,6 +4429,12 @@ The same loan after **₿210** and `Count me in!` were posted. A profile card ha
 
 ![21.gifts member posts loan pay](images/members-posts-open-loan-pay.png)
 
+### Variant: posts-open-loan-pay-full
+
+Carol's loan once it is full (`sats` equals `goalSats`): the loan block reads **Fully funded** and offers no **Lend**, so the money reaction is opened with **React** and keeps the label **Amount**. After **₿210** is posted, the in-card pay sheet reads **Pay ₿210 · $0.21**, the note says **This loan is already fully funded. What you send now is a gift to Carol.**, and the wallet button stays **Send**.
+
+![21.gifts member posts loan pay full](images/members-posts-open-loan-pay-full.png)
+
 ### Variant: posts-open-loan-tag-open
 
 Same post as **posts-open-goal-credit**, after **Loan** is pressed. A line under the name says a loan is paid back.
@@ -6642,11 +6648,23 @@ Unsigned permalink of a filled credit whose two shares are both paid. The loan b
 
 ![21.gifts public message loan repaid](images/messages-id-loan-repaid.png)
 
+### Variant: loan-lend
+
+Signed-in permalink of Maria's loan that still collects (`sats: 10500` of `goalSats: 21000`, 30 days). The note page opens the card already, so pressing **Lend** in the loan block puts the focus in the reaction's amount field **Amount to lend**.
+
+![21.gifts public message loan lend](images/messages-id-loan-lend.png)
+
 ### Variant: loan-pay
 
-Signed-in permalink of Maria's loan that still collects (`sats: 10500` of `goalSats: 21000`, 30 days). The note page opens the card already, so **Lend** puts the focus in **Amount to lend**. After **₿210** and `Count me in!` are posted, the in-card pay sheet reads **You lend ₿210 · $0.21**, then the muted note **You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.** and the wallet button **Lend ₿210 · $0.21**.
+Signed-in permalink of Maria's loan that still collects (`sats: 10500` of `goalSats: 21000`, 30 days), after **Lend**, **₿210** and `Count me in!` were posted. The in-card pay sheet reads **You lend ₿210 · $0.21**, then the muted note **You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.** and the wallet button **Lend ₿210 · $0.21**.
 
 ![21.gifts public message loan pay](images/messages-id-loan-pay.png)
+
+### Variant: loan-pay-full
+
+Signed-in permalink of Maria's loan once it is full (`sats` equals `goalSats`): the loan block reads **Fully funded** and offers no **Lend**, and the open card's amount field keeps the label **Amount**. After **₿210** is posted, the in-card pay sheet reads **Pay ₿210 · $0.21**, the note says **This loan is already fully funded. What you send now is a gift to Maria.**, and the wallet button stays **Send**.
+
+![21.gifts public message loan pay full](images/messages-id-loan-pay-full.png)
 
 ### Variant: photos
 

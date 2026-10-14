@@ -11133,7 +11133,7 @@ test.describe('onboarding screens', () => {
   });
 
   /** Signed-in Ada on Carol's profile, whose one post is a loan that still collects. */
-  async function seedCarolLoan(page: Page): Promise<string> {
+  async function seedCarolLoan(page: Page, sats = 10500): Promise<string> {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const loanId = '44444444-4444-4444-8444-444444444444';
     await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
@@ -11188,7 +11188,7 @@ test.describe('onboarding screens', () => {
               name: 'Carol',
               text: 'A loan for a sewing machine, paid back every day from the orders.',
               createdAt: '2026-08-02T10:00:00.000Z',
-              sats: 10500,
+              sats,
               goalSats: 21000,
               goalRepayable: true,
               goalTermDays: 30,
@@ -11257,6 +11257,29 @@ test.describe('onboarding screens', () => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
     await shotScreen(page, 'state-members-posts-open-loan-pay');
+  });
+
+  test('state /members posts-open-loan-pay-full', async ({ page }) => {
+    const memberId = await seedCarolLoan(page, 21000);
+    await page.goto(`/members/${memberId}?visual=wallet-pay-confirm`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('Fully funded', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'React', exact: true }).click();
+    await page.getByLabel('Amount', { exact: true }).fill('210');
+    await page.getByLabel('Your reaction').fill('Thank you, Carol!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.locator('[data-pay-sheet]');
+    await expect(sheet.getByText('Pay ₿210 · $0.21')).toBeVisible();
+    await expect(sheet.locator('[data-loan-notice="full"]')).toHaveText(
+      'This loan is already fully funded. What you send now is a gift to Carol.',
+    );
+    await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-members-posts-open-loan-pay-full');
   });
 
   test('state /members posts-open-loan-tag-open', async ({ page }) => {
@@ -15970,7 +15993,8 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-signed-in');
   });
 
-  test('state /messages/[id] loan-pay', async ({ page }) => {
+  /** Signed-in Ada on the open note of Maria's loan, with an empty thread and a 210-sat invoice. */
+  async function seedMariaLoanNote(page: Page, sats = 10500): Promise<string> {
     const id = '55555555-5555-4555-8555-555555555555';
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -16017,7 +16041,7 @@ test.describe('onboarding screens', () => {
       name: 'Maria',
       text: 'The burner at our food stall broke. A loan for a new one, paid back every day from what we sell.',
       createdAt: '2026-08-28T12:00:00.000Z',
-      sats: 10500,
+      sats,
       goalSats: 21000,
       goalRepayable: true,
       goalTermDays: 30,
@@ -16043,6 +16067,19 @@ test.describe('onboarding screens', () => {
         });
       },
     );
+    return id;
+  }
+
+  test('state /messages/[id] loan-lend', async ({ page }) => {
+    const id = await seedMariaLoanNote(page);
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Lend' }).click();
+    await expect(page.getByLabel('Amount to lend')).toBeFocused();
+    await shotScreen(page, 'state-messages-id-loan-lend');
+  });
+
+  test('state /messages/[id] loan-pay', async ({ page }) => {
+    const id = await seedMariaLoanNote(page);
     await page.goto(`/messages/${id}?visual=wallet-pay-confirm`);
     await page.getByRole('button', { name: 'Lend' }).click();
     await expect(page.getByLabel('Amount to lend')).toBeFocused();
@@ -16060,6 +16097,27 @@ test.describe('onboarding screens', () => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
     await shotScreen(page, 'state-messages-id-loan-pay');
+  });
+
+  test('state /messages/[id] loan-pay-full', async ({ page }) => {
+    const id = await seedMariaLoanNote(page, 21000);
+    await page.goto(`/messages/${id}?visual=wallet-pay-confirm`);
+    await expect(page.getByText('Fully funded', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
+    await page.getByLabel('Amount', { exact: true }).fill('210');
+    await page.getByLabel('Your reaction').fill('Thank you, Maria!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.locator('[data-pay-sheet]');
+    await expect(sheet.getByText('Pay ₿210 · $0.21')).toBeVisible();
+    await expect(sheet.locator('[data-loan-notice="full"]')).toHaveText(
+      'This loan is already fully funded. What you send now is a gift to Maria.',
+    );
+    await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-messages-id-loan-pay-full');
   });
 
   test('state /messages/[id] shop-edit', async ({ page }) => {

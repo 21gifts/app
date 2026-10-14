@@ -4086,6 +4086,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'posts-open-loan-pay-full',
+    image: 'members-posts-open-loan-pay-full.png',
+    visual: 'state-members-posts-open-loan-pay-full',
+    needle: 'state /members posts-open-loan-pay-full',
+  },
+  {
+    route: '/members/[accountId]',
     id: 'posts-open-repay-today',
     image: 'members-posts-open-repay-today.png',
     visual: 'state-members-posts-open-repay-today',
@@ -6412,10 +6419,24 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'loan-lend',
+    image: 'messages-id-loan-lend.png',
+    visual: 'state-messages-id-loan-lend',
+    needle: 'state /messages/[id] loan-lend',
+  },
+  {
+    route: '/messages/[id]',
     id: 'loan-pay',
     image: 'messages-id-loan-pay.png',
     visual: 'state-messages-id-loan-pay',
     needle: 'state /messages/[id] loan-pay',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'loan-pay-full',
+    image: 'messages-id-loan-pay-full.png',
+    visual: 'state-messages-id-loan-pay-full',
+    needle: 'state /messages/[id] loan-pay-full',
   },
   {
     route: '/messages/[id]',
