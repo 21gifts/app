@@ -11126,10 +11126,160 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Need help with a train ticket')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
+    await expect(page.getByText(/^of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await page.getByText('Need help with a train ticket').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-goal-credit');
+  });
+
+  /** Signed-in Ada on Carol's profile, whose one post is a loan that still collects. */
+  async function seedCarolLoan(page: Page, sats = 10500): Promise<string> {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const loanId = '44444444-4444-4444-8444-444444444444';
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: loanId,
+              accountId: memberId,
+              name: 'Carol',
+              text: 'A loan for a sewing machine, paid back every day from the orders.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${loanId}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route(new RegExp(`/messages/${loanId}/invoice$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc2100n1example', amountSats: 210 }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    return memberId;
+  }
+
+  test('state /members posts-open-loan-lend', async ({ page }) => {
+    const memberId = await seedCarolLoan(page);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByRole('button', { name: 'Lend' }).click();
+    await expect(page.getByLabel('Amount to lend')).toBeFocused();
+    await expect(page.getByLabel('Your reaction')).toBeVisible();
+    await shotScreen(page, 'state-members-posts-open-loan-lend');
+  });
+
+  test('state /members posts-open-loan-pay', async ({ page }) => {
+    const memberId = await seedCarolLoan(page);
+    await page.goto(`/members/${memberId}?visual=wallet-pay-confirm`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByRole('button', { name: 'Lend' }).click();
+    await page.getByLabel('Amount to lend').fill('210');
+    await page.getByLabel('Your reaction').fill('Count me in!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.locator('[data-pay-sheet]');
+    await expect(sheet.getByText('You lend ₿210 · $0.21')).toBeVisible();
+    await expect(sheet.locator('[data-loan-notice="lend"]')).toHaveText(
+      'You are lending to Carol. Once the loan is fully funded, you get it back in 30 daily payments.',
+    );
+    await expect(sheet.getByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeVisible();
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-members-posts-open-loan-pay');
+  });
+
+  test('state /members posts-open-loan-pay-full', async ({ page }) => {
+    const memberId = await seedCarolLoan(page, 21000);
+    await page.goto(`/members/${memberId}?visual=wallet-pay-confirm`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('Fully funded', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'React', exact: true }).click();
+    await page.getByLabel('Amount', { exact: true }).fill('210');
+    await page.getByLabel('Your reaction').fill('Thank you, Carol!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.locator('[data-pay-sheet]');
+    await expect(sheet.getByText('Pay ₿210 · $0.21')).toBeVisible();
+    await expect(sheet.locator('[data-loan-notice="full"]')).toHaveText(
+      'This loan is already fully funded. What you send now is a gift to Carol.',
+    );
+    await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-members-posts-open-loan-pay-full');
   });
 
   test('state /members posts-open-loan-tag-open', async ({ page }) => {
@@ -12712,7 +12862,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('A credit from Carol.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
+    await expect(page.getByText(/^of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
     await expect(page.getByText('Showing the latest 1 of 3.')).toBeVisible();
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
@@ -15193,10 +15343,11 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}`);
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
+    await expect(page.getByText(/^of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
-    await expect(page.getByText("₿21'000")).toBeVisible();
-    await expect(page.getByText('$21.00')).toBeVisible();
+    await expect(page.getByText("₿21'000", { exact: true })).toBeVisible();
+    await expect(page.getByText('$21.00', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
     await shotScreen(page, 'state-messages-id-goal-credit');
   });
 
@@ -15354,10 +15505,90 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}`);
     await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
     await expect(page.getByLabel('Given').getByText('Cara @cara')).toBeVisible();
-    await expect(page.getByLabel('Paid back')).toBeVisible();
+    await expect(page.getByLabel('Paid back', { exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Repayment list' })).toBeVisible();
     await expect(page.getByText(/Each share is one bitcoin payment/)).toBeVisible();
+    await expect(page.getByText('Fully funded · being repaid')).toBeVisible();
     await shotScreen(page, 'state-messages-id-credit-ledger');
+  });
+
+  test('state /messages/[id] loan-repaid', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: 'Need help with a train ticket',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 21,
+          goalSats: 21,
+          goalRepayable: true,
+          goalTermDays: 2,
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/messages/${id}/repayment`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          currency: 'BTC',
+          fundedAt: '2026-09-26T12:00:00.000Z',
+          termDays: 2,
+          daysDue: 2,
+          daysPaid: 2,
+          unassignedSats: 0,
+          givers: [
+            {
+              accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              name: 'Bea',
+              username: 'bea',
+              givenSats: 21,
+              givenAmount: null,
+            },
+          ],
+          repayments: [
+            {
+              dayIndex: 0,
+              dueOn: '2026-09-27',
+              accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              name: 'Bea',
+              username: 'bea',
+              amount: null,
+              sats: 10,
+              status: 'paid',
+              via: 'lightning',
+            },
+            {
+              dayIndex: 1,
+              dueOn: '2026-09-28',
+              accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              name: 'Bea',
+              username: 'bea',
+              amount: null,
+              sats: 11,
+              status: 'paid',
+              via: 'lightning',
+            },
+          ],
+          next: null,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    const block = page.getByRole('region', { name: 'Loan request' });
+    await expect(block.getByText('Paid back', { exact: true })).toBeVisible();
+    await expect(block.getByRole('img', { name: '100% paid back' })).toBeVisible();
+    await shotScreen(page, 'state-messages-id-loan-repaid');
   });
 
   test('screen /messages/[id]/repayment-list', async ({ page }) => {
@@ -15757,6 +15988,133 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Copy link to this note' })).toBeVisible();
     await expect(page.getByPlaceholder('Write a reaction')).toBeVisible();
     await shotScreen(page, 'state-messages-id-signed-in');
+  });
+
+  /** Signed-in Ada on the open note of Maria's loan, with an empty thread and a 210-sat invoice. */
+  async function seedMariaLoanNote(page: Page, sats = 10500): Promise<string> {
+    const id = '55555555-5555-4555-8555-555555555555';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route(`**/messages/${id}/repayment`, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await page.route(new RegExp(`/messages/${id}/invoice$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc2100n1example', amountSats: 210 }),
+      });
+    });
+    const loanNote = {
+      id,
+      accountId: 'acc_maria',
+      name: 'Maria',
+      text: 'The burner at our food stall broke. A loan for a new one, paid back every day from what we sell.',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats,
+      goalSats: 21000,
+      goalRepayable: true,
+      goalTermDays: 30,
+      payable: true,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+    };
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(loanNote),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname === `/forum/messages/${id}`,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(loanNote),
+        });
+      },
+    );
+    return id;
+  }
+
+  test('state /messages/[id] loan-lend', async ({ page }) => {
+    const id = await seedMariaLoanNote(page);
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Lend' }).click();
+    await expect(page.getByLabel('Amount to lend')).toBeFocused();
+    await shotScreen(page, 'state-messages-id-loan-lend');
+  });
+
+  test('state /messages/[id] loan-pay', async ({ page }) => {
+    const id = await seedMariaLoanNote(page);
+    await page.goto(`/messages/${id}?visual=wallet-pay-confirm`);
+    await page.getByRole('button', { name: 'Lend' }).click();
+    await expect(page.getByLabel('Amount to lend')).toBeFocused();
+    await page.getByLabel('Amount to lend').fill('210');
+    await page.getByLabel('Your reaction').fill('Count me in!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.locator('[data-pay-sheet]');
+    await expect(sheet.getByText('You lend ₿210 · $0.21')).toBeVisible();
+    await expect(sheet.locator('[data-loan-notice="lend"]')).toHaveText(
+      'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
+    );
+    await expect(sheet.getByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeVisible();
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-messages-id-loan-pay');
+  });
+
+  test('state /messages/[id] loan-pay-full', async ({ page }) => {
+    const id = await seedMariaLoanNote(page, 21000);
+    await page.goto(`/messages/${id}?visual=wallet-pay-confirm`);
+    await expect(page.getByText('Fully funded', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
+    await page.getByLabel('Amount', { exact: true }).fill('210');
+    await page.getByLabel('Your reaction').fill('Thank you, Maria!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.locator('[data-pay-sheet]');
+    await expect(sheet.getByText('Pay ₿210 · $0.21')).toBeVisible();
+    await expect(sheet.locator('[data-loan-notice="full"]')).toHaveText(
+      'This loan is already fully funded. What you send now is a gift to Maria.',
+    );
+    await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    await sheet.evaluate((node) => {
+      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-messages-id-loan-pay-full');
   });
 
   test('state /messages/[id] shop-edit', async ({ page }) => {
@@ -20239,7 +20597,8 @@ test.describe('welcome forum variants', () => {
           messages: [
             {
               id: 'm-goal-credit',
-              name: 'Ada',
+              accountId: 'acc_maria',
+              name: 'Maria',
               text: 'Need help with a train ticket',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 10500,
@@ -20258,8 +20617,9 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/₿700 · \$0\.70 per day for 30 days/)).toBeVisible();
+    await expect(page.getByText(/^of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
     await expect(page.getByText('50%')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Lend' })).toBeVisible();
     await shotScreen(page, 'state-welcome-goal-credit');
   });
 
@@ -20277,7 +20637,8 @@ test.describe('welcome forum variants', () => {
           messages: [
             {
               id: 'm-goal-credit',
-              name: 'Ada',
+              accountId: 'acc_maria',
+              name: 'Maria',
               text: 'Need help with a train ticket',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 10500,
@@ -20365,6 +20726,104 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await expect(page.getByRole('link', { name: 'Repay your loan' })).toBeVisible();
     await shotScreen(page, 'state-welcome-repay-today');
+  });
+
+  /** Signed-in Ada and Maria's loan that still collects (or is full), with an empty thread. */
+  async function seedLoanCard(page: Page, sats = 10500): Promise<void> {
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-loan-maria',
+              accountId: 'acc_maria',
+              name: 'Maria',
+              text: 'The burner at our food stall broke. A loan for a new one, paid back every day from what we sell.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route(/\/messages\/m-loan-maria\/invoice$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc2100n1example', amountSats: 210 }),
+      });
+    });
+  }
+
+  test('state /welcome loan-lend', async ({ page }) => {
+    await seedLoanCard(page);
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await page.getByRole('button', { name: 'Lend' }).click();
+    await expect(page.getByLabel('Amount to lend')).toBeFocused();
+    await expect(page.getByLabel('Your reaction')).toBeVisible();
+    await shotScreen(page, 'state-welcome-loan-lend');
+  });
+
+  test('state /welcome loan-pay', async ({ page }) => {
+    await seedLoanCard(page);
+    await page.goto('/welcome?visual=wallet-pay-confirm');
+    await chooseForumView(page, 'All');
+    await page.getByRole('button', { name: 'Lend' }).click();
+    await page.getByLabel('Amount to lend').fill('210');
+    await page.getByLabel('Your reaction').fill('Count me in!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const payPage = page.locator('[data-reply-pay-page]');
+    await expect(payPage.getByText('You lend ₿210 · $0.21')).toBeVisible();
+    await expect(payPage.locator('[data-loan-notice="lend"]')).toHaveText(
+      'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
+    );
+    await expect(payPage.getByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeVisible();
+    await payPage.evaluate((node) => {
+      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-welcome-loan-pay');
+  });
+
+  test('state /welcome loan-pay-full', async ({ page }) => {
+    await seedLoanCard(page, 21000);
+    await page.goto('/welcome?visual=wallet-pay-confirm');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'React', exact: true }).click();
+    await page.getByLabel('Amount', { exact: true }).fill('210');
+    await page.getByLabel('Your reaction').fill('Thank you, Maria!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await form.getByRole('button', { name: 'Post' }).click();
+    const payPage = page.locator('[data-reply-pay-page]');
+    await expect(payPage.getByText('Pay ₿210 · $0.21')).toBeVisible();
+    await expect(payPage.locator('[data-loan-notice="full"]')).toHaveText(
+      'This loan is already fully funded. What you send now is a gift to Maria.',
+    );
+    await expect(payPage.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    await payPage.evaluate((node) => {
+      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    });
+    await shotScreen(page, 'state-welcome-loan-pay-full');
   });
 
   async function openWelcomeLoans(page: Page, body: ReturnType<typeof myLoans>): Promise<void> {

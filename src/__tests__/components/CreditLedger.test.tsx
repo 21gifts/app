@@ -581,4 +581,62 @@ describe('CreditLedger', () => {
     expect(await screen.findByText(/Darlehen voll gegeben/)).toBeTruthy();
     expect(screen.queryByText(/Kredit/)).toBeNull();
   });
+
+  it('hands every loaded ledger to onLedger, the first read and each refresh', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    try {
+      ledger(btc);
+      const onLedger = vi.fn();
+      renderWithLocale(<CreditLedger messageId="m1" onLedger={onLedger} />);
+      expect(await screen.findByText('Given')).toBeTruthy();
+      expect(onLedger).toHaveBeenCalled();
+      expect(
+        onLedger.mock.calls
+          .at(-1)?.[0]
+          .repayments.some((row: { status: string }) => row.status === 'due'),
+      ).toBe(true);
+      ledger({
+        ...btc,
+        repayments: btc.repayments.map((row) =>
+          row.status === 'due' ? { ...row, status: 'paid' as const } : row,
+        ),
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4000);
+      });
+      expect(
+        onLedger.mock.calls
+          .at(-1)?.[0]
+          .repayments.every((row: { status: string }) => row.status !== 'due'),
+      ).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('shows the paid-back share in the loan block of the open note from that one read', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo) => {
+      const url = String(input);
+      if (url.includes('/gifts/stats')) {
+        return new Response(JSON.stringify({ spendOverTime: [] }), { status: 200 });
+      }
+      return new Response(
+        JSON.stringify({
+          ...btc,
+          repayments: btc.repayments.map((row, index) => ({
+            ...row,
+            status: index === 0 ? 'paid' : 'scheduled',
+          })),
+        }),
+        { status: 200 },
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<ForumGoalBar sats={21} goalSats={21} goalRepayable messageId="m1" />);
+    expect(await screen.findByText('Fully funded · being repaid')).toBeTruthy();
+    expect(screen.getByRole('img', { name: '47% paid back' })).toBeTruthy();
+    expect(
+      fetchMock.mock.calls.filter(([input]) => String(input).includes('/repayment')),
+    ).toHaveLength(1);
+  });
 });

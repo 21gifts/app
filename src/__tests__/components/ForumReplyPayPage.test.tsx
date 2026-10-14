@@ -155,6 +155,71 @@ describe('ForumReplyPayPage in-app wallet', () => {
     expect(screen.queryByRole('img')).toBeNull();
   });
 
+  it('words a loan that still collects as lending, with the notice and a Lend button', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 210));
+    setWalletUsable('ready');
+    renderWithLocale(
+      <ForumReplyPayPage
+        preview="Count me in!"
+        amountSats={210}
+        pr="lnbc21n1example"
+        sparkInvoice={SPARK_INVOICE}
+        payWaiting={false}
+        rateDay={RATE_DAY}
+        onCancel={vi.fn()}
+        loan={{ name: 'Maria', days: 30, full: false }}
+      />,
+    );
+    expect(screen.getByText(/^You lend ₿210/)).toBeTruthy();
+    expect(screen.queryByText(/^Pay ₿210/)).toBeNull();
+    expect(
+      screen.getByText(
+        'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
+      ),
+    ).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+  });
+
+  it('keeps Lend without fiat when no rate is known', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 210));
+    setWalletUsable('ready');
+    renderWithLocale(
+      <ForumReplyPayPage
+        preview=""
+        amountSats={210}
+        pr="lnbc21n1example"
+        sparkInvoice={SPARK_INVOICE}
+        payWaiting={false}
+        rateDay={null}
+        onCancel={vi.fn()}
+        loan={{ name: 'Maria', days: 30, full: false }}
+      />,
+    );
+    expect(await screen.findByRole('button', { name: 'Lend ₿210' })).toBeTruthy();
+  });
+
+  it('keeps Pay and Send on a full loan and says the payment is a gift', async () => {
+    setWalletUsable('ready');
+    renderWithLocale(
+      <ForumReplyPayPage
+        preview=""
+        amountSats={21}
+        pr="lnbc21n1example"
+        sparkInvoice={SPARK_INVOICE}
+        payWaiting={false}
+        rateDay={RATE_DAY}
+        onCancel={vi.fn()}
+        loan={{ name: 'Maria', days: 30, full: true }}
+      />,
+    );
+    expect(screen.getByText(/^Pay ₿21/)).toBeTruthy();
+    expect(
+      screen.getByText('This loan is already fully funded. What you send now is a gift to Maria.'),
+    ).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+  });
+
   it('says the wallet is not available when it is not configured, and offers nothing else', () => {
     setWalletUsable('disabled');
     renderPage(SPARK_INVOICE);

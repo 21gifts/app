@@ -5,10 +5,16 @@ import { type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { LoanPayNotice, type LoanPayTarget } from '@/components/LoanPayNotice';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { WalletPay } from '@/components/WalletPay';
 import { IconButton } from '@/components/ui';
-import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
+import {
+  formatBitcoin,
+  formatFiatDisplay,
+  satsToFiatAmount,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 
 /**
  * In-place paid-reaction pay page that replaces the reply composer.
@@ -17,6 +23,10 @@ import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
  *
  * The pay slot pays from the member's in-app wallet (`sparkInvoice` when the
  * api issued one, otherwise `pr`). It shows no invoice QR.
+ *
+ * On a loan that still collects, the amount line reads **You lend**, the
+ * confirm button **Lend** with the amount, and {@link LoanPayNotice} says how it
+ * comes back. On a loan that is already full the notice says it is a gift.
  *
  * @param props - Preview, invoice, waiting flag, and cancel handler.
  * @returns The pay page element.
@@ -29,6 +39,7 @@ export function ForumReplyPayPage({
   payWaiting,
   rateDay,
   onCancel,
+  loan,
 }: {
   preview: string;
   amountSats: number;
@@ -37,10 +48,18 @@ export function ForumReplyPayPage({
   payWaiting: boolean;
   rateDay: FiatRateDay | null;
   onCancel: () => void;
+  /** Set when the note is a loan: borrower, term, and whether it is already fully funded. */
+  loan?: LoanPayTarget | undefined;
 }): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
+  const lending = loan !== undefined && !loan.full;
+  const priced = satsToFiatAmount(amountSats, rateDay, fiat);
+  const amountWithFiat =
+    priced === null
+      ? formatBitcoin(amountSats, numberFormat)
+      : `${formatBitcoin(amountSats, numberFormat)} · ${formatFiatDisplay(priced, fiat, numberFormat)}`;
   return (
     <div
       data-reply-pay-page=""
@@ -64,17 +83,19 @@ export function ForumReplyPayPage({
         </p>
       ) : null}
       <p className="px-10 text-center text-sm text-app-muted">
-        {t('forum.payConfirm', {
+        {t(lending ? 'forum.loan.payAmount' : 'forum.payConfirm', {
           amount: formatBitcoin(amountSats, numberFormat),
         })}
         {preferredFiatSuffix(amountSats, rateDay, fiat, numberFormat)}
       </p>
+      {loan !== undefined ? <LoanPayNotice {...loan} /> : null}
       <WalletPay
         sparkInvoice={sparkInvoice}
         pr={pr}
         amountSats={amountSats}
         rateDay={rateDay}
         flow="reaction"
+        confirmLabel={lending ? t('forum.loan.payLend', { amount: amountWithFiat }) : undefined}
       />
       {payWaiting ? (
         <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>

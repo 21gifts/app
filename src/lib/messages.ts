@@ -413,6 +413,24 @@ const en = {
   'forum.creditDay': 'Day {day}',
   'forum.creditFiatHow': 'The bitcoin amount is the rate on the day it is paid.',
   'forum.creditList': 'Repayment list',
+  'forum.loan.title': 'Loan request',
+  'forum.loan.lentOf': 'of {goal} lent',
+  'forum.loan.funded': 'Fully funded',
+  'forum.loan.fundedRepaying': 'Fully funded · being repaid',
+  'forum.loan.repaid': 'Paid back',
+  'forum.loan.paidBarAria': '{percent}% paid back',
+  'forum.loan.lend': 'Lend',
+  'forum.loan.amountLabel': 'Amount to lend',
+  'forum.loan.payAmount': 'You lend {amount}',
+  'forum.loan.payLend': 'Lend {amount}',
+  'forum.loan.payNotice':
+    'You are lending to {name}. Once the loan is fully funded, you get it back in {days} daily payments.',
+  'forum.loan.payNoticeOne':
+    'You are lending to {name}. Once the loan is fully funded, you get it back in one payment.',
+  'forum.loan.payNoticePlain':
+    'You are lending to {name}. Once the loan is fully funded, you get it back in daily payments.',
+  'forum.loan.payNoticeFull':
+    'This loan is already fully funded. What you send now is a gift to {name}.',
   'welcome.loanTitle': 'Your loan',
   'welcome.loansTitle': 'Your loans ({count})',
   'welcome.loanCollecting': 'Not fully funded yet.',
@@ -1774,6 +1792,24 @@ const de = {
   'forum.creditDay': 'Tag {day}',
   'forum.creditFiatHow': 'Der Bitcoin-Betrag ist der Kurs am Zahltag.',
   'forum.creditList': 'Rückzahlungsliste',
+  'forum.loan.title': 'Kreditanfrage',
+  'forum.loan.lentOf': 'von {goal} geliehen',
+  'forum.loan.funded': 'Vollständig finanziert',
+  'forum.loan.fundedRepaying': 'Vollständig finanziert · wird zurückgezahlt',
+  'forum.loan.repaid': 'Zurückgezahlt',
+  'forum.loan.paidBarAria': '{percent}% zurückgezahlt',
+  'forum.loan.lend': 'Leihen',
+  'forum.loan.amountLabel': 'Betrag zum Leihen',
+  'forum.loan.payAmount': 'Sie leihen {amount}',
+  'forum.loan.payLend': '{amount} leihen',
+  'forum.loan.payNotice':
+    'Sie leihen {name} Geld. Sobald der Kredit vollständig finanziert ist, erhalten Sie es in {days} täglichen Zahlungen zurück.',
+  'forum.loan.payNoticeOne':
+    'Sie leihen {name} Geld. Sobald der Kredit vollständig finanziert ist, erhalten Sie es in einer Zahlung zurück.',
+  'forum.loan.payNoticePlain':
+    'Sie leihen {name} Geld. Sobald der Kredit vollständig finanziert ist, erhalten Sie es in täglichen Zahlungen zurück.',
+  'forum.loan.payNoticeFull':
+    'Dieser Kredit ist bereits vollständig finanziert. Was Sie jetzt senden, ist ein Geschenk an {name}.',
   'welcome.loanTitle': 'Ihr Kredit',
   'welcome.loanCollecting': 'Noch nicht vollständig finanziert.',
   'welcome.loanFunded': 'Vollständig finanziert.',
@@ -3168,6 +3204,24 @@ const es = {
   'forum.creditDay': 'Día {day}',
   'forum.creditFiatHow': 'El monto en bitcoin es el tipo de cambio del día del pago.',
   'forum.creditList': 'Lista de devolución',
+  'forum.loan.title': 'Solicitud de préstamo',
+  'forum.loan.lentOf': 'de {goal} prestado',
+  'forum.loan.funded': 'Totalmente financiado',
+  'forum.loan.fundedRepaying': 'Totalmente financiado · en devolución',
+  'forum.loan.repaid': 'Devuelto',
+  'forum.loan.paidBarAria': '{percent}% devuelto',
+  'forum.loan.lend': 'Prestar',
+  'forum.loan.amountLabel': 'Importe a prestar',
+  'forum.loan.payAmount': 'Prestas {amount}',
+  'forum.loan.payLend': 'Prestar {amount}',
+  'forum.loan.payNotice':
+    'Le prestas a {name}. Cuando el préstamo esté totalmente financiado, lo recibes de vuelta en {days} pagos diarios.',
+  'forum.loan.payNoticeOne':
+    'Le prestas a {name}. Cuando el préstamo esté totalmente financiado, lo recibes de vuelta en un pago.',
+  'forum.loan.payNoticePlain':
+    'Le prestas a {name}. Cuando el préstamo esté totalmente financiado, lo recibes de vuelta en pagos diarios.',
+  'forum.loan.payNoticeFull':
+    'Este préstamo ya está totalmente financiado. Lo que envíes ahora es un regalo para {name}.',
   'welcome.loanTitle': 'Tu préstamo',
   'welcome.loanCollecting': 'Aún no está totalmente financiado.',
   'welcome.loanFunded': 'Totalmente financiado.',
@@ -4536,6 +4590,24 @@ const fil = {
   'forum.creditDay': 'Araw {day}',
   'forum.creditFiatHow': 'Ang bitcoin ay ang palitan sa araw ng bayad.',
   'forum.creditList': 'Listahan ng ibabalik',
+  'forum.loan.title': 'Hiling na pautang',
+  'forum.loan.lentOf': 'sa {goal} ang naipahiram',
+  'forum.loan.funded': 'Buo na ang pondo',
+  'forum.loan.fundedRepaying': 'Buo na ang pondo · binabayaran na',
+  'forum.loan.repaid': 'Bayad na',
+  'forum.loan.paidBarAria': '{percent}% bayad na',
+  'forum.loan.lend': 'Magpahiram',
+  'forum.loan.amountLabel': 'Halagang ipapahiram',
+  'forum.loan.payAmount': 'Magpapahiram ka ng {amount}',
+  'forum.loan.payLend': 'Ipahiram ang {amount}',
+  'forum.loan.payNotice':
+    'Nagpapahiram ka kay {name}. Kapag buo na ang pondo ng utang, maibabalik ito sa iyo sa {days} araw-araw na bayad.',
+  'forum.loan.payNoticeOne':
+    'Nagpapahiram ka kay {name}. Kapag buo na ang pondo ng utang, maibabalik ito sa iyo sa isang bayad.',
+  'forum.loan.payNoticePlain':
+    'Nagpapahiram ka kay {name}. Kapag buo na ang pondo ng utang, maibabalik ito sa iyo sa araw-araw na bayad.',
+  'forum.loan.payNoticeFull':
+    'Buo na ang pondo ng utang na ito. Ang ipapadala mo ngayon ay regalo kay {name}.',
   'welcome.loanTitle': 'Ang iyong utang',
   'welcome.loanCollecting': 'Hindi pa buo ang pondo.',
   'welcome.loanFunded': 'Buo na ang pondo.',

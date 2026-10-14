@@ -14381,7 +14381,7 @@ test('Function: CreditLedger — a credit note lists who gave and who is paid ba
   });
   await page.goto(`/messages/${id}`);
   await expect(page.getByLabel('Given').getByText('Bea @bea')).toBeVisible();
-  await expect(page.getByLabel('Paid back')).toBeVisible();
+  await expect(page.getByLabel('Paid back', { exact: true })).toBeVisible();
   await expect(page.getByText(/Each share is one bitcoin payment/)).toBeVisible();
   await expect(page.getByRole('img', { name: /Sep 27/ })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Repayment list' })).toBeVisible();

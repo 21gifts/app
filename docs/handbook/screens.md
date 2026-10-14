@@ -2223,7 +2223,7 @@ On **All**: a top-level English note defined as **₱200.00**, with frozen **₿
 
 ### Variant: goal-credit
 
-On **All**: top-level Ada note with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00** and the note amount **₿10'500 · $10.50**. A **Loan** tag beside the name explains the credit when pressed. Under the ask: **To repay per day: ₿700 · $0.70 per day for 30 days.** Progress bar at **50%**. The day list is not on this card. **Repayment list** opens /messages/<id>/repayment-list. Composer **Send a post** / **Ask for money** pill visible.
+On **All**: top-level note by another member, Maria (`accountId: acc_maria`), with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. A **Loan** tag beside the name explains the credit when pressed. The ask is defined in bitcoin, so the loan block under the text: a small muted **Loan request** label with the hand-and-coins icon and the ask **₿21'000 · $21.00** on the right, the orange bar at **50%**, and **₿10'500 · $10.50 of ₿21'000 · $21.00 lent**. Its bottom row has **Repayment list** (a link to /messages/<id>/repayment-list) on the left and a secondary **Lend** button with the same icon on the right. The repayment plan is not on this card, and the feed reads no repayment ledger for it. The note amount is **₿10'500 · $10.50**. Composer **Send a post** / **Ask for money** pill visible.
 
 ![21.gifts welcome goal credit](images/welcome-goal-credit.png)
 
@@ -2241,9 +2241,27 @@ On **All**: a top-level Ada note with `sats: 10500` and `goalSats: 21000`, after
 
 ### Variant: repay-today
 
-On **All**: Ada's own filled credit (`accountId` matches the signed-in account, `sats` equals `goalSats`). **Repay your loan** is a link to `/loans/repay`. **Repayment list** is also a link. The day list is not on this card.
+On **All**: Ada's own filled credit (`accountId` matches the signed-in account, `sats` equals `goalSats`). The loan block reads **Fully funded** under a full orange bar at **100%**; the feed does not read the repayment ledger, so it does not say how much is paid back. There is no **Lend** on a full loan or on her own note. **Repay your loan** is a link to `/loans/repay`. **Repayment list** is also a link. The day list is not on this card.
 
 ![21.gifts welcome repay today](images/welcome-repay-today.png)
+
+### Variant: loan-lend
+
+Maria's loan that still collects (`sats: 10500` of `goalSats: 21000`, 30 days), after **Lend** in its loan block is pressed. The card opens its money reaction: the amount field reads **Amount to lend** and has the focus, then the reaction line and **Post**.
+
+![21.gifts welcome loan lend](images/welcome-loan-lend.png)
+
+### Variant: loan-pay
+
+The same loan after **₿210** and `Count me in!` were posted. The pay step reads **You lend ₿210 · $0.21**, then a muted note **You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.** and the wallet button **Lend ₿210 · $0.21** (the in-app wallet confirm view).
+
+![21.gifts welcome loan pay](images/welcome-loan-pay.png)
+
+### Variant: loan-pay-full
+
+Maria's loan once it is full (`sats` equals `goalSats`): there is no **Lend**, so the money reaction is opened with **React** and keeps the label **Amount**. After **₿210** is posted the pay step reads **Pay ₿210 · $0.21**, the note says **This loan is already fully funded. What you send now is a gift to Maria.**, and the wallet button stays **Send**.
+
+![21.gifts welcome loan pay full](images/welcome-loan-pay-full.png)
 
 ### Variant: ask-credit-amount
 
@@ -4389,9 +4407,27 @@ Identity card; posts pressed; the listed English post is defined as **$1.50** wi
 
 ### Variant: posts-open-goal-credit
 
-Identity card; posts pressed; the listed post has `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, a **Loan** tag and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. The post offers **Repayment list**, a link to /messages/<id>/repayment-list. The day list is not on this card.
+Identity card; posts pressed; the listed post has `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the loan block under the text: a small muted **Loan request** label with the hand-and-coins icon and the ask **₿21'000 · $21.00** on the right, the orange bar at **50%**, and **₿10'500 · $10.50 of ₿21'000 · $21.00 lent**, the note amount **₿10'500 · $10.50**, and a **Loan** tag. The block offers **Repayment list**, a link to /messages/<id>/repayment-list, and **Lend**. The repayment plan and the day list are not on this card.
 
 ![21.gifts member posts open with credit goal](images/members-posts-open-goal-credit.png)
+
+### Variant: posts-open-loan-lend
+
+Signed-in Ada on Carol's profile; posts pressed; Carol's one post is a loan that still collects (`sats: 10500` of `goalSats: 21000`, 30 days). After **Lend** in its loan block is pressed, the card opens its money reaction: the amount field reads **Amount to lend** and has the focus, then the reaction line and **Post**.
+
+![21.gifts member posts loan lend](images/members-posts-open-loan-lend.png)
+
+### Variant: posts-open-loan-pay
+
+The same loan after **₿210** and `Count me in!` were posted. A profile card has no reaction pay page, so the in-card pay sheet opens: **You lend ₿210 · $0.21**, the muted note **You are lending to Carol. Once the loan is fully funded, you get it back in 30 daily payments.**, and the wallet button **Lend ₿210 · $0.21** (the in-app wallet confirm view).
+
+![21.gifts member posts loan pay](images/members-posts-open-loan-pay.png)
+
+### Variant: posts-open-loan-pay-full
+
+Carol's loan once it is full (`sats` equals `goalSats`): the loan block reads **Fully funded** and offers no **Lend**, so the money reaction is opened with **React** and keeps the label **Amount**. After **₿210** is posted, the in-card pay sheet reads **Pay ₿210 · $0.21**, the note says **This loan is already fully funded. What you send now is a gift to Carol.**, and the wallet button stays **Send**.
+
+![21.gifts member posts loan pay full](images/members-posts-open-loan-pay-full.png)
 
 ### Variant: posts-open-loan-tag-open
 
@@ -4407,7 +4443,7 @@ Same post as **posts-open-goal-110**, after **Donation** is pressed. A line unde
 
 ### Variant: posts-open-repay-today
 
-Identity card of the signed-in member; posts pressed; the listed post is her own filled credit (`accountId` matches the signed-in account, `sats` equals `goalSats`). **Repay your loan** is a link to `/loans/repay`. **Repayment list** is also a link. The day list is not on this card.
+Identity card of the signed-in member; posts pressed; the listed post is her own filled credit (`accountId` matches the signed-in account, `sats` equals `goalSats`). The loan block reads **Fully funded** at **100%**, without **Lend**. **Repay your loan** is a link to `/loans/repay`. **Repayment list** is also a link. The day list is not on this card.
 
 ![21.gifts member posts repay today](images/members-posts-open-repay-today.png)
 
@@ -4503,7 +4539,7 @@ Identity card; **3 shops** pressed; one listed shop note; muted `Showing the lat
 
 ### Variant: credits-truncated
 
-Identity card; **3 credits** pressed; one listed credit note `A credit from Carol.` with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, a **Loan** tag and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. The note offers **Repayment list**, a link to /messages/<id>/repayment-list. The day list is not on this card. Muted `Showing the latest 1 of 3.`; no pinned profile-note card.
+Identity card; **3 credits** pressed; one listed credit note `A credit from Carol.` with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the loan block under the text: a small muted **Loan request** label with the hand-and-coins icon and the ask **₿21'000 · $21.00** on the right, the orange bar at **50%**, and **₿10'500 · $10.50 of ₿21'000 · $21.00 lent**, the note amount **₿10'500 · $10.50**, and a **Loan** tag. The block offers **Repayment list**, a link to /messages/<id>/repayment-list, and **Lend**. The repayment plan and the day list are not on this card. Muted `Showing the latest 1 of 3.`; no pinned profile-note card.
 
 ![21.gifts member credits truncated](images/members-credits-truncated.png)
 
@@ -6578,7 +6614,7 @@ Unsigned permalink of an English note defined as **$1.50** with frozen **₿1'00
 
 ### Variant: goal-credit
 
-Unsigned permalink of a top-level Ada note with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, a **Loan** tag and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. No composer Ask.
+Unsigned permalink of a top-level Ada note with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the note amount is **₿10'500 · $10.50** and the loan block under the text: a small muted **Loan request** label with the hand-and-coins icon and the ask **₿21'000 · $21.00** on the right, the orange bar at **50%**, and **₿10'500 · $10.50 of ₿21'000 · $21.00 lent**, with a **Loan** tag. Signed out there is no **Lend**. No composer Ask.
 
 ![21.gifts public message credit goal](images/messages-id-goal-credit.png)
 
@@ -6596,9 +6632,33 @@ Same unsigned note as **goal-110**, after **Donation** is pressed. A line under 
 
 ### Variant: credit-ledger
 
-Unsigned permalink of a filled credit. Under the ask, **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows a chart from 27 Sep 2026 to 28 Sep 2026, bars for each day's amount and a line from the whole debt down to zero, and **Each share is one bitcoin payment to that person.** The day rows are not on this page. **Repayment list** links to /messages/<id>/repayment-list.
+Unsigned permalink of a filled credit. The loan block reads **Fully funded · being repaid** with a green bar at the paid-back share (**0%**: no share is paid yet); the note page takes that share from the ledger it already reads below. Under the block, **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows a chart from 27 Sep 2026 to 28 Sep 2026, bars for each day's amount and a line from the whole debt down to zero, and **Each share is one bitcoin payment to that person.** The day rows are not on this page. **Repayment list** links to /messages/<id>/repayment-list.
 
 ![21.gifts public message credit ledger](images/messages-id-credit-ledger.png)
+
+### Variant: loan-repaid
+
+Unsigned permalink of a filled credit whose two shares are both paid. The loan block shows a full green bar at **100%** and **Paid back** in green with a check. Below it, **Given** lists Bea @bea and **Paid back** shows the plan chart from 27 Sep 2026 to 28 Sep 2026; the day rows are on the repayment list, not on this page.
+
+![21.gifts public message loan repaid](images/messages-id-loan-repaid.png)
+
+### Variant: loan-lend
+
+Signed-in permalink of Maria's loan that still collects (`sats: 10500` of `goalSats: 21000`, 30 days). The note page opens the card already, so pressing **Lend** in the loan block puts the focus in the reaction's amount field **Amount to lend**.
+
+![21.gifts public message loan lend](images/messages-id-loan-lend.png)
+
+### Variant: loan-pay
+
+Signed-in permalink of Maria's loan that still collects (`sats: 10500` of `goalSats: 21000`, 30 days), after **Lend**, **₿210** and `Count me in!` were posted. The in-card pay sheet reads **You lend ₿210 · $0.21**, then the muted note **You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.** and the wallet button **Lend ₿210 · $0.21**.
+
+![21.gifts public message loan pay](images/messages-id-loan-pay.png)
+
+### Variant: loan-pay-full
+
+Signed-in permalink of Maria's loan once it is full (`sats` equals `goalSats`): the loan block reads **Fully funded** and offers no **Lend**, and the open card's amount field keeps the label **Amount**. After **₿210** is posted, the in-card pay sheet reads **Pay ₿210 · $0.21**, the note says **This loan is already fully funded. What you send now is a gift to Maria.**, and the wallet button stays **Send**.
+
+![21.gifts public message loan pay full](images/messages-id-loan-pay-full.png)
 
 ### Variant: photos
 

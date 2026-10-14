@@ -8774,3 +8774,243 @@ describe('ForumBoard writer', () => {
     );
   });
 });
+
+describe('ForumBoard loan block', () => {
+  const LOAN: ForumMessage = {
+    ...SAMPLE,
+    id: 'loan1',
+    name: 'Maria',
+    accountId: 'acc-maria',
+    text: 'A new burner for the stall',
+    sats: 10_500,
+    goalSats: 21_000,
+    goalRepayable: true,
+    goalTermDays: 30,
+  };
+
+  function board(props: Partial<ForumBoardProps> = {}): ReactElement {
+    return (
+      <ForumBoard
+        messages={[LOAN]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        viewerAccountId="acc-ada"
+        {...modeProps('all')}
+        {...props}
+      />
+    );
+  }
+
+  afterEach(() => {
+    delete document.documentElement.dataset['localSunday'];
+  });
+
+  /** A host that opens and closes the card in the same click, unless it refuses to. */
+  function Host({
+    refuse = false,
+    repliesLoading = false,
+    replies = null,
+  }: {
+    refuse?: boolean;
+    repliesLoading?: boolean;
+    replies?: ForumMessage[] | null;
+  }): ReactElement {
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+    return board({
+      expandedId,
+      repliesLoading,
+      replies,
+      onToggleExpand: (id) => {
+        if (!refuse) {
+          setExpandedId((current) => (current === id ? null : id));
+        }
+      },
+    });
+  }
+
+  function amountField(): HTMLElement | null {
+    return document.getElementById('forum-reply-amount');
+  }
+
+  it('opens the money reaction from Lend and puts the focus in its amount field', () => {
+    const view = renderWithLocale(<Host repliesLoading />);
+    expect(screen.getByRole('region', { name: 'Loan request' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    expect(screen.getByRole('button', { name: 'Hide reactions' })).toBeTruthy();
+    expect(document.activeElement).not.toBe(amountField());
+    view.rerender(<Host replies={[]} />);
+    expect(document.activeElement).toBe(amountField());
+    expect(screen.getByLabelText('Amount to lend')).toBe(amountField());
+  });
+
+  it('focuses the amount field of an open card and reveals its form in the scrollport', () => {
+    const onToggleExpand = vi.fn();
+    renderWithLocale(
+      <AppShell mode="fill">
+        {board({ onToggleExpand, expandedId: 'loan1', replies: [] })}
+      </AppShell>,
+    );
+    const port = document.querySelector('[data-scrollport]');
+    if (!(port instanceof HTMLElement)) {
+      throw new Error('missing scrollport');
+    }
+    const form = amountField()?.closest('form');
+    if (!(form instanceof HTMLElement)) {
+      throw new Error('missing reaction form');
+    }
+    vi.spyOn(port, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 400, 300));
+    vi.spyOn(form, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 500, 400, 100));
+    let top = 0;
+    Object.defineProperty(port, 'scrollTop', {
+      configurable: true,
+      get: () => top,
+      set: (value: number) => {
+        top = value;
+      },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    expect(onToggleExpand).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(amountField());
+    expect(top).toBeGreaterThan(0);
+  });
+
+  it('drops the Lend intent when the card is closed before its form is ready', () => {
+    const view = renderWithLocale(<Host repliesLoading />);
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    view.rerender(<Host replies={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(amountField()).not.toBeNull();
+    expect(document.activeElement).not.toBe(amountField());
+  });
+
+  it('drops the Lend intent when the host refuses to open the card', () => {
+    const view = renderWithLocale(<Host refuse replies={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    expect(amountField()).toBeNull();
+    view.rerender(<Host replies={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(amountField()).not.toBeNull();
+    expect(document.activeElement).not.toBe(amountField());
+  });
+
+  it('drops the Lend focus when the amount field cannot take it', () => {
+    const view = renderWithLocale(board({ expandedId: 'loan1', replies: [], replyPosting: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
+    expect(document.activeElement).not.toBe(document.getElementById('forum-reply-amount'));
+    view.rerender(board({ expandedId: 'loan1', replies: [], replyPosting: false }));
+    expect(document.activeElement).not.toBe(document.getElementById('forum-reply-amount'));
+  });
+
+  it.each([
+    ['on the viewer’s own loan', { viewerAccountId: 'acc-maria' }, LOAN],
+    ['on a read-only board', { readOnly: true }, LOAN],
+    ['when the author cannot receive', {}, { ...LOAN, payable: false }],
+    ['on a deleted loan', {}, { ...LOAN, deletedAt: '2026-09-01T00:00:00.000Z' }],
+  ])('offers no Lend %s', (_label, props, message) => {
+    renderWithLocale(board({ ...props, messages: [message] }));
+    expect(screen.getByRole('region', { name: 'Loan request' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+  });
+
+  it('offers no Lend on the local Sunday', () => {
+    document.documentElement.dataset['localSunday'] = '1';
+    renderWithLocale(board());
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+  });
+
+  it('keeps the plain amount label on a loan that is already full', () => {
+    renderWithLocale(
+      board({ messages: [{ ...LOAN, sats: 21_000 }], expandedId: 'loan1', replies: [] }),
+    );
+    expect(screen.getByLabelText('Amount')).toBe(document.getElementById('forum-reply-amount'));
+    expect(screen.queryByLabelText('Amount to lend')).toBeNull();
+  });
+
+  it('lets the sats, not the fiat percent, decide between lending and a gift', () => {
+    const fiatLoan = {
+      ...LOAN,
+      goalCurrency: 'USD' as const,
+      goalAmount: '20',
+    };
+    const view = renderWithLocale(
+      board({
+        messages: [{ ...fiatLoan, sats: 21_000, amountUsd: '10.00' }],
+        expandedId: 'loan1',
+        replies: [],
+      }),
+    );
+    expect(screen.getByLabelText('Amount')).toBe(document.getElementById('forum-reply-amount'));
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+    view.rerender(
+      board({
+        messages: [{ ...fiatLoan, sats: 5_000, amountUsd: '25.00' }],
+        expandedId: 'loan1',
+        replies: [],
+      }),
+    );
+    expect(screen.getByLabelText('Amount to lend')).toBe(
+      document.getElementById('forum-reply-amount'),
+    );
+    expect(screen.getByRole('button', { name: 'Lend' })).toBeTruthy();
+  });
+
+  it('words the reaction pay page of a loan as lending', () => {
+    renderWithLocale(
+      board({
+        expandedId: 'loan1',
+        replies: [],
+        replyPayPreview: 'Count me in!',
+        payMessageId: 'loan1',
+        payHost: 'card',
+        payInvoice: { messageId: 'loan1', pr: 'lnbc1', amountSats: 210 },
+      }),
+    );
+    expect(screen.getByText(/^You lend ₿210/)).toBeTruthy();
+    expect(
+      screen.getByText(
+        'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('words the note page pay sheet of a full loan as a gift', () => {
+    renderWithLocale(
+      board({
+        messages: [{ ...LOAN, sats: 21_000 }],
+        expandedId: 'loan1',
+        replies: [],
+        payMessageId: 'loan1',
+        payHost: 'card',
+        payInvoice: { messageId: 'loan1', pr: 'lnbc1', amountSats: 210 },
+      }),
+    );
+    expect(screen.getByText(/^Pay ₿210/)).toBeTruthy();
+    expect(
+      screen.getByText('This loan is already fully funded. What you send now is a gift to Maria.'),
+    ).toBeTruthy();
+  });
+
+  it('writes no loan sentence on a donation', () => {
+    renderWithLocale(
+      board({
+        messages: [{ ...LOAN, goalRepayable: undefined }],
+        expandedId: 'loan1',
+        replies: [],
+        payMessageId: 'loan1',
+        payHost: 'card',
+        payInvoice: { messageId: 'loan1', pr: 'lnbc1', amountSats: 210 },
+      }),
+    );
+    expect(document.querySelector('[data-loan-notice]')).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Loan request' })).toBeNull();
+  });
+});
