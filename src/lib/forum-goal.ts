@@ -123,7 +123,8 @@ const COLLECTED_BY_CODE = {
  * other Ask uses {@link forumGoalPercent} of the sats.
  *
  * @param note - Collected sats, goal, definition, and payment snapshots.
- * @returns Floored percent for the label; 100 or more means fully funded.
+ * @returns Floored percent for the label and the bar. Whether a loan is funded follows the sats
+ *   (`sats >= goalSats`), not this percent.
  */
 export function forumAskPercent(note: ForumAskProgress): number {
   const code = note.goalCurrency;

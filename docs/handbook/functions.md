@@ -1338,7 +1338,7 @@ Integer percent of a fiat Ask from decimal strings. Uncapped. Scales collected a
 
 Integer percent of a note's Ask in the unit it was defined in. Uncapped.
 
-- **Purpose:** One rule for the goal bar and for the card's loan wording: a fiat Ask (USD, CHF, EUR, or PHP with a usable `goalAmount`) uses `forumFiatGoalPercent` of the payment snapshot in that code; every other Ask uses `forumGoalPercent` of the sats. It is the label and the bar only: whether a loan is funded follows the sats, as the api counts it.
+- **Purpose:** The percent label and bar of an Ask (the goal bar and the loan block): a fiat Ask (USD, CHF, EUR, or PHP with a usable `goalAmount`) uses `forumFiatGoalPercent` of the payment snapshot in that code; every other Ask uses `forumGoalPercent` of the sats. It is the label and the bar only: whether a loan is funded follows the sats, as the api counts it.
 - **Inputs:** `ForumAskProgress`: `sats`, `goalSats`, optional `goalCurrency`, `goalAmount`, and the payment snapshots `amountUsd` / `amountChf` / `amountEur` / `amountPhp`.
 - **Returns / side effects:** Floored percent. No I/O.
 - **Used by:** `ForumGoalBar` (the label and the bar of the goal bar and the loan block).
