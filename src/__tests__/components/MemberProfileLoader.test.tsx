@@ -22,6 +22,7 @@ vi.mock('@/lib/api', () => ({
   fetchMember: vi.fn(),
   fetchMemberActivity: vi.fn(),
   fetchMemberPosts: vi.fn(),
+  fetchMemberShops: vi.fn(),
   fetchMemberReplies: vi.fn(),
   fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
   fetchFxSpot: vi

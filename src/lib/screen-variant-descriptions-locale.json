@@ -634,6 +634,16 @@
     "es": "Se pulsó 1 reacción. El flujo bajo la tarjeta muestra Cargando…. Aún no hay texto de nota.",
     "fil": "Pinindot ang 1 reaksyon. Ipinapakita ng daloy sa ilalim ng kard ang Naglo-load…. Wala pang teksto ng nota."
   },
+  "/messages/[id]/author:shops-loading": {
+    "de": "1 Shop gedrückt. Der Feed unter der Karte zeigt Wird geladen…. Noch kein Notiztext.",
+    "es": "Se pulsó 1 tienda. El feed bajo la tarjeta muestra Cargando…. Aún no hay texto de nota.",
+    "fil": "Pinindot ang 1 tindahan. Ang feed sa ilalim ng kard ay nagpapakita ng Naglo-load…. Wala pang teksto ng nota."
+  },
+  "/messages/[id]/author:credits-loading": {
+    "de": "1 Kredit gedrückt. Der Feed unter der Karte zeigt Wird geladen…. Noch kein Notiztext.",
+    "es": "Se pulsó 1 crédito. El feed bajo la tarjeta muestra Cargando…. Aún no hay texto de nota.",
+    "fil": "Pinindot ang 1 utang. Ang feed sa ilalim ng kard ay nagpapakita ng Naglo-load…. Wala pang teksto ng nota."
+  },
   "/stats:error": {
     "de": "Abruf fehlgeschlagen. Text Could not load gift stats. Please try again. und Try again.",
     "es": "Falló la obtención. Texto Could not load gift stats. Please try again. y Try again.",
@@ -769,6 +779,16 @@
     "es": "1 reacción está pulsada y la lista muestra A reply from Ada. Aguja A reply from Ada.",
     "fil": "1 reaksyon ang nakapindot at ipinapakita ng listahan ang A reply from Ada. Karayom A reply from Ada."
   },
+  "/profile:shops-open": {
+    "de": "1 Shop ist gedrückt und der Feed zeigt A shop from Ada. Nadel A shop from Ada.",
+    "es": "1 tienda está pulsada y la lista muestra A shop from Ada. Aguja A shop from Ada.",
+    "fil": "1 tindahan ang nakapindot at ipinapakita ng listahan ang A shop from Ada. Karayom A shop from Ada."
+  },
+  "/profile:credits-open": {
+    "de": "1 Kredit ist gedrückt und der Feed zeigt A credit from Ada. Nadel A credit from Ada.",
+    "es": "1 crédito está pulsado y la lista muestra A credit from Ada. Aguja A credit from Ada.",
+    "fil": "1 utang ang nakapindot at ipinapakita ng listahan ang A credit from Ada. Karayom A credit from Ada."
+  },
   "/grants/applications:empty": {
     "de": "Personal (Gründer) hat die Liste mit null offenen Bewerbungen geladen. Keine offenen Bewerbungen.",
     "es": "El personal (fundador) cargó la lista con cero solicitudes abiertas. No hay solicitudes abiertas.",
@@ -868,6 +888,16 @@
     "de": "Identitätskarte; Antwortenanzahl gedrückt; die Beitragsliste zeigt Wird geladen…; keine angeheftete Profilnotiz-Karte.",
     "es": "Tarjeta de identidad; se pulsó el recuento de respuestas; el listado muestra Cargando…; no hay tarjeta fijada de nota de perfil.",
     "fil": "Kard ng pagkakakilanlan; pinindot ang bilang ng mga sagot; nagpapakita ang listahan ng Naglo-load…; walang nakaangkla na kard ng tala sa pagkakakilanlan."
+  },
+  "/members/[accountId]:shops-loading": {
+    "de": "Identitätskarte; 1 Shop gedrückt; Feed zeigt Wird geladen…; keine angeheftete Profilnotiz-Karte.",
+    "es": "Tarjeta de identidad; 1 tienda pulsada; la lista muestra Cargando…; ninguna tarjeta de nota de perfil fijada.",
+    "fil": "Talaan ng pagkakakilanlan; nakapindot ang 1 tindahan; ipinapakita ng listahan ang Naglo-load…; walang nakaangkla na talaan ng tala sa profile."
+  },
+  "/members/[accountId]:credits-loading": {
+    "de": "Identitätskarte; 1 Kredit gedrückt; Feed zeigt Wird geladen…; keine angeheftete Profilnotiz-Karte.",
+    "es": "Tarjeta de identidad; 1 crédito pulsado; la lista muestra Cargando…; ninguna tarjeta de nota de perfil fijada.",
+    "fil": "Talaan ng pagkakakilanlan; nakapindot ang 1 utang; ipinapakita ng listahan ang Naglo-load…; walang nakaangkla na talaan ng tala sa profile."
   },
   "/pos/amount:loading": {
     "de": "Die Kassenanfrage ist noch nicht zurück. Überschrift Betrag und der Ladekreis. Kein Tastenfeld und kein QR.",
@@ -1014,6 +1044,16 @@
     "es": "Tarjeta de identidad; contador de respuestas pulsado; error del listado e Intentar de nuevo; ninguna tarjeta de nota de perfil fijada.",
     "fil": "Kard ng pagkakakilanlan; pinindot ang bilang ng mga sagot; error sa listahan at Subukan ulit; walang nakaangkla na kard ng tala sa pagkakakilanlan."
   },
+  "/members/[accountId]:shops-error": {
+    "de": "Identitätskarte; 1 Shop gedrückt; Feed-Fehler Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen; keine angeheftete Profilnotiz-Karte.",
+    "es": "Tarjeta de identidad; 1 tienda pulsada; error del flujo No se pudieron cargar los mensajes. Inténtalo de nuevo. e Intentar de nuevo; ninguna tarjeta de nota de perfil fijada.",
+    "fil": "Suleras ng pagkakakilanlan; pinindot ang 1 tindahan; error sa daloy Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit; walang nakaangkla na suleras ng tala sa profile."
+  },
+  "/members/[accountId]:credits-error": {
+    "de": "Identitätskarte; 1 Kredit gedrückt; Feed-Fehler Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen; keine angeheftete Profilnotiz-Karte.",
+    "es": "Tarjeta de identidad; 1 crédito pulsado; error del flujo No se pudieron cargar los mensajes. Inténtalo de nuevo. e Intentar de nuevo; ninguna tarjeta de nota de perfil fijada.",
+    "fil": "Suleras ng pagkakakilanlan; pinindot ang 1 utang; error sa daloy Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit; walang nakaangkla na suleras ng tala sa profile."
+  },
   "/members/[accountId]:about-translate": {
     "de": "Angemeldet auf /members/:id mit einem deutschen Über mich. Übersetzen ist unter dem Über-mich-Text sichtbar.",
     "es": "Sesión iniciada en /members/:id con un Sobre mí en alemán. Traducir está visible bajo el cuerpo de Sobre mí.",
@@ -1029,6 +1069,16 @@
     "es": "Se pulsó 1 reacción. El listado muestra No se pudieron cargar los mensajes. Inténtalo de nuevo. e Intentar de nuevo.",
     "fil": "Pinindot ang 1 reaksyon. Ipinapakita ng listahan Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit."
   },
+  "/messages/[id]/author:shops-error": {
+    "de": "1 Shop ist gedrückt. Der Feed zeigt Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen.",
+    "es": "1 tienda está pulsada. El listado muestra No se pudieron cargar los mensajes. Inténtalo de nuevo. e Intentar de nuevo.",
+    "fil": "Nakapindot ang 1 tindahan. Ipinapakita ng feed ang Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit."
+  },
+  "/messages/[id]/author:credits-error": {
+    "de": "1 Kredit ist gedrückt. Der Feed zeigt Nachrichten konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen.",
+    "es": "1 crédito está pulsado. El listado muestra No se pudieron cargar los mensajes. Inténtalo de nuevo. e Intentar de nuevo.",
+    "fil": "Nakapindot ang 1 utang. Ipinapakita ng feed ang Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit."
+  },
   "/messages/[id]/author:posts-truncated": {
     "de": "2 Beiträge gedrückt. Eine Notiz, Robin wrote a note, und die gedämpfte Zeile Es werden die neuesten 1 von 2 angezeigt.",
     "es": "Se pulsaron 2 publicaciones. Una nota, Robin wrote a note, y la línea atenuada Mostrando las últimas 1 de 2.",
@@ -1038,6 +1088,16 @@
     "de": "Identitätskarte; Antworten gedrückt; keine angeheftete Profilnotiz-Karte; Antwortkarte A reply from Carol.",
     "es": "Tarjeta de identidad; respuestas pulsadas; ninguna tarjeta de nota de perfil fijada; tarjeta de respuesta A reply from Carol.",
     "fil": "Kard ng pagkakakilanlan; pinindot ang mga sagot; walang nakaangkla na kard ng tala sa pagkakakilanlan; kard ng sagot A reply from Carol."
+  },
+  "/members/[accountId]:shops-open": {
+    "de": "Identitätskarte; 1 Shop gedrückt; keine angeheftete Profilnotiz-Karte; Shop-Karte A shop from Carol.",
+    "es": "Tarjeta de identidad; 1 tienda pulsada; ninguna tarjeta de nota de perfil fijada; tarjeta de tienda A shop from Carol.",
+    "fil": "Kard ng pagkakakilanlan; pinindot ang 1 tindahan; walang nakaangkla na kard ng tala sa pagkakakilanlan; kard ng tindahan A shop from Carol."
+  },
+  "/members/[accountId]:credits-open": {
+    "de": "Identitätskarte; 1 Kredit gedrückt; keine angeheftete Profilnotiz-Karte; Kredit-Karte A credit from Carol.",
+    "es": "Tarjeta de identidad; 1 crédito pulsado; ninguna tarjeta de nota de perfil fijada; tarjeta de crédito A credit from Carol.",
+    "fil": "Kard ng pagkakakilanlan; pinindot ang 1 utang; walang nakaangkla na kard ng tala sa pagkakakilanlan; kard ng utang A credit from Carol."
   },
   "/grants/applications/[accountId]:deciding": {
     "de": "Personal (Gründer) Ablehnen-POST unterwegs. Nein deaktiviert mit einem Drehsymbol; Antrag weiter sichtbar.",
@@ -1239,6 +1299,16 @@
     "es": "Se pulsaron 2 reacciones. Una nota, Robin wrote a reaction, y la línea atenuada Mostrando las últimas 1 de 2.",
     "fil": "Pinindot ang 2 reaksyon. Isang tala, Robin wrote a reaction, at ang pinatahimik na linya Ipinapakita ang pinakabago 1 sa 2."
   },
+  "/messages/[id]/author:shops-truncated": {
+    "de": "2 Shops gedrückt. Eine Notiz, Robin wrote a shop note, und die gedämpfte Zeile Die neuesten 1 von 2 werden angezeigt.",
+    "es": "Se pulsaron 2 tiendas. Una nota, Robin wrote a shop note, y la línea atenuada Mostrando las últimas 1 de 2.",
+    "fil": "Pinindot ang 2 tindahan. Isang tala, Robin wrote a shop note, at ang pinatahimik na linya Ipinapakita ang pinakabago 1 sa 2."
+  },
+  "/messages/[id]/author:credits-truncated": {
+    "de": "2 Kredite gedrückt. Eine Notiz, Robin wrote a credit note, und die gedämpfte Zeile Die neuesten 1 von 2 werden angezeigt.",
+    "es": "Se pulsaron 2 créditos. Una nota, Robin wrote a credit note, y la línea atenuada Mostrando las últimas 1 de 2.",
+    "fil": "Pinindot ang 2 utang. Isang tala, Robin wrote a credit note, at ang pinatahimik na linya Ipinapakita ang pinakabago 1 sa 2."
+  },
   "/members/[accountId]:mention-suggest-reply": {
     "de": "Beiträge sind geöffnet, Carols Notiz ist aufgeklappt, ihr Reaktionsfeld enthält @, und die Personenliste ist geöffnet.",
     "es": "Las publicaciones están abiertas, la nota de Carol está expandida, su campo de reacción contiene @, y la lista de Personas está abierta.",
@@ -1303,6 +1373,16 @@
     "de": "Die Schaltfläche 1 Reaktion wurde gedrückt, mit dem Notiztext Robin wrote a reaction unter der Karte. Der Verlauf ist nur lesbar.",
     "es": "Se pulsó el botón 1 reacción con el texto de la nota Robin wrote a reaction bajo la tarjeta. El flujo es de solo lectura.",
     "fil": "Pinindot ang pindutan na 1 reaksyon na may tekstong tala na Robin wrote a reaction sa ilalim ng kahon. Ang daloy ay basahin-lamang."
+  },
+  "/messages/[id]/author:shops-open": {
+    "de": "Die Schaltfläche 1 Shop wurde gedrückt, mit dem Notiztext Robin wrote a shop note unter der Karte. Der Verlauf ist nur lesbar.",
+    "es": "Se pulsó el botón 1 tienda con el texto de la nota Robin wrote a shop note bajo la tarjeta. El flujo es de solo lectura.",
+    "fil": "Pinindot ang pindutan na 1 tindahan na may tekstong tala na Robin wrote a shop note sa ilalim ng kahon. Ang daloy ay basahin-lamang."
+  },
+  "/messages/[id]/author:credits-open": {
+    "de": "Die Schaltfläche 1 Kredit wurde gedrückt, mit dem Notiztext Robin wrote a credit note unter der Karte. Der Verlauf ist nur lesbar.",
+    "es": "Se pulsó el botón 1 crédito con el texto de la nota Robin wrote a credit note bajo la tarjeta. El flujo es de solo lectura.",
+    "fil": "Pinindot ang pindutan na 1 utang na may tekstong tala na Robin wrote a credit note sa ilalim ng kahon. Ang daloy ay basahin-lamang."
   },
   "/welcome:reaction-pay-kept": {
     "de": "Dieselbe Seite. Der Satz ist eine Vorschau, kein deaktiviertes Feld Ihre Reaktion, und es gibt kein Feld Betrag.",
@@ -1628,6 +1708,16 @@
     "de": "Identitätskarte; Antworten-Zähler 3 gedrückt; eine aufgeführte Antwort; gedämpftes Zeigt die neuesten 1 von 3.; keine angeheftete Profilnotiz-Karte.",
     "es": "Tarjeta de identidad; contador de respuestas 3 pulsado; una respuesta listada; atenuado Mostrando las últimas 1 de 3.; ninguna tarjeta de nota de perfil fijada.",
     "fil": "Kard ng pagkakakilanlan; bilang ng mga sagot na 3 ang pinindot; isang nakalistang sagot; naka-mute na Ipinapakita ang pinakabago 1 sa 3.; walang naka-pin na kard ng tala sa profile."
+  },
+  "/members/[accountId]:shops-truncated": {
+    "de": "Identitätskarte; 3 Shops gedrückt; eine aufgeführte Shop-Notiz; gedämpft Die neuesten 1 von 3 werden angezeigt.; keine angepinnte Profilnotiz-Karte.",
+    "es": "Tarjeta de identidad; 3 tiendas pulsadas; una nota de tienda listada; atenuado Mostrando el último 1 de 3.; ninguna tarjeta de nota de perfil fijada.",
+    "fil": "Tarheta ng pagkakakilanlan; 3 tindahan nakapindot; isang nakalistang tala ng tindahan; pinahina Ipinapakita ang pinakabago 1 sa 3.; walang nakaangkla na tarheta ng tala sa profile."
+  },
+  "/members/[accountId]:credits-truncated": {
+    "de": "Identitätskarte; 3 Kredite gedrückt; eine aufgeführte Kredit-Notiz A credit from Carol. mit sats: 10500, goalSats: 21000, goalRepayable: true und goalTermDays: 30. Die Anfrage ist in Bitcoin definiert, daher zeigt die Leiste Anfragen ₿21'000 · $21.00, den Notizbetrag ₿10'500 · $10.50, ein Etikett Darlehen und Pro Tag zurückzuzahlen: ₿700 · $0.70 pro Tag über 30 Tage. Beschriftung 50%. Rückzahlungsliste öffnet /messages/<id>/repayment-list. Die Tagesliste steht nicht auf dieser Karte. Gedämpft Die neuesten 1 von 3 werden angezeigt.; keine angepinnte Profilnotiz-Karte.",
+    "es": "Tarjeta de identidad; 3 créditos pulsados; una nota de crédito listada A credit from Carol. con sats: 10500, goalSats: 21000, goalRepayable: true y goalTermDays: 30. El pedido está definido en bitcoin, así que la barra muestra Pedir ₿21'000 · $21.00, el importe de la nota ₿10'500 · $10.50, una etiqueta Préstamo y A devolver por día: ₿700 · $0.70 por día durante 30 días. Etiqueta 50%. Lista de devolución abre /messages/<id>/repayment-list. La lista por días no está en esta tarjeta. Atenuado Mostrando el último 1 de 3.; ninguna tarjeta de nota de perfil fijada.",
+    "fil": "Tarheta ng pagkakakilanlan; 3 utang nakapindot; isang nakalistang tala ng utang na A credit from Carol. na may sats: 10500, goalSats: 21000, goalRepayable: true, at goalTermDays: 30. Ang hiling ay nakatakda sa bitcoin, kaya ipinapakita ng bar ang Hiling ₿21'000 · $21.00, ang halaga ng tala ₿10'500 · $10.50, isang tatak na Pautang at Ibabalik bawat araw: ₿700 · $0.70 bawat araw sa loob ng 30 araw. Label 50%. Binubuksan ng Listahan ng ibabalik ang /messages/<id>/repayment-list. Wala sa kard na ito ang listahan ng bawat araw. Pinahina Ipinapakita ang pinakabago 1 sa 3.; walang nakaangkla na tarheta ng tala sa profile."
   },
   "/messages:thread-composer-photo": {
     "de": "Direkt-Thread geöffnet. Ein JPEG im Composer ausgewählt; Foto entfernen sichtbar; Textbereich leer. Betragsfeld weiterhin sichtbar.",
