@@ -8923,6 +8923,7 @@ describe('ForumBoard loan block', () => {
     const view = renderWithLocale(board());
     fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
     view.rerender(board({ expandedId: 'loan1', repliesLoading: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
     view.rerender(board({ expandedId: null }));
     view.rerender(board({ expandedId: 'loan1', replies: [] }));
     expect(document.getElementById('forum-reply-amount')).not.toBeNull();
