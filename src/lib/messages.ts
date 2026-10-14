@@ -380,7 +380,7 @@ const en = {
   'forum.creditChartDebt': 'Still owed',
   'forum.creditChartAria': 'Repayment from {from} to {to}. {total} owed at the start.',
   'forum.creditBackOpen':
-    'The days are fixed once the credit is fully given. Repayment starts the day after that, but never before 1 November 2026. Until then this is the plan for what has been given.',
+    'The days are fixed once the credit is fully given. Repayment starts the day after that, but never before November 1, 2026. Until then this is the plan for what has been given.',
   'forum.creditNoneYet': 'No one has given yet.',
   'forum.creditUnassigned': 'has no 21.gifts account and is not paid back.',
   'forum.creditStatusPaid': 'Paid',
@@ -482,7 +482,7 @@ const en = {
   'forum.creditTermDays': 'Number of days',
   'forum.creditPlanTitle': 'How repayment works',
   'forum.creditPlanBody':
-    'Repayment is due every day. It starts the day after the credit has been fully given, but never before 1 November 2026. A credit fully given before November starts repaying on 1 November. A credit fully given on 10 November starts repaying on 11 November.',
+    'Repayment is due every day. It starts the day after the credit has been fully given, but never before November 1, 2026. A credit fully given before November starts repaying on November 1. A credit fully given on November 10 starts repaying on November 11.',
   'forum.creditDaily': 'To repay per day: {plan}',
   'forum.creditPlanEven': '{amount} per day for {days} days',
   'forum.creditPlanLast': '{amount} per day for {earlier} days, then {last} on the last day',
