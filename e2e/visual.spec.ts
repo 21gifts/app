@@ -22719,7 +22719,9 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
     await expect(page.getByText('Caption waiting for the photo to load.')).toBeVisible();
-    await expect(page.getByAltText('Photo from Ada')).toHaveCount(0);
+    const photo = page.getByAltText('Photo from Ada');
+    await expect(photo).toHaveCount(1);
+    await expect(photo).toHaveAttribute('src', /\/messages\/m-loading\/photo\.jpg$/);
     await shotScreen(page, 'state-welcome-photo-loading');
     release();
   });

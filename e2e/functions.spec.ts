@@ -11296,7 +11296,7 @@ test('Function: fetchPublicMessagePhoto — public note with photo shows alt', a
     await route.fulfill({
       status: 200,
       contentType: 'image/jpeg',
-      body: Buffer.from([0xff, 0xd8, 0xff, 0xd9]),
+      body: fs.readFileSync(path.join(process.cwd(), 'e2e/fixtures/tiny.jpg')),
     });
   });
   await page.goto(`/messages/${id}`);

@@ -860,8 +860,11 @@ describe('MemberProfileScreen', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: '1 shop' }));
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledWith('sess', secondPost.id, 0);
+      expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe(
+        `/messages/${secondPost.id}/photo.jpg`,
+      );
     });
+    expect(photoMock).not.toHaveBeenCalledWith('sess', secondPost.id, 0);
   });
 
   it('uses the forum empty state for an empty shops feed', async () => {
@@ -948,8 +951,11 @@ describe('MemberProfileScreen', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: '1 credit' }));
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledWith('sess', credit.id, 0);
+      expect(screen.getByAltText('Photo from Carol').getAttribute('src')).toBe(
+        `/messages/${credit.id}/photo.jpg`,
+      );
     });
+    expect(photoMock).not.toHaveBeenCalledWith('sess', credit.id, 0);
   });
 
   it('uses the forum empty state for an empty credits feed', async () => {
