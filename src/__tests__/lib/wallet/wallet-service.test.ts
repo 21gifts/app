@@ -15,6 +15,7 @@ import {
   registerWalletAddress,
   WALLET_RETRY_BASE_MS,
   WALLET_RETRY_CAP_MS,
+  WALLET_RETRY_DISCONNECT_WAIT_MS,
   WALLET_RETRY_JITTER,
   WALLET_SEND_TIMEOUT_MS,
   type WalletSdkLoader,
@@ -1314,12 +1315,12 @@ describe('automatic retries after a failed open', () => {
     expect(sdk.connect).toHaveBeenCalledTimes(1);
     expect(sdk.connection.disconnect).toHaveBeenCalledTimes(1);
     expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
-    // The disconnect is still running: no pause has started, however long it takes.
-    await vi.advanceTimersByTimeAsync(600_000);
+    // The disconnect is still running: longer than the first pause, and no retry has started.
+    await vi.advanceTimersByTimeAsync(3_000);
     expect(sdk.connect).toHaveBeenCalledTimes(1);
     window.dispatchEvent(new Event('online'));
     document.dispatchEvent(new Event('visibilitychange'));
-    await vi.advanceTimersByTimeAsync(600_000);
+    await vi.advanceTimersByTimeAsync(1_000);
     expect(sdk.connect).toHaveBeenCalledTimes(1);
     expect(sdk.loadSdk).toHaveBeenCalledTimes(1);
     expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
@@ -1332,11 +1333,57 @@ describe('automatic retries after a failed open', () => {
     // The retry failed the same way: its trigger waits for its own disconnect too.
     expect(sdk.connection.disconnect).toHaveBeenCalledTimes(2);
     window.dispatchEvent(new Event('online'));
-    await vi.advanceTimersByTimeAsync(600_000);
+    await vi.advanceTimersByTimeAsync(4_000);
     expect(sdk.connect).toHaveBeenCalledTimes(2);
     sdk.finishDisconnect();
     await vi.advanceTimersByTimeAsync(2_000);
     expect(sdk.connect).toHaveBeenCalledTimes(3);
+  });
+
+  it('goes on after 5 s when the disconnect never settles', async () => {
+    expect(WALLET_RETRY_DISCONNECT_WAIT_MS).toBe(5_000);
+    const sdk = slowClosingSdk();
+    void connectWallet(sdk.loadSdk);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sdk.connection.disconnect).toHaveBeenCalledTimes(1);
+    // Until the wait is over nothing starts, not even on a trigger.
+    await vi.advanceTimersByTimeAsync(4_999);
+    window.dispatchEvent(new Event('online'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sdk.connect).toHaveBeenCalledTimes(1);
+    // At 5 s the first pause of 2 s starts as if the disconnect had finished.
+    await vi.advanceTimersByTimeAsync(1 + 1_999);
+    expect(sdk.connect).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(sdk.connect).toHaveBeenCalledTimes(2);
+    expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
+    // The retry failed the same way; its disconnect hangs too. The next pause is 4 s after its 5 s wait.
+    expect(sdk.connection.disconnect).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(5_000 + 3_999);
+    expect(sdk.connect).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(sdk.connect).toHaveBeenCalledTimes(3);
+    // It keeps going without a limit, never held back for more than the wait.
+    await vi.advanceTimersByTimeAsync(5_000 + 8_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(4);
+  });
+
+  it('retries at once on a trigger after the wait for a hanging disconnect is over, and a late end of that disconnect changes nothing', async () => {
+    const sdk = slowClosingSdk();
+    void connectWallet(sdk.loadSdk);
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(sdk.connect).toHaveBeenCalledTimes(1);
+    // The pause is running now; the old disconnect finishing late must not plan a second retry.
+    sdk.finishDisconnect();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(sdk.connect).toHaveBeenCalledTimes(1);
+    window.dispatchEvent(new Event('online'));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(sdk.connect).toHaveBeenCalledTimes(2);
+    // Only that one retry ran: the timer of the replaced pause is gone.
+    sdk.finishDisconnect();
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(sdk.connect).toHaveBeenCalledTimes(2);
   });
 
   it('retries at once on a trigger that arrives after the disconnect has finished', async () => {

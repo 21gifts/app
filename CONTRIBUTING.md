@@ -1053,7 +1053,9 @@ only for a signed-in member and both through same-origin proxies:
 A payment that did not go out, and a wallet that did not open, are also sent
 to error reporting (`Payment failed`, one issue per stage and reason, and
 `Wallet did not open`, one per reason), errors-only like every other report.
-A wallet that did not open is opened again automatically; only the first
+A wallet that did not open is opened again automatically, except while the
+wallet code needs a page reload (`walletNeedsReload`): then no automatic
+attempt runs and **Try again** reloads the page. Only the first
 failure sends `wallet_open_failed` and `Wallet did not open`, and nothing more
 goes out until the wallet has been ready again or was disconnected.
 Member state (too little balance, an amount below the minimum, no wallet
