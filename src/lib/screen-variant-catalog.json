@@ -3420,6 +3420,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:posts-open-loan-lend",
+    "label": "/members/[accountId] posts-open-loan-lend",
+    "visual": "state-members-posts-open-loan-lend",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-pay",
+    "label": "/members/[accountId] posts-open-loan-pay",
+    "visual": "state-members-posts-open-loan-pay",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-open-repay-today",
     "label": "/members/[accountId] posts-open-repay-today",
     "visual": "state-members-posts-open-repay-today",
@@ -5409,6 +5421,12 @@
     "id": "/messages/[id]:loan-repaid",
     "label": "/messages/[id] loan-repaid",
     "visual": "state-messages-id-loan-repaid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-pay",
+    "label": "/messages/[id] loan-pay",
+    "visual": "state-messages-id-loan-pay",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
