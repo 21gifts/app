@@ -1446,7 +1446,9 @@ export function ForumBoard({
                     message.deletedAt === undefined &&
                     !isOwnNote(viewerAccountId, message.accountId)
                       ? () => {
-                          lendIntentOpened.current = false;
+                          if (lendIntentId !== message.id) {
+                            lendIntentOpened.current = false;
+                          }
                           setLendIntentId(message.id);
                           if (expandedId !== message.id) {
                             onToggleExpand(message.id);
