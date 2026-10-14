@@ -35,7 +35,7 @@ import {
   type ForumPayError,
   type ForumPayInvoice,
 } from '@/components/ForumPaySheet';
-import { SundayWritingGate } from '@/components/SundayWritingGate';
+import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGate';
 import { AppShellOverlay, useAppShellScroller } from '@/components/AppShell';
 import {
   ForumAskWizard,
@@ -44,6 +44,8 @@ import {
   type ForumAskStep,
 } from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
+import type { LoanPayTarget } from '@/components/LoanPayNotice';
+import { forumAskPercent } from '@/lib/forum-goal';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
 import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
@@ -868,6 +870,28 @@ export function ForumBoard({
   }, [expandedId, repliesLoading, scroller, shownReplies, payMessageId, payInvoice]);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  // Lend opens the card's money reaction and puts the focus in its amount field once it is enabled.
+  const [lendIntentId, setLendIntentId] = useState<string | null>(null);
+  const sunday = useLocalSunday();
+  useEffect(() => {
+    if (
+      lendIntentId === null ||
+      lendIntentId !== expandedId ||
+      repliesLoading ||
+      replies === null
+    ) {
+      return;
+    }
+    setLendIntentId(null);
+    const field = document.getElementById('forum-reply-amount');
+    if (field instanceof HTMLInputElement && !field.disabled) {
+      field.focus({ preventScroll: true });
+      const port = scrollerRef.current;
+      if (port !== null && field.form !== null) {
+        revealInScrollport(port, field.form);
+      }
+    }
+  }, [lendIntentId, expandedId, repliesLoading, replies]);
   const [deadVideoIds, setDeadVideoIds] = useState<ReadonlySet<string>>(() => new Set());
   const [pullArmed, setPullArmed] = useState(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1156,6 +1180,27 @@ export function ForumBoard({
                 }
               : null;
           const reactionPayPage = reactionPay !== null;
+          const loanOfCard: LoanPayTarget | null =
+            message.parentId === undefined &&
+            message.goalRepayable === true &&
+            typeof message.goalSats === 'number' &&
+            message.goalSats > 0
+              ? {
+                  name: message.name,
+                  days: message.goalTermDays,
+                  full:
+                    forumAskPercent({
+                      sats: message.sats,
+                      goalSats: message.goalSats,
+                      goalCurrency: message.goalCurrency,
+                      goalAmount: message.goalAmount,
+                      amountUsd: message.amountUsd,
+                      amountChf: message.amountChf,
+                      amountEur: message.amountEur,
+                      amountPhp: message.amountPhp,
+                    }) >= 100,
+                }
+              : null;
           const copied = copiedId === message.id;
           const shopNote = message.parentId === undefined && isShopNote(message.text);
           const displayText = shopNote ? stripShopHashtag(message.text) : message.text;
@@ -1387,6 +1432,20 @@ export function ForumBoard({
                   goalTermDays={message.goalTermDays}
                   messageId={message.id}
                   ledgerCollapsed={truncate}
+                  onLend={
+                    !readOnly &&
+                    !sunday &&
+                    message.payable &&
+                    message.deletedAt === undefined &&
+                    !isOwnNote(viewerAccountId, message.accountId)
+                      ? () => {
+                          setLendIntentId(message.id);
+                          if (expandedId !== message.id) {
+                            onToggleExpand(message.id);
+                          }
+                        }
+                      : undefined
+                  }
                 />
               ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -1542,6 +1601,7 @@ export function ForumBoard({
               {!reactionPayPage && payMessageId === message.id && payHost !== 'composer' ? (
                 <SundayWritingGate notice="zap">
                   <ForumPaySheet
+                    {...(loanOfCard === null ? {} : { loan: loanOfCard })}
                     messageId={message.id}
                     payDraft={payDraft}
                     payBusy={payBusy}
@@ -1823,6 +1883,7 @@ export function ForumBoard({
                     reactionPay !== null ? (
                       <SundayWritingGate notice="zap">
                         <ForumReplyPayPage
+                          {...(loanOfCard === null ? {} : { loan: loanOfCard })}
                           preview={reactionPay.preview}
                           amountSats={reactionPay.amountSats}
                           pr={reactionPay.pr}
@@ -1840,7 +1901,11 @@ export function ForumBoard({
                             <AmountEntry
                               id="forum-reply-amount"
                               layout="inline"
-                              label={t('forum.replyAmountLabel')}
+                              label={t(
+                                loanOfCard !== null && !loanOfCard.full
+                                  ? 'forum.loan.amountLabel'
+                                  : 'forum.replyAmountLabel',
+                              )}
                               placeholder={t('forum.payAmountPlaceholder')}
                               value={replyAmountDraft}
                               disabled={

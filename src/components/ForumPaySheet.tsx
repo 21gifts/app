@@ -6,11 +6,17 @@ import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { LoanPayNotice, type LoanPayTarget } from '@/components/LoanPayNotice';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { WalletPay } from '@/components/WalletPay';
 import { Button, IconButton } from '@/components/ui';
 import type { AmountUnit } from '@/lib/api-types';
-import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
+import {
+  formatBitcoin,
+  formatFiatDisplay,
+  satsToFiatAmount,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 
 /** Pay-sheet validation or request failure. */
 export type ForumPayError =
@@ -33,6 +39,10 @@ export interface ForumPayInvoice {
 /**
  * Amount form and invoice card for one payable note, reply, or habit comment.
  *
+ * On a loan that still collects, the invoice card reads **You lend**, the
+ * confirm button **Lend** with the amount, and {@link LoanPayNotice} says how it
+ * comes back. On a loan that is already full the notice says it is a gift.
+ *
  * @param props - Open pay-sheet state for `messageId`.
  * @returns The in-card sheet.
  */
@@ -50,6 +60,7 @@ export function ForumPaySheet({
   rateDay,
   ratePending = false,
   onInteract,
+  loan,
 }: {
   messageId: string;
   payDraft: string;
@@ -65,12 +76,21 @@ export function ForumPaySheet({
   /** When true, Continue does not submit. The rate request is still loading. */
   ratePending?: boolean;
   onInteract: (event: MouseEvent) => void;
+  /** Set when the paid note is a loan: borrower, term, and whether it is already fully funded. */
+  loan?: LoanPayTarget | undefined;
 }): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const invoiceForCard =
     payInvoice !== null && payInvoice.messageId === messageId ? payInvoice : null;
+  const lending = loan !== undefined && !loan.full && invoiceForCard?.postsOnPay !== true;
+  const amountWithFiat = (sats: number): string => {
+    const priced = satsToFiatAmount(sats, rateDay, fiat);
+    return priced === null
+      ? formatBitcoin(sats, numberFormat)
+      : `${formatBitcoin(sats, numberFormat)} · ${formatFiatDisplay(priced, fiat, numberFormat)}`;
+  };
 
   const handlePaySubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -169,11 +189,14 @@ export function ForumPaySheet({
         </IconButton>
       </div>
       <p className="px-10 text-center text-sm text-app-muted">
-        {t('forum.payConfirm', {
+        {t(lending ? 'forum.loan.payAmount' : 'forum.payConfirm', {
           amount: formatBitcoin(invoiceForCard.amountSats, numberFormat),
         })}
         {preferredFiatSuffix(invoiceForCard.amountSats, rateDay, fiat, numberFormat)}
       </p>
+      {loan !== undefined && invoiceForCard.postsOnPay !== true ? (
+        <LoanPayNotice {...loan} />
+      ) : null}
       <WalletPay
         sparkInvoice={invoiceForCard.sparkInvoice}
         pr={invoiceForCard.pr}
@@ -181,6 +204,11 @@ export function ForumPaySheet({
         rateDay={rateDay}
         postsOnPay={invoiceForCard.postsOnPay === true}
         flow={invoiceForCard.postsOnPay === true ? 'post_fee' : 'gift'}
+        confirmLabel={
+          lending
+            ? t('forum.loan.payLend', { amount: amountWithFiat(invoiceForCard.amountSats) })
+            : undefined
+        }
       />
       {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
       {payWaiting ? (

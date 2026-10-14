@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatDefinedGoalAmount,
+  forumAskPercent,
   forumFiatGoalPercent,
   forumGoalPercent,
   parseForumAskAmount,
@@ -129,5 +130,41 @@ describe('formatDefinedGoalAmount', () => {
     expect(formatDefinedGoalAmount('1200', 'PHP', 'ch')).toBe("₱1'200.00");
     expect(formatDefinedGoalAmount('1200', 'USD', 'us')).toBe('$1,200.00');
     expect(formatDefinedGoalAmount('1200', 'EUR', 'de')).toBe('EUR 1.200,00');
+  });
+});
+
+describe('forumAskPercent', () => {
+  it('uses the sats for a bitcoin or legacy ask', () => {
+    expect(forumAskPercent({ sats: 10_500, goalSats: 21_000 })).toBe(50);
+    expect(forumAskPercent({ sats: 21_000, goalSats: 21_000, goalCurrency: 'BTC' })).toBe(100);
+  });
+
+  it('uses the payment snapshot in the definition code for a fiat ask', () => {
+    for (const [code, field] of [
+      ['USD', 'amountUsd'],
+      ['CHF', 'amountChf'],
+      ['EUR', 'amountEur'],
+      ['PHP', 'amountPhp'],
+    ] as const) {
+      expect(
+        forumAskPercent({
+          sats: 1,
+          goalSats: 1,
+          goalCurrency: code,
+          goalAmount: '20',
+          [field]: '20.00',
+        }),
+      ).toBe(100);
+    }
+    expect(forumAskPercent({ sats: 999, goalSats: 1, goalCurrency: 'USD', goalAmount: '20' })).toBe(
+      0,
+    );
+  });
+
+  it('falls back to the sats when the defined amount is unusable', () => {
+    expect(
+      forumAskPercent({ sats: 5, goalSats: 10, goalCurrency: 'USD', goalAmount: 'nope' }),
+    ).toBe(50);
+    expect(forumAskPercent({ sats: 5, goalSats: 10, goalCurrency: 'USD' })).toBe(50);
   });
 });
