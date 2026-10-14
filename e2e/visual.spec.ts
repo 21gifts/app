@@ -31516,6 +31516,20 @@ test.describe('settings states', () => {
     await shotScreen(page, 'state-settings-default-amount-fiat');
   });
 
+  test('settings notification-level-gifted', async ({ page }) => {
+    await seedSettingsAccount(page, { notificationLevel: 'active' });
+    await openSettings(page);
+    const gifted = page
+      .getByRole('group', { name: 'Posts' })
+      .getByRole('button', { name: 'Only with a gift', exact: true });
+    await expect(gifted).toHaveAttribute('aria-pressed', 'true');
+    await page
+      .getByRole('group', { name: 'Posts' })
+      .getByRole('button', { name: 'Off', exact: true })
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-notification-level-gifted');
+  });
+
   test('settings notification-level-error', async ({ page }) => {
     await seedSettingsAccount(page);
     await page.route('**/me/notification-level', async (route) => {
@@ -31526,7 +31540,10 @@ test.describe('settings states', () => {
       });
     });
     await openSettings(page);
-    await page.getByRole('button', { name: 'Active' }).click();
+    await page
+      .getByRole('group', { name: 'Posts' })
+      .getByRole('button', { name: 'Off', exact: true })
+      .click();
     await expect(page.getByText('Could not save notification level.')).toBeVisible();
     await shotScreen(page, 'state-settings-notification-level-error');
   });
@@ -31551,7 +31568,7 @@ test.describe('settings states', () => {
     await seedSettingsAccount(page);
     await openSettings(page);
     await page
-      .getByRole('group', { name: 'This device' })
+      .getByRole('group', { name: 'Notifications' })
       .getByRole('button', { name: 'On' })
       .click();
     await expect(page.getByText('Notifications are not available in this browser.')).toBeVisible();

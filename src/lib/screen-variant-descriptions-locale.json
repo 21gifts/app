@@ -5514,10 +5514,15 @@
     "es": "Tras pulsar el código fiat bajo Importe predeterminado: queda pulsado en lugar de ₿ y los campos de importe empiezan ahora en fiat.",
     "fil": "Pagkatapos pindutin ang fiat code sa ilalim ng Default na halaga: ito na ang nakapindot sa halip na ₿, at nagsisimula na sa fiat ang mga field ng halaga."
   },
+  "/settings:notification-level-gifted": {
+    "de": "Abschnitt Benachrichtigungen bei gespeicherter Stufe active: Beiträge zeigt Alles, Nur an mich, Nur mit Geschenk und Aus auf derselben Zeile, und Nur mit Geschenk ist gedrückt.",
+    "es": "Sección de notificaciones con el nivel guardado active: Publicaciones muestra Todo, Solo a mí, Solo con un regalo y Desactivado en la misma línea, con Solo con un regalo pulsado.",
+    "fil": "Bahagi ng mga abiso kapag active ang naka-store na antas: ipinapakita ng Mga post ang Lahat, Sa akin lang, May regalo lang at Naka-off sa parehong linya, at nakapindot ang May regalo lang."
+  },
   "/settings:notification-level-error": {
-    "de": "Abschnitt Benachrichtigungen mit Speicherfehler role=\"alert\" nach dem Stubben von POST /me/notification-level auf 500 und dem Klick auf Aktiv. Text Benachrichtigungsstufe konnte nicht gespeichert werden.",
-    "es": "Sección de notificaciones con error de guardado role=\"alert\" tras simular POST /me/notification-level a 500 y pulsar Activas. Texto No se pudo guardar el nivel de notificaciones.",
-    "fil": "Bahagi ng mga abiso na may mali sa pag-save na role=\"alert\" pagkatapos i-stub ang POST /me/notification-level sa 500 at pindutin ang Aktibo. Sipi Hindi ma-save ang antas ng notification."
+    "de": "Abschnitt Benachrichtigungen mit Speicherfehler role=\"alert\" nach dem Stubben von POST /me/notification-level auf 500 und dem Klick auf Aus bei Beiträge. Text Benachrichtigungsstufe konnte nicht gespeichert werden.",
+    "es": "Sección de notificaciones con error de guardado role=\"alert\" tras simular POST /me/notification-level a 500 y pulsar Desactivado en Publicaciones. Texto No se pudo guardar el nivel de notificaciones.",
+    "fil": "Bahagi ng mga abiso na may mali sa pag-save na role=\"alert\" pagkatapos i-stub ang POST /me/notification-level sa 500 at pindutin ang Naka-off sa Mga post. Sipi Hindi ma-save ang antas ng notification."
   },
   "/settings:heart-notify-error": {
     "de": "Abschnitt Benachrichtigungen mit Speicherfehler role=\"alert\" nach dem Stubben von POST /me/heart-notifications auf 500 und dem Klick auf Aus in Herzen. Text Die Herzen-Einstellung konnte nicht gespeichert werden.",
@@ -5525,9 +5530,9 @@
     "fil": "Bahagi ng mga abiso na may mali sa pag-save na role=\"alert\" pagkatapos i-stub ang POST /me/heart-notifications sa 500 at pindutin ang Naka-off sa loob ng Mga puso. Sipi Hindi na-save ang setting ng puso."
   },
   "/settings:push-enable-error": {
-    "de": "Benachrichtigungsabschnitt mit role=\"alert\" nach Klick auf An auf der Dieses Gerät-Kapsel, wenn Web Push vorhanden ist, das Aktivieren aber fehlschlägt. Text Benachrichtigungen sind in diesem Browser nicht verfügbar.",
-    "es": "Apartado de notificaciones con role=\"alert\" tras pulsar Activado en la pastilla Este dispositivo cuando Web Push está presente pero la activación falla. Texto Las notificaciones no están disponibles en este navegador.",
-    "fil": "Seksiyon ng mga notification na may role=\"alert\" pagkatapos i-click ang Naka-on sa pilduras na Device na ito kapag nariyan ang Web Push pero nabigo ang pag-enable. Sipi Hindi available ang mga notification sa browser na ito."
+    "de": "Abschnitt Auf diesem Gerät mit role=\"alert\" nach dem Klick auf An bei Mitteilungen, wenn Web Push vorhanden ist, das Aktivieren aber fehlschlägt. Text Benachrichtigungen sind in diesem Browser nicht verfügbar.",
+    "es": "Apartado En este dispositivo con role=\"alert\" tras pulsar Activado en Avisos cuando Web Push está presente pero la activación falla. Texto Las notificaciones no están disponibles en este navegador.",
+    "fil": "Seksiyon ng Sa device na ito na may role=\"alert\" pagkatapos i-click ang Naka-on sa Mga abiso kapag nariyan ang Web Push pero nabigo ang pag-enable. Sipi Hindi available ang mga notification sa browser na ito."
   },
   "/wallet:move-waiting": {
     "de": "Nach Ich habe gesendet: drei Punkte gefüllt, ein Spinner, Warte auf deine Bitcoin… und Schließe das Senden in deinem anderen Wallet ab. Diese Ansicht aktualisiert sich von selbst. Im Blatt gibt es keinen Zurück-Knopf: Der Pfeil oben links führt zum Adressschritt zurück. Kommt die Zahlung an, geht der Ablauf von selbst weiter.",
