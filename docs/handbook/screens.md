@@ -4292,6 +4292,8 @@ After a successful send the app navigates to `/messages?c=` and shows the offici
 - **Purpose:** Signed-in member identity card (chart, About me inside the card — not a forum post, name, location, public `username@21.gifts`, role pill, copy-profile-link, and clickable post/reply counts from `postCount` / `replyCount`) with on-demand activity feeds below the card. A successful empty series and in-flight activity show `profile.chartEmpty` (**No gifts yet.**); a thrown activity load shows `profile.chartError` (**Could not load gifts.**); the chart never says **Loading…** and has no retry control. Location is read-only. Own profiles use this route too (forum author names navigate here, not `/profile`). When the viewer is a moderator and the subject is someone else, staff Trust Chain actions (Verify, Propose, Confirm, or Appoint) and the already-on-chain link sit behind the closed **Moderator functions** disclosure, not always visible. About me is not a `ForumBoard` post; **Translate** (Languages icon) sits on the About me text when `profileMessage.id` is set, and in the footer icon row with react / copy on feed notes and replies via `TranslatableNoteBody` (`controlSlotId`), which portals `NoteTranslate`, when the language differs from the UI locale. Heart (lucide Heart, `forum.heart` “Send ₿1”) is icon-only in that same footer row after Translate and before React or Gift; it shows on a note or reply that is not deleted, not the viewer's own, and whose author can receive (`payable`), including a signed-out card, and never on the external author profile; a signed-out or read-only tap does nothing; a payable tap vibrates and shows the filled heart before payment; `+1` appears only after the payment succeeds. The in-card reply composer includes an **Amount** sats field; empty text and an empty amount invoices 21 sats; a reply with text and an empty amount is unpaid for a verified member and for every role on their own note (that form has no **Amount** field, an empty reaction there shows `forum.errorEmpty` instead of paying, and the member's own payable reactions show no Gift: a wallet cannot pay itself), otherwise 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`); an amount of 0 is billed as 1 sat. Visible inline photos on the posts feed and replies feed (the stacked activity list) load via `fetchMessagePhoto` blob URLs, same as the home forum top-level cards. Top-level posts with a positive `goalSats` show `ForumGoalBar` (orange through 100%, in-flow green overflow, uncapped percent), same as `/welcome`. Blob URLs may also be fetched for expanded thread replies, but ForumBoard does not paint photos on nested replies. A missing name or rules agreement on a reply opens `RequirementsOverlay` (no Skip); a missing wallet is explained in the same dialog. `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. Under that QR a labeled **Shop sticker** button (`profile.shopSticker`, `Button size="sm" variant="secondary"`) opens `ShopStickerOverlay`: a preview of a printable shop-window sticker carrying the same `openCryptoPayQrValue`, and a download as PDF (vector, 134.4 mm), PNG or JPG (3000 px), or SVG. The files are made in the browser (`shopStickerBlob`); nothing is sent to the api. Every pay sheet on this screen (a gift, a paid reaction, or a paid reply) follows the same in-app wallet rule as the forum pay sheet on `/welcome`: it pays from the in-app wallet only (the `sparkInvoice`, otherwise the `pr`); without a usable wallet it shows the unavailable or failed state, never an invoice QR or a link to another wallet app.
 - **Inputs:** Bearer session; `accountId` UUID; `GET /forum/members/:id` for the profile and activity counts; `GET /forum/members/:id/activity` even before the member's wallet is verified; `GET /fx/spot` (via `useSpotRate`) for the spot rate when a feed amount or ask has no stored string for the visitor's currency, and for unsent previews (a stored string is shown as-is; no FiatPicker on the chart or the feed — member profiles are always signed-in); on-demand `GET /forum/members/:id/posts` or `GET /forum/members/:id/replies` for the selected feed.
 - **Actions:** On the signed-in member's own funded credit, use **Repay your loan** to open `/loans/repay`. Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**, then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; expand role hint; copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/l/` plus the first 8 hex chars of the account id); Message on the card when another member has a `profileMessage`; translate a foreign-language About me text when `profileMessage.id` is set, and a foreign-language feed note or reply (**Translate**, Languages icon, / Show original / Show translation); click **1 post** or **N posts** (`profile.postCount`) or **1 reaction** or **N reactions** (`profile.replyCount`) to open that `ForumBoard` feed below the card, or click the pressed count again to collapse it. Posts show React and do not show Send Bitcoin; a payable reply card in the replies feed shows Gift. Expanding a reply with a `parentId` navigates to `/messages/{parentId}`. Verified members may post unpaid replies, and so may every role on their own note (no **Amount** field there); below verified a text reply to someone else's note invoices 1 sat to 21.gifts on the composer slot (`payHost: composer`, `payMessageId` = compose-target note); extra gifts and Gift-open stay on the card (`payHost: card`). When a listed feed is shorter than its count, a muted `profile.activityLatest` truncation line shows the displayed and total counts. Inline photos load via `fetchMessagePhoto` blob URLs, same as the forum. Complete a `RequirementsOverlay` for a missing name or rules agreement before a reply. Staff viewing another member can open **Verify** (`/members/[accountId]/verify`; it does not post from the card), Propose, Confirm, or Appoint after opening the closed **Moderator functions** disclosure; already-on-chain is a link behind the same disclosure. When a username is set, press **Shop sticker**, pick PDF, PNG, JPG, or SVG, and **Download** the file `21gifts-shop-sticker-<username>.<format>`; a failure shows an alert and the next try clears it. The identity card has no edit. A moderator sees **Edit shop note** on a shop post in the posts feed.
+- **Shop activity:** The `profile.shopCount` Shops button sits after reactions, renders only when optional `shopCount > 0`, and opens the on-demand shops `ForumBoard` from `GET /forum/members/:id/shops`. It behaves like the posts feed, including top-level expansion and moderator shop-note editing; shop notes are not removed from Posts.
+- **Credit activity:** The `profile.creditCount` Credits button sits after shops, renders only when optional `creditCount > 0`, and opens the on-demand credits `ForumBoard` from `GET /forum/members/:id/credits`. It behaves like the posts feed, including top-level expansion, photos, truncation, empty state, and shared pay/expand state, and does not pass `shopNoteEdit`. Credit notes remain in Posts.
 - **Used by:** Route `/members/[accountId]` (`MemberProfilePage` / `MemberProfileLoader` / `MemberProfileScreen`).
 - **Auth:** Bearer; `OnboardingGate screen="profile"`.
 
@@ -4379,6 +4381,18 @@ Identity card; replies pressed; no pinned profile-note card; reply card 'A reply
 
 ![21.gifts member replies open](images/members-replies-open.png)
 
+### Variant: shops-open
+
+Identity card; **1 shop** pressed; no pinned profile-note card; shop card 'A shop from Carol.'
+
+![21.gifts member shops open](images/members-shops-open.png)
+
+### Variant: credits-open
+
+Identity card; **1 credit** pressed; no pinned profile-note card; credit card 'A credit from Carol.'
+
+![21.gifts member credits open](images/members-credits-open.png)
+
 ### Variant: posts-loading
 
 Identity card; posts count pressed; feed shows Loading…; no pinned profile-note card.
@@ -4390,6 +4404,18 @@ Identity card; posts count pressed; feed shows Loading…; no pinned profile-not
 Identity card; replies count pressed; feed shows Loading…; no pinned profile-note card.
 
 ![21.gifts member replies loading](images/members-replies-loading.png)
+
+### Variant: shops-loading
+
+Identity card; **1 shop** pressed; feed shows Loading…; no pinned profile-note card.
+
+![21.gifts member shops loading](images/members-shops-loading.png)
+
+### Variant: credits-loading
+
+Identity card; **1 credit** pressed; feed shows Loading…; no pinned profile-note card.
+
+![21.gifts member credits loading](images/members-credits-loading.png)
 
 ### Variant: posts-error
 
@@ -4403,6 +4429,18 @@ Identity card; replies count pressed; feed error and Try again; no pinned profil
 
 ![21.gifts member replies error](images/members-replies-error.png)
 
+### Variant: shops-error
+
+Identity card; **1 shop** pressed; feed error `Could not load messages. Please try again.` and Try again; no pinned profile-note card.
+
+![21.gifts member shops error](images/members-shops-error.png)
+
+### Variant: credits-error
+
+Identity card; **1 credit** pressed; feed error `Could not load messages. Please try again.` and Try again; no pinned profile-note card.
+
+![21.gifts member credits error](images/members-credits-error.png)
+
 ### Variant: posts-truncated
 
 Identity card; posts count 3 pressed; one listed post; muted `Showing the latest 1 of 3.`; no pinned profile-note card.
@@ -4414,6 +4452,18 @@ Identity card; posts count 3 pressed; one listed post; muted `Showing the latest
 Identity card; replies count 3 pressed; one listed reply; muted `Showing the latest 1 of 3.`; no pinned profile-note card.
 
 ![21.gifts member replies truncated](images/members-replies-truncated.png)
+
+### Variant: shops-truncated
+
+Identity card; **3 shops** pressed; one listed shop note; muted `Showing the latest 1 of 3.`; no pinned profile-note card.
+
+![21.gifts member shops truncated](images/members-shops-truncated.png)
+
+### Variant: credits-truncated
+
+Identity card; **3 credits** pressed; one listed credit note `A credit from Carol.` with `sats: 10500`, `goalSats: 21000`, `goalRepayable: true`, and `goalTermDays: 30`. The ask is defined in bitcoin, so the bar shows **Ask ₿21'000 · $21.00**, the note amount **₿10'500 · $10.50**, a **Loan** tag and **To repay per day: ₿700 · $0.70 per day for 30 days.** Label **50%**. The note offers **Repayment list**, a link to /messages/<id>/repayment-list. The day list is not on this card. Muted `Showing the latest 1 of 3.`; no pinned profile-note card.
+
+![21.gifts member credits truncated](images/members-credits-truncated.png)
 
 ### Variant: note-null
 
@@ -4868,6 +4918,8 @@ Signed-in Ada in CHF with a spot rate. **Create payment** with `9999999999999` C
 - **Purpose:** Signed-in profile after onboarding: compact dual-line Given/Received activity chart (no chart FiatPicker; populated ₿ | selected fiat `SegmentedControl tone="gift"`) inside the identity card, a resting header when a profile photo or wide image is stored (round photo and wide image are different pictures, and neither is the About me photo; a missing wide image or profile photo is an icon-only camera then the button **Add a wide image** or **Add a profile photo**: **Take a wide photo** (back camera) or **Take a profile photo** (front camera)), About me inside the same card (not a forum post; Languages **Translate** on the filled read-only text when `aboutMessageId` is set; owner empty prompt + **Write your About me** when `aboutMe` is null and `aboutMeHasPhoto` is false; filled text and/or photo otherwise, with camera, attach, preview, and remove in the editor), copy-profile-link on the card, edit name and location (Ort), then the same public facts a visitor sees on `/members/:id` (role pill, funding-program icon, `username@21.gifts`, pay QR, Shop sticker, Posts/Reactions counts, and the activity feed; no Message button and no staff actions). The card holds identity only: notifications, language, theme, fiat currency, number format, and the default amount are on `/settings`. Chrome is the page-frame header (icon-only back + wordmark + Menu inside the rounded sheet). Menu starts with the account header, then **Home** and **Balance**; the Profile row shows no given or received amounts. `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it. Every pay sheet on this screen (a gift, a paid reaction, or a paid reply) follows the same in-app wallet rule as the forum pay sheet on `/welcome`: it pays from the in-app wallet only (the `sparkInvoice`, otherwise the `pr`); without a usable wallet it shows the unavailable or failed state, never an invoice QR or a link to another wallet app.
 - **Inputs:** Session account (name + location + `viewKey` + `aboutMe` + `aboutMeHasPhoto` + living-room rules agreement) via `OnboardingGate` / `useAuthStore`; Given + Received from `GET /me/activity` via `useAccountTotals` / `fetchAccountActivity`. Fetch even before the wallet is verified; refetch when `sparkWalletVerified` turns true. About me save is `PUT /me/about` (`putAboutMe`). The profile photo is `GET`/`PUT` `/pictures/me`. The wide image is `GET`/`PUT` `/banners/me`. Neither slot is filled from the About me photo. Location save is `POST /me/location` (`setLocation`).
 - **Actions:** Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile (current), **Grants**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out** (best-effort Web Push unsubscribe while the session is still valid), then a quiet **Version {version}** line (`app.version`); the top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; write or edit About me, and from that editor take with the camera or attach from the gallery, or remove, each of the three pictures (About me photo, profile photo, and wide image); copy the profile link (`profile.copyLink` **Copy link to this profile** → origin `/view/<viewKey>`, URL/key not shown); save name; save or clear location; when the series has data, toggle the activity chart between ₿ and the selected fiat.
+- **Shop activity:** The shared `MemberProfileScreen` facts place `profile.shopCount` after Reactions only when optional `shopCount > 0`; it opens the same shops feed as the member page.
+- **Credit activity:** The shared `MemberProfileScreen` facts place `profile.creditCount` after shops only when optional `creditCount > 0`; it opens the same credits feed as the member page. That feed follows the posts feed, including top-level expansion, photos, truncation, empty state, and shared pay/expand state, and does not enable shop-note editing. Credit notes remain in Posts.
 - **Used by:** Route `/profile` (`ProfilePage`).
 
 ### Variant: default
@@ -4928,6 +4980,18 @@ Choosing `@ada` from that open list writes `@ada ` into the reaction field and c
 **1 reaction** is pressed and the feed shows **A reply from Ada.** Needle `A reply from Ada.`
 
 ![21.gifts profile reactions](images/profile-replies-open.png)
+
+### Variant: shops-open
+
+**1 shop** is pressed and the feed shows **A shop from Ada.** Needle `A shop from Ada.`
+
+![21.gifts profile shops](images/profile-shops-open.png)
+
+### Variant: credits-open
+
+**1 credit** is pressed and the feed shows **A credit from Ada.** Needle `A credit from Ada.`
+
+![21.gifts profile credits](images/profile-credits-open.png)
 
 ### Variant: receive
 
@@ -6715,8 +6779,10 @@ Unsigned. The ledger loaded with no givers and no repayment rows. **Given** show
 ## Screen: /messages/[id]/author
 
 - **Purpose:** External author profile card for a forum note whose author has no 21.gifts account. Not a member page and not a dialog. Heading is `profile.title` (**Profile** / **Profil** / **Perfil** / **Profile**), not the person's name. Name section always: heading `name.heading`, truncated name, **External** span (not a button). Optional checked Nostr address (`forum.externalProfileNip05`) when published. Payment address (`forum.externalProfileLud16`) only when it differs ignoring case. Nostr key (`forum.externalProfileNpub`) with the centered secondary IconButton copy control when a profile has loaded; addresses and the key are `break-all`, the name truncates. No photo, pay, outbound link, location, chart, about, message, hint paragraph, or close control. Count buttons appear when both `postCount` and `replyCount` are numbers; the feed is read-only under the card (no pay, no composer, no react); a post opens `/messages/{id}`; a reply opens `/messages/{parentId}`; a shorter list shows `profile.activityLatest`; loading uses `forum.loading`; failure uses `forum.error` and `view.retry`. If either count is absent, no buttons. Loading and a null fetch show the title, the fallback name (or Unnamed), and the External span, and omit the address sections. Body is `ExternalAuthorProfile` inside `PublicMessageChrome`.
-- **Inputs:** Dynamic route `id` (forum message id, not validated as a UUID) and optional `name` query (`string` or first array entry, trimmed; blank becomes `''`). Profile from `GET /public-messages/:id/external-profile` (`fetchExternalAuthorProfile`). Posts from `GET /public-messages/:id/external-posts` and replies from `GET /public-messages/:id/external-replies`, no Bearer.
-- **Actions:** The top-left arrow is the existing `ProfileChromeLeft` control (previous in-app view, or `/welcome` when this tab has none). Unsigned chrome is wordmark href `/` plus `LanguageSwitcher`. Signed-in chrome is `ProfileChromeLeft` plus `SignedInChrome`. Copy the npub (icon-only **Copy** → **Copied**). Open and close the count buttons; those clicks GET `/public-messages/:id/external-posts` or `/public-messages/:id/external-replies`. No pay, no outbound link, no close control.
+- **Shop activity:** The posts/reactions gate is unchanged: both `postCount` and `replyCount` must be numbers, and the preceding no-buttons statement applies to those two. Independently, `profile.shopCount` sits after reactions and renders only when optional `shopCount > 0`, so Shops can show alone; it loads the read-only external shops feed and opens a shop at `/messages/{id}` like a post.
+- **Credit activity:** The posts/reactions gate is unchanged. Independently, `profile.creditCount` sits after shops and renders only when optional `creditCount > 0`, including when `shopCount` is 0 or post and reply counts are absent. It loads the read-only external credits feed and opens a credit note at `/messages/{id}` like a post. No composer and no shop-note edit.
+- **Inputs:** Dynamic route `id` (forum message id, not validated as a UUID) and optional `name` query (`string` or first array entry, trimmed; blank becomes `''`). Profile from `GET /public-messages/:id/external-profile` (`fetchExternalAuthorProfile`). Posts from `GET /public-messages/:id/external-posts`, replies from `GET /public-messages/:id/external-replies`, shops from `GET /public-messages/:id/external-shops`, and credits from `GET /public-messages/:id/external-credits`, no Bearer.
+- **Actions:** The top-left arrow is the existing `ProfileChromeLeft` control (previous in-app view, or `/welcome` when this tab has none). Unsigned chrome is wordmark href `/` plus `LanguageSwitcher`. Signed-in chrome is `ProfileChromeLeft` plus `SignedInChrome`. Copy the npub (icon-only **Copy** → **Copied**). Open and close the count buttons; those clicks GET `/public-messages/:id/external-posts`, `/public-messages/:id/external-replies`, `/public-messages/:id/external-shops`, or `/public-messages/:id/external-credits`. No pay, no outbound link, no close control.
 - **Used by:** Route `/messages/[id]/author` (`ExternalAuthorPage`). `ForumBoard`, `QuotedForumNote`, and `PublicMessageLoader` name controls.
 - **Auth:** None required to view; chrome depends on hydrated session. No `OnboardingGate`. Not a `/members` page.
 
@@ -6750,6 +6816,18 @@ Pressed **1 reaction** button with the note text `Robin wrote a reaction` under 
 
 ![21.gifts external author replies open](images/messages-id-author-replies-open.png)
 
+### Variant: shops-open
+
+Pressed **1 shop** button with the note text `Robin wrote a shop note` under the card. The feed is read-only.
+
+![21.gifts external author shops open](images/messages-id-author-shops-open.png)
+
+### Variant: credits-open
+
+Pressed **1 credit** button with the note text `Robin wrote a credit note` under the card. The feed is read-only.
+
+![21.gifts external author credits open](images/messages-id-author-credits-open.png)
+
 ### Variant: posts-loading
 
 Pressed **1 post**. The feed under the card shows Loading…. No note text yet.
@@ -6761,6 +6839,18 @@ Pressed **1 post**. The feed under the card shows Loading…. No note text yet.
 Pressed **1 reaction**. The feed under the card shows Loading…. No note text yet.
 
 ![21.gifts external author replies loading](images/messages-id-author-replies-loading.png)
+
+### Variant: shops-loading
+
+Pressed **1 shop**. The feed under the card shows Loading…. No note text yet.
+
+![21.gifts external author shops loading](images/messages-id-author-shops-loading.png)
+
+### Variant: credits-loading
+
+Pressed **1 credit**. The feed under the card shows Loading…. No note text yet.
+
+![21.gifts external author credits loading](images/messages-id-author-credits-loading.png)
 
 ### Variant: posts-error
 
@@ -6774,6 +6864,18 @@ Pressed **1 reaction**. The feed shows `Could not load messages. Please try agai
 
 ![21.gifts external author replies error](images/messages-id-author-replies-error.png)
 
+### Variant: shops-error
+
+Pressed **1 shop**. The feed shows `Could not load messages. Please try again.` and **Try again**.
+
+![21.gifts external author shops error](images/messages-id-author-shops-error.png)
+
+### Variant: credits-error
+
+Pressed **1 credit**. The feed shows `Could not load messages. Please try again.` and **Try again**.
+
+![21.gifts external author credits error](images/messages-id-author-credits-error.png)
+
 ### Variant: posts-truncated
 
 Pressed **2 posts**. One note, `Robin wrote a note`, and the muted line `Showing the latest 1 of 2.`
@@ -6785,6 +6887,18 @@ Pressed **2 posts**. One note, `Robin wrote a note`, and the muted line `Showing
 Pressed **2 reactions**. One note, `Robin wrote a reaction`, and the muted line `Showing the latest 1 of 2.`
 
 ![21.gifts external author replies truncated](images/messages-id-author-replies-truncated.png)
+
+### Variant: shops-truncated
+
+Pressed **2 shops**. One note, `Robin wrote a shop note`, and the muted line `Showing the latest 1 of 2.`
+
+![21.gifts external author shops truncated](images/messages-id-author-shops-truncated.png)
+
+### Variant: credits-truncated
+
+Pressed **2 credits**. One note, `Robin wrote a credit note`, and the muted line `Showing the latest 1 of 2.`
+
+![21.gifts external author credits truncated](images/messages-id-author-credits-truncated.png)
 
 ### Variant: copied
 

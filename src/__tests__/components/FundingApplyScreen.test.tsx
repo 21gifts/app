@@ -50,6 +50,7 @@ vi.mock('next/link', () => ({
 vi.mock('@/lib/api', () => ({
   fetchAboutMePhoto: vi.fn(),
   fetchMemberPosts: vi.fn(),
+  fetchMemberShops: vi.fn(),
   postFundingApply: vi.fn(),
   putAboutMe: vi.fn(),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),

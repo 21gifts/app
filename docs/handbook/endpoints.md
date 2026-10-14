@@ -354,6 +354,20 @@
 - **Used by:** `fetchMemberPosts` via `MemberProfileScreen`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /forum/members/[accountId]/shops
+
+- **Purpose:** Same-origin proxy of api `GET /members/:accountId/shops` for a signed-in member's top-level forum shop notes.
+- **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
+- **Used by:** `fetchMemberShops` via `MemberProfileScreen`.
+- **Auth:** Bearer.
+
+## Endpoint: GET /forum/members/[accountId]/credits
+
+- **Purpose:** Same-origin proxy of api `GET /members/:accountId/credits` for a signed-in member's top-level forum credit notes.
+- **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
+- **Used by:** `fetchMemberCredits` via `MemberProfileScreen`.
+- **Auth:** Bearer.
+
 ## Endpoint: GET /forum/members/[accountId]/replies
 
 - **Purpose:** Same-origin proxy of api `GET /members/:accountId/replies` for a signed-in member's forum replies.
@@ -510,7 +524,7 @@
 
 ## Endpoint: GET /public-messages/[id]/external-profile
 
-- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-profile` (name, npub, and optional nip05 and lud16, no Bearer). Optional `postCount` and `replyCount` are nonnegative integers; absent still parses.
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-profile` (name, npub, and optional nip05 and lud16, no Bearer). Optional `postCount`, `replyCount`, `shopCount`, and `creditCount` are nonnegative integers; absent still parses.
 - **Errors:** Upstream 404 `{ error: "Not found" }`, upstream 503, or 502 if the api is unreachable.
 - **Used by:** `fetchExternalAuthorProfile`.
 - **Auth:** Public.
@@ -520,6 +534,20 @@
 - **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-posts`, body `{ messages }` for that external author, no Bearer.
 - **Errors:** Upstream failure, or 502 if the api is unreachable.
 - **Used by:** `fetchExternalAuthorPosts`.
+- **Auth:** Public.
+
+## Endpoint: GET /public-messages/[id]/external-shops
+
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-shops`, body `{ messages }` for that external author's shop notes, no Bearer.
+- **Errors:** Upstream failure, or 502 if the api is unreachable.
+- **Used by:** `fetchExternalAuthorShops`.
+- **Auth:** Public.
+
+## Endpoint: GET /public-messages/[id]/external-credits
+
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/external-credits`, body `{ messages }` for that external author's credit notes, no Bearer.
+- **Errors:** Upstream failure, or 502 if the api is unreachable.
+- **Used by:** `fetchExternalAuthorCredits`.
 - **Auth:** Public.
 
 ## Endpoint: GET /public-messages/[id]/external-replies

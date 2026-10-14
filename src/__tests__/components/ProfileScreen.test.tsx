@@ -89,6 +89,7 @@ vi.mock('@/lib/api', () => ({
     .fn()
     .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchMemberPosts: vi.fn().mockResolvedValue([]),
+  fetchMemberShops: vi.fn().mockResolvedValue([]),
   fetchMemberReplies: vi.fn().mockResolvedValue([]),
   fetchMessagePhoto: vi.fn(),
   fetchPublicMessage: vi.fn(),
