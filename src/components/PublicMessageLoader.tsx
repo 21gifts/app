@@ -35,11 +35,12 @@ import { useAuthStore } from '@/stores/auth-store';
 
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function publicStillPriority(index: number): {
-  loading: 'eager' | 'lazy';
-  fetchPriority: 'high' | 'low';
-} {
-  if (index === 0) {
+/** Eager first stills on the first two cards; everything else is lazy. */
+function publicStillPriority(
+  cardIndex: number,
+  photoIndex: number,
+): { loading: 'eager' | 'lazy'; fetchPriority: 'high' | 'low' } {
+  if ((cardIndex === 0 || cardIndex === 1) && photoIndex === 0) {
     return { loading: 'eager', fetchPriority: 'high' };
   }
   return { loading: 'lazy', fetchPriority: 'low' };
@@ -52,6 +53,7 @@ function PublicThreadCard({
   rateDay,
   fiat,
   knownNotes,
+  cardIndex,
 }: {
   note: ForumMessage;
   highlight: boolean;
@@ -59,6 +61,7 @@ function PublicThreadCard({
   rateDay: FiatRateDay | null;
   fiat: FiatCode;
   knownNotes: readonly ForumMessage[];
+  cardIndex: number;
 }): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -72,7 +75,7 @@ function PublicThreadCard({
     return {
       index,
       url: forumPhotoSrc(note.id, index),
-      ...publicStillPriority(index),
+      ...publicStillPriority(cardIndex, index),
     };
   }).filter(
     (
@@ -143,8 +146,8 @@ function PublicThreadCard({
           alt={t('forum.photoAlt', { name: note.name })}
           className="block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
           decoding="async"
-          loading="eager"
-          fetchPriority="high"
+          loading={publicStillPriority(cardIndex, 0).loading}
+          fetchPriority={publicStillPriority(cardIndex, 0).fetchPriority}
           onError={() => {
             setDeadPhotoKeys((prev) => new Set(prev).add(`${note.id}:0`));
           }}
@@ -447,8 +450,9 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
             rateDay={rateDay}
             fiat={fiat}
             knownNotes={[root, ...replies]}
+            cardIndex={0}
           />
-          {replies.map((reply) => (
+          {replies.map((reply, replyIndex) => (
             <PublicThreadCard
               key={reply.id}
               note={reply}
@@ -457,6 +461,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
               rateDay={rateDay}
               fiat={fiat}
               knownNotes={[root, ...replies]}
+              cardIndex={replyIndex + 1}
             />
           ))}
         </>

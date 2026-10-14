@@ -147,19 +147,21 @@ function stillPriority(
   return { loading: 'lazy', fetchPriority: 'low' };
 }
 
-/** Loaded still URLs for one note, in gallery order. Missing slots are skipped. */
+/** Blob or data stills for the shop editor. A public still is omitted. An incomplete list is empty so the editor loads every still itself. */
 function editStillUrls(
   message: ForumMessage,
   photoCount: number,
   photoUrls: Readonly<Record<string, string>>,
-  version: string | undefined,
 ): string[] {
   const found: string[] = [];
   for (let index = 0; index < photoCount; index += 1) {
-    const url = displayStillSrc(message, index, photoUrls, version);
-    if (url !== undefined) {
-      found.push(url);
+    const local = photoUrls[`${message.id}:${index}`];
+    if (typeof local === 'string' && (local.startsWith('blob:') || local.startsWith('data:'))) {
+      found.push(local);
     }
+  }
+  if (found.length < photoCount) {
+    return [];
   }
   return found;
 }
@@ -1599,7 +1601,7 @@ export function ForumBoard({
                       message={message}
                       onUpdated={onShopNoteUpdated}
                       {...(onShopNoteSaved !== undefined ? { onSaved: onShopNoteSaved } : {})}
-                      existingPhotos={editStillUrls(message, photoCount, photoUrls, versionToken)}
+                      existingPhotos={editStillUrls(message, photoCount, photoUrls)}
                       {...(videoSrc !== undefined ? { existingVideoUrl: videoSrc } : {})}
                     />
                   ) : null}

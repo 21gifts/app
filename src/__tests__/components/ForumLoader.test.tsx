@@ -1560,17 +1560,15 @@ describe('ForumLoader', () => {
       ]),
     );
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        blob: () =>
-          Promise.resolve({
-            type: 'image/jpeg',
-            arrayBuffer: () => Promise.resolve(Uint8Array.of(1).buffer),
-          }),
-      })),
-    );
+    const fetchSpy = vi.fn(async () => ({
+      ok: true,
+      blob: () =>
+        Promise.resolve({
+          type: 'image/jpeg',
+          arrayBuffer: () => Promise.resolve(Uint8Array.of(1).buffer),
+        }),
+    }));
+    vi.stubGlobal('fetch', fetchSpy);
     vi.mocked(setMessageShopText).mockResolvedValueOnce({
       ...SAMPLE,
       id: 'shop1',
@@ -1624,8 +1622,10 @@ describe('ForumLoader', () => {
       expect(within(card).getByText('Cafe Norte')).toBeTruthy();
     });
     expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
-    expect(photoMock).not.toHaveBeenCalled();
+    expect(photoMock).toHaveBeenCalledWith('sess', 'shop1', 0);
+    expect(photoMock).not.toHaveBeenCalledWith('sess', 'shop2', expect.anything());
     expect(publicPhotoMock).not.toHaveBeenCalled();
+    expect(fetchSpy.mock.calls.some((call) => String(call[0]).includes('/messages/'))).toBe(false);
     expect(shopsChanged).toHaveBeenCalled();
   });
 

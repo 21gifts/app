@@ -67,9 +67,12 @@ vi.mock('@/lib/api', () => ({
   setMessagePlace: vi.fn(),
   setMessageShopAccount: vi.fn(),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
+  fetchMessagePhoto: vi.fn(),
+  fetchShopNoteEdits: vi.fn().mockResolvedValue([]),
 }));
 
 import { fetchPublicMessage } from '@/lib/api';
+import { fetchMessagePhoto } from '@/lib/api';
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 
@@ -1984,6 +1987,194 @@ describe('ForumBoard', () => {
     );
     expect(screen.queryByAltText('Photo from Ada')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit shop note' })).toBeNull();
+  });
+
+  it('loads a public shop still through fetchMessagePhoto', async () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+      },
+    });
+    const createObjectURL = URL.createObjectURL;
+    const revokeObjectURL = URL.revokeObjectURL;
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => 'blob:loaded'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    });
+    vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob([Uint8Array.of(1)]));
+    try {
+      renderWithLocale(
+        <ForumBoard
+          messages={[
+            {
+              ...SAMPLE,
+              id: 'm-shop',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              hasPhoto: true,
+              photoCount: 1,
+              sats: 5,
+            },
+          ]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          photoUrls={{ 'm-shop:0': '/messages/m-shop/photo.jpg' }}
+          shopNoteEdit
+          onShopNoteUpdated={() => undefined}
+          {...modeProps('all')}
+        />,
+      );
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+        '/messages/m-shop/photo.jpg',
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+      await waitFor(() => {
+        expect(fetchMessagePhoto).toHaveBeenCalledTimes(1);
+      });
+      expect(fetchMessagePhoto).toHaveBeenCalledWith('token', 'm-shop', 0);
+    } finally {
+      cleanup();
+      Object.defineProperty(URL, 'createObjectURL', {
+        configurable: true,
+        writable: true,
+        value: createObjectURL,
+      });
+      Object.defineProperty(URL, 'revokeObjectURL', {
+        configurable: true,
+        writable: true,
+        value: revokeObjectURL,
+      });
+    }
+  });
+
+  it('keeps blob and data stills in the shop editor', async () => {
+    useAuthStore.setState({
+      session: 'token',
+      account: {
+        id: 'acc_staff',
+        linkingKey: '02abcdef',
+        role: 'moderator',
+        name: 'Mod',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+      },
+    });
+    const createObjectURL = URL.createObjectURL;
+    const revokeObjectURL = URL.revokeObjectURL;
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => 'blob:copy'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    });
+    const fetchSpy = vi.fn(async (url: string) => {
+      if (url === 'blob:kept-0' || url === 'data:image/jpeg;base64,aaa') {
+        return {
+          ok: true,
+          blob: async () => ({
+            type: 'image/jpeg',
+            arrayBuffer: async () => Uint8Array.of(1).buffer,
+          }),
+        };
+      }
+      return {
+        ok: false,
+        blob: async () => ({ type: '', arrayBuffer: async () => new ArrayBuffer(0) }),
+      };
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+    vi.mocked(fetchMessagePhoto).mockClear();
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            id: 'm-shop',
+            text: 'Cafe Luna\n\n#21GiftsShop',
+            hasPhoto: true,
+            photoCount: 2,
+            sats: 5,
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        photoUrls={{ 'm-shop:0': 'blob:kept-0', 'm-shop:1': 'data:image/jpeg;base64,aaa' }}
+        shopNoteEdit
+        onShopNoteUpdated={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    try {
+      fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+      await waitFor(() => {
+        expect(fetchSpy).toHaveBeenCalledWith('blob:kept-0');
+        expect(fetchSpy).toHaveBeenCalledWith('data:image/jpeg;base64,aaa');
+      });
+      expect(fetchMessagePhoto).not.toHaveBeenCalled();
+      expect(fetchSpy.mock.calls.some((call) => String(call[0]).includes('/messages/'))).toBe(
+        false,
+      );
+    } finally {
+      cleanup();
+      vi.unstubAllGlobals();
+      Object.defineProperty(URL, 'createObjectURL', {
+        configurable: true,
+        writable: true,
+        value: createObjectURL,
+      });
+      Object.defineProperty(URL, 'revokeObjectURL', {
+        configurable: true,
+        writable: true,
+        value: revokeObjectURL,
+      });
+    }
   });
 
   it('removes a still after img error', () => {

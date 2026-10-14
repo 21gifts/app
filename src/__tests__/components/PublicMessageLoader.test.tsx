@@ -934,6 +934,40 @@ describe('PublicMessageLoader', () => {
     expect(fetchRepliesPublic).toHaveBeenCalledWith(MESSAGE_ID);
   });
 
+  it('keeps only the first two cards first still eager', async () => {
+    const first: ForumMessage = {
+      ...sample,
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Bob',
+      text: 'First reply',
+      sats: 0,
+      hasPhoto: true,
+      photoCount: 1,
+    };
+    const second: ForumMessage = {
+      ...sample,
+      id: '33333333-3333-4333-8333-333333333333',
+      name: 'Carol',
+      text: '',
+      sats: 0,
+      hasPhoto: true,
+      photoCount: 1,
+    };
+    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 1, text: '' });
+    fetchRepliesPublic.mockResolvedValue([first, second]);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
+    });
+    expect(screen.getByAltText('Photo from Ada').getAttribute('loading')).toBe('eager');
+    expect(screen.getByAltText('Photo from Ada').getAttribute('fetchpriority')).toBe('high');
+    expect(screen.getByAltText('Photo from Bob').getAttribute('loading')).toBe('eager');
+    expect(screen.getByAltText('Photo from Bob').getAttribute('fetchpriority')).toBe('high');
+    expect(screen.getByAltText('Photo from Carol').getAttribute('loading')).toBe('lazy');
+    expect(screen.getByAltText('Photo from Carol').getAttribute('fetchpriority')).toBe('low');
+    expect(fetchPhoto).not.toHaveBeenCalled();
+  });
+
   it('loads the parent thread from a reply id and rings the opened reply', async () => {
     const replyId = '22222222-2222-4222-8222-222222222222';
     const reply: ForumMessage = {

@@ -3109,7 +3109,7 @@ Post in flight: spinner on **Post**, composer disabled, preview and caption **Ca
 
 ### Variant: photo-loading
 
-Forum row for Ada with caption **Caption waiting for the photo to load.** and `hasPhoto`, image bytes not yet loaded so no `<img>`. A failed photo fetch looks the same (text-only row) — not a separate variant.
+Forum row for Ada with caption **Caption waiting for the photo to load.** and `hasPhoto`. The still is already an `<img>` whose `src` is `/messages/{id}/photo.jpg` while the bytes load. A failed load removes that img, so the row is text-only — not a separate variant.
 
 ![21.gifts welcome photo loading](images/welcome-photo-loading.png)
 
