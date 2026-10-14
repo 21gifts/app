@@ -22,6 +22,7 @@ import {
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 import { logInteraction } from '@/lib/interaction-log';
+import { traceWallet } from '@/lib/sentry';
 
 vi.mock('@/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api')>();
@@ -35,6 +36,10 @@ vi.mock('@/lib/api', async (importOriginal) => {
 });
 
 vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
+
+vi.mock('@/lib/sentry', () => ({
+  traceWallet: vi.fn((_name: string, work: () => Promise<unknown>) => work()),
+}));
 
 vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
@@ -1329,6 +1334,24 @@ describe('usePasskeyLogin', () => {
     });
     expect(useAuthStore.getState().account?.id).toBe('acc_1');
     expect(rememberSessionPhrase).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('times the login passkey prompt as a wallet span', async () => {
+    const cred = { id: 'cred', type: 'public-key' };
+    const get = vi.fn().mockResolvedValue(cred);
+    vi.stubGlobal('navigator', { ...navigator, credentials: { create: vi.fn(), get } });
+    vi.mocked(traceWallet).mockClear();
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.login();
+    });
+    expect(traceWallet).toHaveBeenCalledTimes(1);
+    expect(traceWallet).toHaveBeenCalledWith('wallet.passkey', expect.any(Function), {
+      prompt: 'login',
+    });
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState().account?.id).toBe('acc_1');
     vi.unstubAllGlobals();
   });
 

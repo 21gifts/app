@@ -1,6 +1,7 @@
 import { captureMessage } from '@sentry/nextjs';
 import { getBreezApiKey } from '@/lib/config';
 import { logInteraction } from '@/lib/interaction-log';
+import { traceWallet, type WalletSpanAttributes } from '@/lib/sentry';
 import { peekSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
 import type { PaymentFailure, PayMethod, PayReason, PayStage } from '@/lib/wallet/payment-failure';
 import {
@@ -332,11 +333,13 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
   });
   const attempt = (async (): Promise<void> => {
     try {
-      const sdk = await loadSdk();
+      const sdk = await traceWallet('wallet.sdk.load', loadSdk);
       if (run !== runCounter) {
         return;
       }
-      const next = await sdk.connect(mnemonic, apiKey, appHost());
+      const next = await traceWallet('wallet.connect', () =>
+        sdk.connect(mnemonic, apiKey, appHost()),
+      );
       if (run !== runCounter) {
         try {
           await next.disconnect();
@@ -354,7 +357,7 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
       if (run !== runCounter) {
         return;
       }
-      await readBalance(run, next, { ensureSynced: true });
+      await traceWallet('wallet.sync.first', () => readBalance(run, next, { ensureSynced: true }));
       void rememberKnownPayments(run, next);
     } catch {
       if (run === runCounter) {
@@ -399,7 +402,7 @@ export async function refreshWallet(options?: {
     return;
   }
   try {
-    await readBalance(run, conn, options);
+    await traceWallet('wallet.balance', () => readBalance(run, conn, options));
   } catch {
     if (options?.ignoreFailure !== true) {
       await failRun(run);
@@ -509,7 +512,7 @@ export async function registerWalletAddress(username: string): Promise<void> {
   if (conn === null) {
     throw new Error('wallet-connect');
   }
-  await conn.registerAddress(username);
+  await traceWallet('wallet.address.register', () => conn.registerAddress(username));
 }
 
 /**
@@ -781,6 +784,28 @@ async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null
 }
 
 /**
+ * How a payment travels, for its trace spans, from its {@link methodOf}
+ * method: an LNURL receiver is paid over Lightning, and a request the method
+ * does not know is a short Spark address (`sp1…`) or else counts as base chain.
+ *
+ * @param request - Payment to prepare.
+ * @param method - Its method.
+ * @returns `spark`, `lightning`, or `onchain`.
+ */
+function payRoute(
+  request: WalletPayRequest,
+  method: PayMethod,
+): NonNullable<WalletSpanAttributes['route']> {
+  if (request.type === 'lnurl') {
+    return 'lightning';
+  }
+  if (method === 'spark' || method === 'lightning' || method === 'onchain') {
+    return method;
+  }
+  return /^sp(?:rt|t)?1/i.test(request.input.trim()) ? 'spark' : 'onchain';
+}
+
+/**
  * Prepares a payment from the in-app wallet and returns its amount and fee for
  * confirmation, checked against a balance read after the wallet has synced.
  * That read also updates the store while it is the latest read; when a newer
@@ -815,9 +840,10 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
   if (conn === null) {
     return { kind: 'unlock', failure: prepareFailure('unlock') };
   }
+  const route = payRoute(request, requestMethod);
   let prepared;
   try {
-    prepared = await conn.prepare(request);
+    prepared = await traceWallet('wallet.prepare', () => conn.prepare(request), { route });
   } catch (err: unknown) {
     if (connection !== conn) {
       return { kind: 'failed', failure: prepareFailure('disconnected', err) };
@@ -880,6 +906,8 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
     const reason = connection === conn ? 'balance_read' : 'disconnected';
     return { kind: 'failed', failure: failureOf('prepare', reason, feeSats, err) };
   }
+  // The prepared method settles a guess from the text, such as a BIP21 URI paid over Lightning.
+  const sendRoute = quote !== undefined ? 'onchain' : route === 'onchain' ? 'lightning' : route;
   let sent = false;
   const send = async (speed: OnchainSpeed = 'medium'): Promise<WalletSendResult> => {
     const chosenFeeSats = quote === undefined ? feeSats : quote.fees[speed];
@@ -911,7 +939,9 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
       );
     };
     try {
-      const sending = prepared.send(speed);
+      const sending = traceWallet('wallet.send', () => prepared.send(speed), {
+        route: sendRoute,
+      });
       const done = await withTimeout(
         sending.then(() => true),
         WALLET_SEND_TIMEOUT_MS,

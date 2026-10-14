@@ -1087,7 +1087,10 @@ describe('PosScreen', () => {
       vi.mocked(logInteraction).mockClear();
       renderWithLocale(<PosScreen />);
       expect((await screen.findByRole('status')).textContent).toBe('Paid ✓');
-      expect(logInteraction).toHaveBeenCalledTimes(1);
+      // Recorded by an effect, which may run after the status is in the DOM.
+      await waitFor(() => {
+        expect(logInteraction).toHaveBeenCalledTimes(1);
+      });
       expect(logInteraction).toHaveBeenCalledWith(
         'pos_charge_paid_seen',
         { chargeId: 'c1', amountSats: 21 },

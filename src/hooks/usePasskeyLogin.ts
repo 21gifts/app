@@ -16,6 +16,7 @@ import { iosInstalledVersion, iosPasskeyBlock } from '@/lib/ios-passkey';
 import { getBreezApiKey } from '@/lib/config';
 import { clearSessionPhrase } from '@/lib/tab-phrase';
 import { obtainPrfFirst, prfEvalFirstSalt, readPrfFirst } from '@/lib/prf-mnemonic';
+import { traceWallet } from '@/lib/sentry';
 import { rememberPhraseFromPrf } from '@/lib/wallet/wallet-phrase';
 import {
   base64UrlToBytes,
@@ -780,7 +781,9 @@ export function usePasskeyLogin(): UsePasskeyLogin {
       }
       let credential: Credential | null;
       try {
-        credential = await navigator.credentials.get(request);
+        credential = await traceWallet('wallet.passkey', () => navigator.credentials.get(request), {
+          prompt: 'login',
+        });
       } catch (error: unknown) {
         reportFailedAttempt(
           'client.passkey.login.fail',

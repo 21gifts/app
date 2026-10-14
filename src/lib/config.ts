@@ -6,10 +6,11 @@
  * a Dockerfile build placeholder that `entrypoint.sh` substitutes at container
  * start. `NEXT_PUBLIC_APP_VERSION` is baked at `next build`, not substituted by
  * `entrypoint.sh`. `NEXT_PUBLIC_BREEZ_API_KEY` is read through `getBreezApiKey`.
- * `NEXT_PUBLIC_PLATFORM_USERNAME`, `NEXT_PUBLIC_SENTRY_DSN`, and
- * `NEXT_PUBLIC_SENTRY_ENVIRONMENT` are optional Dockerfile placeholders:
- * `entrypoint.sh` substitutes an empty string when the container has no value,
- * which hides the donation address or turns error reporting off.
+ * `NEXT_PUBLIC_PLATFORM_USERNAME`, `NEXT_PUBLIC_SENTRY_DSN`,
+ * `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, and `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`
+ * are optional Dockerfile placeholders: `entrypoint.sh` substitutes an empty
+ * string when the container has no value, which hides the donation address,
+ * turns error reporting off, or leaves the default trace sample rate.
  */
 
 /**
@@ -147,4 +148,27 @@ export function getSentryEnvironment(): string | null {
     return null;
   }
   return value.trim();
+}
+
+/**
+ * Optional share of browser page loads, navigations, and wallet steps that
+ * send a performance trace (`NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`), a number
+ * from 0 to 1 such as `0.25`. Unset, empty, blank, or anything else (`1.5`,
+ * `-1`, `1e-2`, `abc`) returns `null`, and the caller uses its default. Only
+ * read while error reporting is on. Does not throw. Delivered like
+ * {@link getSentryDsn}.
+ *
+ * The value is read with a regular expression, not `Number`, on purpose: the
+ * minifier cannot fold it against the placeholder literal, so the substituted
+ * value is what counts.
+ *
+ * @returns The rate, or `null` when unset, blank, or not a number from 0 to 1.
+ */
+export function getSentryTracesSampleRate(): number | null {
+  const value = process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE;
+  if (value === undefined) {
+    return null;
+  }
+  const match = /^\s*(0(?:\.\d+)?|1(?:\.0+)?|\.\d+)\s*$/.exec(value);
+  return match === null ? null : Number(match[1]);
 }
