@@ -86,7 +86,9 @@ function visualStatus(reopened: boolean): WalletViewStatus | null {
  * shows `connecting` until the wallet is verified, or `error` with
  * `setupFailed` once the setup gave up. After a failed open the status is
  * `error` with `retrying` set while the wallet service opens the wallet again
- * in the background, and turns `ready` on its own. Visual pins (`?visual=balance-…`,
+ * in the background, and turns `ready` on its own. While the wallet code needs
+ * a page reload (`walletNeedsReload`) no automatic attempt runs, `retrying` is
+ * false, and retry reloads the page. Visual pins (`?visual=balance-…`,
  * `?visual=history-…`, `?visual=wallet-received` and `?visual=move-arrived` as ready, `?visual=setup-pending` as connecting, and the
  * `?visual=send-…` pins as ready, and `?visual=balance-reopening` as a failed open with `retrying`
  * that turns ready after {@link WALLET_VISUAL_REOPEN_MS}) are honoured only in a Playwright build

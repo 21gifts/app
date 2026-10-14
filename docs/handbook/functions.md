@@ -3982,7 +3982,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** True after the SDK's initialisation rejected in this page, or while it is still pending, for example after the connect deadline expired during it. The SDK caches its initialisation promise, so only a reload recovers. A failed import alone does not set it.
 - **Inputs:** None.
 - **Returns / side effects:** boolean.
-- **Used by:** `useWallet.retry`, `useWalletSetup.retry`, and `useWalletPay.retry`. Implemented in `wallet-sdk`.
+- **Used by:** `useWallet.retry`, `useWalletSetup.retry`, `useWalletPay.retry`, and the retry cycle of `connectWallet` (`syncRetrying`, `runRetry`). Implemented in `wallet-sdk`.
 
 ## Function: listenForWalletPhrase
 
