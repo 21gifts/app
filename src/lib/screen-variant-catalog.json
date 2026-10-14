@@ -3390,6 +3390,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:posts-open-loan-pay-full",
+    "label": "/members/[accountId] posts-open-loan-pay-full",
+    "visual": "state-members-posts-open-loan-pay-full",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-open-repay-today",
     "label": "/members/[accountId] posts-open-repay-today",
     "visual": "state-members-posts-open-repay-today",
@@ -5382,9 +5388,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]:loan-lend",
+    "label": "/messages/[id] loan-lend",
+    "visual": "state-messages-id-loan-lend",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]:loan-pay",
     "label": "/messages/[id] loan-pay",
     "visual": "state-messages-id-loan-pay",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-pay-full",
+    "label": "/messages/[id] loan-pay-full",
+    "visual": "state-messages-id-loan-pay-full",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
