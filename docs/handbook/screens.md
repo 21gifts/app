@@ -4369,6 +4369,18 @@ Identity card; posts pressed; the listed post has `sats: 10500`, `goalSats: 2100
 
 ![21.gifts member posts open with credit goal](images/members-posts-open-goal-credit.png)
 
+### Variant: posts-open-loan-lend
+
+Signed-in Ada on Carol's profile; posts pressed; Carol's one post is a loan that still collects (`sats: 10500` of `goalSats: 21000`, 30 days). After **Lend** in its loan block is pressed, the card opens its money reaction: the amount field reads **Amount to lend** and has the focus, then the reaction line and **Post**.
+
+![21.gifts member posts loan lend](images/members-posts-open-loan-lend.png)
+
+### Variant: posts-open-loan-pay
+
+The same loan after **₿210** and `Count me in!` were posted. A profile card has no reaction pay page, so the in-card pay sheet opens: **You lend ₿210 · $0.21**, the muted note **You are lending to Carol. Once the loan is fully funded, you get it back in 30 daily payments.**, and the wallet button **Lend ₿210 · $0.21** (the in-app wallet confirm view).
+
+![21.gifts member posts loan pay](images/members-posts-open-loan-pay.png)
+
 ### Variant: posts-open-loan-tag-open
 
 Same post as **posts-open-goal-credit**, after **Loan** is pressed. A line under the name says a loan is paid back.
@@ -6578,9 +6590,15 @@ Unsigned permalink of a filled credit. The loan block reads **Fully funded · be
 
 ### Variant: loan-repaid
 
-Unsigned permalink of a filled credit whose two shares are both paid. The loan block shows a full green bar at **100%** and **Paid back** in green with a check; the ledger below lists both days as paid.
+Unsigned permalink of a filled credit whose two shares are both paid. The loan block shows a full green bar at **100%** and **Paid back** in green with a check. Below it, **Given** lists Bea @bea and **Paid back** shows the plan chart from 27 Sep 2026 to 28 Sep 2026; the day rows are on the repayment list, not on this page.
 
 ![21.gifts public message loan repaid](images/messages-id-loan-repaid.png)
+
+### Variant: loan-pay
+
+Signed-in permalink of Maria's loan that still collects (`sats: 10500` of `goalSats: 21000`, 30 days). The note page opens the card already, so **Lend** puts the focus in **Amount to lend**. After **₿210** and `Count me in!` are posted, the in-card pay sheet reads **You lend ₿210 · $0.21**, then the muted note **You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.** and the wallet button **Lend ₿210 · $0.21**.
+
+![21.gifts public message loan pay](images/messages-id-loan-pay.png)
 
 ### Variant: photos
 
