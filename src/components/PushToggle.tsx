@@ -259,7 +259,7 @@ export function PushToggle(): ReactElement | null {
           <SegmentedControl
             tone="neutral"
             fullWidth={false}
-            className={roomOnOwnLine ? 'self-end' : undefined}
+            className={roomOnOwnLine ? 'self-end' : ''}
             value={selected}
             options={room}
             onChange={onRoomPress}
