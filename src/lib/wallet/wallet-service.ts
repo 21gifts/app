@@ -6,6 +6,7 @@ import { peekSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
 import type { PaymentFailure, PayMethod, PayReason, PayStage } from '@/lib/wallet/payment-failure';
 import {
   loadWalletSdk,
+  walletNeedsReload,
   type OnchainSpeed,
   type WalletConnection,
   type WalletPayment,
@@ -38,6 +39,63 @@ const CONNECT_TIMEOUT_MS = 30_000;
 
 /** Counter value of the read that last wrote the store balance. */
 let writtenReadCounter = 0;
+
+/** Nominal pause before the first automatic retry after a failed open. */
+export const WALLET_RETRY_BASE_MS = 2_000;
+
+/** Longest nominal pause between two automatic retries. */
+export const WALLET_RETRY_CAP_MS = 60_000;
+
+/**
+ * Share of the nominal pause that jitter may take away: each pause is the
+ * nominal one times a random factor between `1 - WALLET_RETRY_JITTER` and 1,
+ * so tabs that failed together do not retry together and no pause exceeds
+ * {@link WALLET_RETRY_CAP_MS}.
+ */
+export const WALLET_RETRY_JITTER = 0.2;
+
+/**
+ * Longest wait for the failed connection to finish disconnecting before the
+ * pause of the next retry starts anyway, so a disconnect that never settles
+ * cannot hold the retries back.
+ */
+export const WALLET_RETRY_DISCONNECT_WAIT_MS = 5_000;
+
+/**
+ * Automatic retries after the wallet failed, from the first failure until the
+ * wallet is ready, the member presses **Try again**, or the wallet is
+ * disconnected. There is no attempt limit.
+ */
+interface RetryCycle {
+  /** Failures since the cycle started or since a trigger reset the backoff. */
+  failures: number;
+  /**
+   * Timer of the next retry, or, while the failed connection is closing, of
+   * the end of the wait for it; `null` while a retry runs or the cycle waits
+   * for a trigger.
+   */
+  timer: ReturnType<typeof setTimeout> | null;
+  /** True while a retry's connect attempt is running. */
+  attempting: boolean;
+  /**
+   * The disconnect of the failed connection, from the failure until it has
+   * finished or {@link WALLET_RETRY_DISCONNECT_WAIT_MS} have passed; `null`
+   * otherwise. No retry is planned or started meanwhile.
+   */
+  closing: Promise<void> | null;
+}
+
+/** The retry cycle in progress, or `null`. */
+let retryCycle: RetryCycle | null = null;
+
+/** Loader of the last connect call, which the automatic retries use; `null` before the first call. */
+let retryLoadSdk: WalletSdkLoader | null = null;
+
+/**
+ * True once a failed open was reported, until the wallet is ready again or is
+ * disconnected. While it is set, later failures are not reported.
+ */
+let openFailureReported = false;
 
 /**
  * Balance reads (`getInfo`) of the current connection still running, so an
@@ -101,7 +159,181 @@ function bumpRun(): number {
 }
 
 /**
+ * Pause before the retry that follows the given number of failures: the base
+ * doubled per failure, capped, minus the jitter.
+ *
+ * @param failures - Failures so far in this backoff run.
+ * @returns The pause in milliseconds.
+ */
+function retryDelayMs(failures: number): number {
+  const nominal = Math.min(WALLET_RETRY_CAP_MS, WALLET_RETRY_BASE_MS * 2 ** failures);
+  return Math.round(nominal * (1 - WALLET_RETRY_JITTER * Math.random()));
+}
+
+/**
+ * Writes whether an automatic retry is on its way to the store: a cycle is in
+ * progress and the wallet code does not need a page reload first.
+ */
+function syncRetrying(): void {
+  const retrying = retryCycle !== null && !walletNeedsReload();
+  if (useWalletStore.getState().retrying !== retrying) {
+    useWalletStore.getState().setRetrying(retrying);
+  }
+}
+
+/**
+ * Ends the retry cycle: clears its timer and removes its listeners. A retry
+ * attempt that is still running is not stopped here; the run counter does that.
+ */
+function endRetryCycle(): void {
+  const cycle = retryCycle;
+  if (cycle === null) {
+    return;
+  }
+  if (cycle.timer !== null) {
+    clearTimeout(cycle.timer);
+  }
+  retryCycle = null;
+  window.removeEventListener('online', onRetryTrigger);
+  document.removeEventListener('visibilitychange', onRetryTrigger);
+  syncRetrying();
+}
+
+/**
+ * Starts the timer of the next retry and counts the failure that led to it.
+ *
+ * @param cycle - The cycle in progress.
+ */
+function armRetry(cycle: RetryCycle): void {
+  const delay = retryDelayMs(cycle.failures);
+  cycle.failures += 1;
+  cycle.attempting = false;
+  cycle.timer = setTimeout(runRetry, delay);
+  syncRetrying();
+}
+
+/**
+ * Plans the next automatic retry after the wallet failed, starting a cycle
+ * when none is in progress. The cycle exists at once (the store shows
+ * `retrying`), but the pause before the retry only starts once the failed
+ * connection has finished disconnecting, or after
+ * {@link WALLET_RETRY_DISCONNECT_WAIT_MS} when it has not by then; until then
+ * no trigger starts a retry either, so the next connection does not open
+ * beside one that is still closing, and a disconnect that never settles
+ * cannot hold the retries back. Without a key or a tab phrase there is
+ * nothing to retry and a cycle in progress ends.
+ *
+ * @param dropped - Settles when the failed connection has finished disconnecting.
+ */
+function scheduleRetry(dropped: Promise<void>): void {
+  if (getBreezApiKey() === null || peekSessionPhrase() === null) {
+    endRetryCycle();
+    return;
+  }
+  if (retryCycle === null) {
+    retryCycle = { failures: 0, timer: null, attempting: false, closing: null };
+    window.addEventListener('online', onRetryTrigger);
+    document.addEventListener('visibilitychange', onRetryTrigger);
+  }
+  const cycle = retryCycle;
+  cycle.attempting = false;
+  cycle.closing = dropped;
+  const startPause = (): void => {
+    // Ended or replaced meanwhile (sign-out, Try again, a ready wallet), or
+    // this wait is already over: nothing to plan.
+    if (retryCycle !== cycle || cycle.closing !== dropped) {
+      return;
+    }
+    clearTimeout(wait);
+    cycle.closing = null;
+    armRetry(cycle);
+  };
+  const wait = setTimeout(startPause, WALLET_RETRY_DISCONNECT_WAIT_MS);
+  cycle.timer = wait;
+  syncRetrying();
+  void dropped.then(startPause);
+}
+
+/**
+ * True while a retry must not start: the tab is hidden or the browser is
+ * offline. The cycle then waits for `visibilitychange` or `online`.
+ *
+ * @returns Whether to wait for a trigger.
+ */
+function retryMustWait(): boolean {
+  return document.visibilityState === 'hidden' || !navigator.onLine;
+}
+
+/**
+ * Runs the retry whose pause is over: a quiet connect attempt that leaves the
+ * store at `error` until it succeeds. Waits for a trigger while the tab is
+ * hidden or offline, and only checks again later while the wallet code needs
+ * a page reload.
+ */
+function runRetry(): void {
+  const cycle = retryCycle;
+  const loadSdk = retryLoadSdk;
+  /* v8 ignore next 3 -- the timer is cleared whenever the cycle ends, and a cycle only follows a connect call */
+  if (cycle === null || loadSdk === null) {
+    return;
+  }
+  cycle.timer = null;
+  if (getBreezApiKey() === null || peekSessionPhrase() === null) {
+    endRetryCycle();
+    return;
+  }
+  if (retryMustWait()) {
+    return;
+  }
+  if (walletNeedsReload()) {
+    armRetry(cycle);
+    return;
+  }
+  cycle.attempting = true;
+  syncRetrying();
+  void openWallet(loadSdk, true);
+}
+
+/**
+ * Handles `online` and `visibilitychange` during a retry cycle: once the tab
+ * is visible and online, the backoff starts again and the retry runs at once,
+ * unless one is already running or the failed connection is still closing.
+ */
+function onRetryTrigger(): void {
+  const cycle = retryCycle;
+  /* v8 ignore next 3 -- the listeners are removed whenever the cycle ends */
+  if (cycle === null) {
+    return;
+  }
+  if (retryMustWait()) {
+    return;
+  }
+  cycle.failures = 0;
+  if (cycle.attempting || cycle.closing !== null) {
+    return;
+  }
+  if (cycle.timer !== null) {
+    clearTimeout(cycle.timer);
+  }
+  runRetry();
+}
+
+/**
+ * Writes a read balance to the store as ready. A ready wallet ends the retry
+ * cycle, and its next failed open is reported again.
+ *
+ * @param balanceSats - Confirmed balance in satoshis.
+ * @param identityPubkey - Wallet identity public key.
+ */
+function markReady(balanceSats: number, identityPubkey: string): void {
+  openFailureReported = false;
+  useWalletStore.getState().setReady(balanceSats, identityPubkey);
+  endRetryCycle();
+}
+
+/**
  * Drops the current connection handle and disconnects it. Errors are swallowed.
+ * The handle is cleared and the disconnect is started before the first await.
  *
  * @returns Resolves after disconnect completes or fails.
  */
@@ -148,7 +380,7 @@ async function readBalance(
       return;
     }
     writtenReadCounter = read;
-    useWalletStore.getState().setReady(info.balanceSats, info.identityPubkey);
+    markReady(info.balanceSats, info.identityPubkey);
   } catch (err: unknown) {
     if (run !== runCounter || read !== balanceReadCounter) {
       return;
@@ -158,9 +390,11 @@ async function readBalance(
 }
 
 /**
- * Marks the store as error and closes the connection when `run` is still current.
- * The store write is synchronous so a concurrent logout or reconnect cannot be
- * overwritten after disconnect awaits.
+ * Marks the store as error, starts closing the connection, and plans the
+ * next automatic retry when `run` is still current. The store write, the
+ * start of the disconnect, and the retry plan are synchronous so a concurrent
+ * logout or reconnect cannot be overwritten after disconnect awaits; the
+ * retry itself waits until the disconnect has finished.
  *
  * @param run - Run number that owns this failure.
  * @returns Resolves after disconnect completes or fails.
@@ -171,18 +405,27 @@ async function failRun(run: number): Promise<void> {
   }
   bumpRun();
   useWalletStore.getState().setError();
-  await dropConnection();
+  // The disconnect starts first, so the retry plan waits for it.
+  const dropped = dropConnection();
+  scheduleRetry(dropped);
+  await dropped;
 }
 
 /**
  * Reports a wallet that did not open: `Wallet did not open` to error reporting
  * (a no-op while it is off; one issue per reason) and the member event
- * `wallet_open_failed` (dropped without a session).
+ * `wallet_open_failed` (dropped without a session). Only the first failure is
+ * reported: nothing more goes out until the wallet has been ready again or
+ * was disconnected, so the automatic retries and **Try again** stay silent.
  *
  * @param reason - `timeout` after the connect deadline, `error` when loading,
  *   connecting, or the first read failed.
  */
 function reportWalletOpenFailure(reason: 'timeout' | 'error'): void {
+  if (openFailureReported) {
+    return;
+  }
+  openFailureReported = true;
   captureMessage('Wallet did not open', {
     level: 'error',
     fingerprint: ['wallet-open-failed', reason],
@@ -304,25 +547,26 @@ export function onIncomingPayment(listener: (payment: WalletPayment) => void): (
 }
 
 /**
- * Connects the in-app wallet from the tab phrase and Breez API key. Loading the
- * SDK, connecting, and the first synchronized balance read share a 30-second
- * deadline. A timeout moves a still-connecting wallet to `error`, but leaves a
- * wallet made ready by a synchronized refresh unchanged. No-ops when either
- * input is missing. Never rejects; failures end in the store. A failure of
- * the attempt that is still current is reported as `wallet_open_failed`
- * (`error`, or `timeout` at the deadline) and `Wallet did not open`.
+ * One connect attempt; see {@link connectWallet}. A quiet attempt is an
+ * automatic retry: the store stays at `error` while it runs and only a
+ * success changes it.
  *
- * @param loadSdk - SDK loader; defaults to {@link loadWalletSdk}.
- * @returns Resolves when the attempt leaves `connecting`, is superseded, or reaches its deadline.
+ * @param loadSdk - SDK loader.
+ * @param quiet - Whether this is an automatic retry.
+ * @returns Resolves when the attempt succeeded or failed, is superseded, or reaches its deadline.
  */
-export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): Promise<void> {
+async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<void> {
   const apiKey = getBreezApiKey();
   const mnemonic = peekSessionPhrase();
+  /* v8 ignore next 3 -- both callers checked the key and the phrase */
   if (apiKey === null || mnemonic === null) {
     return;
   }
   const run = bumpRun();
-  useWalletStore.getState().setConnecting();
+  const waiting = quiet ? 'error' : 'connecting';
+  if (!quiet) {
+    useWalletStore.getState().setConnecting();
+  }
   void dropConnection();
   const timeoutSentinel = Symbol('connect timeout');
   let timeout!: ReturnType<typeof setTimeout>;
@@ -368,24 +612,66 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
   })();
   const result: void | typeof timeoutSentinel = await Promise.race([attempt, deadline]);
   if (result !== timeoutSentinel) {
-    if (run !== runCounter || useWalletStore.getState().status !== 'connecting') {
+    if (run !== runCounter || useWalletStore.getState().status !== waiting) {
       clearTimeout(timeout);
       return;
     }
     await deadline;
   }
-  if (run === runCounter && useWalletStore.getState().status === 'connecting') {
+  if (run === runCounter && useWalletStore.getState().status === waiting) {
     reportWalletOpenFailure('timeout');
     void failRun(run);
   }
 }
 
 /**
+ * Connects the in-app wallet from the tab phrase and Breez API key. Loading the
+ * SDK, connecting, and the first synchronized balance read share a 30-second
+ * deadline. A timeout moves a still-connecting wallet to `error`, but leaves a
+ * wallet made ready by a synchronized refresh unchanged. No-ops when either
+ * input is missing. Never rejects; failures end in the store.
+ *
+ * After a failure the wallet is opened again automatically, without an
+ * attempt limit, for as long as the tab holds the phrase and the key: the
+ * first retry about {@link WALLET_RETRY_BASE_MS} later, each pause twice the
+ * one before up to {@link WALLET_RETRY_CAP_MS}, each shortened by up to
+ * {@link WALLET_RETRY_JITTER} of itself. A pause starts once the failed
+ * connection has finished disconnecting, at the latest
+ * {@link WALLET_RETRY_DISCONNECT_WAIT_MS} after the failure. While the wallet
+ * code needs a page reload (`walletNeedsReload`) no automatic attempt runs:
+ * the cycle only checks again after each pause, `retrying` is false, and
+ * **Try again** reloads the page. Between and during those retries
+ * the store stays at `error` with `retrying` set, so screens keep the
+ * could-not-be-opened state with **Try again**, and a retry that succeeds
+ * makes the store `ready`. While the tab is hidden or the browser is offline
+ * no retry starts; `visibilitychange` and `online` start one at once and
+ * begin the backoff again. Calling this function (also from **Try again**)
+ * ends the retries in progress and starts over; {@link disconnectWallet} and
+ * a ready wallet end them.
+ *
+ * The first failure is reported as `wallet_open_failed` (`error`, or
+ * `timeout` at the deadline) and `Wallet did not open`; later failures are
+ * not reported until the wallet has been ready again or was disconnected.
+ *
+ * @param loadSdk - SDK loader; defaults to {@link loadWalletSdk}.
+ * @returns Resolves when the attempt leaves `connecting`, is superseded, or reaches its deadline.
+ */
+export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): Promise<void> {
+  if (getBreezApiKey() === null || peekSessionPhrase() === null) {
+    return;
+  }
+  retryLoadSdk = loadSdk;
+  endRetryCycle();
+  await openWallet(loadSdk, false);
+}
+
+/**
  * Refreshes the balance on the current connection with a plain read, or a
  * read after the wallet has synced. No-ops without a connection. When reads
  * overlap only the latest one writes. Never rejects; a failure while current
- * ends in the store, unless `ignoreFailure` is set: then a failed read changes
- * nothing and the wallet stays as it is.
+ * ends in the store and starts the automatic retries of {@link connectWallet},
+ * unless `ignoreFailure` is set: then a failed read changes nothing and the
+ * wallet stays as it is.
  *
  * @param options - Set `ensureSynced` to read after the wallet has synced, so
  *   a payment that arrived without a wallet event is counted. Set
@@ -412,12 +698,15 @@ export async function refreshWallet(options?: {
 
 /**
  * Disconnects the wallet, resets the store to its resting status, and invalidates
- * in-flight work. Never rejects.
+ * in-flight work, including the automatic retries after a failed open: their
+ * timer and listeners are removed. Never rejects.
  *
  * @returns Resolves after the handle is dropped.
  */
 export async function disconnectWallet(): Promise<void> {
   bumpRun();
+  endRetryCycle();
+  openFailureReported = false;
   useWalletStore.getState().reset();
   await dropConnection();
 }
@@ -889,7 +1178,7 @@ export async function payFromWallet(request: WalletPayRequest): Promise<WalletPa
     let balanceSats = info.balanceSats;
     if (read === balanceReadCounter) {
       writtenReadCounter = read;
-      useWalletStore.getState().setReady(info.balanceSats, info.identityPubkey);
+      markReady(info.balanceSats, info.identityPubkey);
     } else if (writtenReadCounter > read) {
       /* v8 ignore next -- a newer read of this connection wrote a balance */
       balanceSats = useWalletStore.getState().balanceSats ?? info.balanceSats;

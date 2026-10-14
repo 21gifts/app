@@ -4084,6 +4084,11 @@
     "es": "Fixture fijado (?visual=balance-error, solo builds de Playwright), no una wallet real. La región Saldo muestra la frase de apertura fallida y etiquetado Intentar de nuevo.",
     "fil": "Naka-pin na fixture (?visual=balance-error, Playwright builds lang), hindi live na wallet. Ipinapakita ng bahaging Balanse ang pangungusap ng nabigong pagbukas at may label na Subukan ulit."
   },
+  "/wallet:balance-reopening": {
+    "de": "Fixierte Fixture (?visual=balance-reopening, nur Playwright-Builds), keine echte Wallet: Die Wallet ließ sich nicht öffnen und wird im Hintergrund erneut geöffnet. Bereich Guthaben zeigt den Satz zum fehlgeschlagenen Öffnen und beschriftet Erneut versuchen; im Kopf steht links vom Menü der Platzhalter für das Guthaben. Nach vier Sekunden zeigt die Fixture von selbst das Guthaben, ohne Tastendruck.",
+    "es": "Fixture fijado (?visual=balance-reopening, solo builds de Playwright), no una wallet real: la wallet no se pudo abrir y se vuelve a abrir en segundo plano. La región Saldo muestra la frase de apertura fallida y etiquetado Intentar de nuevo; en la cabecera, a la izquierda del Menú, está el marcador de posición del saldo. A los cuatro segundos el fixture muestra el saldo por sí solo, sin pulsar nada.",
+    "fil": "Naka-pin na fixture (?visual=balance-reopening, Playwright builds lang), hindi live na wallet: hindi nabuksan ang wallet at binubuksan itong muli sa background. Ipinapakita ng bahaging Balanse ang pangungusap ng nabigong pagbukas at may label na Subukan ulit; sa header, sa kaliwa ng Menu, naroon ang placeholder ng balanse. Pagkalipas ng apat na segundo, kusang ipinapakita ng fixture ang balanse, nang walang pinipindot."
+  },
   "/wallet:history-empty": {
     "de": "Fixierte Fixture (?visual=history-empty, nur Playwright-Builds). Bereites Guthaben, dann die Karte Zahlungen mit Noch keine Zahlungen., über Senden und Empfangen.",
     "es": "Fixture fijado (?visual=history-empty, solo builds de Playwright). Saldo listo, luego la tarjeta Pagos con Todavía no hay pagos., encima de Enviar y Recibir.",

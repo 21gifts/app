@@ -69,16 +69,85 @@ test('Function: HeaderBalance — the ready balance sits left of Menu with its f
   ).toBe(true);
 });
 
-test('Function: HeaderBalance — nothing in the header while the wallet opens or is not available', async ({
+test('Function: HeaderBalance — a skeleton while the wallet opens, nothing after a failure that is not retried or without a wallet', async ({
   page,
 }) => {
   await signIn(page);
   await page.goto('/welcome?visual=balance-connecting');
-  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+  const menu = page.getByRole('button', { name: 'Menu' });
+  await expect(menu).toBeVisible();
+  const skeleton = page.locator('[data-balance-skeleton]');
+  await expect(skeleton).toBeVisible();
+  await expect(skeleton).toHaveAttribute('aria-hidden', 'true');
+  await expect(page.locator('[data-wallet-tour="balance"]')).toHaveCount(0);
+  const box = await skeleton.boundingBox();
+  const menuBox = await menu.boundingBox();
+  expect(box!.x + box!.width).toBeLessThanOrEqual(menuBox!.x + 1);
+  expect(box!.height).toBeGreaterThanOrEqual(36);
+  await page.goto('/welcome?visual=balance-error');
+  await expect(menu).toBeVisible();
+  await expect(skeleton).toHaveCount(0);
   await expect(page.locator('[data-wallet-tour="balance"]')).toHaveCount(0);
   await page.goto('/welcome');
-  await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+  await expect(menu).toBeVisible();
+  await expect(skeleton).toHaveCount(0);
   await expect(page.locator('[data-wallet-tour="balance"]')).toHaveCount(0);
+});
+
+test('Function: HeaderBalance — the amount replaces the skeleton without moving the header', async ({
+  page,
+}) => {
+  await signIn(page);
+  const now = Date.now();
+  await page.clock.install({ time: now });
+  await page.clock.pauseAt(now + 1_000);
+  await page.goto('/welcome?visual=balance-reopening');
+  const menu = page.getByRole('button', { name: 'Menu' });
+  const skeleton = page.locator('[data-balance-skeleton]');
+  await expect(skeleton).toBeVisible();
+  const before = await skeleton.boundingBox();
+  const menuBefore = await menu.boundingBox();
+  const chromeBefore = await page.locator('[data-app-chrome]').boundingBox();
+  await page.clock.runFor(4_000);
+  const balance = page.getByRole('link', { name: "Balance ₿21'000 $21.00" });
+  await expect(balance).toBeVisible();
+  await expect(skeleton).toHaveCount(0);
+  const after = await balance.boundingBox();
+  // Same row, same height, same right edge: only the width follows the amount.
+  expect(after!.y).toBe(before!.y);
+  expect(after!.height).toBe(before!.height);
+  expect(after!.x + after!.width).toBe(before!.x + before!.width);
+  expect(await menu.boundingBox()).toEqual(menuBefore);
+  expect(await page.locator('[data-app-chrome]').boundingBox()).toEqual(chromeBefore);
+});
+
+// Playwright builds have no wallet key, so no real wallet opens here. The
+// `balance-reopening` pin stands in for a first open that failed and a
+// background retry that succeeds; the retry cycle itself is unit-tested.
+test('Function: useWallet — a wallet that failed to open becomes ready by itself, without a press', async ({
+  page,
+}) => {
+  await signIn(page);
+  const now = Date.now();
+  await page.clock.install({ time: now });
+  await page.clock.pauseAt(now + 1_000);
+  await page.goto('/wallet?visual=balance-reopening');
+  const region = page.getByRole('region', { name: 'Balance' });
+  await expect(region.getByRole('alert')).toHaveText(
+    'Your wallet could not be opened. Please try again.',
+  );
+  await expect(region.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await expect(page.locator('[data-balance-skeleton]')).toBeVisible();
+  await expect(page.locator('[data-wallet-tour="balance"]')).toHaveCount(0);
+  await page.clock.runFor(3_900);
+  await expect(region.getByRole('alert')).toBeVisible();
+  await page.clock.runFor(200);
+  await expect(region.getByRole('alert')).toHaveCount(0);
+  await expect(region.getByRole('button', { name: 'Try again' })).toHaveCount(0);
+  await expect(region).toContainText("₿21'000");
+  await expect(region).toContainText('$21.00');
+  await expect(page.getByRole('link', { name: "Balance ₿21'000 $21.00" })).toBeVisible();
+  await expect(page.locator('[data-balance-skeleton]')).toHaveCount(0);
 });
 
 test('Function: ReceivedNotice — a payment that arrived shows the banner and the green header amount; X closes it', async ({

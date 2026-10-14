@@ -1930,6 +1930,47 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-balance-error');
   });
 
+  test('wallet balance-reopening', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    // The pin turns ready after 4 s; the paused clock keeps the failed open on screen.
+    const now = Date.now();
+    await page.clock.install({ time: now });
+    await page.clock.pauseAt(now + 1_000);
+    await page.goto('/wallet?visual=balance-reopening');
+    await expect(
+      page.getByText('Your wallet could not be opened. Please try again.'),
+    ).toBeVisible();
+    await expect(page.locator('[data-balance-skeleton]')).toBeVisible();
+    await shotScreen(page, 'state-wallet-balance-reopening');
+  });
+
   test('wallet setup-failed', async ({ page }) => {
     await stubWalletSetupAccount(page);
     await page.goto('/wallet?visual=balance-setup-failed');

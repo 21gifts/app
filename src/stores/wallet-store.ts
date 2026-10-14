@@ -35,6 +35,12 @@ interface WalletState {
    * `null`. Money screens show the setup note while it is the current session.
    */
   setupFailedSession: string | null;
+  /**
+   * True while the wallet is at `error` and the wallet service opens it again
+   * automatically (between and during its retries). False once the wallet is
+   * ready, connecting, or reset, and while only a page reload can recover.
+   */
+  retrying: boolean;
   /** Marks the wallet as connecting and clears balance fields. */
   setConnecting(): void;
   /**
@@ -47,6 +53,12 @@ interface WalletState {
   setReady(balanceSats: number, identityPubkey: string): void;
   /** Marks the wallet as failed and clears balance fields. */
   setError(): void;
+  /**
+   * Records whether an automatic retry is on its way.
+   *
+   * @param retrying - Whether the wallet service is retrying.
+   */
+  setRetrying(retrying: boolean): void;
   /** Returns to the resting status and clears balance fields. */
   reset(): void;
   /**
@@ -69,8 +81,9 @@ export const useWalletStore = create<WalletState>((set) => ({
   identityPubkey: null,
   syncCount: 0,
   setupFailedSession: null,
+  retrying: false,
   setConnecting: () => {
-    set({ status: 'connecting', balanceSats: null, identityPubkey: null });
+    set({ status: 'connecting', balanceSats: null, identityPubkey: null, retrying: false });
   },
   setReady: (balanceSats, identityPubkey) => {
     set((state) => ({
@@ -78,13 +91,17 @@ export const useWalletStore = create<WalletState>((set) => ({
       balanceSats,
       identityPubkey,
       syncCount: state.syncCount + 1,
+      retrying: false,
     }));
   },
   setError: () => {
     set({ status: 'error', balanceSats: null, identityPubkey: null });
   },
+  setRetrying: (retrying) => {
+    set({ retrying });
+  },
   reset: () => {
-    set({ status: restingStatus(), balanceSats: null, identityPubkey: null });
+    set({ status: restingStatus(), balanceSats: null, identityPubkey: null, retrying: false });
   },
   setSetupFailedSession: (session) => {
     set({ setupFailedSession: session });

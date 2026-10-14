@@ -801,7 +801,7 @@ A screenshot pin (`?visual=…`, the `e2e-now` session value, or any other
 switch that makes a screen show fixture data or a forced state) is honoured
 **only in a Playwright build**: check `getE2eNow()` (`NEXT_PUBLIC_E2E_NOW`,
 unset in every deployed build) before reading the pin. `visualPin` does that
-for `useWallet`, `useWalletPay`, `useWalletSetup`, the login card's
+for `useWallet` (including `?visual=balance-reopening`), `useWalletPay`, `useWalletSetup`, the login card's
 wallet gate, `sendHeartTip`, and `useHeartTip`; `useWalletHistory`, `useWalletSend`, `useWalletPhrase`, and
 `PasskeyRenewNotice` check it themselves. Inline scripts that run before
 React check for the `e2e-now` meta tag, which only a Playwright build renders.
@@ -1053,6 +1053,11 @@ only for a signed-in member and both through same-origin proxies:
 A payment that did not go out, and a wallet that did not open, are also sent
 to error reporting (`Payment failed`, one issue per stage and reason, and
 `Wallet did not open`, one per reason), errors-only like every other report.
+A wallet that did not open is opened again automatically, except while the
+wallet code needs a page reload (`walletNeedsReload`): then no automatic
+attempt runs and **Try again** reloads the page. Only the first
+failure sends `wallet_open_failed` and `Wallet did not open`, and nothing more
+goes out until the wallet has been ready again or was disconnected.
 Member state (too little balance, an amount below the minimum, no wallet
 connection) and hearts (`Heart not sent`) are not sent as `Payment failed`.
 Reason, stage, method, flow, and the error name and code are short codes; the
