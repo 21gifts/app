@@ -1,6 +1,14 @@
 'use client';
 
-import { ArrowDownLeft, ArrowUpRight, Check, Copy, ExternalLink, Heart } from 'lucide-react';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Check,
+  ChevronRight,
+  Copy,
+  ExternalLink,
+  Heart,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, type ReactElement, type ReactNode } from 'react';
@@ -186,16 +194,19 @@ function PaymentView(props: { payment: WalletPayment; rateDay: FiatRateDay | nul
         <Link
           href={`/messages/${heart.messageId}`}
           aria-label={`${heart.authorName} ${heart.text}`.trim() || t('shops.viewPost')}
-          className="block rounded-2xl border border-app-border px-4 py-3 text-left"
+          className="flex w-full items-center gap-3 rounded-2xl border border-app-border px-4 py-3 text-left text-app-fg no-underline transition hover:bg-app-hover"
         >
-          {heart.authorName === '' ? null : (
-            <span className="block text-sm font-medium text-app-fg">{heart.authorName}</span>
-          )}
-          {heart.text === '' ? null : (
-            <span className="mt-1 block whitespace-pre-wrap text-sm text-app-fg line-clamp-3">
-              {heart.text}
-            </span>
-          )}
+          <span className="min-w-0 flex-1">
+            {heart.authorName === '' ? null : (
+              <span className="block text-sm font-medium text-app-fg">{heart.authorName}</span>
+            )}
+            {heart.text === '' ? null : (
+              <span className="mt-1 block whitespace-pre-wrap text-sm font-medium text-app-fg underline underline-offset-2 line-clamp-3">
+                {heart.text}
+              </span>
+            )}
+          </span>
+          <ChevronRight aria-hidden="true" className="h-4 w-4 shrink-0 text-app-subtle" />
         </Link>
       )}
 

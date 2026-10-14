@@ -219,7 +219,9 @@ describe('WalletPaymentDetails', () => {
     const post = await screen.findByRole('link', { name: 'Ada A thoughtful post' });
     expect(post.getAttribute('href')).toBe('/messages/message-21');
     expect(screen.getByText('Ada')).toBeTruthy();
+    expect(screen.getByText('A thoughtful post').className).toContain('underline');
     expect(screen.getByText('A thoughtful post').className).toContain('line-clamp-3');
+    expect(post.querySelector('.lucide-chevron-right')).toBeTruthy();
     const heartIcon = document.querySelector('.lucide-heart');
     expect(heartIcon?.getAttribute('fill')).toBe('currentColor');
     expect(heartIcon?.getAttribute('class')).toContain('text-app-accent');
