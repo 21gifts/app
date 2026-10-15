@@ -8184,17 +8184,31 @@ describe('reply form size', () => {
     expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
     // The fold marks itself open after its settle event (its timer is not run here).
     fold.setAttribute('data-collapse', 'open');
-    // The last move ends: placed from the rest position by the final layout, mark gone.
+    // While the reveal still follows, a box settling that does not hold the form neither places the
+    // page nor ends the follow.
+    const outside = document.createElement('div');
+    (form.closest('li') as HTMLElement).append(outside);
+    port.scrollTop = 200;
+    settle(outside);
+    expect(port.scrollTop).toBe(200);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    // The last move ends: placed from the rest position by the final layout, mark gone, and one
+    // scroll event announces where the page rests.
+    let scrolls = 0;
+    const onScroll = (): void => {
+      scrolls += 1;
+    };
+    port.addEventListener('scroll', onScroll);
     port.scrollTop = 200;
     settle(glide);
+    port.removeEventListener('scroll', onScroll);
     expect(port.scrollTop).toBe(42);
     expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+    expect(scrolls).toBe(1);
     glide.toggleAttribute('data-gliding', false);
-    // A box settling that does not hold the form does not move the page.
-    const other = document.createElement('div');
-    (form.closest('li') as HTMLElement).append(other);
+    // Nor once the follow is over.
     port.scrollTop = 200;
-    settle(other);
+    settle(outside);
     expect(port.scrollTop).toBe(200);
     globalThis.ResizeObserver = previous;
   });
