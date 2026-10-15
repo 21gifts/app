@@ -587,6 +587,62 @@ describe('ShopNoteEditControl', () => {
     vi.unstubAllGlobals();
   });
 
+  it('saves a text change after reading a loaded still back', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => 'blob:loaded'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    });
+    vi.mocked(fetchMessagePhoto).mockResolvedValue(new Blob([Uint8Array.of(1)]));
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url === 'blob:loaded') {
+        return {
+          ok: true,
+          blob: () =>
+            Promise.resolve({
+              type: 'image/png',
+              arrayBuffer: () => Promise.resolve(Uint8Array.of(4).buffer),
+            }),
+        };
+      }
+      return { ok: true, json: async () => ({ accounts: [] }) };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopMessage,
+      text: 'Cafe Sol\n\n#21GiftsShop',
+    });
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, hasPhoto: true, photoCount: 1 }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect((await screen.findByRole('img')).getAttribute('src')).toBe('blob:loaded');
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessageShopText).toHaveBeenCalledWith('token', 'shop1', 'Cafe Sol');
+    });
+    expect(setMessageShopPhotos).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith('blob:loaded');
+    vi.unstubAllGlobals();
+  });
+
   it('ignores a second pencil click while the stills are still loading', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);

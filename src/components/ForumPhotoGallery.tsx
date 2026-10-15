@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useRef, useState, type ReactElement, type UIEvent } from 'react';
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type UIEvent,
+} from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { IconButton } from '@/components/ui';
 
@@ -8,8 +15,12 @@ import { IconButton } from '@/components/ui';
 export type ForumPhotoGalleryItem = {
   /** Original still index (`data-photo-index`). */
   index: number;
-  /** Object/blob URL. */
+  /** Object/blob URL or same-origin public still path. */
   url: string;
+  /** `<img>` loading. Default `lazy`. */
+  loading?: 'eager' | 'lazy';
+  /** `<img>` fetch priority. Default `low`. */
+  fetchPriority?: 'high' | 'low' | 'auto';
 };
 
 /** Props for {@link ForumPhotoGallery}. */
@@ -22,6 +33,8 @@ export type ForumPhotoGalleryProps = {
   className?: string;
   /** Stop card expand/collapse when tapping or keying the gallery. */
   onPhotoClick?: (event: { stopPropagation(): void }) => void;
+  /** Called when one still fails so the parent can drop that index. */
+  onPhotoError?: (index: number) => void;
 };
 
 /**
@@ -66,10 +79,18 @@ export function ForumPhotoGallery({
   alt,
   className,
   onPhotoClick,
+  onPhotoError,
 }: ForumPhotoGalleryProps): ReactElement | null {
   const { t } = useTranslations();
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(() => {
+    const first = photos[0];
+    return first === undefined ? 0 : first.index;
+  });
+  const photosRef = useRef(photos);
+  const activeRef = useRef(active);
+  photosRef.current = photos;
+  activeRef.current = active;
 
   const updateActive = useCallback(
     (scroller: HTMLElement) => {
@@ -81,15 +102,40 @@ export function ForumPhotoGallery({
         photos.length - 1,
         Math.max(0, Math.round(scroller.scrollLeft / stride)),
       );
-      setActive(next);
+      const photo = photos[next];
+      /* v8 ignore next 3 -- next is clamped to a slot that exists */
+      if (photo === undefined) {
+        return;
+      }
+      setActive(photo.index);
     },
-    [photos.length],
+    [photos],
   );
+
+  const photoIndexes = photos.map((photo) => photo.index).join(',');
+  // Ordered indexes, not photos identity or the remembered index.
+  useLayoutEffect(() => {
+    const scroller = scrollerRef.current;
+    if (scroller === null) {
+      return;
+    }
+    const stride = slideStride(scroller);
+    if (stride === 0) {
+      return;
+    }
+    const currentPhotos = photosRef.current;
+    const remembered = activeRef.current;
+    const found = currentPhotos.findIndex((photo) => photo.index === remembered);
+    const slot = found === -1 ? currentPhotos.length - 1 : found;
+    scroller.scrollLeft = stride * slot;
+  }, [photoIndexes]);
 
   if (photos.length === 0) {
     return null;
   }
 
+  const found = photos.findIndex((photo) => photo.index === active);
+  const shown = found === -1 ? photos.length - 1 : found;
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
 
   return (
@@ -107,17 +153,23 @@ export function ForumPhotoGallery({
             updateActive(event.currentTarget);
           }}
         >
-          {photos.map(({ index, url }, i) => (
+          {photos.map(({ index, url, loading, fetchPriority }, i) => (
             <div
               key={`${index}:${url}`}
               className={`shrink-0 snap-start ${i === photos.length - 1 ? 'w-full min-w-full' : 'w-[88%] min-w-[88%]'}`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element -- blob/object URLs from message photo fetches */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- same-origin photo URL, not next/image */}
               <img
                 src={url}
                 alt={alt}
                 className="block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
+                decoding="async"
+                loading={loading ?? 'lazy'}
+                fetchPriority={fetchPriority ?? 'low'}
                 data-photo-index={index}
+                onError={() => {
+                  onPhotoError?.(index);
+                }}
               />
             </div>
           ))}
@@ -126,7 +178,7 @@ export function ForumPhotoGallery({
           className="pointer-events-none absolute right-2 top-2 rounded-full bg-app-card-muted/90 px-2 py-0.5 text-xs font-medium tabular-nums lining-nums text-app-fg"
           aria-hidden="true"
         >
-          {t('forum.galleryPosition', { current: active + 1, total: photos.length })}
+          {t('forum.galleryPosition', { current: shown + 1, total: photos.length })}
         </div>
       </div>
       {photos.length > 1 ? (
@@ -137,7 +189,7 @@ export function ForumPhotoGallery({
               size="sm"
               variant="ghost"
               aria-label={t('forum.galleryDot', { current: i + 1, total: photos.length })}
-              aria-current={i === active ? true : undefined}
+              aria-current={i === shown ? true : undefined}
               onClick={() => {
                 const scroller = scrollerRef.current;
                 /* v8 ignore next 3 -- dots only render beside the scroller */
@@ -151,12 +203,12 @@ export function ForumPhotoGallery({
                 } else {
                   scroller.scrollLeft = left;
                 }
-                setActive(i);
+                setActive(photo.index);
               }}
             >
               <span
                 aria-hidden="true"
-                className={`block h-1.5 rounded-full ${i === active ? 'w-4 bg-app-fg' : 'w-1.5 bg-app-muted'}`}
+                className={`block h-1.5 rounded-full ${i === shown ? 'w-4 bg-app-fg' : 'w-1.5 bg-app-muted'}`}
               />
             </IconButton>
           ))}

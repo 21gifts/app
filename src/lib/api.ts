@@ -3519,9 +3519,9 @@ export async function markVisibleForumNoteRead(
 /**
  * Fetches the JPEG/PNG/WebP bytes for one indexed forum message photo.
  *
- * Auth is a Bearer token in JS memory, so callers must use the returned blob
- * (for example via `URL.createObjectURL`) instead of an `<img src>` to the
- * same-origin photo path.
+ * Private bytes (inbox, a deleted staff row, shop editor when the list is
+ * shorter than `photoCount`, profile picture) stay as a blob. Public forum
+ * stills use `forumPhotoSrc` on an `<img>` without Authorization.
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param id - Forum message id.
@@ -3554,10 +3554,10 @@ export async function fetchMessagePhoto(
 }
 
 /**
- * Fetches an indexed forum message photo without a session (public note page).
+ * Fetches an indexed forum message photo for `MemberProfileScreen` when the session is null; public stills use `forumPhotoSrc`.
  *
- * Api `GET /messages/:id/photo` is public; the same-origin proxy forwards
- * without Authorization. Callers must use a blob URL, not a bare `<img src>`.
+ * Private bytes stay as a blob. Public forum stills use `forumPhotoSrc` on an
+ * `<img>` without Authorization.
  *
  * @param id - Forum message id.
  * @param index - Zero-based photo index. Index zero uses the legacy route.

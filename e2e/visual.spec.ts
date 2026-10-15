@@ -7731,7 +7731,7 @@ test.describe('onboarding screens', () => {
         });
       },
     );
-    await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+    await page.route(`**/messages/${QUOTED_ID}/photo.jpg`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'image/jpeg',
@@ -10827,7 +10827,7 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route(`**/messages/${postId}/photo`, async (route) => {
+    await page.route(`**/messages/${postId}/photo.jpg`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'image/jpeg',
@@ -11593,7 +11593,7 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route(`**/messages/${postId}/photo`, async (route) => {
+    await page.route(`**/messages/${postId}/photo.jpg`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'image/jpeg',
@@ -15829,7 +15829,7 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route(`**/messages/${id}/photo`, async (route) => {
+    await page.route(`**/messages/${id}/photo.jpg`, async (route) => {
       await route.fulfill({ status: 200, contentType: 'image/jpeg', body: jpeg });
     });
     await page.route(`**/messages/${id}/photo/1.jpg`, async (route) => {
@@ -17922,7 +17922,7 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify(quotedNote),
       });
     });
-    await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+    await page.route(`**/messages/${QUOTED_ID}/photo.jpg`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'image/jpeg',
@@ -22485,7 +22485,7 @@ test.describe('welcome forum variants', () => {
         }),
       });
     });
-    await page.route(/\/messages\/m-photo\/photo$/, async (route) => {
+    await page.route(/\/messages\/m-photo\/photo\.jpg$/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'image/jpeg',
@@ -22526,7 +22526,7 @@ test.describe('welcome forum variants', () => {
         }),
       });
     });
-    await page.route(/\/messages\/m-photo\/photo$/, async (route) => {
+    await page.route(/\/messages\/m-photo\/photo\.jpg$/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'image/jpeg',
@@ -22635,7 +22635,7 @@ test.describe('welcome forum variants', () => {
         }),
       });
     });
-    await page.route(/\/messages\/m-photos-text\/photo$/, async (route) => {
+    await page.route(/\/messages\/m-photos-text\/photo\.jpg$/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'image/jpeg',
@@ -23171,14 +23171,16 @@ test.describe('welcome forum variants', () => {
         }),
       });
     });
-    await page.route(/\/messages\/m-loading\/photo$/, async (route) => {
+    await page.route(/\/messages\/m-loading\/photo\.jpg$/, async (route) => {
       await held;
       await route.abort();
     });
     await page.goto('/welcome');
     await chooseForumView(page, 'All');
     await expect(page.getByText('Caption waiting for the photo to load.')).toBeVisible();
-    await expect(page.getByAltText('Photo from Ada')).toHaveCount(0);
+    const photo = page.getByAltText('Photo from Ada');
+    await expect(photo).toHaveCount(1);
+    await expect(photo).toHaveAttribute('src', /\/messages\/m-loading\/photo\.jpg$/);
     await shotScreen(page, 'state-welcome-photo-loading');
     release();
   });
@@ -27781,7 +27783,7 @@ test.describe('inbox screens', () => {
         });
       },
     );
-    await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+    await page.route(`**/messages/${QUOTED_ID}/photo.jpg`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'image/jpeg',
@@ -29900,7 +29902,7 @@ test.describe('moderate group screens', () => {
         });
       },
     );
-    await page.route(`**/messages/${QUOTED_ID}/photo`, async (route) => {
+    await page.route(`**/messages/${QUOTED_ID}/photo.jpg`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'image/jpeg',

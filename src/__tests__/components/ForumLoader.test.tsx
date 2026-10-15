@@ -97,9 +97,13 @@ vi.mock('@/lib/api', () => ({
   skipSetup: vi.fn(),
 }));
 
-vi.mock('@/lib/forum-photo', () => ({
-  prepareForumPhoto: vi.fn(),
-}));
+vi.mock('@/lib/forum-photo', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/forum-photo')>();
+  return {
+    ...actual,
+    prepareForumPhoto: vi.fn(),
+  };
+});
 
 vi.mock('@/lib/forum-video', () => ({
   isForumVideoFile: vi.fn(() => false),
@@ -1524,7 +1528,7 @@ describe('ForumLoader', () => {
     });
     const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
     await waitFor(() => {
-      expect(card.querySelector('video')?.getAttribute('poster')).toBe('blob:mock');
+      expect(card.querySelector('video')?.getAttribute('poster')).toBe('/messages/shop1/photo.jpg');
     });
     expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
     expect(within(card).getByRole('button', { name: 'Edit shop note' })).toBeTruthy();
@@ -1556,17 +1560,15 @@ describe('ForumLoader', () => {
       ]),
     );
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        blob: () =>
-          Promise.resolve({
-            type: 'image/jpeg',
-            arrayBuffer: () => Promise.resolve(Uint8Array.of(1).buffer),
-          }),
-      })),
-    );
+    const fetchSpy = vi.fn(async () => ({
+      ok: true,
+      blob: () =>
+        Promise.resolve({
+          type: 'image/jpeg',
+          arrayBuffer: () => Promise.resolve(Uint8Array.of(1).buffer),
+        }),
+    }));
+    vi.stubGlobal('fetch', fetchSpy);
     vi.mocked(setMessageShopText).mockResolvedValueOnce({
       ...SAMPLE,
       id: 'shop1',
@@ -1620,12 +1622,209 @@ describe('ForumLoader', () => {
       expect(within(card).getByText('Cafe Norte')).toBeTruthy();
     });
     expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
+    expect(photoMock).toHaveBeenCalledWith('sess', 'shop1', 0);
+    expect(photoMock).not.toHaveBeenCalledWith('sess', 'shop2', expect.anything());
+    expect(publicPhotoMock).not.toHaveBeenCalled();
+    expect(fetchSpy.mock.calls.some((call) => String(call.at(0)).includes('/messages/'))).toBe(
+      false,
+    );
+    expect(shopsChanged).toHaveBeenCalled();
+  });
+
+  it('sets ?v= only on the saved shop note after a staff save', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator', forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue(
+      forumPage([
+        {
+          ...SAMPLE,
+          id: 'shop1',
+          text: 'Cafe Luna\n\n#21GiftsShop',
+          sats: 5,
+          hasPhoto: true,
+          photoCount: 1,
+        },
+        {
+          ...SAMPLE,
+          id: 'shop2',
+          text: 'Other stall\n\n#21GiftsShop',
+          sats: 5,
+          hasPhoto: true,
+          photoCount: 1,
+        },
+      ]),
+    );
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        blob: () =>
+          Promise.resolve({
+            type: 'image/jpeg',
+            arrayBuffer: () => Promise.resolve(Uint8Array.of(1).buffer),
+          }),
+      })),
+    );
+    vi.spyOn(Date, 'now').mockReturnValue(1_714_000_000_000);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop1',
+      text: 'Cafe Sol\n\n#21GiftsShop',
+      sats: 5,
+      hasPhoto: true,
+      photoCount: 1,
+    });
+    renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
-      expect(photoMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+    });
+    const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
+    expect(within(card).getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      '/messages/shop1/photo.jpg',
+    );
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
+    expect(await within(card).findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(within(card).getByText('Cafe Sol')).toBeTruthy();
+    });
+    expect(within(card).getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      '/messages/shop1/photo.jpg?v=1714000000000',
+    );
+    const other = document.querySelector('[data-message-id="shop2"]') as HTMLElement;
+    expect(within(other).getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      '/messages/shop2/photo.jpg',
+    );
+  });
+
+  it('revokes only the saved shop note composer preview after a staff save', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'moderator', forumLawsDismissed: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    prepareMock
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'keep',
+          previewUrl: 'blob:keep',
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'shop',
+          previewUrl: 'blob:shop',
+        },
+      });
+    postMock
+      .mockResolvedValueOnce({
+        ...SAMPLE,
+        id: 'keep-note',
+        text: 'Hello',
+        sats: 5,
+        hasPhoto: true,
+        photoCount: 1,
+      })
+      .mockResolvedValueOnce({
+        ...SAMPLE,
+        id: 'shop-new',
+        text: 'Cafe Luna\n\n#21GiftsShop',
+        sats: 5,
+        hasPhoto: true,
+        photoCount: 1,
+      });
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' })] },
     });
     await waitFor(() => {
-      expect(shopsChanged).toHaveBeenCalled();
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
     });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    const keepCard = await waitFor(() => {
+      const card = document.querySelector('[data-message-id="keep-note"]') as HTMLElement;
+      expect(within(card).getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:keep');
+      return card;
+    });
+    fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
+      target: { files: [new File([new Uint8Array([2])], 'b.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), {
+      target: { value: 'Cafe Luna\n\n#21GiftsShop' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    const card = await waitFor(() => {
+      const shopCard = document.querySelector('[data-message-id="shop-new"]') as HTMLElement;
+      expect(within(shopCard).getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:shop');
+      expect(within(shopCard).getByRole('button', { name: 'Edit shop note' })).toBeTruthy();
+      return shopCard;
+    });
+    vi.spyOn(Date, 'now').mockReturnValue(1_714_000_000_000);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        blob: () =>
+          Promise.resolve({
+            type: 'image/jpeg',
+            arrayBuffer: () => Promise.resolve(Uint8Array.of(1).buffer),
+          }),
+      })),
+    );
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop-new',
+      text: 'Cafe Sol\n\n#21GiftsShop',
+      sats: 5,
+      hasPhoto: true,
+      photoCount: 1,
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
+    expect(await within(card).findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol' },
+    });
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
+    vi.mocked(URL.revokeObjectURL).mockClear();
+    fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(within(card).getByText('Cafe Sol')).toBeTruthy();
+    });
+    expect(vi.mocked(URL.revokeObjectURL)).toHaveBeenCalledWith('blob:shop');
+    expect(vi.mocked(URL.revokeObjectURL)).not.toHaveBeenCalledWith('blob:keep');
+    expect(within(card).getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      '/messages/shop-new/photo.jpg?v=1714000000000',
+    );
+    expect(within(keepCard).getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:keep');
+    expect(photoMock).not.toHaveBeenCalled();
+    expect(publicPhotoMock).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it('does not put a staff place control on living-room notes', async () => {
@@ -2081,7 +2280,7 @@ describe('ForumLoader', () => {
     });
   });
 
-  it('loads a photo blob URL for hasPhoto messages and revokes on unmount', async () => {
+  it('renders a visible public still without fetching a photo blob', async () => {
     fetchMock.mockResolvedValue(
       forumPage([
         {
@@ -2102,15 +2301,14 @@ describe('ForumLoader', () => {
         },
       ]),
     );
-    const view = renderWithLocale(<ForumLoader />);
+    renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo', 0);
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+        '/messages/m-photo/photo.jpg',
+      );
     });
-    await waitFor(() => {
-      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
-    });
-    view.unmount();
-    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock');
+    expect(photoMock).not.toHaveBeenCalled();
+    expect(publicPhotoMock).not.toHaveBeenCalled();
   });
 
   it('falls back to hasPhoto when photoCount is omitted', async () => {
@@ -2135,12 +2333,13 @@ describe('ForumLoader', () => {
     );
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledWith('sess', 'm-omit-photo', 0);
-    });
-    await waitFor(() => {
-      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+        '/messages/m-omit-photo/photo.jpg',
+      );
     });
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    expect(photoMock).not.toHaveBeenCalled();
+    expect(publicPhotoMock).not.toHaveBeenCalled();
   });
 
   it('does not fetch photos for unpaid hasPhoto notes on Active', async () => {
@@ -2171,7 +2370,7 @@ describe('ForumLoader', () => {
     expect(photoMock).not.toHaveBeenCalled();
   });
 
-  it('fetches an unpaid hasPhoto note after switching to All', async () => {
+  it('shows an unpaid hasPhoto note on All without fetching a photo blob', async () => {
     fetchMock.mockResolvedValue(
       forumPage([
         {
@@ -2197,84 +2396,15 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
     });
     expect(photoMock).not.toHaveBeenCalled();
+    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
     await revealAll();
     await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo', 0);
-      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+        '/messages/m-photo/photo.jpg',
+      );
     });
-  });
-
-  it('retries a transient photo fetch failure once for a visible note', async () => {
-    fetchMock.mockResolvedValue(
-      forumPage([
-        {
-          id: 'm-photo',
-          name: 'Ada',
-          text: '',
-          createdAt: '2026-08-28T12:00:00.000Z',
-          sats: 5,
-          payable: false,
-          hasPhoto: true,
-          photoCount: 1,
-          hasVideo: false,
-          videoContentType: null,
-          role: 'basis',
-          replyCount: 0,
-          heartCount: 0,
-          hearted: false,
-        },
-      ]),
-    );
-    photoMock.mockRejectedValueOnce(new Error('transient'));
-    renderWithLocale(<ForumLoader />);
-    await waitFor(() => {
-      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
-    });
-    expect(photoMock).toHaveBeenCalledTimes(2);
-  });
-
-  it('does not cancel an in-flight photo fetch when payable poll refreshes the list', async () => {
-    vi.useFakeTimers();
-    const unsigned: ForumMessage = {
-      id: 'm-photo',
-      name: 'Ada',
-      text: '',
-      createdAt: '2026-08-28T12:00:00.000Z',
-      sats: 5,
-      payable: false,
-      hasPhoto: true,
-      photoCount: 1,
-      hasVideo: false,
-      videoContentType: null,
-      role: 'basis',
-      replyCount: 1,
-      heartCount: 0,
-      hearted: false,
-    };
-    let resolvePhoto: ((blob: Blob) => void) | undefined;
-    photoMock.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolvePhoto = resolve;
-        }),
-    );
-    fetchMock.mockResolvedValueOnce(forumPage([unsigned])).mockResolvedValue(forumPage([unsigned]));
-    fetchMock
-      .mockResolvedValueOnce(forumPage([{ ...unsigned, payable: true }]))
-      .mockResolvedValue(forumPage([{ ...unsigned, payable: true }]));
-    renderWithLocale(<ForumLoader />);
-    await act(async () => {
-      await Promise.resolve();
-    });
-    expect(photoMock).toHaveBeenCalledWith('sess', 'm-photo', 0);
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2000);
-    });
-    await act(async () => {
-      resolvePhoto?.(new Blob(['x'], { type: 'image/jpeg' }));
-      await Promise.resolve();
-    });
-    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:mock');
+    expect(photoMock).not.toHaveBeenCalled();
+    expect(publicPhotoMock).not.toHaveBeenCalled();
   });
 
   it('shows a fetch error and retries', async () => {
@@ -3183,7 +3313,7 @@ describe('ForumLoader', () => {
     expect(document.querySelector('form video')).toBeNull();
   });
 
-  it('ignores a failed photo fetch', async () => {
+  it('shows an unpaid public still on All without fetching a photo blob', async () => {
     fetchMock.mockResolvedValue(
       forumPage([
         {
@@ -3204,7 +3334,6 @@ describe('ForumLoader', () => {
         },
       ]),
     );
-    photoMock.mockRejectedValue(new Error('gone'));
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
       expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
@@ -3212,83 +3341,12 @@ describe('ForumLoader', () => {
     await revealAll();
     await waitFor(() => {
       expect(screen.getByText('Hi')).toBeTruthy();
-      expect(photoMock).toHaveBeenCalled();
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+        '/messages/m-photo/photo.jpg',
+      );
     });
-    expect(screen.queryByAltText('Photo from Ada')).toBeNull();
-  });
-
-  it('ignores a stale photo fetch after unmount', async () => {
-    let resolvePhoto: ((value: Blob) => void) | undefined;
-    fetchMock.mockResolvedValue(
-      forumPage([
-        {
-          id: 'm-photo',
-          name: 'Ada',
-          text: '',
-          createdAt: '2026-08-28T12:00:00.000Z',
-          sats: 5,
-          payable: false,
-          hasPhoto: true,
-          photoCount: 1,
-          hasVideo: false,
-          videoContentType: null,
-          role: 'basis',
-          replyCount: 0,
-          heartCount: 0,
-          hearted: false,
-        },
-      ]),
-    );
-    photoMock.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolvePhoto = resolve;
-        }),
-    );
-    const view = renderWithLocale(<ForumLoader />);
-    await waitFor(() => {
-      expect(photoMock).toHaveBeenCalled();
-    });
-    view.unmount();
-    resolvePhoto?.(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
-    await Promise.resolve();
-  });
-
-  it('does not continue a photo retry after unmount', async () => {
-    let rejectRetry: ((reason: Error) => void) | undefined;
-    fetchMock.mockResolvedValue(
-      forumPage([
-        {
-          id: 'm-photo',
-          name: 'Ada',
-          text: '',
-          createdAt: '2026-08-28T12:00:00.000Z',
-          sats: 5,
-          payable: false,
-          hasPhoto: true,
-          photoCount: 1,
-          hasVideo: false,
-          videoContentType: null,
-          role: 'basis',
-          replyCount: 0,
-          heartCount: 0,
-          hearted: false,
-        },
-      ]),
-    );
-    photoMock.mockRejectedValueOnce(new Error('transient')).mockImplementationOnce(
-      () =>
-        new Promise((_, reject) => {
-          rejectRetry = reject;
-        }),
-    );
-    const view = renderWithLocale(<ForumLoader />);
-    await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledTimes(2);
-    });
-    view.unmount();
-    rejectRetry?.(new Error('gone'));
-    await Promise.resolve();
+    expect(photoMock).not.toHaveBeenCalled();
+    expect(publicPhotoMock).not.toHaveBeenCalled();
   });
 
   it('retries reply loading and records reply draft changes', async () => {
@@ -3309,102 +3367,6 @@ describe('ForumLoader', () => {
     });
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'draft' } });
     expect(screen.getByLabelText('Your reaction')).toHaveProperty('value', 'draft');
-  });
-
-  it('does not fetch the next photo after unmount when the current fetch fails', async () => {
-    let rejectFirst: ((reason: Error) => void) | undefined;
-    fetchMock.mockResolvedValue(
-      forumPage([
-        {
-          id: 'm1',
-          name: 'Ada',
-          text: '',
-          createdAt: '2026-08-28T12:00:00.000Z',
-          sats: 5,
-          payable: false,
-          hasPhoto: true,
-          photoCount: 1,
-          hasVideo: false,
-          videoContentType: null,
-          role: 'basis',
-          replyCount: 0,
-          heartCount: 0,
-          hearted: false,
-        },
-        {
-          id: 'm2',
-          name: 'Ada',
-          text: '',
-          createdAt: '2026-08-28T12:01:00.000Z',
-          sats: 5,
-          payable: false,
-          hasPhoto: true,
-          photoCount: 1,
-          hasVideo: false,
-          videoContentType: null,
-          role: 'basis',
-          replyCount: 0,
-          heartCount: 0,
-          hearted: false,
-        },
-      ]),
-    );
-    photoMock.mockImplementationOnce(
-      () =>
-        new Promise((_, reject) => {
-          rejectFirst = reject;
-        }),
-    );
-    const view = renderWithLocale(<ForumLoader />);
-    await waitFor(() => {
-      expect(photoMock).toHaveBeenCalledTimes(1);
-    });
-    view.unmount();
-    rejectFirst?.(new Error('gone'));
-    await Promise.resolve();
-    expect(photoMock).toHaveBeenCalledTimes(1);
-  });
-
-  it('revokes a photo blob if unmount happens during createObjectURL', async () => {
-    let resolvePhoto: ((value: Blob) => void) | undefined;
-    fetchMock.mockResolvedValue(
-      forumPage([
-        {
-          id: 'm-photo',
-          name: 'Ada',
-          text: '',
-          createdAt: '2026-08-28T12:00:00.000Z',
-          sats: 5,
-          payable: false,
-          hasPhoto: true,
-          photoCount: 1,
-          hasVideo: false,
-          videoContentType: null,
-          role: 'basis',
-          replyCount: 0,
-          heartCount: 0,
-          hearted: false,
-        },
-      ]),
-    );
-    photoMock.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolvePhoto = resolve;
-        }),
-    );
-    const view = renderWithLocale(<ForumLoader />);
-    await waitFor(() => {
-      expect(photoMock).toHaveBeenCalled();
-    });
-    const revoke = vi.mocked(URL.revokeObjectURL);
-    vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
-      view.unmount();
-      return 'blob:late';
-    });
-    resolvePhoto?.(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
-    await Promise.resolve();
-    expect(revoke).toHaveBeenCalledWith('blob:late');
   });
 
   it('posts a photo-only message and shows the preview immediately', async () => {
@@ -4465,20 +4427,28 @@ describe('ForumLoader', () => {
       heartCount: 0,
       hearted: false,
     };
-    fetchMock.mockResolvedValue(forumPage([created]));
-    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:existing');
-    prepareMock.mockResolvedValue({
-      ok: true,
-      photo: {
-        contentType: 'image/jpeg',
-        data: 'abc',
-        previewUrl: 'data:image/jpeg;base64,abc',
-      },
-    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    prepareMock
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'abc',
+          previewUrl: 'blob:existing',
+        },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        photo: {
+          contentType: 'image/jpeg',
+          data: 'def',
+          previewUrl: 'data:image/jpeg;base64,def',
+        },
+      });
     postMock.mockResolvedValue(created);
     renderWithLocale(<ForumLoader />);
     await waitFor(() => {
-      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:existing');
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
     });
     const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     fireEvent.change(input, {
@@ -4489,7 +4459,17 @@ describe('ForumLoader', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalled();
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:existing');
+    });
+    fireEvent.change(input, {
+      target: { files: [new File([new Uint8Array([2])], 'b.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledTimes(2);
     });
     expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:existing');
   });
@@ -10369,15 +10349,16 @@ describe('forum feed pages', () => {
       }
       return { messages: [note], nextCursor: 'cur' };
     });
-    publicPhotoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
     publicRepliesMock.mockResolvedValue([
       { ...SAMPLE, id: 'r-pub', text: 'A public reply', parentId: 'pub-1' },
     ]);
     renderWithLocale(<ForumLoader />);
     await screen.findByText('Public page');
-    await waitFor(() => {
-      expect(publicPhotoMock).toHaveBeenCalledWith('pub-1', 0);
-    });
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      '/messages/pub-1/photo.jpg',
+    );
+    expect(publicPhotoMock).not.toHaveBeenCalled();
+    expect(photoMock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     await screen.findByText('A public reply');
     await waitFor(() => {
@@ -10431,20 +10412,13 @@ describe('forum feed pages', () => {
       }
       return { messages: [note], nextCursor: 'cur' };
     });
-    let photoCalls = 0;
-    publicPhotoMock.mockImplementation(() => {
-      photoCalls += 1;
-      if (photoCalls === 1) {
-        throw new Error('missing');
-      }
-      return Promise.resolve(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
-    });
     publicRepliesMock.mockRejectedValue(new Error('reactions'));
     renderWithLocale(<ForumLoader />);
     expect(await screen.findByText('Public photo')).toBeTruthy();
-    await waitFor(() => {
-      expect(publicPhotoMock.mock.calls.length).toBeGreaterThanOrEqual(2);
-    });
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      '/messages/pub-2/photo.jpg',
+    );
+    expect(publicPhotoMock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     expect(await screen.findByText('Could not load reactions. Please try again.')).toBeTruthy();
     await waitFor(() => {
