@@ -548,15 +548,8 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByRole('link', { name: 'Open linked note from Cyrill' })).toBeNull();
   });
 
-  it('ignores a photo blob if the nested post unmounts during fetch', async () => {
-    let resolvePhoto: ((blob: Blob) => void) | undefined;
-    fetchPhoto.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolvePhoto = resolve;
-        }),
-    );
-    const { unmount } = renderWithLocale(
+  it('renders the public still without fetching a photo blob', () => {
+    renderWithLocale(
       <ForumQuotedBody
         text={`just for information: ${QUOTED_URL}`}
         knownNotes={[quotedNote]}
@@ -565,13 +558,26 @@ describe('ForumQuotedBody', () => {
         fiat="USD"
       />,
     );
-    await waitFor(() => {
-      expect(fetchPhoto).toHaveBeenCalledWith(QUOTED_ID);
-    });
-    unmount();
-    resolvePhoto?.(new Blob(['photo'], { type: 'image/jpeg' }));
-    await Promise.resolve();
-    expect(URL.createObjectURL).not.toHaveBeenCalled();
+    const img = screen.getByAltText('Photo from Cyrill');
+    expect(img.getAttribute('src')).toBe(`/messages/${QUOTED_ID}/photo.jpg`);
+    expect(img.getAttribute('loading')).toBe('lazy');
+    expect(img.getAttribute('fetchpriority')).toBe('low');
+    expect(img.getAttribute('decoding')).toBe('async');
+    expect(fetchPhoto).not.toHaveBeenCalled();
+  });
+
+  it('hides the quoted still after img error', () => {
+    renderWithLocale(
+      <ForumQuotedBody
+        text={`just for information: ${QUOTED_URL}`}
+        knownNotes={[quotedNote]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    fireEvent.error(screen.getByAltText('Photo from Cyrill'));
+    expect(screen.queryByAltText('Photo from Cyrill')).toBeNull();
   });
 
   it('renders a nested post with no caption when the quoted note has empty text', async () => {
@@ -617,7 +623,6 @@ describe('ForumQuotedBody', () => {
 
   it('fetches a missing quoted note and strips the url after it resolves', async () => {
     fetchMessage.mockImplementation(async (id: string) => (id === QUOTED_ID ? quotedNote : null));
-    fetchPhoto.mockResolvedValue(new Blob(['photo'], { type: 'image/jpeg' }));
     renderWithLocale(
       <ForumQuotedBody
         text={`just for information: ${QUOTED_URL}`}
@@ -651,8 +656,10 @@ describe('ForumQuotedBody', () => {
         'object-contain',
       ]),
     );
-    expect(fetchPhoto).toHaveBeenCalledWith(QUOTED_ID);
-    expect(URL.createObjectURL).toHaveBeenCalled();
+    expect(screen.getByAltText('Photo from Cyrill').getAttribute('src')).toBe(
+      `/messages/${QUOTED_ID}/photo.jpg`,
+    );
+    expect(fetchPhoto).not.toHaveBeenCalled();
   });
 
   it('leaves the url visible when fetchPublicMessage returns null', async () => {
@@ -775,7 +782,6 @@ describe('ForumQuotedBody', () => {
   });
 
   it('opens the original note from the caption, photo, and amount', async () => {
-    fetchPhoto.mockResolvedValue(new Blob(['photo'], { type: 'image/jpeg' }));
     renderWithLocale(
       <ForumQuotedBody
         text={`just for information: ${QUOTED_URL}`}

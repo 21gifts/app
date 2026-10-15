@@ -1414,6 +1414,26 @@ export async function proxyMessagesPhotoGet(
 }
 
 /**
+ * Proxies GET /messages/:id/photo.jpg (and jpeg/png/webp aliases) without
+ * forwarding Authorization, so the edge can store the public still.
+ *
+ * @param request - Incoming App Router request.
+ * @param id - Forum message id from the dynamic route segment.
+ * @param ext - Still file extension (`jpg` | `jpeg` | `png` | `webp`).
+ * @returns The upstream response (raw image bytes).
+ */
+export async function proxyMessagesPhotoExtGet(
+  request: Request,
+  id: string,
+  ext: 'jpg' | 'jpeg' | 'png' | 'webp',
+): Promise<Response> {
+  const headers = new Headers(request.headers);
+  headers.delete('authorization');
+  const stripped = new Request(request.url, { method: 'GET', headers });
+  return proxyApiRequest(stripped, `/messages/${encodeURIComponent(id)}/photo.${ext}`);
+}
+
+/**
  * Proxies GET /messages/:id/video.mp4, video.webm, or video.mov to the 21.gifts api (public; no auth).
  *
  * @param request - Incoming App Router request.

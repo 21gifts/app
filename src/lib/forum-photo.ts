@@ -185,3 +185,23 @@ export async function prepareForumPhoto(file: File): Promise<PrepareForumPhotoRe
     loaded.revoke?.();
   }
 }
+
+/**
+ * Public same-origin path for a forum still so the browser and the edge can
+ * cache it. Always `.jpg`; the api serves the real bytes on that name.
+ *
+ * @param messageId - Forum message id.
+ * @param index - Zero-based still index. `<= 0` is `photo.jpg`; `>= 1` is
+ *   `photo/{n}.jpg` with `n` as a decimal (no extra encoding).
+ * @param version - Optional cache-busting token. Empty string omits the query.
+ * @returns `/messages/{id}/photo.jpg` or `/messages/{id}/photo/{n}.jpg`, with
+ *   optional `?v=`. No I/O.
+ */
+export function forumPhotoSrc(messageId: string, index = 0, version?: string): string {
+  const id = encodeURIComponent(messageId);
+  const path = index <= 0 ? `/messages/${id}/photo.jpg` : `/messages/${id}/photo/${index}.jpg`;
+  if (version === undefined || version === '') {
+    return path;
+  }
+  return `${path}?v=${encodeURIComponent(version)}`;
+}

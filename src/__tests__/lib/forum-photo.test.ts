@@ -3,6 +3,7 @@ import {
   FORUM_PHOTO_JPEG_QUALITY,
   FORUM_PHOTO_MAX_BYTES,
   FORUM_PHOTO_MAX_EDGE,
+  forumPhotoSrc,
   isForumPhotoFile,
   prepareForumPhoto,
 } from '@/lib/forum-photo';
@@ -374,5 +375,30 @@ describe('prepareForumPhoto', () => {
 
     await expect(prepareForumPhoto(jpegFile())).rejects.toThrow('Could not decode image');
     expect(revoke).toHaveBeenCalledWith('blob:bad');
+  });
+});
+
+describe('forumPhotoSrc', () => {
+  it('maps index 0, omitted, and negative to photo.jpg', () => {
+    expect(forumPhotoSrc('m1', 0)).toBe('/messages/m1/photo.jpg');
+    expect(forumPhotoSrc('m1')).toBe('/messages/m1/photo.jpg');
+    expect(forumPhotoSrc('m1', -1)).toBe('/messages/m1/photo.jpg');
+  });
+
+  it('maps index 1 and 9 to photo/{n}.jpg', () => {
+    expect(forumPhotoSrc('m1', 1)).toBe('/messages/m1/photo/1.jpg');
+    expect(forumPhotoSrc('m1', 9)).toBe('/messages/m1/photo/9.jpg');
+  });
+
+  it('encodes the message id', () => {
+    expect(forumPhotoSrc('a/b')).toBe('/messages/a%2Fb/photo.jpg');
+  });
+
+  it('encodes a non-empty version query', () => {
+    expect(forumPhotoSrc('m1', 0, 'ab cd')).toBe('/messages/m1/photo.jpg?v=ab%20cd');
+  });
+
+  it('omits the query when version is an empty string', () => {
+    expect(forumPhotoSrc('m1', 0, '')).toBe('/messages/m1/photo.jpg');
   });
 });

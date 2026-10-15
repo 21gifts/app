@@ -658,16 +658,44 @@
 
 ## Endpoint: GET /messages/[id]/photo
 
-- **Purpose:** Same-origin proxy of api GET `/messages/:id/photo` (raw JPEG/PNG/WebP bytes for one forum message). Signed-in clients send Authorization (`fetchMessagePhoto`); the public note page fetches without Bearer (`fetchPublicMessagePhoto`). Always render via blob URLs — not bare `<img src>`.
+- **Purpose:** Same-origin proxy of api GET `/messages/:id/photo` (raw JPEG/PNG/WebP bytes for one forum message). The extensionless route stays for `fetchMessagePhoto` and `fetchPublicMessagePhoto` (inbox, deleted staff row, shop-editor fallback, profile picture). Public forum stills use `<img src>` `/messages/{id}/photo.jpg` without Authorization.
 - **Errors:** Upstream 401/404, or 502 if the api is unreachable.
 - **Used by:** `fetchMessagePhoto`, `fetchPublicMessagePhoto`.
-- **Auth:** Optional Bearer (api photo is public; forum board still sends Bearer).
+- **Auth:** Optional Bearer.
+
+## Endpoint: GET /messages/[id]/photo.jpg
+
+- **Purpose:** Same-origin proxy of the api file of that extension. Authorization is removed before the upstream call so the edge can store the public still; `cache-control` is copied from the api.
+- **Errors:** Upstream 404, or 502 when the api is unreachable.
+- **Used by:** `forumPhotoSrc`.
+- **Auth:** None.
+
+## Endpoint: GET /messages/[id]/photo.jpeg
+
+- **Purpose:** Same-origin proxy of the api file of that extension. Authorization is removed before the upstream call so the edge can store the public still; `cache-control` is copied from the api.
+- **Errors:** Upstream 404, or 502 when the api is unreachable.
+- **Used by:** Direct alias of `photo.jpg`.
+- **Auth:** None.
+
+## Endpoint: GET /messages/[id]/photo.png
+
+- **Purpose:** Same-origin proxy of the api file of that extension. Authorization is removed before the upstream call so the edge can store the public still; `cache-control` is copied from the api.
+- **Errors:** Upstream 404, or 502 when the api is unreachable.
+- **Used by:** Direct alias of `photo.jpg`.
+- **Auth:** None.
+
+## Endpoint: GET /messages/[id]/photo.webp
+
+- **Purpose:** Same-origin proxy of the api file of that extension. Authorization is removed before the upstream call so the edge can store the public still; `cache-control` is copied from the api.
+- **Errors:** Upstream 404, or 502 when the api is unreachable.
+- **Used by:** Direct alias of `photo.jpg`.
+- **Auth:** None.
 
 ## Endpoint: GET /messages/[id]/photo/[file]
 
 - **Purpose:** Same-origin proxy of api extra stills at GET `/messages/:id/photo/{1-9}.jpg`. App Router `file` must match `{1-9}.{jpg|jpeg|png|webp}`; other names 404 without proxying. The proxy always requests `{n}.jpg` from the api (same bytes as `.jpeg`/`.png`/`.webp` aliases).
 - **Errors:** Route 404 for unknown `file`; upstream 404/502 when the extra still is missing or unreachable.
-- **Used by:** `fetchMessagePhoto` / `fetchPublicMessagePhoto` with index 1–9.
+- **Used by:** `fetchMessagePhoto` / `fetchPublicMessagePhoto` with index 1–9, and `forumPhotoSrc`, which builds `/messages/{id}/photo/{n}.jpg` for index >= 1. `ForumBoard` and `PublicMessageLoader` attach public extra stills through that path.
 - **Auth:** Optional Bearer.
 
 ## Endpoint: GET /messages/[id]/[file]

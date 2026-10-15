@@ -614,13 +614,16 @@ describe('PublicMessageLoader', () => {
 
   it('loads a photo blob URL when hasPhoto is true', async () => {
     fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 1, text: '' });
-    fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
       expect(screen.getByAltText('Photo from Ada')).toBeTruthy();
     });
-    expect(fetchPhoto).toHaveBeenCalledWith(MESSAGE_ID, 0);
-    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe('blob:public');
+    expect(fetchPhoto).not.toHaveBeenCalled();
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      `/messages/${MESSAGE_ID}/photo.jpg`,
+    );
+    expect(screen.getByAltText('Photo from Ada').getAttribute('loading')).toBe('eager');
+    expect(screen.getByAltText('Photo from Ada').getAttribute('fetchpriority')).toBe('high');
     const still = screen.getByAltText('Photo from Ada').className.split(/\s+/);
     expect(still).toEqual(
       expect.arrayContaining([
@@ -643,12 +646,13 @@ describe('PublicMessageLoader', () => {
       photoCount: undefined as unknown as number,
       text: '',
     });
-    fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
-      expect(screen.getByAltText('Photo from Ada')).toBeTruthy();
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+        `/messages/${MESSAGE_ID}/photo.jpg`,
+      );
     });
-    expect(fetchPhoto).toHaveBeenCalledWith(MESSAGE_ID, 0);
+    expect(fetchPhoto).not.toHaveBeenCalled();
   });
 
   it('renders text without a photo when photoCount is omitted and hasPhoto is false', async () => {
@@ -671,10 +675,6 @@ describe('PublicMessageLoader', () => {
       photoCount: 2,
       text: '',
     });
-    fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
-    vi.spyOn(URL, 'createObjectURL')
-      .mockReturnValueOnce('blob:public-0')
-      .mockReturnValueOnce('blob:public-1');
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
       expect(screen.getAllByAltText('Photo from Ada')).toHaveLength(2);
@@ -682,8 +682,11 @@ describe('PublicMessageLoader', () => {
     const photos = screen.getAllByAltText('Photo from Ada');
     expect(photos[0]?.getAttribute('data-photo-index')).toBe('0');
     expect(photos[1]?.getAttribute('data-photo-index')).toBe('1');
-    expect(fetchPhoto).toHaveBeenNthCalledWith(1, MESSAGE_ID, 0);
-    expect(fetchPhoto).toHaveBeenNthCalledWith(2, MESSAGE_ID, 1);
+    expect(photos[0]?.getAttribute('src')).toBe(`/messages/${MESSAGE_ID}/photo.jpg`);
+    expect(photos[1]?.getAttribute('src')).toBe(`/messages/${MESSAGE_ID}/photo/1.jpg`);
+    expect(photos[0]?.getAttribute('loading')).toBe('eager');
+    expect(photos[1]?.getAttribute('loading')).toBe('lazy');
+    expect(fetchPhoto).not.toHaveBeenCalled();
     const scroller = photos[0]?.parentElement?.parentElement;
     expect(scroller?.contains(photos[1] ?? null)).toBe(true);
     expect(scroller?.getAttribute('data-scroll-x')).toBe('');
@@ -700,16 +703,14 @@ describe('PublicMessageLoader', () => {
 
   it('keeps the original still index when an earlier extra still fails to load', async () => {
     fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 2, text: '' });
-    fetchPhoto
-      .mockRejectedValueOnce(new Error('gone'))
-      .mockResolvedValueOnce(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
-      expect(screen.getAllByAltText('Photo from Ada')).toHaveLength(1);
+      expect(screen.getAllByAltText('Photo from Ada')).toHaveLength(2);
     });
+    fireEvent.error(screen.getAllByAltText('Photo from Ada')[0] as HTMLElement);
+    expect(screen.getAllByAltText('Photo from Ada')).toHaveLength(1);
     expect(screen.getByAltText('Photo from Ada').getAttribute('data-photo-index')).toBe('1');
-    expect(fetchPhoto).toHaveBeenNthCalledWith(1, MESSAGE_ID, 0);
-    expect(fetchPhoto).toHaveBeenNthCalledWith(2, MESSAGE_ID, 1);
+    expect(fetchPhoto).not.toHaveBeenCalled();
   });
 
   it('renders a video when hasVideo is true', async () => {
@@ -756,16 +757,20 @@ describe('PublicMessageLoader', () => {
       videoContentType: 'video/mp4',
       text: '',
     });
-    fetchPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
       expect(document.querySelector('video')).toBeTruthy();
     });
+    expect(document.querySelector('video')?.getAttribute('poster')).toBe(
+      `/messages/${MESSAGE_ID}/photo.jpg`,
+    );
     fireEvent.error(document.querySelector('video')!);
     await waitFor(() => {
       expect(document.querySelector('video')).toBeNull();
     });
-    expect(screen.getByAltText('Photo from Ada')).toBeTruthy();
+    expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+      `/messages/${MESSAGE_ID}/photo.jpg`,
+    );
   });
 
   it('ignores a stale message resolve after unmount', async () => {
@@ -839,22 +844,15 @@ describe('PublicMessageLoader', () => {
     expect(fetchRepliesPublic).toHaveBeenCalled();
   });
 
-  it('ignores a stale photo resolve after unmount', async () => {
+  it('renders a public still without fetching a photo blob', async () => {
     fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 1 });
-    let resolvePhoto: ((value: Blob) => void) | undefined;
-    fetchPhoto.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolvePhoto = resolve;
-        }),
-    );
-    const view = renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
-      expect(fetchPhoto).toHaveBeenCalled();
+      expect(screen.getByAltText('Photo from Ada').getAttribute('src')).toBe(
+        `/messages/${MESSAGE_ID}/photo.jpg`,
+      );
     });
-    view.unmount();
-    resolvePhoto?.(new Blob([new Uint8Array([1])]));
-    await Promise.resolve();
+    expect(fetchPhoto).not.toHaveBeenCalled();
   });
 
   it('keeps ₿-only when the spot rate fails', async () => {
@@ -896,17 +894,15 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
   });
 
-  it('clears the photo when the photo fetch fails', async () => {
+  it('clears the photo when the still errors', async () => {
     fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 1 });
-    fetchPhoto.mockRejectedValue(new Error('photo down'));
     renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
     await waitFor(() => {
-      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+      expect(screen.getByAltText('Photo from Ada')).toBeTruthy();
     });
-    await waitFor(() => {
-      expect(fetchPhoto).toHaveBeenCalled();
-    });
+    fireEvent.error(screen.getByAltText('Photo from Ada'));
     expect(screen.queryByAltText('Photo from Ada')).toBeNull();
+    expect(fetchPhoto).not.toHaveBeenCalled();
   });
 
   it('renders a parent and two replies without a permalink ring', async () => {
@@ -936,6 +932,40 @@ describe('PublicMessageLoader', () => {
     expect(screen.getByText('Carol')).toBeTruthy();
     expect(document.querySelector('[data-permalink-target="true"]')).toBeNull();
     expect(fetchRepliesPublic).toHaveBeenCalledWith(MESSAGE_ID);
+  });
+
+  it('keeps only the first two cards first still eager', async () => {
+    const first: ForumMessage = {
+      ...sample,
+      id: '22222222-2222-4222-8222-222222222222',
+      name: 'Bob',
+      text: 'First reply',
+      sats: 0,
+      hasPhoto: true,
+      photoCount: 1,
+    };
+    const second: ForumMessage = {
+      ...sample,
+      id: '33333333-3333-4333-8333-333333333333',
+      name: 'Carol',
+      text: '',
+      sats: 0,
+      hasPhoto: true,
+      photoCount: 1,
+    };
+    fetchMessage.mockResolvedValue({ ...sample, hasPhoto: true, photoCount: 1, text: '' });
+    fetchRepliesPublic.mockResolvedValue([first, second]);
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    await waitFor(() => {
+      expect(screen.getByAltText('Photo from Carol')).toBeTruthy();
+    });
+    expect(screen.getByAltText('Photo from Ada').getAttribute('loading')).toBe('eager');
+    expect(screen.getByAltText('Photo from Ada').getAttribute('fetchpriority')).toBe('high');
+    expect(screen.getByAltText('Photo from Bob').getAttribute('loading')).toBe('eager');
+    expect(screen.getByAltText('Photo from Bob').getAttribute('fetchpriority')).toBe('high');
+    expect(screen.getByAltText('Photo from Carol').getAttribute('loading')).toBe('lazy');
+    expect(screen.getByAltText('Photo from Carol').getAttribute('fetchpriority')).toBe('low');
+    expect(fetchPhoto).not.toHaveBeenCalled();
   });
 
   it('loads the parent thread from a reply id and rings the opened reply', async () => {

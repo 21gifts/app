@@ -65,6 +65,14 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   );
   expect((await request.get('/messages/[id]/photo')).status()).toBe(404);
   expect((await request.get('/messages/m1/photo')).status()).toBe(404);
+  expect((await request.get('/messages/[id]/photo.jpg')).status()).toBe(404);
+  expect((await request.get('/messages/m1/photo.jpg')).status()).toBe(404);
+  expect((await request.get('/messages/[id]/photo.jpeg')).status()).toBe(404);
+  expect((await request.get('/messages/m1/photo.jpeg')).status()).toBe(404);
+  expect((await request.get('/messages/[id]/photo.png')).status()).toBe(404);
+  expect((await request.get('/messages/m1/photo.png')).status()).toBe(404);
+  expect((await request.get('/messages/[id]/photo.webp')).status()).toBe(404);
+  expect((await request.get('/messages/m1/photo.webp')).status()).toBe(404);
   expect((await request.get('/messages/[id]/photo/[file]')).status()).toBe(404);
   expect((await request.get('/messages/m1/photo/1.jpg')).status()).toBe(404);
   expect((await request.get('/messages/[id]/[file]')).status()).toBe(404);
