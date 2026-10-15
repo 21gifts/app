@@ -691,6 +691,18 @@ function paySheetElement(root: HTMLElement | null): HTMLElement | null {
 }
 
 /**
+ * The open reaction form, if its composer is mounted. A form that is folding away with its card
+ * (inside an `inert` `Collapse`) is already closed, so the page is not pulled back to it.
+ *
+ * @param field - The reply composer's text field, or null when none is mounted.
+ * @returns The form element, or null.
+ */
+function replyFormElement(field: HTMLTextAreaElement | null): HTMLFormElement | null {
+  const form = field === null ? null : field.form;
+  return form === null || form.closest('[data-collapse][inert]') !== null ? null : form;
+}
+
+/**
  * Presentational public forum: optional dismissible living-room laws hint,
  * ForumModeSelect (a closed full-width combobox showing the selected label
  * and a chevron; unpaid count chip on the closed trigger when `unpaidNewCount`
@@ -929,8 +941,7 @@ export function ForumBoard({
         return;
       }
       sheetWasOpen.current = false;
-      const liveField = replyComposerRef.current;
-      revealReplyForm(scroller, liveField === null ? null : liveField.form);
+      revealReplyForm(scroller, replyFormElement(replyComposerRef.current));
     };
     // While a move runs, each step reveals from where the page last rested. The target already
     // sits at its final place inside the moving box (a fold clips its content, it does not squeeze
@@ -943,25 +954,28 @@ export function ForumBoard({
       reveal();
     };
     /** The open pay sheet, else the reaction form, as they are now. */
-    const liveTarget = (): HTMLElement | null => {
-      const liveField = replyComposerRef.current;
-      return paySheetElement(rootRef.current) ?? (liveField === null ? null : liveField.form);
-    };
+    const liveTarget = (): HTMLElement | null =>
+      paySheetElement(rootRef.current) ?? replyFormElement(replyComposerRef.current);
     // While the sheet or the form is still moving into place, the reveal follows the move frame by
     // frame; the port carries `SCROLL_FOLLOW_ATTR` then, so the footer's slim/full progress and the
     // scroll memory skip those in-between scrolls and count only where the page comes to rest.
-    // A run of this effect in the middle of a move keeps the rest position from before it.
+    // A run of this effect in the middle of a move keeps the rest position from before it; when
+    // it ends that move (the card closes while its form is still easing open), it announces where
+    // the page rests, as the end of a move does below.
     const target = liveTarget();
-    if (scroller !== null && !scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
+    const wasFollowing = scroller !== null && scroller.hasAttribute(SCROLL_FOLLOW_ATTR);
+    if (scroller !== null && !wasFollowing) {
       restTop.current = scroller.scrollTop;
     }
     scroller?.toggleAttribute(SCROLL_FOLLOW_ATTR, target !== null && movingIntoPlace(target));
     follow();
+    if (wasFollowing && !scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
+      scroller.dispatchEvent(new Event('scroll'));
+    }
     if (scroller === null || typeof ResizeObserver === 'undefined') {
       return;
     }
-    const field = replyComposerRef.current;
-    const form = field === null ? null : field.form;
+    const form = replyFormElement(replyComposerRef.current);
     const sheet = paySheetElement(rootRef.current);
     const observer = new ResizeObserver(follow);
     if (sheet !== null) {

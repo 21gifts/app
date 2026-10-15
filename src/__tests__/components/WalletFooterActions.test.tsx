@@ -159,6 +159,30 @@ describe('WalletFooterActions', () => {
     expect(collapse(body)).toBe('0.75');
   });
 
+  it('does not settle in the middle of a followed reveal, and settles from where it ends', () => {
+    vi.useFakeTimers();
+    stubMotion(false);
+    const { port, body } = renderInShell();
+    scrollTo(port, 36);
+    expect(collapse(body)).toBe('0.45');
+    // The reveal starts following before the wait after the last scroll is over.
+    port.toggleAttribute(SCROLL_FOLLOW_ATTR, true);
+    scrollTo(port, 42);
+    act(() => {
+      vi.advanceTimersByTime(140);
+    });
+    expect(collapse(body)).toBe('0.45');
+    expect(body.hasAttribute('data-footer-snap')).toBe(false);
+    port.toggleAttribute(SCROLL_FOLLOW_ATTR, false);
+    // From 36 to 48 in one move: 0.45 + 12 / 80, then it settles to the nearer end.
+    scrollTo(port, 48);
+    expect(collapse(body)).toBe('0.6');
+    act(() => {
+      vi.advanceTimersByTime(140);
+    });
+    expect(collapse(body)).toBe('1');
+  });
+
   it('clamps an overscroll to the page, so a bounce past either end does not count', () => {
     stubMotion(false);
     const { port, body } = renderInShell();

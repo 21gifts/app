@@ -108,8 +108,13 @@ export function WalletFooterActions({
       body.style.setProperty('--footer-collapse', String(value));
     };
     const onScroll = (): void => {
-      // A reveal following a moving form: only the scroll that ends it counts, as one move.
+      // A reveal following a moving form: only the scroll that ends it counts, as one move. The
+      // footer does not settle in the middle of it either; that scroll starts the wait again.
       if (scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
+        if (settle !== null) {
+          window.clearTimeout(settle);
+          settle = null;
+        }
         return;
       }
       const max = range();

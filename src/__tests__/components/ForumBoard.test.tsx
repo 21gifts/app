@@ -8486,6 +8486,57 @@ describe('reply form size', () => {
     expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
   });
 
+  it('does not pull the page back to the reaction form of a closing card', () => {
+    vi.useFakeTimers();
+    const board = (expandedId: string | null) => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={expandedId}
+          replies={[]}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const view = renderWithLocale(board(null));
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    const scrolls = vi.fn();
+    port.addEventListener('scroll', scrolls);
+    // Closed while the form still eases open: the follow ends where the page is, and the board
+    // announces that resting position (jsdom: the reveal of the form moves the port by 12px).
+    view.rerender(board('m1'));
+    expect(port.scrollTop).toBe(12);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    port.scrollTop = 30;
+    view.rerender(board(null));
+    expect(port.scrollTop).toBe(30);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+    expect(scrolls).toHaveBeenCalledTimes(1);
+    act(() => {
+      vi.advanceTimersByTime(FOLD_MS);
+    });
+    // Closed once open and at rest: the folding form stays mounted, inert, and is not revealed.
+    view.rerender(board('m1'));
+    act(() => {
+      vi.advanceTimersByTime(FOLD_MS);
+    });
+    port.scrollTop = 0;
+    port.dispatchEvent(new Event('scroll'));
+    view.rerender(board(null));
+    expect(screen.getByLabelText('Your reaction').closest('[inert]')).not.toBeNull();
+    expect(port.scrollTop).toBe(0);
+    vi.useRealTimers();
+  });
+
   it('restores the scroll position when the pay sheet opens', () => {
     const board = (withSheet: boolean, replies: ForumMessage[]) => (
       <AppShell mode="fill">
