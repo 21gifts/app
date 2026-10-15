@@ -892,28 +892,6 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/photo.jpg');
   });
 
-  it('proxyMessagesPhotoExtGet hits jpeg png and webp pathnames', async () => {
-    const fetchMock = stubApi();
-    await proxyMessagesPhotoExtGet(
-      new Request('http://localhost/messages/m1/photo.jpeg'),
-      'm1',
-      'jpeg',
-    );
-    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/m1/photo.jpeg');
-    await proxyMessagesPhotoExtGet(
-      new Request('http://localhost/messages/m1/photo.png'),
-      'm1',
-      'png',
-    );
-    expect((fetchMock.mock.calls[1]?.[0] as URL).pathname).toBe('/messages/m1/photo.png');
-    await proxyMessagesPhotoExtGet(
-      new Request('http://localhost/messages/m1/photo.webp'),
-      'm1',
-      'webp',
-    );
-    expect((fetchMock.mock.calls[2]?.[0] as URL).pathname).toBe('/messages/m1/photo.webp');
-  });
-
   it('proxyMessagesVideoGet hits /messages/m1/video.mp4', async () => {
     const fetchMock = stubApi();
     await proxyMessagesVideoGet(new Request('http://localhost/messages/m1/video.mp4'), 'm1', 'mp4');

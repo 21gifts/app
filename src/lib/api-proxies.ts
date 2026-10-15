@@ -1414,18 +1414,18 @@ export async function proxyMessagesPhotoGet(
 }
 
 /**
- * Proxies GET /messages/:id/photo.jpg (and jpeg/png/webp aliases) without
- * forwarding Authorization, so the edge can store the public still.
+ * Proxies GET /messages/:id/photo.jpg without forwarding Authorization, so
+ * the edge can store the public still.
  *
  * @param request - Incoming App Router request.
  * @param id - Forum message id from the dynamic route segment.
- * @param ext - Still file extension (`jpg` | `jpeg` | `png` | `webp`).
+ * @param ext - Still file extension (`jpg`).
  * @returns The upstream response (raw image bytes).
  */
 export async function proxyMessagesPhotoExtGet(
   request: Request,
   id: string,
-  ext: 'jpg' | 'jpeg' | 'png' | 'webp',
+  ext: 'jpg',
 ): Promise<Response> {
   const headers = new Headers(request.headers);
   headers.delete('authorization');

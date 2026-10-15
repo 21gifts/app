@@ -1871,9 +1871,6 @@ test('Function: proxyMessagesPhotoExtGet — GET /messages/[id]/photo.jpg withou
 }) => {
   expect((await request.get('/messages/[id]/photo.jpg')).status()).toBe(404);
   expect((await request.get('/messages/m1/photo.jpg')).status()).toBe(404);
-  expect((await request.get('/messages/m1/photo.jpeg')).status()).toBe(404);
-  expect((await request.get('/messages/m1/photo.png')).status()).toBe(404);
-  expect((await request.get('/messages/m1/photo.webp')).status()).toBe(404);
 });
 
 test('Function: proxyMessagesVideoGet — GET /messages/[id]/video.mp4 without a file is 404', async ({
