@@ -422,6 +422,62 @@ describe('ShopNoteEditControl', () => {
     vi.unstubAllGlobals();
   });
 
+  it('saves a country when the pin itself did not move', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessagePlace).mockResolvedValue({
+      ...shopMessage,
+      place: { lat: 14.6, lng: 120.98, label: 'Happyland', country: 'PH' },
+    });
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => ({ addListener: () => undefined, setCenter: () => undefined })),
+        Marker: vi.fn(() => ({
+          setPosition: () => undefined,
+          getPosition: () => ({ lat: () => 14.6, lng: () => 120.98 }),
+          addListener: () => undefined,
+        })),
+      },
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ key: 'k' }),
+      }),
+    );
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+        }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    const country = await screen.findByLabelText('Country code');
+    fireEvent.change(country, { target: { value: 'ph' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessagePlace).toHaveBeenCalledWith('token', 'shop1', {
+        lat: 14.6,
+        lng: 120.98,
+        label: 'Happyland',
+        country: 'PH',
+      });
+    });
+    delete (window as { google?: unknown }).google;
+    vi.unstubAllGlobals();
+  });
+
   it('opens on a photo read failure without the feed stills', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);

@@ -130,7 +130,7 @@ describe('ShopPlaceControl', () => {
     fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Happyland' } });
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
     await waitFor(() => {
-      expect(setMessagePlace).toHaveBeenCalledWith('token', 'shop1', pin);
+      expect(setMessagePlace).toHaveBeenCalledWith('token', 'shop1', { ...pin, country: null });
     });
     expect(onUpdated).toHaveBeenCalledWith('shop1', pin);
   });

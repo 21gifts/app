@@ -128,7 +128,26 @@ describe('PlaceField', () => {
     markerListeners.get('dragend')?.();
     fireEvent.change(screen.getByLabelText('Place name'), { target: { value: '  Stall  ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
-    expect(onChange).toHaveBeenCalledWith({ lat: 14.6, lng: 121, label: 'Stall' });
+    expect(onChange).toHaveBeenCalledWith({ lat: 14.6, lng: 121, label: 'Stall', country: null });
+  });
+
+  it('uppercases the country code the editor typed', async () => {
+    const onChange = vi.fn();
+    const listeners = stubMaps();
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+    fireEvent.change(screen.getByLabelText('Country code'), { target: { value: 'ph' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    expect(onChange).toHaveBeenCalledWith({
+      lat: 14.6,
+      lng: 120.98,
+      label: null,
+      country: 'PH',
+    });
   });
 
   it('restores the confirmed pin when the map opens again', async () => {
@@ -153,7 +172,7 @@ describe('PlaceField', () => {
     vi.stubGlobal('navigator', { geolocation: undefined });
     renderWithLocale(
       <PlaceField
-        place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+        place={{ lat: 14.6, lng: 120.98, label: 'Happyland', country: 'PH' }}
         disabled={false}
         onChange={() => undefined}
       />,
@@ -161,6 +180,7 @@ describe('PlaceField', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     expect(await screen.findByRole('button', { name: 'Use this place' })).toBeTruthy();
     expect(screen.getByLabelText('Place name')).toHaveProperty('value', 'Happyland');
+    expect(screen.getByLabelText('Country code')).toHaveProperty('value', 'PH');
     expect(Marker).toHaveBeenCalledWith({
       position: { lat: 14.6, lng: 120.98 },
       map,
@@ -288,7 +308,7 @@ describe('PlaceField', () => {
     listeners.get('click')?.({ latLng: { lat: () => 1, lng: () => 2 } });
     fireEvent.change(screen.getByLabelText('Place name'), { target: { value: '   ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
-    expect(onChange).toHaveBeenCalledWith({ lat: 1, lng: 2, label: null });
+    expect(onChange).toHaveBeenCalledWith({ lat: 1, lng: 2, label: null, country: null });
   });
 
   it('reports a script error and a loaded script that never installs maps', async () => {
@@ -602,7 +622,12 @@ describe('PlaceField', () => {
     fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Happyland' } });
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
     await waitFor(() => {
-      expect(onCommit).toHaveBeenCalledWith({ lat: 14.6, lng: 120.98, label: 'Happyland' });
+      expect(onCommit).toHaveBeenCalledWith({
+        lat: 14.6,
+        lng: 120.98,
+        label: 'Happyland',
+        country: null,
+      });
     });
     expect(onChange).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'Use this place' })).toBeNull();

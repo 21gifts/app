@@ -569,7 +569,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', {
         text: 'Hello',
-        place: { lat: 14.5, lng: 120.9, label: 'Stall' },
+        place: { lat: 14.5, lng: 120.9, label: 'Stall', country: null },
       });
     });
     fetchSpy.mockRestore();
@@ -800,7 +800,7 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', {
         text: 'Hello',
-        place: { lat: 14.5, lng: 120.9, label: 'Stall' },
+        place: { lat: 14.5, lng: 120.9, label: 'Stall', country: null },
       });
     });
     fetchSpy.mockRestore();

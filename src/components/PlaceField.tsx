@@ -121,6 +121,7 @@ export function PlaceField(props: {
   const [scriptReady, setScriptReady] = useState(false);
   const [mapsKey, setMapsKey] = useState<string | null>(null);
   const [labelDraft, setLabelDraft] = useState('');
+  const [countryDraft, setCountryDraft] = useState('');
   const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(null);
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
@@ -290,6 +291,7 @@ export function PlaceField(props: {
     markerRef.current = null;
     setMarkerPos(saved === null ? null : { lat: saved.lat, lng: saved.lng });
     setLabelDraft(saved?.label ?? '');
+    setCountryDraft(saved?.country ?? '');
     if (saved !== null) {
       const savedMarker = new maps.Marker({
         position: { lat: saved.lat, lng: saved.lng },
@@ -354,6 +356,7 @@ export function PlaceField(props: {
     props.place?.lat,
     props.place?.lng,
     props.place?.label,
+    props.place?.country,
     mapPlaced,
     sunday,
   ]);
@@ -499,6 +502,17 @@ export function PlaceField(props: {
         }}
         className="mt-3 w-full shrink-0 rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
       />
+      <input
+        type="text"
+        maxLength={2}
+        aria-label={t('forum.placeCountry')}
+        value={countryDraft}
+        disabled={props.disabled}
+        onChange={(event) => {
+          setCountryDraft(event.target.value);
+        }}
+        className="mt-3 w-full shrink-0 rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
+      />
       {saveError ? (
         <p role="alert" className="mt-3 text-sm text-app-danger">
           {t('forum.placeSaveFailed')}
@@ -512,10 +526,12 @@ export function PlaceField(props: {
           disabled={props.disabled || saving}
           onClick={() => {
             const trimmed = labelDraft.trim();
+            const trimmedCountry = countryDraft.trim();
             void commit({
               lat: markerPos.lat,
               lng: markerPos.lng,
               label: trimmed === '' ? null : trimmed,
+              country: trimmedCountry === '' ? null : trimmedCountry.toUpperCase(),
             });
           }}
         >

@@ -2117,7 +2117,7 @@ describe('postMessage', () => {
     expect(JSON.parse(String(init.body))).toEqual(
       expect.objectContaining({
         text: 'Hello from Ada',
-        place: { lat: 1.2, lng: 3.4, label: 'Harbor' },
+        place: { lat: 1.2, lng: 3.4, label: 'Harbor', country: null },
       }),
     );
 
@@ -2487,6 +2487,36 @@ describe('postMessageVideo', () => {
     await postMessageVideo('tok', { text: 'Hello from Ada', video: file, shopUsername: ' @ ' });
     const blankShop = fetchMock.mock.calls[0]?.[1] as RequestInit;
     expect((blankShop.body as FormData).get('shopUsername')).toBeNull();
+  });
+
+  it('includes placeCountry only when country is a non-empty string', async () => {
+    const created = {
+      ...forumMessage,
+      hasVideo: true,
+      videoContentType: 'video/mp4' as const,
+    };
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: created,
+    });
+    const file = new File(['vid'], 'clip.mp4', { type: 'video/mp4' });
+    await postMessageVideo('tok', {
+      text: 'Hello from Ada',
+      video: file,
+      place: { lat: 1.2, lng: 3.4, label: 'Harbor', country: 'PH' },
+    });
+    const withCountry = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect((withCountry.body as FormData).get('placeCountry')).toBe('PH');
+
+    fetchMock.mockClear();
+    await postMessageVideo('tok', {
+      text: 'Hello from Ada',
+      video: file,
+      place: { lat: 1.2, lng: 3.4, label: 'Harbor', country: null },
+    });
+    const withNullCountry = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect((withNullCountry.body as FormData).get('placeCountry')).toBeNull();
   });
 
   it('posts multipart video and optional poster and returns the validated message', async () => {

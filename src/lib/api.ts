@@ -2379,7 +2379,14 @@ export async function postMessage(
       ...(stills.length === 0 ? {} : { photo: stills[0], photos: stills }),
       ...(inReplyTo !== undefined ? { inReplyTo } : {}),
       ...(askGoal === null ? {} : askGoal),
-      ...(inReplyTo === undefined && input.place !== undefined ? { place: input.place } : {}),
+      ...(inReplyTo === undefined && input.place !== undefined
+        ? {
+            place: {
+              ...input.place,
+              country: typeof input.place.country === 'string' ? input.place.country : null,
+            },
+          }
+        : {}),
       ...(shopUsername === '' ? {} : { shopUsername }),
     }),
   });
@@ -2473,6 +2480,9 @@ export async function postMessageVideo(
     form.set('placeLng', String(input.place.lng));
     if (typeof input.place.label === 'string') {
       form.set('placeLabel', input.place.label);
+    }
+    if (typeof input.place.country === 'string' && input.place.country !== '') {
+      form.set('placeCountry', input.place.country);
     }
   }
   const shopUsername = input.shopUsername?.trim().replace(/^@/, '') ?? '';

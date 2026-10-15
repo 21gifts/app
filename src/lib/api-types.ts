@@ -565,16 +565,21 @@ export type PasskeySession = z.infer<typeof passkeySessionSchema>;
 export const FORUM_MESSAGE_MAX_LENGTH = 8000;
 
 /**
- * Runtime schema for an optional forum place pin.
+ * Runtime schema for an optional forum place pin (`country` is optional: null or omitted).
  */
 export const forumPlacePinSchema = z.object({
   lat: z.number().gte(-90).lte(90),
   lng: z.number().gte(-180).lte(180),
   label: z.string().max(80).nullish(),
+  country: z
+    .string()
+    .regex(/^[A-Z]{2}$/)
+    .nullable()
+    .optional(),
 });
 
 /**
- * A confirmed forum place pin (`lat`, `lng`, optional `label`).
+ * A confirmed forum place pin. `country` is null or omitted when unset.
  */
 export type ForumPlacePin = z.infer<typeof forumPlacePinSchema>;
 

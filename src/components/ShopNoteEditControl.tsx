@@ -73,7 +73,7 @@ function placeStamp(place: ForumPlacePin | null): string {
   if (place === null) {
     return '';
   }
-  return `${place.lat},${place.lng},${place.label ?? ''}`;
+  return `${place.lat},${place.lng},${place.label ?? ''},${place.country ?? ''}`;
 }
 
 function placesEqual(left: ForumPlacePin | null, right: ForumPlacePin | null): boolean {
