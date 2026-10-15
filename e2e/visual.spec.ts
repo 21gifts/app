@@ -7674,6 +7674,7 @@ test.describe('onboarding screens', () => {
     const posted = page.getByText(REACTION_ANSWER);
     await expect(posted).toBeVisible();
     await expect(page.getByLabel('Your reaction')).toHaveValue('');
+    await motionSettled(page);
     await posted.evaluate((node) => {
       node.scrollIntoView({ block: 'center', inline: 'nearest' });
     });
@@ -11262,6 +11263,9 @@ test.describe('onboarding screens', () => {
     await page.goto(`/members/${memberId}?visual=wallet-pay-confirm`);
     await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Lend' }).click();
+    // The reply block eases open first: type where the fields come to rest.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     await page.getByLabel('Amount to lend').fill('210');
     await page.getByLabel('Your reaction').fill('Count me in!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
@@ -11272,6 +11276,7 @@ test.describe('onboarding screens', () => {
       'You are lending to Carol. Once the loan is fully funded, you get it back in 30 daily payments.',
     );
     await expect(sheet.getByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeVisible();
+    await motionSettled(page);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
@@ -11295,6 +11300,7 @@ test.describe('onboarding screens', () => {
       'This loan is already fully funded. What you send now is a gift to Carol.',
     );
     await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    await motionSettled(page);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
@@ -16123,6 +16129,7 @@ test.describe('onboarding screens', () => {
       'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
     );
     await expect(sheet.getByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeVisible();
+    await motionSettled(page);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
@@ -16144,6 +16151,7 @@ test.describe('onboarding screens', () => {
       'This loan is already fully funded. What you send now is a gift to Maria.',
     );
     await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    await motionSettled(page);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
@@ -20884,6 +20892,9 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome?visual=wallet-pay-confirm');
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Lend' }).click();
+    // The reply block eases open first: type where the fields come to rest.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     await page.getByLabel('Amount to lend').fill('210');
     await page.getByLabel('Your reaction').fill('Count me in!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
@@ -20894,6 +20905,7 @@ test.describe('welcome forum variants', () => {
       'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
     );
     await expect(payPage.getByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeVisible();
+    await motionSettled(page);
     await payPage.evaluate((node) => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
@@ -20916,6 +20928,7 @@ test.describe('welcome forum variants', () => {
       'This loan is already fully funded. What you send now is a gift to Maria.',
     );
     await expect(payPage.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    await motionSettled(page);
     await payPage.evaluate((node) => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
