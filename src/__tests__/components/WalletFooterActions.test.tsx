@@ -183,6 +183,27 @@ describe('WalletFooterActions', () => {
     expect(collapse(body)).toBe('1');
   });
 
+  it('does not settle while a followed reveal has not scrolled yet, and settles from where it ends', () => {
+    vi.useFakeTimers();
+    stubMotion(false);
+    const { port, body } = renderInShell();
+    scrollTo(port, 36);
+    // The form is already in view: the reveal follows without a scroll of its own.
+    port.toggleAttribute(SCROLL_FOLLOW_ATTR, true);
+    act(() => {
+      vi.advanceTimersByTime(140);
+    });
+    expect(collapse(body)).toBe('0.45');
+    expect(body.hasAttribute('data-footer-snap')).toBe(false);
+    port.toggleAttribute(SCROLL_FOLLOW_ATTR, false);
+    scrollTo(port, 48);
+    expect(collapse(body)).toBe('0.6');
+    act(() => {
+      vi.advanceTimersByTime(140);
+    });
+    expect(collapse(body)).toBe('1');
+  });
+
   it('clamps an overscroll to the page, so a bounce past either end does not count', () => {
     stubMotion(false);
     const { port, body } = renderInShell();

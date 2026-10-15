@@ -393,7 +393,7 @@ export function WelcomeScreen(): ReactElement {
               // Synchronously, so the writer's field takes the focus inside this tap.
               flushSync(openWriter);
             }}
-            className={`absolute right-[11px] bottom-6 z-30 shadow-lg ${shown === 'none' ? 'transition-[opacity,visibility] duration-250 ease-glide' : ''} motion-reduce:transition-none group-has-[[data-footer-actions]]/body:bottom-[calc(4.75rem+23px-1.75rem*var(--footer-collapse,0))] group-data-[footer-snap]/body:transition-[bottom,opacity,visibility] group-data-[footer-snap]/body:duration-320${fieldFocused || shown !== 'none' || writerOpen ? ' pointer-events-none invisible opacity-0' : ''}`}
+            className={`absolute right-[11px] bottom-6 z-30 shadow-lg ${shown === 'none' ? 'transition-[opacity,visibility] duration-250 ease-glide' : ''} motion-reduce:transition-none group-has-[[data-footer-actions]]/body:bottom-[calc(4.75rem+23px-1.75rem*var(--footer-collapse,0))]${shown === 'none' ? ' group-data-[footer-snap]/body:transition-[bottom,opacity,visibility] group-data-[footer-snap]/body:duration-320' : ''}${fieldFocused || shown !== 'none' || writerOpen ? ' pointer-events-none invisible opacity-0' : ''}`}
           >
             <Plus aria-hidden="true" className="h-6 w-6" />
           </IconButton>

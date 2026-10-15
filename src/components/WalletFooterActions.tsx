@@ -135,7 +135,8 @@ export function WalletFooterActions({
       }
       settle = window.setTimeout(() => {
         settle = null;
-        if (progress === 0 || progress === 1) {
+        // A reveal started following without a scroll of its own: the scroll that ends it waits again.
+        if (progress === 0 || progress === 1 || scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
           return;
         }
         if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {

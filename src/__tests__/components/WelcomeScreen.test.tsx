@@ -340,10 +340,13 @@ describe('WelcomeScreen writer', () => {
     const plus = (): HTMLElement => screen.getByRole('button', { name: 'Write a post' });
     expect(plusAside(plus())).toBe(false);
     expect(plus().className).toContain('transition-[opacity,visibility]');
+    expect(plus().className).toContain('transition-[bottom,opacity,visibility]');
     fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
-    // The footer it sits above leaves in the same step: no fade that would show it dropping.
+    // The footer it sits above leaves in the same step: no fade and no glide (also not the one of a
+    // settled footer) that would show it dropping.
     expect(plusAside(plus())).toBe(true);
     expect(plus().className).not.toContain('transition-[opacity,visibility]');
+    expect(plus().className).not.toContain('transition-[bottom,opacity,visibility]');
   });
 
   it('brings the feed back at the scroll position it had when the writer opened', () => {
