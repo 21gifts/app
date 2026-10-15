@@ -661,18 +661,26 @@ export function revealPaySheet(scroller: HTMLElement | null, sheet: HTMLElement 
  *
  * @param target - The open pay sheet or the reaction form.
  * @param ended - A box whose move has just ended (it still carries its moving mark), or null.
+ * @param outerGlides - False counts only the height box right around `target`: a glide of a box
+ * further out then comes from other content in it (a reply above opening its own controls), which
+ * does not move `target` into place.
  * @returns True while such a move runs.
  */
-function movingIntoPlace(target: HTMLElement, ended: EventTarget | null = null): boolean {
+function movingIntoPlace(
+  target: HTMLElement,
+  ended: EventTarget | null = null,
+  outerGlides = true,
+): boolean {
   // A fold still `closed` but not inert has just been told to open (its first frame).
-  const selector =
-    '[data-collapse="opening"], [data-collapse="closed"]:not([inert]), [data-auto-height][data-gliding]';
+  const glide = '[data-auto-height][data-gliding]';
+  const selector = `[data-collapse="opening"], [data-collapse="closed"]:not([inert]), ${glide}`;
+  const own = target.closest('[data-auto-height]');
   for (
     let box = target.closest(selector);
     box !== null;
     box = box.parentElement?.closest(selector) ?? null
   ) {
-    if (box !== ended) {
+    if (box !== ended && (outerGlides || box === own || !box.matches(glide))) {
       return true;
     }
   }
@@ -906,6 +914,8 @@ export function ForumBoard({
   const sheetWasOpen = useRef(false);
   // Where the page last came to rest: the reveal at the end of a move starts from here.
   const restTop = useRef(0);
+  // The reply count the reveal last saw, to tell when a list has just arrived.
+  const repliesShown = useRef(shownReplies);
   useEffect(() => {
     if (scroller === null) {
       return;
@@ -962,12 +972,19 @@ export function ForumBoard({
     // A run of this effect in the middle of a move keeps the rest position from before it; when
     // it ends that move (the card closes while its form is still easing open), it announces where
     // the page rests, as the end of a move does below.
+    // A list that has just arrived makes the replies block glide: that glide moves the target into
+    // place too. Any other glide of a box further out than the target's own does not.
+    let listArrived = shownReplies !== repliesShown.current;
+    repliesShown.current = shownReplies;
     const target = liveTarget();
     const wasFollowing = scroller !== null && scroller.hasAttribute(SCROLL_FOLLOW_ATTR);
     if (scroller !== null && !wasFollowing) {
       restTop.current = scroller.scrollTop;
     }
-    scroller?.toggleAttribute(SCROLL_FOLLOW_ATTR, target !== null && movingIntoPlace(target));
+    scroller?.toggleAttribute(
+      SCROLL_FOLLOW_ATTR,
+      target !== null && movingIntoPlace(target, null, listArrived || wasFollowing),
+    );
     follow();
     if (wasFollowing && !scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
       scroller.dispatchEvent(new Event('scroll'));
@@ -990,7 +1007,8 @@ export function ForumBoard({
     // move the page.
     const foldObserver = new ResizeObserver(() => {
       const moving = liveTarget();
-      if (moving !== null && movingIntoPlace(moving)) {
+      const outerGlides = listArrived || scroller.hasAttribute(SCROLL_FOLLOW_ATTR);
+      if (moving !== null && movingIntoPlace(moving, null, outerGlides)) {
         scroller.toggleAttribute(SCROLL_FOLLOW_ATTR, true);
         follow();
       }
@@ -1007,13 +1025,21 @@ export function ForumBoard({
       const wasFollowing = scroller.hasAttribute(SCROLL_FOLLOW_ATTR);
       scroller.toggleAttribute(
         SCROLL_FOLLOW_ATTR,
-        settled !== null && movingIntoPlace(settled, event.target),
+        wasFollowing && settled !== null && movingIntoPlace(settled, event.target),
       );
-      if (settled !== null && event.target instanceof Node && event.target.contains(settled)) {
+      // Only a move the reveal was following places the page; a glide that never moved the target
+      // into place leaves it where the reader has it.
+      if (
+        wasFollowing &&
+        settled !== null &&
+        event.target instanceof Node &&
+        event.target.contains(settled)
+      ) {
         scroller.scrollTop = restTop.current;
         follow();
       }
       if (wasFollowing && !scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
+        listArrived = false;
         scroller.dispatchEvent(new Event('scroll'));
       }
     };

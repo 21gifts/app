@@ -334,12 +334,16 @@ describe('WelcomeScreen writer', () => {
     expect(screen.getByTestId('writer')).toBeTruthy();
   });
 
-  it('fades the + out while a wallet view is open', () => {
+  it('hides the + at once while a wallet view is open, and fades it otherwise', () => {
     vi.mocked(useWallet).mockReturnValue(walletWith('ready'));
     renderWelcome();
-    expect(plusAside(screen.getByRole('button', { name: 'Write a post' }))).toBe(false);
+    const plus = (): HTMLElement => screen.getByRole('button', { name: 'Write a post' });
+    expect(plusAside(plus())).toBe(false);
+    expect(plus().className).toContain('transition-[opacity,visibility]');
     fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
-    expect(plusAside(screen.getByRole('button', { name: 'Write a post' }))).toBe(true);
+    // The footer it sits above leaves in the same step: no fade that would show it dropping.
+    expect(plusAside(plus())).toBe(true);
+    expect(plus().className).not.toContain('transition-[opacity,visibility]');
   });
 
   it('brings the feed back at the scroll position it had when the writer opened', () => {

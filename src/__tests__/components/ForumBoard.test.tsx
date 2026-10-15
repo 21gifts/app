@@ -8257,7 +8257,7 @@ describe('reply form size', () => {
     const previous = globalThis.ResizeObserver;
     globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
     vi.useFakeTimers();
-    const board = (expandedId: string | null) => (
+    const boardWith = (expandedId: string | null, replies: ForumMessage[]) => (
       <AppShell mode="fill">
         <ForumBoard
           messages={[SAMPLE]}
@@ -8271,21 +8271,23 @@ describe('reply form size', () => {
           formError={null}
           {...idleProps}
           expandedId={expandedId}
-          replies={[]}
+          replies={replies}
           {...modeProps('all')}
         />
       </AppShell>
     );
+    const board = (expandedId: string | null) => boardWith(expandedId, []);
     const view = renderWithLocale(board(null));
     view.rerender(board('m1'));
     const port = document.querySelector('[data-scrollport]') as HTMLElement;
-    const foldWatch = made.find((entry) =>
-      entry.observed.some((node) => node.hasAttribute('data-collapse')),
-    );
-    if (foldWatch === undefined) {
-      throw new Error('the fold is not observed');
-    }
+    // The latest watch on the fold: each run of the reveal effect makes its own.
     const resize = (): void => {
+      const foldWatch = made.findLast((entry) =>
+        entry.observed.some((node) => node.hasAttribute('data-collapse')),
+      );
+      if (foldWatch === undefined) {
+        throw new Error('the fold is not observed');
+      }
       act(() => {
         foldWatch.onResize([], {} as ResizeObserver);
       });
@@ -8303,6 +8305,41 @@ describe('reply form size', () => {
     port.dispatchEvent(new Event('scroll'));
     resize();
     expect(port.scrollTop).toBe(0);
+    // A reply above opening its own controls makes the whole replies block glide: the form is
+    // not moving into place, so neither that glide nor its end moves the page.
+    const replyForm = screen.getByLabelText('Your reaction').closest('form') as HTMLFormElement;
+    const outer = replyForm
+      .closest('[data-collapse]')
+      ?.querySelector('[data-auto-height]') as HTMLElement;
+    expect(outer).not.toBe(replyForm.closest('[data-auto-height]'));
+    outer.toggleAttribute('data-gliding', true);
+    resize();
+    expect(port.scrollTop).toBe(0);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+    act(() => {
+      outer.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
+    });
+    expect(port.scrollTop).toBe(0);
+    outer.toggleAttribute('data-gliding', false);
+    // A list that has just arrived makes the same block glide: that moves the form into place.
+    view.rerender(boardWith('m1', [{ ...SAMPLE, id: 'r1', name: 'Bob', text: 'Hi', sats: 0 }]));
+    port.scrollTop = 0;
+    outer.toggleAttribute('data-gliding', true);
+    resize();
+    expect(port.scrollTop).toBe(12);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    act(() => {
+      outer.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
+    });
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+    outer.toggleAttribute('data-gliding', false);
+    // Once that move has ended, a later glide of the block is again someone else's.
+    port.scrollTop = 0;
+    port.dispatchEvent(new Event('scroll'));
+    outer.toggleAttribute('data-gliding', true);
+    resize();
+    expect(port.scrollTop).toBe(0);
+    outer.toggleAttribute('data-gliding', false);
     // The box right around the form glides (a view swap): the reveal follows again.
     const form = screen.getByLabelText('Your reaction').closest('form') as HTMLFormElement;
     const box = form.closest('[data-auto-height]') as HTMLElement;

@@ -31230,6 +31230,7 @@ test.describe('habit tracker baselines', () => {
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
     // The sheet mounts a moment after the click; then wait until it has eased open.
     await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(
       page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
