@@ -50,7 +50,12 @@ import { useHeartTip } from '@/lib/heart-tip';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shopStickerLangFromLocation } from '@/lib/shop-sticker';
 import { shortResourceUrl } from '@/lib/short-link';
-import { isReplyPaymentExempt, roleAtLeast, verifiedChipHiddenByStaffTag } from '@/lib/roles';
+import {
+  isOwnNote,
+  isReplyPaymentExempt,
+  roleAtLeast,
+  verifiedChipHiddenByStaffTag,
+} from '@/lib/roles';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';

@@ -6640,7 +6640,7 @@ Same unsigned note as **goal-110**, after **Donation** is pressed. A line under 
 
 ### Variant: credit-ledger
 
-Unsigned permalink of a filled credit. Under the ask, **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows a chart from 1 Nov 2026 to 2 Nov 2026, bars for each day's amount and a line from the whole debt down to zero, and **Each share is one bitcoin payment to that person.** **First repayment day: November 1, 2026.** The day rows are not on this page. **Repayment list** links to /messages/<id>/repayment-list.
+Unsigned permalink of a filled credit. The loan block reads **Fully funded · being repaid** with a green bar at the paid-back share (**0%**: no share is paid yet); the note page takes that share from the ledger it already reads below. Under the block, **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows a chart from 1 Nov 2026 to 2 Nov 2026, bars for each day's amount and a line from the whole debt down to zero, and **Each share is one bitcoin payment to that person.** **First repayment day: November 1, 2026.** The day rows are not on this page. **Repayment list** links to /messages/<id>/repayment-list.
 
 ![21.gifts public message credit ledger](images/messages-id-credit-ledger.png)
 

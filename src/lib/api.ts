@@ -98,13 +98,6 @@ import type { FiatCode } from '@/lib/stats-money';
 export const OPEN_CREDIT_DELETE_ERROR = 'An open credit cannot be deleted';
 
 /**
- * Exact api 400 body when a Wallet of Satoshi address fails the NIP-57 zap probe.
- * Matched literally (English) before visitor-facing rewrite.
- */
-export const LIGHTNING_ADDRESS_NOT_ZAP_ERROR =
-  'This Wallet of Satoshi address cannot receive these Bitcoin payments';
-
-/**
  * Exact api 403 body when the visitor signed in with a refused account.
  * Matched literally (English).
  */

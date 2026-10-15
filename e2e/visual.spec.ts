@@ -15509,6 +15509,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByLabel('Paid back', { exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Repayment list' })).toBeVisible();
     await expect(page.getByText(/Each share is one bitcoin payment/)).toBeVisible();
+    await expect(page.getByText('Fully funded · being repaid')).toBeVisible();
     await expect(page.getByText('First repayment day: November 1, 2026.')).toBeVisible();
     await shotScreen(page, 'state-messages-id-credit-ledger');
   });
