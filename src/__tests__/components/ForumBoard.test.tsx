@@ -2964,7 +2964,7 @@ describe('ForumBoard', () => {
     expect(screen.getByText('Software Developer')).toBeTruthy();
   });
 
-  it('keeps the Verified button and Software Developer label together', () => {
+  it('hides the Verified button when Software Developer is shown on a top-level note', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, role: 'verified', staffTag: 'software_developer' }]}
@@ -2980,8 +2980,88 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
     expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+  });
+
+  it('hides the Verified button when Software Developer is shown on a reply', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, replyCount: 1 }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[
+          {
+            ...SAMPLE,
+            id: 'r-staff-verified',
+            name: 'Bob',
+            role: 'verified',
+            replyCount: 0,
+            staffTag: 'software_developer',
+          },
+        ]}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+  });
+
+  it('keeps the Moderator button and Software Developer label together', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, role: 'moderator', staffTag: 'software_developer' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Moderator' })).toBeTruthy();
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+  });
+
+  it('hides Verified and External when Software Developer is shown on a verified nostr note', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            via: 'nostr',
+            role: 'verified',
+            payable: false,
+            staffTag: 'software_developer',
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'External' })).toBeNull();
   });
 
   it('keeps the External button and Software Developer label together', () => {

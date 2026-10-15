@@ -591,6 +591,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'delete-open-credit',
+    image: 'welcome-delete-open-credit.png',
+    visual: 'state-welcome-delete-open-credit',
+    needle: 'This credit is not fully repaid yet and cannot be deleted.',
+  },
+  {
+    route: '/welcome',
     id: 'reply-moderation',
     image: 'welcome-reply-moderation.png',
     visual: 'state-welcome-reply-moderation',

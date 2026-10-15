@@ -10440,7 +10440,8 @@ test.describe('onboarding screens', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           currency: 'BTC',
-          fundedAt: '2026-09-26T12:00:00.000Z',
+          fundedAt: '2026-10-09T12:00:00.000Z',
+          startsOn: '2026-11-01',
           termDays: 2,
           daysDue: 1,
           daysPaid: 0,
@@ -10464,7 +10465,7 @@ test.describe('onboarding screens', () => {
           repayments: [
             {
               dayIndex: 0,
-              dueOn: '2026-09-27',
+              dueOn: '2026-11-01',
               accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
               name: 'Bea',
               username: 'bea',
@@ -10475,7 +10476,7 @@ test.describe('onboarding screens', () => {
             },
             {
               dayIndex: 1,
-              dueOn: '2026-09-28',
+              dueOn: '2026-11-02',
               accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
               name: 'Bea',
               username: 'bea',
@@ -10486,7 +10487,7 @@ test.describe('onboarding screens', () => {
             },
             {
               dayIndex: 1,
-              dueOn: '2026-09-28',
+              dueOn: '2026-11-02',
               accountId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
               name: 'Cara',
               username: 'cara',
@@ -10506,6 +10507,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByLabel('Paid back')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Repayment list' })).toBeVisible();
     await expect(page.getByText(/Each share is one bitcoin payment/)).toBeVisible();
+    await expect(page.getByText('First repayment day: November 1, 2026.')).toBeVisible();
     await shotScreen(page, 'state-messages-id-credit-ledger');
   });
 
@@ -10518,7 +10520,8 @@ test.describe('onboarding screens', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           currency: 'BTC',
-          fundedAt: '2026-09-26T12:00:00.000Z',
+          fundedAt: '2026-10-09T12:00:00.000Z',
+          startsOn: '2026-11-01',
           termDays: 2,
           daysDue: 1,
           daysPaid: 0,
@@ -10542,7 +10545,7 @@ test.describe('onboarding screens', () => {
           repayments: [
             {
               dayIndex: 0,
-              dueOn: '2026-09-27',
+              dueOn: '2026-11-01',
               accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
               name: 'Bea',
               username: 'bea',
@@ -10553,7 +10556,7 @@ test.describe('onboarding screens', () => {
             },
             {
               dayIndex: 1,
-              dueOn: '2026-09-28',
+              dueOn: '2026-11-02',
               accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
               name: 'Bea',
               username: 'bea',
@@ -10564,7 +10567,7 @@ test.describe('onboarding screens', () => {
             },
             {
               dayIndex: 1,
-              dueOn: '2026-09-28',
+              dueOn: '2026-11-02',
               accountId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
               name: 'Cara',
               username: 'cara',
@@ -10613,7 +10616,8 @@ test.describe('onboarding screens', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           currency: 'BTC',
-          fundedAt: '2026-09-26T12:00:00.000Z',
+          fundedAt: '2026-10-09T12:00:00.000Z',
+          startsOn: '2026-11-01',
           termDays: 2,
           daysDue: 1,
           daysPaid: 0,
@@ -10637,7 +10641,7 @@ test.describe('onboarding screens', () => {
           repayments: [
             {
               dayIndex: 0,
-              dueOn: '2026-09-27',
+              dueOn: '2026-11-01',
               accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
               name: 'Bea',
               username: 'bea',
@@ -10648,7 +10652,7 @@ test.describe('onboarding screens', () => {
             },
             {
               dayIndex: 1,
-              dueOn: '2026-09-28',
+              dueOn: '2026-11-02',
               accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
               name: 'Bea',
               username: 'bea',
@@ -10659,7 +10663,7 @@ test.describe('onboarding screens', () => {
             },
             {
               dayIndex: 1,
-              dueOn: '2026-09-28',
+              dueOn: '2026-11-02',
               accountId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
               name: 'Cara',
               username: 'cara',
@@ -10715,7 +10719,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Each share is one bitcoin payment to that person.')).toBeVisible();
     await expect(
       page.getByText(
-        'The days are fixed once the credit is fully given. Until then this is the plan for what has been given.',
+        'The days are fixed once the credit is fully given. Repayment starts the day after that, but never before November 1, 2026. Until then this is the plan for what has been given.',
       ),
     ).toBeVisible();
     await expect(page.getByText('Due', { exact: true })).toHaveCount(0);
@@ -14760,6 +14764,56 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-goal-credit');
   });
 
+  test('welcome delete-open-credit', async ({ page }) => {
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await seedAda(page, 'moderator');
+    await fulfillRateDay(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-credit',
+              name: 'Bob',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-goal-credit', async (route) => {
+      await route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: '{"error":"An open credit cannot be deleted"}',
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('button', { name: 'Loan' })).toBeVisible();
+    await page.getByRole('button', { name: 'Delete post', exact: true }).click();
+    await page.getByRole('button', { name: 'Confirm deletion' }).click();
+    await expect(
+      page
+        .getByRole('group', { name: 'Delete this post and its reactions from 21.gifts?' })
+        .getByRole('alert'),
+    ).toHaveText('This credit is not fully repaid yet and cannot be deleted.');
+    await expect(page.getByText('Need help with a train ticket')).toBeVisible();
+    await shotScreen(page, 'state-welcome-delete-open-credit');
+  });
+
   test('state /welcome loan-tag-open', async ({ page }) => {
     await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
       await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
@@ -15214,7 +15268,7 @@ test.describe('welcome forum variants', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
-    await expect(page.getByText(/day 11/)).toBeVisible();
+    await expect(page.getByText(/November 11/)).toBeVisible();
     await shotScreen(page, 'state-welcome-ask-credit-plan-btc');
   });
 
@@ -15253,7 +15307,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText(/fixed in bitcoin/)).toBeVisible();
     await expect(page.getByText(/rising bitcoin price/)).toBeVisible();
     await expect(page.getByText(/Repayment term: 30 days/)).toBeVisible();
-    await expect(page.getByText(/day 11/)).toBeVisible();
+    await expect(page.getByText(/November 11/)).toBeVisible();
     await expect(page.getByText(/Interest 0%/)).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'I want to take this credit.' })).toBeVisible();
     await expect(page.getByRole('checkbox')).toHaveCount(0);

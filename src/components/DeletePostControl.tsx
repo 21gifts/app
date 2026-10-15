@@ -6,7 +6,7 @@ import { InlineConfirm } from '@/components/InlineConfirm';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { IconButton } from '@/components/ui/IconButton';
 import { useTranslations } from '@/components/LocaleProvider';
-import { deleteMessage } from '@/lib/api';
+import { deleteMessage, OPEN_CREDIT_DELETE_ERROR } from '@/lib/api';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -22,6 +22,7 @@ export interface DeletePostControlProps {
 
 /**
  * Moderator-only delete action with confirmation, pending and retry states.
+ * A credit that is not fully repaid shows its own reason instead of the retry error.
  *
  * @param props - Message id, successful removal callback, and optional kind.
  * @returns Inline moderation controls, or null for other roles.
@@ -36,11 +37,13 @@ export function DeletePostControl({
   const { t } = useTranslations();
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<'failed' | 'openCredit' | null>(null);
   const inFlight = useRef(false);
   const idleLabel = kind === 'reply' ? t('forum.deleteReply') : t('forum.delete');
   const confirmLabel = kind === 'reply' ? t('forum.deleteReplyConfirm') : t('forum.deleteConfirm');
-  const errorLabel = kind === 'reply' ? t('forum.deleteReplyError') : t('forum.deleteError');
+  const failedLabel = kind === 'reply' ? t('forum.deleteReplyError') : t('forum.deleteError');
+  const errorLabel =
+    error === 'openCredit' ? t('forum.deleteOpenCreditError') : error === null ? null : failedLabel;
 
   if (session === null || !roleAtLeast(account?.role, 'moderator')) {
     return null;
@@ -52,12 +55,14 @@ export function DeletePostControl({
     }
     inFlight.current = true;
     setBusy(true);
-    setError(false);
+    setError(null);
     try {
       await deleteMessage(session!, messageId);
       onDeleted(messageId);
-    } catch {
-      setError(true);
+    } catch (err) {
+      setError(
+        err instanceof Error && err.message === OPEN_CREDIT_DELETE_ERROR ? 'openCredit' : 'failed',
+      );
     } finally {
       inFlight.current = false;
       setBusy(false);
@@ -77,13 +82,13 @@ export function DeletePostControl({
             confirmLabel={t('forum.deleteConfirmAction')}
             cancelLabel={t('forum.deleteCancel')}
             busy={busy}
-            error={error ? errorLabel : null}
+            error={errorLabel}
             onConfirm={() => {
               void remove();
             }}
             onCancel={() => {
               setConfirming(false);
-              setError(false);
+              setError(null);
             }}
           />
         ) : (

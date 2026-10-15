@@ -85,3 +85,18 @@ export function isReplyPaymentExempt(
 export function canEditDailyPayoutRoster(role: Role | null | undefined): boolean {
   return role === 'initiator' || role === 'founder';
 }
+
+/**
+ * Whether the verified role chip is redundant beside a staff feature tag.
+ *
+ * A feature tag is shown only for someone already treated as verified, so
+ * the verified chip is not shown next to it. Higher role chips stay. An
+ * absent tag does not hide verified.
+ *
+ * @param role - Live account role.
+ * @param staffTag - Staff feature tag when present, otherwise null or omitted.
+ * @returns True only for role `verified` with staff tag `software_developer`.
+ */
+export function verifiedChipHiddenByStaffTag(role: string, staffTag?: string | null): boolean {
+  return role === 'verified' && staffTag === 'software_developer';
+}

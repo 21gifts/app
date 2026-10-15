@@ -6,7 +6,10 @@ import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-vi.mock('@/lib/api', () => ({ deleteMessage: vi.fn() }));
+vi.mock('@/lib/api', () => ({
+  deleteMessage: vi.fn(),
+  OPEN_CREDIT_DELETE_ERROR: 'An open credit cannot be deleted',
+}));
 const account: Account = {
   id: 'acc_1',
   linkingKey: '02abcdef',
@@ -149,5 +152,47 @@ describe('DeletePostControl', () => {
     vi.mocked(deleteMessage).mockResolvedValue(undefined);
     fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
     await waitFor(() => expect(onDeleted).toHaveBeenCalledWith('r1'));
+  });
+  it('explains an open credit in every catalog and clears the reason on cancel', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(deleteMessage).mockRejectedValue(new Error('An open credit cannot be deleted'));
+    const onDeleted = vi.fn();
+    renderWithLocale(<DeletePostControl messageId="credit" onDeleted={onDeleted} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'This credit is not fully repaid yet and cannot be deleted.',
+      );
+    });
+    expect(screen.queryByText('Could not delete the post. Please try again.')).toBeNull();
+    expect(onDeleted).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel deletion' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete post' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+  it('shows the German open-credit reason', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(deleteMessage).mockRejectedValueOnce(new Error('An open credit cannot be deleted'));
+    renderWithLocale(<DeletePostControl messageId="credit" onDeleted={vi.fn()} />, 'de');
+    fireEvent.click(screen.getByRole('button', { name: 'Beitrag löschen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Löschen bestätigen' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Dieser Kredit ist noch nicht vollständig zurückgezahlt und kann nicht gelöscht werden.',
+      );
+    });
+  });
+  it('keeps the retry error for a non-Error rejection', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(deleteMessage).mockRejectedValueOnce('denied');
+    renderWithLocale(<DeletePostControl messageId="post" onDeleted={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete post' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm deletion' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Could not delete the post. Please try again.',
+      );
+    });
   });
 });
