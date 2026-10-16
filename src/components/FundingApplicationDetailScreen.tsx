@@ -3,7 +3,7 @@
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
@@ -59,6 +59,8 @@ export function FundingApplicationDetailScreen({
   const [deciding, setDeciding] = useState(false);
   const [decideFailed, setDecideFailed] = useState(false);
   const [placesFull, setPlacesFull] = useState(false);
+  /** Bumped on every load; a decision whose answer arrives after a newer load is dropped. */
+  const decisionTicket = useRef(0);
   const [step, setStep] = useState<'principles' | 'truth'>('principles');
 
   useEffect(() => {
@@ -69,6 +71,8 @@ export function FundingApplicationDetailScreen({
     setDetailError(false);
     setDecideFailed(false);
     setPlacesFull(false);
+    decisionTicket.current += 1;
+    setDeciding(false);
     void (async () => {
       try {
         const next = await fetchFundingApplication(session, accountId);
@@ -117,11 +121,18 @@ export function FundingApplicationDetailScreen({
     setDecideFailed(false);
     setPlacesFull(false);
     const run = kind === 'admit' ? postFundingAdmit : postFundingReject;
+    const ticket = decisionTicket.current;
     void (async () => {
       try {
         await run(session, accountId);
+        if (decisionTicket.current !== ticket) {
+          return;
+        }
         returnToView('/grants/applications', router);
       } catch (err) {
+        if (decisionTicket.current !== ticket) {
+          return;
+        }
         if (err instanceof Error && err.message === FUNDING_PLACES_FULL_ERROR) {
           setPlacesFull(true);
         } else {

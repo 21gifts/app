@@ -308,6 +308,39 @@ describe('FundingApplicationDetailScreen', () => {
     });
   });
 
+  it.each([
+    [
+      'a late failure',
+      (fail: (reason: unknown) => void) => fail(new Error('All grant places are taken')),
+    ],
+    ['a late success', (_fail: (reason: unknown) => void, done?: () => void) => done?.()],
+  ] as const)('drops %s that arrives after another application loads', async (_label, settle) => {
+    let fail: (reason: unknown) => void = () => undefined;
+    let done: () => void = () => undefined;
+    admitMock.mockImplementation(
+      () =>
+        new Promise((resolve, reject) => {
+          fail = reject;
+          done = () => resolve(DECISION);
+        }),
+    );
+    const view = renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes' }));
+    await screen.findByText('Do these posts, to your knowledge, correspond to the truth?');
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    view.rerender(<FundingApplicationDetailScreen accountId="acc_other" />);
+    await act(async () => {
+      settle(fail, done);
+      await Promise.resolve();
+    });
+    expect(
+      screen.queryByText(
+        'All places of this round are taken. Nobody else can be admitted until the next round opens.',
+      ),
+    ).toBeNull();
+    expect(push).not.toHaveBeenCalled();
+  });
+
   it('shows action-failed copy when a decision throws', async () => {
     rejectMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
