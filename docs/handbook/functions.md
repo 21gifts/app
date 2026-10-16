@@ -1451,10 +1451,10 @@ Optional `firstPostFree` (default false) adds the muted line `forum.firstPostFre
 
 ## Function: middleware
 
-- **Purpose:** Send an old `/map` address to the shops map. There is no map page.
-- **Inputs:** The incoming request whose path is `/map`.
-- **Returns / side effects:** Redirect to `/shops#map`. A query string such as `?pin=` is kept (`/shops?pin=#map`).
-- **Used by:** Route `/map`.
+- **Purpose:** Send an old `/map` address to the shops map (there is no map page), and give every other page and route response its Content-Security-Policy.
+- **Inputs:** The incoming request. The matcher covers `/map` and every path except `/_next/static`, `/_next/image`, `/sw.js`, and the files under `public/` (icons, `og.png`, `robots.txt`, `sitemap.xml`, `handbook-images/`, `happyland/`). Reads `CSP_MODE` through `getCspMode` on every request.
+- **Returns / side effects:** For `/map`: a redirect to `/shops#map`; a query string such as `?pin=` is kept (`/shops?pin=#map`). Otherwise the request passes on. A fresh nonce (`createCspNonce`) goes into the policy (`buildCsp`). The policy is set on the response as `Content-Security-Policy-Report-Only`, or `Content-Security-Policy` when `CSP_MODE=enforce`, with `Reporting-Endpoints: csp="/monitoring/csp"`. The same policy and the nonce (`x-nonce`) are set on the request, so Next.js puts the nonce on its own scripts and `RootLayout` on its inline bootstrap scripts.
+- **Used by:** Next.js, before every matched request.
 
 ## Function: PlacesMapScreen
 
@@ -1925,8 +1925,8 @@ First post free: while the signed-in member is below verified and has no missing
 ## Function: RootLayout
 
 - **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, `FiatPreferenceProvider` with `initial` from `getRequestFiat()`, and `ThemeProvider`. `AccountPreferenceSync`, `PushOpenListener`, `WalletSync`, and `InteractionLog` sit inside `ThemeProvider` beside `RememberWalletReturn`, and `ViewHistoryRoot` wraps the page children. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Nest is Locale → NumberFormat → FiatPreference → Theme.
-- **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages, `getRequestNumberFormat()` for the number-format provider, and `getRequestFiat(locale)` for the fiat provider.
-- **Returns / side effects:** The document wrapper for every route.
+- **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages, `getRequestNumberFormat()` for the number-format provider, `getRequestFiat(locale)` for the fiat provider, and reads the `x-nonce` request header that `middleware` sets.
+- **Returns / side effects:** The document wrapper for every route. The three inline bootstrap scripts (`APP_HEIGHT_BOOTSTRAP_SCRIPT`, `THEME_BOOTSTRAP_SCRIPT`, `SUNDAY_BOOTSTRAP_SCRIPT`) carry the Content-Security-Policy nonce; the JSON-LD data block needs none.
 - **Root listeners:** `WalletSync` (wallet connection and the wallet data report) and `InteractionLog` (the signed-in interaction log) are mounted beside the other root listeners.
 - **Used by:** All screens.
 
@@ -2782,6 +2782,41 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` whose body is an envelope; its header line must name the configured DSN's host and project, and every item must be an error (`event`) or a `transaction`.
 - **Returns / side effects:** 404 while error reporting is off, 413 above 1 MiB (the largest event the Sentry server accepts), 400 for another host or project, a broken header, an envelope without items, a broken item header (also a `length` that is not a whole number of bytes inside the envelope, such as a string, `null`, or a boolean, or one that does not end at a newline or at the end of the envelope), or any other item type (session, client report, standalone span, replay, profile, log, feedback, attachment), 502 when the Sentry server cannot be reached, otherwise the upstream status with an empty body. Does not pass on the visitor's IP address, cookies, or headers.
 - **Used by:** Route POST `/monitoring`.
+
+## Function: forwardCspReport
+
+- **Purpose:** Behind `POST /monitoring/csp`: forwards Content-Security-Policy violation reports to the security endpoint of the configured DSN's project (`/api/<project>/security/?sentry_key=…`, with `sentry_release` and, when set, `sentry_environment`), so policy gaps show up before the policy is enforced.
+- **Inputs:** Incoming `Request` with the legacy `report-uri` body `{ "csp-report": {…} }` or a Reporting API (`report-to`) array; only `csp-violation` entries count, at most ten per request.
+- **Returns / side effects:** Each violation is sent as its own legacy report with only `document-uri` (origin and first path segment: `https://21.gifts/view`, never the key after it), `effective-directive`, `violated-directive` (the directive name only, not the policy with its nonce), `blocked-uri` (an http(s) origin, or a keyword such as `inline`, `eval`, `wasm-eval`, `data`, `blob`; anything else is empty), `disposition`, `source-file` (origin only), and whole non-negative `line-number`, `column-number`, `status-code`. Queries, fragments, member paths, script samples, referrers, and the policy text are dropped. 404 while error reporting is off, 413 above 64 KiB (by `Content-Length`, or while reading), 400 when the body is not JSON or holds no violation with a directive and an http(s) page, 502 when the Sentry server cannot be reached, otherwise 204. Does not pass on the visitor's IP address, cookies, or headers.
+- **Used by:** Route POST `/monitoring/csp`.
+
+## Function: getCspMode
+
+- **Purpose:** Reads the Content-Security-Policy mode from the runtime variable `CSP_MODE`, on every request, so the same image switches from report-only to enforced without a rebuild.
+- **Inputs:** None. `process.env.CSP_MODE`.
+- **Returns / side effects:** `enforce` only when `CSP_MODE` is exactly `enforce`; `report-only` when unset, empty, or anything else.
+- **Used by:** `middleware`.
+
+## Function: cspHeaderName
+
+- **Purpose:** Response header name for a Content-Security-Policy mode.
+- **Inputs:** `report-only` or `enforce`.
+- **Returns / side effects:** `Content-Security-Policy-Report-Only` or `Content-Security-Policy`.
+- **Used by:** `middleware`.
+
+## Function: createCspNonce
+
+- **Purpose:** A fresh Content-Security-Policy nonce for one response.
+- **Inputs:** None. Uses `crypto.getRandomValues`.
+- **Returns / side effects:** 16 random bytes in base64 (24 characters).
+- **Used by:** `middleware`.
+
+## Function: buildCsp
+
+- **Purpose:** The Content-Security-Policy text of every page: the directives of `CSP_SOURCES` in order, the nonce on `script-src`, then `report-uri /monitoring/csp` and `report-to csp`. `docs/csp.md` lists every source and why it is needed.
+- **Inputs:** The nonce of this response.
+- **Returns / side effects:** The policy string, directives separated by `; `.
+- **Used by:** `middleware`.
 
 ## Function: traceWallet
 
