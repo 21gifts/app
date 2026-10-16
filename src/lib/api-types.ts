@@ -565,16 +565,33 @@ export type PasskeySession = z.infer<typeof passkeySessionSchema>;
 export const FORUM_MESSAGE_MAX_LENGTH = 8000;
 
 /**
+ * Runtime schema for a structured postal address on a forum pin.
+ */
+export const forumPlaceAddressSchema = z.object({
+  street: z.string(),
+  houseNumber: z.string(),
+  postalCode: z.string(),
+  city: z.string(),
+  country: z.string(),
+});
+
+/**
+ * Structured postal address on a forum pin.
+ */
+export type ForumPlaceAddress = z.infer<typeof forumPlaceAddressSchema>;
+
+/**
  * Runtime schema for an optional forum place pin.
  */
 export const forumPlacePinSchema = z.object({
   lat: z.number().gte(-90).lte(90),
   lng: z.number().gte(-180).lte(180),
   label: z.string().max(80).nullish(),
+  address: forumPlaceAddressSchema.optional().nullable(),
 });
 
 /**
- * A confirmed forum place pin (`lat`, `lng`, optional `label`).
+ * A confirmed forum place pin (`lat`, `lng`, optional `label`, optional `address`).
  */
 export type ForumPlacePin = z.infer<typeof forumPlacePinSchema>;
 
@@ -588,31 +605,27 @@ export type ForumGoalCurrency = (typeof FORUM_GOAL_CURRENCIES)[number];
 export const FORUM_GOAL_AMOUNT_RE = /^\d+(\.\d{1,8})?$/;
 
 /**
+ * Runtime schema for one row of `GET /forum/messages/places`.
+ */
+export const forumPlaceRowSchema = forumPlacePinSchema.extend({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  createdAt: z.string().min(1),
+  accountId: z.string().min(1).optional(),
+  shop: z.boolean().optional(),
+});
+
+/**
  * Runtime schema for `GET /forum/messages/places`.
  */
 export const forumPlacesResponseSchema = z.object({
-  places: z.array(
-    forumPlacePinSchema.extend({
-      id: z.string().min(1),
-      name: z.string().min(1),
-      createdAt: z.string().min(1),
-      accountId: z.string().min(1).optional(),
-      shop: z.boolean().optional(),
-    }),
-  ),
+  places: z.array(forumPlaceRowSchema),
 });
 
 /**
  * One live top-level forum pin, including the note id and author name.
  */
-export type ForumPlaceRow = ForumPlacePin & {
-  id: string;
-  name: string;
-  createdAt: string;
-  accountId?: string | undefined;
-  /** True when the note is a shop. Omitted by an older api. */
-  shop?: boolean | undefined;
-};
+export type ForumPlaceRow = z.infer<typeof forumPlaceRowSchema>;
 
 /**
  * Runtime schema for one public forum message from `GET`/`POST /messages`.

@@ -1201,10 +1201,10 @@
 
 ## Function: ShopAddWizard
 
-Guided shop submission on `/shops`. Closed state is only **Add a shop**. The open steps are photos, a map place, text, an optional 21.gifts username, then a summary. **Post** on the summary is the only submit. The add photo step shows **Next** only. Edit mode shows an icon-only Close (X) on that step only. Its accessible name is Cancel, and there is no visible Cancel word. It closes the editor. From the place step on, the top-left arrow returns to the previous step. The card has no **Back** button. Photos, place, text, and the username can each be left empty; an empty summary still follows the forum rule that a note needs text or media.
+Guided shop submission on `/shops`. Closed state is only **Add a shop**. The open steps are photos, a map place with shop name and structured address, text, an optional 21.gifts username, then a summary. **Post** on the summary is the only submit. The add photo step shows **Next** only. Edit mode shows an icon-only Close (X) on that step only. Its accessible name is Cancel, and there is no visible Cancel word. It closes the editor. From the place step on, the top-left arrow returns to the previous step. The card has no **Back** button. Photos and the username can be left empty. Place step **Next** stays off until `shopPlaceComplete`. Text step **Next** stays off until `shopDescriptionProblem` is null. Summary **Post** stays off until both are complete.
 
-- **Purpose:** Replace the living-room composer on the shops feed. The shop tag is added when the note is sent, not typed in the text step. That text step lists people as soon as `@` is typed, the same way a post does. The summary shows the photo count (stills plus a video), the place name or coordinates, the text, and `@username`, or **None** when that part was skipped.
-- **Inputs:** `posting`, `draft` / `onDraftChange`, `photoDrafts`, `videoDraft`, `onPickFiles`, `onRemovePhoto`, `onClearPhoto`, `place` / `onPlaceChange`, `username` / `onUsernameChange`, `onSubmit`, optional `onCancel` (edit mode only), `resetToken` (closes the wizard after a successful send), `maxLength`. Optional `mode` (`create` default, or `edit`), `submitLabel`, `keptMedia`, `onRemoveKept`, and `imagesOnly`.
+- **Purpose:** Replace the living-room composer on the shops feed. The shop tag is added when the note is sent, not typed in the text step. That text step lists people as soon as `@` is typed, the same way a post does. The summary shows the photo count (stills plus a video), the shop name, the formatted address line, the text, and `@username`, or **None** when photos or the user were skipped.
+- **Inputs:** `posting`, `draft` / `onDraftChange`, `photoDrafts`, `videoDraft`, `onPickFiles`, `onRemovePhoto`, `onClearPhoto`, `place` / `onPlaceChange`, `username` / `onUsernameChange`, `onSubmit`, optional `onCancel` (edit mode only), `resetToken` (closes the wizard after a successful send), `maxLength`. Optional `mode` (`create` default, or `edit`), `submitLabel`, `keptMedia`, `onRemoveKept`, and `imagesOnly`. `PlaceField` is opened with `shopDetails`.
 - **Returns / side effects:** React tree. No network. File selection calls `onPickFiles`. The summary button calls `onSubmit` (**Post**, or `submitLabel` such as **Save changes**). In edit mode, the icon-only Close (X) on the photo step calls `onCancel`. Its accessible name is Cancel, and there is no visible Cancel word. From the place step on, the top-left arrow returns to the previous step and is disabled while `posting` is true. The card does not draw **Back**.
 - **Used by:** `ForumBoard` when `shopComposer` is set, and `ShopNoteEditControl` in edit mode.
 
@@ -1395,10 +1395,10 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlaceField
 
-- **Purpose:** Optional place control on the top-level forum composer, and the compact editor a moderator uses on a shop note. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin. On the device's local Sunday neither the preview nor the map panel is rendered; the pin stays inside the Sunday writing gate. Otherwise, once the frame box is measured, the preview and the map panel are fixed to the window and kept inside the app frame, and are not sized from the viewport (`vw`). Until that box is measured they sit under the pin as an absolute anchor. The map shrinks so the confirm control stays inside the window, and the page still has one scroller.
-- **Inputs:** `place`, `disabled`, `onChange`. Optional `buttonSize` (`lg` default, or `sm`), `buttonVariant` (`secondary` default, or `ghost`), `showPreview` (default true), `ariaLabel` (default **Add a place**), and `onCommit`. Without `onCommit`, Done and Remove call `onChange` and close. With `onCommit`, those buttons wait; a rejection keeps the panel open and shows the save error; a success closes without calling `onChange`. When preview is hidden and a pin is already set, Remove stays inside the open panel, including when the map is unavailable.
+- **Purpose:** Optional place control on the top-level forum composer, and the compact editor a moderator uses on a shop note. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }` on the living-room composer. With `shopDetails`, the panel shows **Shop name**, `ShopAddressFields`, and **Use this place** stays off until name and address pass the shop rules; confirm stores `{ lat, lng, label, address }` with a trimmed uppercase country. No key shows the unavailable sentence and does not confirm a pin; shop fields are hidden on that panel. On the device's local Sunday neither the preview nor the map panel is rendered; the pin stays inside the Sunday writing gate. Otherwise, once the frame box is measured, the preview and the map panel are fixed to the window and kept inside the app frame, and are not sized from the viewport (`vw`). Until that box is measured they sit under the pin as an absolute anchor. The map shrinks so the confirm control stays inside the window, and the page still has one scroller. A shop API 400 maps through `shopApiProblem` to a localized `shops.problem*` alert.
+- **Inputs:** `place`, `disabled`, `onChange`. Optional `buttonSize` (`lg` default, or `sm`), `buttonVariant` (`secondary` default, or `ghost`), `showPreview` (default true), `ariaLabel` (default **Add a place**), `onCommit`, and `shopDetails` (shop name plus structured address). Without `onCommit`, Done and Remove call `onChange` and close. With `onCommit`, those buttons wait; a rejection keeps the panel open and shows the save error; a success closes without calling `onChange`. When preview is hidden and a pin is already set, Remove stays inside the open panel, including when the map is unavailable.
 - **Returns / side effects:** Attach button, optional preview, and panel. Fetches `/maps/key` when opened.
-- **Used by:** `ForumBoard` (top-level composer) and `ShopPlaceControl`.
+- **Used by:** `ForumBoard` (top-level composer, no `shopDetails`), `ShopAddWizard` (`shopDetails`), and `ShopPlaceControl` (`shopDetails`).
 
 ## Function: fitBoxInFrame
 
@@ -1460,7 +1460,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Table of shop notes with name, place, and operator. A moderator sees the same shop pencil on each row.
 - **Inputs:** Session from `useAuthStore`. Catalog via `useTranslations`.
-- **Returns / side effects:** Loads `GET /messages?hashtag=21GiftsShop&mode=all`. Name is the first note line. Place links to `/map?pin={id}` (label, or coordinates). Operator links to `/members/{id}` as `@username`. A missing place or operator is an em dash (shops.missing). **Show more** loads the next page. If a page has no shop rows and another page exists, **Show more** stays and the empty sentence does not. If that page fails, the rows already shown stay, with the forum error and **Try again**, which reloads the same page. A failed first page replaces the table with that error. A missing-requirements response opens `/setup/rules` instead. Null without a session.
+- **Returns / side effects:** Loads `GET /messages?hashtag=21GiftsShop&mode=all`. Name is the first note line. Place links to `/map?pin={id}` via `formatPlacePinText` (name and address line, or coordinates). Operator links to `/members/{id}` as `@username`. A missing place or operator is an em dash (shops.missing). **Show more** loads the next page. If a page has no shop rows and another page exists, **Show more** stays and the empty sentence does not. If that page fails, the rows already shown stay, with the forum error and **Try again**, which reloads the same page. A failed first page replaces the table with that error. A missing-requirements response opens `/setup/rules` instead. Null without a session.
 - **Used by:** `ShopsScreen`.
 
 ## Function: MessageKindTags
@@ -1497,6 +1497,90 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Inputs:** `text: string`.
 - **Returns / side effects:** Text to POST when the author is unpaid-write exempt, otherwise the compose-fee invoice comment. No network.
 - **Used by:** `ForumLoader` (shops compose).
+
+## Function: ISO_COUNTRIES
+
+- **Purpose:** ISO 3166-1 alpha-2 country codes accepted on a shop pin address. Same set as the 21gifts API place contract.
+- **Inputs:** None. A `Set` of uppercase two-letter codes.
+- **Returns / side effects:** Membership lookup for `countryOptions` and address validation. No network.
+- **Used by:** `countryOptions`, `shopAddressProblem` (via country normalize).
+
+## Function: countryDisplayName
+
+- **Purpose:** Localized region name for an ISO 3166-1 alpha-2 code via `Intl.DisplayNames`.
+- **Inputs:** `code` (uppercase ISO code) and `locale` for the display names.
+- **Returns / side effects:** The localized name, or `code` when the runtime has no name. No network.
+- **Used by:** `countryOptions`, `formatShopAddressLine`.
+
+## Function: countryOptions
+
+- **Purpose:** Country options for a native `<select>`, labeled in `locale` and sorted by that label.
+- **Inputs:** `locale` for `Intl.DisplayNames` and `localeCompare`.
+- **Returns / side effects:** One `{ value, label }` per code in `ISO_COUNTRIES`. No network.
+- **Used by:** `ShopAddressFields`.
+
+## Function: shopAddressProblem
+
+- **Purpose:** First invalid address field on a shop pin, or null when the address matches the API rules. Empty address is `'missing'`. Field order is street, house number, postal code, city, country.
+- **Inputs:** Structured `ForumPlaceAddress`, or `null` when every field is empty.
+- **Returns / side effects:** `'missing'`, `'street'`, `'houseNumber'`, `'postalCode'`, `'city'`, `'country'`, or `null`. No network.
+- **Used by:** `PlaceField`, `shopPlaceComplete`.
+
+## Function: shopNameProblem
+
+- **Purpose:** Name problem of a shop pin. Blank label is `'name'`. A standalone street or postal-code token in the name is `'nameAddress'`.
+- **Inputs:** Pin label (shop name) and the structured address, or `null` when unset.
+- **Returns / side effects:** `'name'`, `'nameAddress'`, or `null`. No network.
+- **Used by:** `PlaceField`, `shopPlaceComplete`.
+
+## Function: shopDescriptionProblem
+
+- **Purpose:** Description problem of a shop note. After CRLF is folded to LF and the shop tag is stripped, the text must be 20–1000 characters and strictly longer than the pin label.
+- **Inputs:** Composer or stored note `text`, and the pin `label` (or `null`).
+- **Returns / side effects:** `'short'`, `'long'`, `'notLonger'`, or `null`. No network.
+- **Used by:** `ShopAddWizard`.
+
+## Function: shopDescriptionRemaining
+
+- **Purpose:** Remaining characters needed to reach the 20-character shop description minimum after the shop tag is stripped.
+- **Inputs:** Composer or stored note `text`.
+- **Returns / side effects:** Non-negative count. No network.
+- **Used by:** `ShopAddWizard` for the text-step hint.
+
+## Function: formatShopAddressLine
+
+- **Purpose:** One address line for a shop pin: street, house number, postal code, city, and the localized country name.
+- **Inputs:** Complete structured address and UI `locale`.
+- **Returns / side effects:** `${street} ${houseNumber}, ${postalCode} ${city}, ${countryName}`. No network.
+- **Used by:** `formatPlacePinText`, `ShopAddWizard` summary.
+
+## Function: formatPlacePinText
+
+- **Purpose:** Visible text for a forum pin. With an address, name · address line, or the address line alone. Without an address, the name or five-decimal coordinates.
+- **Inputs:** Stored `ForumPlacePin` and UI `locale`.
+- **Returns / side effects:** Link or table cell text. No network.
+- **Used by:** `ForumBoard`, `ShopTable`, `PublicMessageLoader`, `ShopNoteEditControl`.
+
+## Function: shopPlaceComplete
+
+- **Purpose:** Whether a shop pin has a valid name and structured address.
+- **Inputs:** Composer pin, or `null` when unset.
+- **Returns / side effects:** `true` when `shopNameProblem` and `shopAddressProblem` are both null. No network.
+- **Used by:** `ShopAddWizard` (place-step Next and summary Post).
+
+## Function: shopApiProblem
+
+- **Purpose:** Map an exact API 400 body to a shop form error. Unknown text returns null so the generic save copy stays.
+- **Inputs:** `Error.message` from `postMessage`, `setMessagePlace`, or `setMessageShopText`.
+- **Returns / side effects:** `'shopName'`, `'shopNameAddress'`, `'shopAddress'`, `'shopDescription'`, `'placeAddress'`, or `null`. No network.
+- **Used by:** `ForumLoader`, `PlaceField`, `ShopNoteEditControl`.
+
+## Function: ShopAddressFields
+
+- **Purpose:** Five native fields for a shop pin address: street, house number, postal code, city, and a country `<select>` whose first option is **Choose a country**. Labels have no asterisk. The country list comes from `countryOptions(locale)`.
+- **Inputs:** `value` (`null` = every field empty), `disabled`, and `onChange` that always receives the five draft strings.
+- **Returns / side effects:** Labeled inputs. Autocomplete `off` / `off` / `postal-code` / `address-level2` / `country`. No network.
+- **Used by:** `PlaceField` when `shopDetails` is set.
 
 ## Function: RulesDocument
 

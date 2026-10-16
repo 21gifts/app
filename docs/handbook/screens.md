@@ -1883,43 +1883,43 @@ A moderator clicked **Edit shop note** beside **Ada · Happyland**. The note did
 
 ### Variant: table
 
-The **Table** option is selected. Headers **Name**, **Place**, and **Operator**. One row **Cafe Luna**, place **Happyland**, operator **@luna**.
+The **Table** option is selected. Headers **Name**, **Place**, and **Operator**. One row **Cafe Luna**, place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland**, operator **@luna**.
 
 ![21.gifts shops table](images/shops-table.png)
 
 ### Variant: table-staff
 
-A moderator session. **Table** is selected. **Edit shop note** sits beside the name **Cafe Luna**. Place **Happyland** and operator **@luna** stay.
+A moderator session. **Table** is selected. **Edit shop note** sits beside the name **Cafe Luna**. Place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table staff](images/shops-table-staff.png)
 
 ### Variant: table-edit-open
 
-A moderator clicked **Edit shop note** beside **Cafe Luna**. Step **1 / 5 · Photos** is open in the table. **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. Place **Happyland** and operator **@luna** stay.
+A moderator clicked **Edit shop note** beside **Cafe Luna**. Step **1 / 5 · Photos** is open in the table. **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. Place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit open](images/shops-table-edit-open.png)
 
 ### Variant: table-edit-place
 
-The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the table. **History** still says there are no edits yet. The photo step's Close (X) is gone. Place **Happyland** and operator **@luna** stay.
+The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the table. **History** still says there are no edits yet. The photo step's Close (X) is gone. Place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit place](images/shops-table-edit-place.png)
 
 ### Variant: table-edit-text
 
-**Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet. Place **Happyland** and operator **@luna** stay.
+**Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet. Place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit text](images/shops-table-edit-text.png)
 
 ### Variant: table-edit-user
 
-**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field already shows luna. **History** still says there are no edits yet. Place **Happyland** and operator **@luna** stay.
+**Next** again. Step **4 / 5 · 21.gifts user** is open. The username field already shows luna. **History** still says there are no edits yet. Place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit user](images/shops-table-edit-user.png)
 
 ### Variant: table-edit-summary
 
-**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. Place **Happyland** and operator **@luna** stay.
+**Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. Place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit summary](images/shops-table-edit-summary.png)
 
@@ -1931,13 +1931,31 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the tabl
 
 ### Variant: add-place
 
-**Add a shop** is open on step **2 / 5 · Place**. **Add a place** is closed. **Next** is the only button on the card. The shop list is empty.
+**Add a shop** is open on step **2 / 5 · Place**. **Add a place** is closed. **Next** is the only button on the card, and it is disabled until a complete shop pin is set. The shop list is empty.
 
 ![21.gifts shops add place](images/shops-add-place.png)
 
+### Variant: add-place-empty
+
+**Add a place** is open with a map. A click has set a pin. **Shop name** is empty. The hint **Enter the shop name.** is visible. **Use this place** is visible and disabled.
+
+![21.gifts shops add place empty](images/shops-add-place-empty.png)
+
+### Variant: add-place-hint
+
+**Add a place** is open with a map. **Shop name** is **Kiki's Bakery**. The address fields are still empty. The hint **Enter the full address:** is visible. **Use this place** stays disabled.
+
+![21.gifts shops add place hint](images/shops-add-place-hint.png)
+
+### Variant: add-place-complete
+
+**Add a place** is open with a map. **Shop name** is **Kiki's Bakery**. Street **Bahnhofstrasse**, house number **12**, postal code **8001**, city **Zürich**, and country **Switzerland** are filled. **Use this place** is enabled. The pin is not confirmed yet.
+
+![21.gifts shops add place complete](images/shops-add-place-complete.png)
+
 ### Variant: add-text
 
-**Add a shop** is open on step **3 / 5 · Text**. Place was skipped. **Next** is the only button on the card.
+**Add a shop** is open on step **3 / 5 · Text**. A complete pin **Kiki's Bakery** is already set. The shop text is empty. The hint **20 more characters.** is visible. **Next** is the only button on the card, and it is disabled.
 
 ![21.gifts shops add text](images/shops-add-text.png)
 
@@ -1949,7 +1967,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the tabl
 
 ### Variant: add-summary
 
-**Add a shop** is open on step **5 / 5 · Summary**. Photos, place, text, and the user were skipped. **Post** is the only button on the card.
+**Add a shop** is open on step **5 / 5 · Summary**. Photos and the user were skipped. The summary shows **Kiki's Bakery** and **Bahnhofstrasse 12, 8001 Zürich, Switzerland**. The description is **Fresh bread every morning.** **Post** is the only button on the card, and it is enabled.
 
 ![21.gifts shops add summary](images/shops-add-summary.png)
 
@@ -2033,7 +2051,7 @@ Empty copy **No shops yet — add the first one.** Composer still present.
 
 ### Variant: place
 
-One shop note with a place. The card shows a MapPin link **Happyland** to `/map?pin=m-place`. The raw `#21GiftsShop` token stays hidden.
+One shop note with a place. The card shows a MapPin link **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** to `/map?pin=m-place`. The raw `#21GiftsShop` token stays hidden.
 
 ![21.gifts shops place](images/shops-place.png)
 
@@ -2057,31 +2075,31 @@ One shop note whose place has no label. The card shows a MapPin link **14.60000,
 
 ### Variant: composer-place-confirm
 
-**Add a place** is open with a map. A click has set a pin, **Place name** is **Stall**, and **Use this place** is still visible. The pin is not confirmed yet.
+**Add a place** is open with a map. A click has set a pin, **Shop name** is **Stall**, and the full address is filled. **Use this place** is visible and enabled. The pin is not confirmed yet.
 
 ![21.gifts shops composer place confirm](images/shops-composer-place-confirm.png)
 
 ### Variant: composer-place-set
 
-A pin named **Stall** was confirmed, then **Add a place** closed. That name is not shown. **Remove place** appears only after the pin is opened again. **Next** stays available. The shop list is still empty.
+A pin named **Stall** with a complete address was confirmed, then **Add a place** closed. That name is not shown. **Remove place** appears only after the pin is opened again. **Next** stays enabled. The shop list is still empty.
 
 ![21.gifts shops composer place set](images/shops-composer-place-set.png)
 
 ### Variant: composer-place-pending
 
-**Add a place** is open on an empty shop list, the key has arrived, and the map script has not loaded. The place name field is visible. **Use this place** is not, and the frame is still empty. A failed script or a rejected key uses the same **The map is not available.** panel as `composer-place`.
+**Add a place** is open on an empty shop list, the key has arrived, and the map script has not loaded. The **Shop name** field is visible. **Use this place** is not, and the frame is still empty. A failed script or a rejected key uses the same **The map is not available.** panel as `composer-place`.
 
 ![21.gifts shops composer place pending](images/shops-composer-place-pending.png)
 
 ### Variant: composer-place-unlabeled
 
-**Add a place** is open with a map. A click has set a pin and the place name is still empty. **Use this place** is visible. The shop list is still empty.
+**Add a place** is open with a map. A click has set a pin and **Shop name** is still empty. The hint **Enter the shop name.** is visible. **Use this place** is visible and disabled. The shop list is still empty.
 
 ![21.gifts shops composer place unlabeled](images/shops-composer-place-unlabeled.png)
 
 ### Variant: composer-place-set-coords
 
-A pin with no name was confirmed, then **Add a place** closed. **14.50000, 120.90000** is not shown. **Remove place** appears only after the pin is opened again. **Next** stays available. The shop list is still empty.
+**Add a place** is open with a map. A click has set a pin. **Shop name** is **Happyland**. The address fields are empty. The hint **Enter the full address:** is visible. **Use this place** is disabled. **Next** stays disabled. The shop list is still empty.
 
 ![21.gifts shops composer place set coordinates](images/shops-composer-place-set-coords.png)
 
@@ -2177,13 +2195,13 @@ A moderator session. **Add a place** on the Cafe Luna note is open with a map ke
 
 ### Variant: staff-place-confirm
 
-A moderator session. **Add a place** on the Cafe Luna note is open with a map. A click has set a pin, **Place name** is **Happyland**, and **Use this place** is still visible. The pin is not saved yet.
+A moderator session. **Add a place** on the Cafe Luna note is open with a map. A click has set a pin, **Shop name** is **Happyland**, and the full address is filled. **Use this place** is still visible and enabled. The pin is not saved yet.
 
 ![21.gifts shops staff place confirm](images/shops-staff-place-confirm.png)
 
 ### Variant: staff-place-unlabeled
 
-A moderator session. **Add a place** on the Cafe Luna note is open with a map. A click has set a pin and the place name is still empty. **Use this place** is visible.
+A moderator session. **Add a place** on the Cafe Luna note is open with a map. A click has set a pin and **Shop name** is still empty. The hint **Enter the shop name.** is visible. **Use this place** is visible and disabled.
 
 ![21.gifts shops staff place unlabeled](images/shops-staff-place-unlabeled.png)
 
@@ -2195,7 +2213,7 @@ A moderator session. The Cafe Luna note has a saved pin with no name. The card s
 
 ### Variant: staff-place-error
 
-A moderator session. **Add a place** on the Cafe Luna note is open. A pin and name are set and **Use this place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible and **Use this place** stays.
+A moderator session. **Add a place** on the Cafe Luna note is open. A pin, **Shop name** **Happyland**, and the full address are set, and **Use this place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible and **Use this place** stays.
 
 ![21.gifts shops staff place error](images/shops-staff-place-error.png)
 

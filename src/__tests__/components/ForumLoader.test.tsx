@@ -376,13 +376,77 @@ async function flushPaint(): Promise<void> {
   });
 }
 
-function submitShopWizard(text: string, username?: string): void {
+const COMPLETE_SHOP_PLACE = {
+  lat: 47.3769,
+  lng: 8.5417,
+  label: "Kiki's Bakery",
+  address: {
+    street: 'Bahnhofstrasse',
+    houseNumber: '12',
+    postalCode: '8001',
+    city: 'Zürich',
+    country: 'CH',
+  },
+};
+
+const SHOP_DESCRIPTION = 'Fresh bread every morning.';
+const SHOP_NOTE_BODY = `${SHOP_DESCRIPTION}\n\n#21GiftsShop`;
+
+function stubShopMaps(): Map<string, (event?: unknown) => void> {
+  const listeners = new Map<string, (event?: unknown) => void>();
+  const map = {
+    setCenter: vi.fn(),
+    addListener: (event: string, handler: (event?: unknown) => void) => {
+      listeners.set(event, handler);
+    },
+  };
+  (window as { google?: unknown }).google = {
+    maps: {
+      Map: vi.fn(() => map),
+      Marker: vi.fn(() => ({
+        setPosition: () => undefined,
+        getPosition: () => ({ lat: () => 47.3769, lng: () => 8.5417 }),
+        addListener: () => undefined,
+      })),
+    },
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({ json: () => Promise.resolve({ key: 'k' }) } as Response),
+  );
+  vi.stubGlobal('navigator', { ...navigator, geolocation: undefined });
+  return listeners;
+}
+
+function fillShopAddressFields(name = "Kiki's Bakery"): void {
+  fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: name } });
+  fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
+  fireEvent.change(screen.getByLabelText('House number'), { target: { value: '12' } });
+  fireEvent.change(screen.getByLabelText('Postal code'), { target: { value: '8001' } });
+  fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Zürich' } });
+  fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'CH' } });
+}
+
+async function fillCompleteShopPlace(
+  listeners: Map<string, (event?: unknown) => void>,
+  name = "Kiki's Bakery",
+): Promise<void> {
+  fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+  await waitFor(() => {
+    expect(listeners.has('click')).toBe(true);
+  });
+  listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
+  fillShopAddressFields(name);
+  fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+}
+
+async function submitShopWizard(text: string, username?: string): Promise<void> {
+  const listeners = stubShopMaps();
   fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  await fillCompleteShopPlace(listeners);
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-  if (text !== '') {
-    fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: text } });
-  }
+  fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: text } });
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   if (username !== undefined) {
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: username } });
@@ -455,6 +519,7 @@ afterEach(() => {
     value: originalUserAgent,
   });
   vi.unstubAllGlobals();
+  delete (window as { google?: unknown }).google;
   Object.defineProperty(document, 'visibilityState', {
     configurable: true,
     get: () => 'visible',
@@ -1262,9 +1327,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    submitShopWizard('Cafe Luna');
+    await submitShopWizard(SHOP_DESCRIPTION);
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: SHOP_NOTE_BODY,
+        place: COMPLETE_SHOP_PLACE,
+      });
     });
     expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
   });
@@ -1282,10 +1350,11 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    submitShopWizard('Cafe Luna', '@Luna');
+    await submitShopWizard(SHOP_DESCRIPTION, '@Luna');
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', {
-        text: 'Cafe Luna\n\n#21GiftsShop',
+        text: SHOP_NOTE_BODY,
+        place: COMPLETE_SHOP_PLACE,
         shopUsername: 'Luna',
       });
     });
@@ -1301,16 +1370,10 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    submitShopWizard('Cafe Luna');
+    await submitShopWizard(SHOP_DESCRIPTION);
     await waitFor(() => {
       expect(composeTargetMock).toHaveBeenCalledWith('sess');
-      expect(invoiceMock).toHaveBeenCalledWith(
-        'sess',
-        'fee-note',
-        1,
-        'Cafe Luna\n\n#21GiftsShop',
-        NO_RATE_SHOWN,
-      );
+      expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
     });
     expect(postMock).not.toHaveBeenCalled();
   });
@@ -1353,9 +1416,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    submitShopWizard('Cafe Luna\n\n#21GiftsShop');
+    await submitShopWizard(SHOP_NOTE_BODY);
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Cafe Luna\n\n#21GiftsShop' });
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: SHOP_NOTE_BODY,
+        place: COMPLETE_SHOP_PLACE,
+      });
     });
   });
 
@@ -1390,13 +1456,14 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
-    submitShopWizard('Cafe Luna', 'luna');
+    await submitShopWizard(SHOP_DESCRIPTION, 'luna');
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
     });
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', {
-        text: 'Cafe Luna\n\n#21GiftsShop',
+        text: SHOP_NOTE_BODY,
+        place: COMPLETE_SHOP_PLACE,
         shopUsername: 'luna',
       });
     });
@@ -1430,10 +1497,12 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
     });
+    const listeners = stubShopMaps();
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await fillCompleteShopPlace(listeners);
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: 'Cafe Luna' } });
+    fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: SHOP_DESCRIPTION } });
     expect(
       within(screen.getByLabelText('Shop text').closest('form') as HTMLElement).queryByRole(
         'button',
@@ -1446,7 +1515,9 @@ describe('ForumLoader', () => {
     expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect((screen.getByLabelText('Shop text') as HTMLTextAreaElement).value).toBe('Cafe Luna');
+    expect((screen.getByLabelText('Shop text') as HTMLTextAreaElement).value).toBe(
+      SHOP_DESCRIPTION,
+    );
   });
 
   it('feed="shops" refuses an empty summary', async () => {
@@ -1455,8 +1526,13 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
     });
-    submitShopWizard('');
-    expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    const listeners = stubShopMaps();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await fillCompleteShopPlace(listeners);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('3 / 5 · Text')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     expect(postMock).not.toHaveBeenCalled();
   });
 
@@ -1542,10 +1618,11 @@ describe('ForumLoader', () => {
         {
           ...SAMPLE,
           id: 'shop1',
-          text: 'Cafe Luna\n\n#21GiftsShop',
+          text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
           sats: 5,
           hasPhoto: true,
           photoCount: 1,
+          place: COMPLETE_SHOP_PLACE,
         },
         {
           ...SAMPLE,
@@ -1572,16 +1649,16 @@ describe('ForumLoader', () => {
     vi.mocked(setMessageShopText).mockResolvedValueOnce({
       ...SAMPLE,
       id: 'shop1',
-      text: 'Cafe Sol\n\n#21GiftsShop',
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
       sats: 5,
       hasPhoto: true,
       photoCount: 1,
-      place: { lat: 1, lng: 2, label: 'Stall' },
+      place: COMPLETE_SHOP_PLACE,
       shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     });
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
-      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+      expect(screen.getByText('Cafe Luna is open every morning.')).toBeTruthy();
     });
     const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
     fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
@@ -1589,20 +1666,20 @@ describe('ForumLoader', () => {
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(within(card).getByText('Cafe Sol')).toBeTruthy();
+      expect(within(card).getByText('Cafe Sol is open every morning.')).toBeTruthy();
     });
     expect(within(card).getByRole('button', { name: 'Edit place' })).toBeTruthy();
     expect(screen.getByText('Other stall')).toBeTruthy();
     vi.mocked(setMessageShopText).mockResolvedValueOnce({
       ...SAMPLE,
       id: 'shop1',
-      text: 'Cafe Norte\n\n#21GiftsShop',
+      text: 'Cafe Norte is open every morning.\n\n#21GiftsShop',
       sats: 5,
       hasPhoto: true,
       photoCount: 1,
@@ -1612,13 +1689,13 @@ describe('ForumLoader', () => {
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Norte' },
+      target: { value: 'Cafe Norte is open every morning.' },
     });
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(within(card).getByText('Cafe Norte')).toBeTruthy();
+      expect(within(card).getByText('Cafe Norte is open every morning.')).toBeTruthy();
     });
     expect(within(card).getByRole('button', { name: 'Add a place' })).toBeTruthy();
     await waitFor(() => {
@@ -1697,10 +1774,8 @@ describe('ForumLoader', () => {
       expect(listeners.has('click')).toBe(true);
     });
     listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
-    fireEvent.change(screen.getByLabelText('Place name'), {
-      target: { value: 'Happyland' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    fillShopAddressFields('Happyland');
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
     await waitFor(() => {
       expect(within(card).getByRole('link', { name: 'Happyland' })).toBeTruthy();
     });
@@ -4539,6 +4614,36 @@ describe('ForumLoader', () => {
 
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+  });
+
+  it.each([
+    ['Shop name is required', 'Enter the shop name.'],
+    [
+      'Shop name must not contain the address',
+      'The shop name must not contain the street or the postal code.',
+    ],
+    [
+      'Shop address is required',
+      'Enter the full address: street, house number, postal code, city and country.',
+    ],
+    [
+      'Shop description must be 20 to 1000 characters and longer than the shop name',
+      'The description must be 20 to 1000 characters and longer than the shop name.',
+    ],
+    ['Place address is invalid', 'The address is invalid.'],
+  ])('shows shop 400 %s when posting fails', async (apiMessage, localized) => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockRejectedValue(new Error(apiMessage));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(localized);
   });
 
   it('shows rate-limit copy when posting is rate limited', async () => {

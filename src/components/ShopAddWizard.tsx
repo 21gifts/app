@@ -10,6 +10,12 @@ import { Button, IconButton } from '@/components/ui';
 import type { ForumPlacePin } from '@/lib/api-types';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import type { ForumVideoPayload } from '@/lib/forum-video';
+import {
+  formatShopAddressLine,
+  shopDescriptionProblem,
+  shopDescriptionRemaining,
+  shopPlaceComplete,
+} from '@/lib/forum-shop';
 
 /** One step of the shop submission, after the closed button. */
 type ShopAddStep = 1 | 2 | 3 | 4 | 5;
@@ -127,7 +133,7 @@ export function ShopAddWizard({
   onRemoveKept,
   imagesOnly = false,
 }: ShopAddWizardProps): ReactElement {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const { setOverride } = useChromeBack();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<ShopAddStep | 'closed'>(mode === 'edit' ? 1 : 'closed');
@@ -187,6 +193,19 @@ export function ShopAddWizard({
 
   const title = t(STEP_KEY[step]);
   const cancelEdit = mode === 'edit' ? onCancel : undefined;
+  const placeComplete = shopPlaceComplete(place);
+  const descriptionProblem = shopDescriptionProblem(draft, place?.label ?? null);
+  const nextDisabled =
+    posting || (step === 2 && !placeComplete) || (step === 3 && descriptionProblem !== null);
+  const submitDisabled = posting || !summaryArmed || !placeComplete || descriptionProblem !== null;
+  const descriptionHint =
+    descriptionProblem === 'short'
+      ? t('shops.problemDescriptionShort', { n: shopDescriptionRemaining(draft) })
+      : descriptionProblem === 'long'
+        ? t('shops.problemDescriptionLong')
+        : descriptionProblem === 'notLonger'
+          ? t('shops.problemDescriptionNotLonger')
+          : null;
 
   return (
     <form
@@ -320,19 +339,30 @@ export function ShopAddWizard({
         </div>
       ) : null}
       {step === 2 ? (
-        <PlaceField place={place} disabled={posting} onChange={onPlaceChange} showPreview={false} />
+        <PlaceField
+          place={place}
+          disabled={posting}
+          onChange={onPlaceChange}
+          showPreview={false}
+          shopDetails
+        />
       ) : null}
       {step === 3 ? (
-        <MentionTextarea
-          ariaLabel={t('shops.textLabel')}
-          value={draft}
-          onChange={onDraftChange}
-          maxLength={maxLength}
-          rows={4}
-          disabled={posting}
-          wrapperClassName="relative w-full"
-          className="min-h-24 w-full resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg disabled:opacity-50"
-        />
+        <div className="flex flex-col gap-2">
+          <MentionTextarea
+            ariaLabel={t('shops.textLabel')}
+            value={draft}
+            onChange={onDraftChange}
+            maxLength={maxLength}
+            rows={4}
+            disabled={posting}
+            wrapperClassName="relative w-full"
+            className="min-h-24 w-full resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg disabled:opacity-50"
+          />
+          {descriptionHint !== null ? (
+            <p className="text-sm text-app-muted">{descriptionHint}</p>
+          ) : null}
+        </div>
       ) : null}
       {step === 4 ? (
         <label className="flex min-w-0 max-w-full flex-col gap-1">
@@ -361,11 +391,20 @@ export function ShopAddWizard({
           <div>
             <dt className="text-app-muted">{t('shops.stepPlace')}</dt>
             <dd>
-              {place === null
-                ? t('shops.summaryNone')
-                : typeof place.label === 'string' && place.label.trim() !== ''
-                  ? place.label
-                  : `${place.lat}, ${place.lng}`}
+              {place === null ? (
+                t('shops.summaryNone')
+              ) : (
+                <>
+                  {typeof place.label === 'string' && place.label.trim() !== ''
+                    ? place.label
+                    : `${place.lat}, ${place.lng}`}
+                  {place.address !== undefined && place.address !== null ? (
+                    <span className="mt-1 block">
+                      {formatShopAddressLine(place.address, locale)}
+                    </span>
+                  ) : null}
+                </>
+              )}
             </dd>
           </div>
           <div>
@@ -405,7 +444,7 @@ export function ShopAddWizard({
             key="shop-step-next"
             type="button"
             variant="primary"
-            disabled={posting}
+            disabled={nextDisabled}
             onClick={() => {
               setSummaryArmed(false);
               setStep((current) => advanceShopStep(current));
@@ -414,12 +453,7 @@ export function ShopAddWizard({
             {t('shops.next')}
           </Button>
         ) : (
-          <Button
-            key="shop-step-submit"
-            type="submit"
-            variant="primary"
-            disabled={posting || !summaryArmed}
-          >
+          <Button key="shop-step-submit" type="submit" variant="primary" disabled={submitDisabled}>
             {submitLabel ?? t('forum.post')}
           </Button>
         )}

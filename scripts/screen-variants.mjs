@@ -4919,6 +4919,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'add-place-empty',
+    image: 'shops-add-place-empty.png',
+    visual: 'state-shops-add-place-empty',
+    needle: "shotScreen(page, 'state-shops-add-place-empty')",
+  },
+  {
+    route: '/shops',
+    id: 'add-place-hint',
+    image: 'shops-add-place-hint.png',
+    visual: 'state-shops-add-place-hint',
+    needle: "shotScreen(page, 'state-shops-add-place-hint')",
+  },
+  {
+    route: '/shops',
+    id: 'add-place-complete',
+    image: 'shops-add-place-complete.png',
+    visual: 'state-shops-add-place-complete',
+    needle: "shotScreen(page, 'state-shops-add-place-complete')",
+  },
+  {
+    route: '/shops',
     id: 'add-text',
     image: 'shops-add-text.png',
     visual: 'state-shops-add-text',

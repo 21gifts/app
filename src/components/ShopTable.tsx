@@ -7,7 +7,7 @@ import { ShopNoteEditControl } from '@/components/ShopNoteEditControl';
 import { Button } from '@/components/ui';
 import { fetchMessages } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
-import { isShopNote, SHOP_HASHTAG, stripShopHashtag } from '@/lib/forum-shop';
+import { formatPlacePinText, isShopNote, SHOP_HASHTAG, stripShopHashtag } from '@/lib/forum-shop';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -34,15 +34,12 @@ function shopDisplayName(message: ForumMessage): string {
  * @param message - Shop note.
  * @returns Link text, or null when the note has no pin.
  */
-function placeText(message: ForumMessage): string | null {
+function placeText(message: ForumMessage, locale: string): string | null {
   const place = message.place;
   if (place === undefined) {
     return null;
   }
-  if (typeof place.label === 'string' && place.label.trim() !== '') {
-    return place.label;
-  }
-  return `${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`;
+  return formatPlacePinText(place, locale);
 }
 
 /**
@@ -55,7 +52,7 @@ export function ShopTable(): ReactElement | null {
   const router = useRouter();
   const replaceRef = useRef(router.replace);
   replaceRef.current = router.replace;
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const [rows, setRows] = useState<ForumMessage[] | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -154,7 +151,7 @@ export function ShopTable(): ReactElement | null {
           </thead>
           <tbody>
             {rows.map((row) => {
-              const place = placeText(row);
+              const place = placeText(row, locale);
               const operator = row.shopAccount;
               return (
                 <tr key={row.id} className="border-t border-app-border">

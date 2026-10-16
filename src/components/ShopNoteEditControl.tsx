@@ -17,7 +17,14 @@ import {
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
-import { ensureShopHashtag, isShopNote, stripShopHashtag } from '@/lib/forum-shop';
+import {
+  ensureShopHashtag,
+  formatPlacePinText,
+  isShopNote,
+  shopApiProblem,
+  stripShopHashtag,
+} from '@/lib/forum-shop';
+import type { MessageKey } from '@/lib/messages';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
 import { roleAtLeast } from '@/lib/roles';
@@ -45,7 +52,12 @@ export interface ShopNoteEditControlProps {
  * @param none - Copy used when the value is empty or not the expected shape.
  * @returns Visible text for that value.
  */
-function editValueText(field: ShopNoteEdit['field'], value: unknown, none: string): string {
+function editValueText(
+  field: ShopNoteEdit['field'],
+  value: unknown,
+  none: string,
+  locale: string,
+): string {
   if (value === null || value === undefined) {
     return none;
   }
@@ -56,12 +68,48 @@ function editValueText(field: ShopNoteEdit['field'], value: unknown, none: strin
     return none;
   }
   if (field === 'place') {
-    const place = value as { lat?: unknown; lng?: unknown; label?: unknown };
-    if (typeof place.label === 'string' && place.label.trim() !== '') {
-      return place.label;
-    }
-    if (typeof place.lat === 'number' && typeof place.lng === 'number') {
-      return `${place.lat}, ${place.lng}`;
+    const place = value as {
+      lat?: unknown;
+      lng?: unknown;
+      label?: unknown;
+      address?: {
+        street?: unknown;
+        houseNumber?: unknown;
+        postalCode?: unknown;
+        city?: unknown;
+        country?: unknown;
+      } | null;
+    };
+    if (
+      typeof place.lat === 'number' &&
+      typeof place.lng === 'number' &&
+      (typeof place.label === 'string' || place.label === null || place.label === undefined)
+    ) {
+      const address =
+        place.address !== undefined &&
+        place.address !== null &&
+        typeof place.address.street === 'string' &&
+        typeof place.address.houseNumber === 'string' &&
+        typeof place.address.postalCode === 'string' &&
+        typeof place.address.city === 'string' &&
+        typeof place.address.country === 'string'
+          ? {
+              street: place.address.street,
+              houseNumber: place.address.houseNumber,
+              postalCode: place.address.postalCode,
+              city: place.address.city,
+              country: place.address.country,
+            }
+          : null;
+      return formatPlacePinText(
+        {
+          lat: place.lat,
+          lng: place.lng,
+          label: typeof place.label === 'string' ? place.label : null,
+          ...(address === null ? {} : { address }),
+        },
+        locale,
+      );
     }
     return none;
   }
@@ -73,7 +121,12 @@ function placeStamp(place: ForumPlacePin | null): string {
   if (place === null) {
     return '';
   }
-  return `${place.lat},${place.lng},${place.label ?? ''}`;
+  const address = place.address;
+  const addressPart =
+    address === undefined || address === null
+      ? ''
+      : `${address.street}|${address.houseNumber}|${address.postalCode}|${address.city}|${address.country}`;
+  return `${place.lat},${place.lng},${place.label ?? ''},${addressPart}`;
 }
 
 function placesEqual(left: ForumPlacePin | null, right: ForumPlacePin | null): boolean {
@@ -184,6 +237,7 @@ export function ShopNoteEditControl({
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [saveErrorKey, setSaveErrorKey] = useState<MessageKey | null>(null);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
   const [photoBaseline, setPhotoBaseline] = useState<readonly string[]>([]);
@@ -239,6 +293,7 @@ export function ShopNoteEditControl({
       setUsername(message.shopAccount?.username ?? '');
       setPhotoDrafts([]);
       setSaveError(false);
+      setSaveErrorKey(null);
       setHistory(null);
       setHistoryError(false);
       let photos = existingPhotos.length >= message.photoCount ? [...existingPhotos] : [];
@@ -331,6 +386,7 @@ export function ShopNoteEditControl({
   async function save(): Promise<void> {
     setSaving(true);
     setSaveError(false);
+    setSaveErrorKey(null);
     try {
       const keptPhotos = kept.filter((item) => item.kind === 'photo');
       const hasMedia =
@@ -395,8 +451,22 @@ export function ShopNoteEditControl({
       }
       onUpdated(latest);
       setOpen(false);
-    } catch {
+    } catch (error) {
       setSaveError(true);
+      const problem = error instanceof Error ? shopApiProblem(error.message) : null;
+      setSaveErrorKey(
+        problem === 'shopName'
+          ? 'shops.problemName'
+          : problem === 'shopNameAddress'
+            ? 'shops.problemNameAddress'
+            : problem === 'shopAddress'
+              ? 'shops.problemAddress'
+              : problem === 'shopDescription'
+                ? 'shops.problemDescription'
+                : problem === 'placeAddress'
+                  ? 'shops.problemAddressInvalid'
+                  : null,
+      );
     } finally {
       setSaving(false);
     }
@@ -457,6 +527,7 @@ export function ShopNoteEditControl({
               }}
               onCancel={() => {
                 setSaveError(false);
+                setSaveErrorKey(null);
                 setOpen(false);
               }}
               resetToken={0}
@@ -471,7 +542,7 @@ export function ShopNoteEditControl({
           </SundayWritingGate>
           {saveError ? (
             <p role="alert" className="text-xs text-app-danger">
-              {t('forum.editShopNoteFailed')}
+              {saveErrorKey !== null ? t(saveErrorKey) : t('forum.editShopNoteFailed')}
             </p>
           ) : null}
           <h3 className="text-xs font-medium text-app-fg">{t('forum.editHistory')}</h3>
@@ -499,9 +570,9 @@ export function ShopNoteEditControl({
                       {who} · {formatForumTime(edit.createdAt, locale)} · {fieldLabel}
                     </p>
                     <p className="whitespace-pre-wrap">
-                      {editValueText(edit.field, edit.before, t('forum.editNone'))}
+                      {editValueText(edit.field, edit.before, t('forum.editNone'), locale)}
                       {' → '}
-                      {editValueText(edit.field, edit.after, t('forum.editNone'))}
+                      {editValueText(edit.field, edit.after, t('forum.editNone'), locale)}
                     </p>
                   </li>
                 );

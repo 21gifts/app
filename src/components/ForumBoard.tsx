@@ -60,6 +60,7 @@ import {
   type ForumMessage,
   type ForumPlacePin,
 } from '@/lib/api-types';
+
 import { DeletePostControl } from '@/components/DeletePostControl';
 import { ShopAccountControl } from '@/components/ShopAccountControl';
 import { ShopAddWizard } from '@/components/ShopAddWizard';
@@ -74,7 +75,7 @@ import {
 } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
-import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
+import { formatPlacePinText, isShopNote, stripShopHashtag } from '@/lib/forum-shop';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
@@ -101,6 +102,11 @@ export type ForumFormError =
   | 'tooLarge'
   | 'tooMany'
   | 'ask'
+  | 'shopName'
+  | 'shopNameAddress'
+  | 'shopAddress'
+  | 'shopDescription'
+  | 'placeAddress'
   | null;
 
 /** Reply composer validation; `amount` is the paid-reply sats field. */
@@ -1134,8 +1140,7 @@ export function ForumBoard({
                     onClick={stopCardToggle}
                   >
                     <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
-                    {message.place.label ??
-                      `${message.place.lat.toFixed(5)}, ${message.place.lng.toFixed(5)}`}
+                    {formatPlacePinText(message.place, locale)}
                   </Link>
                 ) : null}
                 {message.parentId === undefined && message.shopAccount !== undefined ? (
@@ -2072,6 +2077,31 @@ export function ForumBoard({
         {!hideCompose && formError === 'ask' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorAskAmount')}
+          </p>
+        ) : null}
+        {!hideCompose && formError === 'shopName' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('shops.problemName')}
+          </p>
+        ) : null}
+        {!hideCompose && formError === 'shopNameAddress' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('shops.problemNameAddress')}
+          </p>
+        ) : null}
+        {!hideCompose && formError === 'shopAddress' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('shops.problemAddress')}
+          </p>
+        ) : null}
+        {!hideCompose && formError === 'shopDescription' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('shops.problemDescription')}
+          </p>
+        ) : null}
+        {!hideCompose && formError === 'placeAddress' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('shops.problemAddressInvalid')}
           </p>
         ) : null}
       </div>

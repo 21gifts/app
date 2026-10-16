@@ -238,7 +238,7 @@ async function openShopPosts(feedNote: ForumMessage): Promise<void> {
   if (postsButton.getAttribute('aria-pressed') !== 'true') {
     fireEvent.click(postsButton);
   }
-  await screen.findByText('Cafe Luna');
+  await screen.findByText('Cafe Luna is open every morning.');
 }
 
 function stubShopPhotoFetch(): void {
@@ -4099,11 +4099,24 @@ describe('MemberProfileScreen', () => {
   });
 
   it('shows the shop pencil on a moderator’s post list and applies a saved note', async () => {
+    const shopPlace = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
     const shopPost: ForumMessage = {
       ...note,
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       sats: 0,
       payable: false,
+      place: shopPlace,
     };
     useAuthStore.setState({ session: 'sess', account: null });
     renderWithLocale(
@@ -4125,8 +4138,8 @@ describe('MemberProfileScreen', () => {
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...shopPost,
-      text: 'Cafe Sol\n\n#21GiftsShop',
-      place: { lat: 1, lng: 2, label: 'Stall' },
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+      place: shopPlace,
       shopAccount: { id: 'shop-acc', username: 'luna', name: 'Luna' },
     });
     vi.mocked(fetchMemberPosts).mockResolvedValue([
@@ -4143,7 +4156,7 @@ describe('MemberProfileScreen', () => {
       <MemberProfileScreen profile={{ ...profile, postCount: 2 }} received={[]} donated={[]} />,
     );
     fireEvent.click(screen.getByRole('button', { name: /posts?/ }));
-    await screen.findByText('Cafe Luna');
+    await screen.findByText('Cafe Luna is open every morning.');
     await screen.findByText('Other note');
     const card = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
     fireEvent.click(within(card).getByRole('button', { name: 'Edit shop note' }));
@@ -4151,13 +4164,13 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.change(within(card).getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(card).getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(within(card).getByText('Cafe Sol')).toBeTruthy();
+      expect(within(card).getByText('Cafe Sol is open every morning.')).toBeTruthy();
     });
 
     fireEvent.click(screen.getByRole('button', { name: '0 reactions', pressed: false }));
@@ -4169,17 +4182,29 @@ describe('MemberProfileScreen', () => {
   it('drops stored photo addresses when a shop post’s pictures change', async () => {
     const shopPost: ForumMessage = {
       ...note,
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       sats: 0,
       payable: false,
       hasPhoto: true,
       photoCount: 1,
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
     };
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'moderator' } });
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...shopPost,
-      text: 'Cafe Sol\n\n#21GiftsShop',
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
     });
     stubShopPhotoFetch();
     let photoUrl = 0;
@@ -4200,7 +4225,7 @@ describe('MemberProfileScreen', () => {
       <MemberProfileScreen profile={{ ...profile, postCount: 2 }} received={[]} donated={[]} />,
     );
     fireEvent.click(screen.getByRole('button', { name: /posts?/ }));
-    await screen.findByText('Cafe Luna');
+    await screen.findByText('Cafe Luna is open every morning.');
     const shopCard = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
     const otherCard = document.querySelector(
       '[data-message-id="44444444-4444-4444-8444-444444444444"]',
@@ -4222,7 +4247,7 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(within(shopCard).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(shopCard).getByRole('button', { name: 'Next' }));
     fireEvent.change(within(shopCard).getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(within(shopCard).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(shopCard).getByRole('button', { name: 'Next' }));

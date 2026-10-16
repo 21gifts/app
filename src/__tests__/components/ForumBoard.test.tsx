@@ -2758,6 +2758,75 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole number to ask for.');
   });
 
+  it.each([
+    ['shopName', 'Enter the shop name.'],
+    ['shopNameAddress', 'The shop name must not contain the street or the postal code.'],
+    ['shopAddress', 'Enter the full address: street, house number, postal code, city and country.'],
+    [
+      'shopDescription',
+      'The description must be 20 to 1000 characters and longer than the shop name.',
+    ],
+    ['placeAddress', 'The address is invalid.'],
+  ] as const)('shows formError %s alert', (formError, copy) => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={formError}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(copy);
+  });
+
+  it('shows a shop address on a labeled pin', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[
+          {
+            ...SAMPLE,
+            place: {
+              lat: 47.3769,
+              lng: 8.5417,
+              label: "Kiki's Bakery",
+              address: {
+                street: 'Bahnhofstrasse',
+                houseNumber: '12',
+                postalCode: '8001',
+                city: 'Zürich',
+                country: 'CH',
+              },
+            },
+          },
+        ]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    expect(
+      screen
+        .getByRole('link', {
+          name: "Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland",
+        })
+        .getAttribute('href'),
+    ).toBe('/map?pin=m1');
+  });
+
   it('renders ForumGoalBar 110% on a top-level note with a goal', () => {
     renderWithLocale(
       <ForumBoard
