@@ -19031,12 +19031,19 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await page.getByLabel('Shop name', { exact: true }).fill('Happyland');
+    const name = page.getByLabel('Shop name', { exact: true });
+    await name.fill('Happyland');
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(page.getByText('Enter the full address:')).toBeVisible();
     await expect(confirm).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await confirm.scrollIntoViewIfNeeded();
+    // Focusing the name leaves the detail scrollport at a timing-dependent offset.
+    await name.evaluate((node) => {
+      (node as HTMLInputElement).blur();
+      const port = node.closest('[data-scrollport]') as HTMLElement;
+      port.scrollTop = 0;
+    });
     await shotScreen(page, 'state-shops-composer-place-set-coords');
   });
 
