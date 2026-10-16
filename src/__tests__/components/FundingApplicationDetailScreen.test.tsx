@@ -308,37 +308,79 @@ describe('FundingApplicationDetailScreen', () => {
     });
   });
 
-  it.each([
-    [
-      'a late failure',
-      (fail: (reason: unknown) => void) => fail(new Error('All grant places are taken')),
-    ],
-    ['a late success', (_fail: (reason: unknown) => void, done?: () => void) => done?.()],
-  ] as const)('drops %s that arrives after another application loads', async (_label, settle) => {
-    let fail: (reason: unknown) => void = () => undefined;
-    let done: () => void = () => undefined;
+  /** Admit that settles only when the test says so. */
+  function pendingAdmit(): { fail: (reason: unknown) => void; done: () => void } {
+    const handle = { fail: (_reason: unknown) => undefined as void, done: () => undefined as void };
     admitMock.mockImplementation(
       () =>
         new Promise((resolve, reject) => {
-          fail = reject;
-          done = () => resolve(DECISION);
+          handle.fail = reject;
+          handle.done = () => resolve(DECISION);
         }),
     );
-    const view = renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    return handle;
+  }
+
+  async function admitFromTruthQuestion(): Promise<void> {
     fireEvent.click(await screen.findByRole('button', { name: 'Yes' }));
     await screen.findByText('Do these posts, to your knowledge, correspond to the truth?');
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+  }
+
+  const FULL =
+    'All places of this round are taken. Nobody else can be admitted until the next round opens.';
+
+  it.each(['failure', 'success'] as const)(
+    'drops a late %s for an application that is no longer on screen',
+    async (outcome) => {
+      const admit = pendingAdmit();
+      const view = renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+      await admitFromTruthQuestion();
+      view.rerender(<FundingApplicationDetailScreen accountId="acc_other" />);
+      const principles = await screen.findByRole('button', { name: 'Yes' });
+      expect((principles as HTMLButtonElement).disabled).toBe(false);
+      await act(async () => {
+        if (outcome === 'failure') {
+          admit.fail(new Error('All grant places are taken'));
+        } else {
+          admit.done();
+        }
+        await Promise.resolve();
+      });
+      expect(screen.queryByText(FULL)).toBeNull();
+      expect(push).not.toHaveBeenCalled();
+    },
+  );
+
+  it('keeps the buttons locked and applies the answer after returning to the same application', async () => {
+    const admit = pendingAdmit();
+    const view = renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    await admitFromTruthQuestion();
     view.rerender(<FundingApplicationDetailScreen accountId="acc_other" />);
+    await screen.findByRole('button', { name: 'Yes' });
+    view.rerender(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    const yes = await screen.findByRole('button', { name: 'Yes' });
+    expect((yes as HTMLButtonElement).disabled).toBe(true);
     await act(async () => {
-      settle(fail, done);
+      admit.fail(new Error('All grant places are taken'));
       await Promise.resolve();
     });
-    expect(
-      screen.queryByText(
-        'All places of this round are taken. Nobody else can be admitted until the next round opens.',
-      ),
-    ).toBeNull();
-    expect(push).not.toHaveBeenCalled();
+    expect(await screen.findByText(FULL)).toBeTruthy();
+    expect(admitMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('applies the answer when only the session reloads the same application', async () => {
+    const admit = pendingAdmit();
+    renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    await admitFromTruthQuestion();
+    act(() => {
+      useAuthStore.setState({ session: 'sess-renewed' });
+    });
+    await act(async () => {
+      admit.done();
+      await Promise.resolve();
+    });
+    expect(push).toHaveBeenCalledWith('/grants/applications');
   });
 
   it('shows action-failed copy when a decision throws', async () => {

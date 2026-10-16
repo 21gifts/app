@@ -59,9 +59,20 @@ export function FundingApplicationDetailScreen({
   const [deciding, setDeciding] = useState(false);
   const [decideFailed, setDecideFailed] = useState(false);
   const [placesFull, setPlacesFull] = useState(false);
-  /** Bumped on every load; a decision whose answer arrives after a newer load is dropped. */
-  const decisionTicket = useRef(0);
   const [step, setStep] = useState<'principles' | 'truth'>('principles');
+  /** The application on screen; a decision answer for another one is dropped. */
+  const shownAccountId = useRef(accountId);
+  /** The application whose decision POST is still in flight, if any. */
+  const decidingAccountId = useRef<string | null>(null);
+
+  useEffect(() => {
+    // Another application: start from its first question with no stale detail, and keep
+    // the buttons locked only while a decision for this same person is still in flight.
+    shownAccountId.current = accountId;
+    setDetail(null);
+    setStep('principles');
+    setDeciding(decidingAccountId.current === accountId);
+  }, [accountId]);
 
   useEffect(() => {
     if (session === null || !staff) {
@@ -71,8 +82,6 @@ export function FundingApplicationDetailScreen({
     setDetailError(false);
     setDecideFailed(false);
     setPlacesFull(false);
-    decisionTicket.current += 1;
-    setDeciding(false);
     void (async () => {
       try {
         const next = await fetchFundingApplication(session, accountId);
@@ -121,16 +130,19 @@ export function FundingApplicationDetailScreen({
     setDecideFailed(false);
     setPlacesFull(false);
     const run = kind === 'admit' ? postFundingAdmit : postFundingReject;
-    const ticket = decisionTicket.current;
+    const target = accountId;
+    decidingAccountId.current = target;
     void (async () => {
       try {
-        await run(session, accountId);
-        if (decisionTicket.current !== ticket) {
+        await run(session, target);
+        decidingAccountId.current = null;
+        if (shownAccountId.current !== target) {
           return;
         }
         returnToView('/grants/applications', router);
       } catch (err) {
-        if (decisionTicket.current !== ticket) {
+        decidingAccountId.current = null;
+        if (shownAccountId.current !== target) {
           return;
         }
         if (err instanceof Error && err.message === FUNDING_PLACES_FULL_ERROR) {
