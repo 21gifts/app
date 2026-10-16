@@ -801,6 +801,8 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
       }),
     )
     .toBe(true);
+  // The public grant-places panel loads on its own; never capture it mid-load.
+  await expect(page.locator('[data-grant-places="loading"]')).toHaveCount(0);
   const problems = await page.evaluate(pageFrameProblems);
   expect(problems, problems.join('\n')).toEqual([]);
   await unstickStickyChrome(page);
@@ -5779,63 +5781,14 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Daily payout stopped' })).toBeVisible();
     await expect(
       page.getByText(
-        'Applications are currently paused. You can apply again when shop transactions have increased.',
+        'Your daily payout has stopped because you have not applied for the 21 gifts grant. Apply so a moderator can review your posts.',
       ),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'https://21.gifts/statistics' })).toHaveAttribute(
-      'href',
-      'https://21.gifts/statistics',
-    );
-    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
     await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
     await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
     await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
     await shotScreen(page, 'state-welcome-daily-payout-stopped');
-  });
-
-  test('state /welcome daily-payout-stopped-apply', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('21gifts.session', 'sess-e2e');
-    });
-    await page.route(/\/me$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          ...E2E_ACCOUNT,
-          name: 'Ada',
-          location: null,
-          username: 'joey-rosima',
-          lightningAddress: 'alice@walletofsatoshi.com',
-          rulesAgreedAt: 1_700_000_001,
-          viewKey: 'a'.repeat(64),
-          aboutMe: null,
-          setup: null,
-          missing: [],
-          funding: {
-            status: 'none',
-            trialUtcDate: null,
-            admittedAt: null,
-            reviewedByName: null,
-            dailyPayoutStoppedNotice: true,
-          },
-        }),
-      });
-    });
-    await fulfillMixedSatsMessages(page);
-    await page.goto('/welcome');
-    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Daily payout stopped' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
-    await expect(
-      page.getByText(
-        'Applications are currently paused. You can apply again when shop transactions have increased.',
-      ),
-    ).toHaveCount(0);
-    await expect(page.getByText('Thank you both — that helps.')).toBeVisible();
-    await expect(page.getByText('I can send a small gift tomorrow.')).toBeVisible();
-    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('Active');
-    await shotScreen(page, 'state-welcome-daily-payout-stopped-apply');
   });
 
   test('state /welcome renew', async ({ page }) => {
@@ -19303,32 +19256,16 @@ test.describe('profile funding states', () => {
     await page.goto('/grants');
     await expect(
       page.getByText(
-        'Applications are currently paused. You can apply again when shop transactions have increased.',
-      ),
-    ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'https://21.gifts/statistics' })).toHaveAttribute(
-      'href',
-      'https://21.gifts/statistics',
-    );
-    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toHaveCount(0);
-    await shotScreen(page, 'screen-grants');
-  });
-
-  test('state /grants funding-apply', async ({ page }) => {
-    await seedFundingProfile(page, { username: 'joey-rosima' });
-    await page.goto('/grants');
-    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
-    await expect(
-      page.getByText(
         'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
       ),
     ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
     await expect(
-      page.getByText(
-        'Applications are currently paused. You can apply again when shop transactions have increased.',
-      ),
-    ).toHaveCount(0);
-    await shotScreen(page, 'state-grants-funding-apply');
+      page
+        .getByRole('group', { name: 'Grant places' })
+        .getByText('Round 1: 10 of 10 places are free.'),
+    ).toBeVisible();
+    await shotScreen(page, 'screen-grants');
   });
 
   test('profile funding pending', async ({ page }) => {
@@ -19564,7 +19501,12 @@ test.describe('profile funding states', () => {
     await page.goto('/grants/goals');
     await expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible();
     await expect(
-      page.getByText('The grant program continues when we reach 10 active shops.'),
+      page.getByText('Goal reached: 10 active shops. The grant program is open again.'),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole('group', { name: 'Grant places' })
+        .getByText('When 20 shops are active, the grant program opens for more people.'),
     ).toBeVisible();
     await expect(page.getByText('2 shops meet this')).toBeVisible();
     await expect(page.getByRole('img', { name: 'Shops per UTC day' })).toBeVisible();
@@ -19586,6 +19528,50 @@ test.describe('profile funding states', () => {
     await expect(page.getByText('Could not load the shop goal. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-grants-goals-error');
+  });
+
+  test('state /grants/goals places-full', async ({ page }) => {
+    await seedFundingProfile(page);
+    await stubGrantGoal(page, 'ok');
+    await page.route('**/funding/places', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          round: 1,
+          startsAt: '2026-10-16T00:00:00.000Z',
+          places: 10,
+          admitted: 10,
+          placesLeft: 0,
+          nextGoalShops: 20,
+        }),
+      });
+    });
+    await page.goto('/grants/goals');
+    await expect(page.getByText('Round 1: 0 of 10 places are free.')).toBeVisible();
+    await expect(
+      page.getByText('All 10 places of this round are taken. Applications stay open.'),
+    ).toBeVisible();
+    await expect(page.getByText('2 shops meet this')).toBeVisible();
+    await shotScreen(page, 'state-grants-goals-places-full');
+  });
+
+  test('state /grants/goals places-error', async ({ page }) => {
+    await seedFundingProfile(page);
+    await stubGrantGoal(page, 'ok');
+    await page.route('**/funding/places', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Funding is unavailable' }),
+      });
+    });
+    await page.goto('/grants/goals');
+    await expect(
+      page.getByText('Could not load the grant places. Please try again.'),
+    ).toBeVisible();
+    await expect(page.getByText('2 shops meet this')).toBeVisible();
+    await shotScreen(page, 'state-grants-goals-places-error');
   });
 });
 
@@ -19682,9 +19668,7 @@ test.describe('profile apply screens', () => {
     await seedApply(page);
     await page.goto('/grants/apply');
     await expect(
-      page.getByText(
-        'Applications are currently paused. You can apply again when shop transactions have increased.',
-      ),
+      page.getByText('First, write a short About me so people can get to know you.'),
     ).toBeVisible();
     await shotScreen(page, 'screen-grants-apply');
   });
@@ -19693,20 +19677,9 @@ test.describe('profile apply screens', () => {
     await seedApply(page);
     await page.goto('/profile/apply');
     await expect(
-      page.getByText(
-        'Applications are currently paused. You can apply again when shop transactions have increased.',
-      ),
-    ).toBeVisible();
-    await shotScreen(page, 'screen-profile-apply');
-  });
-
-  test('state /grants/apply about', async ({ page }) => {
-    await seedApply(page, { username: 'joey-rosima' });
-    await page.goto('/grants/apply');
-    await expect(
       page.getByText('First, write a short About me so people can get to know you.'),
     ).toBeVisible();
-    await shotScreen(page, 'state-grants-apply-about');
+    await shotScreen(page, 'screen-profile-apply');
   });
 
   test('state /grants/apply sunday', async ({ page }) => {
@@ -29428,6 +29401,33 @@ test.describe('moderate applications screens', () => {
     await page.getByRole('button', { name: 'No' }).click();
     await expect(page.getByText('Could not update this member. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-moderate-applications-accountId-decide-failed');
+  });
+
+  test('moderate applications accountId decide-full', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/funding/applications/acc_rose', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(DETAIL),
+      });
+    });
+    await page.route('**/funding/admit', async (route) => {
+      await route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'All grant places are taken' }),
+      });
+    });
+    await page.goto('/grants/applications/acc_rose');
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await page.getByRole('button', { name: 'Yes' }).click();
+    await expect(
+      page.getByText(
+        'All places of this round are taken. Nobody else can be admitted until the next round opens.',
+      ),
+    ).toBeVisible();
+    await shotScreen(page, 'state-moderate-applications-accountId-decide-full');
   });
 
   test('moderate applications accountId deciding', async ({ page }) => {

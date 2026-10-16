@@ -31,6 +31,7 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('@/lib/api', () => ({
+  FUNDING_PLACES_FULL_ERROR: 'All grant places are taken',
   fetchFundingApplication: vi.fn(),
   postFundingAdmit: vi.fn(),
   postFundingReject: vi.fn(),
@@ -275,6 +276,21 @@ describe('FundingApplicationDetailScreen', () => {
     });
     expect(push).toHaveBeenCalledWith('/grants/applications');
     expect(admitMock).not.toHaveBeenCalled();
+  });
+
+  it('shows the places-full copy when admit finds the round full', async () => {
+    admitMock.mockRejectedValue(new Error('All grant places are taken'));
+    renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes' }));
+    await screen.findByText('Do these posts, to your knowledge, correspond to the truth?');
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    expect(
+      await screen.findByText(
+        'All places of this round are taken. Nobody else can be admitted until the next round opens.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText('Could not update this member. Please try again.')).toBeNull();
+    expect(push).not.toHaveBeenCalled();
   });
 
   it('shows action-failed copy when a decision throws', async () => {

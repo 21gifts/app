@@ -8,7 +8,12 @@ import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { Button, Card } from '@/components/ui';
-import { fetchFundingApplication, postFundingAdmit, postFundingReject } from '@/lib/api';
+import {
+  FUNDING_PLACES_FULL_ERROR,
+  fetchFundingApplication,
+  postFundingAdmit,
+  postFundingReject,
+} from '@/lib/api';
 import type { FundingApplicationDetail } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { roleAtLeast } from '@/lib/roles';
@@ -53,6 +58,7 @@ export function FundingApplicationDetailScreen({
   const [detailAttempt, setDetailAttempt] = useState(0);
   const [deciding, setDeciding] = useState(false);
   const [decideFailed, setDecideFailed] = useState(false);
+  const [placesFull, setPlacesFull] = useState(false);
   const [step, setStep] = useState<'principles' | 'truth'>('principles');
 
   useEffect(() => {
@@ -108,13 +114,18 @@ export function FundingApplicationDetailScreen({
     }
     setDeciding(true);
     setDecideFailed(false);
+    setPlacesFull(false);
     const run = kind === 'admit' ? postFundingAdmit : postFundingReject;
     void (async () => {
       try {
         await run(session, accountId);
         returnToView('/grants/applications', router);
-      } catch {
-        setDecideFailed(true);
+      } catch (err) {
+        if (err instanceof Error && err.message === FUNDING_PLACES_FULL_ERROR) {
+          setPlacesFull(true);
+        } else {
+          setDecideFailed(true);
+        }
         setDeciding(false);
       }
     })();
@@ -191,6 +202,11 @@ export function FundingApplicationDetailScreen({
         {decideFailed ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('trustChain.actionFailed')}
+          </p>
+        ) : null}
+        {placesFull ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('funding.detail.placesFull')}
           </p>
         ) : null}
         {open ? (

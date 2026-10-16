@@ -281,7 +281,7 @@
 - **Purpose:** Logged-in profile row to set, edit, or clear a free-text location. Icon-only actions (pencil / check / X / trash). Empty after trim is a valid save and clears. Not an onboarding step and has no Skip.
 - **Inputs:** Reads `useAuthStore`. Optional `startEditing` opens the field on mount. User input: location string. Visitor-facing copy via `useTranslations` (`location.*`). Request failures use `location.errorRequest`.
 - **Returns / side effects:** React element or `null` when logged out. POST `/me/location` on save or clear. Merges only `location` so a concurrent name write is not overwritten.
-- **Used by:** `ProfileScreen` on `/profile`. `FundingApplyScreen` renders it in the apply walk, which is shown while applications are paused only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`, and, when the switch is off, for a verified account with status `none` or `rejected`.
+- **Used by:** `ProfileScreen` on `/profile`. `FundingApplyScreen` renders it in the apply walk, which every verified account with status `none` or `rejected` sees (applications are open).
 
 ## Function: LocaleProvider
 
@@ -648,7 +648,7 @@
 - **Purpose:** Profile-card About me block: heading plus filled text and/or photo (the note photo shows the whole picture (`object-contain`, `max-h-80`) and is not cropped, not the profile photo or the wide image), or the owner empty prompt (`profile.about.empty` **Tell others who you are.** and labeled **Write your About me**). Filled means trimmed `aboutMe` is a real bio (not the display name) **or** `hasPhoto` is true. Owner mode can edit (write / pencil, save, cancel) via `onSave`. The editor has three separate attaches, each its own icon-only camera (`CameraPhotoButton`, same handler; the profile photo uses the front camera) followed by its ImagePlus and remove: the About me photo (JPEG/PNG/WebP via `prepareForumPhoto`, no video), the round profile photo, and the wide image. Each previews on its own. Choosing a wide image opens a 5:2 cropper above its preview; **Use this crop** stores that JPEG and the X (**Cancel crop**) stores nothing. Closing the editor, or a successful save, drops an unsaved crop. A whole portrait is not stored as the wide image. Optional icon-only copy-profile-link (`profile.copyLink` **Copy link to this profile**) when `profileUrl` is set; the URL is never shown as visible text. Public mode with no filled text, no photo, and no copy URL renders `null`. A filled read-only body uses `TranslatableNoteBody` when `messageId` is a non-empty string; otherwise `LinkedText`. The editor is not translatable.
 - **Inputs:** `aboutMe` (`string | null`), `mode` (`owner` | `public`), optional `name` (`string | null`) for the filled comparison (`(name ?? '').trim()`; blank name applies only the trimmed-non-empty check), optional `hasPhoto`, optional `loadPhoto` (`() => Promise<Blob>`), optional `profileUrl`, optional `messageId` (stored About me note id; omitted or blank keeps `LinkedText`), optional `onSave(text, photo?)` (`photo` omitted keeps, `null` clears, object sets), optional `loadPicture` / `onSavePicture` for the round profile photo and optional `loadBanner` / `onSaveBanner` for the wide image (neither is the About me note photo; a non-image blob stays empty), optional `startEditing` to open the owner editor on mount.
 - **Returns / side effects:** React element or `null`. Clipboard write for copy. Calls `onSave` on owner save, `onSavePicture` when the profile photo changes, and `onSaveBanner` when the wide image changes. Loads a blob URL when `hasPhoto` and `loadPhoto` are set and revokes it on unmount. Loads and revokes the profile-photo and wide-image blob URLs the same way when `loadPicture` or `loadBanner` is set.
-- **Used by:** `ProfileScreen` (owner, `name={account.name}`), `MemberProfileScreen` (public, `name={profile.name}`), `ViewProfileScreen` (public, `name={profile.name}`), and `FundingApplyScreen` (apply walk, shown while applications are paused only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`, and, when the switch is off, for a verified account with status `none` or `rejected`).
+- **Used by:** `ProfileScreen` (owner, `name={account.name}`), `MemberProfileScreen` (public, `name={profile.name}`), `ViewProfileScreen` (public, `name={profile.name}`), and `FundingApplyScreen` renders it in the apply walk, which every verified account with status `none` or `rejected` sees (applications are open).
 
 ## Function: PushToggle
 
@@ -1991,7 +1991,7 @@ First post free: while the signed-in member is below verified and has no missing
 - **Purpose:** POST `/funding/apply` (Bearer) and parse `{ funding }` via `fundingApplyResponseSchema`. Role `basis` is 403. 400 `About me is required` / `About me photo is required` / `Location is required` are rethrown; other failures use visitor copy `Could not submit your application. Please try again.`
 - **Inputs:** Bearer `sessionToken`.
 - **Returns / side effects:** Updated `OwnerFunding`. Throws the 400 api string, or visitor copy on 401/403/409/503, other non-2xx, network failure, or a body that fails the schema.
-- **Used by:** `FundingApplyScreen`. While applications are paused, a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected` sees the walk and calls `postFundingApply`. The pause card, which does not call it, is only for a username outside those three whose status is not pending, trial, or admitted. A basis account on the open card sees **You are not verified yet.** and does not call it, including when the status is pending, trial, or admitted. A verified account with one of those statuses sees that copy and does not call it. When `grantApplicationsPaused` is false, the walk also calls it.
+- **Used by:** `FundingApplyScreen`: a verified account with status `none` or `rejected` sees the walk and calls `postFundingApply` after Yes on the truth question. Applications are open to every verified member.
 
 ## Function: fetchFundingPayoutDays
 
@@ -2060,7 +2060,7 @@ First post free: while the signed-in member is below verified and has no missing
 
 - **Purpose:** POST `/funding/admit` with `{ accountId }` (staff). Target pending or trial.
 - **Inputs:** Bearer `sessionToken`, subject `accountId`.
-- **Returns / side effects:** `FundingDecisionResult`. Throws visitor copy `Could not update this member. Please try again.` on any failure.
+- **Returns / side effects:** `FundingDecisionResult`. Throws `Error(FUNDING_PLACES_FULL_ERROR)` (`All grant places are taken`) when the api answers 409 with that error (the round has no free place), and visitor copy `Could not update this member. Please try again.` on any other failure, including another 409 or an unreadable 409 body.
 - **Used by:** `FundingApplicationDetailScreen`.
 
 ## Function: postFundingReject
@@ -3861,18 +3861,11 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** No dismiss control on the explanation. **Continue** starts the ceremony. Cancelling the device prompt returns to the explanation and is not a logged failure. Success stores the account only after **OK**. A failed ceremony stores the returned account and stays on the failure step only when that account has an open failure and the session is unchanged, so a remount stays there. When that account has `passkeyRenewPrfUnsupported`, the failure step shows `wallet.prfUnsupported` (**This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.**). An HTTP seed error that did not record a failure returns to the explanation. Failure **OK** stores the acknowledged account only while that same session is still current, then the dialog closes and does not start again. Null once success is confirmed, a failure was acknowledged, or `passkeyRenewClosed` is true.
 - **Used by:** `AppShell` when `walletRequired === false` and `passkeyRenewClosed` is not true.
 
-## Function: FundingPausedCopy
-
-- **Purpose:** Paused-applications sentence plus the statistics anchor. Renders no button and does not read a shop count; the pause is unconditional until a later change removes it.
-- **Inputs:** None. Uses translations.
-- **Returns / side effects:** The paused paragraph and the `https://21.gifts/statistics` anchor.
-- **Used by:** `FundingStatusCard` for `none`/`rejected`, `DailyPayoutStoppedNotice`, and `FundingApplyScreen`.
-
 ## Function: DailyPayoutStoppedNotice
 
-- **Purpose:** Non-dismissible info banner for signed-in members whose owner funding JSON has `dailyPayoutStoppedNotice === true`. The title is **Daily payout stopped**. While `grantApplicationsPaused` is true, the body is `FundingPausedCopy` and Apply is not offered, except usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`, of any role, who still see the stopped-daily sentence and an Apply link to `/grants/apply`. That link is not the apply walk. When that switch is false, the body is the stopped-daily sentence and an Apply link to `/grants/apply`.
+- **Purpose:** Non-dismissible info banner for signed-in members whose owner funding JSON has `dailyPayoutStoppedNotice === true`. The title is **Daily payout stopped**, then `funding.stoppedDaily.body` and the large **Apply for the 21 gifts grant** link to `/grants/apply`. Applications are open, so every account with the flag sees Apply. Nothing shows while the account wallet is not open in this tab (`useWalletOpen`).
 - **Inputs:** None. Reads the auth store and translations.
-- **Returns / side effects:** A `role="region"` banner, or `null` when the flag is missing, false, or funding is null. No close control, no localStorage, no extra API call. Apply is offered when applications are not paused, or when the signed-in username is `joey-rosima`, `vincent`, or `jewel-bacolbas`. Shows nothing while the account's wallet is not open in this tab (`useWalletOpen`), since that session counts as signed out.
+- **Returns / side effects:** A `role="region"` banner with the body and the Apply link, or `null` when the flag is missing, false, or funding is null, or the wallet is not open. No close control, no localStorage, no extra API call.
 - **Used by:** `AppShell`.
 
 ## Function: proxyMePasskeyRenewReportPost
@@ -5149,6 +5142,20 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Returns / side effects:** Upstream response from `proxyApiRequest(request, '/shops/activity')`.
 - **Used by:** `src/app/shops/activity/route.ts`.
 
+## Function: fetchGrantPlaces
+
+- **Purpose:** Loads the public grant round places from same-origin `GET /funding/places` with no Authorization. `GrantPlacesPanel` calls it with or without a session. The body must match `grantPlacesSchema` (`round`, `startsAt`, `places`, `admitted`, `placesLeft`, `nextGoalShops`, nonnegative integers); otherwise this throws.
+- **Inputs:** None.
+- **Returns / side effects:** `GrantPlaces`. Network via `fetch`. Throws `Could not load the grant places. Please try again.` on a non-ok response, a network failure, or a schema failure.
+- **Used by:** `GrantPlacesPanel`.
+
+## Function: proxyFundingPlacesGet
+
+- **Purpose:** Same-origin proxy for the public api `GET /funding/places`. No session is required; the request is forwarded as received.
+- **Inputs:** `request` (incoming App Router request).
+- **Returns / side effects:** Upstream response from `proxyApiRequest(request, '/funding/places')`.
+- **Used by:** `src/app/funding/places/route.ts`.
+
 ## Function: fetchGrantContinuation
 
 - **Purpose:** Loads the signed-in grant goal from same-origin `GET /funding/goal` with `Authorization: Bearer`. GrantGoalsScreen calls it only when a session exists. The body must be 7 unique contiguous UTC days, oldest first, plus a nonnegative `qualifyingShops`; otherwise this throws and the goals page shows its error state. Does not call `fetchShopActivity`.
@@ -5181,7 +5188,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Client chart of people counted once per UTC day, with a shop-activity panel under the people chart. A signed-out visitor fetches both feeds and sees both panels. Does not return `null`. Any visitor fetches both feeds and sees yesterday's person count, the measurement paragraph, and the 30-UTC-day people chart (no goal line), then the shop panel (one explainer and the 30-UTC-day shop-count chart). Each panel loads and fails on its own. The people panel is always open and there is no **Tap to close**. No forbidden card. When `roleAtLeast(..., 'moderator')` and yesterday's person count is a number (including 0; not loading and not the people error panel, including omitted `officialCount`), closed `StaffFunctions` sits after the people chart and before the shop panel; its only child is the payout `ButtonLink` (`href` `/moderate/payouts`, `variant` `secondary`, `size` `lg`, label `moderate.payouts.link`). Basis and verified never render `StaffFunctions`. A signed-out visitor never renders `StaffFunctions`.
 - **Inputs:** Account from `useAuthStore`; catalog and locale via `useTranslations`.
-- **Returns / side effects:** A React element. No session still fetches. Fetches `GET /gifts/stats` and also calls `fetchShopActivity`. Does not return `null`.
+- **Returns / side effects:** A React element. No session still fetches. Fetches `GET /gifts/stats`, calls `fetchShopActivity`, and renders `GrantPlacesPanel` last (public `GET /funding/places`). Does not return `null`.
 - **Used by:** `StatisticsPage`.
 
 ## Function: ModerateScreen
@@ -5273,7 +5280,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Client staff review of one grant application. Staff fetch `fetchFundingApplication` and answer two questions against living-room posts (no replies; post text uses `TranslatableNoteBody`, the applicant name stays plain; each post keeps its own time; there is no application time under the name). The first is `funding.review.question.staff`, with an About link to `/about`. **Yes** shows `funding.review.truth`. **Yes** there posts `postFundingAdmit`. **No** on either question posts `postFundingReject` while the grant is `pending` or `trial`. A failed decision shows `trustChain.actionFailed`. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch. Renders `null` without a session. The page chrome owns the back; this screen renders no back control. While a POST is in flight, visible decide buttons are disabled and show the Loader2 spinner.
 - **Inputs:** `accountId`; session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications/:accountId` only when the role is founder or moderator. Decide buttons only when `grant.status` is `pending` or `trial`. Successful Admit / Reject leaves the buttons disabled and returns to `/grants/applications` with `returnToView` (a step back when the queue opened this page, otherwise a replace).
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications/:accountId` only when the role is founder or moderator. Decide buttons only when `grant.status` is `pending` or `trial`. Successful Admit / Reject leaves the buttons disabled and returns to `/grants/applications` with `returnToView` (a step back when the queue opened this page, otherwise a replace). When Admit throws `FUNDING_PLACES_FULL_ERROR`, the alert is **All places of this round are taken. Nobody else can be admitted until the next round opens.** (`funding.detail.placesFull`) instead of `trustChain.actionFailed`, and the member stays on the page.
 - **Used by:** `FundingApplicationDetailPage`.
 
 ## Function: SettingsPage
@@ -5301,7 +5308,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When `canEditDailyPayoutRoster` is true (initiator or founder only), two secondary large `ButtonLink`s, **Daily payment text** to `/grants/payments/comment` and **Daily payment amounts** to `/grants/payments/amounts`, do not fetch the roster. A moderator does not see those links. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only when `roleAtLeast(role, 'moderator')`, which includes an initiator and a founder. Roles below moderator do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the applications link. The Goals link does not fetch; `/grants/goals` loads `GET /funding/goal`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only when `roleAtLeast(role, 'moderator')`, which includes an initiator and a founder. Roles below moderator do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the applications link. The Goals link does not fetch; `/grants/goals` loads `GET /funding/goal`. Renders `GrantPlacesPanel` under `FundingStatusCard` for every signed-in account.
 - **Used by:** `GrantsPage`.
 
 ## Function: GrantGoalsPage
@@ -5313,7 +5320,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: GrantGoalsScreen
 
-- **Purpose:** Signed-in grant goal. Heading **Goals**, the sentence that the program continues at 10 active shops, the sentence that a shop is active with at least one transaction on 5 of the last 7 days, and the sentence that defines a transaction as a till payment created at https://21.gifts/pos (creating it counts, including later expiry or cancel). When the load succeeds, shows how many shops meet that rule, the label **Shops per UTC day**, `ShopActivityChart` for those 7 days, and the note that the lighter bar is today still open. Loading and error (error sentence plus **Try again**) keep the heading and those sentences. Renders `null` without a session and does not fetch then.
+- **Purpose:** Signed-in grant goal. Heading **Goals**, the sentence that the 10-active-shop goal is reached and the grant program is open again, the public `GrantPlacesPanel` (free places of the round and the 20-shop goal for the next round), the sentence that a shop is active with at least one transaction on 5 of the last 7 days, and the sentence that defines a transaction as a till payment created at https://21.gifts/pos (creating it counts, including later expiry or cancel). When the load succeeds, shows how many shops meet that rule, the label **Shops per UTC day**, `ShopActivityChart` for those 7 days, and the note that the lighter bar is today still open. Loading and error (error sentence plus **Try again**) keep the heading and those sentences. Renders `null` without a session and does not fetch then.
 - **Inputs:** Session from `useAuthStore`; catalog and locale via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/goal` through `fetchGrantContinuation` only when a session exists. Does not call `fetchShopActivity`.
 - **Used by:** `GrantGoalsPage`.
@@ -5346,58 +5353,51 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/daily-roster` only when `canEditDailyPayoutRoster` is true. Saves go to the payments, add, update, and delete daily-roster POSTs. A save failure shows a `funding.daily.*` catalog sentence.
 - **Used by:** `DailyPaymentAmountsPage`.
 
+## Function: GrantPlacesPanel
+
+- **Purpose:** Public grant-places panel (`role="group"`, label **Grant places**): **Round N: X of Y places are free.**, how many people moderators have admitted in the round, then either that applications are open and moderators admit up to Y people, or that all Y places are taken and applications stay open, then **When G shops are active, the grant program opens for more people.** Loads `fetchGrantPlaces` without a session. Loading shows the shared **Loading…**; failure shows **Could not load the grant places. Please try again.** with **Try again**. `data-grant-places` is `loading`, `error`, or `ready` so screenshot tests wait for the load.
+- **Inputs:** None (reads translations).
+- **Returns / side effects:** React element. One `GET /funding/places` per mount and per retry; a late answer after unmount is ignored.
+- **Used by:** `GrantsScreen`, `GrantGoalsScreen`, `StatisticsScreen`.
+
 ## Function: FundingStatusCard
 
-- **Purpose:** Owner grant section on `/grants`, not on the profile. The title is one `h1` **21 gifts grant** at the app page ramp, with no hairline above it. `basis` sees not-verified copy and how in-person verification works (no apply), including when the username is `joey-rosima`, `vincent`, or `jewel-bacolbas`. Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): while `grantApplicationsPaused` is true, `FundingPausedCopy` for `none`/`rejected` (no Apply, no About link) except usernames `joey-rosima`, `vincent`, and `jewel-bacolbas`, who still see the daily-gift sentence, About link, and Apply link to `/grants/apply`; when that switch is false, the daily-gift sentence, About link, and Apply link to `/grants/apply`. Then pending, one-day trial, or admitted with **Takes part in the 21.gifts funding program** (since {date} when `admittedAt` is a number). Pending, trial, and admitted stay as they are for every username.
+- **Purpose:** Owner grant section on `/grants`, not on the profile. The title is one `h1` **21 gifts grant** at the app page ramp, with no hairline above it. `basis` sees not-verified copy and how in-person verification works (no apply). Verified and above see funding status from `account.funding` (missing or `null` treated as `none`): `none`/`rejected` show the daily-gift sentence, About link, and Apply link to `/grants/apply` (applications are open). Then pending, one-day trial, or admitted with **Takes part in the 21.gifts funding program** (since {date} when `admittedAt` is a number).
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session or account. `none`/`rejected` do not offer Apply while applications are paused, except a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas`.
+- **Returns / side effects:** React element or `null` without a session or account. `none`/`rejected` offer the daily-gift sentence, About, and Apply to every verified account (applications are open).
 - **Used by:** `GrantsScreen`.
 
 ## Function: FundingApplyPage
 
 - **Purpose:** Next.js page for `/grants/apply`. Fill `AppShell` with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="profile"` around `FundingApplyScreen`. `/profile/apply` redirects to this path.
 - **Inputs:** None.
-- **Returns / side effects:** `FundingApplyScreen` inside fill AppShell. While applications are paused, the username is not `joey-rosima`, `vincent`, or `jewel-bacolbas`, and the status is not pending, trial, or admitted: the paused card. A verified account with one of those names and status `none` or `rejected`: the apply walk. Pending, trial, and admitted: that copy for every verified username. A basis account named one of those three, and a basis account whose status is pending, trial, or admitted: **You are not verified yet.** Any other basis account sees the paused card.
+- **Returns / side effects:** `FundingApplyScreen` inside fill AppShell: the apply walk for a verified account with status `none` or `rejected`, the pending, trial, or admitted card, or the not-verified card for a basis account.
 - **Used by:** Route `/grants/apply`.
 
 ## Function: FundingApplyScreen
 
-- **Purpose:** Signed-in grant apply screen. While `grantApplicationsPaused` is true, `grantApplicationStillOpen` is false, and funding status is not pending, trial, or admitted, heading **21 gifts grant** and `FundingPausedCopy` only: no About-me steps, no questions, no POST. A missing account still shows that paused card. Pending, trial, and admitted keep their copy for every verified username. Usernames `joey-rosima`, `vincent`, and `jewel-bacolbas` with status `none` or `rejected` open the existing apply card: a verified account fills About me, photo, and location, then two yes/no questions; a basis account sees **You are not verified yet.** and does not post. When that switch is false, every signed-in account opens that same card. The page chrome owns the back; this screen renders no back control.
-- **Inputs:** Session and account from `useAuthStore` (the account is read before choosing the pause card or the walk). Uses translations.
-- **Returns / side effects:** The paused card while applications are paused, the username is not one of those three, and the status is not pending, trial, or admitted. Otherwise the apply card. On that card a verified account with status none or rejected on the roster sees the walk, and a verified account with status pending, trial, or admitted sees that status. A basis account on that card sees **You are not verified yet.**, including when the status is pending, trial, or admitted. Without a session the screen is `null` when the walk is open. Yes on the truth question posts `postFundingApply` only when the walk is open and the account is verified. A `MissingRequirementsError` on the walk goes to `/setup/rules`, and a posted application returns to `/grants`, both with `returnToView` (a step back when that page opened this one, otherwise a replace).
+- **Purpose:** Signed-in grant apply screen. Applications are open to every verified member, so this always renders the apply card: About me, photo, and location steps, then the two yes/no questions; Yes on the truth question posts apply. Pending, trial, and admitted keep their copy. A basis account sees **You are not verified yet.** and does not post.
+- **Inputs:** Session and account from `useAuthStore`. Uses translations.
+- **Returns / side effects:** The apply card, the not-verified card, or `null` without a session.
 - **Used by:** `FundingApplyPage`.
-
-## Function: grantApplicationsPaused
-
-- **Purpose:** Switch for new grant applications. Returns true while they are paused. The apply walk and the apply API stay in the code. This switch stays true for everyone; `grantApplicationStillOpen` is the username exception in the three screens.
-- **Inputs:** None.
-- **Returns / side effects:** `true`.
-- **Used by:** `FundingApplyScreen`, `FundingStatusCard`, `DailyPayoutStoppedNotice`.
-
-## Function: grantApplicationStillOpen
-
-- **Purpose:** Whether this signed-in username skips the pause card while applications are paused. Exact, case-sensitive match against `joey-rosima`, `vincent`, and `jewel-bacolbas`. It does not by itself open the apply walk: a basis account on the open card still sees **You are not verified yet.** Null, omitted, empty, and every other username (including `Vincent`) do not skip the card.
-- **Inputs:** `username` string, null, or undefined.
-- **Returns / side effects:** `true` only for those three strings.
-- **Used by:** `FundingApplyScreen`, `FundingStatusCard`, `DailyPayoutStoppedNotice`.
 
 ## Function: aboutMeFilled
 
-- **Purpose:** True when About me is a real bio (not empty or the display-name auto note). Used by the apply walk. That walk is shown while applications are paused only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`, and, when the switch is off, for a verified account with status `none` or `rejected`.
+- **Purpose:** True when About me is a real bio (not empty or the display-name auto note). Used by the apply walk. Every verified account with status `none` or `rejected` sees that walk.
 - **Inputs:** `aboutMe`, `name`.
 - **Returns / side effects:** boolean.
 - **Used by:** `nextFillStep`, `FundingApplyScreen`.
 
 ## Function: locationFilled
 
-- **Purpose:** True when location is a non-empty trimmed string. Used by the apply walk. That walk is shown while applications are paused only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`, and, when the switch is off, for a verified account with status `none` or `rejected`.
+- **Purpose:** True when location is a non-empty trimmed string. Used by the apply walk. Every verified account with status `none` or `rejected` sees that walk.
 - **Inputs:** `location`.
 - **Returns / side effects:** boolean.
 - **Used by:** `nextFillStep`, `FundingApplyScreen`.
 
 ## Function: nextFillStep
 
-- **Purpose:** First missing apply fill step: about, photo, then location, or `null` when all three are present. Used by the apply walk. That walk is shown while applications are paused only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`, and, when the switch is off, for a verified account with status `none` or `rejected`.
+- **Purpose:** First missing apply fill step: about, photo, then location, or `null` when all three are present. Used by the apply walk. Every verified account with status `none` or `rejected` sees that walk.
 - **Inputs:** Owner `Account`.
 - **Returns / side effects:** `'about' | 'photo' | 'location' | null`.
 - **Used by:** `FundingApplyScreen`.
@@ -5758,7 +5758,7 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Purpose:** Exclusive original XOR translated body in the same React commit (not a parent `useEffect` after paint). Clicking **Translate** marks the note read-in-full so **Show more** is gone immediately (while loading, on error, and after **Show original**). A visible translation is the full text. Idle and error keep the original. **Show original** restores the original and hides the translation. Identity is `source + messageId + text + locale`. Holds `translatedText` and `showingTranslation`; a successful POST sets both so the original unmounts in that commit.
 - **Inputs:** Required `messageId` (stored forum or conversation message id) and `text`. Optional `source` (default forum message, or `{ kind: 'conversation', conversationId }`). Optional `plain`. Optional `truncate` (default true; applies only to the original body — `ForumNoteText` vs `LinkedText`). A visible translation is always the full text via `LinkedText` (no Show more), including past 280 characters. Clicking Translate sets an internal read-full flag so a truncated original expands on that click and stays expanded when Show original restores it. A new identity clears that flag. Optional `className` (default `whitespace-pre-wrap text-sm text-app-fg`; `text-app-btn-fg` selects NoteTranslate `tone="onButton"`). Optional `formatTranslated` (applied only to the visible translation, not the original; not part of the identity key). Optional `controlSlotId` (when set, portals `NoteTranslate` with `placement="row"` into that element; if the node is missing, the control is omitted rather than stacked).
 - **Returns / side effects:** Original or translated paragraph plus the translate control, or `null` when `text` is empty. Mounts `NoteTranslate` under the body, or portals it into `controlSlotId` when that node exists. Visible body is original XOR translation in the same commit. Idle/error keep original; **Show original** restores original and hides translation.
-- **Used by:** `ForumBoard` (notes and replies, including `via === 'nostr'`), `PublicMessageLoader`, `ForumQuotedBody`, `QuotedForumNote` (any caption when `translate` is true; `plain` only when `via === 'nostr'`), `AboutMeSection`, `HiddenNotesScreen`, `FundingApplicationDetailScreen`, and `FundingApplyScreen` (apply walk, shown while applications are paused only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`, and, when the switch is off, for a verified account with status `none` or `rejected`).
+- **Used by:** `ForumBoard` (notes and replies, including `via === 'nostr'`), `PublicMessageLoader`, `ForumQuotedBody`, `QuotedForumNote` (any caption when `translate` is true; `plain` only when `via === 'nostr'`), `AboutMeSection`, `HiddenNotesScreen`, `FundingApplicationDetailScreen`, and `FundingApplyScreen` (apply walk for every verified account with status `none` or `rejected`).
 
 ## Function: HappylandSection
 

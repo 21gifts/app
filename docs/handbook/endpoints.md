@@ -170,6 +170,13 @@
 - **Used by:** `fetchShopActivity` on `/statistics`.
 - **Auth:** No bearer. StatisticsScreen calls it for every visitor.
 
+## Endpoint: GET /funding/places
+
+- **Purpose:** Same-origin proxy of the public api `GET /funding/places`: the current grant round, its places, how many are admitted, how many are left, and the active-shop goal that opens the next round.
+- **Errors:** The proxy forwards the upstream status. Expected upstream error is 503 when funding is unavailable, or 502 if this proxy cannot reach the api.
+- **Used by:** `fetchGrantPlaces` in `GrantPlacesPanel` on `/grants`, `/grants/goals`, and `/statistics`.
+- **Auth:** No bearer. Every visitor can read the free places.
+
 ## Endpoint: GET /funding/goal
 
 - **Purpose:** Same-origin proxy of api `GET /funding/goal` (7 UTC days of shop till-charge counts, plus how many shops had a charge on 5 of those days). Not the public 30-day shop series.
@@ -861,9 +868,9 @@
 
 ## Endpoint: POST /funding/apply
 
-- **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. While applications are paused the api returns 403 `{ error: 'Applications are paused' }` for a caller whose username is not `joey-rosima`, `vincent`, or `jewel-bacolbas`. Role `basis` is 403 Forbidden, including those three usernames, and does not write a grant. The paused screen does not call this route. The apply walk calls it when `grantApplicationsPaused` is false, and, while paused, only for a verified account named one of those three with status `none` or `rejected`.
-- **Errors:** While applications are paused for everyone else: upstream 401/403, or 502 if the api is unreachable. When the apply walk is open: also upstream 400, 409, and 503, matching `postFundingApply`.
-- **Used by:** `postFundingApply`. `FundingApplyScreen` calls it when the apply walk is open: a verified account with status `none` or `rejected`, and while paused only when that account is named `joey-rosima`, `vincent`, or `jewel-bacolbas`. A basis account does not call it.
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/apply`. Applications are open to every verified member. Role `basis` is 403 Forbidden and does not write a grant.
+- **Errors:** Upstream 400/401/403/409/503, matching `postFundingApply`, or 502 if the api is unreachable.
+- **Used by:** `postFundingApply`. `FundingApplyScreen` calls it after Yes on the truth question for a verified account with status `none` or `rejected`. A basis account does not call it.
 - **Auth:** Bearer session; the api requires a role other than `basis`.
 
 ## Endpoint: GET /funding/payout-days
@@ -939,7 +946,7 @@
 ## Endpoint: POST /funding/admit
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/admit` with `{ accountId }`. Target pending or trial.
-- **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
+- **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable. A 409 `{ error: 'All grant places are taken' }` means the round has no free place; `postFundingAdmit` throws `FUNDING_PLACES_FULL_ERROR` for it.
 - **Used by:** `postFundingAdmit` in `FundingApplicationDetailScreen`.
 - **Auth:** Bearer (founder or moderator).
 

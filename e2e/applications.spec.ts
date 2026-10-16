@@ -134,7 +134,7 @@ test('Function: GrantGoalsPage — signed-in goals page explains the shop target
   await page.goto('/grants/goals');
   await expect(page.getByRole('heading', { name: 'Goals' })).toBeVisible();
   await expect(
-    page.getByText('The grant program continues when we reach 10 active shops.'),
+    page.getByText('Goal reached: 10 active shops. The grant program is open again.'),
   ).toBeVisible();
 });
 
@@ -163,6 +163,37 @@ test('Function: proxyFundingGoalGet — GET /funding/goal without bearer is 401'
 }) => {
   const res = await request.get('/funding/goal');
   expect(res.status()).toBe(401);
+});
+
+test('Function: GrantPlacesPanel — the goals page shows free places and the next goal', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'basis');
+  await page.goto('/grants/goals');
+  const panel = page.getByRole('group', { name: 'Grant places' });
+  await expect(panel.getByText('Round 1: 10 of 10 places are free.')).toBeVisible();
+  await expect(
+    panel.getByText('When 20 shops are active, the grant program opens for more people.'),
+  ).toBeVisible();
+});
+
+test('Function: fetchGrantPlaces — signed-out statistics show the grant places', async ({
+  page,
+}) => {
+  await page.goto('/statistics');
+  const panel = page.getByRole('group', { name: 'Grant places' });
+  await expect(panel.getByText('Moderators have admitted 0 people in this round.')).toBeVisible();
+  await expect(
+    panel.getByText(
+      'Applications are open to every verified member. Moderators admit up to 10 people in this round.',
+    ),
+  ).toBeVisible();
+});
+
+test('Function: proxyFundingPlacesGet — GET /funding/places is public', async ({ request }) => {
+  const res = await request.get('/funding/places');
+  expect(res.status()).toBe(200);
+  expect(((await res.json()) as { placesLeft: number }).placesLeft).toBe(10);
 });
 
 test('Function: fetchFundingApplications — staff see an applicant row', async ({ page }) => {
@@ -260,6 +291,33 @@ const DECISION = {
     reviewedByName: 'Ada',
   },
 };
+
+test('Function: FundingApplicationDetailScreen — a full round shows the places-full copy', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'founder');
+  await stubDetail(page);
+  await page.route('**/funding/admit', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 409,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'All grant places are taken' }),
+    });
+  });
+  await page.goto('/grants/applications/acc_rose');
+  await page.getByRole('button', { name: 'Yes' }).click();
+  await page.getByRole('button', { name: 'Yes' }).click();
+  await expect(
+    page.getByText(
+      'All places of this round are taken. Nobody else can be admitted until the next round opens.',
+    ),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/grants\/applications\/acc_rose$/);
+});
 
 test('Function: postFundingAdmit — Yes admits and returns to the queue', async ({ page }) => {
   await seedAdaSession(page, 'founder');

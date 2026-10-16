@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type ReactElement } from 'react';
+import { GrantPlacesPanel } from '@/components/GrantPlacesPanel';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ShopActivityChart } from '@/components/ShopActivityChart';
 import { Button, Card } from '@/components/ui';
@@ -10,8 +11,10 @@ import { utcDayFromMs } from '@/lib/payout-goal';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
- * Signed-in grant goal: ten active shops, what a transaction is, how many
- * shops meet 5 of the last 7 UTC days, and those seven daily shop counts.
+ * Signed-in grant goal: the reached ten-active-shop goal, the public grant
+ * places ({@link GrantPlacesPanel}: free places and the next shop goal), what
+ * a transaction is, how many shops meet 5 of the last 7 UTC days, and those
+ * seven daily shop counts.
  *
  * The series comes from {@link fetchGrantContinuation}, not the public
  * shop-activity chart. Renders nothing without a session.
@@ -110,6 +113,7 @@ export function GrantGoalsScreen(): ReactElement | null {
         {t('funding.goals.heading')}
       </h1>
       <p className="text-center text-sm text-app-fg">{t('funding.goals.lead')}</p>
+      <GrantPlacesPanel />
       <p className="text-center text-sm text-app-muted">{t('funding.goals.active')}</p>
       <p className="text-center text-sm text-app-muted">{t('funding.goals.transaction')}</p>
       {measurement}

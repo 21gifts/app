@@ -1261,7 +1261,7 @@ const en = {
   'funding.heading': '21 gifts grant',
   'funding.goals.link': 'Goals',
   'funding.goals.heading': 'Goals',
-  'funding.goals.lead': 'The grant program continues when we reach 10 active shops.',
+  'funding.goals.lead': 'Goal reached: 10 active shops. The grant program is open again.',
   'funding.goals.active':
     'A shop is active when it has at least one transaction on 5 of the last 7 days.',
   'funding.goals.transaction':
@@ -1271,14 +1271,23 @@ const en = {
   'funding.goals.chartFoot': 'Lighter bar = today, still open.',
   'funding.goals.error': 'Could not load the shop goal. Please try again.',
   'funding.goals.widgetLabel': 'Shop goal',
+  'funding.places.widgetLabel': 'Grant places',
+  'funding.places.free':
+    '{count, plural, one {Round {round}: # of {places} places is free.} other {Round {round}: # of {places} places are free.}}',
+  'funding.places.admitted':
+    '{count, plural, one {Moderators have admitted # person in this round.} other {Moderators have admitted # people in this round.}}',
+  'funding.places.open':
+    'Applications are open to every verified member. Moderators admit up to {places} people in this round.',
+  'funding.places.full': 'All {places} places of this round are taken. Applications stay open.',
+  'funding.places.next': 'When {goal} shops are active, the grant program opens for more people.',
+  'funding.places.error': 'Could not load the grant places. Please try again.',
+  'funding.detail.placesFull':
+    'All places of this round are taken. Nobody else can be admitted until the next round opens.',
   'funding.notVerified': 'You are not verified yet.',
   'funding.verifyHow':
     'A moderator who personally knows you and has met you in the real world can confirm you on your member page.',
   'funding.grace':
     'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
-  'funding.paused':
-    'Applications are currently paused. You can apply again when shop transactions have increased.',
-  'funding.statisticsUrl': 'https://21.gifts/statistics',
   'funding.stoppedDaily.title': 'Daily payout stopped',
   'funding.stoppedDaily.body':
     'Your daily payout has stopped because you have not applied for the 21 gifts grant. Apply so a moderator can review your posts.',
@@ -2674,7 +2683,7 @@ const de = {
   'funding.heading': '21-Förderprogramm',
   'funding.goals.link': 'Ziele',
   'funding.goals.heading': 'Ziele',
-  'funding.goals.lead': 'Das Förderprogramm läuft weiter, wenn wir 10 aktive Shops erreichen.',
+  'funding.goals.lead': 'Ziel erreicht: 10 aktive Shops. Das Förderprogramm ist wieder offen.',
   'funding.goals.active':
     'Ein Shop ist aktiv, wenn er an 5 der letzten 7 Tage mindestens eine Transaktion hat.',
   'funding.goals.transaction':
@@ -2685,14 +2694,25 @@ const de = {
   'funding.goals.chartFoot': 'Heller Balken = heute, noch offen.',
   'funding.goals.error': 'Das Shop-Ziel konnte nicht geladen werden. Bitte erneut versuchen.',
   'funding.goals.widgetLabel': 'Shop-Ziel',
+  'funding.places.widgetLabel': 'Förderplätze',
+  'funding.places.free':
+    '{count, plural, one {Runde {round}: # von {places} Plätzen ist frei.} other {Runde {round}: # von {places} Plätzen sind frei.}}',
+  'funding.places.admitted':
+    '{count, plural, one {Die Moderatoren haben in dieser Runde # Person zugelassen.} other {Die Moderatoren haben in dieser Runde # Personen zugelassen.}}',
+  'funding.places.open':
+    'Bewerbungen sind für alle verifizierten Mitglieder offen. Die Moderatoren lassen in dieser Runde bis zu {places} Personen zu.',
+  'funding.places.full':
+    'Alle {places} Plätze dieser Runde sind vergeben. Bewerbungen bleiben offen.',
+  'funding.places.next':
+    'Wenn {goal} Shops aktiv sind, öffnet das Förderprogramm für weitere Personen.',
+  'funding.places.error': 'Die Förderplätze konnten nicht geladen werden. Bitte erneut versuchen.',
+  'funding.detail.placesFull':
+    'Alle Plätze dieser Runde sind vergeben. Bis zur nächsten Runde kann niemand mehr zugelassen werden.',
   'funding.notVerified': 'Sie sind noch nicht verifiziert.',
   'funding.verifyHow':
     'Eine Moderatorin oder ein Moderator, die oder der Sie persönlich kennt und im echten Leben getroffen hat, kann Sie auf Ihrer Mitgliederseite bestätigen.',
   'funding.grace':
     'Tägliche Geschenke erhalten zugelassene Mitglieder. Bewerben Sie sich, damit das Team Ihre Beiträge prüfen kann.',
-  'funding.paused':
-    'Bewerbungen sind zurzeit pausiert. Eine Bewerbung ist wieder möglich, wenn die Shop-Transaktionen gestiegen sind.',
-  'funding.statisticsUrl': 'https://21.gifts/statistics',
   'funding.stoppedDaily.title': 'Tägliche Auszahlung gestoppt',
   'funding.stoppedDaily.body':
     'Ihre tägliche Auszahlung ist gestoppt, weil Sie sich noch nicht für das 21-Förderprogramm beworben haben. Bewerben Sie sich, damit das Team Ihre Beiträge prüfen kann.',
@@ -4066,7 +4086,8 @@ const es = {
   'funding.heading': 'Beca 21 gifts',
   'funding.goals.link': 'Objetivos',
   'funding.goals.heading': 'Objetivos',
-  'funding.goals.lead': 'El programa de becas sigue cuando llegamos a 10 tiendas activas.',
+  'funding.goals.lead':
+    'Objetivo alcanzado: 10 tiendas activas. El programa de becas vuelve a estar abierto.',
   'funding.goals.active':
     'Una tienda está activa cuando tiene al menos una transacción en 5 de los últimos 7 días.',
   'funding.goals.transaction':
@@ -4077,14 +4098,25 @@ const es = {
   'funding.goals.chartFoot': 'La barra más clara = hoy, todavía abierto.',
   'funding.goals.error': 'No se pudo cargar el objetivo de las tiendas. Inténtalo de nuevo.',
   'funding.goals.widgetLabel': 'Objetivo de tiendas',
+  'funding.places.widgetLabel': 'Plazas de beca',
+  'funding.places.free':
+    '{count, plural, one {Ronda {round}: # de {places} plazas está libre.} other {Ronda {round}: # de {places} plazas están libres.}}',
+  'funding.places.admitted':
+    '{count, plural, one {Los moderadores han admitido a # persona en esta ronda.} other {Los moderadores han admitido a # personas en esta ronda.}}',
+  'funding.places.open':
+    'Las solicitudes están abiertas para todos los miembros verificados. Los moderadores admiten hasta {places} personas en esta ronda.',
+  'funding.places.full':
+    'Las {places} plazas de esta ronda están ocupadas. Las solicitudes siguen abiertas.',
+  'funding.places.next':
+    'Cuando haya {goal} tiendas activas, el programa de becas se abrirá a más personas.',
+  'funding.places.error': 'No se pudieron cargar las plazas de beca. Inténtalo de nuevo.',
+  'funding.detail.placesFull':
+    'Todas las plazas de esta ronda están ocupadas. Nadie más puede ser admitido hasta que abra la siguiente ronda.',
   'funding.notVerified': 'Aún no estás verificada o verificado.',
   'funding.verifyHow':
     'Una persona moderadora que te conoce personalmente y te ha visto en la vida real puede confirmarte en tu página de miembro.',
   'funding.grace':
     'Las personas admitidas reciben el regalo diario. Solicita ahora para que una persona moderadora revise tus mensajes.',
-  'funding.paused':
-    'Las solicitudes están en pausa por ahora. Volverán a ser posibles cuando hayan aumentado las transacciones de las tiendas.',
-  'funding.statisticsUrl': 'https://21.gifts/statistics',
   'funding.stoppedDaily.title': 'Pago diario detenido',
   'funding.stoppedDaily.body':
     'Tu pago diario se ha detenido porque aún no has solicitado la beca 21 gifts. Solicita ahora para que una persona moderadora revise tus mensajes.',
@@ -5464,7 +5496,8 @@ const fil = {
   'funding.heading': '21 gifts grant',
   'funding.goals.link': 'Mga layunin',
   'funding.goals.heading': 'Mga layunin',
-  'funding.goals.lead': 'Tuloy ang grant program kapag umabot tayo sa 10 aktibong tindahan.',
+  'funding.goals.lead':
+    'Naabot na ang layunin: 10 aktibong tindahan. Bukas na ulit ang grant program.',
   'funding.goals.active':
     'Aktibo ang isang tindahan kapag may kahit isang transaksyon ito sa 5 sa huling 7 araw.',
   'funding.goals.transaction':
@@ -5475,14 +5508,25 @@ const fil = {
   'funding.goals.chartFoot': 'Mas maputlang bar = ngayon, bukas pa.',
   'funding.goals.error': 'Hindi ma-load ang layunin ng tindahan. Pakisubukan muli.',
   'funding.goals.widgetLabel': 'Layunin ng tindahan',
+  'funding.places.widgetLabel': 'Mga puwesto sa grant',
+  'funding.places.free':
+    '{count, plural, one {Round {round}: # sa {places} puwesto ang bakante.} other {Round {round}: # sa {places} puwesto ang bakante.}}',
+  'funding.places.admitted':
+    '{count, plural, one {Nakapag-admit ang mga moderator ng # tao sa round na ito.} other {Nakapag-admit ang mga moderator ng # tao sa round na ito.}}',
+  'funding.places.open':
+    'Bukas ang pag-apply sa bawat verified na miyembro. Hanggang {places} tao ang maa-admit ng mga moderator sa round na ito.',
+  'funding.places.full':
+    'Puno na ang lahat ng {places} puwesto sa round na ito. Bukas pa rin ang pag-apply.',
+  'funding.places.next':
+    'Kapag {goal} na ang aktibong tindahan, magbubukas ang grant program para sa mas maraming tao.',
+  'funding.places.error': 'Hindi ma-load ang mga puwesto sa grant. Pakisubukan muli.',
+  'funding.detail.placesFull':
+    'Puno na ang lahat ng puwesto sa round na ito. Wala nang maa-admit hanggang magbukas ang susunod na round.',
   'funding.notVerified': 'Hindi ka pa nabe-verify.',
   'funding.verifyHow':
     'Ang isang moderator na personal kang kilala at nakilala ka sa totoong buhay ay maaaring kumpirmahin ka sa iyong member page.',
   'funding.grace':
     'Admitted members ang tumatanggap ng araw-araw na gift. Mag-apply na para masuri ng moderator ang iyong mga post.',
-  'funding.paused':
-    'Naka-pause ang mga aplikasyon sa ngayon. Magiging posible ulit ang pag-apply kapag tumaas ang mga transaksyon ng tindahan.',
-  'funding.statisticsUrl': 'https://21.gifts/statistics',
   'funding.stoppedDaily.title': 'Huminto ang araw-araw na payout',
   'funding.stoppedDaily.body':
     'Huminto ang araw-araw na payout mo dahil hindi ka pa nag-a-apply para sa 21 gifts grant. Mag-apply na para masuri ng moderator ang iyong mga post.',

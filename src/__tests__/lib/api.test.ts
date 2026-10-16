@@ -22,6 +22,8 @@ import {
   fetchShopActivity,
   fetchFxSpot,
   fetchGrantContinuation,
+  fetchGrantPlaces,
+  FUNDING_PLACES_FULL_ERROR,
   fetchPostStats,
   fetchAboutMePhoto,
   fetchProfilePhoto,
@@ -1397,6 +1399,37 @@ describe('fetchShopActivity', () => {
     stubFetch({ ok: true, status: 200, body: { days: [] } });
     await expect(fetchShopActivity()).rejects.toThrow(
       'Could not load shop activity. Please try again.',
+    );
+  });
+});
+
+describe('fetchGrantPlaces', () => {
+  const places = {
+    round: 1,
+    startsAt: '2026-10-16T00:00:00.000Z',
+    places: 10,
+    admitted: 3,
+    placesLeft: 7,
+    nextGoalShops: 20,
+  };
+
+  it('returns the places without an Authorization header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: places });
+    await expect(fetchGrantPlaces()).resolves.toEqual(places);
+    expect(fetchMock).toHaveBeenCalledWith('/funding/places');
+  });
+
+  it('throws visitor copy on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Funding is unavailable' } });
+    await expect(fetchGrantPlaces()).rejects.toThrow(
+      'Could not load the grant places. Please try again.',
+    );
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { ...places, placesLeft: -1 } });
+    await expect(fetchGrantPlaces()).rejects.toThrow(
+      'Could not load the grant places. Please try again.',
     );
   });
 });
@@ -6176,6 +6209,36 @@ describe('postFundingAdmit', () => {
 
   it('throws visitor copy on a non-ok response', async () => {
     stubFetch({ ok: false, status: 403, body: {} });
+    await expect(postFundingAdmit('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+
+  it('throws the places-full error on 409 All grant places are taken', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'All grant places are taken' } });
+    await expect(postFundingAdmit('sess', 'acc_1')).rejects.toThrow(FUNDING_PLACES_FULL_ERROR);
+  });
+
+  it.each([
+    ['another 409 error', { error: 'Conflict' }],
+    ['a null body', null],
+    ['a string body', 'full'],
+  ])('throws visitor copy on 409 with %s', async (_label, body) => {
+    stubFetch({ ok: false, status: 409, body });
+    await expect(postFundingAdmit('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
+
+  it('throws visitor copy on 409 with an unreadable body', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.reject(new SyntaxError('bad json')),
+      } as unknown as Response),
+    );
     await expect(postFundingAdmit('sess', 'acc_1')).rejects.toThrow(
       'Could not update this member. Please try again.',
     );

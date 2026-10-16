@@ -21,6 +21,10 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+vi.mock('@/components/GrantPlacesPanel', () => ({
+  GrantPlacesPanel: () => <div data-testid="grant-places-panel" />,
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn(),
   fetchShopActivity: vi.fn(),
@@ -133,6 +137,7 @@ describe('StatisticsScreen', () => {
       expect(fetchShopMock).toHaveBeenCalled();
     });
     expect(screen.queryByTestId('staff-functions')).toBeNull();
+    expect(screen.getByTestId('grant-places-panel')).toBeTruthy();
   });
 
   it.each(['basis', 'verified'] as const)(

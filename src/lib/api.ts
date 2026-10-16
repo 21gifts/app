@@ -24,6 +24,7 @@ import {
   fxSpotSchema,
   shopActivitySchema,
   grantContinuationSchema,
+  grantPlacesSchema,
   postStatsSchema,
   accountActivitySchema,
   memberProfileSchema,
@@ -63,6 +64,7 @@ import {
   type FxSpot,
   type ShopActivityDay,
   type GrantContinuation,
+  type GrantPlaces,
   type PostStats,
   type AccountActivity,
   type LnurlInvoice,
@@ -1179,6 +1181,27 @@ export async function fetchShopActivity(): Promise<ShopActivityDay[]> {
   }
 }
 
+const GRANT_PLACES_LOAD_ERROR = 'Could not load the grant places. Please try again.';
+
+/**
+ * Fetches the public grant round places. No session.
+ *
+ * @returns Round, places, admitted, places left, and the next shop goal.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link grantPlacesSchema}.
+ */
+export async function fetchGrantPlaces(): Promise<GrantPlaces> {
+  try {
+    const response = await fetch('/funding/places');
+    if (!response.ok) {
+      throw new Error(GRANT_PLACES_LOAD_ERROR);
+    }
+    return grantPlacesSchema.parse(await response.json());
+  } catch {
+    throw new Error(GRANT_PLACES_LOAD_ERROR);
+  }
+}
+
 const GRANT_GOAL_LOAD_ERROR = 'Could not load the shop goal. Please try again.';
 
 /**
@@ -1399,6 +1422,11 @@ const FUNDING_APPLICATIONS_LOAD_ERROR = 'Could not load grant applications. Plea
 const FUNDING_APPLICATION_LOAD_ERROR = 'Could not load this application. Please try again.';
 const FUNDING_PAYOUT_DAYS_LOAD_ERROR = 'Could not load the payout table. Please try again.';
 const FUNDING_ACTION_ERROR = 'Could not update this member. Please try again.';
+/**
+ * Thrown by {@link postFundingAdmit} when the api answers 409
+ * `All grant places are taken`: the current round has no free place.
+ */
+export const FUNDING_PLACES_FULL_ERROR = 'All grant places are taken';
 const FUNDING_DAILY_ROSTER_LOAD_ERROR = 'Could not load daily payments. Please try again.';
 const FUNDING_DAILY_ROSTER_SAVE_ERROR = 'funding.daily.saveError';
 
@@ -1609,6 +1637,7 @@ async function postFundingAction(
   sessionToken: string,
   accountId: string,
 ): Promise<FundingDecisionResult> {
+  let placesFull = false;
   try {
     const response = await fetch(path, {
       method: 'POST',
@@ -1619,12 +1648,22 @@ async function postFundingAction(
       },
       body: JSON.stringify({ accountId }),
     });
+    if (response.status === 409) {
+      const body: unknown = await response.json().catch(() => null);
+      if (
+        typeof body === 'object' &&
+        body !== null &&
+        (body as { error?: unknown }).error === FUNDING_PLACES_FULL_ERROR
+      ) {
+        placesFull = true;
+      }
+    }
     if (!response.ok) {
       throw new Error(FUNDING_ACTION_ERROR);
     }
     return fundingDecisionResultSchema.parse(await response.json());
   } catch {
-    throw new Error(FUNDING_ACTION_ERROR);
+    throw new Error(placesFull ? FUNDING_PLACES_FULL_ERROR : FUNDING_ACTION_ERROR);
   }
 }
 
@@ -1634,7 +1673,9 @@ async function postFundingAction(
  * @param sessionToken - Bearer session of a founder or moderator.
  * @param accountId - Subject account id.
  * @returns The updated account snapshot.
- * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
+ * @throws Error({@link FUNDING_PLACES_FULL_ERROR}) when the round has no free
+ * place; Error with visitor-facing copy on 401/403/404/other 409/503 or any
+ * other failure.
  */
 export async function postFundingAdmit(
   sessionToken: string,
