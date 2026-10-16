@@ -619,7 +619,7 @@ test('Function: ShopPlaceControl — moderator saves a pin; basis cannot edit', 
   await page.getByRole('button', { name: 'Use this place' }).click();
   const placeReq = await patched;
   expect(placeReq.postDataJSON()).toEqual({
-    place: { lat: 14.5, lng: 120.9, label: 'Happyland' },
+    place: { lat: 14.5, lng: 120.9, label: 'Happyland', country: null },
   });
   await expect(note.getByRole('link', { name: 'Happyland' })).toBeVisible();
 

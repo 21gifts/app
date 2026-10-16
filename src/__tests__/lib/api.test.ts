@@ -2127,6 +2127,25 @@ describe('postMessage', () => {
     expect(JSON.parse(String(without.body))).not.toHaveProperty('place');
   });
 
+  it('sends a string country on the JSON place', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { ...forumMessage, place: { lat: 1.2, lng: 3.4, label: 'Harbor' } },
+    });
+    await postMessage('tok', {
+      text: 'Hello from Ada',
+      place: { lat: 1.2, lng: 3.4, label: 'Harbor', country: 'PH' },
+    });
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(String(init.body))).toEqual(
+      expect.objectContaining({
+        text: 'Hello from Ada',
+        place: { lat: 1.2, lng: 3.4, label: 'Harbor', country: 'PH' },
+      }),
+    );
+  });
+
   it('sends shopUsername without a leading @ and omits a blank handle', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: forumMessage });
     await postMessage('tok', { text: 'Cafe', shopUsername: '@Luna' });
