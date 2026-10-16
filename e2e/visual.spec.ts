@@ -17930,7 +17930,14 @@ test.describe('shops screens', () => {
     await address.getByLabel('House number', { exact: true }).fill('12');
     await address.getByLabel('Postal code', { exact: true }).fill('8001');
     await address.getByLabel('City', { exact: true }).fill('Zürich');
-    await address.getByLabel('Country', { exact: true }).selectOption('CH');
+    const country = address.getByLabel('Country', { exact: true });
+    await country.selectOption('CH');
+    // Filling scrolls the detail scrollport to a timing-dependent offset.
+    await country.evaluate((node) => {
+      (node as HTMLSelectElement).blur();
+      const port = node.closest('[data-scrollport]') as HTMLElement;
+      port.scrollTop = 0;
+    });
   }
 
   test('shops default', async ({ page }) => {
