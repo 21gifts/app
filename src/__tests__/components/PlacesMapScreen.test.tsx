@@ -615,6 +615,14 @@ describe('PlacesMapScreen', () => {
     await saveOpened('Cafe Norte is open every morning.');
     expect(await screen.findByRole('link', { name: 'Ada · Norte' })).toBeTruthy();
 
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...note,
+      text: 'Cafe West is open every morning.\n\n#21GiftsShop',
+      place: { lat: 5, lng: 6, label: null, address: completeAddress },
+    });
+    await saveOpened('Cafe West is open every morning.');
+    expect(await screen.findByRole('link', { name: 'Ada · 5.00000, 6.00000' })).toBeTruthy();
+
     const withoutPlace: ForumMessage = {
       ...note,
       text: 'Cafe Sur is open every morning.\n\n#21GiftsShop',
@@ -624,6 +632,7 @@ describe('PlacesMapScreen', () => {
     await saveOpened('Cafe Sur is open every morning.');
     await waitFor(() => {
       expect(screen.queryByRole('link', { name: 'Ada · Norte' })).toBeNull();
+      expect(screen.queryByRole('link', { name: 'Ada · 5.00000, 6.00000' })).toBeNull();
     });
     expect(screen.getByRole('link', { name: 'Ada · Other' })).toBeTruthy();
     useAuthStore.setState({ session: null, account: null });
