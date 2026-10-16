@@ -1629,13 +1629,17 @@ export async function fetchFundingApplication(
  * @param path - Same-origin proxy path.
  * @param sessionToken - Bearer session.
  * @param accountId - Subject account id.
+ * @param mapPlacesFull - When true (admit only), a 409 whose `error` is
+ *   exactly {@link FUNDING_PLACES_FULL_ERROR} throws that error.
  * @returns Parsed {@link FundingDecisionResult}.
- * @throws Error with visitor-facing copy on any failure.
+ * @throws Error({@link FUNDING_PLACES_FULL_ERROR}) for that admit 409;
+ *   Error with visitor-facing copy on any other failure.
  */
 async function postFundingAction(
   path: string,
   sessionToken: string,
   accountId: string,
+  mapPlacesFull: boolean,
 ): Promise<FundingDecisionResult> {
   let placesFull = false;
   try {
@@ -1648,7 +1652,7 @@ async function postFundingAction(
       },
       body: JSON.stringify({ accountId }),
     });
-    if (response.status === 409) {
+    if (mapPlacesFull && response.status === 409) {
       const body: unknown = await response.json().catch(() => null);
       if (
         typeof body === 'object' &&
@@ -1681,7 +1685,7 @@ export async function postFundingAdmit(
   sessionToken: string,
   accountId: string,
 ): Promise<FundingDecisionResult> {
-  return postFundingAction('/funding/admit', sessionToken, accountId);
+  return postFundingAction('/funding/admit', sessionToken, accountId, true);
 }
 
 /**
@@ -1696,7 +1700,7 @@ export async function postFundingReject(
   sessionToken: string,
   accountId: string,
 ): Promise<FundingDecisionResult> {
-  return postFundingAction('/funding/reject', sessionToken, accountId);
+  return postFundingAction('/funding/reject', sessionToken, accountId, false);
 }
 
 /**

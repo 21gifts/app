@@ -821,6 +821,32 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
   });
 }
 
+/** Answers the public GET /funding/places with a full round or a 503 for the places-panel states. */
+async function stubGrantPlaces(page: Page, mode: 'full' | 'error'): Promise<void> {
+  await page.route('**/funding/places', async (route) => {
+    if (mode === 'error') {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Funding is unavailable' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        round: 1,
+        startsAt: '2026-10-16T00:00:00.000Z',
+        places: 10,
+        admitted: 10,
+        placesLeft: 0,
+        nextGoalShops: 20,
+      }),
+    });
+  });
+}
+
 /** Opens the forum home writer from the floating + (the composer is not on the page). */
 async function openHomeWriter(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Write a post' }).click();
@@ -19268,6 +19294,28 @@ test.describe('profile funding states', () => {
     await shotScreen(page, 'screen-grants');
   });
 
+  test('state /grants places-full', async ({ page }) => {
+    await seedFundingProfile(page);
+    await stubGrantPlaces(page, 'full');
+    await page.goto('/grants');
+    await expect(page.getByText('Round 1: 0 of 10 places are free.')).toBeVisible();
+    await expect(
+      page.getByText('All 10 places of this round are taken. Applications stay open.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-grants-places-full');
+  });
+
+  test('state /grants places-error', async ({ page }) => {
+    await seedFundingProfile(page);
+    await stubGrantPlaces(page, 'error');
+    await page.goto('/grants');
+    await expect(
+      page.getByText('Could not load the grant places. Please try again.'),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+    await shotScreen(page, 'state-grants-places-error');
+  });
+
   test('profile funding pending', async ({ page }) => {
     await seedFundingProfile(page, {
       funding: {
@@ -19537,20 +19585,7 @@ test.describe('profile funding states', () => {
   test('state /grants/goals places-full', async ({ page }) => {
     await seedFundingProfile(page);
     await stubGrantGoal(page, 'ok');
-    await page.route('**/funding/places', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          round: 1,
-          startsAt: '2026-10-16T00:00:00.000Z',
-          places: 10,
-          admitted: 10,
-          placesLeft: 0,
-          nextGoalShops: 20,
-        }),
-      });
-    });
+    await stubGrantPlaces(page, 'full');
     await page.goto('/grants/goals');
     await expect(page.getByText('Round 1: 0 of 10 places are free.')).toBeVisible();
     await expect(
@@ -19563,13 +19598,7 @@ test.describe('profile funding states', () => {
   test('state /grants/goals places-error', async ({ page }) => {
     await seedFundingProfile(page);
     await stubGrantGoal(page, 'ok');
-    await page.route('**/funding/places', async (route) => {
-      await route.fulfill({
-        status: 503,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'Funding is unavailable' }),
-      });
-    });
+    await stubGrantPlaces(page, 'error');
     await page.goto('/grants/goals');
     await expect(
       page.getByText('Could not load the grant places. Please try again.'),
@@ -28373,6 +28402,34 @@ test.describe('statistics screens', () => {
     await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveCount(0);
     await shotStatistics(page);
     await shotScreen(page, 'screen-statistics');
+  });
+
+  test('statistics places-full', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubPayoutGoal(page);
+    await stubShopActivity(page);
+    await stubGrantPlaces(page, 'full');
+    await page.goto('/statistics');
+    await expect(page.getByText('Shops by UTC day')).toBeVisible();
+    await expect(
+      page.getByText('All 10 places of this round are taken. Applications stay open.'),
+    ).toBeVisible();
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-places-full');
+  });
+
+  test('statistics places-error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubPayoutGoal(page);
+    await stubShopActivity(page);
+    await stubGrantPlaces(page, 'error');
+    await page.goto('/statistics');
+    await expect(page.getByText('Shops by UTC day')).toBeVisible();
+    await expect(
+      page.getByText('Could not load the grant places. Please try again.'),
+    ).toBeVisible();
+    await shotStatistics(page);
+    await shotScreen(page, 'state-statistics-places-error');
   });
 
   test('statistics loading', async ({ page }) => {

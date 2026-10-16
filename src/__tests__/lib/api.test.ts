@@ -6284,6 +6284,13 @@ describe('postFundingReject', () => {
       'Could not update this member. Please try again.',
     );
   });
+
+  it('keeps the generic copy on a 409 places-full body (only admit maps it)', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'All grant places are taken' } });
+    await expect(postFundingReject('sess', 'acc_1')).rejects.toThrow(
+      'Could not update this member. Please try again.',
+    );
+  });
 });
 
 describe('deleteMessage', () => {

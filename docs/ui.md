@@ -1188,7 +1188,7 @@ The shared `MemberProfileScreen` facts add `profile.creditCount` after Shops onl
 
 Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline). A verified account with status none or rejected sees the daily-gift sentence, **About**, and the **Apply for the 21 gifts grant** `ButtonLink` (applications are open). A basis account sees You are not verified yet and no Apply. Pending, trial, and admitted keep their status copy. Under the card, `GrantPlacesPanel` (**Grant places**) shows the round, free places, admissions, whether places are left, and the 20-shop goal for the next round (`GET /funding/places`, public). A secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null. Two secondary `size="lg"` `ButtonLink`s, **Daily payment text** (`/grants/payments/comment`) and **Daily payment amounts** (`/grants/payments/amounts`), render only when `canEditDailyPayoutRoster`. Neither link fetches the roster. Plus, for an account at least moderator (`roleAtLeast(role, 'moderator')`), including an initiator and a founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Settings for every signed-in account.
 
-Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications, daily-payments.
+Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications, daily-payments, places-full, places-error.
 
 ### `/grants/goals`
 

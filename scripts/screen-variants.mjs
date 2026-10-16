@@ -4765,6 +4765,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/grants',
+    id: 'places-full',
+    image: 'grants-places-full.png',
+    visual: 'state-grants-places-full',
+    needle: 'state-grants-places-full',
+  },
+  {
+    route: '/grants',
+    id: 'places-error',
+    image: 'grants-places-error.png',
+    visual: 'state-grants-places-error',
+    needle: 'state-grants-places-error',
+  },
+  {
+    route: '/grants',
     id: 'funding-not-verified',
     image: 'profile-funding-not-verified.png',
     visual: 'state-profile-funding-not-verified',
@@ -5076,7 +5090,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'profile-apply.png',
     visual: 'screen-grants-apply',
-    needle: "page.goto('/grants/apply')",
+    needle: 'First, write a short About me so people can get to know you.',
   },
   {
     route: '/grants/apply',
@@ -5714,6 +5728,20 @@ export const SCREEN_VARIANTS = [
     image: 'statistics.png',
     visual: 'screen-statistics',
     needle: "getByRole('heading', { name: 'Statistics' })",
+  },
+  {
+    route: '/statistics',
+    id: 'places-full',
+    image: 'statistics-places-full.png',
+    visual: 'state-statistics-places-full',
+    needle: 'state-statistics-places-full',
+  },
+  {
+    route: '/statistics',
+    id: 'places-error',
+    image: 'statistics-places-error.png',
+    visual: 'state-statistics-places-error',
+    needle: 'state-statistics-places-error',
   },
   {
     route: '/statistics',

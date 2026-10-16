@@ -5265,62 +5265,74 @@ Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, **A
 
 ![21.gifts grants](images/grants.png)
 
+### Variant: places-full
+
+Verified owner with status none when every place of the round is taken. The card still offers **Apply for the 21 gifts grant**. The **Grant places** panel reads **Round 1: 0 of 10 places are free.** and **All 10 places of this round are taken. Applications stay open.**, then the 20-shop goal. Needle `state-grants-places-full`.
+
+![21.gifts grants places full](images/grants-places-full.png)
+
+### Variant: places-error
+
+Verified owner with status none when `GET /funding/places` fails. The card and **Apply for the 21 gifts grant** stay. The panel shows **Could not load the grant places. Please try again.** and **Try again**. Needle `state-grants-places-error`.
+
+![21.gifts grants places error](images/grants-places-error.png)
+
 ### Variant: funding-not-verified
 
-Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus how in-person verification works. No apply button.
+Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus how in-person verification works. No apply button. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts profile funding not verified](images/profile-funding-not-verified.png)
 
 ### Variant: funding-pending
 
-Verified owner with `funding.status` **pending**. Copy **Your application is open. A moderator will review your posts.**
+Verified owner with `funding.status` **pending**. Copy **Your application is open. A moderator will review your posts.** The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts profile funding pending](images/profile-funding-pending.png)
 
 ### Variant: funding-trial
 
-Verified owner with `funding.status` **trial**. Copy **You are on a one-day trial. Review repeats tomorrow.**
+Verified owner with `funding.status` **trial**. Copy **You are on a one-day trial. Review repeats tomorrow.** The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts profile funding trial](images/profile-funding-trial.png)
 
 ### Variant: funding-admitted
 
-Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**. When `reviewedByName` is set, that sentence names the reviewer. Trial, pending, and rejected do not show a name. The funding-program icon on the public facts is closed here. The pressed result is **funding-program-open**.
+Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**. When `reviewedByName` is set, that sentence names the reviewer. Trial, pending, and rejected do not show a name. The funding-program icon on the public facts is closed here. The pressed result is **funding-program-open**. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
 ![21.gifts profile funding admitted](images/profile-funding-admitted.png)
 
 ### Variant: funding-program-open
 
-Admitted owner on `/grants`. The participation sentence **Takes part in the 21.gifts funding program since {date}** is visible on the grant card. Viewport capture after scrolling that line into view.
+Admitted owner on `/grants`. The participation sentence **Takes part in the 21.gifts funding program since {date}** is visible on the grant card. Viewport capture after scrolling that line into view. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts profile funding program open](images/profile-funding-program-open.png)
 
 ### Variant: open-applications
 
-Moderator on `/grants` with two open grant applications. The grant card is shown, and **Open applications (2)** links to `/grants/applications`. When the list is empty this control is the sentence **No open applications.** and not a link; that state is **no-applications**. Needle `state-grants-open-applications`.
+Moderator on `/grants` with two open grant applications. The grant card is shown, and **Open applications (2)** links to `/grants/applications`. When the list is empty this control is the sentence **No open applications.** and not a link; that state is **no-applications**. Needle `state-grants-open-applications`. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts grants open applications](images/grants-open-applications.png)
 
 ### Variant: no-applications
 
-Moderator on `/grants` when no grant application is open. The sentence **No open applications.** is plain text, not a button or link. Needle `state-grants-no-applications`.
+Moderator on `/grants` when no grant application is open. The sentence **No open applications.** is plain text, not a button or link. Needle `state-grants-no-applications`. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts grants no applications](images/grants-no-applications.png)
 
 ### Variant: applications-loading
 
-Moderator on `/grants` while open applications are still loading. Copy **Loading…** is plain text, not a link. Needle `state-grants-applications-loading`.
+Moderator on `/grants` while open applications are still loading. Copy **Loading…** is plain text, not a link. Needle `state-grants-applications-loading`. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts grants applications loading](images/grants-applications-loading.png)
 
 ### Variant: applications-error
 
-Moderator on `/grants` when the open-application load fails. Copy **Could not load open applications. Please try again.** and button **Try again**. Not a link to the queue. Needle `state-grants-applications-error`.
+Moderator on `/grants` when the open-application load fails. Copy **Could not load open applications. Please try again.** and button **Try again**. Not a link to the queue. Needle `state-grants-applications-error`. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts grants applications error](images/grants-applications-error.png)
 
 ### Variant: daily-payments
 
-Founder on `/grants` sees a secondary **Goals** link, secondary **Daily payment text** and **Daily payment amounts** links, plus **Open applications (2)**. Needle `Daily payment text`.
+Founder on `/grants` sees a secondary **Goals** link, secondary **Daily payment text** and **Daily payment amounts** links, plus **Open applications (2)**. Needle `Daily payment text`. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts grants daily payments](images/grants-daily-payments.png)
 
@@ -5962,49 +5974,61 @@ Unread `moderator_proposal` row (actor **Bob**, copy **Bob proposed a moderator*
 
 ### Variant: default
 
-Staff (moderator) page with heading **Statistics**, the **People paid** panel always open (yesterday count, measurement paragraph, 30-UTC-day chart). Closed **Moderator functions** sits between the people chart and the shop chart; **Show payout per person** is not visible yet. The shop chart sits under that disclosure (**Shops by UTC day**). The **Grant places** panel is last: **Round 1: 10 of 10 places are free.**, the admissions sentence, the open-applications sentence, and the 20-shop goal. The people panel is not a toggle.
+Staff (moderator) page with heading **Statistics**, the **People paid** panel always open (yesterday count, measurement paragraph, 30-UTC-day chart). Closed **Moderator functions** sits between the people chart and the shop chart; **Show payout per person** is not visible yet. The shop chart sits under that disclosure (**Shops by UTC day**). The **Grant places** panel is last: **Round 1: 10 of 10 places are free.**, the admissions sentence, the open-applications sentence, and the 20-shop goal. The people panel is not a toggle. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts statistics](images/statistics.png)
 
+### Variant: places-full
+
+Staff page like default when every place of the round is taken. The last panel, **Grant places**, reads **Round 1: 0 of 10 places are free.** and **All 10 places of this round are taken. Applications stay open.**, then the 20-shop goal. Needle `state-statistics-places-full`.
+
+![21.gifts statistics places full](images/statistics-places-full.png)
+
+### Variant: places-error
+
+Staff page like default when `GET /funding/places` fails. The people and shop panels load. The last panel shows **Could not load the grant places. Please try again.** and **Try again**. Needle `state-statistics-places-error`.
+
+![21.gifts statistics places error](images/statistics-places-error.png)
+
 ### Variant: loading
 
-Staff (moderator) page. Both panels show **Loading…** while their own request is in flight: the people panel (group **People paid**) for `GET /gifts/stats`, and the shop panel (group **Active shops**) for `GET /shops/activity`. One panel can finish while the other is still loading. **Moderator functions** is not shown.
+Staff (moderator) page. The people and shop panels show **Loading…** while their own request is in flight: the people panel (group **People paid**) for `GET /gifts/stats`, and the shop panel (group **Active shops**) for `GET /shops/activity`. One panel can finish while the other is still loading. **Moderator functions** is not shown. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts statistics loading](images/statistics-loading.png)
 
 ### Variant: error
 
-Staff (moderator) page. The people panel shows **Could not load payouts. Please try again.** and **Try again**. The shop panel under it still shows **Shops by UTC day**. The two panels fail independently. **Moderator functions** is not shown.
+Staff (moderator) page. The people panel shows **Could not load payouts. Please try again.** and **Try again**. The shop panel under it still shows **Shops by UTC day**. The two panels fail independently. **Moderator functions** is not shown. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts statistics error](images/statistics-error.png)
 
 ### Variant: member
 
-A basis account sees both charts and both explainers. No **Moderator functions**. No **This page is for moderators.**
+A basis account sees both charts and both explainers. No **Moderator functions**. No **This page is for moderators.** The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts statistics member](images/statistics-member.png)
 
 ### Variant: signed-out
 
-No session. Top-right is **Log in** instead of Menu. Both charts. No **Moderator functions**.
+No session. Top-right is **Log in** instead of Menu. Both charts. No **Moderator functions**. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts statistics signed out](images/statistics-signed-out.png)
 
 ### Variant: staff-open
 
-A founder clicks **Moderator functions**, then **Show payout per person** is visible.
+A founder clicks **Moderator functions**, then **Show payout per person** is visible. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts statistics staff open](images/statistics-staff-open.png)
 
 ### Variant: shop-error
 
-Staff (moderator) page. The people chart stays up (**People by UTC day**). Closed **Moderator functions** sits between the people chart and the shop panel; **Show payout per person** is not visible yet. The shop panel under it shows **Could not load shop activity. Please try again.** and **Try again**.
+Staff (moderator) page. The people chart stays up (**People by UTC day**). Closed **Moderator functions** sits between the people chart and the shop panel; **Show payout per person** is not visible yet. The shop panel under it shows **Could not load shop activity. Please try again.** and **Try again**. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts statistics shop error](images/statistics-shop-error.png)
 
 ### Variant: both-error
 
-Staff (moderator) page. The people panel shows **Could not load payouts. Please try again.** and the shop panel shows **Could not load shop activity. Please try again.** **Moderator functions** is not shown.
+Staff (moderator) page. The people panel shows **Could not load payouts. Please try again.** and the shop panel shows **Could not load shop activity. Please try again.** **Moderator functions** is not shown. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
 
 ![21.gifts statistics both error](images/statistics-both-error.png)
 
