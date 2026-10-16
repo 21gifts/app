@@ -19435,6 +19435,8 @@ test.describe('profile funding states', () => {
       /* hang */
     });
     await page.goto('/grants');
+    // The public places panel loads on its own; let it settle so only the queue says Loading….
+    await expect(page.locator('[data-grant-places="ready"]')).toBeVisible();
     await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
     await shotScreen(page, 'state-grants-applications-loading');
   });
@@ -19517,6 +19519,8 @@ test.describe('profile funding states', () => {
     await seedFundingProfile(page);
     await stubGrantGoal(page, 'loading');
     await page.goto('/grants/goals');
+    // The public places panel loads on its own; let it settle so only the goal says Loading….
+    await expect(page.locator('[data-grant-places="ready"]')).toBeVisible();
     await expect(page.getByText('Loading…')).toBeVisible();
     await shotScreen(page, 'state-grants-goals-loading');
   });
