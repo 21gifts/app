@@ -116,11 +116,14 @@ function placeStamp(place: ForumPlacePin | null): string {
     return '';
   }
   const address = place.address;
-  const addressPart =
+  return JSON.stringify([
+    place.lat,
+    place.lng,
+    place.label ?? null,
     address === undefined || address === null
-      ? ''
-      : `${address.street}|${address.houseNumber}|${address.postalCode}|${address.city}|${address.country}`;
-  return `${place.lat},${place.lng},${place.label ?? ''},${addressPart}`;
+      ? null
+      : [address.street, address.houseNumber, address.postalCode, address.city, address.country],
+  ]);
 }
 
 function placesEqual(left: ForumPlacePin | null, right: ForumPlacePin | null): boolean {

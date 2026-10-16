@@ -2294,6 +2294,11 @@
     "es": "Una sesión de moderador. Añadir un lugar en la nota Cafe Luna está abierto con un mapa. Un clic ha puesto un pin y Nombre de la tienda sigue vacío. El aviso Introduce el nombre de la tienda. es visible. Usar este lugar está visible y desactivado.",
     "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng lugar sa tala ng Cafe Luna na may mapa. May klik na naglagay ng tuldok at walang laman pa ang Pangalan ng shop. Nakikita ang palatandaan Ilagay ang pangalan ng shop. Nakikita at naka-disable ang Gamitin ang lugar na ito."
   },
+  "/shops:staff-place-hint": {
+    "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Notiz Cafe Luna ist geöffnet, mit einer Karte. Ein Klick hat eine Stecknadel gesetzt und Shopname ist Happyland, aber die Adresse ist noch leer. Der Hinweis Geben Sie die vollständige Adresse ein: Strasse, Hausnummer, Postleitzahl, Ort und Land. ist sichtbar. Diesen Ort verwenden ist sichtbar und deaktiviert.",
+    "es": "Una sesión de moderador. Añadir un lugar en la nota Cafe Luna está abierto con un mapa. Un clic ha puesto un pin y Nombre de la tienda es Happyland, pero la dirección sigue vacía. El aviso Introduce la dirección completa: calle, número, código postal, ciudad y país. es visible. Usar este lugar está visible y desactivado.",
+    "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng lugar sa tala ng Cafe Luna na may mapa. May tuldok mula sa isang klik at ang Pangalan ng shop ay Happyland, pero walang laman pa ang address. Nakikita ang palatandaan Ilagay ang buong address: kalye, numero ng bahay, postal code, lungsod at bansa. Nakikita at naka-disable ang Gamitin ang lugar na ito."
+  },
   "/welcome:ask-credit-error-request-daily": {
     "de": "Kredit, Schritt 9 von 9, mit Täglich gedrückt, nachdem Senden fehlschlägt. Derselbe Fehler bleibt auf der Kreditvorschau. Täglich und Kredit bleiben gedrückt. Der Zähler zeigt 9 von 9.",
     "es": "Crédito, paso 9 de 9, con Cada día pulsado, después de que Publicar falle. El mismo error permanece en la vista previa del crédito. Cada día y Crédito siguen pulsados. El contador muestra 9 de 9.",

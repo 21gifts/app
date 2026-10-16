@@ -1220,6 +1220,62 @@ describe('ShopNoteEditControl', () => {
     vi.unstubAllGlobals();
   });
 
+  it('saves a pin that differs from the stored place only by a pipe split in street and house number', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const stored = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: 'Happyland',
+      address: {
+        street: 'A',
+        houseNumber: '1|8000',
+        postalCode: '8000',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    const pin = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: 'Happyland',
+      address: {
+        street: 'A|1',
+        houseNumber: '8000',
+        postalCode: '8000',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    vi.mocked(setMessagePlace).mockResolvedValue({ ...shopMessage, place: pin });
+    const onUpdated = vi.fn();
+    stubShopMaps();
+    renderEdit(
+      <ShopNoteEditControl message={{ ...shopMessage, place: stored }} onUpdated={onUpdated} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await screen.findByLabelText('Shop name');
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: 'Happyland' } });
+    fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'A|1' } });
+    fireEvent.change(screen.getByLabelText('House number'), { target: { value: '8000' } });
+    fireEvent.change(screen.getByLabelText('Postal code'), { target: { value: '8000' } });
+    fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Zürich' } });
+    fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'CH' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessagePlace).toHaveBeenCalledWith('token', 'shop1', pin);
+    });
+    delete (window as { google?: unknown }).google;
+    vi.unstubAllGlobals();
+  });
+
   it('saves a pin when the stored place has no name or address', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -1259,18 +1315,71 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(setMessagePlace).toHaveBeenCalledWith(
-        'token',
-        'shop1',
-        expect.objectContaining({
-          lat: 47.3769,
-          lng: 8.5417,
-          label: 'Happyland',
-        }),
-      );
+      expect(setMessagePlace).toHaveBeenCalledWith('token', 'shop1', pin);
     });
-    expect(onUpdated).toHaveBeenCalled();
+    expect(onUpdated).toHaveBeenCalledWith(expect.objectContaining({ place: pin }));
     delete (window as { google?: unknown }).google;
     vi.unstubAllGlobals();
+  });
+
+  it('keeps the panel open when the place step fails after a text save', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const textResult = { ...shopMessage, text: 'Cafe Sol\n\n#21GiftsShop' };
+    vi.mocked(setMessageShopText).mockResolvedValue(textResult);
+    vi.mocked(setMessagePlace).mockRejectedValue(new Error('no'));
+    const onUpdated = vi.fn();
+    const listeners = stubShopMaps();
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={onUpdated} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+    fillShopAddressFields('Happyland');
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
+    expect(onUpdated).toHaveBeenCalledTimes(1);
+    expect(onUpdated).toHaveBeenCalledWith(textResult);
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeTruthy();
+    delete (window as { google?: unknown }).google;
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps the panel open when the account step fails after a text save', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const textResult = { ...shopMessage, text: 'Cafe Sol\n\n#21GiftsShop' };
+    vi.mocked(setMessageShopText).mockResolvedValue(textResult);
+    vi.mocked(setMessageShopAccount).mockRejectedValue(new Error('no'));
+    const onUpdated = vi.fn();
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={onUpdated} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'luna' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
+    expect(onUpdated).toHaveBeenCalledTimes(1);
+    expect(onUpdated).toHaveBeenCalledWith(textResult);
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeTruthy();
   });
 });

@@ -2205,6 +2205,12 @@ A moderator session. **Add a place** on the Cafe Luna note is open with a map. A
 
 ![21.gifts shops staff place unlabeled](images/shops-staff-place-unlabeled.png)
 
+### Variant: staff-place-hint
+
+A moderator session. **Add a place** on the Cafe Luna note is open with a map. A click has set a pin and **Shop name** is **Happyland**, but the address is still empty. The hint **Enter the full address:** is visible. **Use this place** is visible and disabled.
+
+![21.gifts shops staff place hint](images/shops-staff-place-hint.png)
+
 ### Variant: staff-place-set-coords
 
 A moderator session. The Cafe Luna note has a saved pin with no name. The card shows the coordinate link **14.50000, 120.90000** and footer **Edit place** and **Add an account**. The map panel is closed. The account panel is closed.
