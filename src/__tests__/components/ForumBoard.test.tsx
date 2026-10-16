@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { useState, type ReactElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
-import { FOLD_MS, MOTION_SETTLE_EVENT, SWAP_FADE_MS } from '@/components/Motion';
+import { MOTION_FOLD_MS, MOTION_SETTLE_EVENT, MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import { SCROLL_FOLLOW_ATTR } from '@/lib/reveal-in-scrollport';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -8213,6 +8213,124 @@ describe('reply form size', () => {
     globalThis.ResizeObserver = previous;
   });
 
+  it('starts the move of a list that arrives after the fold has settled from where the fold started', () => {
+    class FakeResizeObserver {
+      observe(): void {}
+
+      disconnect(): void {}
+
+      unobserve(): void {}
+    }
+    const previous = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = FakeResizeObserver as unknown as typeof ResizeObserver;
+    const board = (
+      expandedId: string | null,
+      replies: ForumMessage[] | null,
+      repliesLoading: boolean,
+    ) => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={expandedId}
+          replies={replies}
+          repliesLoading={repliesLoading}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const settleFold = (): void => {
+      const fold = screen
+        .getByLabelText('Your reaction')
+        .closest('[data-collapse]') as HTMLElement;
+      act(() => {
+        fold.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
+      });
+    };
+    const view = renderWithLocale(board(null, null, false));
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    port.scrollTop = 30;
+    port.dispatchEvent(new Event('scroll'));
+    // The card opens while its replies load; the fold settles first (jsdom: each reveal adds the
+    // 12px margin to where it starts).
+    view.rerender(board('m1', null, true));
+    settleFold();
+    expect(port.scrollTop).toBe(42);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+    port.dispatchEvent(new Event('scroll'));
+    // The list arrives: placed from 30 again, not from the 42 the first move ended on.
+    view.rerender(board('m1', [], false));
+    expect(port.scrollTop).toBe(42);
+
+    // When the reader scrolls before the list arrives, the list moves the page from there.
+    view.rerender(board(null, null, false));
+    port.scrollTop = 30;
+    port.dispatchEvent(new Event('scroll'));
+    view.rerender(board('m1', null, true));
+    settleFold();
+    expect(port.scrollTop).toBe(42);
+    port.scrollTop = 100;
+    port.dispatchEvent(new Event('scroll'));
+    view.rerender(board('m1', [], false));
+    expect(port.scrollTop).toBe(112);
+    globalThis.ResizeObserver = previous;
+  });
+
+  it('ends a follow when the fold settles in a browser without ResizeObserver', () => {
+    const previous = globalThis.ResizeObserver;
+    Reflect.deleteProperty(globalThis, 'ResizeObserver');
+    const board = (expandedId: string | null) => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId={expandedId}
+          replies={[]}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const view = renderWithLocale(board(null));
+    const port = document.querySelector('[data-scrollport]') as HTMLElement;
+    port.scrollTop = 30;
+    port.dispatchEvent(new Event('scroll'));
+    view.rerender(board('m1'));
+    expect(port.scrollTop).toBe(42);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(true);
+    const fold = screen.getByLabelText('Your reaction').closest('[data-collapse]') as HTMLElement;
+    let scrolls = 0;
+    const onScroll = (): void => {
+      scrolls += 1;
+    };
+    port.addEventListener('scroll', onScroll);
+    port.scrollTop = 200;
+    act(() => {
+      fold.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
+    });
+    port.removeEventListener('scroll', onScroll);
+    // Placed by the final layout from where the page rested, the mark gone, one scroll announced.
+    expect(port.scrollTop).toBe(42);
+    expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
+    expect(scrolls).toBe(1);
+    globalThis.ResizeObserver = previous;
+  });
+
   it('ignores a settle when no reaction form or sheet is open', () => {
     class FakeResizeObserver {
       observe(): void {}
@@ -8312,7 +8430,7 @@ describe('reply form size', () => {
     resize();
     expect(port.scrollTop).toBe(12);
     act(() => {
-      vi.advanceTimersByTime(FOLD_MS);
+      vi.advanceTimersByTime(MOTION_FOLD_MS);
     });
     // Open and at rest: a change elsewhere in the fold does not move the page.
     port.scrollTop = 0;
@@ -8363,7 +8481,7 @@ describe('reply form size', () => {
     // Closed card: nothing left to reveal.
     view.rerender(board(null));
     act(() => {
-      vi.advanceTimersByTime(FOLD_MS);
+      vi.advanceTimersByTime(MOTION_FOLD_MS);
     });
     port.scrollTop = 0;
     resize();
@@ -8573,12 +8691,12 @@ describe('reply form size', () => {
     expect(port.hasAttribute(SCROLL_FOLLOW_ATTR)).toBe(false);
     expect(scrolls).toHaveBeenCalledTimes(1);
     act(() => {
-      vi.advanceTimersByTime(FOLD_MS);
+      vi.advanceTimersByTime(MOTION_FOLD_MS);
     });
     // Closed once open and at rest: the folding form stays mounted, inert, and is not revealed.
     view.rerender(board('m1'));
     act(() => {
-      vi.advanceTimersByTime(FOLD_MS);
+      vi.advanceTimersByTime(MOTION_FOLD_MS);
     });
     port.scrollTop = 0;
     port.dispatchEvent(new Event('scroll'));
@@ -8644,7 +8762,7 @@ describe('reply form size', () => {
     // The reply form fades out first; the pay page mounts after the swap fade.
     expect(document.querySelector('[data-reply-pay-page]')).toBeNull();
     act(() => {
-      vi.advanceTimersByTime(SWAP_FADE_MS);
+      vi.advanceTimersByTime(MOTION_SWAP_FADE_MS);
     });
     expect(document.querySelector('[data-reply-pay-page]')).not.toBeNull();
     // The box glides to the pay page's height, and the observer of the fold hears it.

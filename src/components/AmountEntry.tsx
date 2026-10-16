@@ -4,7 +4,7 @@ import { Delete } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Collapse } from '@/components/Motion';
+import { Collapse } from '@/components/Collapse';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, SegmentedControl } from '@/components/ui';
 import { useActiveSession } from '@/hooks/useActiveSession';

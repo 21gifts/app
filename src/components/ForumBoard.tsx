@@ -1,5 +1,6 @@
 'use client';
 
+import { MOTION_SETTLE_EVENT } from '@/lib/motion';
 import { revealInScrollport, SCROLL_FOLLOW_ATTR } from '@/lib/reveal-in-scrollport';
 
 import {
@@ -45,7 +46,8 @@ import {
 } from '@/components/ForumAskWizard';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import type { LoanPayTarget } from '@/components/LoanPayNotice';
-import { Collapse, MOTION_SETTLE_EVENT, Swap } from '@/components/Motion';
+import { Collapse } from '@/components/Collapse';
+import { Swap } from '@/components/Swap';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
 import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
@@ -916,6 +918,9 @@ export function ForumBoard({
   const restTop = useRef(0);
   // The reply count the reveal last saw, to tell when a list has just arrived.
   const repliesShown = useRef(shownReplies);
+  // A follow that ended before the open card's reply list arrived: where it started, and where it
+  // placed the page by the layout of that moment (with **Loading reactions…** still above the form).
+  const restBeforeList = useRef<{ from: number; placed: number } | null>(null);
   useEffect(() => {
     if (scroller === null) {
       return;
@@ -976,10 +981,24 @@ export function ForumBoard({
     // place too. Any other glide of a box further out than the target's own does not.
     let listArrived = shownReplies !== repliesShown.current;
     repliesShown.current = shownReplies;
+    // The list of the open card is still on its way.
+    const listPending = shownReplies === -1 && repliesLoading;
     const target = liveTarget();
     const wasFollowing = scroller !== null && scroller.hasAttribute(SCROLL_FOLLOW_ATTR);
     if (scroller !== null && !wasFollowing) {
       restTop.current = scroller.scrollTop;
+      // The fold ended before the list arrived, and the reader has not scrolled since: the list
+      // moving the form is part of the same move, so it starts from where the first one started.
+      // The page then rests by the final layout whichever came first, the list or the end of the
+      // fold.
+      const before = restBeforeList.current;
+      if (listArrived && before !== null && scroller.scrollTop === before.placed) {
+        restTop.current = before.from;
+        scroller.scrollTop = before.from;
+      }
+    }
+    if (!listPending) {
+      restBeforeList.current = null;
     }
     scroller?.toggleAttribute(
       SCROLL_FOLLOW_ATTR,
@@ -989,30 +1008,9 @@ export function ForumBoard({
     if (wasFollowing && !scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
       scroller.dispatchEvent(new Event('scroll'));
     }
-    if (scroller === null || typeof ResizeObserver === 'undefined') {
+    if (scroller === null) {
       return;
     }
-    const form = replyFormElement(replyComposerRef.current);
-    const sheet = paySheetElement(rootRef.current);
-    const observer = new ResizeObserver(follow);
-    if (sheet !== null) {
-      observer.observe(sheet);
-    }
-    if (form !== null) {
-      observer.observe(form);
-    }
-    // The fold around the sheet or the form eases open, and the box around them glides when the
-    // reply form swaps for the pay page; follow those moves, so the reveal tracks the move instead
-    // of its start. Other changes inside the fold (a reply above opening its own controls) do not
-    // move the page.
-    const foldObserver = new ResizeObserver(() => {
-      const moving = liveTarget();
-      const outerGlides = listArrived || scroller.hasAttribute(SCROLL_FOLLOW_ATTR);
-      if (moving !== null && movingIntoPlace(moving, null, outerGlides)) {
-        scroller.toggleAttribute(SCROLL_FOLLOW_ATTR, true);
-        follow();
-      }
-    });
     // When a move around the target ends, place the page once more from where it last rested, by
     // the final layout. The frames in between (and anything that scrolled during them) do not
     // decide where the page comes to rest. Once nothing around the target moves any more, the
@@ -1040,10 +1038,41 @@ export function ForumBoard({
       }
       if (wasFollowing && !scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
         listArrived = false;
+        restBeforeList.current = listPending
+          ? { from: restTop.current, placed: scroller.scrollTop }
+          : null;
         scroller.dispatchEvent(new Event('scroll'));
       }
     };
     root.addEventListener(MOTION_SETTLE_EVENT, onSettle);
+    // A browser without `ResizeObserver` does not follow the steps, but the end of a move still
+    // places the page and clears the mark.
+    if (typeof ResizeObserver === 'undefined') {
+      return () => {
+        root.removeEventListener(MOTION_SETTLE_EVENT, onSettle);
+      };
+    }
+    const form = replyFormElement(replyComposerRef.current);
+    const sheet = paySheetElement(rootRef.current);
+    const observer = new ResizeObserver(follow);
+    if (sheet !== null) {
+      observer.observe(sheet);
+    }
+    if (form !== null) {
+      observer.observe(form);
+    }
+    // The fold around the sheet or the form eases open, and the box around them glides when the
+    // reply form swaps for the pay page; follow those moves, so the reveal tracks the move instead
+    // of its start. Other changes inside the fold (a reply above opening its own controls) do not
+    // move the page.
+    const foldObserver = new ResizeObserver(() => {
+      const moving = liveTarget();
+      const outerGlides = listArrived || scroller.hasAttribute(SCROLL_FOLLOW_ATTR);
+      if (moving !== null && movingIntoPlace(moving, null, outerGlides)) {
+        scroller.toggleAttribute(SCROLL_FOLLOW_ATTR, true);
+        follow();
+      }
+    });
     const folds = new Set([sheet, form].map((el) => el?.closest('[data-collapse]') ?? null));
     for (const fold of folds) {
       if (fold !== null) {

@@ -319,7 +319,7 @@ Do not add drop shadows on marketing. Do not use colored shadows.
 }
 ```
 
-This global `*` hammer is WCAG 2.3.3-compliant and **does freeze** `Loader2` and the 1200ms copy-check flash (they become static). That is acceptable. `Collapse`, `AutoHeight` and `Swap` (`src/components/Motion.tsx`) also read `prefers-reduced-motion` where they wait on a timer, so with reduced motion a sheet opens and unmounts at once, a swap shows the new view at once, and nothing clips while a height changes. The forum reveals a focused field by writing the one scrollport's `scrollTop` (`revealInScrollport`), not `scrollIntoView`, and that does **not** depend on this CSS. Do not introduce `behavior: 'smooth'` without a reduced-motion guard.
+This global `*` hammer is WCAG 2.3.3-compliant and **does freeze** `Loader2` and the 1200ms copy-check flash (they become static). That is acceptable. `Collapse`, `AutoHeight` and `Swap` (`src/components/Collapse.tsx`, `AutoHeight.tsx`, `Swap.tsx`, through `prefersReducedMotion` in `src/lib/motion.ts`) also read `prefers-reduced-motion` where they wait on a timer, so with reduced motion a sheet opens and unmounts at once, a swap shows the new view at once, and nothing clips while a height changes. The forum reveals a focused field by writing the one scrollport's `scrollTop` (`revealInScrollport`), not `scrollIntoView`, and that does **not** depend on this CSS. Do not introduce `behavior: 'smooth'` without a reduced-motion guard.
 
 **Hit targets.** WCAG 2.2 AA 2.5.8 is **24×24px**. 44×44 is 2.5.5 AAA.
 

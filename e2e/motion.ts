@@ -1,8 +1,8 @@
 import { expect, type Page } from '@playwright/test';
 
 /**
- * Boxes of `src/components/Motion.tsx` that are still moving: a fold that is opening or closing,
- * a view that is fading out before a swap, and a height that is gliding.
+ * Boxes of `Collapse`, `Swap` and `AutoHeight` (`src/components/`) that are still moving: a fold
+ * that is opening or closing, a view that is fading out before a swap, and a height that is gliding.
  */
 const MOVING =
   '[data-collapse="opening"], [data-collapse="closed"], [data-swap][inert], [data-auto-height][data-gliding]';

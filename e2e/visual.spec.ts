@@ -1260,6 +1260,8 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('Enter a whole number.')).toBeVisible();
     await shotScreen(page, 'state-pl-amount-invalid');
     await page.getByLabel('Amount').fill('21');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByLabel('Amount')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
@@ -1305,6 +1307,8 @@ test.describe('screen baselines', () => {
     await page.goto(`/pl?lightning=${lnurl}&fail=1`);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
     await page.getByLabel('Amount').fill('21');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('Could not create the invoice.')).toBeVisible();
     await expect(page.getByText('$0.02')).toBeVisible();
@@ -3186,6 +3190,8 @@ test.describe('screen baselines', () => {
     await openWalletSend(page, '$0.00');
     const send = page.getByRole('region', { name: 'Send Bitcoin' });
     await send.getByLabel('Amount').fill('2100');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await send.getByRole('button', { name: 'Continue' }).click();
     await expect(send.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await expect(send.getByLabel('Amount')).toBeDisabled();
@@ -3646,6 +3652,8 @@ test.describe('screen baselines', () => {
     await openWelcomeSend(page, '$0.00');
     const send = page.getByRole('region', { name: 'Send Bitcoin' });
     await send.getByLabel('Amount').fill('2100');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await send.getByRole('button', { name: 'Continue' }).click();
     await expect(send.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await expect(send.getByLabel('Amount')).toBeDisabled();
@@ -6201,7 +6209,9 @@ test.describe('onboarding screens', () => {
     await page.goto('/welcome');
     await page.getByText(REACTION_NOTE_TEXT).click();
     const field = page.getByLabel('Your reaction');
-    await expect(field).toBeVisible();
+    await expect(field).toBeEnabled();
+    // The reply block eases open first: type once the field has come to rest.
+    await motionSettled(page);
     await field.fill('@');
     const list = page.getByRole('listbox', { name: 'People' });
     await expect(list).toBeVisible();
@@ -6227,7 +6237,9 @@ test.describe('onboarding screens', () => {
     await page.goto('/welcome');
     await page.getByText(REACTION_NOTE_TEXT).click();
     const field = page.getByLabel('Your reaction');
-    await expect(field).toBeVisible();
+    await expect(field).toBeEnabled();
+    // The reply block eases open first: type once the field has come to rest.
+    await motionSettled(page);
     await chooseMentionAda(page, field);
     await shotScreen(page, 'state-welcome-mention-inserted-reply');
   });
@@ -7272,10 +7284,14 @@ test.describe('onboarding screens', () => {
     await page.goto(path);
     await page.getByText(REACTION_NOTE_TEXT).click();
     const field = page.getByLabel('Your reaction');
-    await expect(field).toBeVisible();
+    await expect(field).toBeEnabled();
+    // The reply block eases open first: type once the form has come to rest.
+    await motionSettled(page);
     await page.getByLabel('Amount').fill('21');
     await field.fill(REACTION_ANSWER);
     await expect(page.getByText('$0.02')).toBeVisible();
+    // The line under the amount eases in: act once it has come to rest.
+    await motionSettled(page);
   }
 
   test('state /welcome reaction-draft', async ({ page }) => {
@@ -11269,6 +11285,8 @@ test.describe('onboarding screens', () => {
     await page.getByLabel('Amount to lend').fill('210');
     await page.getByLabel('Your reaction').fill('Count me in!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
     const sheet = page.locator('[data-pay-sheet]');
     await expect(sheet.getByText('You lend ₿210 · $0.21')).toBeVisible();
@@ -11290,9 +11308,14 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Fully funded', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
     await page.getByRole('button', { name: 'React', exact: true }).click();
+    // The reply block eases open first: type once the form has come to rest.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     await page.getByLabel('Amount', { exact: true }).fill('210');
     await page.getByLabel('Your reaction').fill('Thank you, Carol!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
     const sheet = page.locator('[data-pay-sheet]');
     await expect(sheet.getByText('Pay ₿210 · $0.21')).toBeVisible();
@@ -13166,6 +13189,8 @@ test.describe('onboarding screens', () => {
     await motionSettled(page);
     await page.getByLabel('Your reaction').fill('Hello');
     await page.getByLabel('Amount').fill('1');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Your wallet is not set up' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
@@ -13275,6 +13300,8 @@ test.describe('onboarding screens', () => {
     await motionSettled(page);
     await page.getByLabel('Your reaction').fill('Hello');
     await page.getByLabel('Amount').fill('1');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Add your 21.gifts name' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
@@ -16119,9 +16146,13 @@ test.describe('onboarding screens', () => {
     await page.goto(`/messages/${id}?visual=wallet-pay-confirm`);
     await page.getByRole('button', { name: 'Lend' }).click();
     await expect(page.getByLabel('Amount to lend')).toBeFocused();
+    // The reply block eases open first: type once the form has come to rest.
+    await motionSettled(page);
     await page.getByLabel('Amount to lend').fill('210');
     await page.getByLabel('Your reaction').fill('Count me in!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
     const sheet = page.locator('[data-pay-sheet]');
     await expect(sheet.getByText('You lend ₿210 · $0.21')).toBeVisible();
@@ -16144,6 +16175,8 @@ test.describe('onboarding screens', () => {
     await page.getByLabel('Amount', { exact: true }).fill('210');
     await page.getByLabel('Your reaction').fill('Thank you, Maria!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
     const sheet = page.locator('[data-pay-sheet]');
     await expect(sheet.getByText('Pay ₿210 · $0.21')).toBeVisible();
@@ -16388,6 +16421,10 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Edit shop note' }).click();
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     await expect(page.getByText('No edits yet')).toBeVisible();
+    // The line under the reaction amount eases in once the rate has answered; a scroll to the
+    // end of the page must not run before it has come to rest.
+    await expect(page.getByText('No exchange rate yet')).toBeVisible();
+    await motionSettled(page);
   }
 
   test('state /messages/[id] shop-edit-photo-busy', async ({ page }) => {
@@ -20375,6 +20412,9 @@ test.describe('welcome forum variants', () => {
       await expect(
         page.getByRole('button', { name: 'Delete reaction', exact: true }),
       ).toBeVisible();
+      // The replies block eases open first: act once it has come to rest.
+      await expect(page.getByLabel('Your reaction')).toBeEnabled();
+      await motionSettled(page);
       if (state !== 'reply-moderation') {
         await page.getByRole('button', { name: 'Delete reaction', exact: true }).click();
         await expect(
@@ -20898,6 +20938,8 @@ test.describe('welcome forum variants', () => {
     await page.getByLabel('Amount to lend').fill('210');
     await page.getByLabel('Your reaction').fill('Count me in!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
     const payPage = page.locator('[data-reply-pay-page]');
     await expect(payPage.getByText('You lend ₿210 · $0.21')).toBeVisible();
@@ -20918,9 +20960,14 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
     await page.getByRole('button', { name: 'React', exact: true }).click();
+    // The reply block eases open first: type once the form has come to rest.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     await page.getByLabel('Amount', { exact: true }).fill('210');
     await page.getByLabel('Your reaction').fill('Thank you, Maria!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
     const payPage = page.locator('[data-reply-pay-page]');
     await expect(payPage.getByText('Pay ₿210 · $0.21')).toBeVisible();
@@ -27675,6 +27722,8 @@ test.describe('inbox screens', () => {
     await page.goto('/messages?c=conv-21');
     await expect(page.getByText('Hello team')).toBeVisible();
     await page.getByLabel('Amount').fill('21');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(page.getByText(PAY_UNAVAILABLE)).toBeVisible();
     await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
@@ -27745,6 +27794,8 @@ test.describe('inbox screens', () => {
     await page.goto(`/messages?c=conv-21&visual=${visual}`);
     await expect(page.getByText('Hello team')).toBeVisible();
     await page.getByLabel('Amount').fill('21');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(page.getByRole('paragraph').filter({ hasText: /^Pay ₿21\b/ })).toBeVisible();
   }
@@ -27847,6 +27898,8 @@ test.describe('inbox screens', () => {
     await page.goto('/messages?c=conv-21');
     await expect(page.getByText('Hello team')).toBeVisible();
     await page.getByLabel('Amount').fill('21');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(page.getByRole('link', { name: 'Set up your wallet first.' })).toHaveAttribute(
       'href',
@@ -31249,6 +31302,8 @@ test.describe('habit tracker baselines', () => {
     await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('0');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(
       page.getByRole('alert').filter({

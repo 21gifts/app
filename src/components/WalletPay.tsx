@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Swap } from '@/components/Motion';
+import { Swap } from '@/components/Swap';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { WalletOwnAddress } from '@/components/WalletOwnAddress';

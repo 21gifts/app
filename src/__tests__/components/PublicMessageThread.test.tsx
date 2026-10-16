@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMessageThread } from '@/components/PublicMessageThread';
-import { FOLD_MS, SWAP_FADE_MS } from '@/components/Motion';
+import { MOTION_FOLD_MS, MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import {
   agreeToRules,
   CannotReceiveError,
@@ -570,7 +570,7 @@ describe('PublicMessageThread', () => {
     });
     // The view swaps in after the old one has faded out.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(SWAP_FADE_MS);
+      await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
     });
     expect(screen.getByText(PAY_UNAVAILABLE)).toBeTruthy();
     await act(async () => {
@@ -578,7 +578,7 @@ describe('PublicMessageThread', () => {
     });
     // The closed sheet folds away before it unmounts.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(FOLD_MS);
+      await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
     });
     expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
   });
@@ -693,7 +693,7 @@ describe('PublicMessageThread', () => {
     });
     // The closed sheet folds away before it unmounts.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(FOLD_MS);
+      await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
     });
     expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
   });

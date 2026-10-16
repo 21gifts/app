@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
-import { FOLD_MS, SWAP_FADE_MS } from '@/components/Motion';
+import { MOTION_FOLD_MS, MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import {
   agreeToRules,
   CannotReceiveError,
@@ -1115,7 +1115,7 @@ describe('MemberProfileScreen', () => {
     });
     // The view swaps in after the old one has faded out.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(SWAP_FADE_MS);
+      await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
     });
     expect(within(replyCard).getByText('Pay ₿21')).toBeTruthy();
     await act(async () => {
@@ -1123,7 +1123,7 @@ describe('MemberProfileScreen', () => {
     });
     // The closed sheet folds away before it unmounts.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(FOLD_MS);
+      await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
     });
     expect(within(replyCard).queryByText('Pay ₿21')).toBeNull();
   });

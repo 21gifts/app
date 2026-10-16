@@ -3,7 +3,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
-import { FOLD_MS, SWAP_FADE_MS } from '@/components/Motion';
+import { MOTION_FOLD_MS, MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import { ForumLoader } from '@/components/ForumLoader';
 import { SPOT_REFRESH_MS } from '@/hooks/useSpotRate';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -5236,7 +5236,7 @@ describe('ForumLoader', () => {
     });
     // The view swaps in after the old one has faded out.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(SWAP_FADE_MS);
+      await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
     });
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
     await act(async () => {
@@ -5244,7 +5244,7 @@ describe('ForumLoader', () => {
     });
     // The closed sheet folds away before it unmounts.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(FOLD_MS);
+      await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
     });
     expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
@@ -5323,7 +5323,7 @@ describe('ForumLoader', () => {
     publicFetchMock.mockImplementationOnce(
       () =>
         new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('poll failed')), SWAP_FADE_MS + 1);
+          setTimeout(() => reject(new Error('poll failed')), MOTION_SWAP_FADE_MS + 1);
         }),
     );
     publicFetchMock.mockResolvedValue({ ...PAYABLE_REPLY, sats: 21 });
@@ -5344,7 +5344,7 @@ describe('ForumLoader', () => {
     });
     // The view swaps in after the old one has faded out.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(SWAP_FADE_MS);
+      await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
     });
     expect(screen.getByText('Pay ₿21')).toBeTruthy();
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
@@ -5416,7 +5416,7 @@ describe('ForumLoader', () => {
     });
     // The closed sheet folds away before it unmounts.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(FOLD_MS);
+      await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
     });
     expect(screen.queryByText('Pay ₿21')).toBeNull();
   });
@@ -10271,7 +10271,7 @@ it('keeps a reply pay sheet until receivedSats rises', async () => {
   );
   // The view swaps in after the old one has faded out.
   await act(async () => {
-    await vi.advanceTimersByTimeAsync(SWAP_FADE_MS);
+    await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
   });
   expect(within(replyCard).getByText('Pay ₿21')).toBeTruthy();
   publicFetchMock.mockResolvedValue({ ...payableReply, sats: 5, receivedSats: 21 });
@@ -10280,7 +10280,7 @@ it('keeps a reply pay sheet until receivedSats rises', async () => {
   });
   // The closed sheet folds away before it unmounts.
   await act(async () => {
-    await vi.advanceTimersByTimeAsync(FOLD_MS);
+    await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
   });
   expect(within(replyCard).queryByText('Pay ₿21')).toBeNull();
 });

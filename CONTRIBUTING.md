@@ -276,6 +276,9 @@ app/
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + Send-a-post/Ask-for-money pill + Post messenger + payable-reply pay sheet + expand/replies + copy-link + author profile links
+│   │   ├── Collapse.tsx         # Folds content in and out (height + opacity), inert while folding
+│   │   ├── AutoHeight.tsx       # Glides its height when the content's height changes
+│   │   ├── Swap.tsx             # Fades one view out, then the next in, while the height glides
 │   │   ├── MentionTextarea.tsx  # Forum composer @ suggestions (post, reply, ask text)
 │   │   ├── ForumAskWizard.tsx   # Ask-for-money steps amount → photos → text → preview Post
 │   │   ├── ForumGoalBar.tsx     # Top-level ask progress (Ask ₿ + fiat, orange/green overflow)
@@ -385,6 +388,7 @@ app/
 │   │   ├── trust-chain.ts       # mergeTrustChain + layoutTrustChain (stack, no invented edges)
 │   │   ├── app-height.ts        # --app-height bootstrap IIFE (server-safe; no hooks)
 │   │   ├── scroll-surface.ts    # Which scrollport is active, and clipping of the rest
+│   │   ├── motion.ts            # Shared motion time windows, settle event, and transition-end wait
 │   │   └── push.ts              # Web Push subscribe helpers (VAPID bytes, SW register, enable/disable)
 │   ├── types/
 
@@ -505,6 +509,11 @@ update stuff
   exception is a `style` attribute that sets viewport-measured `top`,
   `bottom`, `left`, and `width` on a `fixed` overlay. Those four numbers
   are the clamped box; `top-full` and `bottom-full` do not compute them.
+  Script that measures an element may also write that measured `height` on
+  it (`element.style`, never a JSX `style` attribute): `fitTextarea`
+  (`src/lib/scroll-surface.ts`) fits a textarea to its text, and
+  `AutoHeight` writes the height its content needs so that it can glide.
+  No class can hold a height that is only known after layout.
 - Utility classes live directly on the JSX elements.
 - Visual language (shells, tokens, type, chrome, control grammar) lives in
   `docs/ui.md`. New or migrated surfaces compose those parts. Raw

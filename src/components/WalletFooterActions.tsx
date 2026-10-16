@@ -5,6 +5,7 @@ import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { AppShellContext, AppShellFooter } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui';
+import { MOTION_EASE_MS } from '@/lib/motion';
 import { SCROLL_FOLLOW_ATTR } from '@/lib/reveal-in-scrollport';
 
 /** Scroll distance that takes the buttons from full to slim (or back), in px. */
@@ -15,9 +16,6 @@ const FULL_NEAR_TOP = 24;
 
 /** Quiet time after the last scroll before an in-between size settles, in ms. */
 const SETTLE_MS = 140;
-
-/** Length of the fold away and back, in ms (`duration-280` below and in the shell footer). */
-const FOLD_MS = 280;
 
 /** Props for {@link WalletFooterActions}. */
 export interface WalletFooterActionsProps {
@@ -174,7 +172,7 @@ export function WalletFooterActions({
       body.dataset['footerFolding'] = '';
       done = window.setTimeout(() => {
         delete body.dataset['footerFolding'];
-      }, FOLD_MS);
+      }, MOTION_EASE_MS);
     }
     return () => {
       if (done !== null) {
