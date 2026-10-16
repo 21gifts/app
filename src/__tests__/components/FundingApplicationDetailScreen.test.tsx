@@ -293,6 +293,21 @@ describe('FundingApplicationDetailScreen', () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  it('clears the places-full copy when another application loads', async () => {
+    admitMock.mockRejectedValue(new Error('All grant places are taken'));
+    const view = renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Yes' }));
+    await screen.findByText('Do these posts, to your knowledge, correspond to the truth?');
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
+    const full =
+      'All places of this round are taken. Nobody else can be admitted until the next round opens.';
+    expect(await screen.findByText(full)).toBeTruthy();
+    view.rerender(<FundingApplicationDetailScreen accountId="acc_other" />);
+    await waitFor(() => {
+      expect(screen.queryByText(full)).toBeNull();
+    });
+  });
+
   it('shows action-failed copy when a decision throws', async () => {
     rejectMock.mockRejectedValue(new Error('boom'));
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);

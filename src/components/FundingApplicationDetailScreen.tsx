@@ -68,6 +68,7 @@ export function FundingApplicationDetailScreen({
     let cancelled = false;
     setDetailError(false);
     setDecideFailed(false);
+    setPlacesFull(false);
     void (async () => {
       try {
         const next = await fetchFundingApplication(session, accountId);
