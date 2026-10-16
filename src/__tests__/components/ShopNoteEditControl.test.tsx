@@ -66,6 +66,42 @@ function renderEdit(ui: ReactElement) {
   );
 }
 
+function stubShopMaps(): Map<string, (event?: unknown) => void> {
+  const listeners = new Map<string, (event?: unknown) => void>();
+  const map = {
+    setCenter: vi.fn(),
+    addListener: (event: string, handler: (event?: unknown) => void) => {
+      listeners.set(event, handler);
+    },
+  };
+  (window as { google?: unknown }).google = {
+    maps: {
+      Map: vi.fn(() => map),
+      Marker: vi.fn(() => ({
+        setPosition: () => undefined,
+        getPosition: () => ({ lat: () => 14.6, lng: () => 120.98 }),
+        addListener: () => undefined,
+      })),
+      event: { trigger: vi.fn() },
+    },
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({ json: () => Promise.resolve({ key: 'k' }) } as Response),
+  );
+  vi.stubGlobal('navigator', { geolocation: undefined });
+  return listeners;
+}
+
+function fillShopAddressFields(name = "Kiki's Bakery"): void {
+  fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: name } });
+  fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
+  fireEvent.change(screen.getByLabelText('House number'), { target: { value: '12' } });
+  fireEvent.change(screen.getByLabelText('Postal code'), { target: { value: '8001' } });
+  fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Zürich' } });
+  fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'CH' } });
+}
+
 vi.mock('@/lib/api', () => ({
   setMessageShopText: vi.fn(),
   setMessagePlace: vi.fn(),
@@ -213,6 +249,104 @@ describe('ShopNoteEditControl', () => {
         after: [],
         actor: { id: 'acc', name: 'Ada', role: 'moderator' },
       },
+      {
+        id: 'e-address',
+        createdAt: '2026-08-25T12:00:00.000Z',
+        field: 'place',
+        before: {
+          lat: 47.3769,
+          lng: 8.5417,
+          label: null,
+          address: {
+            street: 'Bahnhofstrasse',
+            houseNumber: '12',
+            postalCode: '8001',
+            city: 'Zürich',
+            country: 'CH',
+          },
+        },
+        after: { lat: 1, lng: 2, address: { street: 1 } },
+        actor: { id: 'acc', name: 'Ada', role: 'moderator' },
+      },
+      {
+        id: 'e-address-null',
+        createdAt: '2026-08-24T12:00:00.000Z',
+        field: 'place',
+        before: { lat: 1, lng: 2, label: 'Stall', address: null },
+        after: {
+          lat: 3,
+          lng: 4,
+          label: 'Norte',
+          address: {
+            street: 'Main',
+            houseNumber: '1',
+            postalCode: '8000',
+            city: 'Zürich',
+            country: 'CH',
+          },
+        },
+        actor: { id: 'acc', name: 'Ada', role: 'moderator' },
+      },
+      {
+        id: 'e-addr-fields',
+        createdAt: '2026-08-23T12:00:00.000Z',
+        field: 'place',
+        before: {
+          lat: 1,
+          lng: 2,
+          label: 'House',
+          address: {
+            street: 'S',
+            houseNumber: 2,
+            postalCode: '1',
+            city: 'C',
+            country: 'CH',
+          },
+        },
+        after: {
+          lat: 1,
+          lng: 2,
+          label: 'Postal',
+          address: {
+            street: 'S',
+            houseNumber: '2',
+            postalCode: 1,
+            city: 'C',
+            country: 'CH',
+          },
+        },
+        actor: { id: 'acc', name: 'Ada', role: 'moderator' },
+      },
+      {
+        id: 'e-addr-city',
+        createdAt: '2026-08-22T12:00:00.000Z',
+        field: 'place',
+        before: {
+          lat: 1,
+          lng: 2,
+          label: 'City',
+          address: {
+            street: 'S',
+            houseNumber: '2',
+            postalCode: '1',
+            city: 1,
+            country: 'CH',
+          },
+        },
+        after: {
+          lat: 1,
+          lng: 2,
+          label: 'Country',
+          address: {
+            street: 'S',
+            houseNumber: '2',
+            postalCode: '1',
+            city: 'C',
+            country: 1,
+          },
+        },
+        actor: { id: 'acc', name: 'Ada', role: 'moderator' },
+      },
     ]);
     vi.mocked(setMessageShopText).mockResolvedValue({
       ...shopMessage,
@@ -236,6 +370,12 @@ describe('ShopNoteEditControl', () => {
     expect(screen.getByText('None → Stall')).toBeTruthy();
     expect(screen.getByText('None → @luna')).toBeTruthy();
     expect(screen.getByText('None → None')).toBeTruthy();
+    expect(
+      screen.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland → 1.00000, 2.00000'),
+    ).toBeTruthy();
+    expect(screen.getByText('Stall → Norte · Main 1, 8000 Zürich, Switzerland')).toBeTruthy();
+    expect(screen.getByText('House → Postal')).toBeTruthy();
+    expect(screen.getByText('City → Country')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     const box = screen.getByRole('textbox', { name: 'Shop text' });
@@ -318,6 +458,25 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect((await screen.findByRole('alert')).textContent).toContain(localized);
+  });
+
+  it('shows the generic save copy when save rejects a non-Error value', async () => {
+    signIn('founder');
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockRejectedValue('offline');
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'Could not save this shop note',
+    );
   });
 
   it('saves a place, a user, and replaced stills, and ignores a bad file', async () => {
@@ -1015,6 +1174,103 @@ describe('ShopNoteEditControl', () => {
     expect((await screen.findByRole('img')).getAttribute('src')).toBe('blob:copy-1');
     expect(revoke).toHaveBeenCalledWith('blob:copy-0');
     expect(revoke).not.toHaveBeenCalledWith('blob:kept');
+    vi.unstubAllGlobals();
+  });
+
+  it('opens without a pin and saves a complete Happyland place', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const pin = {
+      lat: 14.6,
+      lng: 120.98,
+      label: 'Happyland',
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    vi.mocked(setMessagePlace).mockResolvedValue({ ...shopMessage, place: pin });
+    const onUpdated = vi.fn();
+    const listeners = stubShopMaps();
+    const withoutPlace: ForumMessage = { ...shopMessage };
+    delete withoutPlace.place;
+    renderEdit(<ShopNoteEditControl message={withoutPlace} onUpdated={onUpdated} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+    fillShopAddressFields('Happyland');
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessagePlace).toHaveBeenCalledWith('token', 'shop1', pin);
+    });
+    expect(onUpdated).toHaveBeenCalledWith(expect.objectContaining({ place: pin }));
+    delete (window as { google?: unknown }).google;
+    vi.unstubAllGlobals();
+  });
+
+  it('saves a pin when the stored place has no name or address', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const pin = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: 'Happyland',
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    vi.mocked(setMessagePlace).mockResolvedValue({ ...shopMessage, place: pin });
+    const onUpdated = vi.fn();
+    stubShopMaps();
+    renderEdit(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          place: { lat: 47.3769, lng: 8.5417, label: null, address: null },
+        }}
+        onUpdated={onUpdated}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await screen.findByLabelText('Shop name');
+    fillShopAddressFields('Happyland');
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessagePlace).toHaveBeenCalledWith(
+        'token',
+        'shop1',
+        expect.objectContaining({
+          lat: 47.3769,
+          lng: 8.5417,
+          label: 'Happyland',
+        }),
+      );
+    });
+    expect(onUpdated).toHaveBeenCalled();
+    delete (window as { google?: unknown }).google;
     vi.unstubAllGlobals();
   });
 });

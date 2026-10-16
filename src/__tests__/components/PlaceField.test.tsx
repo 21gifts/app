@@ -1294,4 +1294,50 @@ describe('PlaceField', () => {
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toContain(localized);
   });
+
+  it('maps a non-Error shop commit rejection to the generic save copy', async () => {
+    const onCommit = vi.fn().mockRejectedValue('boom');
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={onCommit}
+        shopDetails
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
+    fillShopAddress();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain(
+      'The place could not be saved. Please try again.',
+    );
+  });
+
+  it('shows a mapped shop 400 on the unavailable panel when removing a pin fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    const onCommit = vi.fn().mockRejectedValue(new Error('Shop name is required'));
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 1, lng: 2, label: 'Stall' }}
+        disabled={false}
+        showPreview={false}
+        ariaLabel="Edit place"
+        onChange={() => undefined}
+        onCommit={onCommit}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit place' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain('Enter the shop name.');
+    expect(screen.getByRole('button', { name: 'Remove place' })).toBeTruthy();
+    expect(screen.getByText('The map is not available.')).toBeTruthy();
+  });
 });

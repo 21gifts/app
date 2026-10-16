@@ -17,13 +17,7 @@ import {
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
-import {
-  ensureShopHashtag,
-  formatPlacePinText,
-  isShopNote,
-  shopApiProblem,
-  stripShopHashtag,
-} from '@/lib/forum-shop';
+import { formatPlacePinText, isShopNote, shopApiProblem, stripShopHashtag } from '@/lib/forum-shop';
 import type { MessageKey } from '@/lib/messages';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
@@ -389,20 +383,7 @@ export function ShopNoteEditControl({
     setSaveErrorKey(null);
     try {
       const keptPhotos = kept.filter((item) => item.kind === 'photo');
-      const hasMedia =
-        keptPhotos.length > 0 ||
-        photoDrafts.length > 0 ||
-        message.hasVideo ||
-        kept.some((item) => item.kind === 'video');
-      if (draft.trim() === '' && !hasMedia) {
-        setSaveError(true);
-        return;
-      }
       const textChanged = draft !== stripShopHashtag(message.text);
-      if (textChanged && ensureShopHashtag(draft).length > FORUM_MESSAGE_MAX_LENGTH) {
-        setSaveError(true);
-        return;
-      }
       const photosChanged = photoDrafts.length > 0 || keptPhotos.length !== photoBaseline.length;
       if (photosChanged && !photosReady) {
         setSaveError(true);

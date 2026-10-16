@@ -260,6 +260,58 @@ describe('ShopAddWizard', () => {
     expect(screen.getByRole('button', { name: 'Post' })).toHaveProperty('disabled', false);
   });
 
+  it('keeps Next disabled when the description is not longer than the shop name', () => {
+    const longNamePlace: ForumPlacePin = {
+      ...COMPLETE_PLACE,
+      label: "Kiki's Bakery Extra Long Name",
+    };
+    function DraftHost(): ReactElement {
+      const [draft, setDraft] = useState(SHOP_DESCRIPTION);
+      return <ShopAddWizard {...props({ draft, onDraftChange: setDraft, place: longNamePlace })} />;
+    }
+    renderWizard(<DraftHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('The description must be longer than the shop name.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    fireEvent.change(screen.getByLabelText('Shop text'), {
+      target: { value: 'Fresh bread every morning here.' },
+    });
+    expect(screen.queryByText('The description must be longer than the shop name.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+  });
+
+  it('shows coordinates on the summary when the pin has no name or address', () => {
+    function SummaryHost(): ReactElement {
+      const [place, setPlace] = useState<ForumPlacePin | null>(COMPLETE_PLACE);
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => setPlace({ lat: 47.3769, lng: 8.5417, label: null })}
+          >
+            Drop pin name
+          </button>
+          <ShopAddWizard {...props({ place, onPlaceChange: setPlace, draft: SHOP_DESCRIPTION })} />
+        </>
+      );
+    }
+    renderWizard(<SummaryHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText("Kiki's Bakery")).toBeTruthy();
+    expect(screen.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Drop pin name' }));
+    expect(screen.getByText('47.3769, 8.5417')).toBeTruthy();
+    expect(screen.queryByText("Kiki's Bakery")).toBeNull();
+    expect(screen.queryByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Post' })).toHaveProperty('disabled', true);
+  });
+
   it('closes after a successful send and disables controls while posting', () => {
     const place: ForumPlacePin = { lat: 1, lng: 2, label: null };
     renderWizard(<Host initial={props({ place })} />);

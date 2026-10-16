@@ -4616,6 +4616,21 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
   });
 
+  it('shows a post error when posting rejects a non-Error value', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockRejectedValue('offline');
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+  });
+
   it.each([
     ['Shop name is required', 'Enter the shop name.'],
     [

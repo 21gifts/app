@@ -1954,6 +1954,53 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('drops the shop pin when a saved note omits place', async () => {
+    const shopPlace = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    const shopRoot: ForumMessage = {
+      ...root,
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      sats: 0,
+      payable: false,
+      place: shopPlace,
+    };
+    const withoutPlace: ForumMessage = {
+      ...shopRoot,
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+    };
+    delete withoutPlace.place;
+    signIn({ role: 'moderator' });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue(withoutPlace);
+    renderThread({ root: shopRoot });
+    const pinName = "Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland";
+    expect(screen.getByRole('link', { name: pinName })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(screen.getByText('Cafe Sol is open every morning.')).toBeTruthy();
+    });
+    expect(screen.queryByRole('link', { name: pinName })).toBeNull();
+  });
+
   it('drops the public note’s photo address after a shop edit', async () => {
     const shopRoot: ForumMessage = {
       ...root,
