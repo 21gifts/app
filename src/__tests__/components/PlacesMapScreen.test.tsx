@@ -615,14 +615,6 @@ describe('PlacesMapScreen', () => {
     await saveOpened('Cafe Norte is open every morning.');
     expect(await screen.findByRole('link', { name: 'Ada · Norte' })).toBeTruthy();
 
-    vi.mocked(setMessageShopText).mockResolvedValue({
-      ...note,
-      text: 'Cafe West is open every morning.\n\n#21GiftsShop',
-      place: { lat: 5, lng: 6, label: null, address: completeAddress },
-    });
-    await saveOpened('Cafe West is open every morning.');
-    expect(await screen.findByRole('link', { name: 'Ada · 5.00000, 6.00000' })).toBeTruthy();
-
     const withoutPlace: ForumMessage = {
       ...note,
       text: 'Cafe Sur is open every morning.\n\n#21GiftsShop',
@@ -632,12 +624,81 @@ describe('PlacesMapScreen', () => {
     await saveOpened('Cafe Sur is open every morning.');
     await waitFor(() => {
       expect(screen.queryByRole('link', { name: 'Ada · Norte' })).toBeNull();
-      expect(screen.queryByRole('link', { name: 'Ada · 5.00000, 6.00000' })).toBeNull();
     });
     expect(screen.getByRole('link', { name: 'Ada · Other' })).toBeTruthy();
     useAuthStore.setState({ session: null, account: null });
     await waitFor(() => {
       expect(screen.queryAllByRole('button', { name: 'Edit shop note' })).toHaveLength(0);
     });
+  });
+
+  it('shows coordinates when a saved shop pin has no label', async () => {
+    const moderator = {
+      id: 'acc',
+      linkingKey: '02',
+      role: 'moderator',
+      name: 'Ada',
+      location: null,
+      lightningAddress: null,
+      lightningAddressVerified: false,
+      forumLawsDismissed: true,
+      createdAt: 1,
+      rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      setup: null,
+      missing: [],
+    } as Account;
+    const completeAddress = {
+      street: 'Bahnhofstrasse',
+      houseNumber: '12',
+      postalCode: '8001',
+      city: 'Zürich',
+      country: 'CH',
+    };
+    const note: ForumMessage = {
+      id: 'm-pin',
+      name: 'Ada',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 5,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "Kiki's Bakery",
+        address: completeAddress,
+      },
+    };
+    useAuthStore.setState({ session: 'tok', account: moderator });
+    fetchPlacesMock.mockResolvedValue([{ ...ROW, shop: true }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(fetchForumMessage).mockResolvedValue(note);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...note,
+      text: 'Cafe West is open every morning.\n\n#21GiftsShop',
+      place: { lat: 5, lng: 6, label: null, address: completeAddress },
+    });
+    renderWithLocale(<PlacesMapScreen />);
+    expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe West is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(await screen.findByRole('link', { name: 'Ada · 5.00000, 6.00000' })).toBeTruthy();
   });
 });
