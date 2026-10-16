@@ -1182,10 +1182,12 @@ describe('PlaceField', () => {
     const map = document.querySelector('.h-64') as HTMLElement;
     const mapTokens = map.className.split(/\s+/);
     expect(mapTokens).toContain('h-64');
-    expect(mapTokens).toContain('shrink-0');
-    expect(mapTokens).not.toContain('shrink');
+    // The map gives way down to min-h-32 so the address scrollport keeps min-h-24.
+    expect(mapTokens).toContain('shrink');
+    expect(mapTokens).toContain('min-h-32');
     expect(mapTokens).not.toContain('min-h-0');
-    expect(shopName.closest('[data-scrollport]')).not.toBeNull();
+    const port = shopName.closest('[data-scrollport]') as HTMLElement;
+    expect(port.className.split(/\s+/)).toContain('min-h-24');
     expect(
       screen.getByText("A short name, for example “Kiki's Bakery”. Not the address."),
     ).toBeTruthy();
