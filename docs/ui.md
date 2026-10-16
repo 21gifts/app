@@ -1188,13 +1188,13 @@ The shared `MemberProfileScreen` facts add `profile.creditCount` after Shops onl
 
 Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `GrantsScreen`: `FundingStatusCard` with one **h1** **21 gifts grant** (app page ramp, no hairline). A verified account with status none or rejected sees the daily-gift sentence, **About**, and the **Apply for the 21 gifts grant** `ButtonLink` (applications are open). A basis account sees You are not verified yet and no Apply. Pending, trial, and admitted keep their status copy. Under the card, `GrantPlacesPanel` (**Grant places**) shows the round, free places, admissions, whether places are left, and the 20-shop goal for the next round (`GET /funding/places`, public). A secondary **Goals** `ButtonLink` to `/grants/goals` when the account is non-null. Two secondary `size="lg"` `ButtonLink`s, **Daily payment text** (`/grants/payments/comment`) and **Daily payment amounts** (`/grants/payments/amounts`), render only when `canEditDailyPayoutRoster`. Neither link fetches the roster. Plus, for an account at least moderator (`roleAtLeast(role, 'moderator')`), including an initiator and a founder, a secondary **Open application (1)** or **Open applications (N)** `ButtonLink` (`funding.applications.openCount`) to `/grants/applications`. Menu row **Grants** (`nav.grants`, lucide `HandCoins`, `/grants`) is after Profile and before Settings for every signed-in account.
 
-Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications, daily-payments, places-full, places-error.
+Handbook states: not-verified, pending, trial, admitted, funding-program-open, open-applications, daily-payments, places-full, places-error, places-loading.
 
 ### `/grants/goals`
 
 Fill `AppShell`; `ProfileChromeLeft` + `SignedInChrome`. `OnboardingGate screen="profile"` → `Card` `maxWidth="xl"` `surface={false}` → **h1** **Goals**. Goal reached: 10 active shops; the grant program is open again. `GrantPlacesPanel` (**Grant places**) follows: round, free places, admissions, and the 20-shop goal for the next round. A shop is active with at least one transaction on 5 of the last 7 days. A transaction is a till payment the assigned member created at https://21.gifts/pos that UTC day; creating it counts, including later expiry or cancel. The measurement panel reuses the statistics chart shell: how many shops meet the rule, **Shops per UTC day**, `ShopActivityChart` for those 7 UTC days (lighter bar is today, still open), or **Loading…**, or the error sentence plus **Try again**. It calls `GET /funding/goal`, not `GET /shops/activity`. Signed-in members open it from **Goals** on `/grants`. No session renders nothing and does not fetch.
 
-Handbook states: default, loading, error, places-full, places-error.
+Handbook states: default, loading, error, places-full, places-error, places-loading.
 
 ### `/grants/apply`
 

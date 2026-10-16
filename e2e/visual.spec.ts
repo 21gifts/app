@@ -789,7 +789,20 @@ async function scrollAddFormIntoShot(page: Page): Promise<void> {
   });
 }
 
-async function shotScreen(page: Page, arg: string, fullPage = true): Promise<void> {
+/**
+ * Waits until no public grant-places panel is still loading, so a capture never
+ * depends on how fast `GET /funding/places` answers.
+ */
+async function waitForGrantPlaces(page: Page): Promise<void> {
+  await expect(page.locator('[data-grant-places="loading"]')).toHaveCount(0);
+}
+
+async function shotScreen(
+  page: Page,
+  arg: string,
+  fullPage = true,
+  options: { grantPlacesLoading?: boolean } = {},
+): Promise<void> {
   // Receive / Send settle at full or slim 140 ms after a scroll; never capture in between.
   await expect
     .poll(() =>
@@ -801,8 +814,11 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
       }),
     )
     .toBe(true);
-  // The public grant-places panel loads on its own; never capture it mid-load.
-  await expect(page.locator('[data-grant-places="loading"]')).toHaveCount(0);
+  // The public grant-places panel loads on its own; never capture it mid-load
+  // unless the test pins that loading state on purpose.
+  if (options.grantPlacesLoading !== true) {
+    await waitForGrantPlaces(page);
+  }
   const problems = await page.evaluate(pageFrameProblems);
   expect(problems, problems.join('\n')).toEqual([]);
   await unstickStickyChrome(page);
@@ -821,9 +837,12 @@ async function shotScreen(page: Page, arg: string, fullPage = true): Promise<voi
   });
 }
 
-/** Answers the public GET /funding/places with a full round or a 503 for the places-panel states. */
-async function stubGrantPlaces(page: Page, mode: 'full' | 'error'): Promise<void> {
+/** Answers the public GET /funding/places with a full round, a 503, or never (loading) for the places-panel states. */
+async function stubGrantPlaces(page: Page, mode: 'full' | 'error' | 'loading'): Promise<void> {
   await page.route('**/funding/places', async (route) => {
+    if (mode === 'loading') {
+      return;
+    }
     if (mode === 'error') {
       await route.fulfill({
         status: 503,
@@ -19316,6 +19335,15 @@ test.describe('profile funding states', () => {
     await shotScreen(page, 'state-grants-places-error');
   });
 
+  test('state /grants places-loading', async ({ page }) => {
+    await seedFundingProfile(page);
+    await stubGrantPlaces(page, 'loading');
+    await page.goto('/grants');
+    await expect(page.locator('[data-grant-places="loading"]')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+    await shotScreen(page, 'state-grants-places-loading', true, { grantPlacesLoading: true });
+  });
+
   test('profile funding pending', async ({ page }) => {
     await seedFundingProfile(page, {
       funding: {
@@ -19605,6 +19633,16 @@ test.describe('profile funding states', () => {
     ).toBeVisible();
     await expect(page.getByText('2 shops meet this')).toBeVisible();
     await shotScreen(page, 'state-grants-goals-places-error');
+  });
+
+  test('state /grants/goals places-loading', async ({ page }) => {
+    await seedFundingProfile(page);
+    await stubGrantGoal(page, 'ok');
+    await stubGrantPlaces(page, 'loading');
+    await page.goto('/grants/goals');
+    await expect(page.locator('[data-grant-places="loading"]')).toBeVisible();
+    await expect(page.getByText('2 shops meet this')).toBeVisible();
+    await shotScreen(page, 'state-grants-goals-places-loading', true, { grantPlacesLoading: true });
   });
 });
 
@@ -28317,7 +28355,14 @@ test.describe('statistics screens', () => {
     });
   }
 
-  async function shotStatistics(page: Page): Promise<void> {
+  async function shotStatistics(
+    page: Page,
+    options: { grantPlacesLoading?: boolean } = {},
+  ): Promise<void> {
+    // Measure only after the places panel settled; its loading state is shorter.
+    if (options.grantPlacesLoading !== true) {
+      await waitForGrantPlaces(page);
+    }
     const current = page.viewportSize() ?? { width: 1280, height: 720 };
     await page.evaluate(() => document.fonts.ready);
     const styleTag = await page.addStyleTag({
@@ -28430,6 +28475,18 @@ test.describe('statistics screens', () => {
     ).toBeVisible();
     await shotStatistics(page);
     await shotScreen(page, 'state-statistics-places-error');
+  });
+
+  test('statistics places-loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await stubPayoutGoal(page);
+    await stubShopActivity(page);
+    await stubGrantPlaces(page, 'loading');
+    await page.goto('/statistics');
+    await expect(page.getByText('Shops by UTC day')).toBeVisible();
+    await expect(page.locator('[data-grant-places="loading"]')).toBeVisible();
+    await shotStatistics(page, { grantPlacesLoading: true });
+    await shotScreen(page, 'state-statistics-places-loading', true, { grantPlacesLoading: true });
   });
 
   test('statistics loading', async ({ page }) => {

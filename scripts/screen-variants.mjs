@@ -4779,6 +4779,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/grants',
+    id: 'places-loading',
+    image: 'grants-places-loading.png',
+    visual: 'state-grants-places-loading',
+    needle: 'state-grants-places-loading',
+  },
+  {
+    route: '/grants',
     id: 'funding-not-verified',
     image: 'profile-funding-not-verified.png',
     visual: 'state-profile-funding-not-verified',
@@ -4881,6 +4888,13 @@ export const SCREEN_VARIANTS = [
     image: 'grants-goals-places-error.png',
     visual: 'state-grants-goals-places-error',
     needle: 'Could not load the grant places. Please try again.',
+  },
+  {
+    route: '/grants/goals',
+    id: 'places-loading',
+    image: 'grants-goals-places-loading.png',
+    visual: 'state-grants-goals-places-loading',
+    needle: 'state-grants-goals-places-loading',
   },
   {
     route: '/grants/payments/comment',
@@ -5742,6 +5756,13 @@ export const SCREEN_VARIANTS = [
     image: 'statistics-places-error.png',
     visual: 'state-statistics-places-error',
     needle: 'state-statistics-places-error',
+  },
+  {
+    route: '/statistics',
+    id: 'places-loading',
+    image: 'statistics-places-loading.png',
+    visual: 'state-statistics-places-loading',
+    needle: 'state-statistics-places-loading',
   },
   {
     route: '/statistics',

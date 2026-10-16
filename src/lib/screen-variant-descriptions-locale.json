@@ -5683,5 +5683,20 @@
     "de": "Personalseite wie default, wenn GET /funding/places fehlschlägt. Personen- und Shop-Feld laden. Das letzte Feld zeigt Die Förderplätze konnten nicht geladen werden. Bitte erneut versuchen. und Erneut versuchen. Nadel state-statistics-places-error.",
     "es": "Página de personal como default cuando falla GET /funding/places. Los paneles de personas y tiendas cargan. El último panel muestra No se pudieron cargar las plazas de beca. Inténtalo de nuevo. e Intentar de nuevo. Aguja state-statistics-places-error.",
     "fil": "Pahina ng kawani gaya ng default kapag nabigo ang GET /funding/places. Naglo-load ang panel ng tao at ng tindahan. Ipinapakita ng huling panel ang Hindi ma-load ang mga puwesto sa grant. Pakisubukan muli. at Subukan ulit. Karayom state-statistics-places-error."
+  },
+  "/grants:places-loading": {
+    "de": "Verifizierter Inhaber mit Status none, solange GET /funding/places nicht geantwortet hat. Karte und Für 21 Förderprogramm bewerben bleiben. Das Feld Förderplätze zeigt Wird geladen…. Nadel state-grants-places-loading.",
+    "es": "Titular verificado con estado none mientras GET /funding/places no ha respondido. La tarjeta y Solicitar la beca 21 gifts se quedan. El panel Plazas de beca muestra Cargando…. Aguja state-grants-places-loading.",
+    "fil": "Verified na may-ari na may status none habang hindi pa sumasagot ang GET /funding/places. Nanatili ang card at ang Mag-apply para sa 21 gifts grant. Ipinapakita ng panel na Mga puwesto sa grant ang Naglo-load…. Karayom state-grants-places-loading."
+  },
+  "/grants/goals:places-loading": {
+    "de": "Angemeldete Seite, solange GET /funding/places nicht geantwortet hat. Die Zielmessung ist geladen. Das Feld Förderplätze zeigt Wird geladen…. Nadel state-grants-goals-places-loading.",
+    "es": "Página con sesión iniciada mientras GET /funding/places no ha respondido. La medición del objetivo está cargada. El panel Plazas de beca muestra Cargando…. Aguja state-grants-goals-places-loading.",
+    "fil": "Naka-sign in na pahina habang hindi pa sumasagot ang GET /funding/places. Naka-load ang sukat ng layunin. Ipinapakita ng panel na Mga puwesto sa grant ang Naglo-load…. Karayom state-grants-goals-places-loading."
+  },
+  "/statistics:places-loading": {
+    "de": "Personalseite wie default, solange GET /funding/places nicht geantwortet hat. Personen- und Shop-Feld laden. Das letzte Feld Förderplätze zeigt Wird geladen…. Nadel state-statistics-places-loading.",
+    "es": "Página de personal como default mientras GET /funding/places no ha respondido. Los paneles de personas y tiendas cargan. El último panel, Plazas de beca, muestra Cargando…. Aguja state-statistics-places-loading.",
+    "fil": "Pahina ng kawani gaya ng default habang hindi pa sumasagot ang GET /funding/places. Naglo-load ang panel ng tao at ng tindahan. Ipinapakita ng huling panel, Mga puwesto sa grant, ang Naglo-load…. Karayom state-statistics-places-loading."
   }
 }

@@ -5277,6 +5277,12 @@ Verified owner with status none when `GET /funding/places` fails. The card and *
 
 ![21.gifts grants places error](images/grants-places-error.png)
 
+### Variant: places-loading
+
+Verified owner with status none while `GET /funding/places` has not answered. The card and **Apply for the 21 gifts grant** stay. The **Grant places** panel shows **Loading…**. Needle `state-grants-places-loading`.
+
+![21.gifts grants places loading](images/grants-places-loading.png)
+
 ### Variant: funding-not-verified
 
 Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus how in-person verification works. No apply button. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
@@ -5372,6 +5378,12 @@ Signed-in page when every place of the round is taken (`placesLeft` 0). The **Gr
 Signed-in page when `GET /funding/places` fails. The panel shows **Could not load the grant places. Please try again.** and **Try again**. The goal measurement still loads on its own.
 
 ![21.gifts grant goals places error](images/grants-goals-places-error.png)
+
+### Variant: places-loading
+
+Signed-in page while `GET /funding/places` has not answered. The goal measurement is loaded. The **Grant places** panel shows **Loading…**. Needle `state-grants-goals-places-loading`.
+
+![21.gifts grant goals places loading](images/grants-goals-places-loading.png)
 
 ## Screen: /grants/payments/comment
 
@@ -5989,6 +6001,12 @@ Staff page like default when every place of the round is taken. The last panel, 
 Staff page like default when `GET /funding/places` fails. The people and shop panels load. The last panel shows **Could not load the grant places. Please try again.** and **Try again**. Needle `state-statistics-places-error`.
 
 ![21.gifts statistics places error](images/statistics-places-error.png)
+
+### Variant: places-loading
+
+Staff page like default while `GET /funding/places` has not answered. The people and shop panels load. The last panel, **Grant places**, shows **Loading…**. Needle `state-statistics-places-loading`.
+
+![21.gifts statistics places loading](images/statistics-places-loading.png)
 
 ### Variant: loading
 
