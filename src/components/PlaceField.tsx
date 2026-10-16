@@ -596,11 +596,13 @@ export function PlaceField(props: {
       <div
         ref={mapElRef}
         className={
-          shopDetails ? 'h-64 w-full shrink-0 rounded-xl' : 'h-64 min-h-0 w-full shrink rounded-xl'
+          shopDetails
+            ? 'h-64 min-h-32 w-full shrink rounded-xl'
+            : 'h-64 min-h-0 w-full shrink rounded-xl'
         }
       />
       {shopDetails ? (
-        <Scrollport className="mt-3 flex flex-1 flex-col gap-3">
+        <Scrollport className="mt-3 flex min-h-24 flex-1 flex-col gap-3">
           <div className={SHOP_NAME_WRAP_CLASS}>
             <label htmlFor={SHOP_NAME_ID}>{t('shops.placeName')}</label>
             <input
