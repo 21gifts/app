@@ -38,13 +38,16 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.DOCKER_TAGS }}
+          tags: |
+            ${{ env.DOCKER_TAGS }}
+            21gifts/app:staging-${{ github.sha }}
           platforms: linux/arm64
           cache-from: type=registry,ref=21gifts/app:buildcache
           cache-to: type=registry,ref=21gifts/app:buildcache,mode=max
           build-args: |
             APP_VERSION=${{ github.run_number }}
             NEXT_PUBLIC_BREEZ_API_KEY=${{ secrets.BREEZ_API_KEY_STAGING }}
+            NEXT_PUBLIC_BUILD_ID=${{ github.sha }}
 
       - name: Notify infrastructure to pull :staging
         env:

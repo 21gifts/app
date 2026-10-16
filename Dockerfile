@@ -18,16 +18,17 @@
 # signed-in Menu. It is the deploy run number, not an entrypoint.sh
 # placeholder, and is not substituted at container start.
 #
-# NEXT_PUBLIC_BREEZ_API_KEY is a second build-arg (no default), passed only by
-# the staging deploy and baked at `next build`. It is not an entrypoint.sh
-# placeholder; an unset or empty value still builds.
+# NEXT_PUBLIC_BREEZ_API_KEY is a second build-arg (no default), passed by every
+# deploy from that environment's repository secret and baked at `next build`.
+# It is not an entrypoint.sh placeholder; an unset or empty value still builds
+# (the in-app wallet is then off). deploy-prd.yaml refuses to build without it.
 #
 # Current NEXT_PUBLIC_* variables:
 #   NEXT_PUBLIC_API_URL — upstream 21.gifts api (browser talks same-origin)
 #                         DEV: https://dev-api.21.gifts / PRD: https://api.21.gifts
 #   NEXT_PUBLIC_APP_VERSION — decimal deploy run number of this image (from ARG APP_VERSION), or `dev`
 #   NEXT_PUBLIC_BREEZ_API_KEY — Breez SDK key, a build-arg baked at `next build`
-#                               (staging deploy only); empty when unset
+#                               (each deploy's own secret); empty when unset
 #   NEXT_PUBLIC_PLATFORM_USERNAME — username of the 21.gifts platform account; the landing
 #                         page shows its wallet address for donations to the project.
 #                         Optional placeholder: empty or unset hides that address.
