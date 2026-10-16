@@ -2474,6 +2474,14 @@ export async function postMessageVideo(
     if (typeof input.place.label === 'string') {
       form.set('placeLabel', input.place.label);
     }
+    const address = input.place.address;
+    if (address !== undefined && address !== null) {
+      form.set('placeStreet', address.street);
+      form.set('placeHouseNumber', address.houseNumber);
+      form.set('placePostalCode', address.postalCode);
+      form.set('placeCity', address.city);
+      form.set('placeCountry', address.country);
+    }
   }
   const shopUsername = input.shopUsername?.trim().replace(/^@/, '') ?? '';
   if (shopUsername !== '') {
@@ -3758,6 +3766,10 @@ export async function setMessagePlace(
     body: JSON.stringify({ place }),
   });
   if (!response.ok) {
+    if (response.status === 400) {
+      const raw = await readApiError(response);
+      throw new Error(raw === null ? 'Could not save place' : toUserFacingError(raw));
+    }
     throw new Error('Could not save place');
   }
   return forumMessageSchema.parse(await response.json());
@@ -3883,6 +3895,10 @@ export async function setMessageShopText(
     body: JSON.stringify({ text }),
   });
   if (!response.ok) {
+    if (response.status === 400) {
+      const raw = await readApiError(response);
+      throw new Error(raw === null ? 'Could not save shop note' : toUserFacingError(raw));
+    }
     throw new Error('Could not save shop note');
   }
   return forumMessageSchema.parse(await response.json());

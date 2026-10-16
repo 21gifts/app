@@ -1153,4 +1153,145 @@ describe('PlaceField', () => {
       globalThis.ResizeObserver = previous;
     }
   });
+
+  function fillShopAddress(name = "Kiki's Bakery"): void {
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: name } });
+    fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
+    fireEvent.change(screen.getByLabelText('House number'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('Postal code'), { target: { value: '8001' } });
+    fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Zürich' } });
+    fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'CH' } });
+  }
+
+  it('collects a shop name and address before Use this place is enabled', async () => {
+    const onChange = vi.fn();
+    const listeners = stubMaps();
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={onChange} shopDetails />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
+    expect(screen.queryByLabelText('Place name')).toBeNull();
+    const shopName = screen.getByLabelText('Shop name', { exact: true });
+    expect(shopName).toBeTruthy();
+    expect(shopName.getAttribute('id')).toBe('field-shop-name');
+    expect(shopName.parentElement?.tagName).toBe('DIV');
+    expect(shopName.hasAttribute('required')).toBe(true);
+    expect(shopName.getAttribute('maxlength')).toBe('80');
+    const map = document.querySelector('.h-64') as HTMLElement;
+    const mapTokens = map.className.split(/\s+/);
+    expect(mapTokens).toContain('h-64');
+    expect(mapTokens).toContain('shrink-0');
+    expect(mapTokens).not.toContain('shrink');
+    expect(mapTokens).not.toContain('min-h-0');
+    expect(shopName.closest('[data-scrollport]')).not.toBeNull();
+    expect(
+      screen.getByText("A short name, for example “Kiki's Bakery”. Not the address."),
+    ).toBeTruthy();
+    const confirm = await screen.findByRole('button', { name: 'Use this place' });
+    expect(confirm.hasAttribute('disabled')).toBe(true);
+    expect(screen.getByText('Enter the shop name.')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: "Kiki's Bakery" } });
+    expect(
+      screen.getByText(
+        'Enter the full address: street, house number, postal code, city and country.',
+      ),
+    ).toBeTruthy();
+    expect(confirm.hasAttribute('disabled')).toBe(true);
+    fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
+    expect(screen.getByText('Check the House number.')).toBeTruthy();
+    fillShopAddress('Bahnhofstrasse Bakery');
+    expect(
+      screen.getByText('The shop name must not contain the street or the postal code.'),
+    ).toBeTruthy();
+    expect(confirm.hasAttribute('disabled')).toBe(true);
+    fillShopAddress();
+    expect(confirm.hasAttribute('disabled')).toBe(false);
+    fireEvent.click(confirm);
+    expect(onChange).toHaveBeenCalledWith({
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    });
+  });
+
+  it('prefills shop fields from an existing pin', async () => {
+    stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={{
+          lat: 47.3769,
+          lng: 8.5417,
+          label: "Kiki's Bakery",
+          address: {
+            street: 'Bahnhofstrasse',
+            houseNumber: '12',
+            postalCode: '8001',
+            city: 'Zürich',
+            country: 'CH',
+          },
+        }}
+        disabled={false}
+        onChange={() => undefined}
+        shopDetails
+      />,
+    );
+    expect(
+      screen.getByText("Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland"),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByLabelText('Shop name')).toHaveProperty('value', "Kiki's Bakery");
+    expect(screen.getByLabelText('Street')).toHaveProperty('value', 'Bahnhofstrasse');
+    expect(screen.getByLabelText('Country')).toHaveProperty('value', 'CH');
+    expect(screen.getByRole('button', { name: 'Use this place' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+  });
+
+  it.each([
+    ['Shop name is required', 'Enter the shop name.'],
+    [
+      'Shop name must not contain the address',
+      'The shop name must not contain the street or the postal code.',
+    ],
+    [
+      'Shop address is required',
+      'Enter the full address: street, house number, postal code, city and country.',
+    ],
+    [
+      'Shop description must be 20 to 1000 characters and longer than the shop name',
+      'The description must be 20 to 1000 characters and longer than the shop name.',
+    ],
+    ['Place address is invalid', 'The address is invalid.'],
+    ['boom', 'The place could not be saved. Please try again.'],
+  ])('maps shop commit error %s', async (apiMessage, localized) => {
+    const onCommit = vi.fn().mockRejectedValue(new Error(apiMessage));
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={onCommit}
+        shopDetails
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
+    fillShopAddress();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain(localized);
+  });
 });

@@ -140,6 +140,49 @@ describe('catalogs', () => {
     }
   });
 
+  it('keeps shop address and 400 keys in every locale', () => {
+    const shopKeys = (Object.keys(catalogs.en) as MessageKey[]).filter((key) =>
+      key.startsWith('shops.'),
+    );
+    expect(shopKeys).toEqual(
+      expect.arrayContaining([
+        'shops.placeName',
+        'shops.placeNameHint',
+        'shops.addressStreet',
+        'shops.addressHouseNumber',
+        'shops.addressPostalCode',
+        'shops.addressCity',
+        'shops.addressCountry',
+        'shops.addressCountryChoose',
+        'shops.problemName',
+        'shops.problemNameAddress',
+        'shops.problemAddress',
+        'shops.problemAddressField',
+        'shops.problemDescriptionShort',
+        'shops.problemDescriptionLong',
+        'shops.problemDescriptionNotLonger',
+        'shops.problemDescription',
+        'shops.problemAddressInvalid',
+      ]),
+    );
+    for (const locale of ['en', 'de', 'es', 'fil'] as const) {
+      const catalog = getCatalog(locale);
+      for (const key of shopKeys) {
+        const value = catalog[key];
+        expect(value.trim().length, `${locale} ${key}`).toBeGreaterThan(0);
+      }
+    }
+    expect(translate(getCatalog('en'), 'shops.problemName')).toBe('Enter the shop name.');
+    expect(translate(getCatalog('de'), 'shops.problemName')).toBe('Geben Sie den Shopnamen ein.');
+    expect(translate(getCatalog('es'), 'shops.problemName')).toBe(
+      'Introduce el nombre de la tienda.',
+    );
+    expect(translate(getCatalog('fil'), 'shops.problemName')).toBe('Ilagay ang pangalan ng shop.');
+    expect(translate(getCatalog('en'), 'shops.problemAddressField', { field: 'Street' })).toBe(
+      'Check the Street.',
+    );
+  });
+
   it('resolves every English key without throwing', () => {
     const en = getCatalog('en');
     for (const key of Object.keys(en) as MessageKey[]) {

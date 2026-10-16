@@ -234,4 +234,8 @@ test('Function: PlaceField — add a place is on the shop composer', async ({ pa
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByRole('button', { name: 'Add a place' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await expect(page.getByText('The map is not available.')).toBeVisible();
+  await expect(page.getByLabel('Shop name', { exact: true })).toHaveCount(0);
 });

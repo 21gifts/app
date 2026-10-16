@@ -12,9 +12,89 @@ import {
 import { createPortal } from 'react-dom';
 import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
+import { ShopAddressFields, type ForumPlaceAddressDraft } from '@/components/ShopAddressFields';
 import { Button, IconButton } from '@/components/ui';
-import type { ForumPlacePin } from '@/lib/api-types';
+import { Scrollport } from '@/components/ui/Scrollport';
+import type { ForumPlaceAddress, ForumPlacePin } from '@/lib/api-types';
+import {
+  formatPlacePinText,
+  shopAddressProblem,
+  shopApiProblem,
+  shopNameProblem,
+} from '@/lib/forum-shop';
+import type { MessageKey } from '@/lib/messages';
 import { fitBoxInFrame, type PlacedFrameBox } from '@/lib/page-frame';
+
+const EMPTY_ADDRESS: ForumPlaceAddressDraft = {
+  street: '',
+  houseNumber: '',
+  postalCode: '',
+  city: '',
+  country: '',
+};
+
+const SHOP_NAME_ID = 'field-shop-name';
+
+const SHOP_NAME_CONTROL_CLASS = [
+  'w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card',
+  'px-4 py-2 text-base text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50',
+].join(' ');
+
+const SHOP_NAME_WRAP_CLASS = 'flex flex-col gap-1 text-left text-sm text-app-fg';
+
+const SHOP_API_MESSAGE: Record<
+  'shopName' | 'shopNameAddress' | 'shopAddress' | 'shopDescription' | 'placeAddress',
+  MessageKey
+> = {
+  shopName: 'shops.problemName',
+  shopNameAddress: 'shops.problemNameAddress',
+  shopAddress: 'shops.problemAddress',
+  shopDescription: 'shops.problemDescription',
+  placeAddress: 'shops.problemAddressInvalid',
+};
+
+const ADDRESS_FIELD_KEY: Record<
+  'street' | 'houseNumber' | 'postalCode' | 'city' | 'country',
+  MessageKey
+> = {
+  street: 'shops.addressStreet',
+  houseNumber: 'shops.addressHouseNumber',
+  postalCode: 'shops.addressPostalCode',
+  city: 'shops.addressCity',
+  country: 'shops.addressCountry',
+};
+
+function addressFromDraft(draft: ForumPlaceAddressDraft): ForumPlaceAddress | null {
+  if (
+    draft.street === '' &&
+    draft.houseNumber === '' &&
+    draft.postalCode === '' &&
+    draft.city === '' &&
+    draft.country === ''
+  ) {
+    return null;
+  }
+  return {
+    street: draft.street,
+    houseNumber: draft.houseNumber,
+    postalCode: draft.postalCode,
+    city: draft.city,
+    country: draft.country,
+  };
+}
+
+function draftFromAddress(address: ForumPlaceAddress | null | undefined): ForumPlaceAddressDraft {
+  if (address === null || address === undefined) {
+    return { ...EMPTY_ADDRESS };
+  }
+  return {
+    street: address.street,
+    houseNumber: address.houseNumber,
+    postalCode: address.postalCode,
+    city: address.city,
+    country: address.country,
+  };
+}
 
 type GoogleLatLng = {
   lat: () => number;
@@ -96,6 +176,7 @@ function placedBoxStyle(box: PlacedFrameBox, fill: boolean): CSSProperties {
  *
  * @param props - Current pin, disabled flag, change handler, and optional
  * staff-commit overrides (size, variant, preview, label, `onCommit`).
+ * `shopDetails` collects a required shop name and structured address.
  * @returns Attach button, optional preview, and map panel.
  */
 export function PlaceField(props: {
@@ -107,9 +188,11 @@ export function PlaceField(props: {
   showPreview?: boolean;
   ariaLabel?: string;
   onCommit?: (place: ForumPlacePin | null) => Promise<void>;
+  shopDetails?: boolean;
 }): ReactElement {
-  const { t } = useTranslations();
+  const { t, locale } = useTranslations();
   const sunday = useLocalSunday();
+  const shopDetails = props.shopDetails === true;
   const buttonSize = props.buttonSize ?? 'lg';
   const buttonVariant = props.buttonVariant ?? 'secondary';
   const showPreview = props.showPreview ?? true;
@@ -117,10 +200,12 @@ export function PlaceField(props: {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [saveErrorKey, setSaveErrorKey] = useState<MessageKey | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const [scriptReady, setScriptReady] = useState(false);
   const [mapsKey, setMapsKey] = useState<string | null>(null);
   const [labelDraft, setLabelDraft] = useState('');
+  const [addressDraft, setAddressDraft] = useState<ForumPlaceAddressDraft>({ ...EMPTY_ADDRESS });
   const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(null);
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
@@ -290,6 +375,7 @@ export function PlaceField(props: {
     markerRef.current = null;
     setMarkerPos(saved === null ? null : { lat: saved.lat, lng: saved.lng });
     setLabelDraft(saved?.label ?? '');
+    setAddressDraft(draftFromAddress(saved?.address ?? null));
     if (saved !== null) {
       const savedMarker = new maps.Marker({
         position: { lat: saved.lat, lng: saved.lng },
@@ -354,6 +440,11 @@ export function PlaceField(props: {
     props.place?.lat,
     props.place?.lng,
     props.place?.label,
+    props.place?.address?.street,
+    props.place?.address?.houseNumber,
+    props.place?.address?.postalCode,
+    props.place?.address?.city,
+    props.place?.address?.country,
     mapPlaced,
     sunday,
   ]);
@@ -419,10 +510,22 @@ export function PlaceField(props: {
     };
   }, [open, showPreview, props.place, props.disabled, unavailable, mapsKey, sunday]);
 
-  const previewText =
-    props.place === null
-      ? ''
-      : (props.place.label ?? `${props.place.lat.toFixed(5)}, ${props.place.lng.toFixed(5)}`);
+  const previewText = props.place === null ? '' : formatPlacePinText(props.place, locale);
+
+  const addressValue = addressFromDraft(addressDraft);
+  const nameProblem = shopDetails ? shopNameProblem(labelDraft, addressValue) : null;
+  const addressProblem = shopDetails ? shopAddressProblem(addressValue) : null;
+  const shopCommitBlocked = shopDetails && (nameProblem !== null || addressProblem !== null);
+  const shopHint =
+    nameProblem === 'name'
+      ? t('shops.problemName')
+      : nameProblem === 'nameAddress'
+        ? t('shops.problemNameAddress')
+        : addressProblem === 'missing'
+          ? t('shops.problemAddress')
+          : addressProblem !== null
+            ? t('shops.problemAddressField', { field: t(ADDRESS_FIELD_KEY[addressProblem]) })
+            : null;
 
   async function commit(next: ForumPlacePin | null): Promise<void> {
     if (props.onCommit === undefined) {
@@ -432,11 +535,14 @@ export function PlaceField(props: {
     }
     setSaving(true);
     setSaveError(false);
+    setSaveErrorKey(null);
     try {
       await props.onCommit(next);
       setOpen(false);
-    } catch {
+    } catch (error) {
       setSaveError(true);
+      const problem = error instanceof Error ? shopApiProblem(error.message) : null;
+      setSaveErrorKey(problem === null ? null : SHOP_API_MESSAGE[problem]);
     } finally {
       setSaving(false);
     }
@@ -466,7 +572,7 @@ export function PlaceField(props: {
       <p className="text-sm text-app-muted">{t('forum.placeUnavailable')}</p>
       {saveError ? (
         <p role="alert" className="mt-3 text-sm text-app-danger">
-          {t('forum.placeSaveFailed')}
+          {saveErrorKey !== null ? t(saveErrorKey) : t('forum.placeSaveFailed')}
         </p>
       ) : null}
       {!showPreview && props.place !== null ? (
@@ -487,21 +593,53 @@ export function PlaceField(props: {
     </>
   ) : (
     <>
-      <div ref={mapElRef} className="h-64 min-h-0 w-full shrink rounded-xl" />
-      <input
-        type="text"
-        maxLength={80}
-        aria-label={t('forum.placeLabel')}
-        value={labelDraft}
-        disabled={props.disabled}
-        onChange={(event) => {
-          setLabelDraft(event.target.value);
-        }}
-        className="mt-3 w-full shrink-0 rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
+      <div
+        ref={mapElRef}
+        className={
+          shopDetails ? 'h-64 w-full shrink-0 rounded-xl' : 'h-64 min-h-0 w-full shrink rounded-xl'
+        }
       />
+      {shopDetails ? (
+        <Scrollport className="mt-3 flex flex-1 flex-col gap-3">
+          <div className={SHOP_NAME_WRAP_CLASS}>
+            <label htmlFor={SHOP_NAME_ID}>{t('shops.placeName')}</label>
+            <input
+              id={SHOP_NAME_ID}
+              className={SHOP_NAME_CONTROL_CLASS}
+              required
+              maxLength={80}
+              autoComplete="off"
+              value={labelDraft}
+              disabled={props.disabled}
+              onChange={(event) => {
+                setLabelDraft(event.target.value);
+              }}
+            />
+          </div>
+          <p className="text-sm text-app-muted">{t('shops.placeNameHint')}</p>
+          <ShopAddressFields
+            value={addressValue}
+            disabled={props.disabled}
+            onChange={setAddressDraft}
+          />
+          {shopHint !== null ? <p className="text-sm text-app-muted">{shopHint}</p> : null}
+        </Scrollport>
+      ) : (
+        <input
+          type="text"
+          maxLength={80}
+          aria-label={t('forum.placeLabel')}
+          value={labelDraft}
+          disabled={props.disabled}
+          onChange={(event) => {
+            setLabelDraft(event.target.value);
+          }}
+          className="mt-3 w-full shrink-0 rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
+        />
+      )}
       {saveError ? (
         <p role="alert" className="mt-3 text-sm text-app-danger">
-          {t('forum.placeSaveFailed')}
+          {saveErrorKey !== null ? t(saveErrorKey) : t('forum.placeSaveFailed')}
         </p>
       ) : null}
       {markerPos !== null ? (
@@ -509,9 +647,23 @@ export function PlaceField(props: {
           type="button"
           variant="secondary"
           className="mt-3 shrink-0"
-          disabled={props.disabled || saving}
+          disabled={props.disabled || saving || shopCommitBlocked}
           onClick={() => {
             const trimmed = labelDraft.trim();
+            if (shopDetails) {
+              const street = addressDraft.street.trim();
+              const houseNumber = addressDraft.houseNumber.trim();
+              const postalCode = addressDraft.postalCode.trim();
+              const city = addressDraft.city.trim();
+              const country = addressDraft.country.trim().toUpperCase();
+              void commit({
+                lat: markerPos.lat,
+                lng: markerPos.lng,
+                label: trimmed,
+                address: { street, houseNumber, postalCode, city, country },
+              });
+              return;
+            }
             void commit({
               lat: markerPos.lat,
               lng: markerPos.lng,

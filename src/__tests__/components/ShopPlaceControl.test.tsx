@@ -117,7 +117,18 @@ describe('ShopPlaceControl', () => {
 
   it('saves a pin and calls onUpdated with the returned place', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-    const pin = { lat: 14.6, lng: 120.98, label: 'Happyland' };
+    const pin = {
+      lat: 14.6,
+      lng: 120.98,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
     vi.mocked(setMessagePlace).mockResolvedValue({ ...shopMessage, place: pin });
     const onUpdated = vi.fn();
     const listeners = stubMaps();
@@ -127,7 +138,12 @@ describe('ShopPlaceControl', () => {
       expect(listeners.has('click')).toBe(true);
     });
     listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
-    fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Happyland' } });
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: "Kiki's Bakery" } });
+    fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
+    fireEvent.change(screen.getByLabelText('House number'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('Postal code'), { target: { value: '8001' } });
+    fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Zürich' } });
+    fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'CH' } });
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
     await waitFor(() => {
       expect(setMessagePlace).toHaveBeenCalledWith('token', 'shop1', pin);
@@ -161,6 +177,12 @@ describe('ShopPlaceControl', () => {
       expect(listeners.has('click')).toBe(true);
     });
     listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: "Kiki's Bakery" } });
+    fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
+    fireEvent.change(screen.getByLabelText('House number'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('Postal code'), { target: { value: '8001' } });
+    fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Zürich' } });
+    fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'CH' } });
     fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toContain(

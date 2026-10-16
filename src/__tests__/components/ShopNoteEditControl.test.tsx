@@ -97,10 +97,25 @@ const account: Account = {
   missing: [],
 };
 
+const COMPLETE_PLACE = {
+  lat: 47.3769,
+  lng: 8.5417,
+  label: "Kiki's Bakery",
+  address: {
+    street: 'Bahnhofstrasse',
+    houseNumber: '12',
+    postalCode: '8001',
+    city: 'Zürich',
+    country: 'CH',
+  },
+};
+
+const SHOP_DESCRIPTION = 'Fresh bread every morning.';
+
 const shopMessage: ForumMessage = {
   id: 'shop1',
   name: 'Ada',
-  text: 'Cafe Luna\n\n#21GiftsShop',
+  text: `Cafe Luna\n\n${SHOP_DESCRIPTION}\n\n#21GiftsShop`,
   createdAt: '2026-08-28T12:00:00.000Z',
   sats: 5,
   payable: true,
@@ -110,6 +125,7 @@ const shopMessage: ForumMessage = {
   videoContentType: null,
   role: 'basis',
   replyCount: 0,
+  place: COMPLETE_PLACE,
 };
 
 afterEach(() => {
@@ -203,12 +219,7 @@ describe('ShopNoteEditControl', () => {
       text: 'Cafe Sol\n\n#21GiftsShop',
     });
     const onUpdated = vi.fn();
-    renderWithLocale(
-      <ShopNoteEditControl
-        message={{ ...shopMessage, place: { lat: 1, lng: 2, label: null } }}
-        onUpdated={onUpdated}
-      />,
-    );
+    renderWithLocale(<ShopNoteEditControl message={shopMessage} onUpdated={onUpdated} />);
     const pencil = screen.getByRole('button', { name: 'Edit shop note' });
     expect(screen.queryByText('Edit shop note')).toBeNull();
     fireEvent.keyDown(pencil, { key: 'Enter' });
@@ -221,15 +232,15 @@ describe('ShopNoteEditControl', () => {
     expect(screen.getAllByText(/Ada ·/).length).toBeGreaterThan(0);
     expect(screen.getByText('Cafe Luna → None')).toBeTruthy();
     expect(screen.getByText(/acc-2 · not-a-date · Place/)).toBeTruthy();
-    expect(screen.getByText('None → 14.5, 120.9')).toBeTruthy();
+    expect(screen.getByText('None → 14.50000, 120.90000')).toBeTruthy();
     expect(screen.getByText('None → Stall')).toBeTruthy();
     expect(screen.getByText('None → @luna')).toBeTruthy();
     expect(screen.getByText('None → None')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     const box = screen.getByRole('textbox', { name: 'Shop text' });
-    expect(box).toHaveProperty('value', 'Cafe Luna');
-    fireEvent.change(box, { target: { value: 'Cafe Sol' } });
+    expect(box).toHaveProperty('value', `Cafe Luna\n\n${SHOP_DESCRIPTION}`);
+    fireEvent.change(box, { target: { value: 'Cafe Sol is open every morning.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
@@ -238,7 +249,11 @@ describe('ShopNoteEditControl', () => {
         expect.objectContaining({ id: 'shop1', text: 'Cafe Sol\n\n#21GiftsShop' }),
       );
     });
-    expect(setMessageShopText).toHaveBeenCalledWith('token', 'shop1', 'Cafe Sol');
+    expect(setMessageShopText).toHaveBeenCalledWith(
+      'token',
+      'shop1',
+      'Cafe Sol is open every morning.',
+    );
     expect(setMessagePlace).not.toHaveBeenCalled();
     expect(setMessageShopAccount).not.toHaveBeenCalled();
     expect(setMessageShopPhotos).not.toHaveBeenCalled();
@@ -255,7 +270,7 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -271,6 +286,38 @@ describe('ShopNoteEditControl', () => {
     expect(await screen.findByText('Could not load the history')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     expect(screen.queryByText('Could not load the history')).toBeNull();
+  });
+
+  it.each([
+    ['Shop name is required', 'Enter the shop name.'],
+    [
+      'Shop name must not contain the address',
+      'The shop name must not contain the street or the postal code.',
+    ],
+    [
+      'Shop address is required',
+      'Enter the full address: street, house number, postal code, city and country.',
+    ],
+    [
+      'Shop description must be 20 to 1000 characters and longer than the shop name',
+      'The description must be 20 to 1000 characters and longer than the shop name.',
+    ],
+    ['Place address is invalid', 'The address is invalid.'],
+  ])('maps shop 400 %s to localized copy', async (apiMessage, localized) => {
+    signIn('founder');
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockRejectedValue(new Error(apiMessage));
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(localized);
   });
 
   it('saves a place, a user, and replaced stills, and ignores a bad file', async () => {
@@ -354,7 +401,7 @@ describe('ShopNoteEditControl', () => {
       <ShopNoteEditControl
         message={{
           ...shopMessage,
-          place: { lat: 9, lng: 8, label: 'Old' },
+          place: COMPLETE_PLACE,
           shopAccount: { id: 'old', username: 'old', name: 'Old' },
         }}
         existingPhotos={['blob:png', 'blob:jpeg']}
@@ -389,11 +436,9 @@ describe('ShopNoteEditControl', () => {
     const removeButtons = screen.getAllByRole('button', { name: 'Remove photo' });
     fireEvent.click(removeButtons[removeButtons.length - 1]!);
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: '@luna' } });
@@ -402,7 +447,7 @@ describe('ShopNoteEditControl', () => {
     await waitFor(() => {
       expect(onUpdated).toHaveBeenCalled();
     });
-    expect(setMessagePlace).toHaveBeenCalledWith('token', 'shop1', null);
+    expect(setMessagePlace).not.toHaveBeenCalled();
     expect(setMessageShopAccount).toHaveBeenCalledWith('token', 'shop1', 'luna');
     const photos = vi.mocked(setMessageShopPhotos).mock.calls[0]?.[2] ?? [];
     expect(photos.map((photo) => photo.contentType)).toEqual([
@@ -646,13 +691,17 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() => {
-      expect(setMessageShopText).toHaveBeenCalledWith('token', 'shop1', 'Cafe Sol');
+      expect(setMessageShopText).toHaveBeenCalledWith(
+        'token',
+        'shop1',
+        'Cafe Sol is open every morning.',
+      );
     });
   });
 
@@ -702,13 +751,9 @@ describe('ShopNoteEditControl', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
       target: { value: '   ' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     expect(setMessageShopText).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     vi.mocked(prepareForumPhoto).mockResolvedValue({
@@ -730,7 +775,7 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -749,13 +794,9 @@ describe('ShopNoteEditControl', () => {
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
       target: { value: 'x'.repeat(8000) },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    expect(screen.getByText('The description is too long (max. 1000 characters).')).toBeTruthy();
     expect(setMessageShopText).not.toHaveBeenCalled();
-    expect((await screen.findByRole('alert')).textContent).toContain(
-      'Could not save this shop note',
-    );
   });
 
   it('clears a shop user without sending stills', async () => {
@@ -797,11 +838,12 @@ describe('ShopNoteEditControl', () => {
       json: async () => ({ accounts: [] }),
     }));
     vi.stubGlobal('fetch', fetchMock);
-    vi.mocked(setMessageShopText).mockImplementation(async () => {
-      expect(keptStillReads(fetchMock)).toBe(1);
-      return { ...shopMessage, text: 'Cafe Sol\n\n#21GiftsShop' };
-    });
-    vi.mocked(setMessagePlace).mockRejectedValueOnce(new Error('no'));
+    vi.mocked(setMessageShopText)
+      .mockRejectedValueOnce(new Error('no'))
+      .mockImplementation(async () => {
+        expect(keptStillReads(fetchMock)).toBe(1);
+        return { ...shopMessage, text: 'Cafe Sol\n\n#21GiftsShop' };
+      });
     vi.mocked(setMessageShopPhotos).mockResolvedValue({
       ...shopMessage,
       hasPhoto: false,
@@ -814,7 +856,7 @@ describe('ShopNoteEditControl', () => {
           ...shopMessage,
           hasPhoto: true,
           photoCount: 1,
-          place: { lat: 1, lng: 2, label: 'Old' },
+          place: COMPLETE_PLACE,
         }}
         existingPhotos={['blob:kept']}
         onUpdated={vi.fn()}
@@ -823,11 +865,9 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
-      target: { value: 'Cafe Sol' },
+      target: { value: 'Cafe Sol is open every morning.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));

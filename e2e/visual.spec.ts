@@ -3154,12 +3154,24 @@ test.describe('onboarding screens', () => {
             {
               id: 'm-shop',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 5,
               payable: true,
               hasPhoto: false,
               role: 'basis',
+              place: {
+                lat: 14.6,
+                lng: 120.98,
+                label: 'Happyland',
+                address: {
+                  street: 'Bahnhofstrasse',
+                  houseNumber: '12',
+                  postalCode: '8001',
+                  city: 'Zürich',
+                  country: 'CH',
+                },
+              },
             },
           ],
         }),
@@ -6402,7 +6414,7 @@ test.describe('onboarding screens', () => {
               id: noteId,
               accountId: memberId,
               name: 'Carol',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-02T10:00:00.000Z',
               sats: 0,
               payable: false,
@@ -6411,6 +6423,18 @@ test.describe('onboarding screens', () => {
               videoContentType: null,
               role: 'verified',
               replyCount: 0,
+              place: {
+                lat: 14.6,
+                lng: 120.98,
+                label: 'Happyland',
+                address: {
+                  street: 'Bahnhofstrasse',
+                  houseNumber: '12',
+                  postalCode: '8001',
+                  city: 'Zürich',
+                  country: 'CH',
+                },
+              },
             },
           ],
         }),
@@ -11019,13 +11043,25 @@ test.describe('onboarding screens', () => {
     const shopNote = {
       id,
       name: 'Ada',
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       createdAt: '2026-08-28T12:00:00.000Z',
       sats: 0,
       payable: false,
       hasPhoto: false,
       role: 'basis',
       replyCount: 0,
+      place: {
+        lat: 14.6,
+        lng: 120.98,
+        label: 'Happyland',
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
     };
     await page.route(`**/public-messages/${id}`, async (route) => {
       await route.fulfill({
@@ -17872,6 +17908,31 @@ test.describe('shops screens', () => {
     });
   }
 
+  const COMPLETE_SHOP_PLACE = {
+    lat: 47.3769,
+    lng: 8.5417,
+    label: "Kiki's Bakery",
+    address: {
+      street: 'Bahnhofstrasse',
+      houseNumber: '12',
+      postalCode: '8001',
+      city: 'Zürich',
+      country: 'CH',
+    },
+  };
+
+  const COMPLETE_SHOP_TEXT = 'Cafe Luna is open every morning.\n\n#21GiftsShop';
+
+  async function fillShopAddress(page: Page, name = "Kiki's Bakery"): Promise<void> {
+    const address = page.getByTestId('shop-address-fields');
+    await page.getByLabel('Shop name', { exact: true }).fill(name);
+    await address.getByLabel('Street', { exact: true }).fill('Bahnhofstrasse');
+    await address.getByLabel('House number', { exact: true }).fill('12');
+    await address.getByLabel('Postal code', { exact: true }).fill('8001');
+    await address.getByLabel('City', { exact: true }).fill('Zürich');
+    await address.getByLabel('Country', { exact: true }).selectOption('CH');
+  }
+
   test('shops default', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -17903,6 +17964,7 @@ test.describe('shops screens', () => {
   });
 
   test('state /shops mention-suggest', async ({ page }) => {
+    await stubPlaceMap(page);
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
@@ -17928,6 +17990,10 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     await page.getByRole('button', { name: 'Add a shop' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    await page.getByRole('button', { name: 'Use this place' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     const box = page.getByRole('textbox', { name: 'Shop text' });
     await expect(box).toBeVisible();
@@ -17937,6 +18003,7 @@ test.describe('shops screens', () => {
   });
 
   test('state /shops mention-inserted', async ({ page }) => {
+    await stubPlaceMap(page);
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
@@ -17962,6 +18029,10 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     await page.getByRole('button', { name: 'Add a shop' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    await page.getByRole('button', { name: 'Use this place' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     const box = page.getByRole('textbox', { name: 'Shop text' });
     await expect(box).toBeVisible();
@@ -18153,11 +18224,12 @@ test.describe('shops screens', () => {
           body: JSON.stringify({
             id: 'm-shop',
             name: 'Ada',
-            text: 'Cafe Luna\n\n#21GiftsShop',
+            text: COMPLETE_SHOP_TEXT,
             createdAt: '2026-08-28T12:00:00.000Z',
             sats: 0,
             payable: false,
             hasPhoto: false,
+            place: COMPLETE_SHOP_PLACE,
           }),
         });
       },
@@ -18428,7 +18500,12 @@ test.describe('shops screens', () => {
               payable: true,
               hasPhoto: false,
               role: 'basis',
-              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+              place: {
+                lat: 14.6,
+                lng: 120.98,
+                label: 'Happyland',
+                address: COMPLETE_SHOP_PLACE.address,
+              },
               shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
             },
           ],
@@ -18453,13 +18530,18 @@ test.describe('shops screens', () => {
             {
               id: 'm-shop',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: COMPLETE_SHOP_TEXT,
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 5,
               payable: true,
               hasPhoto: false,
               role: 'basis',
-              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+              place: {
+                lat: 14.6,
+                lng: 120.98,
+                label: 'Happyland',
+                address: COMPLETE_SHOP_PLACE.address,
+              },
               shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
             },
           ],
@@ -18511,7 +18593,12 @@ test.describe('shops screens', () => {
     payable: true,
     hasPhoto: false,
     role: 'basis',
-    place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+    place: {
+      lat: 14.6,
+      lng: 120.98,
+      label: 'Happyland',
+      address: COMPLETE_SHOP_PLACE.address,
+    },
     shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
   };
 
@@ -18780,7 +18867,12 @@ test.describe('shops screens', () => {
               payable: false,
               hasPhoto: false,
               role: 'basis',
-              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+              place: {
+                lat: 14.6,
+                lng: 120.98,
+                label: 'Happyland',
+                address: COMPLETE_SHOP_PLACE.address,
+              },
             },
           ],
         }),
@@ -18862,10 +18954,11 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await page.getByLabel('Place name').fill('Stall');
+    await fillShopAddress(page, 'Stall');
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
     await expect(confirm).toBeVisible();
+    await expect(confirm).toBeEnabled();
     await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-composer-place-confirm', false);
   });
@@ -18880,7 +18973,7 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await page.getByLabel('Place name').fill('Stall');
+    await fillShopAddress(page, 'Stall');
     await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
     await expect(page.getByText('Stall', { exact: true })).toHaveCount(0);
@@ -18898,7 +18991,7 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Add a shop' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
-    const name = page.getByLabel('Place name');
+    const name = page.getByLabel('Shop name', { exact: true });
     await expect(name).toBeVisible();
     await expect(page.getByText('The map is not available.')).toHaveCount(0);
     await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
@@ -18920,8 +19013,10 @@ test.describe('shops screens', () => {
     await page.locator('.h-64').click();
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
-    await expect(page.getByLabel('Place name')).toHaveValue('');
+    await expect(page.getByLabel('Shop name', { exact: true })).toHaveValue('');
+    await expect(page.getByText('Enter the shop name.')).toBeVisible();
     await expect(confirm).toBeVisible();
+    await expect(confirm).toBeDisabled();
     await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-composer-place-unlabeled', false);
   });
@@ -18936,11 +19031,12 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await page.getByRole('button', { name: 'Use this place' }).click();
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
-    await expect(page.getByText('14.50000, 120.90000', { exact: true })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Remove place' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+    await page.getByLabel('Shop name', { exact: true }).fill('Happyland');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(page.getByText('Enter the full address:')).toBeVisible();
+    await expect(confirm).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-composer-place-set-coords');
   });
 
@@ -18985,12 +19081,13 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: COMPLETE_SHOP_TEXT,
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
               hasPhoto: false,
               role: 'basis',
+              place: COMPLETE_SHOP_PLACE,
             },
           ],
         }),
@@ -19042,12 +19139,13 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: COMPLETE_SHOP_TEXT,
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
               hasPhoto: false,
               role: 'basis',
+              place: COMPLETE_SHOP_PLACE,
             },
           ],
         }),
@@ -19073,7 +19171,7 @@ test.describe('shops screens', () => {
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
-    await page.getByLabel('Shop text').fill('Cafe Luna updated');
+    await page.getByLabel('Shop text').fill('Cafe Luna is open every morning.');
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
@@ -19426,10 +19524,11 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await page.getByLabel('Place name').fill('Happyland');
+    await fillShopAddress(page, 'Happyland');
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
     await expect(confirm).toBeVisible();
+    await expect(confirm).toBeEnabled();
     await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-confirm', false);
   });
@@ -19462,52 +19561,39 @@ test.describe('shops screens', () => {
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     const confirm = page.getByRole('button', { name: 'Use this place' });
-    await expect(page.getByLabel('Place name')).toHaveValue('');
+    await expect(page.getByLabel('Shop name', { exact: true })).toHaveValue('');
+    await expect(page.getByText('Enter the shop name.')).toBeVisible();
     await expect(confirm).toBeVisible();
+    await expect(confirm).toBeDisabled();
     await confirm.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-unlabeled', false);
   });
 
   test('shops staff-place-set-coords', async ({ page }) => {
-    await stubPlaceMap(page);
     await seedAda(page, 'moderator');
-    const noteBody = {
-      id: 'm-staff',
-      name: 'Ada',
-      text: 'Cafe Luna\n\n#21GiftsShop',
-      createdAt: '2026-08-28T12:00:00.000Z',
-      sats: 0,
-      payable: false,
-      hasPhoto: false,
-      role: 'basis',
-    };
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ messages: [noteBody] }),
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.5, lng: 120.9, label: null },
+            },
+          ],
+        }),
       });
     });
-    await page.route(
-      (url) => new URL(url).pathname.endsWith('/place'),
-      async (route) => {
-        if (route.request().method() !== 'PATCH') {
-          await route.continue();
-          return;
-        }
-        const body = route.request().postDataJSON() as { place?: unknown };
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({ ...noteBody, place: body.place }),
-        });
-      },
-    );
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
-    await note.getByRole('button', { name: 'Add a place' }).click();
-    await page.locator('.h-64').click();
-    await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(note.getByRole('link', { name: '14.50000, 120.90000' })).toBeVisible();
     await expect(note.getByRole('button', { name: 'Edit place' })).toBeVisible();
     await shotScreen(page, 'state-shops-staff-place-set-coords');
@@ -19554,7 +19640,7 @@ test.describe('shops screens', () => {
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
-    await page.getByLabel('Place name').fill('Happyland');
+    await fillShopAddress(page, 'Happyland');
     await page.getByRole('button', { name: 'Use this place' }).click();
     await expect(
       page.getByRole('alert').filter({
@@ -19726,6 +19812,7 @@ test.describe('shops screens', () => {
   });
 
   test('shops add steps', async ({ page }) => {
+    await stubPlaceMap(page);
     await seedAda(page);
     await fulfillMixedSatsMessages(page);
     await page.goto('/shops');
@@ -19736,16 +19823,34 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('2 / 5 · Place')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add a place' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await expect(page.getByText('The map is not available.')).toHaveCount(0);
     await shotScreen(page, 'state-shops-add-place');
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await expect(page.getByLabel('Shop name', { exact: true })).toHaveValue('');
+    await expect(page.getByText('Enter the shop name.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-add-place-empty');
+    await page.getByLabel('Shop name', { exact: true }).fill("Kiki's Bakery");
+    await expect(page.getByText('Enter the full address:')).toBeVisible();
+    await shotScreen(page, 'state-shops-add-place-hint');
+    await fillShopAddress(page);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeEnabled();
+    await shotScreen(page, 'state-shops-add-place-complete');
+    await page.getByRole('button', { name: 'Use this place' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    await expect(page.getByText('20 more characters.')).toBeVisible();
     await shotScreen(page, 'state-shops-add-text');
+    await page.getByLabel('Shop text').fill('Fresh bread every morning.');
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await shotScreen(page, 'state-shops-add-user');
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await expect(page.getByText("Kiki's Bakery")).toBeVisible();
+    await expect(page.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeVisible();
     const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
     await expect(post).toBeEnabled();
     await expect

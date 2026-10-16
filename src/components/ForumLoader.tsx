@@ -65,7 +65,7 @@ import {
 } from '@/lib/forum-feed';
 import { parseForumAskAmountInUnit } from '@/lib/forum-goal';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
-import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
+import { SHOP_HASHTAG, ensureShopHashtag, isShopNote, shopApiProblem } from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
@@ -1965,6 +1965,11 @@ export function ForumLoader({
       }
       pendingComposePlaceRef.current = null;
       pendingComposeShopUsernameRef.current = null;
+      const shopProblem = err instanceof Error ? shopApiProblem(err.message) : null;
+      if (shopProblem !== null) {
+        setFormError(shopProblem);
+        return;
+      }
       setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
     } finally {
       if (!awaitingPay) {
