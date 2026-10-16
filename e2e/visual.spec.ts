@@ -19586,6 +19586,47 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-staff-place-unlabeled', false);
   });
 
+  test('shops staff-place-hint', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await page.getByLabel('Shop name', { exact: true }).fill('Happyland');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(page.getByText('Enter the full address:')).toBeVisible();
+    await expect(confirm).toBeVisible();
+    await expect(confirm).toBeDisabled();
+    await page.getByLabel('Shop name', { exact: true }).evaluate((node) => {
+      (node as HTMLInputElement).blur();
+      const port = node.closest('[data-scrollport]') as HTMLElement;
+      port.scrollTop = 0;
+    });
+    await confirm.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-hint', false);
+  });
+
   test('shops staff-place-set-coords', async ({ page }) => {
     await seedAda(page, 'moderator');
     await page.route(/\/messages(?:\?|$)/, async (route) => {

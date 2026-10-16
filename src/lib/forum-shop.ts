@@ -189,10 +189,11 @@ function escapeRegex(value: string): string {
  * @returns `true` when the token appears as a whole word.
  */
 function containsStandaloneToken(name: string, token: string): boolean {
-  if (token === '') {
+  const trimmed = token.trim();
+  if (trimmed === '') {
     return false;
   }
-  const escaped = escapeRegex(token);
+  const escaped = escapeRegex(trimmed);
   const pattern = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu');
   return pattern.test(name);
 }

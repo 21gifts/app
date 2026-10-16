@@ -143,6 +143,17 @@ describe('forum-shop', () => {
     it('treats an empty street token as no match', () => {
       expect(shopNameProblem("Kiki's Bakery", { ...ADDRESS, street: '' })).toBe(null);
     });
+
+    it('trims street and postal-code tokens before matching', () => {
+      expect(
+        shopNameProblem('Bahnhofstrasse Bakery', { ...ADDRESS, street: 'Bahnhofstrasse ' }),
+      ).toBe('nameAddress');
+      expect(shopNameProblem('Bahnhofstrasse Bakery', ADDRESS)).toBe('nameAddress');
+      expect(shopNameProblem('Bakery 8001', { ...ADDRESS, postalCode: ' 8001 ' })).toBe(
+        'nameAddress',
+      );
+      expect(shopNameProblem("Kiki's Bakery", { ...ADDRESS, street: '   ' })).toBe(null);
+    });
   });
 
   describe('shopDescriptionProblem', () => {

@@ -4446,6 +4446,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:staff-place-hint",
+    "label": "/shops staff-place-hint",
+    "visual": "state-shops-staff-place-hint",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:staff-place-set-coords",
     "label": "/shops staff-place-set-coords",
     "visual": "state-shops-staff-place-set-coords",
