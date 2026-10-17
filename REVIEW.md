@@ -26,7 +26,7 @@ The pull request lists what it reused and what it added, each with the file and 
 
 ## What the review reports
 
-Each pass lane is read-only. Its prompt contains this reminder: `Read CONTRIBUTING.md and REVIEW.md at the base revision. Review this pull request against those files. Do not change any files.`
+Each pass lane is read-only. Its prompt contains this reminder: `Read CONTRIBUTING.md and REVIEW.md at the base revision. Review this pull request against those files and against the linked issue. Do not change any files.`
 
 Quality judges the diff against these files, read at the base revision, and against the pull request. Logic judges whether the diff is sound and complete for that pull request, and whether it adds a second mechanism for a job these files say to reuse.
 
@@ -84,7 +84,10 @@ These must be green on the PR. A missing or red gate is rejected:
 - `npm run build`
 - `npm run e2e` locally (behavior + four visual combos). CI splits that
   into `E2E (behavior)` plus `Visual (desktop-light|desktop-dark|mobile-light|mobile-dark)`;
-  all must be green.
+  all must be green. `E2E (behavior)` is green only when its three shard jobs
+  `E2E (behavior, shard 1/3)` to `3/3` are green. Each `Visual (<combo>)` is green
+  only when all eight visual shard jobs (`Visual (<combo>, shard 1/2)` and `2/2`)
+  are green.
 
 ## Other CONTRIBUTING rules
 
