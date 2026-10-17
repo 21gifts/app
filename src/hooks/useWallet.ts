@@ -163,16 +163,17 @@ export function useWallet(): UseWalletResult {
   if (storeStatus === 'disabled' || !canUnlockWallet(account)) {
     return { ...base, status: 'disabled' };
   }
+  const downloading = storeStatus === 'connecting' && storeDownloading;
   if (setup.due) {
     return setup.failed
       ? { ...base, status: 'error', setupFailed: true }
-      : { ...base, status: 'connecting' };
+      : { ...base, status: 'connecting', downloading };
   }
   return {
     ...base,
     status: storeStatus === 'locked' ? 'connecting' : storeStatus,
     balanceSats: storeBalanceSats,
-    downloading: storeStatus === 'connecting' && storeDownloading,
+    downloading,
     retrying: storeStatus === 'error' && storeRetrying,
   };
 }

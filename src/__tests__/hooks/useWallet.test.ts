@@ -212,6 +212,17 @@ describe('useWallet live state', () => {
     });
   });
 
+  it('reports downloading while setup is due and the wallet code downloads', () => {
+    useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
+    useWalletStore.setState({ status: 'connecting', downloading: true });
+    const { result } = renderHook(() => useWallet());
+    expect(result.current).toMatchObject({ status: 'connecting', downloading: true });
+    act(() => {
+      useWalletStore.setState({ status: 'ready', downloading: false });
+    });
+    expect(result.current).toMatchObject({ status: 'connecting', downloading: false });
+  });
+
   it('shows the setup error after setup failed', () => {
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
     useWalletStore.setState({ status: 'error', setupFailedSession: 'token' });
