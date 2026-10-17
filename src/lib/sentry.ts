@@ -807,9 +807,71 @@ const CSP_DIRECTIVE = /^[a-z][a-z-]{0,31}$/;
 type CspReport = Record<string, string | number>;
 
 /**
+ * Top-level route names of `src/app` (route groups flattened). Only these
+ * first path segments are kept in a report's page: any other segment, such as
+ * a mistyped link with a key in it, is dropped.
+ */
+const CSP_PAGE_SECTIONS: ReadonlySet<string> = new Set([
+  '.well-known',
+  'about',
+  'auth',
+  'banners',
+  'contact',
+  'conversations',
+  'diagnostics',
+  'donate',
+  'forum',
+  'funding',
+  'fx',
+  'gifts',
+  'grants',
+  'habit-tracker',
+  'habits',
+  'handbook',
+  'healthz',
+  'l',
+  'legal',
+  'links',
+  'lnurl',
+  'lnurlp',
+  'lnurlpay',
+  'loans',
+  'login',
+  'maps',
+  'me',
+  'members',
+  'messages',
+  'moderate',
+  'monitoring',
+  'notifications',
+  'pay',
+  'pictures',
+  'pl',
+  'pos',
+  'profile',
+  'public-messages',
+  'push',
+  'rules',
+  'settings',
+  'setup',
+  'shops',
+  'statistics',
+  'stats',
+  'terms',
+  'translate',
+  'trust',
+  'trust-chain',
+  'verify',
+  'view',
+  'view-key',
+  'wallet',
+  'welcome',
+]);
+
+/**
  * Where a page or script was loaded from, without anything that can name a
  * member: the origin and, for a page, its first path segment (`/members`,
- * `/view`). Every top-level segment is a fixed route name.
+ * `/view`) when it is a route name in {@link CSP_PAGE_SECTIONS}.
  *
  * @param value - URL text from the browser.
  * @param keepSection - Whether to keep the first path segment.
@@ -830,7 +892,10 @@ function reducedCspUrl(value: unknown, keepSection: boolean): string | null {
   }
   // An http(s) pathname always starts with `/`, so the first segment exists.
   const section = url.pathname.split('/')[1] as string;
-  return keepSection ? `${url.origin}/${section}` : url.origin;
+  if (!keepSection) {
+    return url.origin;
+  }
+  return CSP_PAGE_SECTIONS.has(section) ? `${url.origin}/${section}` : `${url.origin}/`;
 }
 
 /**
@@ -873,11 +938,13 @@ function reducedCspReport(raw: Record<string, unknown>): CspReport | null {
   ) {
     return null;
   }
+  // Only the directive name: the rest is the policy, with this response's nonce.
+  const name = violated.trim().split(/\s+/)[0] as string;
+  const violatedName = CSP_DIRECTIVE.test(name) ? name : directive;
   const report: CspReport = {
     'document-uri': page,
     'effective-directive': directive,
-    // Only the directive name: the rest is the policy, with this response's nonce.
-    'violated-directive': violated.split(' ')[0] as string,
+    'violated-directive': violatedName,
     'blocked-uri': blocked ?? '',
   };
   const disposition = raw['disposition'];

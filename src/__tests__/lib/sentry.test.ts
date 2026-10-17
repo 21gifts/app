@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { startSpan, type Breadcrumb, type ErrorEvent, type Event } from '@sentry/nextjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -1260,6 +1262,65 @@ describe('forwardCspReport', () => {
         'blocked-uri': '',
       },
     ]);
+  });
+
+  it('keeps a page segment only when it is a route of src/app', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const app = resolve(__dirname, '../../app');
+    const routes = readdirSync(app, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .flatMap((entry) =>
+        entry.name.startsWith('(')
+          ? readdirSync(resolve(app, entry.name), { withFileTypes: true })
+              .filter((child) => child.isDirectory())
+              .map((child) => child.name)
+          : [entry.name],
+      );
+    expect(routes).toContain('view');
+    const pages = [...routes, HEX64, 'Members', 'unknown-page'];
+    for (const section of pages) {
+      await forwardCspReport(
+        report({
+          'csp-report': {
+            'document-uri': `https://21.gifts/${section}/x`,
+            'effective-directive': 'img-src',
+          },
+        }),
+      );
+    }
+    expect(sent(fetchMock).map((r) => r['document-uri'])).toEqual([
+      ...routes.map((section) => `https://21.gifts/${section}`),
+      'https://21.gifts/',
+      'https://21.gifts/',
+      'https://21.gifts/',
+    ]);
+  });
+
+  it('sends only a directive name as the violated directive', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const cases: Array<[string, string]> = [
+      ["script-src-elem\t'nonce-abc' 'self'", 'script-src-elem'],
+      ["  style-src 'self'", 'style-src'],
+      ["'nonce-abc'", 'img-src'],
+      ['Free Text', 'img-src'],
+      ['', 'img-src'],
+    ];
+    for (const [violated] of cases) {
+      await forwardCspReport(
+        report({
+          'csp-report': {
+            'document-uri': 'https://21.gifts/',
+            'effective-directive': 'img-src',
+            'violated-directive': violated,
+          },
+        }),
+      );
+    }
+    expect(sent(fetchMock).map((r) => r['violated-directive'])).toEqual(
+      cases.map(([, want]) => want),
+    );
   });
 
   it('refuses a report without a directive or an http(s) page', async () => {

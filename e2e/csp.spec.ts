@@ -113,6 +113,15 @@ test('Function: buildCsp — landing, welcome, and shops load without a violatio
   await page.goto('/shops');
   await expect(page.getByRole('button', { name: 'Add a shop' })).toBeVisible();
   expect(await violations()).toEqual([]);
+  // The listener does see a violation: an http image is outside img-src.
+  await page.evaluate(() => {
+    const image = document.createElement('img');
+    image.src = 'http://csp-check.invalid/x.png';
+    document.body.append(image);
+  });
+  await expect
+    .poll(violations)
+    .toEqual([expect.stringMatching(/^img-src http:\/\/csp-check\.invalid/)]);
 });
 
 test('Function: forwardCspReport — POST /monitoring/csp is 404 while reporting is off', async ({

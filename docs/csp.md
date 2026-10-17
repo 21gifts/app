@@ -1,6 +1,7 @@
 # Content-Security-Policy
 
-Every page and route response carries a Content-Security-Policy. The
+Every page and route response the middleware matches carries a
+Content-Security-Policy (the `/map` redirect does not). The
 middleware (`src/middleware.ts`) builds it per request with a fresh nonce
 (`buildCsp` in `src/lib/csp.ts`); the sources live in `CSP_SOURCES` in the
 same file. This page lists every source and why the app needs it.
@@ -32,15 +33,16 @@ each violation to the security endpoint of the `NEXT_PUBLIC_SENTRY_DSN`
 project. The existing envelope tunnel `/monitoring` is not used: a violation
 report is not an envelope. Each report is reduced before it leaves the app:
 
-| Field                 | Sent as                                                                    |
-| --------------------- | -------------------------------------------------------------------------- |
-| `document-uri`        | origin and first path segment (`https://21.gifts/view`), no key, id, query |
-| `blocked-uri`         | origin, or a keyword (`inline`, `eval`, `wasm-eval`, `data`, `blob`)       |
-| `effective-directive` | as sent                                                                    |
-| `violated-directive`  | directive name only (the rest is the policy with its nonce)                |
-| `source-file`         | origin only                                                                |
-| line, column, status  | whole numbers only                                                         |
-| everything else       | dropped: script sample, referrer, policy text, query strings, fragments    |
+| Field                 | Sent as                                                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `document-uri`        | origin and first path segment if it is a route of `src/app` (`https://21.gifts/view`), else origin and `/`; no key, id, query |
+| `blocked-uri`         | origin, or a keyword (`inline`, `eval`, `wasm-eval`, `data`, `blob`); else empty                                              |
+| `effective-directive` | as sent                                                                                                                       |
+| `violated-directive`  | directive name only (the rest is the policy with its nonce); else the effective directive                                     |
+| `disposition`         | `report` or `enforce`; else dropped                                                                                           |
+| `source-file`         | origin only                                                                                                                   |
+| line, column, status  | whole numbers only                                                                                                            |
+| everything else       | dropped: script sample, referrer, policy text, query strings, fragments                                                       |
 
 The visitor's IP address, cookies, and headers are not forwarded. Without a
 DSN the route answers 404 and nothing is sent.

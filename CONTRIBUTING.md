@@ -332,6 +332,7 @@ app/
 │   │   └── useCopied.ts         # Clipboard copy with a two-second Copied state
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)
+│   │   ├── csp.ts               # Content-Security-Policy: sources, nonce, mode, header name
 │   │   ├── sentry.ts            # Error reporting + browser tracing: init options, privacy scrubber, traceWallet, tunnel forwarder
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
@@ -1032,8 +1033,8 @@ through this scrubber and through `traceWallet` or the SDK's automatic spans.
 
 ### Content-Security-Policy
 
-`src/middleware.ts` sends a Content-Security-Policy on every page with a
-per-request nonce; the sources are in `src/lib/csp.ts` and
+`src/middleware.ts` sends a Content-Security-Policy on every page and route
+it matches (not on the `/map` redirect) with a per-request nonce; the sources are in `src/lib/csp.ts` and
 [`docs/csp.md`](docs/csp.md) gives the reason for each one.
 
 | Variable   | Meaning                                                                                                        |
@@ -1044,13 +1045,15 @@ per-request nonce; the sources are in `src/lib/csp.ts` and
 `entrypoint.sh` placeholder), so the same image switches by recreating the
 container with it set. Violation reports go to `POST /monitoring/csp`, which
 forwards them to the Sentry project's security endpoint reduced to the
-directive and origins (no query, member path, sample, or referrer), and
+directive, origins, and route name (no query, member path, sample, or referrer), and
 answers 404 without a DSN.
 
 Rules:
 
-- No inline `<script>` without the nonce. A new inline script in a server
-  component reads it from the `x-nonce` request header, as `RootLayout` does.
+- No inline executable `<script>` without the nonce. A new inline script in a
+  server component reads it from the `x-nonce` request header, as
+  `RootLayout` does. JSON-LD data blocks (`type="application/ld+json"`) are
+  not run and need none.
 - No `eval`, `new Function`, or string timers.
 - A new external origin (script, image, font, frame, socket) needs a source in
   `CSP_SOURCES` and a row in `docs/csp.md` in the same PR; the unit test fails

@@ -1,5 +1,5 @@
 /**
- * Content-Security-Policy of every page.
+ * Content-Security-Policy of every page and route the middleware matches.
  *
  * The middleware builds the policy per request with a fresh nonce. Next.js
  * reads that nonce from the request header and puts it on its own scripts;

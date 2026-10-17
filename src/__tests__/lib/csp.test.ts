@@ -115,9 +115,10 @@ describe('buildCsp', () => {
 describe('docs/csp.md', () => {
   it('has one row for every source of the policy, and none for a source it lacks', () => {
     const doc = readFileSync(resolve(__dirname, '../../../docs/csp.md'), 'utf8');
-    const rows = [...doc.matchAll(/^\| `([a-z-]+)` +\| `([^`]+)` +\|/gm)]
-      .filter(([, name]) => name !== undefined && name in CSP_SOURCES)
-      .map(([, name, source]) => `${name} ${source}`);
+    const sources = doc.slice(doc.indexOf('\n## Sources\n'), doc.indexOf('\n### Hosts behind'));
+    const rows = [...sources.matchAll(/^\| `([a-z-]+)` +\| `([^`]+)` +\|/gm)].map(
+      ([, name, source]) => `${name} ${source}`,
+    );
     const policy = Object.entries(CSP_SOURCES).flatMap(([name, sources]) =>
       sources.map((source) => `${name} ${source}`),
     );

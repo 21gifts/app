@@ -79,7 +79,7 @@
 
 ## Endpoint: POST /monitoring/csp
 
-- **Purpose:** Same-origin endpoint for Content-Security-Policy violation reports (`forwardCspReport`), named by `report-uri` and by the `csp` group of `Reporting-Endpoints`. Forwards each violation to the security endpoint of the `NEXT_PUBLIC_SENTRY_DSN` project, reduced to the directive, the blocked origin or keyword (`inline`, `eval`, `data`, …), the page's origin and first path segment, the script's origin, and line, column, and status numbers.
+- **Purpose:** Same-origin endpoint for Content-Security-Policy violation reports (`forwardCspReport`), named by `report-uri` and by the `csp` group of `Reporting-Endpoints`. Forwards each violation to the security endpoint of the `NEXT_PUBLIC_SENTRY_DSN` project, reduced to the directive, the blocked origin or keyword (`inline`, `eval`, `data`, …), the page's origin and first path segment when it is a route of `src/app`, the script's origin, the disposition (`report` or `enforce`), and line, column, and status numbers.
 - **Inputs:** The legacy `{ "csp-report": {…} }` body (`application/csp-report`) or a Reporting API array (`application/reports+json`) whose `csp-violation` entries count. At most ten violations per request.
 - **Errors:** 404 while error reporting is off (no DSN), 413 above 64 KiB, 400 when the body is not JSON or holds no violation with a directive and an http(s) page, 502 when the Sentry server cannot be reached; otherwise 204.
 - **Used by:** Browsers, for the policy the middleware sends (`buildCsp`).
