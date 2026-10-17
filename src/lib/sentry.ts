@@ -9,15 +9,16 @@ import {
 
 /**
  * Error reporting (Sentry): init options, the privacy scrubber, the wallet
- * span helper, and the same-origin tunnel.
+ * span helper, the same-origin tunnel, and the Content-Security-Policy report
+ * forwarder.
  *
  * Everything comes from the environment (`getSentryDsn`,
  * `getSentryEnvironment`, `getSentryTracesSampleRate`, `getAppVersion`).
  * Without a valid DSN, {@link sentryOptions} returns `null`, the init files
  * never call `init`, {@link traceWallet} only runs its work, and
- * {@link forwardSentryEnvelope} answers 404. Errors, plus sampled performance
- * traces from the browser; the server sends errors only. No sessions, replay,
- * profiling, logs, or feedback.
+ * {@link forwardSentryEnvelope} and {@link forwardCspReport} answer 404.
+ * Errors, plus sampled performance traces from the browser; the server sends
+ * errors only. No sessions, replay, profiling, logs, or feedback.
  */
 
 /** Same-origin path the browser posts its envelopes to. */
@@ -173,7 +174,7 @@ export type WalletSpanSentAttributes = WalletSpanAttributes & PageLoad;
 /** A transaction event, as `beforeSendTransaction` receives it. */
 type TransactionEvent = Event & { type: 'transaction' };
 
-/** The parts of a DSN the SDK and the tunnel need. */
+/** The parts of a DSN the SDK, the tunnel, and the CSP report forwarder need. */
 interface SentryDsn {
   /** `host[:port]` of the Sentry server. */
   host: string;
@@ -181,6 +182,8 @@ interface SentryDsn {
   projectId: string;
   /** Envelope endpoint of that project. */
   envelopeUrl: string;
+  /** Security-report endpoint of that project, with the public key. */
+  securityUrl: string;
 }
 
 /** Init options shared by the browser, server, and edge runtimes. */
@@ -217,8 +220,8 @@ export interface SentryInitOptions {
  * Parse a DSN (`https://key@host[:port][/prefix]/projectId`).
  *
  * @param value - DSN text, or `null` when none is configured.
- * @returns Host, project id, and envelope URL, or `null` when not a DSN
- * (including an unsubstituted build placeholder).
+ * @returns Host, project id, envelope URL, and security-report URL, or `null`
+ * when not a DSN (including an unsubstituted build placeholder).
  */
 function parseSentryDsn(value: string | null): SentryDsn | null {
   if (value === null) {
@@ -239,10 +242,13 @@ function parseSentryDsn(value: string | null): SentryDsn | null {
   if (!/^\d+$/.test(projectId)) {
     return null;
   }
+  const base = `${url.protocol}//${url.host}${url.pathname.slice(0, slash)}/api/${projectId}`;
   return {
     host: url.host,
     projectId,
-    envelopeUrl: `${url.protocol}//${url.host}${url.pathname.slice(0, slash)}/api/${projectId}/envelope/`,
+    envelopeUrl: `${base}/envelope/`,
+    // `username` is already percent-encoded.
+    securityUrl: `${base}/security/?sentry_key=${url.username}`,
   };
 }
 
@@ -714,10 +720,13 @@ function envelopeDsn(envelope: Uint8Array): SentryDsn | null {
  * Read a request body, stopping as soon as it grows past the size limit.
  *
  * @param request - Incoming request.
- * @returns The body bytes, or `null` when it is larger than
- * {@link MAX_ENVELOPE_BYTES}.
+ * @param maxBytes - Largest body accepted.
+ * @returns The body bytes, or `null` when it is larger than `maxBytes`.
  */
-async function readCappedBody(request: Request): Promise<Uint8Array<ArrayBuffer> | null> {
+async function readCappedBody(
+  request: Request,
+  maxBytes: number,
+): Promise<Uint8Array<ArrayBuffer> | null> {
   if (request.body === null) {
     return new Uint8Array();
   }
@@ -730,7 +739,7 @@ async function readCappedBody(request: Request): Promise<Uint8Array<ArrayBuffer>
       break;
     }
     size += value.byteLength;
-    if (size > MAX_ENVELOPE_BYTES) {
+    if (size > maxBytes) {
       await reader.cancel();
       return null;
     }
@@ -770,7 +779,7 @@ export async function forwardSentryEnvelope(request: Request): Promise<Response>
   if (Number(request.headers.get('content-length')) > MAX_ENVELOPE_BYTES) {
     return new Response(null, { status: 413 });
   }
-  const body = await readCappedBody(request);
+  const body = await readCappedBody(request, MAX_ENVELOPE_BYTES);
   if (body === null) {
     return new Response(null, { status: 413 });
   }
@@ -793,4 +802,266 @@ export async function forwardSentryEnvelope(request: Request): Promise<Response>
   } catch {
     return new Response(null, { status: 502 });
   }
+}
+
+/** Largest violation-report body the report route reads. */
+const MAX_CSP_REPORT_BYTES = 64 * 1024;
+
+/** Most reports forwarded from one request. */
+const MAX_CSP_REPORTS = 10;
+
+/** A source keyword in a report: `inline`, `eval`, `wasm-eval`, `data`, and the like. */
+const CSP_KEYWORD = /^[a-z][a-z-]{0,31}$/;
+
+/** A directive name. */
+const CSP_DIRECTIVE = /^[a-z][a-z-]{0,31}$/;
+
+/** One violation in the legacy `report-uri` shape the Sentry security endpoint takes. */
+type CspReport = Record<string, string | number>;
+
+/**
+ * Top-level route names of `src/app` (route groups flattened). Only these
+ * first path segments are kept in a report's page: any other segment, such as
+ * a mistyped link with a key in it, is dropped.
+ */
+const CSP_PAGE_SECTIONS: ReadonlySet<string> = new Set([
+  '.well-known',
+  'about',
+  'auth',
+  'banners',
+  'contact',
+  'conversations',
+  'diagnostics',
+  'donate',
+  'forum',
+  'funding',
+  'fx',
+  'gifts',
+  'grants',
+  'habit-tracker',
+  'habits',
+  'handbook',
+  'healthz',
+  'l',
+  'legal',
+  'links',
+  'lnurl',
+  'lnurlp',
+  'lnurlpay',
+  'loans',
+  'login',
+  'maps',
+  'me',
+  'members',
+  'messages',
+  'moderate',
+  'monitoring',
+  'notifications',
+  'pay',
+  'pictures',
+  'pl',
+  'pos',
+  'profile',
+  'public-messages',
+  'push',
+  'rules',
+  'settings',
+  'setup',
+  'shops',
+  'statistics',
+  'stats',
+  'terms',
+  'translate',
+  'trust',
+  'trust-chain',
+  'verify',
+  'view',
+  'view-key',
+  'wallet',
+  'welcome',
+]);
+
+/**
+ * Where a page or script was loaded from, without anything that can name a
+ * member: the origin and, for a page, its first path segment (`/members`,
+ * `/view`) when it is a route name in {@link CSP_PAGE_SECTIONS}.
+ *
+ * @param value - URL text from the browser.
+ * @param keepSection - Whether to keep the first path segment.
+ * @returns The reduced URL, or `null` when not an http(s) URL.
+ */
+function reducedCspUrl(value: unknown, keepSection: boolean): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    return null;
+  }
+  // An http(s) pathname always starts with `/`, so the first segment exists.
+  const section = url.pathname.split('/')[1] as string;
+  if (!keepSection) {
+    return url.origin;
+  }
+  return CSP_PAGE_SECTIONS.has(section) ? `${url.origin}/${section}` : `${url.origin}/`;
+}
+
+/**
+ * What was blocked: an http(s) origin, or a keyword such as `inline`, `eval`,
+ * `data`, or `blob`. Paths and queries are dropped.
+ *
+ * @param value - `blocked-uri` / `blockedURL` from the browser.
+ * @returns The origin or keyword, or `null` when neither.
+ */
+function reducedBlocked(value: unknown): string | null {
+  const origin = reducedCspUrl(value, false);
+  if (origin !== null) {
+    return origin;
+  }
+  if (typeof value !== 'string') {
+    return null;
+  }
+  const keyword = value.replace(/:.*$/s, '');
+  return CSP_KEYWORD.test(keyword) ? keyword : null;
+}
+
+/**
+ * One violation, reduced to the fields that say which source a directive
+ * missed. Sample, referrer, policy text, and full URLs are dropped.
+ *
+ * @param raw - Report body: the legacy `csp-report` object or a Reporting API
+ * `body`.
+ * @returns The reduced report, or `null` when it names no directive or page.
+ */
+function reducedCspReport(raw: Record<string, unknown>): CspReport | null {
+  const directive = raw['effective-directive'] ?? raw['effectiveDirective'];
+  const violated = raw['violated-directive'] ?? directive;
+  const page = reducedCspUrl(raw['document-uri'] ?? raw['documentURL'], true);
+  const blocked = reducedBlocked(raw['blocked-uri'] ?? raw['blockedURL']);
+  if (
+    typeof directive !== 'string' ||
+    !CSP_DIRECTIVE.test(directive) ||
+    typeof violated !== 'string' ||
+    page === null
+  ) {
+    return null;
+  }
+  // Only the directive name: the rest is the policy, with this response's nonce.
+  const name = violated.trim().split(/\s+/)[0] as string;
+  const violatedName = CSP_DIRECTIVE.test(name) ? name : directive;
+  const report: CspReport = {
+    'document-uri': page,
+    'effective-directive': directive,
+    'violated-directive': violatedName,
+    'blocked-uri': blocked ?? '',
+  };
+  const disposition = raw['disposition'];
+  if (disposition === 'report' || disposition === 'enforce') {
+    report['disposition'] = disposition;
+  }
+  const source = reducedCspUrl(raw['source-file'] ?? raw['sourceFile'], false);
+  if (source !== null) {
+    report['source-file'] = source;
+  }
+  for (const [legacy, modern] of [
+    ['line-number', 'lineNumber'],
+    ['column-number', 'columnNumber'],
+    ['status-code', 'statusCode'],
+  ] as const) {
+    const value = raw[legacy] ?? raw[modern];
+    if (typeof value === 'number' && Number.isInteger(value) && value >= 0) {
+      report[legacy] = value;
+    }
+  }
+  return report;
+}
+
+/**
+ * Violations in a report body: the legacy `{ "csp-report": {…} }` object
+ * (`report-uri`) or a Reporting API array (`report-to`), where only
+ * `csp-violation` entries count.
+ *
+ * @param body - Parsed JSON body.
+ * @returns The raw violation objects.
+ */
+function cspViolations(body: unknown): Record<string, unknown>[] {
+  const isObject = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
+  if (Array.isArray(body)) {
+    return body
+      .filter((entry) => isObject(entry) && entry['type'] === 'csp-violation')
+      .map((entry) => (entry as Record<string, unknown>)['body'])
+      .filter(isObject);
+  }
+  if (isObject(body) && isObject(body['csp-report'])) {
+    return [body['csp-report']];
+  }
+  return [];
+}
+
+/**
+ * `POST /monitoring/csp`: forward Content-Security-Policy violation reports to
+ * the configured Sentry project's security endpoint.
+ *
+ * Takes the legacy `report-uri` body and the Reporting API (`report-to`)
+ * array. Each violation is reduced to its directive, the blocked origin or
+ * keyword, the page's origin and first path segment, the script's origin, and
+ * line, column, and status numbers; nothing else is passed on, so no query,
+ * fragment, member path, sample, or referrer. At most ten violations per
+ * request. The visitor's IP address, cookies, and headers are not passed on.
+ *
+ * @param request - Incoming report POST.
+ * @returns 404 when error reporting is off, 413 when larger than 64 KiB,
+ * 400 when the body is not JSON or holds no usable violation, 502 when the
+ * Sentry server cannot be reached, otherwise 204.
+ */
+export async function forwardCspReport(request: Request): Promise<Response> {
+  const target = parseSentryDsn(getSentryDsn());
+  if (target === null) {
+    return new Response(null, { status: 404 });
+  }
+  if (Number(request.headers.get('content-length')) > MAX_CSP_REPORT_BYTES) {
+    return new Response(null, { status: 413 });
+  }
+  const body = await readCappedBody(request, MAX_CSP_REPORT_BYTES);
+  if (body === null) {
+    return new Response(null, { status: 413 });
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(new TextDecoder().decode(body));
+  } catch {
+    return new Response(null, { status: 400 });
+  }
+  const reports = cspViolations(parsed)
+    .slice(0, MAX_CSP_REPORTS)
+    .map(reducedCspReport)
+    .filter((report): report is CspReport => report !== null);
+  if (reports.length === 0) {
+    return new Response(null, { status: 400 });
+  }
+  const environment = getSentryEnvironment();
+  const url =
+    `${target.securityUrl}&sentry_release=${encodeURIComponent(getAppVersion())}` +
+    (environment === null ? '' : `&sentry_environment=${encodeURIComponent(environment)}`);
+  try {
+    await Promise.all(
+      reports.map((report) =>
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/csp-report' },
+          // Through the same scrubber as every event: a kept origin can still spell an address.
+          body: JSON.stringify({ 'csp-report': scrubValue(report, 0) }),
+        }),
+      ),
+    );
+  } catch {
+    return new Response(null, { status: 502 });
+  }
+  return new Response(null, { status: 204 });
 }

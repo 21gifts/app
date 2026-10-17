@@ -1,7 +1,10 @@
 // @vitest-environment node
+import { readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { startSpan, type Breadcrumb, type ErrorEvent, type Event } from '@sentry/nextjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  forwardCspReport,
   forwardSentryEnvelope,
   SENTRY_TUNNEL_PATH,
   sentryOptions,
@@ -1076,5 +1079,361 @@ describe('forwardSentryEnvelope', () => {
   it('answers 502 when the Sentry server cannot be reached', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
     expect((await forwardSentryEnvelope(envelope(JSON.stringify({ dsn: DSN })))).status).toBe(502);
+  });
+});
+
+describe('forwardCspReport', () => {
+  const SECURITY = 'https://errors.example/api/42/security/?sentry_key=publickey';
+
+  /**
+   * Report POST as the browser sends it.
+   *
+   * @param body - JSON body, or raw text.
+   * @param type - Content type.
+   * @returns POST request to the report route.
+   */
+  function report(body: unknown, type = 'application/csp-report'): Request {
+    return new Request('http://localhost/monitoring/csp', {
+      method: 'POST',
+      headers: { 'Content-Type': type },
+      body: typeof body === 'string' ? body : JSON.stringify(body),
+    });
+  }
+
+  /** A legacy `report-uri` violation with every field a browser fills. */
+  const LEGACY = {
+    'document-uri': `https://21.gifts/view/${HEX64}?lightning=${INVOICE}#frag`,
+    referrer: 'https://21.gifts/members/acc_1',
+    'violated-directive': "script-src-elem 'nonce-abc' 'self'",
+    'effective-directive': 'script-src-elem',
+    'original-policy': "default-src 'self'; script-src 'nonce-abc'",
+    disposition: 'report',
+    'blocked-uri': 'https://evil.example/x.js?user=ada@21.gifts',
+    'status-code': 200,
+    'script-sample': 'alert(1)',
+    'source-file': 'https://21.gifts/_next/static/chunks/app.js?v=1',
+    'line-number': 12,
+    'column-number': 3,
+  };
+
+  /**
+   * Bodies the forwarder sent, parsed.
+   *
+   * @param fetchMock - The stubbed fetch.
+   * @returns The `csp-report` object of each call.
+   */
+  function sent(fetchMock: ReturnType<typeof vi.fn>): Array<Record<string, unknown>> {
+    return fetchMock.mock.calls.map(
+      ([, init]) =>
+        (JSON.parse((init as { body: string }).body) as { 'csp-report': Record<string, unknown> })[
+          'csp-report'
+        ],
+    );
+  }
+
+  it('answers 404 and sends nothing while error reporting is off', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', '');
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    expect((await forwardCspReport(report({ 'csp-report': LEGACY }))).status).toBe(404);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('forwards a legacy report reduced to directive, origins, and numbers', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 201 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const response = await forwardCspReport(report({ 'csp-report': LEGACY }));
+    expect(response.status).toBe(204);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${SECURITY}&sentry_release=123&sentry_environment=staging`,
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/csp-report' },
+      }),
+    );
+    expect(sent(fetchMock)).toEqual([
+      {
+        'document-uri': 'https://21.gifts/view',
+        'effective-directive': 'script-src-elem',
+        'violated-directive': 'script-src-elem',
+        'blocked-uri': 'https://evil.example',
+        disposition: 'report',
+        'source-file': 'https://21.gifts',
+        'line-number': 12,
+        'column-number': 3,
+        'status-code': 200,
+      },
+    ]);
+  });
+
+  it('leaves out the environment when none is set and keeps a DSN prefix and port', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', 'http://k%2By@errors.example:9000/sentry/7');
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_ENVIRONMENT', '');
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await forwardCspReport(report({ 'csp-report': LEGACY }));
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      'http://errors.example:9000/sentry/api/7/security/?sentry_key=k%2By&sentry_release=123',
+    );
+  });
+
+  it('forwards each csp-violation of a Reporting API batch and skips other types', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const body = [
+      {
+        type: 'csp-violation',
+        url: 'https://21.gifts/wallet?x=1',
+        body: {
+          documentURL: 'https://21.gifts/wallet?x=1',
+          effectiveDirective: 'connect-src',
+          blockedURL: 'https://lnurl.example/.well-known/lnurlp/ada',
+          disposition: 'enforce',
+          sourceFile: 'https://21.gifts/_next/static/chunks/w.js',
+          lineNumber: 1,
+          columnNumber: 99,
+          statusCode: 0,
+          sample: 'secret',
+        },
+      },
+      { type: 'deprecation', body: { id: 'x' } },
+      { type: 'csp-violation', body: 'not an object' },
+      'junk',
+      {
+        type: 'csp-violation',
+        body: {
+          documentURL: 'https://21.gifts/',
+          effectiveDirective: 'script-src-elem',
+          blockedURL: 'inline',
+        },
+      },
+    ];
+    expect((await forwardCspReport(report(body, 'application/reports+json'))).status).toBe(204);
+    expect(sent(fetchMock)).toEqual([
+      {
+        'document-uri': 'https://21.gifts/wallet',
+        'effective-directive': 'connect-src',
+        'violated-directive': 'connect-src',
+        'blocked-uri': 'https://lnurl.example',
+        disposition: 'enforce',
+        'source-file': 'https://21.gifts',
+        'line-number': 1,
+        'column-number': 99,
+        'status-code': 0,
+      },
+      {
+        'document-uri': 'https://21.gifts/',
+        'effective-directive': 'script-src-elem',
+        'violated-directive': 'script-src-elem',
+        'blocked-uri': 'inline',
+      },
+    ]);
+  });
+
+  it('keeps source keywords and drops what follows a scheme', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const base = { 'document-uri': 'https://21.gifts/', 'effective-directive': 'img-src' };
+    const cases: Array<[unknown, string]> = [
+      ['eval', 'eval'],
+      ['wasm-eval', 'wasm-eval'],
+      ['data:image/png;base64,AAAA', 'data'],
+      ['blob:https://21.gifts/1234-5678', 'blob'],
+      ['', ''],
+      ['Not A Keyword', ''],
+      [42, ''],
+      [undefined, ''],
+      ['ftp://files.example/a', 'ftp'],
+    ];
+    for (const [blocked] of cases) {
+      await forwardCspReport(report({ 'csp-report': { ...base, 'blocked-uri': blocked } }));
+    }
+    expect(sent(fetchMock).map((r) => r['blocked-uri'])).toEqual(cases.map(([, want]) => want));
+  });
+
+  it('drops bad optional fields', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    await forwardCspReport(
+      report({
+        'csp-report': {
+          'document-uri': 'https://21.gifts/',
+          'effective-directive': 'img-src',
+          disposition: 'maybe',
+          'source-file': 'about:srcdoc',
+          'line-number': -1,
+          'column-number': 1.5,
+          'status-code': '200',
+        },
+      }),
+    );
+    expect(sent(fetchMock)).toEqual([
+      {
+        'document-uri': 'https://21.gifts/',
+        'effective-directive': 'img-src',
+        'violated-directive': 'img-src',
+        'blocked-uri': '',
+      },
+    ]);
+  });
+
+  it('passes the reduced report through the privacy scrubber', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const address = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+    await forwardCspReport(
+      report({
+        'csp-report': {
+          'document-uri': 'https://21.gifts/wallet',
+          'effective-directive': 'connect-src',
+          'blocked-uri': `https://${address}.relay.example/x`,
+          'source-file': `https://${HEX64}.cdn.example/a.js`,
+        },
+      }),
+    );
+    expect(sent(fetchMock)).toEqual([
+      {
+        'document-uri': 'https://21.gifts/wallet',
+        'effective-directive': 'connect-src',
+        'violated-directive': 'connect-src',
+        'blocked-uri': 'https://[Filtered].relay.example',
+        'source-file': 'https://[Filtered].cdn.example',
+      },
+    ]);
+  });
+
+  it('keeps a page segment only when it is a route of src/app', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const app = resolve(__dirname, '../../app');
+    const routes = readdirSync(app, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .flatMap((entry) =>
+        entry.name.startsWith('(')
+          ? readdirSync(resolve(app, entry.name), { withFileTypes: true })
+              .filter((child) => child.isDirectory())
+              .map((child) => child.name)
+          : [entry.name],
+      );
+    expect(routes).toContain('view');
+    const pages = [...routes, HEX64, 'Members', 'unknown-page'];
+    for (const section of pages) {
+      await forwardCspReport(
+        report({
+          'csp-report': {
+            'document-uri': `https://21.gifts/${section}/x`,
+            'effective-directive': 'img-src',
+          },
+        }),
+      );
+    }
+    expect(sent(fetchMock).map((r) => r['document-uri'])).toEqual([
+      ...routes.map((section) => `https://21.gifts/${section}`),
+      'https://21.gifts/',
+      'https://21.gifts/',
+      'https://21.gifts/',
+    ]);
+  });
+
+  it('sends only a directive name as the violated directive', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const cases: Array<[string, string]> = [
+      ["script-src-elem\t'nonce-abc' 'self'", 'script-src-elem'],
+      ["  style-src 'self'", 'style-src'],
+      ["'nonce-abc'", 'img-src'],
+      ['Free Text', 'img-src'],
+      ['', 'img-src'],
+    ];
+    for (const [violated] of cases) {
+      await forwardCspReport(
+        report({
+          'csp-report': {
+            'document-uri': 'https://21.gifts/',
+            'effective-directive': 'img-src',
+            'violated-directive': violated,
+          },
+        }),
+      );
+    }
+    expect(sent(fetchMock).map((r) => r['violated-directive'])).toEqual(
+      cases.map(([, want]) => want),
+    );
+  });
+
+  it('refuses a report without a directive or an http(s) page', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    for (const bad of [
+      { 'document-uri': 'https://21.gifts/' },
+      { 'document-uri': 'https://21.gifts/', 'effective-directive': 'Script Src' },
+      { 'document-uri': 'https://21.gifts/', 'effective-directive': 7 },
+      {
+        'document-uri': 'https://21.gifts/',
+        'effective-directive': 'img-src',
+        'violated-directive': 3,
+      },
+      { 'document-uri': 'about:blank', 'effective-directive': 'img-src' },
+      { 'document-uri': 'not a url', 'effective-directive': 'img-src' },
+      { 'effective-directive': 'img-src' },
+    ]) {
+      expect((await forwardCspReport(report({ 'csp-report': bad }))).status).toBe(400);
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses a body that is not JSON or holds no violation', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    for (const body of ['not json', '{}', '[]', 'null', '{"csp-report":[1]}', '"text"']) {
+      expect((await forwardCspReport(report(body))).status).toBe(400);
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('forwards at most ten violations from one request', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const one = {
+      type: 'csp-violation',
+      body: { documentURL: 'https://21.gifts/', effectiveDirective: 'img-src' },
+    };
+    await forwardCspReport(report(Array.from({ length: 25 }, () => one)));
+    expect(fetchMock).toHaveBeenCalledTimes(10);
+  });
+
+  it('refuses a body larger than 64 KiB, by header or while reading', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const declared = new Request('http://localhost/monitoring/csp', {
+      method: 'POST',
+      headers: { 'Content-Length': String(64 * 1024 + 1) },
+      body: new ReadableStream({}),
+      duplex: 'half',
+    } as RequestInit);
+    expect((await forwardCspReport(declared)).status).toBe(413);
+    expect(declared.bodyUsed).toBe(false);
+    const streamed = new Request('http://localhost/monitoring/csp', {
+      method: 'POST',
+      body: new ReadableStream<Uint8Array>({
+        pull(controller) {
+          controller.enqueue(new Uint8Array(16 * 1024));
+        },
+      }),
+      duplex: 'half',
+    } as RequestInit);
+    expect((await forwardCspReport(streamed)).status).toBe(413);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('answers 502 when the Sentry server cannot be reached', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    expect((await forwardCspReport(report({ 'csp-report': LEGACY }))).status).toBe(502);
+  });
+
+  it('answers 400 for a POST without a body', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    const request = new Request('http://localhost/monitoring/csp', { method: 'POST' });
+    expect((await forwardCspReport(request)).status).toBe(400);
   });
 });
