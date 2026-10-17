@@ -5,6 +5,7 @@ import {
   formatPlacePinText,
   formatShopAddressLine,
   isShopNote,
+  SHOP_API_MESSAGE,
   SHOP_DESCRIPTION_MAX,
   SHOP_DESCRIPTION_MIN,
   shopAddressProblem,
@@ -14,7 +15,10 @@ import {
   shopNameProblem,
   shopPlaceComplete,
   stripShopHashtag,
+  type ShopApiProblem,
 } from '@/lib/forum-shop';
+import { getCatalog } from '@/lib/messages';
+import { translate } from '@/lib/translate';
 
 const ADDRESS: ForumPlaceAddress = {
   street: 'Bahnhofstrasse',
@@ -246,6 +250,23 @@ describe('forum-shop', () => {
       ).toBe('shopDescription');
       expect(shopApiProblem('Place address is invalid')).toBe('placeAddress');
       expect(shopApiProblem('Could not post your message')).toBe(null);
+    });
+  });
+
+  describe('SHOP_API_MESSAGE', () => {
+    it('maps each problem to an existing message key', () => {
+      const catalog = getCatalog('en');
+      const problems: ShopApiProblem[] = [
+        'shopName',
+        'shopNameAddress',
+        'shopAddress',
+        'shopDescription',
+        'placeAddress',
+      ];
+      expect(Object.keys(SHOP_API_MESSAGE).sort()).toEqual([...problems].sort());
+      for (const problem of problems) {
+        expect(translate(catalog, SHOP_API_MESSAGE[problem]).trim().length).toBeGreaterThan(0);
+      }
     });
   });
 });

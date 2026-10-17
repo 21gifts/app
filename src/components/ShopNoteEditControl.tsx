@@ -17,7 +17,15 @@ import {
 } from '@/lib/api';
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
-import { formatPlacePinText, isShopNote, shopApiProblem, stripShopHashtag } from '@/lib/forum-shop';
+import {
+  SHOP_API_MESSAGE,
+  formatPlacePinText,
+  isShopNote,
+  shopApiProblem,
+  shopDescriptionProblem,
+  shopPlaceComplete,
+  stripShopHashtag,
+} from '@/lib/forum-shop';
 import type { MessageKey } from '@/lib/messages';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
@@ -387,6 +395,7 @@ export function ShopNoteEditControl({
     try {
       const keptPhotos = kept.filter((item) => item.kind === 'photo');
       const textChanged = draft !== stripShopHashtag(message.text);
+      const placeChanged = !placesEqual(place, message.place ?? null);
       const photosChanged = photoDrafts.length > 0 || keptPhotos.length !== photoBaseline.length;
       if (photosChanged && !photosReady) {
         setSaveError(true);
@@ -415,11 +424,20 @@ export function ShopNoteEditControl({
         }
       }
       let latest = message;
+      const placeFirst =
+        textChanged &&
+        placeChanged &&
+        shopPlaceComplete(message.place ?? null) &&
+        shopDescriptionProblem(draft, message.place?.label ?? null) !== null;
+      if (placeChanged && placeFirst) {
+        latest = await setMessagePlace(token, message.id, place);
+        onUpdated(latest);
+      }
       if (textChanged) {
         latest = await setMessageShopText(token, message.id, draft);
         onUpdated(latest);
       }
-      if (!placesEqual(place, message.place ?? null)) {
+      if (placeChanged && !placeFirst) {
         latest = await setMessagePlace(token, message.id, place);
         onUpdated(latest);
       }
@@ -438,19 +456,7 @@ export function ShopNoteEditControl({
     } catch (error) {
       setSaveError(true);
       const problem = error instanceof Error ? shopApiProblem(error.message) : null;
-      setSaveErrorKey(
-        problem === 'shopName'
-          ? 'shops.problemName'
-          : problem === 'shopNameAddress'
-            ? 'shops.problemNameAddress'
-            : problem === 'shopAddress'
-              ? 'shops.problemAddress'
-              : problem === 'shopDescription'
-                ? 'shops.problemDescription'
-                : problem === 'placeAddress'
-                  ? 'shops.problemAddressInvalid'
-                  : null,
-      );
+      setSaveErrorKey(problem === null ? null : SHOP_API_MESSAGE[problem]);
     } finally {
       setSaving(false);
     }

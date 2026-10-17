@@ -4933,6 +4933,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'add-place-name-address',
+    image: 'shops-add-place-name-address.png',
+    visual: 'state-shops-add-place-name-address',
+    needle: "shotScreen(page, 'state-shops-add-place-name-address')",
+  },
+  {
+    route: '/shops',
+    id: 'add-place-field-invalid',
+    image: 'shops-add-place-field-invalid.png',
+    visual: 'state-shops-add-place-field-invalid',
+    needle: "shotScreen(page, 'state-shops-add-place-field-invalid')",
+  },
+  {
+    route: '/shops',
     id: 'add-place-complete',
     image: 'shops-add-place-complete.png',
     visual: 'state-shops-add-place-complete',
@@ -4947,6 +4961,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'add-text-long',
+    image: 'shops-add-text-long.png',
+    visual: 'state-shops-add-text-long',
+    needle: "shotScreen(page, 'state-shops-add-text-long')",
+  },
+  {
+    route: '/shops',
+    id: 'add-text-not-longer',
+    image: 'shops-add-text-not-longer.png',
+    visual: 'state-shops-add-text-not-longer',
+    needle: "shotScreen(page, 'state-shops-add-text-not-longer')",
+  },
+  {
+    route: '/shops',
     id: 'add-user',
     image: 'shops-add-user.png',
     visual: 'state-shops-add-user',
@@ -4958,6 +4986,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-add-summary.png',
     visual: 'state-shops-add-summary',
     needle: "shotScreen(page, 'state-shops-add-summary')",
+  },
+  {
+    route: '/shops',
+    id: 'add-post-rejected',
+    image: 'shops-add-post-rejected.png',
+    visual: 'state-shops-add-post-rejected',
+    needle: "shotScreen(page, 'state-shops-add-post-rejected')",
   },
   {
     route: '/shops',
@@ -5164,6 +5199,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'edit-save-rejected',
+    image: 'shops-edit-save-rejected.png',
+    visual: 'state-shops-edit-save-rejected',
+    needle: "shotScreen(page, 'state-shops-edit-save-rejected')",
+  },
+  {
+    route: '/shops',
     id: 'edit-history-error',
     image: 'shops-edit-history-error.png',
     visual: 'state-shops-edit-history-error',
@@ -5224,6 +5266,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-staff-place-edit-error.png',
     visual: 'state-shops-staff-place-edit-error',
     needle: "shotScreen(page, 'state-shops-staff-place-edit-error')",
+  },
+  {
+    route: '/shops',
+    id: 'staff-place-edit-rejected',
+    image: 'shops-staff-place-edit-rejected.png',
+    visual: 'state-shops-staff-place-edit-rejected',
+    needle: "shotScreen(page, 'state-shops-staff-place-edit-rejected')",
   },
   {
     route: '/shops',

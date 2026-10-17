@@ -1947,6 +1947,18 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the tabl
 
 ![21.gifts shops add place hint](images/shops-add-place-hint.png)
 
+### Variant: add-place-name-address
+
+**Add a place** is open with a map. **Shop name** is **Bahnhofstrasse Bakery**. Street **Bahnhofstrasse**, house number **12**, postal code **8001**, city **Zürich**, and country **Switzerland** are filled. The hint **The shop name must not contain the street or the postal code.** is visible. **Use this place** stays disabled.
+
+![21.gifts shops add place name address](images/shops-add-place-name-address.png)
+
+### Variant: add-place-field-invalid
+
+**Add a place** is open with a map. **Shop name** is **Kiki's Bakery**. Street **Bahnhofstrasse**, house number **abc**, postal code **8001**, city **Zürich**, and country **Switzerland** are filled. The hint **Check the House number.** is visible. **Use this place** stays disabled.
+
+![21.gifts shops add place field invalid](images/shops-add-place-field-invalid.png)
+
 ### Variant: add-place-complete
 
 **Add a place** is open with a map. **Shop name** is **Kiki's Bakery**. Street **Bahnhofstrasse**, house number **12**, postal code **8001**, city **Zürich**, and country **Switzerland** are filled. **Use this place** is enabled. The pin is not confirmed yet.
@@ -1959,6 +1971,18 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the tabl
 
 ![21.gifts shops add text](images/shops-add-text.png)
 
+### Variant: add-text-long
+
+**Add a shop** is open on step **3 / 5 · Text**. A complete pin **Kiki's Bakery** is already set. The shop text is 1001 characters. The hint **The description is too long (max. 1000 characters).** is visible. **Next** is the only button on the card, and it is disabled.
+
+![21.gifts shops add text long](images/shops-add-text-long.png)
+
+### Variant: add-text-not-longer
+
+**Add a shop** is open on step **3 / 5 · Text**. A complete pin **Kiki's Bakery and Coffee House Zurich** is already set. The shop text is **Fresh bread every morning.** The hint **The description must be longer than the shop name.** is visible. **Next** is the only button on the card, and it is disabled.
+
+![21.gifts shops add text not longer](images/shops-add-text-not-longer.png)
+
 ### Variant: add-user
 
 **Add a shop** is open on step **4 / 5 · 21.gifts user**. The username is empty. **Next** is the only button on the card.
@@ -1970,6 +1994,12 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the tabl
 **Add a shop** is open on step **5 / 5 · Summary**. Photos and the user were skipped. The summary shows **Kiki's Bakery** and **Bahnhofstrasse 12, 8001 Zürich, Switzerland**. The description is **Fresh bread every morning.** **Post** is the only button on the card, and it is enabled.
 
 ![21.gifts shops add summary](images/shops-add-summary.png)
+
+### Variant: add-post-rejected
+
+**Add a shop** is open on step **5 / 5 · Summary**. **Post** was pressed and rejected. The summary stays open. The alert **The description must be 20 to 1000 characters and longer than the shop name.** is visible.
+
+![21.gifts shops add post rejected](images/shops-add-post-rejected.png)
 
 ### Variant: table-more
 
@@ -2145,6 +2175,12 @@ A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save
 
 ![21.gifts shops edit save error](images/shops-edit-save-error.png)
 
+### Variant: edit-save-rejected
+
+A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** was rejected. The editor stays open. The alert **The shop name must not contain the street or the postal code.** is visible.
+
+![21.gifts shops edit save rejected](images/shops-edit-save-rejected.png)
+
 ### Variant: edit-history-error
 
 A moderator opened **Edit shop note** on Cafe Luna. The history request failed. The alert **Could not load the history** is visible. The photo step stays open and still dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word.
@@ -2174,6 +2210,12 @@ A moderator session. The Cafe Luna note has place **Happyland**. **Edit place** 
 A moderator session. **Edit place** is open on the Cafe Luna note, the map is visible, and **Remove place** was pressed. The save failed, so the alert **The place could not be saved. Please try again.** is visible. **Remove place** and **Use this place** stay.
 
 ![21.gifts shops staff place edit error](images/shops-staff-place-edit-error.png)
+
+### Variant: staff-place-edit-rejected
+
+A moderator session. **Edit place** is open on the Cafe Luna note (text **Cafe Luna**). **Shop name** is **Happyland**, the full address is filled, and **Use this place** was pressed. The server rejected the place because the stored description is too short for it, so the alert **The description must be 20 to 1000 characters and longer than the shop name.** is visible. The dialog stays open with **Use this place**.
+
+![21.gifts shops staff place edit rejected](images/shops-staff-place-edit-rejected.png)
 
 ### Variant: staff-place-edit-unavailable
 

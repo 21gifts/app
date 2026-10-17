@@ -75,7 +75,13 @@ import {
 } from '@/lib/forum-feed';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
-import { formatPlacePinText, isShopNote, stripShopHashtag } from '@/lib/forum-shop';
+import {
+  SHOP_API_MESSAGE,
+  formatPlacePinText,
+  isShopNote,
+  stripShopHashtag,
+  type ShopApiProblem,
+} from '@/lib/forum-shop';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
@@ -102,12 +108,12 @@ export type ForumFormError =
   | 'tooLarge'
   | 'tooMany'
   | 'ask'
-  | 'shopName'
-  | 'shopNameAddress'
-  | 'shopAddress'
-  | 'shopDescription'
-  | 'placeAddress'
+  | ShopApiProblem
   | null;
+
+function isShopApiProblem(error: ForumFormError): error is ShopApiProblem {
+  return error !== null && error in SHOP_API_MESSAGE;
+}
 
 /** Reply composer validation; `amount` is the paid-reply sats field. */
 export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted';
@@ -2079,29 +2085,9 @@ export function ForumBoard({
             {t('forum.errorAskAmount')}
           </p>
         ) : null}
-        {!hideCompose && formError === 'shopName' ? (
+        {!hideCompose && isShopApiProblem(formError) ? (
           <p role="alert" className="text-center text-sm text-app-danger">
-            {t('shops.problemName')}
-          </p>
-        ) : null}
-        {!hideCompose && formError === 'shopNameAddress' ? (
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {t('shops.problemNameAddress')}
-          </p>
-        ) : null}
-        {!hideCompose && formError === 'shopAddress' ? (
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {t('shops.problemAddress')}
-          </p>
-        ) : null}
-        {!hideCompose && formError === 'shopDescription' ? (
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {t('shops.problemDescription')}
-          </p>
-        ) : null}
-        {!hideCompose && formError === 'placeAddress' ? (
-          <p role="alert" className="text-center text-sm text-app-danger">
-            {t('shops.problemAddressInvalid')}
+            {t(SHOP_API_MESSAGE[formError])}
           </p>
         ) : null}
       </div>

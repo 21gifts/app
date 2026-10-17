@@ -1582,6 +1582,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** Labeled inputs. Autocomplete `off` / `off` / `postal-code` / `address-level2` / `country`. No network.
 - **Used by:** `PlaceField` when `shopDetails` is set.
 
+## Function: ShopLabeledInput
+
+- **Purpose:** One shop address text field: a sibling `<label htmlFor>` and an `<input>` with the shared rounded control style, so the accessible name is exactly the label text and never includes the typed value.
+- **Inputs:** `label`, `id` (must be unique per instance; `ShopAddressFields` derives it from `useId()`), and the native input attributes except `id` and `className`.
+- **Returns / side effects:** Labeled input. No state, no network.
+- **Used by:** `ShopAddressFields` for street, house number, postal code and city.
+
 ## Function: RulesDocument
 
 - **Purpose:** Presentational living-room rules body from catalog keys: lead with the **The test** callout, three rule cards (`rules.lawKicker` with `{n}`, title, body, optional test callout), welcome / allowed / better-not / forbidden lists rendered as bordered cards with lucide glyphs (`Check` `text-app-fg`, `Check` muted, `Minus`, `X` `text-app-danger`), the **Our house** closing block (`rules.houseBody` + `rules.houseClosing`), and an optional Contact CTA to `/contact`. There is no forum back CTA in the document.

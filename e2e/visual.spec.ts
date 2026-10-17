@@ -19199,6 +19199,62 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-edit-save-error');
   });
 
+  test('shops edit-save-rejected', async ({ page }) => {
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: COMPLETE_SHOP_TEXT,
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: COMPLETE_SHOP_PLACE,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-staff/edits', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ edits: [] }),
+      });
+    });
+    await page.route('**/forum/messages/m-staff/text', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Shop name must not contain the address' }),
+      });
+    });
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit shop note' }).click();
+    await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page
+      .getByLabel('Shop text')
+      .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    const alert = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(alert).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-edit-save-rejected');
+  });
+
   test('shops edit-history-error', async ({ page }) => {
     await seedAda(page, 'moderator');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -19391,6 +19447,62 @@ test.describe('shops screens', () => {
       node.scrollTop += 160;
     });
     await shotScreen(page, 'state-shops-staff-place-edit-error');
+  });
+
+  test('shops staff-place-edit-rejected', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page, 'moderator');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-staff',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              role: 'basis',
+              place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(
+      (url) => new URL(url).pathname.endsWith('/place'),
+      async (route) => {
+        if (route.request().method() !== 'PATCH') {
+          await route.continue();
+          return;
+        }
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: 'Shop description must be 20 to 1000 characters and longer than the shop name',
+          }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    const note = page.locator('[data-message-id="m-staff"]');
+    await note.getByRole('button', { name: 'Edit place' }).click();
+    await fillShopAddress(page, 'Happyland');
+    const confirm = page.getByRole('button', { name: 'Use this place' });
+    await expect(confirm).toBeEnabled();
+    await confirm.click();
+    const alert = page.getByRole('alert').filter({
+      hasText: 'The description must be 20 to 1000 characters and longer than the shop name.',
+    });
+    await expect(alert).toBeVisible();
+    await expect(confirm).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-staff-place-edit-rejected');
   });
 
   test('shops staff-place-edit-unavailable', async ({ page }) => {
@@ -19915,6 +20027,153 @@ test.describe('shops screens', () => {
       .poll(async () => post.evaluate((element) => getComputedStyle(element).opacity))
       .toBe('1');
     await shotScreen(page, 'state-shops-add-summary');
+  });
+
+  test('shops add-place-name-address', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page, 'Bahnhofstrasse Bakery');
+    await expect(
+      page.getByText('The shop name must not contain the street or the postal code.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-add-place-name-address');
+  });
+
+  test('shops add-place-field-invalid', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    const houseNumber = page
+      .getByTestId('shop-address-fields')
+      .getByLabel('House number', { exact: true });
+    await houseNumber.fill('abc');
+    await houseNumber.evaluate((node) => {
+      (node as HTMLInputElement).blur();
+      const port = node.closest('[data-scrollport]') as HTMLElement;
+      port.scrollTop = 0;
+    });
+    await expect(page.getByText('Check the House number.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-add-place-field-invalid');
+  });
+
+  test('shops add-text-long', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    const box = page.getByLabel('Shop text');
+    await box.fill('x'.repeat(1001));
+    await box.evaluate((node) => {
+      const port = node.closest('[data-scrollport]') as HTMLElement;
+      port.scrollTop = 0;
+    });
+    await expect(
+      page.getByText('The description is too long (max. 1000 characters).'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-add-text-long');
+  });
+
+  test('shops add-text-not-longer', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page, "Kiki's Bakery and Coffee House Zurich");
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    const box = page.getByLabel('Shop text');
+    await box.fill('Fresh bread every morning.');
+    await box.evaluate((node) => {
+      const port = node.closest('[data-scrollport]') as HTMLElement;
+      port.scrollTop = 0;
+    });
+    await expect(
+      page.getByText('The description must be longer than the shop name.'),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-add-text-not-longer');
+  });
+
+  test('shops add-post-rejected', async ({ page }) => {
+    await stubPlaceMap(page);
+    await seedAda(page);
+    await fulfillMixedSatsMessages(page);
+    await page.route(
+      (url) => new URL(url).pathname === '/forum/messages',
+      async (route) => {
+        if (route.request().method() !== 'POST') {
+          await route.continue();
+          return;
+        }
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: 'Shop description must be 20 to 1000 characters and longer than the shop name',
+          }),
+        });
+      },
+    );
+    await page.goto('/shops');
+    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a shop' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await fillShopAddress(page);
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('3 / 5 · Text')).toBeVisible();
+    await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+    const post = page.locator('form').getByRole('button', { name: 'Post', exact: true });
+    await expect(post).toBeEnabled();
+    await expect
+      .poll(async () => post.evaluate((element) => getComputedStyle(element).opacity))
+      .toBe('1');
+    await post.evaluate((element) => {
+      (element as unknown as { click: () => void }).click();
+    });
+    const alert = page.getByText(
+      'The description must be 20 to 1000 characters and longer than the shop name.',
+    );
+    await expect(alert).toBeVisible();
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-add-post-rejected');
   });
 });
 

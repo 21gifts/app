@@ -1104,6 +1104,16 @@
     "es": "Añadir una tienda está abierto en el paso 3 de 5 · Texto. Ya hay un pin completo Kiki's Bakery. El texto de la tienda está vacío. El aviso 20 caracteres más. es visible. Siguiente es el único botón de la tarjeta y permanece desactivado.",
     "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 sa 5 · Teksto. May kumpletong pin na Kiki's Bakery. Walang laman ang teksto ng shop. Nakikita ang palatandaan 20 pang karakter. Ang Susunod ang tanging pindutan sa kard at naka-disable."
   },
+  "/shops:add-text-long": {
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 3 von 5 · Text. Eine vollständige Stecknadel Kiki's Bakery ist bereits gesetzt. Der Shoptext hat 1001 Zeichen. Der Hinweis Die Beschreibung ist zu lang (max. 1000 Zeichen). ist sichtbar. Weiter ist die einzige Schaltfläche auf der Karte und bleibt deaktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 3 de 5 · Texto. Ya hay un pin completo Kiki's Bakery. El texto de la tienda tiene 1001 caracteres. El aviso La descripción es demasiado larga (máx. 1000 caracteres). es visible. Siguiente es el único botón de la tarjeta y permanece desactivado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 sa 5 · Teksto. May kumpletong pin na Kiki's Bakery. 1001 karakter ang teksto ng shop. Nakikita ang palatandaan Masyadong mahaba ang paglalarawan (max. 1000 karakter). Ang Susunod ang tanging pindutan sa kard at naka-disable."
+  },
+  "/shops:add-text-not-longer": {
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 3 von 5 · Text. Eine vollständige Stecknadel Kiki's Bakery and Coffee House Zurich ist bereits gesetzt. Der Shoptext ist Fresh bread every morning. Der Hinweis Die Beschreibung muss länger sein als der Shopname. ist sichtbar. Weiter ist die einzige Schaltfläche auf der Karte und bleibt deaktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 3 de 5 · Texto. Ya hay un pin completo Kiki's Bakery and Coffee House Zurich. El texto de la tienda es Fresh bread every morning. El aviso La descripción debe ser más larga que el nombre de la tienda. es visible. Siguiente es el único botón de la tarjeta y permanece desactivado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 sa 5 · Teksto. May kumpletong pin na Kiki's Bakery and Coffee House Zurich. Ang teksto ng shop ay Fresh bread every morning. Nakikita ang palatandaan Dapat mas mahaba ang paglalarawan kaysa sa pangalan ng shop. Ang Susunod ang tanging pindutan sa kard at naka-disable."
+  },
   "/moderate/payouts:empty": {
     "de": "Personal-Seite, wenn niemand berechtigt war. In diesen sieben Tagen war niemand berechtigt. Keine Tabelle.",
     "es": "Página del personal cuando nadie tenía derecho. Nadie tenía derecho en estos siete días. Sin tabla.",
@@ -1520,8 +1530,8 @@
     "fil": "Ipinapakita ang Aktibo na sarado; mas luma ang selyo ng huling pagdalaw kaysa sa hindi pa bayad na tala ni Bob; ang marka ng bilang 1 ay nakaupo sa saradong kontrol na iyon."
   },
   "/shops:table": {
-    "de": "Die Option Tabelle ist ausgewählt. Überschriften Name, Ort und Betreiber. Eine Zeile Cafe Luna, Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland, Betreiber @luna.",
-    "es": "La opción Tabla está seleccionada. Encabezados Nombre, Lugar y Operador. Una fila Cafe Luna, lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland, operador @luna.",
+    "de": "Die Option Tabelle ist ausgewählt. Überschriften Name, Ort und Betreiber. Eine Zeile Cafe Luna, Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz, Betreiber @luna.",
+    "es": "La opción Tabla está seleccionada. Encabezados Nombre, Lugar y Operador. Una fila Cafe Luna, lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza, operador @luna.",
     "fil": "Napili ang opsyon na Talahanayan. Mga paulo Pangalan, Lugar, at Operator. Isang hilera Cafe Luna, lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland, Operator @luna."
   },
   "/profile:large-usd": {
@@ -1645,13 +1655,13 @@
     "fil": "Hiling hakbang 2 sa 4 pagkatapos ng mahigit 10 litrato. Nanatili ang unang sampung maliit na larawan, at Pwede kang magdagdag ng hanggang 10 litrato ay nasa ilalim nila."
   },
   "/shops:table-edit-text": {
-    "de": "Erneut Weiter. Schritt 3 von 5 · Text ist geöffnet. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland und Betreiber @luna bleiben.",
-    "es": "Siguiente otra vez. Paso 3 de 5 · Texto está abierto. El historial sigue diciendo que aún no hay ediciones. Lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland y operador @luna permanecen.",
+    "de": "Erneut Weiter. Schritt 3 von 5 · Text ist geöffnet. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiber @luna bleiben.",
+    "es": "Siguiente otra vez. Paso 3 de 5 · Texto está abierto. El historial sigue diciendo que aún no hay ediciones. Lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y operador @luna permanecen.",
     "fil": "Susunod ulit. Hakbang 3 sa 5 · Teksto ay bukas. Sinasabi pa rin ng kasaysayan na wala pang mga pagbabago. Lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland at Operator @luna ay nananatili."
   },
   "/shops:table-edit-summary": {
-    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Änderungen speichern ist die Schaltfläche auf der Karte. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland und Betreiber @luna bleiben.",
-    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. Guardar cambios es el botón de la tarjeta. Lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland y operador @luna permanecen.",
+    "de": "Erneut Weiter. Schritt 5 von 5 · Zusammenfassung ist geöffnet. Änderungen speichern ist die Schaltfläche auf der Karte. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiber @luna bleiben.",
+    "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. Guardar cambios es el botón de la tarjeta. Lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y operador @luna permanecen.",
     "fil": "Susunod ulit. Hakbang 5 sa 5 · Buod ay bukas. I-save ang mga pagbabago ang pindutan sa talaan. Lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland at Operator @luna ay nananatili."
   },
   "/members/[accountId]:about-translate-loading": {
@@ -1759,6 +1769,16 @@
     "es": "Añadir un lugar está abierto con un mapa. Nombre de la tienda es Kiki's Bakery. Los campos de dirección siguen vacíos. El aviso Introduce la dirección completa: es visible. Usar este lugar sigue desactivado.",
     "fil": "Bukas ang Magdagdag ng lugar na may mapa. Pangalan ng shop ay Kiki's Bakery. Walang laman pa ang mga patlang ng address. Nakikita ang palatandaan Ilagay ang buong address:. Naka-disable pa ang Gamitin ang lugar na ito."
   },
+  "/shops:add-place-name-address": {
+    "de": "Einen Ort hinzufügen ist mit einer Karte geöffnet. Shopname ist Bahnhofstrasse Bakery. Strasse Bahnhofstrasse, Hausnummer 12, Postleitzahl 8001, Ort Zürich und Land Schweiz sind ausgefüllt. Der Hinweis Der Shopname darf die Strasse oder die Postleitzahl nicht enthalten. ist sichtbar. Diesen Ort verwenden bleibt deaktiviert.",
+    "es": "Añadir un lugar está abierto con un mapa. Nombre de la tienda es Bahnhofstrasse Bakery. Calle Bahnhofstrasse, número 12, código postal 8001, ciudad Zúrich y país Suiza están rellenos. El aviso El nombre de la tienda no debe contener la calle ni el código postal. es visible. Usar este lugar sigue desactivado.",
+    "fil": "Bukas ang Magdagdag ng lugar na may mapa. Pangalan ng shop ay Bahnhofstrasse Bakery. Kalye Bahnhofstrasse, numero ng bahay 12, postal code 8001, lungsod Zürich, at bansa Switzerland ay napunan. Nakikita ang palatandaan Hindi dapat kasama sa pangalan ng shop ang kalye o ang postal code. Naka-disable pa ang Gamitin ang lugar na ito."
+  },
+  "/shops:add-place-field-invalid": {
+    "de": "Einen Ort hinzufügen ist mit einer Karte geöffnet. Shopname ist Kiki's Bakery. Strasse Bahnhofstrasse, Hausnummer abc, Postleitzahl 8001, Ort Zürich und Land Schweiz sind ausgefüllt. Der Hinweis Prüfen Sie Hausnummer. ist sichtbar. Diesen Ort verwenden bleibt deaktiviert.",
+    "es": "Añadir un lugar está abierto con un mapa. Nombre de la tienda es Kiki's Bakery. Calle Bahnhofstrasse, número abc, código postal 8001, ciudad Zúrich y país Suiza están rellenos. El aviso Revisa Número. es visible. Usar este lugar sigue desactivado.",
+    "fil": "Bukas ang Magdagdag ng lugar na may mapa. Pangalan ng shop ay Kiki's Bakery. Kalye Bahnhofstrasse, numero ng bahay abc, postal code 8001, lungsod Zürich, at bansa Switzerland ay napunan. Nakikita ang palatandaan Suriin ang Numero ng bahay. Naka-disable pa ang Gamitin ang lugar na ito."
+  },
   "/shops:add-place-complete": {
     "de": "Einen Ort hinzufügen ist mit einer Karte geöffnet. Shopname ist Kiki's Bakery. Strasse Bahnhofstrasse, Hausnummer 12, Postleitzahl 8001, Ort Zürich und Land Schweiz sind ausgefüllt. Diesen Ort verwenden ist aktiviert. Die Stecknadel ist noch nicht bestätigt.",
     "es": "Añadir un lugar está abierto con un mapa. Nombre de la tienda es Kiki's Bakery. Calle Bahnhofstrasse, número 12, código postal 8001, ciudad Zúrich y país Suiza están rellenos. Usar este lugar está activado. El pin aún no está confirmado.",
@@ -1790,8 +1810,8 @@
     "fil": "Tauhan (moderator) na na-load ang pila na may hindi bababa sa isang bukas na mungkahi (paksa Rose, Iminungkahi ni Bob, Kumpirmahin bilang moderator, Tanggihan)."
   },
   "/shops:table-staff": {
-    "de": "Eine Moderatorsitzung. Tabelle ist ausgewählt. Shop-Eintrag bearbeiten steht neben dem Namen Cafe Luna. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland und Betreiberin oder Betreiber @luna bleiben.",
-    "es": "Una sesión de moderación. Tabla está seleccionada. Editar la entrada de la tienda está junto al nombre Cafe Luna. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland y la operadora o el operador @luna se quedan.",
+    "de": "Eine Moderatorsitzung. Tabelle ist ausgewählt. Shop-Eintrag bearbeiten steht neben dem Namen Cafe Luna. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiberin oder Betreiber @luna bleiben.",
+    "es": "Una sesión de moderación. Tabla está seleccionada. Editar la entrada de la tienda está junto al nombre Cafe Luna. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y la operadora o el operador @luna se quedan.",
     "fil": "Isang sesyon ng moderator. Napili ang Talahanayan. Nakaupo ang Baguhin ang entry sa shop sa tabi ng pangalang Cafe Luna. Nanatili ang lugar na Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland at ang operator na @luna."
   },
   "/welcome:renew-failed": {
@@ -1805,13 +1825,18 @@
     "fil": "Habang nakabinbin ang DELETE ng sagot, naka-disable ang kumpirmasyon at pagkansela sa sagot na iyon at pumapalit sa tsek ang isang umiikot na tagapaghintay."
   },
   "/shops:add-summary": {
-    "de": "Shop hinzufügen ist geöffnet bei Schritt 5 von 5 · Zusammenfassung. Fotos und die Nutzerin oder der Nutzer wurden übersprungen. Die Zusammenfassung zeigt Kiki's Bakery und Bahnhofstrasse 12, 8001 Zürich, Switzerland. Die Beschreibung ist Fresh bread every morning. Senden ist die einzige Schaltfläche auf der Karte und ist aktiviert.",
-    "es": "Añadir una tienda está abierto en el paso 5 de 5 · Resumen. Se omitieron las fotos y la usuaria o el usuario. El resumen muestra Kiki's Bakery y Bahnhofstrasse 12, 8001 Zürich, Switzerland. La descripción es Fresh bread every morning. Publicar es el único botón de la ficha y está activado.",
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 5 von 5 · Zusammenfassung. Fotos und die Nutzerin oder der Nutzer wurden übersprungen. Die Zusammenfassung zeigt Kiki's Bakery und Bahnhofstrasse 12, 8001 Zürich, Schweiz. Die Beschreibung ist Fresh bread every morning. Senden ist die einzige Schaltfläche auf der Karte und ist aktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 5 de 5 · Resumen. Se omitieron las fotos y la usuaria o el usuario. El resumen muestra Kiki's Bakery y Bahnhofstrasse 12, 8001 Zürich, Suiza. La descripción es Fresh bread every morning. Publicar es el único botón de la ficha y está activado.",
     "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 sa 5 · Buod. Nilaktawan ang mga litrato at ang user. Ipinapakita ng buod ang Kiki's Bakery at Bahnhofstrasse 12, 8001 Zürich, Switzerland. Ang paglalarawan ay Fresh bread every morning. Ang I-post ang tanging pindutan sa kard at naka-enable."
   },
+  "/shops:add-post-rejected": {
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 5 von 5 · Zusammenfassung. Senden wurde gedrückt und abgelehnt. Die Zusammenfassung bleibt geöffnet. Die Meldung Die Beschreibung muss 20 bis 1000 Zeichen lang und länger als der Shopname sein. ist sichtbar.",
+    "es": "Añadir una tienda está abierto en el paso 5 de 5 · Resumen. Se pulsó Publicar y fue rechazado. El resumen sigue abierto. La alerta La descripción debe tener entre 20 y 1000 caracteres y ser más larga que el nombre de la tienda. está visible.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 sa 5 · Buod. Pinindot ang I-post at tinanggihan. Bukas pa ang buod. Nakikita ang alerto Dapat 20 hanggang 1000 karakter ang paglalarawan at mas mahaba kaysa sa pangalan ng shop."
+  },
   "/shops:place": {
-    "de": "Eine Shop-Notiz mit einem Ort. Die Karte zeigt einen MapPin-Link Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland zu /map?pin=m-place. Das rohe Token #21GiftsShop bleibt verborgen.",
-    "es": "Una nota de tienda con un lugar. La ficha muestra un enlace MapPin Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland a /map?pin=m-place. El token en bruto #21GiftsShop permanece oculto.",
+    "de": "Eine Shop-Notiz mit einem Ort. Die Karte zeigt einen MapPin-Link Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz zu /map?pin=m-place. Das rohe Token #21GiftsShop bleibt verborgen.",
+    "es": "Una nota de tienda con un lugar. La ficha muestra un enlace MapPin Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza a /map?pin=m-place. El token en bruto #21GiftsShop permanece oculto.",
     "fil": "Isang tala ng tindahan na may lugar. Ipinapakita ng kard ang isang link na MapPin Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland papunta sa /map?pin=m-place. Nakatago pa rin ang hilaw na token na #21GiftsShop."
   },
   "/messages/[id]:donation-tag-open": {
@@ -2389,6 +2414,11 @@
     "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el texto, y Guardar cambios falló. El editor sigue abierto. La alerta No se pudo guardar esta entrada está visible.",
     "fil": "Nagbukas ang tagapamagitan ng Baguhin ang entry sa shop sa Cafe Luna, binago ang teksto, at nabigo ang I-save ang mga pagbabago. Bukas pa ang pampatnugot. Nakikita ang alerto Hindi na-save ang entry na ito."
   },
+  "/shops:edit-save-rejected": {
+    "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern wurde abgelehnt. Der Editor bleibt geöffnet. Die Meldung Der Shopname darf die Strasse oder die Postleitzahl nicht enthalten. ist sichtbar.",
+    "es": "Un moderador abrió Editar la entrada de la tienda en Cafe Luna, cambió el texto, y Guardar cambios fue rechazado. El editor sigue abierto. La alerta El nombre de la tienda no debe contener la calle ni el código postal. está visible.",
+    "fil": "Nagbukas ang tagapamagitan ng Baguhin ang entry sa shop sa Cafe Luna, binago ang teksto, at tinanggihan ang I-save ang mga pagbabago. Bukas pa ang pampatnugot. Nakikita ang alerto Hindi dapat kasama sa pangalan ng shop ang kalye o ang postal code."
+  },
   "/profile:picture-save-error": {
     "de": "PUT /pictures/me antwortet 500, nachdem ein JPEG gewählt wurde. Meldung Konnte nicht gespeichert werden. Bitte versuchen Sie es erneut. Die Profilfoto-Schaltfläche bleibt. Needle state-profile-picture-save-error.",
     "es": "PUT /pictures/me responde 500 después de elegir un JPEG. Alerta No se pudo guardar. Inténtalo de nuevo. El botón de foto de perfil permanece. Needle state-profile-picture-save-error.",
@@ -2465,8 +2495,8 @@
     "fil": "Binubuksan ng tagapagtatag ang komento gamit ang lapis at pinipindot ang tsek. Tinatanggihan ito ng Spend. Bukas pa ang patlang. Alerto Hindi wasto ang komento. Karayom Hindi wasto ang komento."
   },
   "/shops:table-edit-user": {
-    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Benutzername-Feld zeigt bereits luna. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland und Betreiberin @luna bleiben.",
-    "es": "Otra vez Siguiente. El paso 4 de 5 · usuario de 21.gifts está abierto. El campo de nombre de usuario ya muestra luna. El historial sigue diciendo que aún no hay ediciones. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland y la operadora @luna permanecen.",
+    "de": "Erneut Weiter. Schritt 4 von 5 · 21.gifts-Nutzer ist geöffnet. Das Benutzername-Feld zeigt bereits luna. Der Verlauf sagt noch, dass es noch keine Bearbeitungen gibt. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiberin @luna bleiben.",
+    "es": "Otra vez Siguiente. El paso 4 de 5 · usuario de 21.gifts está abierto. El campo de nombre de usuario ya muestra luna. El historial sigue diciendo que aún no hay ediciones. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y la operadora @luna permanecen.",
     "fil": "Muli ang Susunod. Bukas ang Hakbang 4 sa 5 · User ng 21.gifts. Ipinapakita na ng patlang ng pangalan ng gumagamit ang luna. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Nanatili ang lugar na Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland at ang operator na @luna."
   },
   "/welcome:note-video-paused": {
@@ -2665,8 +2695,8 @@
     "fil": "Miyembro. Walang pumipili. Nai-load na listahan na ang huling teksto ay sariling padala ng tumitingin (Bob, Hello team). Paunang tingin Ikaw: Hello team bilang siksik na napunang pildura sa kanan ng tahimik na hilera, hindi tahimik na katawan ng teksto."
   },
   "/shops:table-edit-place": {
-    "de": "Dieselbe Moderation hat Weiter gedrückt. Schritt 2 von 5 · Ort ist in der Tabelle geöffnet. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Das Schließen (X) des Foto-Schritts ist weg. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland und Betreiber @luna bleiben.",
-    "es": "El mismo moderador pulsó Siguiente. El paso 2 de 5 · Lugar está abierto en la tabla. El historial sigue diciendo que aún no hay ediciones. El Cerrar (X) del paso de la foto desapareció. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland y el operador @luna permanecen.",
+    "de": "Dieselbe Moderation hat Weiter gedrückt. Schritt 2 von 5 · Ort ist in der Tabelle geöffnet. Der Verlauf sagt weiterhin, dass es noch keine Bearbeitungen gibt. Das Schließen (X) des Foto-Schritts ist weg. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiber @luna bleiben.",
+    "es": "El mismo moderador pulsó Siguiente. El paso 2 de 5 · Lugar está abierto en la tabla. El historial sigue diciendo que aún no hay ediciones. El Cerrar (X) del paso de la foto desapareció. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y el operador @luna permanecen.",
     "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang hakbang 2 sa 5 · Lugar sa talahanayan. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng litrato. Nanatili ang lugar na Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland at ang Operator na @luna."
   },
   "/shops:staff-account-error": {
@@ -3029,6 +3059,11 @@
     "es": "Una sesión de moderación. Editar lugar está abierto en la nota Cafe Luna, el mapa es visible y se pulsó Quitar lugar. El guardado falló, así que el aviso No se pudo guardar el lugar. Inténtalo de nuevo. está visible. Quitar lugar y Usar este lugar permanecen.",
     "fil": "Isang session ng moderator. Bukas ang I-edit ang lugar sa tala ng Cafe Luna, nakikita ang mapa, at pinindot ang Alisin ang lugar. Nabigo ang pag-save, kaya nakikita ang alerto Hindi ma-save ang lugar. Pakisubukan muli. Nanatili ang Alisin ang lugar at Gamitin ang lugar na ito."
   },
+  "/shops:staff-place-edit-rejected": {
+    "de": "Eine Moderatorsitzung. Ort bearbeiten ist auf der Notiz Cafe Luna geöffnet (Text Cafe Luna). Shopname ist Happyland, die vollständige Adresse ist ausgefüllt, und Diesen Ort verwenden wurde gedrückt. Der Server hat den Ort abgelehnt, weil die gespeicherte Beschreibung dafür zu kurz ist, daher ist der Hinweis Die Beschreibung muss 20 bis 1000 Zeichen lang und länger als der Shopname sein. sichtbar. Der Dialog bleibt mit Diesen Ort verwenden offen.",
+    "es": "Una sesión de moderación. Editar lugar está abierto en la nota Cafe Luna (texto Cafe Luna). Nombre de la tienda es Happyland, la dirección completa está rellenada y se pulsó Usar este lugar. El servidor rechazó el lugar porque la descripción guardada es demasiado corta para él, así que el aviso La descripción debe tener entre 20 y 1000 caracteres y ser más larga que el nombre de la tienda. está visible. El diálogo sigue abierto con Usar este lugar.",
+    "fil": "Isang session ng moderator. Bukas ang I-edit ang lugar sa tala ng Cafe Luna (teksto Cafe Luna). Happyland ang Pangalan ng shop, kumpleto ang address, at pinindot ang Gamitin ang lugar na ito. Tinanggihan ng server ang lugar dahil masyadong maikli ang naka-save na paglalarawan para dito, kaya nakikita ang alerto Dapat 20 hanggang 1000 karakter ang paglalarawan at mas mahaba kaysa sa pangalan ng shop. Nananatiling bukas ang dialog na may Gamitin ang lugar na ito."
+  },
   "/wallet/phrase:error": {
     "de": "Allgemeiner Fehler. Hinweis Der Wiederherstellungssatz konnte nicht angelegt oder geöffnet werden. Prüfen Sie dieses Gerät und versuchen Sie es erneut. plus Hinweis Wenn das weiter passiert, nutzen Sie einen anderen Browser oder das Gerät, mit dem Sie sich angemeldet haben. und beschriftetes Erneut versuchen. Kein Empfangs-QR.",
     "es": "Fallo genérico. Aviso No se pudo crear ni abrir la frase de recuperación. Comprueba este dispositivo e inténtalo de nuevo. más la pista Si sigue ocurriendo, prueba otro navegador o el dispositivo con el que ya iniciaste sesión. y Intentar de nuevo etiquetado. No hay QR de recepción.",
@@ -3230,8 +3265,8 @@
     "fil": "Sagot na pwedeng bayaran pagkatapos ipakita ang mga reaksyon, nabuksan ang regalo, napunan ang halaga, hindi pa naisumite. Ang panawagan sa kilos ng halaga ay Magpatuloy (forum.payContinue) sa bawat ahente ng gumagamit. Kasalukuyang katumbas sa nais na pera ng fiat (walang tagapili). Walang mali, walang QR ng bayad, wala pang pindutan para magbayad gamit ang pitaka. Ang publikasyon mismo ay hindi nagpapakita ng Magpadala ng Bitcoin."
   },
   "/shops:table-edit-open": {
-    "de": "Ein Moderator hat neben Cafe Luna auf Shop-Eintrag bearbeiten geklickt. Schritt 1 von 5 · Bilder ist in der Tabelle geöffnet. Die Historie zeigt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt schliesst sich mit einem nur als Symbol sichtbaren Schliessen (X). Der barrierefreie Name lautet Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland und Betreiber @luna bleiben.",
-    "es": "Un moderador hizo clic en Editar la entrada de la tienda junto a Cafe Luna. El paso 1 de 5 · Fotos está abierto en la tabla. El historial indica que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay ninguna palabra Cancelar visible. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland y el operador @luna se mantienen.",
+    "de": "Ein Moderator hat neben Cafe Luna auf Shop-Eintrag bearbeiten geklickt. Schritt 1 von 5 · Bilder ist in der Tabelle geöffnet. Die Historie zeigt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt schliesst sich mit einem nur als Symbol sichtbaren Schliessen (X). Der barrierefreie Name lautet Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiber @luna bleiben.",
+    "es": "Un moderador hizo clic en Editar la entrada de la tienda junto a Cafe Luna. El paso 1 de 5 · Fotos está abierto en la tabla. El historial indica que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay ninguna palabra Cancelar visible. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y el operador @luna se mantienen.",
     "fil": "Isang moderator ang nag-click sa Baguhin ang entry sa shop sa tabi ng Cafe Luna. Bukas sa talahanayan ang Hakbang 1 sa 5 · Mga larawan. Sinasabi ng kasaysayan na wala pang mga pagbabago. Ang hakbang ng litrato ay nagsasara sa isang Isara (X) na icon lang. Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Nanatili ang lugar na Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland at ang operator na @luna."
   },
   "/view/[viewKey]:about-photo": {
