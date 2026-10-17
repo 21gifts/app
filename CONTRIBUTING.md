@@ -229,6 +229,7 @@ app/
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (identity only: pictures + totals + About me + name/location + public facts)
 │   │   ├── WalletLoginCard.tsx  # LoginCard shown in place while a signed-in screen's wallet is not open in this tab
+│   │   ├── LoginBlockedNotice.tsx # Login card / profile claim body when the api refuses a session (logins closed, new version + Reload)
 │   │   ├── WalletScreen.tsx     # Wires useWallet + useWalletPhrase + useWalletSend into WalletScreenView (balance, payments list while ready, Receive/Send)
 │   │   ├── SettingsScreen.tsx   # Signed-in /settings (Wallet: recovery phrase, address, default amount; Display; Notifications; Account; About & legal)
 │   │   ├── MenuAccountHeader.tsx # Menu top card: photo, name, @username (profile link), balance link, payable loan row
@@ -417,6 +418,7 @@ app/
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
 │   ├── contact.spec.ts          # /contact composer, validation, success
 │   ├── login.spec.ts            # /login Log in + Open a new account + signed-in forms
+│   ├── login-gate.spec.ts       # logins_closed / app_outdated notices, X-App-Build, wiped session falls back to signed out
 │   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, Send (camera), Receive, and Function titles
 │   ├── data-collection.spec.ts  # POST /me/wallet/report, /me/wallet/hearts, and /me/events proxies, interaction log in the browser
 │   ├── camera.ts                # Stubbed getUserMedia (black stream, QR stream, blocked, none) for wallet specs

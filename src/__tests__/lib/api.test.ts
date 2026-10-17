@@ -5461,7 +5461,10 @@ describe('passkey login refusals', () => {
     ['finishPasskeyAuthentication', () => finishPasskeyAuthentication('ch', {})],
   ];
 
-  it.each(steps)('%s throws LoginsClosedError on 503 logins_closed', async (_name, run) => {
+  /** The api answers `logins_closed` on these steps only, never on authenticate begin. */
+  const closedSteps = steps.filter(([name]) => name !== 'startPasskeyAuthentication');
+
+  it.each(closedSteps)('%s throws LoginsClosedError on 503 logins_closed', async (_name, run) => {
     stubFetch({
       ok: false,
       status: 503,
@@ -5484,6 +5487,44 @@ describe('passkey login refusals', () => {
     const error = await run().catch((err: unknown) => err);
     expect(error).toBeInstanceOf(AppOutdatedError);
     expect((error as Error).message).toBe('app_outdated');
+  });
+
+  /**
+   * Installs a real `Response` per call, so a body read by the refusal check
+   * on the original instead of a clone leaves the caller an already-read body.
+   */
+  function stubRealResponse(status: number, body: unknown): void {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify(body), {
+            status,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        ),
+      ),
+    );
+  }
+
+  it('startPasskeyRegistration still reads the api error of a plain 403 after the check', async () => {
+    stubRealResponse(403, { error: 'Registration is not allowed here' });
+    await expect(startPasskeyRegistration()).rejects.toThrow('Registration is not allowed here');
+  });
+
+  it('startPasskeyRegistration still reads the api error of a plain 503 after the check', async () => {
+    stubRealResponse(503, { error: 'Try again shortly' });
+    await expect(startPasskeyRegistration()).rejects.toThrow('Try again shortly');
+  });
+
+  it('finishPasskeyRegistration still reads the wrong-account 403 after the check', async () => {
+    stubRealResponse(403, { error: WRONG_ACCOUNT_ERROR });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toBeInstanceOf(WrongAccountError);
+  });
+
+  it('finishPasskeyAuthentication still reads the wrong-account 403 after the check', async () => {
+    stubRealResponse(403, { error: WRONG_ACCOUNT_ERROR });
+    await expect(finishPasskeyAuthentication('ch', {})).rejects.toBeInstanceOf(WrongAccountError);
   });
 
   it.each(steps)(

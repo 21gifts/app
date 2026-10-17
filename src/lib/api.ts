@@ -3826,7 +3826,8 @@ export async function finishPasskeyRegistration(
  * Starts a passkey authentication ceremony.
  *
  * @returns Challenge id plus WebAuthn request options JSON.
- * @throws {@link LoginsClosedError} or {@link AppOutdatedError} on that api `code`.
+ * @throws {@link AppOutdatedError} on api `code` `app_outdated` (the api
+ *   checks closed logins on authenticate finish, not here).
  * @throws Error on a non-2xx status or a body that fails validation.
  */
 export async function startPasskeyAuthentication(): Promise<PasskeyBegin> {

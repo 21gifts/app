@@ -2935,8 +2935,14 @@ describe('usePasskeyLogin', () => {
   });
 
   describe('login refusals from the api', () => {
-    it('login begin logins_closed shows closed, keeps no error, and does not retry', async () => {
-      vi.mocked(startPasskeyAuthentication).mockRejectedValue(new LoginsClosedError());
+    it('login finish logins_closed shows closed, keeps no error, and does not retry', async () => {
+      const cred = { id: 'cred', type: 'public-key' };
+      vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+      vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new LoginsClosedError());
+      vi.stubGlobal('navigator', {
+        ...navigator,
+        credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+      });
       const { result } = renderHook(() => usePasskeyLogin());
       await act(async () => {
         result.current.login();
@@ -2944,7 +2950,9 @@ describe('usePasskeyLogin', () => {
       expect(result.current.status).toBe('closed');
       expect(result.current.error).toBeNull();
       expect(startPasskeyAuthentication).toHaveBeenCalledTimes(1);
+      expect(finishPasskeyAuthentication).toHaveBeenCalledTimes(1);
       expect(startPasskeyRegistration).not.toHaveBeenCalled();
+      vi.unstubAllGlobals();
     });
 
     it('authenticate finish app_outdated shows outdated', async () => {
@@ -2988,7 +2996,13 @@ describe('usePasskeyLogin', () => {
     });
 
     it('keeps a held-back session when logins are closed', async () => {
-      vi.mocked(startPasskeyAuthentication).mockRejectedValue(new LoginsClosedError());
+      const cred = { id: 'cred', type: 'public-key' };
+      vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+      vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new LoginsClosedError());
+      vi.stubGlobal('navigator', {
+        ...navigator,
+        credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+      });
       useAuthStore.setState({ lockedSession: 'held', lockedName: 'Ada' });
       const { result } = renderHook(() => usePasskeyLogin());
       await act(async () => {
@@ -2997,6 +3011,7 @@ describe('usePasskeyLogin', () => {
       expect(result.current.status).toBe('closed');
       expect(useAuthStore.getState()).toMatchObject({ lockedSession: 'held', lockedName: 'Ada' });
       useAuthStore.setState({ lockedSession: null, lockedName: null });
+      vi.unstubAllGlobals();
     });
   });
 

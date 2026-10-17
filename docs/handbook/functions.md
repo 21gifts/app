@@ -1168,10 +1168,10 @@
 
 ## Function: LoginsClosedError
 
-- **Purpose:** Typed error for the api's HTTP 503 answer with `code` `logins_closed` (`LOGINS_CLOSED_CODE`) on a passkey begin or finish: operators closed new logins for an update. Recognised by the body's `code` and that status, never by text; screens show catalog copy.
+- **Purpose:** Typed error for the api's HTTP 503 answer with `code` `logins_closed` (`LOGINS_CLOSED_CODE`) on register begin, register finish, or authenticate finish: operators closed new logins for an update. Recognised by the body's `code` and that status, never by text; screens show catalog copy.
 - **Inputs:** None. The message is `logins_closed`.
 - **Returns / side effects:** Error instance named `LoginsClosedError`. `usePasskeyLogin` maps it to status `closed`.
-- **Used by:** `startPasskeyRegistration`, `finishPasskeyRegistration`, `startPasskeyAuthentication`, `finishPasskeyAuthentication`, `usePasskeyLogin`.
+- **Used by:** `startPasskeyRegistration`, `finishPasskeyRegistration`, `finishPasskeyAuthentication`, `usePasskeyLogin`.
 
 ## Function: AppOutdatedError
 
@@ -3816,7 +3816,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** POST `/auth/passkey/authenticate/begin` and parse options.
 - **Inputs:** None.
-- **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx. Sends `X-App-Build` (`getBuildId`). 503 `code` `logins_closed` throws `LoginsClosedError`; 403 `code` `app_outdated` throws `AppOutdatedError`.
+- **Returns / side effects:** `{ challengeId, options }`. Throws on non-2xx. Sends `X-App-Build` (`getBuildId`). 403 `code` `app_outdated` throws `AppOutdatedError`; the api checks closed logins on authenticate finish, not here.
 - **Used by:** `usePasskeyLogin.authenticate`.
 
 ## Function: startPasskeyReplace
