@@ -18649,8 +18649,8 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     await page.getByRole('button', { name: 'Table' }).click();
     await page.getByRole('button', { name: 'Show more' }).click();
-    await expect(page.getByText('Other stall')).toBeVisible();
-    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await expect(page.getByText('Other stall', { exact: true })).toBeVisible();
+    await expect(page.getByText('Cafe Luna', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Show more' })).toHaveCount(0);
     await shotScreen(page, 'state-shops-table-next');
   });
@@ -18676,7 +18676,7 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     await page.getByRole('button', { name: 'Table' }).click();
     await page.getByRole('button', { name: 'Show more' }).click();
-    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await expect(page.getByText('Cafe Luna', { exact: true })).toBeVisible();
     await expect(page.getByText('Could not load messages. Please try again.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
