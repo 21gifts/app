@@ -192,6 +192,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pl:lightning-only",
+    "label": "/pl lightning-only",
+    "visual": "state-pl-lightning-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pl:on-its-way",
     "label": "/pl on-its-way",
     "visual": "state-pl-on-its-way",

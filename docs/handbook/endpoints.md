@@ -25,7 +25,7 @@
 
 - **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats, comment? }`. Response `{ pr, amountSats, sparkInvoice }`. With a pending charge, `sparkInvoice` is a Spark invoice for that charge when `amountSats` is its amount. Without one, it is a Spark invoice for exactly `amountSats` to the member's verified wallet, carrying the message when one is sent. It is `null` when the api issues no Spark invoice.
 - **Errors:** Upstream 400 for a bad amount, 404 when the person cannot be paid, 502 when the invoice cannot be created.
-- **Used by:** `PayLinkScreen` after **Continue** when the first answer of `POST /pay/[username]/payment` is 503 `stablecoin_unavailable` or another 4xx (never after a repeat), and for an open till whose pay link is the plain Lightning request; `fetchShopChargeInvoice` and `fetchMemberSparkInvoice` for the in-app wallet.
+- **Used by:** `PayLinkScreen` after **Continue** when `POST /pay/[username]/payment` answers 503 `stablecoin_unavailable` or a 4xx other than 409, on the first answer or its one repeat, and for an open till whose pay link is the plain Lightning request; `fetchShopChargeInvoice` and `fetchMemberSparkInvoice` for the in-app wallet.
 - **Auth:** none.
 
 ## Endpoint: POST /pay/[username]/payment

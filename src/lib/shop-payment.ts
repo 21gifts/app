@@ -43,7 +43,7 @@ export type ShopPayLink =
 
 /** Outcome of `POST /pay/:username/payment`. */
 export type ShopPaymentStart =
-  | { kind: 'opened'; payment: string; expiresAt: string }
+  | { kind: 'opened'; payment: string; expiresAt: string | null }
   | { kind: 'charge' }
   | { kind: 'invoice' }
   | { kind: 'failed' };
@@ -202,14 +202,13 @@ async function attemptShopPayment(
   if (response.ok) {
     try {
       const body = fields<'payment' | 'expiresAt'>(await response.json());
-      if (
-        body !== null &&
-        typeof body.payment === 'string' &&
-        body.payment !== '' &&
-        typeof body.expiresAt === 'string' &&
-        Number.isFinite(Date.parse(body.expiresAt))
-      ) {
-        return { kind: 'opened', payment: body.payment, expiresAt: body.expiresAt };
+      if (body !== null && typeof body.payment === 'string' && body.payment !== '') {
+        // The id is that payment; repeating the call would replace it.
+        const expiresAt =
+          typeof body.expiresAt === 'string' && Number.isFinite(Date.parse(body.expiresAt))
+            ? body.expiresAt
+            : null;
+        return { kind: 'opened', payment: body.payment, expiresAt };
       }
     } catch {
       // An unreadable success leaves open whether a payment was opened.
@@ -230,19 +229,19 @@ async function attemptShopPayment(
 
 /**
  * Open a shop payment for an amount the payer entered
- * (`POST /pay/:username/payment`). A failed request, an unreadable success, or
- * a 5xx other than `stablecoin_unavailable` leaves open whether a payment was
- * opened, so the same call is repeated once.
+ * (`POST /pay/:username/payment`). A failed request, a success without a
+ * usable payment id, or a 5xx other than `stablecoin_unavailable` leaves open
+ * whether a payment was opened, so the same call is repeated once; a new payer
+ * amount replaces any payment the lost answer opened.
  *
  * @param username - The shop's username.
  * @param amountSats - Whole sats the payer entered.
- * @returns `opened` with the payment id and its window end; `charge` on 409
- *   `payment_open` (a till charge is pending); `invoice` on 503
- *   `stablecoin_unavailable` or any other 4xx (mint with
- *   `POST /pay/:username/invoice` instead), only on the first answer; `failed`
- *   when the repeat was unknown too, or answered 503 `stablecoin_unavailable`
- *   or another 4xx, because the lost first answer may have opened a payment
- *   (show the error, do not mint).
+ * @returns `opened` with the payment id and its window end (`null` when the
+ *   answer had no readable `expiresAt`); `charge` on 409 `payment_open` (a till
+ *   charge is pending); `invoice` on 503 `stablecoin_unavailable` or any other
+ *   4xx, from the first answer or the repeat (mint with
+ *   `POST /pay/:username/invoice` instead); `failed` when the repeat was
+ *   unknown too (show the error, do not mint).
  */
 export async function openShopPayment(
   username: string,
@@ -252,9 +251,8 @@ export async function openShopPayment(
   if (first !== 'unknown') {
     return first;
   }
-  // The lost first answer may have opened a payment, so the repeat never mints.
   const second = await attemptShopPayment(username, amountSats);
-  return second === 'unknown' || second.kind === 'invoice' ? { kind: 'failed' } : second;
+  return second === 'unknown' ? { kind: 'failed' } : second;
 }
 
 /**
