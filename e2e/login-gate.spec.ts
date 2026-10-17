@@ -76,7 +76,13 @@ test('a wiped session falls back to signed out on the next load', async ({ page 
       localStorage.setItem('21gifts.session', 'sess-deleted-by-operator');
     }
   });
+  const refused = page.waitForResponse(
+    (response) =>
+      /\/me$/.test(response.url()) &&
+      response.request().headers()['authorization'] === 'Bearer sess-deleted-by-operator',
+  );
   await page.goto('/login');
+  expect((await refused).status()).toBe(401);
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
   await expect(page.getByText(/Welcome back/)).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => localStorage.getItem('21gifts.session'))).toBeNull();
