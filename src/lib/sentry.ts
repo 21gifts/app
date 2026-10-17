@@ -8,15 +8,16 @@ import {
 
 /**
  * Error reporting (Sentry): init options, the privacy scrubber, the wallet
- * span helper, and the same-origin tunnel.
+ * span helper, the same-origin tunnel, and the Content-Security-Policy report
+ * forwarder.
  *
  * Everything comes from the environment (`getSentryDsn`,
  * `getSentryEnvironment`, `getSentryTracesSampleRate`, `getAppVersion`).
  * Without a valid DSN, {@link sentryOptions} returns `null`, the init files
  * never call `init`, {@link traceWallet} only runs its work, and
- * {@link forwardSentryEnvelope} answers 404. Errors, plus sampled performance
- * traces from the browser; the server sends errors only. No sessions, replay,
- * profiling, logs, or feedback.
+ * {@link forwardSentryEnvelope} and {@link forwardCspReport} answer 404.
+ * Errors, plus sampled performance traces from the browser; the server sends
+ * errors only. No sessions, replay, profiling, logs, or feedback.
  */
 
 /** Same-origin path the browser posts its envelopes to. */
@@ -164,7 +165,7 @@ export type WalletSpanAttributes = {
 /** A transaction event, as `beforeSendTransaction` receives it. */
 type TransactionEvent = Event & { type: 'transaction' };
 
-/** The parts of a DSN the SDK and the tunnel need. */
+/** The parts of a DSN the SDK, the tunnel, and the CSP report forwarder need. */
 interface SentryDsn {
   /** `host[:port]` of the Sentry server. */
   host: string;
@@ -210,8 +211,8 @@ export interface SentryInitOptions {
  * Parse a DSN (`https://key@host[:port][/prefix]/projectId`).
  *
  * @param value - DSN text, or `null` when none is configured.
- * @returns Host, project id, and envelope URL, or `null` when not a DSN
- * (including an unsubstituted build placeholder).
+ * @returns Host, project id, envelope URL, and security-report URL, or `null`
+ * when not a DSN (including an unsubstituted build placeholder).
  */
 function parseSentryDsn(value: string | null): SentryDsn | null {
   if (value === null) {
