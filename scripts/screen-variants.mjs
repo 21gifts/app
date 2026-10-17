@@ -3435,6 +3435,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'author-cannot-receive',
+    image: 'welcome-author-cannot-receive.png',
+    visual: 'state-welcome-author-cannot-receive',
+    needle: "shotScreen(page, 'state-welcome-author-cannot-receive')",
+  },
+  {
+    route: '/welcome',
+    id: 'author-cannot-receive-open',
+    image: 'welcome-author-cannot-receive-open.png',
+    visual: 'state-welcome-author-cannot-receive-open',
+    needle: "shotScreen(page, 'state-welcome-author-cannot-receive-open')",
+  },
+  {
+    route: '/welcome',
     id: 'pay-deleted',
     image: 'welcome-pay-deleted.png',
     visual: 'state-welcome-pay-deleted',
@@ -3621,6 +3635,13 @@ export const SCREEN_VARIANTS = [
     image: 'habit-tracker-donate-author-wallet.png',
     visual: 'state-habit-tracker-donate-author-wallet',
     needle: 'screen /habit-tracker donate-author-wallet',
+  },
+  {
+    route: '/habit-tracker',
+    id: 'comment-cannot-receive',
+    image: 'habit-tracker-comment-cannot-receive.png',
+    visual: 'state-habit-tracker-comment-cannot-receive',
+    needle: "shotScreen(page, 'state-habit-tracker-comment-cannot-receive')",
   },
   {
     route: '/habit-tracker',
@@ -4307,6 +4328,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-heart-needs-balance.png',
     visual: 'state-members-heart-needs-balance',
     needle: 'A Bitcoin balance is required for this.',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'cannot-receive',
+    image: 'members-cannot-receive.png',
+    visual: 'state-members-cannot-receive',
+    needle: "shotScreen(page, 'state-members-cannot-receive')",
   },
   {
     route: '/members/[accountId]',
@@ -5236,6 +5264,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/view/[viewKey]',
+    id: 'cannot-receive',
+    image: 'view-cannot-receive.png',
+    visual: 'state-view-cannot-receive',
+    needle: "shotScreen(page, 'state-view-cannot-receive')",
+  },
+  {
+    route: '/view/[viewKey]',
     id: 'about-filled',
     image: 'view-about-filled.png',
     visual: 'state-view-about-filled',
@@ -5499,6 +5534,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-thread.png',
     visual: 'state-messages-thread',
     needle: 'Hello team',
+  },
+  {
+    route: '/messages',
+    id: 'thread-cannot-receive',
+    image: 'messages-thread-cannot-receive.png',
+    visual: 'state-messages-thread-cannot-receive',
+    needle: "shotScreen(page, 'state-messages-thread-cannot-receive')",
   },
   {
     route: '/messages',
@@ -6787,6 +6829,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-heart-needs-balance.png',
     visual: 'state-welcome-heart-needs-balance',
     needle: 'A Bitcoin balance is required for this.',
+  },
+  {
+    route: '/welcome',
+    id: 'heart-cannot-receive',
+    image: 'welcome-heart-cannot-receive.png',
+    visual: 'state-welcome-heart-cannot-receive',
+    needle: "shotScreen(page, 'state-welcome-heart-cannot-receive')",
   },
   {
     route: '/welcome',

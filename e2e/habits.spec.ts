@@ -149,7 +149,7 @@ test('screen /habit-tracker donate', async ({ page }) => {
 
 async function openHabitPay(
   page: Page,
-  post: { status: number; error: string } | null,
+  post: { status: number; error: string; code?: string } | null,
 ): Promise<void> {
   await seedAda(page);
   await page.route('**/habits', async (route) => {
@@ -157,7 +157,9 @@ async function openHabitPay(
       await route.fulfill({
         status: post.status,
         contentType: 'application/json',
-        body: JSON.stringify({ error: post.error }),
+        body: JSON.stringify(
+          post.code === undefined ? { error: post.error } : { error: post.error, code: post.code },
+        ),
       });
       return;
     }
@@ -289,10 +291,35 @@ test('screen /habit-tracker donate-rate-limit', async ({ page }) => {
   ).toHaveText('Too many payments. Please wait a moment and try again.');
 });
 
+test('Function: CannotReceiveLabel — a comment whose author cannot receive shows the label and a disabled gift', async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  await seedAda(page);
+  await page.route('**/habits', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...PUBLIC_LIST,
+        habits: PUBLIC_LIST.habits.map((habit) => ({
+          ...habit,
+          comments: habit.comments.map((comment) => ({ ...comment, canReceive: false })),
+        })),
+      }),
+    });
+  });
+  await page.goto('/habit-tracker');
+  await expect(page.getByText("Can't receive yet")).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+});
+
 test('screen /habit-tracker donate-author-wallet', async ({ page }) => {
   await openHabitPay(page, {
     status: 409,
     error: "The author's wallet cannot receive this Bitcoin payment",
+    code: 'cannot_receive',
   });
   await page.getByLabel('Amount').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();

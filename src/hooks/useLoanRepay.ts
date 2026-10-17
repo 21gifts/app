@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { WALLET_PAY_BALANCE_POLL_MS, WALLET_PAY_CONFIRM_WAIT_MS } from '@/hooks/useWalletPay';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
 import {
+  CannotReceiveError,
   postRepaymentDue,
   WalletRequiredError,
   type MyLoan,
@@ -64,9 +65,15 @@ export interface LoanRepayResult {
   missingSats: number | null;
   /**
    * Catalog key of the failure line while phase is 'failed':
-   * 'forum.payErrorRateLimit' | 'forum.payErrorRequest' | 'wallet.payUnavailable'.
+   * 'forum.payErrorRateLimit' | 'forum.payErrorRequest' | 'wallet.payUnavailable' |
+   * 'loans.errorCannotReceive' (the api answered `cannot_receive`: no lender can receive yet).
    */
-  errorKey: 'forum.payErrorRateLimit' | 'forum.payErrorRequest' | 'wallet.payUnavailable' | null;
+  errorKey:
+    | 'forum.payErrorRateLimit'
+    | 'forum.payErrorRequest'
+    | 'wallet.payUnavailable'
+    | 'loans.errorCannotReceive'
+    | null;
   /** True while the top-up block is open. */
   topUpOpen: boolean;
   /** Opens the top-up block (the screen's "Top up your wallet"); starts the balance poll. */
@@ -391,9 +398,11 @@ export function useLoanRepay(options: {
         const key: ErrorKey =
           error instanceof WalletRequiredError
             ? 'wallet.payUnavailable'
-            : error instanceof Error && /too many (messages|payments)/i.test(error.message)
-              ? 'forum.payErrorRateLimit'
-              : 'forum.payErrorRequest';
+            : error instanceof CannotReceiveError
+              ? 'loans.errorCannotReceive'
+              : error instanceof Error && /too many (messages|payments)/i.test(error.message)
+                ? 'forum.payErrorRateLimit'
+                : 'forum.payErrorRequest';
         setErrorKey(key);
         setLivePhase('failed');
       };

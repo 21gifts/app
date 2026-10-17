@@ -676,7 +676,7 @@ async function stubOwnMember(page: Page): Promise<void> {
         username: 'alice',
         location: null,
         role: 'basis',
-        lightningAddress: null,
+        lightningAddress: 'member@21.gifts',
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: null,
         profileMessage: null,
@@ -897,7 +897,7 @@ async function seedShopStickerMember(page: Page): Promise<void> {
         location: null,
         role: 'verified',
         username: 'carol',
-        lightningAddress: null,
+        lightningAddress: 'member@21.gifts',
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: 'Hello from Carol.',
         profileMessage: null,
@@ -8076,6 +8076,56 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-heart-needs-balance');
   });
 
+  test('state /welcome heart-cannot-receive', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-erin',
+              accountId: 'acc-erin',
+              name: 'Erin',
+              text: 'Fresh pandesal every morning near the chapel.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              authorCanReceive: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome?visual=heart-cannot-receive');
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    const line = page.getByText("The author's wallet cannot receive this Bitcoin payment");
+    await expect(line).toBeVisible();
+    await line.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-heart-cannot-receive');
+  });
+
   test('state /welcome heart-paid', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -8735,7 +8785,7 @@ test.describe('onboarding screens', () => {
           username: 'alice',
           location: null,
           role: 'verified',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -8866,7 +8916,7 @@ test.describe('onboarding screens', () => {
           username: 'alice',
           location: null,
           role: 'basis',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -10116,7 +10166,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: 'Hello from Carol.',
           profileMessage: {
@@ -10150,6 +10200,61 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Message' })).toBeVisible();
     await shotScreen(page, 'screen-members-accountId');
+  });
+
+  test('state /members/[accountId] cannot-receive', async ({ page }) => {
+    const memberId = '12121212-1212-4212-8212-121212121212';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Erin',
+          location: 'Tondo',
+          role: 'basis',
+          username: 'erin',
+          lightningAddress: null,
+          createdAt: '2026-03-01T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByText(/erin@/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+    await shotScreen(page, 'state-members-cannot-receive');
   });
 
   test('state /members software-developer', async ({ page }) => {
@@ -10252,7 +10357,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -10343,7 +10448,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -10423,7 +10528,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -10531,7 +10636,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -10668,7 +10773,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -10783,7 +10888,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -10884,7 +10989,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -10978,7 +11083,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -11066,7 +11171,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -11167,7 +11272,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -11315,7 +11420,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -11387,7 +11492,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -11548,7 +11653,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -11659,7 +11764,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -11931,7 +12036,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -12007,7 +12112,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -12239,7 +12344,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -12309,7 +12414,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -12523,7 +12628,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -12613,7 +12718,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -12901,7 +13006,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -13017,7 +13122,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'basis',
           username: 'alice',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -13070,7 +13175,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -13174,7 +13279,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -13278,7 +13383,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'basis',
           username: 'alice',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           profileMessage: null,
           postCount: 0,
@@ -13339,7 +13444,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'basis',
           username: 'alice',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           profileMessage: null,
           postCount: 0,
@@ -13850,7 +13955,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'basis',
           username: 'alice',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           profileMessage: null,
           postCount: 0,
@@ -13907,7 +14012,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: 'Hello from Carol.',
           profileMessage: null,
@@ -13959,7 +14064,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: 'Hello from Carol.',
           profileMessage: null,
@@ -14088,7 +14193,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14178,7 +14283,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14272,7 +14377,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14363,7 +14468,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14456,7 +14561,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14549,7 +14654,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14641,7 +14746,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14743,7 +14848,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: GERMAN_NOTE_TEXT,
           profileMessage: {
@@ -14808,7 +14913,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: GERMAN_NOTE_TEXT,
           profileMessage: {
@@ -14877,7 +14982,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: GERMAN_NOTE_TEXT,
           profileMessage: {
@@ -14945,7 +15050,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: GERMAN_NOTE_TEXT,
           profileMessage: {
@@ -15014,7 +15119,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: GERMAN_NOTE_TEXT,
           profileMessage: {
@@ -18054,8 +18159,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: null,
@@ -18077,7 +18182,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-view-viewKey');
   });
 
-  test('state /view about-filled', async ({ page }) => {
+  test('state /view/[viewKey] cannot-receive', async ({ page }) => {
     await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
       await route.fulfill({
         status: 200,
@@ -18088,6 +18193,37 @@ test.describe('onboarding screens', () => {
           username: 'alice',
           lightningAddress: null,
           lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: true,
+          aboutMe: null,
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByText('alice@', { exact: false })).toHaveCount(0);
+    await shotScreen(page, 'state-view-cannot-receive');
+  });
+
+  test('state /view about-filled', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: 'I build on Bitcoin',
@@ -18117,8 +18253,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: 'I build on Bitcoin',
@@ -18155,8 +18291,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: GERMAN_NOTE_TEXT,
@@ -18187,8 +18323,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: GERMAN_NOTE_TEXT,
@@ -18223,8 +18359,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: GERMAN_NOTE_TEXT,
@@ -18258,8 +18394,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: GERMAN_NOTE_TEXT,
@@ -18294,8 +18430,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: GERMAN_NOTE_TEXT,
@@ -18366,8 +18502,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: true,
           aboutMe: null,
@@ -18402,8 +18538,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: null,
@@ -18445,8 +18581,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: null,
@@ -23926,6 +24062,110 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-pay-author-wallet');
   });
 
+  test('welcome author-cannot-receive', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-erin',
+              accountId: 'acc-erin',
+              name: 'Erin',
+              text: 'Fresh pandesal every morning near the chapel.',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: false,
+              authorCanReceive: false,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 1,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await chooseForumView(page, 'All');
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-author-cannot-receive');
+  });
+
+  test('welcome author-cannot-receive-open', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      const url = route.request().url();
+      if (url.includes('/replies') || route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-erin',
+              accountId: 'acc-erin',
+              name: 'Erin',
+              text: 'Fresh pandesal every morning near the chapel.',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: false,
+              authorCanReceive: false,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 1,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/m-erin/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-ben',
+              accountId: 'acc-ben',
+              parentId: 'm-erin',
+              name: 'Ben',
+              text: 'I will come by tomorrow.',
+              createdAt: '2026-08-28T10:05:00.000Z',
+              sats: 0,
+              payable: false,
+              authorCanReceive: false,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await chooseForumView(page, 'All');
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    const replyCard = page.locator('[data-reply-id="r-ben"]');
+    await expect(replyCard.getByText("Can't receive yet")).toBeVisible();
+    await expect(replyCard.getByRole('button', { name: 'Send Bitcoin' })).toBeDisabled();
+    await expect(page.locator('#forum-reply-amount')).toBeDisabled();
+    await shotScreen(page, 'state-welcome-author-cannot-receive-open');
+  });
+
   test('welcome pay-deleted', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -27021,6 +27261,54 @@ test.describe('inbox screens', () => {
     await expect(page.getByText('Hello team')).toBeVisible();
     await expect(page.getByText('You')).toBeVisible();
     await shotScreen(page, 'state-messages-thread');
+  });
+
+  test('messages thread-cannot-receive', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-erin',
+              kind: 'member_member',
+              name: 'Erin',
+              lastText: 'See you at the market',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+              accountId: 'acc-erin',
+              canReceive: false,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-erin(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: 'Erin',
+              text: 'See you at the market',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/messages?c=conv-erin');
+    await expect(page.getByText('See you at the market')).toBeVisible();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByLabel('Amount')).toBeDisabled();
+    await shotScreen(page, 'state-messages-thread-cannot-receive');
   });
 
   test('state /messages thread-mention-suggest', async ({ page }) => {
@@ -31274,6 +31562,7 @@ test.describe('habit tracker baselines', () => {
           contentType: 'application/json',
           body: JSON.stringify({
             error: "The author's wallet cannot receive this Bitcoin payment",
+            code: 'cannot_receive',
           }),
         });
         return;
@@ -31297,6 +31586,24 @@ test.describe('habit tracker baselines', () => {
     await expect(page.getByText('$0.02')).toBeInViewport();
     await expect(walletAlert).toBeInViewport();
     await shotScreen(page, 'state-habit-tracker-donate-author-wallet');
+  });
+
+  test('screen /habit-tracker comment-cannot-receive', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [
+        {
+          ...HABIT_ROW,
+          comments: [{ ...HABIT_ROW.comments[0], canReceive: false }],
+        },
+      ],
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeDisabled();
+    await shotScreen(page, 'state-habit-tracker-comment-cannot-receive');
   });
 
   test('screen /habit-tracker sunday', async ({ page }) => {

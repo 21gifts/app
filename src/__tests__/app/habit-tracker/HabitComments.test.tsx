@@ -141,4 +141,19 @@ describe('HabitComments', () => {
     expect(screen.getByRole('button', { name: 'Continue' }).hasAttribute('disabled')).toBe(true);
     expect(onPaySubmit).not.toHaveBeenCalled();
   });
+
+  it('shows the label and a disabled gift without the sheet when the author cannot receive', () => {
+    const onPayOpen = vi.fn();
+    renderComments({
+      onPayOpen,
+      payCommentId: 'c-other',
+      habit: habit([{ ...otherComment, canReceive: false }]),
+    });
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    const gift = screen.getByRole('button', { name: 'Send Bitcoin' }) as HTMLButtonElement;
+    expect(gift.disabled).toBe(true);
+    fireEvent.click(gift);
+    expect(onPayOpen).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+  });
 });

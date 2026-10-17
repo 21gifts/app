@@ -2909,6 +2909,12 @@ Same signed-in German note after opening `?visual=heart-needs-balance` (a ready 
 
 ![21.gifts welcome heart needs balance](images/welcome-heart-needs-balance.png)
 
+### Variant: heart-cannot-receive
+
+Signed-in note by another member after opening `?visual=heart-cannot-receive` (Playwright builds only) and clicking Send ₿1. The api refused the heart because the author cannot receive (`cannot_receive`), so the tap is rolled back and the catalog line **The author's wallet cannot receive this Bitcoin payment** shows under the heart, in the place of the balance-required line.
+
+![21.gifts welcome heart cannot receive](images/welcome-heart-cannot-receive.png)
+
 ### Variant: heart-paid
 
 Same signed-in German note after opening `?visual=heart-paid` and clicking Send ₿1. The filled heart and **+1** that every tap shows are held for the shot.
@@ -3351,6 +3357,18 @@ Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only). 60 se
 Payable reply, Gift amount submitted, but the author's wallet cannot mint a zap invoice. The pay sheet stays on the amount form and shows **The author's wallet cannot receive this Bitcoin payment**. Amount CTA is **Continue** (`forum.payContinue`) on every user-agent. No invoice card and no pay slot.
 
 ![21.gifts welcome pay author wallet](images/welcome-pay-author-wallet.png)
+
+### Variant: author-cannot-receive
+
+A note by a member who has no verified wallet yet (`authorCanReceive: false`). The action row shows the small muted label **Can't receive yet** before the heart, and the heart with its count is disabled, so nobody starts a payment that can only fail.
+
+![21.gifts welcome author cannot receive](images/welcome-author-cannot-receive.png)
+
+### Variant: author-cannot-receive-open
+
+The same note after **Show reactions**. The reaction **Amount** field is disabled (text still posts), and a reply by another member who cannot receive yet shows **Can't receive yet** with a disabled **Send Bitcoin** gift that opens no sheet.
+
+![21.gifts welcome author cannot receive open](images/welcome-author-cannot-receive-open.png)
 
 ### Variant: pay-deleted
 
@@ -4231,6 +4249,12 @@ Ada's session. **Send Bitcoin** is open. **Continue** was pressed and the author
 
 ![21.gifts habit tracker donate author wallet](images/habit-tracker-donate-author-wallet.png)
 
+### Variant: comment-cannot-receive
+
+Ada's session. A comment by a member who cannot receive yet (`canReceive: false`) shows the label **Can't receive yet** and a disabled **Send Bitcoin** gift; it opens no sheet.
+
+![21.gifts habit tracker comment cannot receive](images/habit-tracker-comment-cannot-receive.png)
+
 ### Variant: sunday
 
 Ada's session on the device's local Sunday. **Add habit**, **Edit**, **Archive**, and the rating pill stay. **Write a comment**, **Post**, and **Delete comment** are gone, and **Writing is paused on Sunday.** stands in their place. **Send Bitcoin** is gone, and **Zapping is paused on Sunday.** stands in its place.
@@ -4621,6 +4645,12 @@ Same German post after POST /translate fails. Alert **Could not translate this n
 Same German post in the posts feed after opening `?visual=heart-needs-balance` (a ready wallet below 1 sat) and clicking Send ₿1. No press and no **+1**; nothing is sent. Copy **A Bitcoin balance is required for this.**
 
 ![21.gifts member heart needs balance](images/members-heart-needs-balance.png)
+
+### Variant: cannot-receive
+
+Profile of a member who cannot receive yet (`lightningAddress: null` on the member card). The gifts block shows the label **Can't receive yet** in place of the 21.gifts address, the Open CryptoPay QR, and **Shop sticker**.
+
+![21.gifts member cannot receive](images/members-cannot-receive.png)
 
 ### Variant: heart-paid
 
@@ -5763,6 +5793,12 @@ List fetch failed. Button **Try again**. Chooser absent.
 Open official thread. Heading **21.gifts** (a profile control when the api sent `accountId`), origin **Contact** under the heading, inbound **Hello team** as a full-width muted note card and a sent filled `app-btn` bubble on the right labelled **You**, composer visible: the photo icon row (**Take a photo** and ImagePlus attach), then the message and send on one row, then the **Amount** field (₿ | fiat, other unit under it) on the next row. Chooser absent.
 
 ![21.gifts inbox thread](images/messages-thread.png)
+
+### Variant: thread-cannot-receive
+
+Open thread with a member who cannot receive yet (`canReceive: false` on the conversation). The **Amount** field under the composer is disabled and the label **Can't receive yet** shows under it. Text messages still send.
+
+![21.gifts inbox thread cannot receive](images/messages-thread-cannot-receive.png)
 
 ### Variant: thread-translate
 
@@ -7112,6 +7148,12 @@ After a failed translation of that reaction. The feed shows `Could not translate
 Valid known key. Heading **Profile**, FiatPicker only while unsigned; empty series shows FiatPicker + `profile.chartEmpty` when unsigned (**No gifts yet.**, no legend/SVG / no ₿|fiat scale; never **Loading…** on the chart) and `profile.chartEmpty` alone when signed in (a failed activity load is `profile.chartError`), About me inside the card when `aboutMe` is a string (not a forum post), icon-only **Copy link to this profile**, name, location, and 21.gifts address, yellow **Action required, the account must be activated** / **Activate** banner under the card when unclaimed (even if signed in), no visible view-key URL/text. The card has no back control; the page header has the one top-left arrow.
 
 ![21.gifts public view profile](images/view-viewKey.png)
+
+### Variant: cannot-receive
+
+Public profile of a member who cannot receive yet (`lightningAddressVerified: false`). The gifts block shows the label **Can't receive yet** in place of the 21.gifts address and the Open CryptoPay QR.
+
+![21.gifts public view cannot receive](images/view-cannot-receive.png)
 
 ### Variant: about-filled
 

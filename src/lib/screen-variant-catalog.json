@@ -1242,6 +1242,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings:notification-level-gifted",
+    "label": "/settings notification-level-gifted",
+    "visual": "state-settings-notification-level-gifted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/settings:notification-level-error",
     "label": "/settings notification-level-error",
     "visual": "state-settings-notification-level-error",
@@ -2874,6 +2880,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:author-cannot-receive",
+    "label": "/welcome author-cannot-receive",
+    "visual": "state-welcome-author-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:author-cannot-receive-open",
+    "label": "/welcome author-cannot-receive-open",
+    "visual": "state-welcome-author-cannot-receive-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:pay-deleted",
     "label": "/welcome pay-deleted",
     "visual": "state-welcome-pay-deleted",
@@ -3033,6 +3051,12 @@
     "id": "/habit-tracker:donate-author-wallet",
     "label": "/habit-tracker donate-author-wallet",
     "visual": "state-habit-tracker-donate-author-wallet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:comment-cannot-receive",
+    "label": "/habit-tracker comment-cannot-receive",
+    "visual": "state-habit-tracker-comment-cannot-receive",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3621,6 +3645,12 @@
     "id": "/members/[accountId]:heart-needs-balance",
     "label": "/members/[accountId] heart-needs-balance",
     "visual": "state-members-heart-needs-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:cannot-receive",
+    "label": "/members/[accountId] cannot-receive",
+    "visual": "state-members-cannot-receive",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4416,6 +4446,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/view/[viewKey]:cannot-receive",
+    "label": "/view/[viewKey] cannot-receive",
+    "visual": "state-view-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/view/[viewKey]:about-filled",
     "label": "/view/[viewKey] about-filled",
     "visual": "state-view-about-filled",
@@ -4641,6 +4677,12 @@
     "id": "/messages:thread",
     "label": "/messages thread",
     "visual": "state-messages-thread",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-cannot-receive",
+    "label": "/messages thread-cannot-receive",
+    "visual": "state-messages-thread-cannot-receive",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5745,6 +5787,12 @@
     "id": "/welcome:heart-needs-balance",
     "label": "/welcome heart-needs-balance",
     "visual": "state-welcome-heart-needs-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:heart-cannot-receive",
+    "label": "/welcome heart-cannot-receive",
+    "visual": "state-welcome-heart-cannot-receive",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
