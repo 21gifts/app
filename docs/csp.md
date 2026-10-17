@@ -130,8 +130,8 @@ where a script could send data. The hosts the app is known to reach:
    (`defaultConfig('mainnet')`) and the hosts and WebSocket URLs in its code.
 2. Run: a production build with a policy of `'self'` plus the nonce only,
    report-only, reports sent through `/monitoring/csp` to a local stand-in
-   for the Sentry server. The Playwright behavior suite (`npm run
-e2e:behavior`) ran over it, and a second Playwright pass recorded every
+   for the Sentry server. The Playwright behavior suite
+   (`npm run e2e:behavior`) ran over it, and a second Playwright pass recorded every
    request origin and every `securitypolicyviolation` event on the main
    screens signed in and signed out, plus the shops map with the real Maps
    script. Every report became a row above.

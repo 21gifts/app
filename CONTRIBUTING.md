@@ -333,7 +333,7 @@ app/
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)
 │   │   ├── csp.ts               # Content-Security-Policy: sources, nonce, mode, header name
-│   │   ├── sentry.ts            # Error reporting + browser tracing: init options, privacy scrubber, traceWallet, tunnel forwarder
+│   │   ├── sentry.ts            # Error reporting + browser tracing: init options, privacy scrubber, traceWallet, tunnel forwarder, CSP report forwarder
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
 │   │   ├── amount-unit.ts       # saveAmountUnit: the one ordered save of account.amountUnit
