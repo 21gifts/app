@@ -889,11 +889,16 @@ docker build -t 21gifts/app:dev .
 docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=https://dev-api.21.gifts 21gifts/app:dev
 ```
 
-**One image, multiple environments**: `next build` inlines `NEXT_PUBLIC_*`
-values into the bundles, so the image is built with literal placeholders
-(`__NEXT_PUBLIC_API_URL__`) and `entrypoint.sh` substitutes the runtime
-values at container start. The container refuses to start if a required
-variable is unset or empty. The optional variables (`OPTIONAL_VARS` in
+**One image per environment**: each deploy workflow builds its own image,
+because the Breez API key (`NEXT_PUBLIC_BREEZ_API_KEY`) and the build id
+(`NEXT_PUBLIC_BUILD_ID`) are baked in at `next build` (below). An image built
+for one environment is not deployed to another. `NEXT_PUBLIC_APP_VERSION` is
+baked in at `next build` too (from `APP_VERSION`, below). `NEXT_PUBLIC_API_URL`
+and the optional variables in the table below are runtime placeholders:
+`next build` inlines `NEXT_PUBLIC_*` values into the bundles, so the image is
+built with literal placeholders (`__NEXT_PUBLIC_API_URL__`) and
+`entrypoint.sh` substitutes the runtime values at container start. The
+container refuses to start if a required variable is unset or empty. The optional variables (`OPTIONAL_VARS` in
 `entrypoint.sh`) are substituted with an empty string instead, and the app
 reads that empty string as unset: no donation address, no error reporting, the
 SDK's default environment name, or the default trace sample rate (table below). Each deployment sets them in
@@ -921,9 +926,11 @@ It is not substituted at container start and is not an `entrypoint.sh`
 placeholder. Local and Playwright builds without the arg show `dev`.
 
 `NEXT_PUBLIC_BREEZ_API_KEY` is a second Docker **build-arg** (no default),
-passed only by the staging deploy (see [Breez SDK Spark](#breez-sdk-spark)).
-It is inlined at `next build`, is not an `entrypoint.sh` placeholder, and an
-unset or empty value still builds.
+passed by every deploy from that environment's secret (see
+[Breez SDK Spark](#breez-sdk-spark)). It is inlined at `next build` and is not
+an `entrypoint.sh` placeholder. An unset or empty value still builds a local or
+DEV/staging image with the wallet off; `deploy-prd.yaml` fails before the build
+when `BREEZ_API_KEY_PRD` is empty.
 
 `NEXT_PUBLIC_PLATFORM_USERNAME` is an optional `entrypoint.sh` placeholder,
 set per deployment and read through `getPlatformUsername()`. It is the
@@ -1084,22 +1091,31 @@ performance traces, both through its scrubber.
 | Workflow               | Trigger                                                           | Action                                                                                                                                                                                                                                                                                                                                    |
 | ---------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + three behavior shard jobs (`E2E (behavior, shard 1/3)` to `3/3`) + E2E (behavior), green only when all three shards are green, + four visual combo jobs; **10 minutes each**; Playwright `v1.61.1-noble` |
-| `deploy-dev.yaml`      | push to `develop`                                                 | Docker build → push `21gifts/app:beta` → notify → wait for deploy                                                                                                                                                                                                                                                                         |
-| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` → notify → wait for deploy                                                                                                                                                                                                           |
-| `deploy-prd.yaml`      | push to `main`                                                    | Docker build → push `21gifts/app:latest` → notify → wait for deploy                                                                                                                                                                                                                                                                       |
+| `deploy-dev.yaml`      | push to `develop`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_DEV`) → push `21gifts/app:beta` and `21gifts/app:beta-<sha>` → notify → wait for deploy                                                                                                                                                                                     |
+| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` and `21gifts/app:staging-<sha>` → notify → wait for deploy                                                                                                                                                                           |
+| `deploy-prd.yaml`      | push to `main`                                                    | Fail when `BREEZ_API_KEY_PRD` is empty → Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_PRD`) → push `21gifts/app:latest` and `21gifts/app:latest-<sha>` → notify → wait for deploy                                                                                                                                        |
 | `auto-release-pr.yaml` | push to `develop` or `staging`                                    | Open a missing release only (`staging → develop`, and `develop → main`). Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                                                                                                                                    |
 | `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                                                                                                                                |
 
-Images target `linux/arm64`.
+Images target `linux/arm64`. Every deploy passes the build-arg
+`NEXT_PUBLIC_BUILD_ID` as the full commit SHA (`github.sha`), read by the
+Dockerfile's `ARG NEXT_PUBLIC_BUILD_ID`. Every deploy also pushes the image as
+`21gifts/app:<tag>-<sha>`, where `<tag>` is that workflow's moving tag
+(`beta`, `staging`, or `latest`) and `<sha>` is the full 40-character
+`github.sha`, for example `21gifts/app:latest-<sha>`. The image bakes
+environment-specific build-args, so the tag names the environment as well as
+the commit; no later commit writes it. A re-run for the same commit pushes the
+same tag again. The moving tags and the deploy dispatch are unchanged.
 
 Deploy workflows require these GitHub Actions secrets:
 
-| Secret            | Purpose                                             |
-| ----------------- | --------------------------------------------------- |
-| `DOCKER_USERNAME` | Docker Hub username for image push                  |
-| `DOCKER_PASSWORD` | Docker Hub token for image push                     |
-| `DISPATCH_TOKEN`  | PAT to dispatch `image-published` and read that run |
-| `DISPATCH_REPO`   | Target `owner/repo` that receives `image-published` |
+| Secret              | Purpose                                                                    |
+| ------------------- | -------------------------------------------------------------------------- |
+| `DOCKER_USERNAME`   | Docker Hub username for image push                                         |
+| `DOCKER_PASSWORD`   | Docker Hub token for image push                                            |
+| `DISPATCH_TOKEN`    | PAT to dispatch `image-published` and read that run                        |
+| `DISPATCH_REPO`     | Target `owner/repo` that receives `image-published`                        |
+| `BREEZ_API_KEY_PRD` | Breez API key baked into the PRD image; `deploy-prd.yaml` fails without it |
 
 If `DISPATCH_TOKEN` or `DISPATCH_REPO` is missing, deploy fails loud (the image
 may already be on Hub). After `image-published`, the job waits for the
@@ -1113,16 +1129,17 @@ It is inlined at `next build`. Unset or empty disables the in-app wallet. It
 is the only wallet, so members then cannot pay from the app: the pay sheets say
 that the wallet is not available here. Local use:
 `NEXT_PUBLIC_BREEZ_API_KEY=<key> npm run dev`. Playwright and CI builds leave
-it unset. Only the staging deploy passes it (see below), so the DEV and PRD
-deployments do not have the wallet enabled.
+it unset. Every deploy passes its own environment's key (see below).
 
 This repository stores three GitHub Actions secrets for the Breez SDK (Spark).
-`deploy-staging.yaml` passes `BREEZ_API_KEY_STAGING` as the Docker build-arg
-`NEXT_PUBLIC_BREEZ_API_KEY`, which `next build` bakes into the app; unset or
-empty still builds. The DEV and PRD deploys do not read their secrets. A later
-workflow can read them as `secrets.BREEZ_API_KEY_PRD` and
-`secrets.BREEZ_API_KEY_DEV`. GitHub does not show the values again, and
-the values are not in git.
+Each deploy passes its own secret as the Docker build-arg
+`NEXT_PUBLIC_BREEZ_API_KEY`, which `next build` bakes into the app:
+`deploy-dev.yaml` reads `BREEZ_API_KEY_DEV`, `deploy-staging.yaml` reads
+`BREEZ_API_KEY_STAGING`, and `deploy-prd.yaml` reads `BREEZ_API_KEY_PRD`. On
+DEV and staging an unset or empty secret still builds with the wallet off.
+`deploy-prd.yaml` fails before the build, with an error that names
+`BREEZ_API_KEY_PRD`, when that secret is unset, empty, or only whitespace.
+GitHub does not show the values again, and the values are not in git.
 
 | Secret                  | Use                                                            |
 | ----------------------- | -------------------------------------------------------------- |

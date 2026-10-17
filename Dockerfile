@@ -8,26 +8,32 @@
 #   docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=https://dev-api.21.gifts 21gifts/app:beta
 #   docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=https://api.21.gifts 21gifts/app:latest
 #
-# One image, multiple environments: `next build` inlines NEXT_PUBLIC_* values
-# into the emitted bundles, so the image is built with literal placeholders
-# (__NEXT_PUBLIC_API_URL__) and entrypoint.sh substitutes the real runtime
-# values at container start — the same image runs DEV and PRD without rebuild.
+# One image per environment: each deploy builds its own image, because the
+# Breez API key (NEXT_PUBLIC_BREEZ_API_KEY) and the build id
+# (NEXT_PUBLIC_BUILD_ID) are baked in at `next build`; an image built for one
+# environment is not deployed to another. NEXT_PUBLIC_APP_VERSION is baked in
+# at `next build` too (from APP_VERSION, below). NEXT_PUBLIC_API_URL and the
+# optional entrypoint.sh variables are runtime placeholders: `next build`
+# inlines NEXT_PUBLIC_* values into the emitted bundles, so the image is built
+# with literal placeholders (__NEXT_PUBLIC_API_URL__) and entrypoint.sh
+# substitutes the real runtime values at container start.
 #
 # APP_VERSION is a Docker build-arg (default `dev`), baked into
 # NEXT_PUBLIC_APP_VERSION at `next build` and shown as Version in the
 # signed-in Menu. It is the deploy run number, not an entrypoint.sh
 # placeholder, and is not substituted at container start.
 #
-# NEXT_PUBLIC_BREEZ_API_KEY is a second build-arg (no default), passed only by
-# the staging deploy and baked at `next build`. It is not an entrypoint.sh
-# placeholder; an unset or empty value still builds.
+# NEXT_PUBLIC_BREEZ_API_KEY is a second build-arg (no default), passed by every
+# deploy from that environment's repository secret and baked at `next build`.
+# It is not an entrypoint.sh placeholder; an unset or empty value still builds
+# (the in-app wallet is then off). deploy-prd.yaml refuses to build without it.
 #
 # Current NEXT_PUBLIC_* variables:
 #   NEXT_PUBLIC_API_URL — upstream 21.gifts api (browser talks same-origin)
 #                         DEV: https://dev-api.21.gifts / PRD: https://api.21.gifts
 #   NEXT_PUBLIC_APP_VERSION — decimal deploy run number of this image (from ARG APP_VERSION), or `dev`
 #   NEXT_PUBLIC_BREEZ_API_KEY — Breez SDK key, a build-arg baked at `next build`
-#                               (staging deploy only); empty when unset
+#                               (each deploy's own secret); empty when unset
 #   NEXT_PUBLIC_PLATFORM_USERNAME — username of the 21.gifts platform account; the landing
 #                         page shows its wallet address for donations to the project.
 #                         Optional placeholder: empty or unset hides that address.
