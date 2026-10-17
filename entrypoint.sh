@@ -1,12 +1,14 @@
 #!/bin/sh
 # Runtime substitution of NEXT_PUBLIC_* build-time placeholders.
 #
-# `next build` inlines NEXT_PUBLIC_* values into the emitted bundles, which
-# would tie a Docker image to one environment. To keep one image runnable in
-# every environment ("One image, multiple environments" — CONCEPT.md in
-# 21gifts/api), the image is built with literal placeholders of the form
-# __NEXT_PUBLIC_FOO__ and this script replaces them with the runtime values
-# of the corresponding environment variables at container start.
+# `next build` inlines NEXT_PUBLIC_* values into the emitted bundles. For the
+# values set per container (NEXT_PUBLIC_API_URL and the optional ones below),
+# the image is built with literal placeholders of the form __NEXT_PUBLIC_FOO__
+# and this script replaces them with the runtime values of the corresponding
+# environment variables at container start. The build-args
+# (NEXT_PUBLIC_BREEZ_API_KEY, NEXT_PUBLIC_BUILD_ID, APP_VERSION) are baked in
+# at `next build` and are not substituted here, so each environment builds its
+# own image.
 #
 # Fail-loud contract: if the running environment does not provide a value for
 # a placeholder present in the build output, the container refuses to start.
