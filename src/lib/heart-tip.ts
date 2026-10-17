@@ -712,6 +712,7 @@ function reconcileHeartCounts(
         plusOne,
         needsBalance: current !== undefined && current.needsBalance,
         extra,
+        ...(current?.cannotReceive === true ? { cannotReceive: true } : {}),
       });
     }
     return next ?? prev;

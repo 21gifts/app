@@ -1095,6 +1095,21 @@ describe('useHeartTip', () => {
     );
   });
 
+  it('keeps the author-wallet line when heartCounts catch up with an earlier heart', async () => {
+    sessionStorage.setItem('21gifts.heart.sent', JSON.stringify({ m1: { base: 3, extra: 2 } }));
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CannotReceiveError());
+    const { result, rerender } = renderHook(
+      ({ heartCounts }: { heartCounts: Readonly<Record<string, number>> }) =>
+        useHeartTip({ readOnly: false, heartCounts }),
+      { initialProps: { heartCounts: { m1: 3 } } },
+    );
+    await clickHeart(result, 'm1');
+    expect(result.current.heartTipViews['m1']?.cannotReceive).toBe(true);
+    rerender({ heartCounts: { m1: 4 } });
+    expect(result.current.heartTipViews['m1']?.extra).toBe(1);
+    expect(result.current.heartTipViews['m1']?.cannotReceive).toBe(true);
+  });
+
   it('shows the press and +1 on a Sunday tap and reports it without invoicing', async () => {
     document.documentElement.dataset['localSunday'] = '1';
     try {
