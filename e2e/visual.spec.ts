@@ -20134,7 +20134,7 @@ test.describe('shops screens', () => {
 
   test('shops add-post-rejected', async ({ page }) => {
     await stubPlaceMap(page);
-    await seedAda(page);
+    await seedAda(page, 'moderator');
     await fulfillMixedSatsMessages(page);
     await page.route(
       (url) => new URL(url).pathname === '/forum/messages',
