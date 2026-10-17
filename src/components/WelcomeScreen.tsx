@@ -170,7 +170,8 @@ function PanelChromeBack({ onBack, over }: { onBack: () => void; over: boolean }
  * them as they slim down with the scroll), or near the frame's bottom edge
  * without them. Tapping it opens the writer under the header row (see
  * `ForumBoard`) and focuses its text field in the same tap. While the writer
- * is open the **+**, the feed and the footer are covered; the top-left arrow
+ * is open the feed and the footer are covered and the **+** fades out (the
+ * same fade as for a focused field, below); the top-left arrow
  * (a chrome back override, after any Ask step inside) closes it, and so do a
  * successful post, the wordmark and the Menu's Home. Closing takes the focus
  * out of the writer first, so the keyboard closes as a focus change. The
@@ -179,14 +180,16 @@ function PanelChromeBack({ onBack, over }: { onBack: () => void; over: boolean }
  * post whose fee completes after the writer closed changes neither the
  * scroll nor the focus), and Home leaves the scroll to the forum's own
  * scroll-to-top. Drafts stay for the next opening.
- * The **+** is hidden while a wallet view is open. An 80 px clearance
+ * A wallet view hides the **+** at once, without the fade: the footer it sits
+ * above leaves in that same step, so a fade would show it dropping to the
+ * bottom first. It fades back in when the view closes. An 80 px clearance
  * (`data-plus-clearance`) ends the signed-in page, so at the end of the feed
  * the last note's controls scroll clear of the **+** and of the space above
  * Receive / Send.
  *
- * Only while a text field in the page has the focus (a reaction or reply
- * text, an amount, a mention box) does the **+** fade out (250 ms; at once
- * with reduced motion) and become unpressable, and Receive / Send fold away
+ * While a text field in the page has the focus (a reaction or reply text, an
+ * amount, a mention box) the **+** fades out (250 ms; at once with reduced
+ * motion) and becomes unpressable, and Receive / Send fold away
  * (`WalletFooterActions` `folded`), so the field has the whole height above
  * the keyboard and the **+** never lies over the form being filled. An open
  * form whose field does not have the focus (an expanded post's reaction form,
