@@ -5832,9 +5832,10 @@ test('Function: ForumReplyPayPage — paid reaction replaces the reply composer'
 });
 
 /**
- * Records, in order, each state the `Motion` boxes take from the first paint on: a `[data-swap]`
- * view as `swap:<key>`, a `[data-collapse]` fold that holds `holding` as `collapse:<open|closed>`,
- * each with `:faded` while at `opacity-0` and `:inert` while inert. Read it with {@link motionLog}.
+ * Records, in order, each state the `Swap` and `Collapse` boxes take from the first paint on: a
+ * `[data-swap]` view as `swap:<key>`, a `[data-collapse]` fold that holds `holding` as
+ * `collapse:<open|closed>`, each with `:faded` while at `opacity-0` and `:inert` while inert. Read
+ * it with {@link motionLog}.
  */
 async function recordMotion(page: Page, holding: string): Promise<void> {
   await page.addInitScript((selector: string) => {
@@ -6113,8 +6114,10 @@ test('Function: AutoHeight — the open reaction box glides to the height its co
   });
   await page.getByLabel('Your reaction').fill(REACTION_PAY_ANSWER);
   const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+  // An amount that is not a number brings the amount error line in without a request.
+  await form.getByLabel('Amount').fill('abc');
   await form.getByRole('button', { name: 'Post' }).click();
-  await expect(form.getByRole('alert')).toBeVisible();
+  await expect(form.getByRole('alert')).toHaveText('Send at least ₿1 with your reaction');
   // While the height moved, a box glided and clipped; at rest it clips no more (below).
   await expect
     .poll(() => page.evaluate(() => (window as unknown as { glideLog: string[] }).glideLog))

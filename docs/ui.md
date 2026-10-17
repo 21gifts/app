@@ -291,20 +291,20 @@ Do not add drop shadows on marketing. Do not use colored shadows.
 
 **Motion.**
 
-| Event                       | Duration                     | Easing                | Notes                                                                                            |
-| --------------------------- | ---------------------------- | --------------------- | ------------------------------------------------------------------------------------------------ |
-| Color hover                 | 150ms                        | `ease` (`transition`) | Buttons, rows, pills                                                                             |
-| Menu panel                  | instant (`hidden` class)     | —                     | Stays mounted so `PwaInstall` is not remounted                                                   |
-| Listbox mount               | instant (conditional render) | —                     | LanguageSwitcher; no fade required                                                               |
-| Theme switch                | instant                      | —                     | Class toggle on `html`; do not animate `color` on `<body>`                                       |
-| Pay sheet open / close      | 280ms (`Collapse`)           | `ease-glide`          | In-card, card-level, per-reply and composer sheets; no slide, the height and opacity ease        |
-| Fold in / out (`Collapse`)  | 280ms                        | `ease-glide`          | `grid-rows-[0fr]`↔`[1fr]` + opacity; last content stays, inert, until folded; first render still |
-| Height glide (`AutoHeight`) | 280ms                        | `ease-glide`          | Box follows its content's height; clips only while it moves                                      |
-| View swap (`Swap`)          | 180ms out, then 180ms in     | `ease-glide`          | Old view fades in place (inert), then the box glides to the new height                           |
-| New reply                   | 280ms (`animate-fade-in`)    | `ease-glide`          | Opacity 0→1, from 4px above into place, once per mounted reply                                   |
-| Forum home **+** aside      | 250ms                        | `ease-glide`          | Opacity and visibility while the writer or a field is open; a wallet view hides it at once       |
-| Spinner                     | 1000ms linear infinite       | `animate-spin`        | `Loader2`                                                                                        |
-| Copy check flash            | 1200ms then revert           | —                     | `ForumBoard` `COPY_RESET_MS`                                                                     |
+| Event                       | Duration                     | Easing                | Notes                                                                                                         |
+| --------------------------- | ---------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Color hover                 | 150ms                        | `ease` (`transition`) | Buttons, rows, pills                                                                                          |
+| Menu panel                  | instant (`hidden` class)     | —                     | Stays mounted so `PwaInstall` is not remounted                                                                |
+| Listbox mount               | instant (conditional render) | —                     | LanguageSwitcher; no fade required                                                                            |
+| Theme switch                | instant                      | —                     | Class toggle on `html`; do not animate `color` on `<body>`                                                    |
+| Pay sheet open / close      | 280ms (`Collapse`)           | `ease-glide`          | In-card, card-level, per-reply and composer sheets; no slide, the height and opacity ease                     |
+| Fold in / out (`Collapse`)  | 280ms                        | `ease-glide`          | `grid-rows-[0fr]`↔`[1fr]` + opacity; last content stays, inert, until folded; first render shows at once      |
+| Height glide (`AutoHeight`) | 280ms                        | `ease-glide`          | Box follows its content's height; clips only while it moves                                                   |
+| View swap (`Swap`)          | 180ms out, then 180ms in     | `ease-glide`          | Old view fades in place (inert), then the box glides to the new height                                        |
+| New reply                   | 280ms (`animate-fade-in`)    | `ease-glide`          | Opacity 0→1, from 4px above into place, once per mounted reply                                                |
+| Forum home **+** aside      | 250ms                        | `ease-glide`          | Opacity and visibility while the writer is open or a text field has the focus; a wallet view hides it at once |
+| Spinner                     | 1000ms linear infinite       | `animate-spin`        | `Loader2`                                                                                                     |
+| Copy check flash            | 1200ms then revert           | —                     | `ForumBoard` `COPY_RESET_MS`                                                                                  |
 
 ```css
 @media (prefers-reduced-motion: reduce) {
