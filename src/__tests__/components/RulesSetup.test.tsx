@@ -80,7 +80,9 @@ describe('RulesSetup', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     expect(
-      screen.getByText('Please read this chapter. You can continue once you agree to the rules.'),
+      screen.getByText(
+        'Please read this chapter. After that, you can agree to the rules and continue.',
+      ),
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'I agree to these rules' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();

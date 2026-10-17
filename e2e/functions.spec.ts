@@ -53,6 +53,26 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test('Function: marketingMetadata — homepage has its own search and social title', async ({
+  request,
+}) => {
+  const response = await request.get('/');
+  expect(response.ok()).toBe(true);
+  const html = await response.text();
+  expect(html).toContain('<title>Help people with Bitcoin | 21.gifts</title>');
+  expect(html).toContain('<meta property="og:title" content="Help people with Bitcoin | 21.gifts"');
+  expect(html).toContain('<link rel="canonical" href="https://21.gifts/en"');
+
+  const german = await request.get('/de');
+  expect(german.ok()).toBe(true);
+  const germanHtml = await german.text();
+  expect(germanHtml).toContain('<title>Help people with Bitcoin | 21.gifts</title>');
+  expect(germanHtml).toContain('/og.png');
+  expect(germanHtml).toContain('21.gifts: Help people. With Bitcoin. Your wallet to their wallet.');
+  expect(germanHtml).toContain('rel="canonical" href="https://21.gifts/de"');
+  expect(germanHtml).not.toContain('/og-de.png');
+});
+
 test('Function: readJpegTakenAt — a jpeg with Exif sends its capture time', async ({
   page,
   request,
@@ -3283,13 +3303,13 @@ test('Function: resolveLightningAddress — GET /lightning-address still resolve
 
 test('Function: RootLayout — landing renders', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
 });
 
 test('Function: Home — landing renders the pitch', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Donate to this project' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '21.gifts also needs support' })).toBeVisible();
   await expect(page.getByRole('link', { name: '21gifts@walletofsatoshi.com' })).toHaveAttribute(
     'href',
     'lightning:21gifts@walletofsatoshi.com',
@@ -3370,7 +3390,7 @@ test('Function: shouldOfferIosInstall — iPhone Safari shows the install contro
 
 test('Function: MarketingFooter — landing shows the footer wordmark', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('footer').getByText('21.gifts')).toBeVisible();
+  await expect(page.locator('footer').getByText('21.gifts', { exact: true })).toBeVisible();
 });
 
 test('Function: LegalPage — legal heading is visible', async ({ page }) => {
@@ -3380,7 +3400,7 @@ test('Function: LegalPage — legal heading is visible', async ({ page }) => {
 
 test('Function: AboutPage — about heading is visible', async ({ page }) => {
   await page.goto('/about');
-  await expect(page.getByRole('heading', { name: 'Three convictions' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What 21.gifts stands for' })).toBeVisible();
 });
 
 test('Function: HandbookPage — handbook heading is visible', async ({ page }) => {
@@ -4367,6 +4387,7 @@ test('Function: recordCurrentView shows Back to shops after notifications', asyn
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
+  await waitUntilShopsRecorded(page);
   await page.goto('/notifications');
   const back = page.getByRole('link', { name: 'Back', exact: true });
   await expect(back).toHaveCount(1);
@@ -4377,6 +4398,7 @@ test('Function: ViewHistoryRoot records shops then notifications in this tab', a
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
+  await waitUntilShopsRecorded(page);
   await page.goto('/notifications');
   const back = page.getByRole('link', { name: 'Back', exact: true });
   await expect(back).toHaveAttribute('href', '/shops');
@@ -4390,6 +4412,7 @@ test('Function: goToPreviousView opens the shops view from notifications', async
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
+  await waitUntilShopsRecorded(page);
   await page.goto('/notifications');
   const origin = new URL(page.url()).origin;
   await page.getByRole('link', { name: 'Back', exact: true }).click();
@@ -4401,6 +4424,7 @@ test('Function: previousViewPath is the shops href on the back link', async ({ p
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
+  await waitUntilShopsRecorded(page);
   await page.goto('/notifications');
   await expect(page.getByRole('link', { name: 'Back', exact: true })).toHaveAttribute(
     'href',
@@ -4429,10 +4453,30 @@ test('Function: ChromeBackProvider shows no back arrow on welcome', async ({ pag
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveCount(0);
 });
 
+/** Shops is on the tab stack only after ViewHistoryRoot records it. */
+async function waitUntilShopsRecorded(page: Page): Promise<void> {
+  await page.waitForFunction(() => {
+    const raw = sessionStorage.getItem('21gifts.viewHistory');
+    if (raw === null) {
+      return false;
+    }
+    try {
+      const stored = JSON.parse(raw) as { stack?: unknown; cursor?: unknown };
+      if (!Array.isArray(stored.stack) || typeof stored.cursor !== 'number') {
+        return false;
+      }
+      return stored.stack[stored.cursor] === '/shops';
+    } catch {
+      return false;
+    }
+  });
+}
+
 test('Function: previousViewPath is shops when welcome follows shops', async ({ page }) => {
   await seedAdaSession(page);
   await routeForumLists(page);
   await page.goto('/shops');
+  await waitUntilShopsRecorded(page);
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
   const back = page.getByRole('link', { name: 'Back', exact: true });
@@ -4640,7 +4684,7 @@ test('Function: LoginPage — login heading is visible', async ({ page }) => {
 
 test('Function: DonatePage — send-help explainer renders', async ({ page }) => {
   await page.goto('/donate');
-  await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Help someone' })).toBeVisible();
 });
 
 test('Function: LoginCard — a single Log in button is visible', async ({ page }) => {
@@ -4686,7 +4730,7 @@ async function expectWrongAccountHint(page: Page): Promise<void> {
   await page.goto('/login');
   await expect(
     page.getByRole('alert').filter({
-      hasText: 'You signed in with the wrong account. Please try again with the correct account.',
+      hasText: 'You signed in with a different account. Try again with the right one.',
     }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
@@ -5433,7 +5477,7 @@ test('Function: GiftDayTable — day page lists alice', async ({ page }) => {
 
 test('Function: DayLoader — empty day copy is visible', async ({ page }) => {
   await page.goto('/stats/2026-06-02');
-  await expect(page.getByText('No gifts recorded on this day.')).toBeVisible();
+  await expect(page.getByText('No donations recorded on this day.')).toBeVisible();
 });
 
 test('Function: GiftDayPage — invalid day is 404', async ({ page }) => {
@@ -5478,24 +5522,24 @@ test('Function: fetchPostStats — stats page shows notes and replies as posts',
 test('Function: fetchGiftStats — stats page shows the empty copy', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
-  await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
+  await expect(page.getByText('No donations recorded yet.')).toBeVisible();
 });
 
 test('Function: StatsPage — stats heading is visible', async ({ page }) => {
   await page.goto('/stats');
-  await expect(page.getByRole('heading', { name: 'Gifts' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Donations' })).toBeVisible();
 });
 
 test('Function: StatsLoader — stats page shows the empty copy', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
-  await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
+  await expect(page.getByText('No donations recorded yet.')).toBeVisible();
 });
 
 test('Function: StatsDashboard — empty stats hide the spend chart heading', async ({ page }) => {
   await stubGiftStats(page, EMPTY_STATS);
   await page.goto('/stats');
-  await expect(page.getByText('No gifts recorded yet.')).toBeVisible();
+  await expect(page.getByText('No donations recorded yet.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Total spend over time' })).toHaveCount(0);
 });
 
@@ -6475,27 +6519,27 @@ test('Function: LanguagePreferenceSwitcher — /profile lists English Deutsch Es
 
 test('Function: LocaleProvider — landing heading is English by default', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/ })).toBeVisible();
 });
 
 test('Function: useTranslations — landing heading is English by default', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/ })).toBeVisible();
 });
 
 test('Function: translate — landing heading is English by default', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/ })).toBeVisible();
 });
 
 test('Function: getCatalog — landing heading is English by default', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/ })).toBeVisible();
 });
 
 test('Function: getRequestLocale — landing heading is English by default', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Direct human-to-human gifts/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Help people with Bitcoin/ })).toBeVisible();
 });
 
 test('Function: parseSupportedLocale — Español cookie localizes the landing heading', async ({
@@ -6505,7 +6549,7 @@ test('Function: parseSupportedLocale — Español cookie localizes the landing h
   await page.getByLabel('Language').click();
   await page.getByRole('option', { name: 'Español' }).click();
   await expect(
-    page.getByRole('heading', { name: /Regalos directos de persona a persona/ }),
+    page.getByRole('heading', { name: /Ayuda a otras personas con Bitcoin/ }),
   ).toBeVisible();
 });
 
@@ -6519,9 +6563,7 @@ test.describe('Function: parseAcceptLanguage', () => {
     page,
   }) => {
     await page.goto('/');
-    await expect(
-      page.getByRole('heading', { name: /Direkte Geschenke von Mensch zu Mensch/ }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Hilf Menschen mit Bitcoin/ })).toBeVisible();
   });
 });
 
@@ -8626,6 +8668,14 @@ test('Function: resyncPushSubscription — signed-in chrome still shows Menu', a
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
 });
 
+test('Function: WelcomeTopRight — signed-out welcome offers the log-in link', async ({ page }) => {
+  await page.goto('/welcome');
+  const login = page.getByRole('link', { name: 'Log in' });
+  await expect(login).toBeVisible();
+  await expect(login).toHaveAttribute('href', '/login');
+  await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(0);
+});
+
 test('Function: SignedInChrome — Menu reveals Profile and log out', async ({ page, request }) => {
   await signInViaStub(page, request);
   await expect(page).toHaveURL(/\/setup\/address/);
@@ -9117,7 +9167,7 @@ test('Function: Button — login shows the Log in button', async ({ page }) => {
 
 test('Function: ButtonLink — landing Ask for help is a link', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('link', { name: 'Ask for help' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Ask for help' }).first()).toBeVisible();
 });
 
 test('Function: Wordmark — landing shows the 21.gifts wordmark', async ({ page }) => {
@@ -9127,7 +9177,7 @@ test('Function: Wordmark — landing shows the 21.gifts wordmark', async ({ page
 
 test('Function: HomeWordmark — unsigned donate wordmark goes home', async ({ page }) => {
   await page.goto('/donate');
-  await expect(page.getByRole('link', { name: '21.gifts' })).toHaveAttribute('href', '/');
+  await expect(page.getByRole('link', { name: '21.gifts' })).toHaveAttribute('href', '/en');
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toHaveAttribute(
     'href',
     '/welcome',

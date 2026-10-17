@@ -3,16 +3,18 @@ import type { ReactElement } from 'react';
 import { HandbookCopyLink } from '@/components/HandbookCopyLink';
 import { HandbookIntro } from '@/components/HandbookIntro';
 import { getCatalog } from '@/lib/messages';
+import { marketingMetadata } from '@/lib/marketing-metadata';
 import { getRequestLocale } from '@/lib/request-locale';
 import { translate } from '@/lib/translate';
 
 /**
  * Title and description for `/handbook` (overrides the root layout metadata).
  */
-export const metadata: Metadata = {
-  title: 'Handbook — 21.gifts',
-  description: 'Screens, functions, and HTTP endpoints for the 21.gifts app.',
-};
+export const metadata: Metadata = marketingMetadata(
+  '/handbook',
+  'Handbook — 21.gifts',
+  'Screens, functions, and HTTP endpoints for the 21.gifts app.',
+);
 
 /**
  * Async handbook hub at `/handbook`: describes and links the three parts.
