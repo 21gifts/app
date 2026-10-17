@@ -1048,6 +1048,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet/payment',
+    id: 'downloading',
+    image: 'wallet-payment-downloading.png',
+    visual: 'state-wallet-payment-downloading',
+    needle: "shotScreen(page, 'state-wallet-payment-downloading')",
+  },
+  {
+    route: '/wallet/payment',
     id: 'error',
     image: 'wallet-payment-error.png',
     visual: 'state-wallet-payment-error',

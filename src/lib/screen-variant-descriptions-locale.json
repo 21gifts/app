@@ -4554,6 +4554,11 @@
     "es": "Lo mismo mientras la wallet se abre (pin ?visual=balance-connecting): el indicador y Abriendo tu wallet….",
     "fil": "Pareho habang binubuksan ang wallet (pin ?visual=balance-connecting): ang spinner at Binubuksan ang wallet mo…."
   },
+  "/wallet/payment:downloading": {
+    "de": "Dasselbe, während der Wallet-Code in dieser Seite zum ersten Mal heruntergeladen wird (Pin ?visual=balance-downloading): der Spinner und Wallet wird heruntergeladen…. Der Download hat keine Zeitgrenze und wird nie durch ein Neuladen der Seite ersetzt.",
+    "es": "Lo mismo mientras el código de la wallet se descarga por primera vez en esta página (pin ?visual=balance-downloading): el indicador y Descargando la wallet…. La descarga no tiene límite de tiempo y nunca se sustituye por una recarga de la página.",
+    "fil": "Pareho habang dina-download pa sa unang pagkakataon sa page na ito ang code ng wallet (pin ?visual=balance-downloading): ang spinner at Dina-download ang wallet…. Walang time limit ang download at hindi ito pinapalitan ng pag-reload ng page."
+  },
   "/wallet/payment:error": {
     "de": "Dasselbe, wenn die Wallet nicht geöffnet werden konnte (Pin ?visual=balance-error): Ihre Wallet konnte nicht geöffnet werden. Bitte versuchen Sie es erneut. und Erneut versuchen.",
     "es": "Lo mismo cuando no se pudo abrir la wallet (pin ?visual=balance-error): No se pudo abrir tu wallet. Inténtalo de nuevo. e Intentar de nuevo.",

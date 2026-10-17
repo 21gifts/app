@@ -2370,6 +2370,16 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-payment-connecting');
   });
 
+  test('state-wallet-payment-downloading', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-downloading',
+    );
+    await expect(page.getByText('Downloading wallet…').first()).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-downloading');
+  });
+
   test('state-wallet-payment-error', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);

@@ -858,6 +858,12 @@ The same while the wallet is opening (pin `?visual=balance-connecting`): the spi
 
 ![21.gifts wallet payment connecting](images/wallet-payment-connecting.png)
 
+### Variant: downloading
+
+The same while the wallet code is still downloading for the first time in this page (pin `?visual=balance-downloading`): the spinner and **Downloading wallet…**. The download has no time limit and is never replaced by a page reload.
+
+![21.gifts wallet payment downloading](images/wallet-payment-downloading.png)
+
 ### Variant: error
 
 The same when the wallet could not be opened (pin `?visual=balance-error`): **Your wallet could not be opened. Please try again.** and **Try again**.
