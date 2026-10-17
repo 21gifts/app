@@ -19308,7 +19308,7 @@ test.describe('profile funding states', () => {
     await expect(
       page
         .getByRole('group', { name: 'Grant places' })
-        .getByText('Round 1: 10 of 10 places are free.'),
+        .getByText('10 of 10 places are free.'),
     ).toBeVisible();
     await shotScreen(page, 'screen-grants');
   });
@@ -19317,7 +19317,7 @@ test.describe('profile funding states', () => {
     await seedFundingProfile(page);
     await stubGrantPlaces(page, 'full');
     await page.goto('/grants');
-    await expect(page.getByText('Round 1: 0 of 10 places are free.')).toBeVisible();
+    await expect(page.getByText('0 of 10 places are free.')).toBeVisible();
     await expect(
       page.getByText('All 10 places of this round are taken. Applications stay open.'),
     ).toBeVisible();
@@ -19615,7 +19615,7 @@ test.describe('profile funding states', () => {
     await stubGrantGoal(page, 'ok');
     await stubGrantPlaces(page, 'full');
     await page.goto('/grants/goals');
-    await expect(page.getByText('Round 1: 0 of 10 places are free.')).toBeVisible();
+    await expect(page.getByText('0 of 10 places are free.')).toBeVisible();
     await expect(
       page.getByText('All 10 places of this round are taken. Applications stay open.'),
     ).toBeVisible();
@@ -28355,14 +28355,7 @@ test.describe('statistics screens', () => {
     });
   }
 
-  async function shotStatistics(
-    page: Page,
-    options: { grantPlacesLoading?: boolean } = {},
-  ): Promise<void> {
-    // Measure only after the places panel settled; its loading state is shorter.
-    if (options.grantPlacesLoading !== true) {
-      await waitForGrantPlaces(page);
-    }
+  async function shotStatistics(page: Page): Promise<void> {
     const current = page.viewportSize() ?? { width: 1280, height: 720 };
     await page.evaluate(() => document.fonts.ready);
     const styleTag = await page.addStyleTag({
@@ -28447,46 +28440,6 @@ test.describe('statistics screens', () => {
     await expect(page.getByRole('link', { name: 'Show payout per person' })).toHaveCount(0);
     await shotStatistics(page);
     await shotScreen(page, 'screen-statistics');
-  });
-
-  test('statistics places-full', async ({ page }) => {
-    await seedAda(page, 'founder');
-    await stubPayoutGoal(page);
-    await stubShopActivity(page);
-    await stubGrantPlaces(page, 'full');
-    await page.goto('/statistics');
-    await expect(page.getByText('Shops by UTC day')).toBeVisible();
-    await expect(
-      page.getByText('All 10 places of this round are taken. Applications stay open.'),
-    ).toBeVisible();
-    await shotStatistics(page);
-    await shotScreen(page, 'state-statistics-places-full');
-  });
-
-  test('statistics places-error', async ({ page }) => {
-    await seedAda(page, 'founder');
-    await stubPayoutGoal(page);
-    await stubShopActivity(page);
-    await stubGrantPlaces(page, 'error');
-    await page.goto('/statistics');
-    await expect(page.getByText('Shops by UTC day')).toBeVisible();
-    await expect(
-      page.getByText('Could not load the grant places. Please try again.'),
-    ).toBeVisible();
-    await shotStatistics(page);
-    await shotScreen(page, 'state-statistics-places-error');
-  });
-
-  test('statistics places-loading', async ({ page }) => {
-    await seedAda(page, 'founder');
-    await stubPayoutGoal(page);
-    await stubShopActivity(page);
-    await stubGrantPlaces(page, 'loading');
-    await page.goto('/statistics');
-    await expect(page.getByText('Shops by UTC day')).toBeVisible();
-    await expect(page.locator('[data-grant-places="loading"]')).toBeVisible();
-    await shotStatistics(page, { grantPlacesLoading: true });
-    await shotScreen(page, 'state-statistics-places-loading', true, { grantPlacesLoading: true });
   });
 
   test('statistics loading', async ({ page }) => {

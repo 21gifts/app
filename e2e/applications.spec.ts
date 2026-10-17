@@ -171,16 +171,15 @@ test('Function: GrantPlacesPanel — the goals page shows free places and the ne
   await seedAdaSession(page, 'basis');
   await page.goto('/grants/goals');
   const panel = page.getByRole('group', { name: 'Grant places' });
-  await expect(panel.getByText('Round 1: 10 of 10 places are free.')).toBeVisible();
+  await expect(panel.getByText('10 of 10 places are free.')).toBeVisible();
   await expect(
     panel.getByText('When 20 shops are active, the grant program opens for more people.'),
   ).toBeVisible();
 });
 
-test('Function: fetchGrantPlaces — signed-out statistics show the grant places', async ({
-  page,
-}) => {
-  await page.goto('/statistics');
+test('Function: fetchGrantPlaces — the grants page shows the grant places', async ({ page }) => {
+  await seedAdaSession(page, 'verified');
+  await page.goto('/grants');
   const panel = page.getByRole('group', { name: 'Grant places' });
   await expect(panel.getByText('Moderators have admitted 0 people in this round.')).toBeVisible();
   await expect(

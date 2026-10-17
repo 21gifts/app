@@ -7,12 +7,13 @@ import { fetchGrantPlaces } from '@/lib/api';
 import type { GrantPlaces } from '@/lib/api-types';
 
 /**
- * Public grant-places panel: the current round, how many of its places are
- * free, how many people moderators have admitted, that applications stay
- * open, and the active-shop goal that opens the next round.
+ * Grant-places panel on the grant pages: how many places of the current
+ * round are free, how many people moderators have admitted, that
+ * applications stay open, and the active-shop goal that opens the next round.
+ * The round number is not shown.
  *
- * Loads {@link fetchGrantPlaces} without a session, so signed-out visitors
- * see the same numbers. While loading it shows the shared loading sentence;
+ * Loads {@link fetchGrantPlaces} without Authorization; every account sees
+ * the same numbers. While loading it shows the shared loading sentence;
  * on failure an alert and a retry button. `data-grant-places` names the
  * state (`loading`, `error`, `ready`) so screenshot tests wait for the load.
  *
@@ -83,7 +84,6 @@ export function GrantPlacesPanel(): ReactElement {
       <p className="text-center text-sm font-semibold text-app-fg">
         {t('funding.places.free', {
           count: places.placesLeft,
-          round: places.round,
           places: places.places,
         })}
       </p>

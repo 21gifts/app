@@ -5254,20 +5254,20 @@ Owner editor with `role="alert"` save error after stubbing PUT /me/about to 500,
 
 ## Screen: /grants
 
-- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`, then the public **Grant places** panel (`GrantPlacesPanel`: round, free places, admissions, that applications stay open, and the 20-shop goal that opens the next round). The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. An initiator or founder also sees two secondary large links, **Daily payment text** to `/grants/payments/comment` and **Daily payment amounts** to `/grants/payments/amounts`. Those links do not load the roster. A moderator does not see them. An account at least moderator (`roleAtLeast(role, 'moderator')`), including an initiator and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`, then the public **Grant places** panel (`GrantPlacesPanel`: free places, admissions, that applications stay open, and the 20-shop goal that opens the next round). The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. An initiator or founder also sees two secondary large links, **Daily payment text** to `/grants/payments/comment` and **Daily payment amounts** to `/grants/payments/amounts`. Those links do not load the roster. A moderator does not see them. An account at least moderator (`roleAtLeast(role, 'moderator')`), including an initiator and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
 - **Actions:** Read verification or grant status. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy. A verified account with status none or rejected reads the daily-gift sentence, opens About, or opens Apply. Every visitor reads the free grant places of the current round. Signed-in accounts open **Goals** (`/grants/goals`). An initiator or founder opens **Daily payment text** or **Daily payment amounts**. An account at least moderator, including an initiator and a founder, opens **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
 
-Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, **Admitted members receive the daily gift. Apply so a moderator can review your posts.**, the **About** link, and the large **Apply for the 21 gifts grant** link. Under the card the **Grant places** panel reads **Round 1: 10 of 10 places are free.**, **Moderators have admitted 0 people in this round.**, the open-applications sentence, and **When 20 shops are active, the grant program opens for more people.** Then **Goals**.
+Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, **Admitted members receive the daily gift. Apply so a moderator can review your posts.**, the **About** link, and the large **Apply for the 21 gifts grant** link. Under the card the **Grant places** panel reads **10 of 10 places are free.**, **Moderators have admitted 0 people in this round.**, the open-applications sentence, and **When 20 shops are active, the grant program opens for more people.** Then **Goals**.
 
 ![21.gifts grants](images/grants.png)
 
 ### Variant: places-full
 
-Verified owner with status none when every place of the round is taken. The card still offers **Apply for the 21 gifts grant**. The **Grant places** panel reads **Round 1: 0 of 10 places are free.** and **All 10 places of this round are taken. Applications stay open.**, then the 20-shop goal. Needle `state-grants-places-full`.
+Verified owner with status none when every place of the round is taken. The card still offers **Apply for the 21 gifts grant**. The **Grant places** panel reads **0 of 10 places are free.** and **All 10 places of this round are taken. Applications stay open.**, then the 20-shop goal. Needle `state-grants-places-full`.
 
 ![21.gifts grants places full](images/grants-places-full.png)
 
@@ -5285,73 +5285,73 @@ Verified owner with status none while `GET /funding/places` has not answered. Th
 
 ### Variant: funding-not-verified
 
-Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus how in-person verification works. No apply button. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
+Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus how in-person verification works. No apply button. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding not verified](images/profile-funding-not-verified.png)
 
 ### Variant: funding-pending
 
-Verified owner with `funding.status` **pending**. Copy **Your application is open. A moderator will review your posts.** The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
+Verified owner with `funding.status` **pending**. Copy **Your application is open. A moderator will review your posts.** The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding pending](images/profile-funding-pending.png)
 
 ### Variant: funding-trial
 
-Verified owner with `funding.status` **trial**. Copy **You are on a one-day trial. Review repeats tomorrow.** The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
+Verified owner with `funding.status` **trial**. Copy **You are on a one-day trial. Review repeats tomorrow.** The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding trial](images/profile-funding-trial.png)
 
 ### Variant: funding-admitted
 
-Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**. When `reviewedByName` is set, that sentence names the reviewer. Trial, pending, and rejected do not show a name. The funding-program icon on the public facts is closed here. The pressed result is **funding-program-open**. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
+Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**. When `reviewedByName` is set, that sentence names the reviewer. Trial, pending, and rejected do not show a name. The funding-program icon on the public facts is closed here. The pressed result is **funding-program-open**. The **Grant places** panel under the card reads **10 of 10 places are free.**
 ![21.gifts profile funding admitted](images/profile-funding-admitted.png)
 
 ### Variant: funding-program-open
 
-Admitted owner on `/grants`. The participation sentence **Takes part in the 21.gifts funding program since {date}** is visible on the grant card. Viewport capture after scrolling that line into view. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
+Admitted owner on `/grants`. The participation sentence **Takes part in the 21.gifts funding program since {date}** is visible on the grant card. Viewport capture after scrolling that line into view. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding program open](images/profile-funding-program-open.png)
 
 ### Variant: open-applications
 
-Moderator on `/grants` with two open grant applications. The grant card is shown, and **Open applications (2)** links to `/grants/applications`. When the list is empty this control is the sentence **No open applications.** and not a link; that state is **no-applications**. Needle `state-grants-open-applications`. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
+Moderator on `/grants` with two open grant applications. The grant card is shown, and **Open applications (2)** links to `/grants/applications`. When the list is empty this control is the sentence **No open applications.** and not a link; that state is **no-applications**. Needle `state-grants-open-applications`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants open applications](images/grants-open-applications.png)
 
 ### Variant: no-applications
 
-Moderator on `/grants` when no grant application is open. The sentence **No open applications.** is plain text, not a button or link. Needle `state-grants-no-applications`. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
+Moderator on `/grants` when no grant application is open. The sentence **No open applications.** is plain text, not a button or link. Needle `state-grants-no-applications`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants no applications](images/grants-no-applications.png)
 
 ### Variant: applications-loading
 
-Moderator on `/grants` while open applications are still loading. Copy **Loading…** is plain text, not a link. Needle `state-grants-applications-loading`. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
+Moderator on `/grants` while open applications are still loading. Copy **Loading…** is plain text, not a link. Needle `state-grants-applications-loading`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants applications loading](images/grants-applications-loading.png)
 
 ### Variant: applications-error
 
-Moderator on `/grants` when the open-application load fails. Copy **Could not load open applications. Please try again.** and button **Try again**. Not a link to the queue. Needle `state-grants-applications-error`. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
+Moderator on `/grants` when the open-application load fails. Copy **Could not load open applications. Please try again.** and button **Try again**. Not a link to the queue. Needle `state-grants-applications-error`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants applications error](images/grants-applications-error.png)
 
 ### Variant: daily-payments
 
-Founder on `/grants` sees a secondary **Goals** link, secondary **Daily payment text** and **Daily payment amounts** links, plus **Open applications (2)**. Needle `Daily payment text`. The **Grant places** panel under the card reads **Round 1: 10 of 10 places are free.**
+Founder on `/grants` sees a secondary **Goals** link, secondary **Daily payment text** and **Daily payment amounts** links, plus **Open applications (2)**. Needle `Daily payment text`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants daily payments](images/grants-daily-payments.png)
 
 ## Screen: /grants/goals
 
-- **Purpose:** Signed-in grant goal. States that the 10-active-shop goal is reached and the grant program is open again, then the public **Grant places** panel (round, free places, admissions, and the 20-shop goal for the next round), that a shop is active with at least one transaction on 5 of the last 7 days, and what a transaction is. Shows how many shops meet that rule and a 7-day shop chart. The chart is not the public statistics series.
+- **Purpose:** Signed-in grant goal. States that the 10-active-shop goal is reached and the grant program is open again, then the public **Grant places** panel (free places, admissions, and the 20-shop goal for the next round), that a shop is active with at least one transaction on 5 of the last 7 days, and what a transaction is. Shows how many shops meet that rule and a 7-day shop chart. The chart is not the public statistics series.
 - **Inputs:** Session via `OnboardingGate screen="profile"` / `useAuthStore`. `GET /funding/goal` when a session exists. Public `GET /funding/places` for the panel.
 - **Actions:** Read the goal, the transaction definition, the qualifying count, and the chart. **Try again** repeats the load after an error. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/goals` (`GrantGoalsPage`). The **Goals** link on `/grants` opens it.
 
 ### Variant: default
 
-Signed-in page with the goal and the places loaded. Heading **Goals**. Copy **Goal reached: 10 active shops. The grant program is open again.** The **Grant places** panel reads **Round 1: 10 of 10 places are free.** and **When 20 shops are active, the grant program opens for more people.** A shop is active on 5 of the last 7 days. The transaction sentence names https://21.gifts/pos. The count and **Shops per UTC day** chart are shown. The lighter bar is today, still open.
+Signed-in page with the goal and the places loaded. Heading **Goals**. Copy **Goal reached: 10 active shops. The grant program is open again.** The **Grant places** panel reads **10 of 10 places are free.** and **When 20 shops are active, the grant program opens for more people.** A shop is active on 5 of the last 7 days. The transaction sentence names https://21.gifts/pos. The count and **Shops per UTC day** chart are shown. The lighter bar is today, still open.
 
 ![21.gifts grant goals](images/grants-goals.png)
 
@@ -5369,7 +5369,7 @@ Signed-in page when `GET /funding/goal` fails. Heading, the places panel, and th
 
 ### Variant: places-full
 
-Signed-in page when every place of the round is taken (`placesLeft` 0). The **Grant places** panel reads **Round 1: 0 of 10 places are free.** and **All 10 places of this round are taken. Applications stay open.**, then the 20-shop sentence. The goal measurement still loads.
+Signed-in page when every place of the round is taken (`placesLeft` 0). The **Grant places** panel reads **0 of 10 places are free.** and **All 10 places of this round are taken. Applications stay open.**, then the 20-shop sentence. The goal measurement still loads.
 
 ![21.gifts grant goals places full](images/grants-goals-places-full.png)
 
@@ -5978,75 +5978,57 @@ Unread `moderator_proposal` row (actor **Bob**, copy **Bob proposed a moderator*
 
 ## Screen: /statistics
 
-- **URL:** `/statistics` — people-count and shop-activity charts for every visitor, signed-in or not. `OnboardingGate screen="welcome"` with `allowGuest`. A signed-out visitor is not sent to `/login`. Incomplete signed-in setup still is. HTML `/statistics` is the chart page, not a GET proxy (Next.js forbids `route.ts` beside this page). JSON is `GET /gifts/stats`. Not a second moderation hub. No daily funding goal on this page; the last panel shows the public grant places (`GET /funding/places`).
+- **URL:** `/statistics` — people-count and shop-activity charts for every visitor, signed-in or not. `OnboardingGate screen="welcome"` with `allowGuest`. A signed-out visitor is not sent to `/login`. Incomplete signed-in setup still is. HTML `/statistics` is the chart page, not a GET proxy (Next.js forbids `route.ts` beside this page). JSON is `GET /gifts/stats`. Not a second moderation hub. No daily funding goal on this page.
 - **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and **Log in** without a stored session, Menu with an open wallet, or neither while a session is held back, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Statistics**. Signed-out top-right is **Log in**, not Menu. Only an active session whose wallet is open shows Menu. A held-back stored session gets the login card in place of the page, with neither **Log in** nor Menu top right. Signed-out visitors and members see the **People paid** panel: yesterday's person count, the measurement paragraph, and the **People by UTC day** chart (lighter bar is today, no goal line). Both also see an **Active shops** panel under it: one explainer and the **Shops by UTC day** chart. The shop chart has no goal line and no link. The people panel is always open. No **Tap to close**. No Goal, percent, progress bar, or goal line. No Hidden notes, Open proposals, Moderators chat group, or Handbook controls. When `roleAtLeast(role, 'moderator')` and yesterday's person count is a number, a closed **Moderator functions** disclosure (`StaffFunctions`, catalog `staff.functions`) sits between the people chart and the shop panel; opening it shows **Show payout per person** (`moderate.payouts.link`) to `/moderate/payouts`. Basis and verified never see **Moderator functions**. A signed-out visitor never sees **Moderator functions**. Menu row **Statistics** (`nav.statistics`, lucide `BarChart3`, `/statistics`) for a signed-in account, immediately after Trust Chain. Menu row **Moderation** stays staff-only immediately after Statistics.
 - **Actions:** The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Signed-out visitors open **Log in**. A session opens **Menu**. No note list on this page. The shop chart has no drill-down. Staff may open **Moderator functions** then **Show payout per person**.
-- **Calls:** `AppShell`, `ProfileChromeLeft`, `StatisticsPage`, `StatisticsScreen`, `PeopleCountChart`, `ShopActivityChart`, `StaffFunctions`, `GrantPlacesPanel`, `SignedInChrome`, `OnboardingGate`, `fetchGiftStats`, `fetchShopActivity`, `fetchGrantPlaces`.
-- **Auth:** No bearer required to read the page. Fetch `GET /gifts/stats`, `GET /shops/activity`, and `GET /funding/places` with or without a session. `OnboardingGate screen="welcome"` with `allowGuest`. Each request fails on its own. Closed **Moderator functions** only when `roleAtLeast(role, 'moderator')` and yesterday's count is a number.
+- **Calls:** `AppShell`, `ProfileChromeLeft`, `StatisticsPage`, `StatisticsScreen`, `PeopleCountChart`, `ShopActivityChart`, `StaffFunctions`, `SignedInChrome`, `OnboardingGate`, `fetchGiftStats`, `fetchShopActivity`.
+- **Auth:** No bearer required to read the page. Fetch `GET /gifts/stats` and `GET /shops/activity` with or without a session. `OnboardingGate screen="welcome"` with `allowGuest`. Each request fails on its own. Closed **Moderator functions** only when `roleAtLeast(role, 'moderator')` and yesterday's count is a number.
 
 ### Variant: default
 
-Staff (moderator) page with heading **Statistics**, the **People paid** panel always open (yesterday count, measurement paragraph, 30-UTC-day chart). Closed **Moderator functions** sits between the people chart and the shop chart; **Show payout per person** is not visible yet. The shop chart sits under that disclosure (**Shops by UTC day**). The **Grant places** panel is last: **Round 1: 10 of 10 places are free.**, the admissions sentence, the open-applications sentence, and the 20-shop goal. The people panel is not a toggle. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
+Staff (moderator) page with heading **Statistics**, the **People paid** panel always open (yesterday count, measurement paragraph, 30-UTC-day chart). Closed **Moderator functions** sits between the people chart and the shop chart; **Show payout per person** is not visible yet. The shop chart sits under that disclosure (**Shops by UTC day**). The people panel is not a toggle.
 
 ![21.gifts statistics](images/statistics.png)
 
-### Variant: places-full
-
-Staff page like default when every place of the round is taken. The last panel, **Grant places**, reads **Round 1: 0 of 10 places are free.** and **All 10 places of this round are taken. Applications stay open.**, then the 20-shop goal. Needle `state-statistics-places-full`.
-
-![21.gifts statistics places full](images/statistics-places-full.png)
-
-### Variant: places-error
-
-Staff page like default when `GET /funding/places` fails. The people and shop panels load. The last panel shows **Could not load the grant places. Please try again.** and **Try again**. Needle `state-statistics-places-error`.
-
-![21.gifts statistics places error](images/statistics-places-error.png)
-
-### Variant: places-loading
-
-Staff page like default while `GET /funding/places` has not answered. The people and shop panels load. The last panel, **Grant places**, shows **Loading…**. Needle `state-statistics-places-loading`.
-
-![21.gifts statistics places loading](images/statistics-places-loading.png)
-
 ### Variant: loading
 
-Staff (moderator) page. The people and shop panels show **Loading…** while their own request is in flight: the people panel (group **People paid**) for `GET /gifts/stats`, and the shop panel (group **Active shops**) for `GET /shops/activity`. One panel can finish while the other is still loading. **Moderator functions** is not shown. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
+Staff (moderator) page. Both panels show **Loading…** while their own request is in flight: the people panel (group **People paid**) for `GET /gifts/stats`, and the shop panel (group **Active shops**) for `GET /shops/activity`. One panel can finish while the other is still loading. **Moderator functions** is not shown.
 
 ![21.gifts statistics loading](images/statistics-loading.png)
 
 ### Variant: error
 
-Staff (moderator) page. The people panel shows **Could not load payouts. Please try again.** and **Try again**. The shop panel under it still shows **Shops by UTC day**. The two panels fail independently. **Moderator functions** is not shown. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
+Staff (moderator) page. The people panel shows **Could not load payouts. Please try again.** and **Try again**. The shop panel under it still shows **Shops by UTC day**. The two panels fail independently. **Moderator functions** is not shown.
 
 ![21.gifts statistics error](images/statistics-error.png)
 
 ### Variant: member
 
-A basis account sees both charts and both explainers. No **Moderator functions**. No **This page is for moderators.** The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
+A basis account sees both charts and both explainers. No **Moderator functions**. No **This page is for moderators.**
 
 ![21.gifts statistics member](images/statistics-member.png)
 
 ### Variant: signed-out
 
-No session. Top-right is **Log in** instead of Menu. Both charts. No **Moderator functions**. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
+No session. Top-right is **Log in** instead of Menu. Both charts. No **Moderator functions**.
 
 ![21.gifts statistics signed out](images/statistics-signed-out.png)
 
 ### Variant: staff-open
 
-A founder clicks **Moderator functions**, then **Show payout per person** is visible. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
+A founder clicks **Moderator functions**, then **Show payout per person** is visible.
 
 ![21.gifts statistics staff open](images/statistics-staff-open.png)
 
 ### Variant: shop-error
 
-Staff (moderator) page. The people chart stays up (**People by UTC day**). Closed **Moderator functions** sits between the people chart and the shop panel; **Show payout per person** is not visible yet. The shop panel under it shows **Could not load shop activity. Please try again.** and **Try again**. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
+Staff (moderator) page. The people chart stays up (**People by UTC day**). Closed **Moderator functions** sits between the people chart and the shop panel; **Show payout per person** is not visible yet. The shop panel under it shows **Could not load shop activity. Please try again.** and **Try again**.
 
 ![21.gifts statistics shop error](images/statistics-shop-error.png)
 
 ### Variant: both-error
 
-Staff (moderator) page. The people panel shows **Could not load payouts. Please try again.** and the shop panel shows **Could not load shop activity. Please try again.** **Moderator functions** is not shown. The last panel, **Grant places**, reads **Round 1: 10 of 10 places are free.**
+Staff (moderator) page. The people panel shows **Could not load payouts. Please try again.** and the shop panel shows **Could not load shop activity. Please try again.** **Moderator functions** is not shown.
 
 ![21.gifts statistics both error](images/statistics-both-error.png)
 

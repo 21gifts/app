@@ -5144,7 +5144,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: fetchGrantPlaces
 
-- **Purpose:** Loads the public grant round places from same-origin `GET /funding/places` with no Authorization. `GrantPlacesPanel` calls it with or without a session. The body must match `grantPlacesSchema` (`round`, `startsAt`, `places`, `admitted`, `placesLeft`, `nextGoalShops`, nonnegative integers); otherwise this throws.
+- **Purpose:** Loads the public grant round places from same-origin `GET /funding/places` with no Authorization. `GrantPlacesPanel` calls it on the grant pages. The body must match `grantPlacesSchema` (`round` and `nextGoalShops` positive integers, `places`, `admitted`, and `placesLeft` nonnegative integers, `startsAt` a string); otherwise this throws.
 - **Inputs:** None.
 - **Returns / side effects:** `GrantPlaces`. Network via `fetch`. Throws `Could not load the grant places. Please try again.` on a non-ok response, a network failure, or a schema failure.
 - **Used by:** `GrantPlacesPanel`.
@@ -5188,7 +5188,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Client chart of people counted once per UTC day, with a shop-activity panel under the people chart. A signed-out visitor fetches both feeds and sees both panels. Does not return `null`. Any visitor fetches both feeds and sees yesterday's person count, the measurement paragraph, and the 30-UTC-day people chart (no goal line), then the shop panel (one explainer and the 30-UTC-day shop-count chart). Each panel loads and fails on its own. The people panel is always open and there is no **Tap to close**. No forbidden card. When `roleAtLeast(..., 'moderator')` and yesterday's person count is a number (including 0; not loading and not the people error panel, including omitted `officialCount`), closed `StaffFunctions` sits after the people chart and before the shop panel; its only child is the payout `ButtonLink` (`href` `/moderate/payouts`, `variant` `secondary`, `size` `lg`, label `moderate.payouts.link`). Basis and verified never render `StaffFunctions`. A signed-out visitor never renders `StaffFunctions`.
 - **Inputs:** Account from `useAuthStore`; catalog and locale via `useTranslations`.
-- **Returns / side effects:** A React element. No session still fetches. Fetches `GET /gifts/stats`, calls `fetchShopActivity`, and renders `GrantPlacesPanel` last (public `GET /funding/places`). Does not return `null`.
+- **Returns / side effects:** A React element. No session still fetches. Fetches `GET /gifts/stats` and also calls `fetchShopActivity`. Does not return `null`.
 - **Used by:** `StatisticsPage`.
 
 ## Function: ModerateScreen
@@ -5355,10 +5355,10 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: GrantPlacesPanel
 
-- **Purpose:** Public grant-places panel (`role="group"`, label **Grant places**): **Round N: X of Y places are free.**, how many people moderators have admitted in the round, then either that applications are open and moderators admit up to Y people, or that all Y places are taken and applications stay open, then **When G shops are active, the grant program opens for more people.** Loads `fetchGrantPlaces` without a session. Loading shows the shared **Loading…**; failure shows **Could not load the grant places. Please try again.** with **Try again**. `data-grant-places` is `loading`, `error`, or `ready` so screenshot tests wait for the load.
+- **Purpose:** Public grant-places panel (`role="group"`, label **Grant places**): **X of Y places are free.**, how many people moderators have admitted in the round, then either that applications are open and moderators admit up to Y people, or that all Y places are taken and applications stay open, then **When G shops are active, the grant program opens for more people.** Loads `fetchGrantPlaces` without a session. Loading shows the shared **Loading…**; failure shows **Could not load the grant places. Please try again.** with **Try again**. `data-grant-places` is `loading`, `error`, or `ready` so screenshot tests wait for the load.
 - **Inputs:** None (reads translations).
 - **Returns / side effects:** React element. One `GET /funding/places` per mount and per retry; a late answer after unmount is ignored.
-- **Used by:** `GrantsScreen`, `GrantGoalsScreen`, `StatisticsScreen`.
+- **Used by:** `GrantsScreen`, `GrantGoalsScreen`.
 
 ## Function: FundingStatusCard
 

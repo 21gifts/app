@@ -5745,27 +5745,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/statistics',
-    id: 'places-full',
-    image: 'statistics-places-full.png',
-    visual: 'state-statistics-places-full',
-    needle: 'state-statistics-places-full',
-  },
-  {
-    route: '/statistics',
-    id: 'places-error',
-    image: 'statistics-places-error.png',
-    visual: 'state-statistics-places-error',
-    needle: 'state-statistics-places-error',
-  },
-  {
-    route: '/statistics',
-    id: 'places-loading',
-    image: 'statistics-places-loading.png',
-    visual: 'state-statistics-places-loading',
-    needle: 'state-statistics-places-loading',
-  },
-  {
-    route: '/statistics',
     id: 'loading',
     image: 'statistics-loading.png',
     visual: 'state-statistics-loading',

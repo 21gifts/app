@@ -174,7 +174,7 @@
 
 - **Purpose:** Same-origin proxy of the public api `GET /funding/places`: the current grant round, its places, how many are admitted, how many are left, and the active-shop goal that opens the next round.
 - **Errors:** The proxy forwards the upstream status. Expected upstream error is 503 when funding is unavailable, or 502 if this proxy cannot reach the api.
-- **Used by:** `fetchGrantPlaces` in `GrantPlacesPanel` on `/grants`, `/grants/goals`, and `/statistics`.
+- **Used by:** `fetchGrantPlaces` in `GrantPlacesPanel` on `/grants` and `/grants/goals`.
 - **Auth:** No bearer. Every visitor can read the free places.
 
 ## Endpoint: GET /funding/goal

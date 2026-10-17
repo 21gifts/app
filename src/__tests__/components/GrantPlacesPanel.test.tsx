@@ -33,7 +33,7 @@ describe('GrantPlacesPanel', () => {
     renderWithLocale(<GrantPlacesPanel />);
     expect(screen.getByRole('group', { name: 'Grant places' })).toBeTruthy();
     expect(screen.getByText('Loading…')).toBeTruthy();
-    expect(await screen.findByText('Round 1: 7 of 10 places are free.')).toBeTruthy();
+    expect(await screen.findByText('7 of 10 places are free.')).toBeTruthy();
     expect(screen.getByText('Moderators have admitted 3 people in this round.')).toBeTruthy();
     expect(
       screen.getByText(
@@ -49,14 +49,14 @@ describe('GrantPlacesPanel', () => {
   it('uses the singular for one free place and one admission', async () => {
     fetchMock.mockResolvedValue({ ...OPEN, admitted: 1, placesLeft: 1, places: 2 });
     renderWithLocale(<GrantPlacesPanel />);
-    expect(await screen.findByText('Round 1: 1 of 2 places is free.')).toBeTruthy();
+    expect(await screen.findByText('1 of 2 places is free.')).toBeTruthy();
     expect(screen.getByText('Moderators have admitted 1 person in this round.')).toBeTruthy();
   });
 
   it('says the round is full and applications stay open when no place is left', async () => {
     fetchMock.mockResolvedValue({ ...OPEN, admitted: 10, placesLeft: 0 });
     renderWithLocale(<GrantPlacesPanel />);
-    expect(await screen.findByText('Round 1: 0 of 10 places are free.')).toBeTruthy();
+    expect(await screen.findByText('0 of 10 places are free.')).toBeTruthy();
     expect(
       screen.getByText('All 10 places of this round are taken. Applications stay open.'),
     ).toBeTruthy();
@@ -70,7 +70,7 @@ describe('GrantPlacesPanel', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     await waitFor(() => {
-      expect(screen.getByText('Round 1: 7 of 10 places are free.')).toBeTruthy();
+      expect(screen.getByText('7 of 10 places are free.')).toBeTruthy();
     });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, type ReactElement } from 'react';
-import { GrantPlacesPanel } from '@/components/GrantPlacesPanel';
 import { useTranslations, type LocaleContextValue } from '@/components/LocaleProvider';
 import { PeopleCountChart } from '@/components/PeopleCountChart';
 import { ShopActivityChart } from '@/components/ShopActivityChart';
@@ -25,11 +24,9 @@ import { useAuthStore } from '@/stores/auth-store';
  *
  * Every visitor sees yesterday's person count and the 30-UTC-day chart
  * from {@link fetchGiftStats}, always open, then shop counts from
- * {@link fetchShopActivity}, then the public grant places
- * ({@link GrantPlacesPanel}). Each panel loads and fails on its own.
- * Moderators also see closed {@link StaffFunctions} between the first two
- * panels when yesterday's count is a number. Fetches every feed with or
- * without a session.
+ * {@link fetchShopActivity}. Each panel loads and fails on its own. Moderators
+ * also see closed {@link StaffFunctions} between the panels when yesterday's
+ * count is a number. Fetches both feeds with or without a session.
  *
  * @returns The statistics card.
  */
@@ -125,7 +122,6 @@ export function StatisticsScreen(): ReactElement {
           setShopAttempt((current) => current + 1);
         }}
       />
-      <GrantPlacesPanel />
     </Card>
   );
 }

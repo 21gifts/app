@@ -1273,7 +1273,7 @@ const en = {
   'funding.goals.widgetLabel': 'Shop goal',
   'funding.places.widgetLabel': 'Grant places',
   'funding.places.free':
-    '{count, plural, one {Round {round}: # of {places} places is free.} other {Round {round}: # of {places} places are free.}}',
+    '{count, plural, one {# of {places} places is free.} other {# of {places} places are free.}}',
   'funding.places.admitted':
     '{count, plural, one {Moderators have admitted # person in this round.} other {Moderators have admitted # people in this round.}}',
   'funding.places.open':
@@ -2696,7 +2696,7 @@ const de = {
   'funding.goals.widgetLabel': 'Shop-Ziel',
   'funding.places.widgetLabel': 'Förderplätze',
   'funding.places.free':
-    '{count, plural, one {Runde {round}: # von {places} Plätzen ist frei.} other {Runde {round}: # von {places} Plätzen sind frei.}}',
+    '{count, plural, one {# von {places} Plätzen ist frei.} other {# von {places} Plätzen sind frei.}}',
   'funding.places.admitted':
     '{count, plural, one {Die Moderatoren haben in dieser Runde # Person zugelassen.} other {Die Moderatoren haben in dieser Runde # Personen zugelassen.}}',
   'funding.places.open':
@@ -4100,7 +4100,7 @@ const es = {
   'funding.goals.widgetLabel': 'Objetivo de tiendas',
   'funding.places.widgetLabel': 'Plazas de beca',
   'funding.places.free':
-    '{count, plural, one {Ronda {round}: # de {places} plazas está libre.} other {Ronda {round}: # de {places} plazas están libres.}}',
+    '{count, plural, one {# de {places} plazas está libre.} other {# de {places} plazas están libres.}}',
   'funding.places.admitted':
     '{count, plural, one {Los moderadores han admitido a # persona en esta ronda.} other {Los moderadores han admitido a # personas en esta ronda.}}',
   'funding.places.open':
@@ -5510,7 +5510,7 @@ const fil = {
   'funding.goals.widgetLabel': 'Layunin ng tindahan',
   'funding.places.widgetLabel': 'Mga puwesto sa grant',
   'funding.places.free':
-    '{count, plural, one {Round {round}: # sa {places} puwesto ang bakante.} other {Round {round}: # sa {places} puwesto ang bakante.}}',
+    '{count, plural, one {# sa {places} puwesto ang bakante.} other {# sa {places} puwesto ang bakante.}}',
   'funding.places.admitted':
     '{count, plural, one {Nakapag-admit ang mga moderator ng # tao sa round na ito.} other {Nakapag-admit ang mga moderator ng # tao sa round na ito.}}',
   'funding.places.open':
