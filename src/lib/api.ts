@@ -147,7 +147,10 @@ export class PostFeeRequiredError extends Error {
 /** Api error `code` (HTTP 400) when the signed-in member has no verified in-app wallet yet. */
 export const WALLET_REQUIRED_CODE = 'wallet_required';
 
-/** Api error `code` (HTTP 400) when the receiving wallet cannot take this payment. */
+/**
+ * Api error `code` when the receiving wallet cannot take this payment (HTTP 400,
+ * or 409 on a habit donation).
+ */
 export const CANNOT_RECEIVE_CODE = 'cannot_receive';
 
 /**

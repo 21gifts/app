@@ -15003,6 +15003,102 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-heart-needs-balance');
   });
 
+  test('state /members heart-cannot-receive', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'member@21.gifts',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}?visual=heart-cannot-receive`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(
+      page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+    ).toBeVisible();
+    await page
+      .getByText("The author's wallet cannot receive this Bitcoin payment")
+      .evaluate((node) => {
+        node.scrollIntoView({ block: 'center', inline: 'nearest' });
+      });
+    await shotScreen(page, 'state-members-heart-cannot-receive');
+  });
+
   test('state /members heart-paid', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const noteId = '33333333-3333-4333-8333-333333333333';
@@ -17177,6 +17273,143 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('A Bitcoin balance is required for this.')).toBeVisible();
     await page.getByText('A Bitcoin balance is required for this.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-heart-needs-balance');
+  });
+
+  test('state /messages/[id] heart-cannot-receive', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    const note = {
+      id,
+      accountId: 'acc-ada',
+      name: 'Ada',
+      text: GERMAN_NOTE_TEXT,
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: true,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+    };
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(note),
+      });
+    });
+    await page.route(`**/forum/messages/${id}`, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(note),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto(`/messages/${id}?visual=heart-cannot-receive`);
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(
+      page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+    ).toBeVisible();
+    await page
+      .getByText("The author's wallet cannot receive this Bitcoin payment")
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-heart-cannot-receive');
+  });
+
+  test('state /messages/[id] author-cannot-receive', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    const note = {
+      id,
+      accountId: 'acc-erin',
+      name: 'Erin',
+      text: 'Fresh pandesal every morning near the chapel.',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      authorCanReceive: false,
+      heartCount: 2,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+    };
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(note),
+      });
+    });
+    await page.route(`**/forum/messages/${id}`, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(note),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
+    await shotScreen(page, 'state-messages-id-author-cannot-receive');
   });
 
   test('state /messages/[id] heart-paid', async ({ page }) => {
@@ -24955,6 +25188,138 @@ test.describe('shops screens', () => {
     await expect(page.getByText('A Bitcoin balance is required for this.')).toBeVisible();
     await page.getByText('A Bitcoin balance is required for this.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-heart-needs-balance');
+  });
+
+  test('state /shops heart-cannot-receive', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              accountId: 'acc-ada',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops?visual=heart-cannot-receive');
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(
+      page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+    ).toBeVisible();
+    await page
+      .getByText("The author's wallet cannot receive this Bitcoin payment")
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-heart-cannot-receive');
+  });
+
+  test('state /shops author-cannot-receive', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              accountId: 'acc-erin',
+              name: 'Erin',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: false,
+              authorCanReceive: false,
+              heartCount: 2,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-author-cannot-receive');
+  });
+
+  test('state /shops author-cannot-receive-open', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      const url = route.request().url();
+      if (url.includes('/replies') || route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-erin',
+              accountId: 'acc-erin',
+              name: 'Erin',
+              text: 'Fresh pandesal every morning near the chapel.\n\n#21GiftsShop',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: false,
+              authorCanReceive: false,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 1,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/m-erin/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-ben',
+              accountId: 'acc-ben',
+              parentId: 'm-erin',
+              name: 'Ben',
+              text: 'I will come by tomorrow.',
+              createdAt: '2026-08-28T10:05:00.000Z',
+              sats: 0,
+              payable: false,
+              authorCanReceive: false,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await expect(page.getByText('Fresh pandesal every morning near the chapel.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    const replyCard = page.locator('[data-reply-id="r-ben"]');
+    await expect(replyCard.getByText("Can't receive yet")).toBeVisible();
+    await expect(replyCard.getByRole('button', { name: 'Send Bitcoin' })).toBeDisabled();
+    await expect(page.locator('#forum-reply-amount')).toBeDisabled();
+    await shotScreen(page, 'state-shops-author-cannot-receive-open');
   });
 
   test('state /shops heart-paid', async ({ page }) => {

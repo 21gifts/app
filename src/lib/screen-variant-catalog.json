@@ -3714,6 +3714,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:heart-cannot-receive",
+    "label": "/members/[accountId] heart-cannot-receive",
+    "visual": "state-members-heart-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:cannot-receive",
     "label": "/members/[accountId] cannot-receive",
     "visual": "state-members-cannot-receive",
@@ -6048,6 +6054,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:heart-cannot-receive",
+    "label": "/shops heart-cannot-receive",
+    "visual": "state-shops-heart-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:author-cannot-receive",
+    "label": "/shops author-cannot-receive",
+    "visual": "state-shops-author-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:author-cannot-receive-open",
+    "label": "/shops author-cannot-receive-open",
+    "visual": "state-shops-author-cannot-receive-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:heart-paid",
     "label": "/shops heart-paid",
     "visual": "state-shops-heart-paid",
@@ -6657,6 +6681,18 @@
     "id": "/messages/[id]:heart-needs-balance",
     "label": "/messages/[id] heart-needs-balance",
     "visual": "state-messages-id-heart-needs-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:heart-cannot-receive",
+    "label": "/messages/[id] heart-cannot-receive",
+    "visual": "state-messages-id-heart-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:author-cannot-receive",
+    "label": "/messages/[id] author-cannot-receive",
+    "visual": "state-messages-id-author-cannot-receive",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

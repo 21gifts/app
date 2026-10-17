@@ -759,7 +759,8 @@ function replyFormElement(field: HTMLTextAreaElement | null): HTMLFormElement | 
  * expands the reply composer; omitted when `deletedAt` is set), a 1-sat heart
  * (`forum.heart`, lucide Heart) on a non-deleted post and a non-deleted reply
  * when `onHeartTip` is set, `payable` is true, and `heartViewerId !== accountId`
- * (shown signed-out; omitted on the viewer's own note; the count sits
+ * (shown disabled instead when the author cannot receive yet,
+ * `authorCanReceive: false`; shown signed-out; omitted on the viewer's own note; the count sits
  * immediately to the right of the icon and the fill remains after a tap), payable-reply
  * pay sheet (Gift on nested replies and on top-level cards with `parentId`;
  * never on posts; omitted when `deletedAt` is set), optional shop-note
@@ -772,6 +773,9 @@ function replyFormElement(field: HTMLTextAreaElement | null): HTMLFormElement | 
  * `shopAccountEdit` and `onShopAccountUpdated` are set (top-level notes only),
  * staff Delete omitted
  * when `deletedAt` is set, optional inline photos, and optional inline videos.
+ * Toward an author who cannot receive yet (`authorCanReceive: false`), the
+ * heart, Gift, **Lend**, and the reply amount show disabled and
+ * `CannotReceiveLabel` sits in the action row (`authorCannotReceive`).
  * When `onRefresh` is passed, supports pull-to-refresh; `refreshing` shows a
  * visually hidden (`sr-only`) refresh status without changing idle markup.
  * When unseen notes are held for a scrolled visitor, a labeled New posts pill

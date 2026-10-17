@@ -589,6 +589,16 @@
     "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
     "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
+  "/messages/[id]:heart-cannot-receive": {
+    "de": "Angemeldeter Permalink der Notiz eines anderen Mitglieds nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Permalink con sesión iniciada de la nota de otro miembro tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Naka-sign na permalink ng tala ng ibang miyembro, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+  },
+  "/messages/[id]:author-cannot-receive": {
+    "de": "Angemeldeter Permalink einer Notiz eines Mitglieds ohne verifizierte Wallet (authorCanReceive: false). Die Aktionszeile zeigt vor dem Herz Kann noch nicht empfangen, Herz samt Zähler sind deaktiviert, und das Betragsfeld der Reaktion der offenen Karte ist deaktiviert (Text geht weiterhin).",
+    "es": "Permalink con sesión iniciada de una nota de un miembro que aún no tiene wallet verificada (authorCanReceive: false). La fila de acciones muestra Aún no puede recibir antes del corazón, el corazón con su contador está desactivado, y el campo Importe de la reacción de la tarjeta abierta está desactivado (el texto se sigue publicando).",
+    "fil": "Naka-sign na permalink ng tala ng miyembrong wala pang verified na wallet (authorCanReceive: false). Ipinapakita ng hanay ng aksyon ang Hindi pa makatanggap bago ang puso, naka-disable ang puso at ang bilang nito, at naka-disable ang field na Halaga ng reaksyon ng bukas na kard (naipo-post pa rin ang teksto)."
+  },
   "/messages/[id]:heart-paid": {
     "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
     "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
@@ -2134,6 +2144,11 @@
     "es": "La misma publicación en alemán en el feed de publicaciones tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
     "fil": "Parehong post sa German sa feed ng mga post pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
+  "/members/[accountId]:heart-cannot-receive": {
+    "de": "Ada auf Carols Profil, Beiträge geöffnet, nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden bei Carols Notiz: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Ada en el perfil de Carol, publicaciones abiertas, tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1 en la nota de Carol: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Si Ada sa profile ni Carol, bukas ang mga post, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1 sa tala ni Carol: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+  },
   "/members/[accountId]:heart-paid": {
     "de": "Derselbe deutsche Beitrag nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
     "es": "La misma publicación en alemán tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
@@ -3198,6 +3213,21 @@
     "de": "Shop-Beitragsfeed mit Cafe Luna nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
     "es": "Feed de publicaciones de tienda con Cafe Luna tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
     "fil": "Feed ng post ng tindahan na may Cafe Luna pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
+  },
+  "/shops:heart-cannot-receive": {
+    "de": "Angemeldete Shop-Notiz eines anderen Mitglieds nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Nota de tienda de otro miembro con sesión iniciada tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Shop note ng ibang miyembro habang naka-sign in, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+  },
+  "/shops:author-cannot-receive": {
+    "de": "Eine Shop-Notiz eines Mitglieds ohne verifizierte Wallet (authorCanReceive: false). Die Aktionszeile zeigt vor dem Herz das kleine graue Label Kann noch nicht empfangen, und Herz samt Zähler sind deaktiviert.",
+    "es": "Una nota de tienda de un miembro que aún no tiene wallet verificada (authorCanReceive: false). La fila de acciones muestra antes del corazón la etiqueta gris Aún no puede recibir, y el corazón con su contador está desactivado.",
+    "fil": "Isang shop note ng miyembrong wala pang verified na wallet (authorCanReceive: false). Ipinapakita ng hanay ng aksyon bago ang puso ang maliit na label na Hindi pa makatanggap, at naka-disable ang puso at ang bilang nito."
+  },
+  "/shops:author-cannot-receive-open": {
+    "de": "Dieselbe Shop-Notiz nach Reaktionen anzeigen. Das Betragsfeld der Reaktion ist deaktiviert (Text geht weiterhin), und eine Antwort eines anderen Mitglieds, das noch nicht empfangen kann, zeigt Kann noch nicht empfangen mit einem deaktivierten Geschenk Bitcoin senden, das kein Blatt öffnet.",
+    "es": "La misma nota de tienda tras Mostrar reacciones. El campo Importe de la reacción está desactivado (el texto se sigue publicando), y una respuesta de otro miembro que aún no puede recibir muestra Aún no puede recibir con un regalo Enviar Bitcoin desactivado que no abre ninguna hoja.",
+    "fil": "Ang parehong shop note matapos ang Ipakita ang mga reaksyon. Naka-disable ang field na Halaga ng reaksyon (naipo-post pa rin ang teksto), at ang sagot ng ibang miyembrong hindi pa makatanggap ay nagpapakita ng Hindi pa makatanggap kasama ang naka-disable na Magpadala ng Bitcoin na regalo na walang binubuksang sheet."
   },
   "/shops:heart-paid": {
     "de": "Dieselbe Cafe-Luna-Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
