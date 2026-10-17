@@ -2003,7 +2003,7 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open in the tabl
 
 ### Variant: table-more
 
-**Table** is selected. The same row is shown, and **Show more** is under the table. The composer is gone.
+**Table** is selected. One row **Cafe Luna** is shown, and **Show more** is under the table. The composer is gone.
 
 ![21.gifts shops table more](images/shops-table-more.png)
 
