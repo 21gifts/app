@@ -184,14 +184,29 @@ const PAYMENT_TTL_MS = 5 * 60 * 1000;
 /** Pause between two status reads, the pay poll of the forum's pay sheets. */
 const PAY_POLL_MS = 2000;
 
+/**
+ * Time until the pay link is read again for a quote.
+ *
+ * @param quoteExpiresAt - `quote.expiration` of the shown quote.
+ * @returns The time left, or the poll pause once that time has passed.
+ */
+function refetchDelay(quoteExpiresAt: string): number {
+  const left = Date.parse(quoteExpiresAt) - Date.now();
+  return left > 0 ? left : PAY_POLL_MS;
+}
+
 /** A shop payment the page shows (`quote.payment` of the pay link). */
 interface ShopPaymentView {
   /** Shop payment id. */
   id: string;
   /** Whole sats of the payment. */
   sats: number;
-  /** End of the payment's window: the charge's `expiresAt`, or the payer's `expiresAt`. */
-  windowEndsAt: string;
+  /**
+   * End of the payment's window: the charge's `expiresAt`, or the payer's
+   * `expiresAt`; `null` when the opening answer had none (the quote's own
+   * time left still shows).
+   */
+  windowEndsAt: string | null;
   /** The newest pay request read for this payment. */
   request: ShopPayRequest;
   /** Whether `request` is still the pay link's answer for this payment. */
@@ -208,17 +223,16 @@ interface ShopPaymentView {
  * Catalog key of a shop payment's status line.
  *
  * @param status - Last `paymentStatus`.
- * @param windowLive - Whether the payment's window is still running.
  * @returns "waiting", "on its way", "paid", or "ended".
  */
-function shopStatusKey(status: ShopPaymentStatus, windowLive: boolean): MessageKey {
+function shopStatusKey(status: ShopPaymentStatus): MessageKey {
   if (status === 'accepted') {
     return 'pay.onItsWay';
   }
   if (status === 'paid') {
     return 'pos.paid';
   }
-  if (status === 'open' && windowLive) {
+  if (status === 'open') {
     return 'forum.payWaiting';
   }
   return 'pos.expired';
@@ -373,8 +387,13 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
    * and every caller checks its generation first, so this is that payment.
    */
   const patchShop = useCallback((patch: Partial<ShopPaymentView>): void => {
-    /* v8 ignore next -- callers check the generation, and a new generation starts without a shop payment */
-    setShop((current) => (current === null ? null : { ...current, ...patch }));
+    setShop((current) => {
+      /* v8 ignore next 3 -- callers check the generation, and a new generation starts without a shop payment */
+      if (current === null) {
+        return null;
+      }
+      return { ...current, ...patch };
+    });
   }, []);
 
   /** Read the shop payment's BOLT11 from the callback's Lightning detail. */
@@ -394,7 +413,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     (
       id: string,
       sats: number,
-      windowEndsAt: string,
+      windowEndsAt: string | null,
       request: ShopPayRequest,
       generation: number,
     ): void => {
@@ -494,14 +513,18 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
           timer = setTimeout(refetch, PAY_POLL_MS);
           return;
         }
-        patchShop(
-          link.kind === 'payment' && link.request.payment === shopId
-            ? { request: link.request, quoteLive: true }
-            : { quoteLive: false },
-        );
+        if (link.kind === 'plain' || link.request.payment !== shopId) {
+          patchShop({ quoteLive: false });
+          return;
+        }
+        patchShop({ request: link.request, quoteLive: true });
+        if (link.request.quoteExpiresAt === quoteExpiresAt) {
+          // The same expiry does not re-arm this effect, so arm it here.
+          timer = setTimeout(refetch, refetchDelay(quoteExpiresAt));
+        }
       });
     };
-    timer = setTimeout(refetch, Math.max(0, Date.parse(quoteExpiresAt) - Date.now()));
+    timer = setTimeout(refetch, refetchDelay(quoteExpiresAt));
     return () => {
       active = false;
       clearTimeout(timer);
@@ -523,12 +546,12 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         }
         if (result !== null) {
           since = result.paymentStatus;
+          patchShop({ paymentStatus: result.paymentStatus });
           if (result.status !== 'Pending' && result.paymentStatus !== 'paid') {
             // Closed without payment: start again from the pay link.
             setReloadNonce((nonce) => nonce + 1);
             return;
           }
-          patchShop({ paymentStatus: result.paymentStatus });
           if (result.status !== 'Pending') {
             return;
           }
@@ -637,8 +660,10 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
 
   const activeSats = chargeLive && charge !== null ? charge.amountSats : mintedSats;
   const paymentActive = activeSats !== null && (chargeLive || invoice !== null);
-  const shopWindowLeft = shop === null ? 0 : Date.parse(shop.windowEndsAt) - now;
-  const shopOpen = shop !== null && shop.paymentStatus === 'open' && shopWindowLeft > 0;
+  const shopWindowLeft =
+    shop === null || shop.windowEndsAt === null ? 0 : Date.parse(shop.windowEndsAt) - now;
+  // Only the status hides the invoice: a transfer made in time can still move the payment.
+  const shopOpen = shop !== null && shop.paymentStatus === 'open';
   const quoteLeft = quoteExpiresAt === null ? 0 : Date.parse(quoteExpiresAt) - now;
   const shopLines = shop !== null && shopOpen && quoteLeft > 0 ? shop.request.lines : [];
 
@@ -663,7 +688,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
             </h1>
             {shop !== null ? (
               <div className="flex w-full flex-col items-center gap-3">
-                {shopOpen ? (
+                {shopOpen && shopWindowLeft > 0 ? (
                   <p className="text-center text-sm text-app-subtle">
                     {t('pay.timeLeft', { time: formatLeft(shopWindowLeft) })}
                   </p>
@@ -673,7 +698,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 </p>
                 <ChargeFiat amountSats={shop.sats} rateDay={rateDay} />
                 <p role="status" className="text-center text-sm text-app-subtle">
-                  {t(shopStatusKey(shop.paymentStatus, shopWindowLeft > 0))}
+                  {t(shopStatusKey(shop.paymentStatus))}
                 </p>
                 {shopOpen ? (
                   <>

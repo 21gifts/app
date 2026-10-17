@@ -7381,11 +7381,23 @@ test('Endpoint: POST /pay/[username]/payment — proxies the shop payment openin
   await request.post('/pay/[username]/payment');
 });
 
+/** Records every request whose URL contains `part`. */
+function recordRequests(page: Page, part: string): string[] {
+  const urls: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes(part)) {
+      urls.push(request.url());
+    }
+  });
+  return urls;
+}
+
 test('Function: fetchShopPayLink — an open till shows the shop payment of the pay link', async ({
   page,
 }) => {
   await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
   await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const opens = recordRequests(page, '/pay/ada/payment');
   await stubShopPayment(page, { charge: true });
   await page.goto(`/pl?lightning=${ADA_LNURL}`);
   await expect(page.getByText('Waiting for payment…')).toBeVisible();
@@ -7393,6 +7405,7 @@ test('Function: fetchShopPayLink — an open till shows the shop payment of the 
   await expect(page.getByText('Polygon')).toHaveCount(2);
   await expect(page.getByText('Arbitrum')).toHaveCount(1);
   await expect(page.getByText('Lightning')).toHaveCount(0);
+  expect(opens).toEqual([]);
 });
 
 test("Function: fetchShopInvoice — Pay opens the callback's invoice, never a mint", async ({
@@ -7401,12 +7414,8 @@ test("Function: fetchShopInvoice — Pay opens the callback's invoice, never a m
   await stubWalletLocationAssign(page);
   await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
   await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
-  const minted: string[] = [];
-  page.on('request', (request) => {
-    if (request.url().includes('/invoice')) {
-      minted.push(request.url());
-    }
-  });
+  const minted = recordRequests(page, '/invoice');
+  const opens = recordRequests(page, '/pay/ada/payment');
   const detail = page.waitForRequest((request) => request.url().includes('/lnurlp/cb/ada?'));
   await stubShopPayment(page, { charge: true });
   await page.goto(`/pl?lightning=${ADA_LNURL}`);
@@ -7416,6 +7425,7 @@ test("Function: fetchShopInvoice — Pay opens the callback's invoice, never a m
   await pay.click();
   await expect.poll(() => recordedWalletAssign(page)).toBe('lightning:lnbc2380930n1shop');
   expect(minted).toEqual([]);
+  expect(opens).toEqual([]);
 });
 
 test('Function: openShopPayment — Continue opens a shop payment, a repeat failure mints nothing', async ({
@@ -7426,32 +7436,49 @@ test('Function: openShopPayment — Continue opens a shop payment, a repeat fail
   const bodies: string[] = [];
   page.on('request', (request) => {
     if (request.url().endsWith('/pay/ada/payment')) {
-      bodies.push(request.postData() ?? '');
+      bodies.push(`${request.method()} ${request.postData() ?? ''}`);
     }
   });
+  const minted = recordRequests(page, '/invoice');
   await stubShopPayment(page, { start: 'failed' });
   await page.goto(`/pl?lightning=${ADA_LNURL}`);
   await page.getByLabel('Amount').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('This payment could not be started. Try again.')).toBeVisible();
-  expect(bodies).toEqual([JSON.stringify({ amountSats: 21 }), JSON.stringify({ amountSats: 21 })]);
+  const posted = `POST ${JSON.stringify({ amountSats: 21 })}`;
+  expect(bodies).toEqual([posted, posted]);
+  expect(minted).toEqual([]);
   await page.unrouteAll();
   await stubShopPayment(page, {});
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('Waiting for payment…')).toBeVisible();
   await expect(page.getByText('238.19 USDT')).toBeVisible();
+  expect(bodies).toEqual([posted, posted, posted]);
+  expect(minted).toEqual([]);
 });
 
-test('Function: waitShopPayment — on its way hides Pay and the invoice', async ({ page }) => {
+test('Function: waitShopPayment — on its way hides Pay, paid stops the reads', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
   await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
-  const wait = page.waitForRequest((request) => request.url().includes('/lnurlp/wait/p1'));
-  await stubShopPayment(page, { charge: true, paymentStatus: 'accepted' });
+  const waits = recordRequests(page, '/lnurlp/wait/p1');
+  const opens = recordRequests(page, '/pay/ada/payment');
+  await stubShopPayment(page, {
+    charge: true,
+    waits: [
+      { status: 'Pending', paymentStatus: 'accepted' },
+      { status: 'Completed', paymentStatus: 'paid' },
+    ],
+  });
   await page.goto(`/pl?lightning=${ADA_LNURL}`);
-  expect(new URL((await wait).url()).search).toBe('');
   await expect(page.getByText('On its way')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
   await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+  await page.clock.fastForward(2_000);
+  await expect(page.getByText('Paid ✓')).toBeVisible();
+  await page.clock.fastForward(5_000);
+  await expect(page.getByText('Paid ✓')).toBeVisible();
+  expect(waits.map((url) => new URL(url).search)).toEqual(['', '?since=accepted']);
+  expect(opens).toEqual([]);
 });
 
 test('Function: encodeLnurl — BIP-173 LNURL of a cleartext URL', async ({ page, request }) => {

@@ -5685,13 +5685,18 @@
     "fil": "Natapos ang shop payment bago ito nabayaran, at hindi pa alam ang huling status nito. Ang sticker ng tindahan, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi nito, at ang paso na status. Walang natitirang oras, walang QR ng invoice, walang Magbayad, at walang linya ng stablecoin."
   },
   "/pl:start-failed": {
-    "de": "Weiter konnte die Shop-Zahlung auch beim zweiten Versuch nicht eröffnen, oder der zweite Versuch antwortete mit 503 oder einem anderen 4xx. Das Formular bleibt mit dem Betrag, darunter steht, dass diese Zahlung nicht gestartet werden konnte. Es wurde keine Rechnung erstellt. Weiter versucht es erneut.",
-    "es": "Continuar no pudo abrir el pago de tienda, tampoco al repetir, o la repetición respondió 503 u otro 4xx. El formulario se queda con el importe y debajo dice que no se pudo iniciar este pago. No se creó ninguna factura. Continuar lo intenta de nuevo.",
-    "fil": "Hindi nabuksan ng Magpatuloy ang shop payment, kahit sa pag-ulit, o sumagot ang pag-ulit ng 503 o ibang 4xx. Nananatili ang form kasama ang halaga, at sa ilalim nito ay sinasabing hindi masimulan ang bayad na ito. Walang ginawang invoice. Sinusubukan muli ng Magpatuloy."
+    "de": "Weiter konnte die Shop-Zahlung auch beim zweiten Versuch nicht eröffnen: Auch die Wiederholung lief in eine Zeitüberschreitung, einen Verbindungsfehler oder einen anderen 5xx. Das Formular bleibt mit dem Betrag, darunter steht, dass diese Zahlung nicht gestartet werden konnte. Es wurde keine Rechnung erstellt. Weiter versucht es erneut.",
+    "es": "Continuar no pudo abrir el pago de tienda, tampoco al repetir: la repetición también agotó el tiempo, falló en la conexión o respondió otro 5xx. El formulario se queda con el importe y debajo dice que no se pudo iniciar este pago. No se creó ninguna factura. Continuar lo intenta de nuevo.",
+    "fil": "Hindi nabuksan ng Magpatuloy ang shop payment, kahit sa pag-ulit: nag-time out din ang pag-ulit, nabigo ang koneksyon, o sumagot ng ibang 5xx. Nananatili ang form kasama ang halaga, at sa ilalim nito ay sinasabing hindi masimulan ang bayad na ito. Walang ginawang invoice. Sinusubukan muli ng Magpatuloy."
   },
   "/pl:replaced": {
     "de": "Weiter hat eine Shop-Zahlung eröffnet, aber der Zahlungslink nennt bereits den Betrag einer anderen Person. Das Formular bleibt mit dem Betrag, darunter steht, dass eine andere Person zuerst einen Betrag eingegeben hat.",
     "es": "Continuar abrió un pago de tienda, pero el enlace de pago ya nombra el importe de otra persona. El formulario se queda con el importe y debajo dice que otra persona introdujo un importe primero.",
     "fil": "Nagbukas ang Magpatuloy ng shop payment, pero ang payment link ay may halaga na ng ibang nagbabayad. Nananatili ang form kasama ang halaga, at sa ilalim nito ay sinasabing may ibang naglagay muna ng halaga."
+  },
+  "/pl:lightning-only": {
+    "de": "Eine offene Kasse, deren Zahlungslink eine Shop-Zahlung trägt, deren Angebot nur Bitcoin enthält. Der Shop-Aufkleber, verbleibende Zeit, der Sat-Betrag, die Standard-Fiat der betrachtenden Person daneben, Zahlung wird erwartet…, am Desktop der QR der Bitcoin-Rechnung und Zahlen. Keine Stablecoin-Zeilen und kein Scan-Hinweis.",
+    "es": "Una caja abierta cuyo enlace de pago lleva un pago de tienda cuya cotización solo contiene Bitcoin. La pegatina de la tienda, el tiempo restante, el importe en sats, el fiat predeterminado de quien mira al lado, Esperando el pago…, en escritorio el QR de la factura de Bitcoin, y Pagar. Sin líneas de stablecoin y sin indicación para escanear.",
+    "fil": "Isang bukas na kaha na may shop payment ang payment link, at Bitcoin lang ang laman ng quote nito. Ang sticker ng tindahan, natitirang oras, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi nito, ang paghihintay sa bayad, sa desktop ang QR ng invoice ng Bitcoin, at Magbayad. Walang linya ng stablecoin at walang paalala na mag-scan."
   }
 }

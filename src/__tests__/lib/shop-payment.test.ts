@@ -220,8 +220,7 @@ describe('openShopPayment', () => {
       async () => new Response('not json', { status: 503 }),
       async () => Response.json({ code: 'other' }, { status: 503 }),
       async () => Response.json({ payment: '', expiresAt: opened.expiresAt }),
-      async () => Response.json({ payment: 'p1', expiresAt: 'never' }),
-      async () => Response.json({ payment: 'p1' }),
+      async () => Response.json({ payment: 7, expiresAt: opened.expiresAt }),
       async () => Response.json({ expiresAt: opened.expiresAt }),
       async () => Response.json(null),
       async () => new Response('not json', { status: 200 }),
@@ -234,6 +233,28 @@ describe('openShopPayment', () => {
       const mock = stubFetch(answer);
       expect(await openShopPayment('ada', 21)).toEqual({ kind: 'failed' });
       expect(mock).toHaveBeenCalledTimes(2);
+      const call = {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ amountSats: 21 }),
+      };
+      expect(mock.mock.calls).toEqual([
+        ['/pay/ada/payment', call],
+        ['/pay/ada/payment', call],
+      ]);
+      expect(mock.mock.calls.some(([input]) => String(input).includes('/invoice'))).toBe(false);
+    }
+  });
+
+  it('takes a success with a payment id as that payment, also without a readable window end', async () => {
+    for (const expiresAt of [undefined, 'never', 7]) {
+      const mock = stubFetch(async () => Response.json({ payment: 'p1', expiresAt }));
+      expect(await openShopPayment('ada', 21)).toEqual({
+        kind: 'opened',
+        payment: 'p1',
+        expiresAt: null,
+      });
+      expect(mock).toHaveBeenCalledTimes(1);
     }
   });
 
@@ -247,7 +268,7 @@ describe('openShopPayment', () => {
     expect(calls).toBe(2);
   });
 
-  it('never mints after an unknown first answer', async () => {
+  it('takes the 4xx or stablecoin_unavailable answer of the repeat like a first answer', async () => {
     const repeats: [() => Response, string][] = [
       [
         () =>
@@ -255,9 +276,9 @@ describe('openShopPayment', () => {
             { error: 'Stablecoin payment is unavailable', code: 'stablecoin_unavailable' },
             { status: 503 },
           ),
-        'failed',
+        'invoice',
       ],
-      [() => Response.json({ error: 'Enter a whole number of sats' }, { status: 400 }), 'failed'],
+      [() => Response.json({ error: 'Enter a whole number of sats' }, { status: 400 }), 'invoice'],
       [
         () =>
           Response.json(
@@ -283,6 +304,20 @@ describe('openShopPayment', () => {
 });
 
 describe('waitShopPayment', () => {
+  it('returns every payment status with its DFX status', async () => {
+    const bodies = [
+      { status: 'Pending', paymentStatus: 'accepted' },
+      { status: 'Pending', paymentStatus: 'ended' },
+      { status: 'Completed', paymentStatus: 'paid' },
+      { status: 'Cancelled', paymentStatus: 'ended' },
+      { status: 'Expired', paymentStatus: 'ended' },
+    ];
+    for (const body of bodies) {
+      stubFetch(async () => Response.json({ ...body, invoiceExpiresAt: EXPIRATION }));
+      expect(await waitShopPayment('p1', 'open')).toEqual(body);
+    }
+  });
+
   it('asks without since first and with the last status after', async () => {
     const mock = stubFetch(async () => Response.json({ status: 'Pending', paymentStatus: 'open' }));
     expect(await waitShopPayment('p 1', null)).toEqual({

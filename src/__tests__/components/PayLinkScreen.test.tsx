@@ -935,7 +935,7 @@ describe('PayLinkScreen shop payment', () => {
     ]);
   }, 10_000);
 
-  it('shows the payment as expired once its window ends', async () => {
+  it('keeps an open payment payable after its window ends', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     mockShopFetch(async (input) => {
       const url = String(input);
@@ -953,9 +953,16 @@ describe('PayLinkScreen shop payment', () => {
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
     vi.spyOn(Date, 'now').mockReturnValue(FIXED + 300_001);
-    expect(await screen.findByText('Expired', undefined, { timeout: 3000 })).toBeTruthy();
-    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
-    expect(screen.queryByText(/left/)).toBeNull();
+    await waitFor(
+      () => {
+        expect(screen.queryByText(/left/)).toBeNull();
+      },
+      { timeout: 3000 },
+    );
+    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeTruthy();
+    expect(screen.queryByText('Expired')).toBeNull();
   });
 
   it('retries a failed Lightning detail from Pay without minting', async () => {
@@ -1350,7 +1357,10 @@ describe('PayLinkScreen shop payment', () => {
     mockShopFetch(async (input) => {
       const url = String(input);
       if (url === '/pay/ada/payment') {
-        return Response.json({ payment: 'p1', expiresAt: new Date(FIXED).toISOString() });
+        return Response.json({
+          payment: 'p1',
+          expiresAt: new Date(Date.now() + 300_000).toISOString(),
+        });
       }
       if (url === '/.well-known/lnurlp/ada') {
         return new Promise((resolve) => {
@@ -1360,8 +1370,11 @@ describe('PayLinkScreen shop payment', () => {
       if (url.endsWith('/pay/bob')) {
         return Response.json({ name: 'Bob', username: 'bob', minSats: 1, maxSats: 100 });
       }
-      if (url.startsWith(CALLBACK) || url.startsWith('/lnurlp/')) {
-        throw new Error(`unexpected ${url}`);
+      if (url.startsWith(CALLBACK)) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        return pending();
       }
       return Response.json(profile);
     });
@@ -1372,11 +1385,15 @@ describe('PayLinkScreen shop payment', () => {
     });
     view.rerender(<PayLinkScreen lightning={bob} />);
     expect(await screen.findByRole('heading', { name: 'Bob' })).toBeTruthy();
-    releaseLink(Response.json(shopPayLink()));
+    releaseLink(Response.json(shopPayLink({ expiresInMs: Date.now() - FIXED + 90_000 })));
     await new Promise((resolve) => {
       setTimeout(resolve, 50);
     });
+    expect(fetchedUrls().some((url) => url.startsWith(CALLBACK))).toBe(false);
+    expect(fetchedUrls().some((url) => url.startsWith('/lnurlp/wait/'))).toBe(false);
     expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+    expect(screen.queryByText('0.2 USDT')).toBeNull();
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
   });
 
@@ -1472,10 +1489,74 @@ describe('PayLinkScreen shop payment', () => {
       { timeout: 4000 },
     );
     second.unmount();
-    releaseWait(Response.json({ status: 'Completed', paymentStatus: 'paid' }));
+    releaseWait(Response.json({ status: 'Pending', paymentStatus: 'accepted' }));
     await new Promise((resolve) => {
-      setTimeout(resolve, 50);
+      setTimeout(resolve, 2_300);
     });
     expect(waits).toBe(2);
+  }, 15_000);
+
+  it('shows only the quote time left when the opening answer has no window end', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        return Response.json({ payment: 'p1' });
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(shopPayLink());
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        return pending();
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(screen.getAllByText(/left/).map((node) => node.textContent)).toEqual(['1:30 left']);
+    expect(fetchedUrls().filter((url) => url === '/pay/ada/payment')).toHaveLength(1);
+  });
+
+  it('reads the pay link again for the same or a past quote expiry', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let links = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/.well-known/lnurlp/ada') {
+        links += 1;
+        if (links <= 2) {
+          return Response.json(shopPayLink({ expiresInMs: 300 }));
+        }
+        if (links === 3) {
+          return Response.json(shopPayLink({ quote: 'q2', expiresInMs: -1_000 }));
+        }
+        return Response.json(shopPayLink({ quote: 'q3', method: 'Arbitrum' }));
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        return pending();
+      }
+      return Response.json(chargeProfile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText('Polygon')).toBeTruthy();
+    await waitFor(
+      () => {
+        expect(links).toBe(3);
+      },
+      { timeout: 3000 },
+    );
+    await waitFor(() => {
+      expect(screen.queryByText('Polygon')).toBeNull();
+    });
+    expect(links).toBe(3);
+    expect(await screen.findByText('Arbitrum', undefined, { timeout: 4000 })).toBeTruthy();
+    expect(links).toBe(4);
   }, 10_000);
 });

@@ -283,6 +283,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pl',
+    id: 'lightning-only',
+    image: 'pl-lightning-only.png',
+    visual: 'state-pl-lightning-only',
+    needle: 'Waiting for payment…',
+  },
+  {
+    route: '/pl',
     id: 'on-its-way',
     image: 'pl-on-its-way.png',
     visual: 'state-pl-on-its-way',

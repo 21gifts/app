@@ -17,11 +17,38 @@ export async function fulfillStablecoinUnavailable(route: Route): Promise<void> 
   });
 }
 
+/** The stablecoin entries of the quote's `transferAmounts`. */
+const STABLECOIN_AMOUNTS = [
+  {
+    method: 'Polygon',
+    minFee: 36,
+    assets: [
+      { asset: 'USDT', amount: '238.21' },
+      { asset: 'USDC', amount: '238.2' },
+    ],
+    available: true,
+  },
+  {
+    method: 'Arbitrum',
+    minFee: 12,
+    assets: [{ asset: 'USDT', amount: '238.19' }],
+    available: true,
+  },
+];
+
+/** One answer of `GET /lnurlp/wait/:payment`. */
+export interface ShopWaitAnswer {
+  status: string;
+  paymentStatus: string;
+}
+
 /**
  * Pay link `ada` with the shop payment `p1`: `GET /pay/ada` (with or without
- * an open till), `POST /pay/ada/payment`, the OpenCryptoPay pay request, the
- * callback's Lightning detail, and `GET /lnurlp/wait/p1`. A mint answers 500,
- * because a shop payment is never minted.
+ * an open till), `POST /pay/ada/payment` (409 `payment_open` while the till is
+ * open), the OpenCryptoPay pay request (with stablecoin lines, or Lightning
+ * only), the callback's Lightning detail, and `GET /lnurlp/wait/p1` (the
+ * `waits` answers in turn, the last one repeated). A mint answers 500, because
+ * a shop payment is never minted.
  */
 export async function stubShopPayment(
   page: Page,
@@ -31,6 +58,8 @@ export async function stubShopPayment(
     charge?: boolean;
     payLinkPayment?: string;
     start?: 'opened' | 'failed';
+    lightningOnly?: boolean;
+    waits?: ShopWaitAnswer[];
   },
 ): Promise<void> {
   await page.route(
@@ -38,6 +67,14 @@ export async function stubShopPayment(
     async (route) => {
       const url = route.request().url();
       if (url.endsWith('/payment')) {
+        if (options.charge === true) {
+          await route.fulfill({
+            status: 409,
+            contentType: 'application/json',
+            body: JSON.stringify({ error: 'A payment is already open', code: 'payment_open' }),
+          });
+          return;
+        }
         if (options.start === 'failed') {
           await route.fulfill({ status: 502, contentType: 'application/json', body: '{}' });
           return;
@@ -90,21 +127,7 @@ export async function stubShopPayment(
             assets: [{ asset: 'BTC', amount: '0.00238093' }],
             available: true,
           },
-          {
-            method: 'Polygon',
-            minFee: 36,
-            assets: [
-              { asset: 'USDT', amount: '238.21' },
-              { asset: 'USDC', amount: '238.2' },
-            ],
-            available: true,
-          },
-          {
-            method: 'Arbitrum',
-            minFee: 12,
-            assets: [{ asset: 'USDT', amount: '238.19' }],
-            available: true,
-          },
+          ...(options.lightningOnly === true ? [] : STABLECOIN_AMOUNTS),
         ],
       }),
     });
@@ -120,14 +143,17 @@ export async function stubShopPayment(
       });
     },
   );
+  const waits = options.waits ?? [
+    { status: options.status ?? 'Pending', paymentStatus: options.paymentStatus ?? 'open' },
+  ];
+  let wait = 0;
   await page.route('**/lnurlp/wait/p1**', async (route) => {
+    const answer = waits[Math.min(wait, waits.length - 1)];
+    wait += 1;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        status: options.status ?? 'Pending',
-        paymentStatus: options.paymentStatus ?? 'open',
-      }),
+      body: JSON.stringify({ ...answer, invoiceExpiresAt: '2026-09-24T12:17:00.000Z' }),
     });
   });
 }
