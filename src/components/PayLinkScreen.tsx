@@ -438,6 +438,11 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
           );
           return;
         }
+        if (link.kind === 'error') {
+          // A shop payment may exist; only the plain Lightning request mints. Pay reads again.
+          setFormError('failed');
+          return;
+        }
         const response = await fetch(`/pay/${encodeURIComponent(profile.username)}/invoice`, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -478,21 +483,25 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     }
     const username = profile.username;
     let active = true;
-    const timer = setTimeout(
-      () => {
-        void fetchShopPayLink(username).then((link) => {
-          if (!active) {
-            return;
-          }
-          patchShop(
-            link.kind === 'payment' && link.request.payment === shopId
-              ? { request: link.request, quoteLive: true }
-              : { quoteLive: false },
-          );
-        });
-      },
-      Math.max(0, Date.parse(quoteExpiresAt) - Date.now()),
-    );
+    let timer: ReturnType<typeof setTimeout>;
+    const refetch = (): void => {
+      void fetchShopPayLink(username).then((link) => {
+        if (!active) {
+          return;
+        }
+        if (link.kind === 'error') {
+          // A failed read says nothing about the payment: keep the lines and read again.
+          timer = setTimeout(refetch, PAY_POLL_MS);
+          return;
+        }
+        patchShop(
+          link.kind === 'payment' && link.request.payment === shopId
+            ? { request: link.request, quoteLive: true }
+            : { quoteLive: false },
+        );
+      });
+    };
+    timer = setTimeout(refetch, Math.max(0, Date.parse(quoteExpiresAt) - Date.now()));
     return () => {
       active = false;
       clearTimeout(timer);
