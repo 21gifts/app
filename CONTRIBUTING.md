@@ -889,10 +889,14 @@ docker build -t 21gifts/app:dev .
 docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=https://dev-api.21.gifts 21gifts/app:dev
 ```
 
-**One image, multiple environments**: `next build` inlines `NEXT_PUBLIC_*`
-values into the bundles, so the image is built with literal placeholders
-(`__NEXT_PUBLIC_API_URL__`) and `entrypoint.sh` substitutes the runtime
-values at container start. The container refuses to start if a required
+**One image per environment**: each deploy workflow builds its own image,
+because the Breez API key (`NEXT_PUBLIC_BREEZ_API_KEY`) and the build id
+(`NEXT_PUBLIC_BUILD_ID`) are baked in at `next build` (below). An image built
+for one environment is not deployed to another. The other `NEXT_PUBLIC_*`
+values are runtime placeholders: `next build` inlines `NEXT_PUBLIC_*` values
+into the bundles, so the image is built with literal placeholders
+(`__NEXT_PUBLIC_API_URL__`) and `entrypoint.sh` substitutes the runtime values
+at container start. The container refuses to start if a required
 variable is unset or empty. The optional variables (`OPTIONAL_VARS` in
 `entrypoint.sh`) are substituted with an empty string instead, and the app
 reads that empty string as unset: no donation address, no error reporting, the
@@ -1104,12 +1108,13 @@ same tag again. The moving tags and the deploy dispatch are unchanged.
 
 Deploy workflows require these GitHub Actions secrets:
 
-| Secret            | Purpose                                             |
-| ----------------- | --------------------------------------------------- |
-| `DOCKER_USERNAME` | Docker Hub username for image push                  |
-| `DOCKER_PASSWORD` | Docker Hub token for image push                     |
-| `DISPATCH_TOKEN`  | PAT to dispatch `image-published` and read that run |
-| `DISPATCH_REPO`   | Target `owner/repo` that receives `image-published` |
+| Secret              | Purpose                                                                    |
+| ------------------- | -------------------------------------------------------------------------- |
+| `DOCKER_USERNAME`   | Docker Hub username for image push                                         |
+| `DOCKER_PASSWORD`   | Docker Hub token for image push                                            |
+| `DISPATCH_TOKEN`    | PAT to dispatch `image-published` and read that run                        |
+| `DISPATCH_REPO`     | Target `owner/repo` that receives `image-published`                        |
+| `BREEZ_API_KEY_PRD` | Breez API key baked into the PRD image; `deploy-prd.yaml` fails without it |
 
 If `DISPATCH_TOKEN` or `DISPATCH_REPO` is missing, deploy fails loud (the image
 may already be on Hub). After `image-published`, the job waits for the
