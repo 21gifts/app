@@ -247,6 +247,27 @@ describe('Collapse', () => {
     expect(document.querySelector('[data-collapse]')).toBeNull();
   });
 
+  it('still eases open while instant stays on', () => {
+    const view = render(
+      <Collapse show={false} instant>
+        <p>Body</p>
+      </Collapse>,
+    );
+    view.rerender(
+      <Collapse show instant>
+        <p>Body</p>
+      </Collapse>,
+    );
+    expect(fold().getAttribute('data-collapse')).toBe('opening');
+    expect(clip().className).toBe('min-h-0 overflow-hidden');
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+    advance(MOTION_FOLD_MS - 1);
+    expect(fold().getAttribute('data-collapse')).toBe('opening');
+    advance(1);
+    expect(fold().getAttribute('data-collapse')).toBe('open');
+    expect(clip().className).toBe('min-h-0');
+  });
+
   it('drops its frames and timers when unmounted while opening', () => {
     const view = render(
       <Collapse show={false}>
