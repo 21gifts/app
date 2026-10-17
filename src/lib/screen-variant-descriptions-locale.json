@@ -1135,9 +1135,9 @@
     "fil": "Ang kumpirmadong tulos na Stall ay nasa ilalim ng Magdagdag ng lugar bilang paunang tanaw na may Alisin ang lugar. Sarado ang panelo."
   },
   "/shops:table-more": {
-    "de": "Tabelle ist ausgewählt. Dieselbe Zeile wird angezeigt, und Mehr anzeigen steht unter der Tabelle. Der Eingabebereich ist weg.",
-    "es": "La tabla está seleccionada. Se muestra la misma fila, y Mostrar más está debajo de la tabla. El cuadro de redacción desapareció.",
-    "fil": "Napili ang talahanayan. Ipinapakita ang parehong hilera, at nasa ilalim ng talahanayan ang Magpakita pa. Wala na ang kahon ng pagsulat."
+    "de": "Tabelle ist ausgewählt. Eine Zeile Cafe Luna wird angezeigt, und Mehr anzeigen steht unter der Tabelle. Der Eingabebereich ist weg.",
+    "es": "La tabla está seleccionada. Se muestra una fila Cafe Luna, y Mostrar más está debajo de la tabla. El cuadro de redacción desapareció.",
+    "fil": "Napili ang talahanayan. Ipinapakita ang isang hilera na Cafe Luna, at nasa ilalim ng talahanayan ang Magpakita pa. Wala na ang kahon ng pagsulat."
   },
   "/shops:table-next": {
     "de": "Mehr anzeigen hat die nächste Seite geladen. Cafe Luna bleibt, Anderer Stand wird hinzugefügt, und Mehr anzeigen ist weg.",
