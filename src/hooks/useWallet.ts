@@ -4,13 +4,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { visualPin } from '@/lib/visual-pin';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
-import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { connectWallet } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
 
 /** Balance used by the deterministic `/wallet` visual fixture (Playwright builds only). */
 export const WALLET_VISUAL_FIXTURE_SATS = 21_000;
+
+/** Screenshot pin that shows the wallet code still downloading. */
+const DOWNLOADING_PIN = 'balance-downloading';
 
 /** Screenshot pin that shows a failed open which the wallet recovers from by itself. */
 const REOPENING_PIN = 'balance-reopening';
@@ -34,8 +36,13 @@ export interface UseWalletResult {
   status: WalletViewStatus;
   /** Current whole-sat balance, or `null` before it is available. */
   balanceSats: number | null;
-  /** Connects again after an error (reloads the page when the wallet must reload). */
+  /** Connects again after an error, in this page. */
   retry: () => void;
+  /**
+   * True while `status` is `connecting` and the wallet code is still being
+   * downloaded for the first time in this page.
+   */
+  downloading: boolean;
   /**
    * True while `status` is `error` because the background wallet setup gave
    * up; the balance shows the inline setup note instead of the open error.
@@ -61,6 +68,7 @@ function visualStatus(reopened: boolean): WalletViewStatus | null {
     case REOPENING_PIN:
       return reopened ? 'ready' : 'error';
     case 'balance-connecting':
+    case DOWNLOADING_PIN:
     case 'setup-pending':
       return 'connecting';
     case 'balance-ready':
@@ -90,13 +98,15 @@ function visualStatus(reopened: boolean): WalletViewStatus | null {
  * shows `connecting` until the wallet is verified, or `error` with
  * `setupFailed` once the setup gave up. After a failed open the status is
  * `error` with `retrying` set while the wallet service opens the wallet again
- * in the background, and turns `ready` on its own. While the wallet code needs
- * a page reload (`walletNeedsReload`) no automatic attempt runs, `retrying` is
- * false, and retry reloads the page. Visual pins (`?visual=balance-…`,
+ * in the background, and turns `ready` on its own. While the wallet code is
+ * still downloading, the status is `connecting` with `downloading` set. Retry
+ * connects again in this page; a failed download is downloaded again, so the
+ * page is never reloaded. Visual pins (`?visual=balance-…`,
  * `?visual=history-…` including `history-heart` and `history-heart-pending`,
  * `?visual=heart-payment` and `?visual=heart-payment-pending`,
  * `?visual=wallet-received` and `?visual=move-arrived` as ready,
- * `?visual=setup-pending` as connecting, and the `?visual=send-…` pins as ready,
+ * `?visual=setup-pending` as connecting, `?visual=balance-downloading` as
+ * connecting with `downloading`, and the `?visual=send-…` pins as ready,
  * and `?visual=balance-reopening` as a failed open with `retrying` that turns
  * ready after {@link WALLET_VISUAL_REOPEN_MS}) are honoured only in a Playwright
  * build
@@ -108,6 +118,7 @@ export function useWallet(): UseWalletResult {
   const storeStatus = useWalletStore((state) => state.status);
   const storeBalanceSats = useWalletStore((state) => state.balanceSats);
   const storeRetrying = useWalletStore((state) => state.retrying);
+  const storeDownloading = useWalletStore((state) => state.downloading);
   const account = useAuthStore((state) => state.account);
   const [reopened, setReopened] = useState(false);
   const pinnedStatus = visualStatus(reopened);
@@ -129,10 +140,6 @@ export function useWallet(): UseWalletResult {
     if (pinnedStatus !== null) {
       return;
     }
-    if (walletNeedsReload()) {
-      window.location.reload();
-      return;
-    }
     void connectWallet();
   }, [pinnedStatus]);
 
@@ -141,23 +148,32 @@ export function useWallet(): UseWalletResult {
       status: pinnedStatus,
       balanceSats: pinnedStatus === 'ready' ? WALLET_VISUAL_FIXTURE_SATS : null,
       retry,
+      downloading: visualPin() === DOWNLOADING_PIN,
       setupFailed: pinnedStatus === 'error' && setup.failed,
       retrying: pinnedStatus === 'error' && visualPin() === REOPENING_PIN,
     };
   }
-  const base = { balanceSats: null, retry, setupFailed: false, retrying: false };
+  const base = {
+    balanceSats: null,
+    retry,
+    downloading: false,
+    setupFailed: false,
+    retrying: false,
+  };
   if (storeStatus === 'disabled' || !canUnlockWallet(account)) {
     return { ...base, status: 'disabled' };
   }
+  const downloading = storeStatus === 'connecting' && storeDownloading;
   if (setup.due) {
     return setup.failed
       ? { ...base, status: 'error', setupFailed: true }
-      : { ...base, status: 'connecting' };
+      : { ...base, status: 'connecting', downloading };
   }
   return {
     ...base,
     status: storeStatus === 'locked' ? 'connecting' : storeStatus,
     balanceSats: storeBalanceSats,
+    downloading,
     retrying: storeStatus === 'error' && storeRetrying,
   };
 }

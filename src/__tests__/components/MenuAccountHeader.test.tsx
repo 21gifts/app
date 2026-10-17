@@ -68,7 +68,14 @@ function walletWith(
   status: UseWalletResult['status'],
   balanceSats: number | null = null,
 ): UseWalletResult {
-  return { status, balanceSats, retry: vi.fn(), setupFailed: false, retrying: false };
+  return {
+    status,
+    balanceSats,
+    retry: vi.fn(),
+    downloading: false,
+    setupFailed: false,
+    retrying: false,
+  };
 }
 
 /** Lets the settled fetches reach the component. */

@@ -81,6 +81,12 @@ afterEach(() => {
 });
 
 describe('LoginCard', () => {
+  it('shows no wallet confirm line on the ordinary login', () => {
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+    expect(screen.queryByText('Confirm to open your wallet')).toBeNull();
+  });
+
   describe('held-back session', () => {
     beforeEach(() => {
       useAuthStore.setState({ lockedSession: 'held', lockedName: 'Ada' });
@@ -99,6 +105,12 @@ describe('LoginCard', () => {
       expect(screen.getByRole('button', { name: 'Open a new account' })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
       expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('asks to confirm the wallet open directly above Log in', () => {
+      renderWithLocale(<LoginCard />);
+      const line = screen.getByText('Confirm to open your wallet');
+      expect(line.nextElementSibling).toBe(screen.getByRole('button', { name: 'Log in' }));
     });
 
     it('greets nobody when the held account has no name', () => {

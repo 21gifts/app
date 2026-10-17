@@ -190,6 +190,7 @@ export function WalletScreenView({
               balanceSats={wallet.balanceSats}
               onRetry={wallet.retry}
               setupFailed={wallet.setupFailed}
+              downloading={wallet.downloading}
             />
           </div>
         )}

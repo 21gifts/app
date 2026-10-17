@@ -21,11 +21,15 @@ export interface WalletBalanceProps {
   onRetry: () => void;
   /** In `error`, true when the background wallet setup gave up (inline setup note). */
   setupFailed?: boolean;
+  /** In `connecting`, true while the wallet code is still being downloaded. */
+  downloading?: boolean;
 }
 
 /**
  * Wallet balance block for connecting, ready, and error states. There is no
- * locked state: a signed-in member's wallet is open in this tab. The ready
+ * locked state: a signed-in member's wallet is open in this tab. Connecting
+ * reads **Downloading wallet…** while the wallet code is still being
+ * downloaded, and **Opening your wallet…** after that. The ready
  * balance is a large ₿ figure; when the default fiat has a usable rate,
  * tapping it swaps which of ₿ and fiat is the large figure. An error offers
  * **Try again**; an error because the background wallet setup gave up shows
@@ -39,6 +43,7 @@ export function WalletBalance({
   balanceSats,
   onRetry,
   setupFailed = false,
+  downloading = false,
 }: WalletBalanceProps): ReactElement | null {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -56,7 +61,7 @@ export function WalletBalance({
       <>
         <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />
         <p role="status" className="text-sm text-app-muted">
-          {t('wallet.connecting')}
+          {t(downloading ? 'wallet.downloading' : 'wallet.connecting')}
         </p>
       </>
     );

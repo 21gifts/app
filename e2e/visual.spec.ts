@@ -1831,6 +1831,40 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-balance-connecting');
   });
 
+  test('wallet balance-downloading', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/wallet?visual=balance-downloading');
+    await expect(page.getByText('Downloading wallet…')).toBeVisible();
+    await shotScreen(page, 'state-wallet-balance-downloading');
+  });
+
   test('wallet balance-ready', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -2334,6 +2368,16 @@ test.describe('screen baselines', () => {
     );
     await expect(page.getByText('Opening your wallet…').first()).toBeVisible();
     await shotScreen(page, 'state-wallet-payment-connecting');
+  });
+
+  test('state-wallet-payment-downloading', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-downloading',
+    );
+    await expect(page.getByText('Downloading wallet…').first()).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-downloading');
   });
 
   test('state-wallet-payment-error', async ({ page }) => {

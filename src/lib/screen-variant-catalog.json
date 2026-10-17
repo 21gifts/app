@@ -204,6 +204,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:balance-downloading",
+    "label": "/wallet balance-downloading",
+    "visual": "state-wallet-balance-downloading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:balance-ready",
     "label": "/wallet balance-ready",
     "visual": "state-wallet-balance-ready",
@@ -828,6 +834,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:downloading",
+    "label": "/wallet/payment downloading",
+    "visual": "state-wallet-payment-downloading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/payment:error",
     "label": "/wallet/payment error",
     "visual": "state-wallet-payment-error",
@@ -1239,6 +1251,12 @@
     "id": "/settings:default-amount-fiat",
     "label": "/settings default-amount-fiat",
     "visual": "state-settings-default-amount-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:notification-level-gifted",
+    "label": "/settings notification-level-gifted",
+    "visual": "state-settings-notification-level-gifted",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

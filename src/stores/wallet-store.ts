@@ -38,9 +38,15 @@ interface WalletState {
   /**
    * True while the wallet is at `error` and the wallet service opens it again
    * automatically (between and during its retries). False once the wallet is
-   * ready, connecting, or reset, and while only a page reload can recover.
+   * ready, connecting, or reset.
    */
   retrying: boolean;
+  /**
+   * True while the wallet is `connecting` and the wallet code is still being
+   * downloaded for the first time in this page (no deadline runs meanwhile).
+   * False once it is loaded, and after a failed open or a reset.
+   */
+  downloading: boolean;
   /** Marks the wallet as connecting and clears balance fields. */
   setConnecting(): void;
   /**
@@ -59,6 +65,12 @@ interface WalletState {
    * @param retrying - Whether the wallet service is retrying.
    */
   setRetrying(retrying: boolean): void;
+  /**
+   * Records whether the wallet code is still being downloaded.
+   *
+   * @param downloading - Whether the download is running.
+   */
+  setDownloading(downloading: boolean): void;
   /** Returns to the resting status and clears balance fields. */
   reset(): void;
   /**
@@ -82,6 +94,7 @@ export const useWalletStore = create<WalletState>((set) => ({
   syncCount: 0,
   setupFailedSession: null,
   retrying: false,
+  downloading: false,
   setConnecting: () => {
     set({ status: 'connecting', balanceSats: null, identityPubkey: null, retrying: false });
   },
@@ -92,16 +105,26 @@ export const useWalletStore = create<WalletState>((set) => ({
       identityPubkey,
       syncCount: state.syncCount + 1,
       retrying: false,
+      downloading: false,
     }));
   },
   setError: () => {
-    set({ status: 'error', balanceSats: null, identityPubkey: null });
+    set({ status: 'error', balanceSats: null, identityPubkey: null, downloading: false });
   },
   setRetrying: (retrying) => {
     set({ retrying });
   },
+  setDownloading: (downloading) => {
+    set({ downloading });
+  },
   reset: () => {
-    set({ status: restingStatus(), balanceSats: null, identityPubkey: null, retrying: false });
+    set({
+      status: restingStatus(),
+      balanceSats: null,
+      identityPubkey: null,
+      retrying: false,
+      downloading: false,
+    });
   },
   setSetupFailedSession: (session) => {
     set({ setupFailedSession: session });

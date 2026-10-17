@@ -311,6 +311,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'balance-downloading',
+    image: 'wallet-balance-downloading.png',
+    visual: 'state-wallet-balance-downloading',
+    needle: 'Downloading wallet…',
+  },
+  {
+    route: '/wallet',
     id: 'balance-ready',
     image: 'wallet-balance-ready.png',
     visual: 'state-wallet-balance-ready',
@@ -1038,6 +1045,13 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-payment-connecting.png',
     visual: 'state-wallet-payment-connecting',
     needle: "shotScreen(page, 'state-wallet-payment-connecting')",
+  },
+  {
+    route: '/wallet/payment',
+    id: 'downloading',
+    image: 'wallet-payment-downloading.png',
+    visual: 'state-wallet-payment-downloading',
+    needle: "shotScreen(page, 'state-wallet-payment-downloading')",
   },
   {
     route: '/wallet/payment',

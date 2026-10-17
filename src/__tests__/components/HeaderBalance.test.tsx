@@ -41,6 +41,7 @@ function wallet(
     status,
     balanceSats,
     retry: vi.fn(),
+    downloading: false,
     setupFailed: false,
     retrying,
   });

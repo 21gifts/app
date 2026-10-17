@@ -28,7 +28,8 @@ type VersionBlock = {
  *
  * While a stored session is held back (`lockedSession`), the start view is
  * the same, with **Welcome back, {name}** above the heading when the account
- * has a name or username. **Log in** is then one passkey prompt
+ * has a name or username, and **Confirm to open your wallet** directly above
+ * **Log in**. **Log in** is then one passkey prompt
  * (authenticate only): whichever passkey answers decides the account, so a
  * different account replaces the held session. A dismissed prompt, an
  * unknown passkey, or any other failure of that prompt stays on this start
@@ -105,6 +106,7 @@ export function LoginCard({
   ) {
     body = (
       <StartView
+        held
         greeting={lockedName}
         alert={
           wrongAccountHint
@@ -220,13 +222,16 @@ interface StartViewProps {
   versionBlock: VersionBlock | null;
   /** Held-back member to greet (**Welcome back, {name}**), or null. */
   greeting?: string | null;
+  /** True for a held-back session: **Confirm to open your wallet** above **Log in**. */
+  held?: boolean;
   /** Alert above **Log in**, or null. */
   alert?: 'login.error' | 'login.wrongAccount' | 'wallet.prfUnsupported' | null;
 }
 
 /**
  * The initial logged-out state: **Log in**, then **Open a new account** under a short line.
- * For a held-back session, a greeting above the heading and an alert above **Log in**.
+ * For a held-back session, a greeting above the heading, an alert, and
+ * **Confirm to open your wallet** above **Log in**.
  *
  * @param props - See {@link StartViewProps}.
  * @returns The start view.
@@ -236,6 +241,7 @@ function StartView({
   onRegister,
   versionBlock,
   greeting = null,
+  held = false,
   alert = null,
 }: StartViewProps): ReactElement {
   const { t } = useTranslations();
@@ -254,6 +260,7 @@ function StartView({
           {t(alert)}
         </p>
       )}
+      {held ? <p className="text-center text-sm text-app-muted">{t('login.heldConfirm')}</p> : null}
       <Button
         type="button"
         onClick={onLogin}

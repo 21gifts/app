@@ -149,7 +149,14 @@ vi.mock('@/lib/api', () => ({
 }));
 
 function walletWith(status: UseWalletResult['status']): UseWalletResult {
-  return { status, balanceSats: null, retry: vi.fn(), setupFailed: false, retrying: false };
+  return {
+    status,
+    balanceSats: null,
+    retry: vi.fn(),
+    downloading: false,
+    setupFailed: false,
+    retrying: false,
+  };
 }
 
 const SEND: UseWalletSendResult = {

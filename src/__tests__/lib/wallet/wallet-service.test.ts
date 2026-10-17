@@ -20,9 +20,9 @@ import {
   WALLET_SEND_TIMEOUT_MS,
   type WalletSdkLoader,
   WALLET_QUOTE_MARGIN_MS,
+  WALLET_CONNECT_TIMEOUT_MS,
 } from '@/lib/wallet/wallet-service';
 import {
-  walletNeedsReload,
   type WalletConnection,
   type WalletPayment,
   type WalletPreparedPayment,
@@ -39,10 +39,6 @@ vi.mock('@sentry/nextjs', () => ({ captureMessage: vi.fn() }));
 vi.mock('@/lib/sentry', () => ({
   traceWallet: vi.fn((_name: string, work: () => Promise<unknown>) => work()),
 }));
-vi.mock('@/lib/wallet/wallet-sdk', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/lib/wallet/wallet-sdk')>()),
-  walletNeedsReload: vi.fn(() => false),
-}));
 import { useWalletStore } from '@/stores/wallet-store';
 
 const MNEMONIC =
@@ -50,14 +46,14 @@ const MNEMONIC =
 const API_KEY = 'test-breez-api-key';
 const IDENTITY = `02${'a'.repeat(64)}`;
 
-const ssrImport = vi.hoisted(() =>
+const sdkImport = vi.hoisted(() =>
   vi.fn(async () => {
     throw new Error('real SDK must not load');
   }),
 );
 
-vi.mock('@breeztech/breez-sdk-spark/ssr', () => ({
-  default: () => ssrImport(),
+vi.mock('@breeztech/breez-sdk-spark/web', () => ({
+  default: () => sdkImport(),
 }));
 
 const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
@@ -117,10 +113,9 @@ beforeEach(() => {
   clearSessionPhrase();
   useWalletStore.getState().reset();
   useAuthStore.setState({ session: null, account: null, wrongAccount: false });
-  ssrImport.mockClear();
+  sdkImport.mockClear();
   vi.mocked(captureMessage).mockClear();
   vi.mocked(logInteraction).mockClear();
-  vi.mocked(walletNeedsReload).mockReset().mockReturnValue(false);
 });
 
 /**
@@ -196,18 +191,132 @@ describe('connectWallet', () => {
       vi.useRealTimers();
     });
 
-    it('sets error when loadSdk never settles', async () => {
+    it('keeps a slow download connecting, with no deadline while it runs', async () => {
       rememberSessionPhrase(MNEMONIC);
       const loadSdk: WalletSdkLoader = vi.fn(() => new Promise<WalletSdk>(() => undefined));
-      const pending = connectWallet(loadSdk);
+      void connectWallet(loadSdk);
       await vi.advanceTimersByTimeAsync(0);
-      expect(loadSdk).toHaveBeenCalled();
-      expect(useWalletStore.getState().status).toBe('connecting');
+      expect(loadSdk).toHaveBeenCalledTimes(1);
+      expect(useWalletStore.getState()).toMatchObject({ status: 'connecting', downloading: true });
+      expect(vi.getTimerCount()).toBe(0);
+      await vi.advanceTimersByTimeAsync(10 * WALLET_CONNECT_TIMEOUT_MS);
+      expect(useWalletStore.getState()).toMatchObject({ status: 'connecting', downloading: true });
       expect(captureMessage).not.toHaveBeenCalled();
-      await vi.advanceTimersByTimeAsync(30_000);
+      expect(loadSdk).toHaveBeenCalledTimes(1);
+    });
+
+    it('starts the deadline once the download has finished', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      let finishDownload!: (sdk: WalletSdk) => void;
+      const loadSdk: WalletSdkLoader = vi.fn(
+        () =>
+          new Promise<WalletSdk>((resolve) => {
+            finishDownload = resolve;
+          }),
+      );
+      const connect = vi.fn(() => new Promise<WalletConnection>(() => undefined));
+      const pending = connectWallet(loadSdk);
+      await vi.advanceTimersByTimeAsync(5 * WALLET_CONNECT_TIMEOUT_MS);
+      expect(connect).not.toHaveBeenCalled();
+      finishDownload({ connect } as unknown as WalletSdk);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(connect).toHaveBeenCalledTimes(1);
+      expect(useWalletStore.getState()).toMatchObject({ status: 'connecting', downloading: false });
+      await vi.advanceTimersByTimeAsync(WALLET_CONNECT_TIMEOUT_MS - 1);
+      expect(useWalletStore.getState().status).toBe('connecting');
+      await vi.advanceTimersByTimeAsync(1);
       await expect(pending).resolves.toBeUndefined();
       expect(useWalletStore.getState().status).toBe('error');
       expectWalletOpenReport('timeout');
+    });
+
+    it('sets error when connect never settles', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      const { loadSdk } = createFakeSdk({
+        connect: () => new Promise<WalletConnection>(() => undefined),
+      });
+      const pending = connectWallet(loadSdk);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(useWalletStore.getState()).toMatchObject({ status: 'connecting', downloading: false });
+      expect(captureMessage).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(WALLET_CONNECT_TIMEOUT_MS);
+      await expect(pending).resolves.toBeUndefined();
+      expect(useWalletStore.getState().status).toBe('error');
+      expectWalletOpenReport('timeout');
+    });
+
+    it('shows no download once a loader has loaded the wallet code', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      const { loadSdk } = createFakeSdk();
+      await connectWallet(loadSdk);
+      expect(useWalletStore.getState().status).toBe('ready');
+      const downloading: boolean[] = [];
+      const unsub = useWalletStore.subscribe((state) => {
+        downloading.push(state.downloading);
+      });
+      await connectWallet(loadSdk);
+      unsub();
+      expect(downloading).not.toContain(true);
+      expect(useWalletStore.getState().status).toBe('ready');
+    });
+
+    it('reports a failed download as an error and downloads again on the next attempt', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      const sdk = createFakeSdk();
+      const loadSdk: WalletSdkLoader = vi
+        .fn<WalletSdkLoader>()
+        .mockRejectedValueOnce(new Error('download failed'))
+        .mockImplementation(sdk.loadSdk);
+      await connectWallet(loadSdk);
+      expect(useWalletStore.getState()).toMatchObject({
+        status: 'error',
+        downloading: false,
+        retrying: true,
+      });
+      expectWalletOpenReport('error');
+      await connectWallet(loadSdk);
+      expect(loadSdk).toHaveBeenCalledTimes(2);
+      expect(useWalletStore.getState().status).toBe('ready');
+    });
+
+    it('lets a superseded download finish without touching the newer attempt', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      let finishDownload!: (sdk: WalletSdk) => void;
+      const slow: WalletSdkLoader = vi.fn(
+        () =>
+          new Promise<WalletSdk>((resolve) => {
+            finishDownload = resolve;
+          }),
+      );
+      const fast = createFakeSdk();
+      void connectWallet(slow);
+      await vi.advanceTimersByTimeAsync(0);
+      await connectWallet(fast.loadSdk);
+      expect(useWalletStore.getState().status).toBe('ready');
+      const stale = createFakeSdk();
+      finishDownload({ connect: stale.connect } as unknown as WalletSdk);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(stale.connect).not.toHaveBeenCalled();
+      expect(useWalletStore.getState().status).toBe('ready');
+    });
+
+    it('ignores a superseded download that fails', async () => {
+      rememberSessionPhrase(MNEMONIC);
+      let failDownload!: (error: Error) => void;
+      const slow: WalletSdkLoader = vi.fn(
+        () =>
+          new Promise<WalletSdk>((_resolve, reject) => {
+            failDownload = reject;
+          }),
+      );
+      const fast = createFakeSdk();
+      void connectWallet(slow);
+      await vi.advanceTimersByTimeAsync(0);
+      await connectWallet(fast.loadSdk);
+      failDownload(new Error('download failed'));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(useWalletStore.getState().status).toBe('ready');
+      expect(captureMessage).not.toHaveBeenCalled();
     });
 
     it('starts the deadline without waiting for the previous disconnect', async () => {
@@ -217,10 +326,12 @@ describe('connectWallet', () => {
       });
       await connectWallet(first.loadSdk);
       expect(useWalletStore.getState().status).toBe('ready');
-      const secondLoadSdk: WalletSdkLoader = vi.fn(() => new Promise<WalletSdk>(() => undefined));
-      const pending = connectWallet(secondLoadSdk);
+      const second = createFakeSdk({
+        connect: () => new Promise<WalletConnection>(() => undefined),
+      });
+      const pending = connectWallet(second.loadSdk);
       await vi.advanceTimersByTimeAsync(0);
-      expect(secondLoadSdk).toHaveBeenCalled();
+      expect(second.connect).toHaveBeenCalled();
       expect(first.connection.disconnect).toHaveBeenCalledTimes(1);
       expect(useWalletStore.getState().status).toBe('connecting');
       await vi.advanceTimersByTimeAsync(30_000);
@@ -1008,7 +1119,9 @@ describe('automatic retries after a failed open', () => {
   });
 
   it('reports a timeout once and stays silent while later retries time out', async () => {
-    const loadSdk: WalletSdkLoader = vi.fn(() => new Promise<WalletSdk>(() => undefined));
+    const { loadSdk } = createFakeSdk({
+      connect: () => new Promise<WalletConnection>(() => undefined),
+    });
     const pending = connectWallet(loadSdk);
     await vi.advanceTimersByTimeAsync(30_000);
     await pending;
@@ -1255,20 +1368,6 @@ describe('automatic retries after a failed open', () => {
     }
   });
 
-  it('only checks again, without an attempt, while the wallet code needs a page reload', async () => {
-    const { loadSdk } = refusingSdk();
-    vi.mocked(walletNeedsReload).mockReturnValue(true);
-    await connectWallet(loadSdk);
-    expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: false });
-    await vi.advanceTimersByTimeAsync(2_000 + 4_000);
-    expect(loadSdk).toHaveBeenCalledTimes(1);
-    expect(useWalletStore.getState().retrying).toBe(false);
-    vi.mocked(walletNeedsReload).mockReturnValue(false);
-    await vi.advanceTimersByTimeAsync(8_000);
-    expect(loadSdk).toHaveBeenCalledTimes(2);
-    expect(useWalletStore.getState()).toMatchObject({ status: 'error', retrying: true });
-  });
-
   it('opens the wallet again after a balance read failed', async () => {
     const sdk = createFakeSdk();
     await connectWallet(sdk.loadSdk);
@@ -1504,7 +1603,7 @@ describe('disabled wallet path', () => {
     rememberSessionPhrase(MNEMONIC);
     await Promise.resolve();
     expect(loadSdk).not.toHaveBeenCalled();
-    expect(ssrImport).not.toHaveBeenCalled();
+    expect(sdkImport).not.toHaveBeenCalled();
     expect(addSpy).not.toHaveBeenCalledWith('21gifts:wallet-phrase', expect.any(Function));
     expect(useWalletStore.getState().status).toBe('disabled');
     await expect(ensureWalletConnected(loadSdk)).rejects.toThrow('wallet-connect');
