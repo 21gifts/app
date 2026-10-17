@@ -737,9 +737,11 @@ no `test('Function: <Name> …')` title. Adding a `page.tsx`, `route.ts`, or oth
 spec (`page.goto` / `request.<verb>` / `Function: <Name>`) in the **same PR**
 is an undeclared deviation and is rejected. CI runs `e2e:check` in the Check
 job, behavioral specs in three parallel shard jobs (`chromium` project,
-`--shard=1/3` to `3/3`), and pixel compare in four parallel visual combo jobs.
-The E2E (behavior) job runs no tests: it is green only when every shard is
-green. `npm run e2e:behavior` still runs the whole suite locally.
+`--shard=1/3` to `3/3`), and pixel compare in eight parallel visual shard jobs
+(each of the four visual combos in two shards, `--shard=1/2` and `2/2`). The
+E2E (behavior) job and the four Visual (<combo>) jobs run no tests: each is
+green only when every shard of its group is green. `npm run e2e:behavior` and
+`npm run e2e:visual` still run the whole suite locally.
 
 ### Screenshot baselines (hard requirement)
 
@@ -819,7 +821,7 @@ unexpected PNG sits under `e2e/visual.spec.ts-snapshots/` (not a screen or
 `## Function: <Name>` section and an e2e `Function: <Name>` needle, not a
 screenshot of that markdown.
 `screenshot:check` still runs in the Check job. CI also runs the four visual
-combo projects as parallel jobs on every PR (each with a 10-minute budget) so
+combo projects in eight parallel shard jobs on every PR (each with a 10-minute budget) so
 pixel compare remains a gate.
 
 A PR's snapshot diff must contain only screens whose intended appearance
@@ -866,7 +868,7 @@ at commit `59e31ebd11ab587897dc8e5b2a6f21e489f35f3d`. Repo job selection:
 This is a **public** repository. GitHub-hosted runners execute the heavy suite
 (typecheck, handbook completeness, e2e completeness, screenshot baselines,
 Vitest with the coverage gate, the production build, Playwright behavior, and
-the four visual jobs). A38 does not replace those GitHub checks. The author
+the eight visual shard jobs). A38 does not replace those GitHub checks. The author
 report only covers the light local job in `.github/a38.json` (`npm run lint`
 on Node 22). Do not run Vitest, the production build, or Playwright locally
 for A38.
@@ -1088,14 +1090,14 @@ performance traces, both through its scrubber.
 
 ## CI / CD
 
-| Workflow               | Trigger                                                           | Action                                                                                                                                                                                                                                                                                                                                    |
-| ---------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + three behavior shard jobs (`E2E (behavior, shard 1/3)` to `3/3`) + E2E (behavior), green only when all three shards are green, + four visual combo jobs; **10 minutes each**; Playwright `v1.61.1-noble` |
-| `deploy-dev.yaml`      | push to `develop`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_DEV`) → push `21gifts/app:beta` and `21gifts/app:beta-<sha>` → notify → wait for deploy                                                                                                                                                                                     |
-| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` and `21gifts/app:staging-<sha>` → notify → wait for deploy                                                                                                                                                                           |
-| `deploy-prd.yaml`      | push to `main`                                                    | Fail when `BREEZ_API_KEY_PRD` is empty → Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_PRD`) → push `21gifts/app:latest` and `21gifts/app:latest-<sha>` → notify → wait for deploy                                                                                                                                        |
-| `auto-release-pr.yaml` | push to `develop` or `staging`                                    | Open a missing release only (`staging → develop`, and `develop → main`). Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                                                                                                                                    |
-| `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                                                                                                                                |
+| Workflow               | Trigger                                                           | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + three behavior shard jobs (`E2E (behavior, shard 1/3)` to `3/3`) + E2E (behavior), green only when all three shards are green, + eight visual shard jobs (`Visual (<combo>, shard 1/2)` and `2/2`) + four Visual (<combo>) jobs, green only when all eight visual shards are green; **10 minutes each**; Playwright `v1.61.1-noble` |
+| `deploy-dev.yaml`      | push to `develop`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_DEV`) → push `21gifts/app:beta` and `21gifts/app:beta-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                                |
+| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` and `21gifts/app:staging-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                      |
+| `deploy-prd.yaml`      | push to `main`                                                    | Fail when `BREEZ_API_KEY_PRD` is empty → Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_PRD`) → push `21gifts/app:latest` and `21gifts/app:latest-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                   |
+| `auto-release-pr.yaml` | push to `develop` or `staging`                                    | Open a missing release only (`staging → develop`, and `develop → main`). Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                                                                                                                                                                                                                                                               |
+| `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                                                                                                                                                                                                                                                           |
 
 Images target `linux/arm64`. Every deploy passes the build-arg
 `NEXT_PUBLIC_BUILD_ID` as the full commit SHA (`github.sha`), read by the
