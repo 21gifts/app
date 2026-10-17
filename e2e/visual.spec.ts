@@ -11268,7 +11268,7 @@ test.describe('onboarding screens', () => {
   });
 
   /** Signed-in Ada on Carol's profile, whose one post is a loan that still collects. */
-  async function seedCarolLoan(page: Page, sats = 10500): Promise<string> {
+  async function seedCarolLoan(page: Page, sats = 10500, cannotReceive = false): Promise<string> {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const loanId = '44444444-4444-4444-8444-444444444444';
     await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
@@ -11327,7 +11327,7 @@ test.describe('onboarding screens', () => {
               goalSats: 21000,
               goalRepayable: true,
               goalTermDays: 30,
-              payable: true,
+              ...(cannotReceive ? { payable: false, authorCanReceive: false } : { payable: true }),
               hasPhoto: false,
               hasVideo: false,
               videoContentType: null,
@@ -11371,6 +11371,15 @@ test.describe('onboarding screens', () => {
     await expect(page.getByLabel('Amount to lend')).toBeFocused();
     await expect(page.getByLabel('Your reaction')).toBeVisible();
     await shotScreen(page, 'state-members-posts-open-loan-lend');
+  });
+
+  test('state /members posts-open-loan-lend-cannot-receive', async ({ page }) => {
+    const memberId = await seedCarolLoan(page, 10500, true);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByRole('button', { name: 'Lend' })).toBeDisabled();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await shotScreen(page, 'state-members-posts-open-loan-lend-cannot-receive');
   });
 
   test('state /members posts-open-loan-pay', async ({ page }) => {
@@ -16130,7 +16139,11 @@ test.describe('onboarding screens', () => {
   });
 
   /** Signed-in Ada on the open note of Maria's loan, with an empty thread and a 210-sat invoice. */
-  async function seedMariaLoanNote(page: Page, sats = 10500): Promise<string> {
+  async function seedMariaLoanNote(
+    page: Page,
+    sats = 10500,
+    cannotReceive = false,
+  ): Promise<string> {
     const id = '55555555-5555-4555-8555-555555555555';
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -16181,7 +16194,7 @@ test.describe('onboarding screens', () => {
       goalSats: 21000,
       goalRepayable: true,
       goalTermDays: 30,
-      payable: true,
+      ...(cannotReceive ? { payable: false, authorCanReceive: false } : { payable: true }),
       hasPhoto: false,
       role: 'basis',
       replyCount: 0,
@@ -16212,6 +16225,14 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Lend' }).click();
     await expect(page.getByLabel('Amount to lend')).toBeFocused();
     await shotScreen(page, 'state-messages-id-loan-lend');
+  });
+
+  test('state /messages/[id] loan-lend-cannot-receive', async ({ page }) => {
+    const id = await seedMariaLoanNote(page, 10500, true);
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByRole('button', { name: 'Lend' })).toBeDisabled();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await shotScreen(page, 'state-messages-id-loan-lend-cannot-receive');
   });
 
   test('state /messages/[id] loan-pay', async ({ page }) => {
@@ -20949,7 +20970,7 @@ test.describe('welcome forum variants', () => {
   });
 
   /** Signed-in Ada and Maria's loan that still collects (or is full), with an empty thread. */
-  async function seedLoanCard(page: Page, sats = 10500): Promise<void> {
+  async function seedLoanCard(page: Page, sats = 10500, cannotReceive = false): Promise<void> {
     await seedAda(page);
     await fulfillRateDay(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -20968,7 +20989,7 @@ test.describe('welcome forum variants', () => {
               goalSats: 21000,
               goalRepayable: true,
               goalTermDays: 30,
-              payable: true,
+              ...(cannotReceive ? { payable: false, authorCanReceive: false } : { payable: true }),
               hasPhoto: false,
               role: 'basis',
               replyCount: 0,
@@ -21001,6 +21022,15 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByLabel('Amount to lend')).toBeFocused();
     await expect(page.getByLabel('Your reaction')).toBeVisible();
     await shotScreen(page, 'state-welcome-loan-lend');
+  });
+
+  test('state /welcome loan-lend-cannot-receive', async ({ page }) => {
+    await seedLoanCard(page, 10500, true);
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('button', { name: 'Lend' })).toBeDisabled();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await shotScreen(page, 'state-welcome-loan-lend-cannot-receive');
   });
 
   test('state /welcome loan-pay', async ({ page }) => {
