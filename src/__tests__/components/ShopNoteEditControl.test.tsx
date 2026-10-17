@@ -1476,6 +1476,58 @@ describe('ShopNoteEditControl', () => {
     vi.unstubAllGlobals();
   });
 
+  it('writes the text before the place when the note had no place yet', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const newText = 'Cafe Sol is open every morning.';
+    const pin = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: 'Happyland',
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    const stored: ForumMessage = { ...shopMessage, place: undefined };
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...stored,
+      text: `${newText}\n\n#21GiftsShop`,
+    });
+    vi.mocked(setMessagePlace).mockResolvedValue({ ...stored, place: pin });
+    const listeners = stubShopMaps();
+    renderEdit(<ShopNoteEditControl message={stored} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await screen.findByLabelText('Shop name');
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+    fillShopAddressFields('Happyland');
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: newText },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessagePlace).toHaveBeenCalled();
+      expect(setMessageShopText).toHaveBeenCalled();
+    });
+    const placeOrder = vi.mocked(setMessagePlace).mock.invocationCallOrder[0];
+    const textOrder = vi.mocked(setMessageShopText).mock.invocationCallOrder[0];
+    expect(Number(textOrder)).toBeLessThan(Number(placeOrder));
+    delete (window as { google?: unknown }).google;
+    vi.unstubAllGlobals();
+  });
+
   it('writes the text before the place when the stored place has no address', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
