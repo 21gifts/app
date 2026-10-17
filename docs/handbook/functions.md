@@ -2402,7 +2402,7 @@ First post free: while the signed-in member is below verified and has no missing
 
 ## Function: CannotReceiveLabel
 
-- **Purpose:** Small muted label **Can't receive yet** (`member.cannotReceive`) next to a pay, gift, heart, or Lend control that is disabled because the member it targets cannot receive yet. Text only; the caller disables the control. On the member card and on `/view` it stands in place of the gifts block (address, QR and, on the member card, **Shop sticker**) instead of next to a control. Used wherever the api sends `authorCanReceive: false`, `canReceive: false`, `lightningAddress: null` (member card), or `lightningAddressVerified: false` (`/view`).
+- **Purpose:** Small muted label **Can't receive yet** (`member.cannotReceive`) next to a pay, gift, heart, Lend, or amount control that is disabled because the member it targets cannot receive yet. Text only; the caller disables the control. On the member card and on `/view` it stands in place of the gifts block (address, QR and, on the member card, **Shop sticker**) instead of next to a control. Used wherever the api sends `authorCanReceive: false`, `canReceive: false`, `lightningAddress: null` (member card), or `lightningAddressVerified: false` (`/view`).
 - **Inputs:** None.
 - **Returns / side effects:** A `<span class="text-xs text-app-muted" data-cannot-receive>` with the catalog text. No network.
 - **Used by:** `ForumBoard` (note and reply action rows), `InboxScreen` (amount field), `HabitComments` (comment gift), `MemberProfileScreen` and `ViewProfileScreen` (gifts block).
