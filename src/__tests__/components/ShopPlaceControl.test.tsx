@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ShopPlaceControl } from '@/components/ShopPlaceControl';
 import { setMessagePlace } from '@/lib/api';
 import type { Account, ForumMessage } from '@/lib/api-types';
+import { shopApiProblem } from '@/lib/forum-shop';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -117,7 +118,18 @@ describe('ShopPlaceControl', () => {
 
   it('saves a pin and calls onUpdated with the returned place', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
-    const pin = { lat: 14.6, lng: 120.98, label: 'Happyland' };
+    const pin = {
+      lat: 14.6,
+      lng: 120.98,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
     vi.mocked(setMessagePlace).mockResolvedValue({ ...shopMessage, place: pin });
     const onUpdated = vi.fn();
     const listeners = stubMaps();
@@ -127,7 +139,12 @@ describe('ShopPlaceControl', () => {
       expect(listeners.has('click')).toBe(true);
     });
     listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
-    fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Happyland' } });
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: "Kiki's Bakery" } });
+    fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
+    fireEvent.change(screen.getByLabelText('House number'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('Postal code'), { target: { value: '8001' } });
+    fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Zürich' } });
+    fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'CH' } });
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
     await waitFor(() => {
       expect(setMessagePlace).toHaveBeenCalledWith('token', 'shop1', pin);
@@ -161,10 +178,44 @@ describe('ShopPlaceControl', () => {
       expect(listeners.has('click')).toBe(true);
     });
     listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: "Kiki's Bakery" } });
+    fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
+    fireEvent.change(screen.getByLabelText('House number'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('Postal code'), { target: { value: '8001' } });
+    fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Zürich' } });
+    fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'CH' } });
     fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toContain(
       'The place could not be saved. Please try again.',
+    );
+    expect(onUpdated).not.toHaveBeenCalled();
+  });
+
+  it('shows the description problem when the server rejects the pin', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    const apiMessage =
+      'Shop description must be 20 to 1000 characters and longer than the shop name';
+    expect(shopApiProblem(apiMessage)).toBe('shopDescription');
+    vi.mocked(setMessagePlace).mockRejectedValue(new Error(apiMessage));
+    const onUpdated = vi.fn();
+    const listeners = stubMaps();
+    renderWithLocale(<ShopPlaceControl message={shopMessage} onUpdated={onUpdated} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: "Kiki's Bakery" } });
+    fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
+    fireEvent.change(screen.getByLabelText('House number'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('Postal code'), { target: { value: '8001' } });
+    fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Zürich' } });
+    fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'CH' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain(
+      'The description must be 20 to 1000 characters and longer than the shop name.',
     );
     expect(onUpdated).not.toHaveBeenCalled();
   });

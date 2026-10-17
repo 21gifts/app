@@ -56,6 +56,7 @@ export function ShopPlaceControl({
         showPreview={false}
         buttonSize="sm"
         buttonVariant="ghost"
+        shopDetails
         ariaLabel={hasPlace ? t('forum.editPlace') : t('forum.addPlace')}
         onChange={
           /* v8 ignore next -- PlaceField calls onChange only when onCommit is omitted; this control always commits */

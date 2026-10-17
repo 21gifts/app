@@ -65,7 +65,14 @@ import {
 } from '@/lib/forum-feed';
 import { parseForumAskAmountInUnit } from '@/lib/forum-goal';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
-import { SHOP_HASHTAG, ensureShopHashtag, isShopNote } from '@/lib/forum-shop';
+import {
+  SHOP_API_MESSAGE,
+  SHOP_HASHTAG,
+  ensureShopHashtag,
+  isShopNote,
+  shopApiProblem,
+  type ShopApiProblem,
+} from '@/lib/forum-shop';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
@@ -97,6 +104,16 @@ function isRateLimitError(err: unknown): boolean {
     return false;
   }
   return /too many (messages|payments)/i.test(err.message);
+}
+
+/**
+ * True when a composer error is a mapped shop API 400.
+ *
+ * @param error - Current composer error.
+ * @returns Whether the error is a {@link ShopApiProblem}.
+ */
+function isShopFormError(error: ForumFormError): error is ShopApiProblem {
+  return error !== null && error in SHOP_API_MESSAGE;
 }
 
 /** Revokes a blob object URL when present; no-op for undefined or empty. */
@@ -1563,8 +1580,9 @@ export function ForumLoader({
                   pendingComposeGoalRef.current = undefined;
                   pendingComposePlaceRef.current = null;
                   pendingComposeShopUsernameRef.current = null;
-                } catch {
-                  setFormError('request');
+                } catch (err) {
+                  const shopProblem = err instanceof Error ? shopApiProblem(err.message) : null;
+                  setFormError(shopProblem ?? (isRateLimitError(err) ? 'rateLimit' : 'request'));
                   composeFeePaidRef.current = true;
                   const keptCaption = pendingComposeTextRef.current;
                   if (keptCaption !== null && keptCaption !== '') {
@@ -1965,6 +1983,11 @@ export function ForumLoader({
       }
       pendingComposePlaceRef.current = null;
       pendingComposeShopUsernameRef.current = null;
+      const shopProblem = err instanceof Error ? shopApiProblem(err.message) : null;
+      if (shopProblem !== null) {
+        setFormError(shopProblem);
+        return;
+      }
       setFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
     } finally {
       if (!awaitingPay) {
@@ -2710,7 +2733,10 @@ export function ForumLoader({
         posting={posting || preparing}
         draft={draft}
         placeDraft={placeDraft}
-        onPlaceDraftChange={setPlaceDraft}
+        onPlaceDraftChange={(next) => {
+          setPlaceDraft(next);
+          setFormError((current) => (isShopFormError(current) ? null : current));
+        }}
         onDraftChange={(value) => {
           setDraft(value);
           setFormError(null);

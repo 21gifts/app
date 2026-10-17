@@ -60,6 +60,21 @@ const video: ForumVideoPayload = {
   previewUrl: 'blob:video',
 };
 
+const COMPLETE_PLACE: ForumPlacePin = {
+  lat: 47.3769,
+  lng: 8.5417,
+  label: "Kiki's Bakery",
+  address: {
+    street: 'Bahnhofstrasse',
+    houseNumber: '12',
+    postalCode: '8001',
+    city: 'Zürich',
+    country: 'CH',
+  },
+};
+
+const SHOP_DESCRIPTION = 'Fresh bread every morning.';
+
 function props(overrides: Partial<ShopAddWizardProps> = {}): ShopAddWizardProps {
   return {
     posting: false,
@@ -107,24 +122,31 @@ describe('ShopAddWizard', () => {
     const onUsernameChange = vi.fn();
     const onSubmit = vi.fn();
     const onCancel = vi.fn();
-    renderWizard(
-      <ShopAddWizard
-        {...props({
-          onPickFiles,
-          onRemovePhoto,
-          onClearPhoto,
-          onDraftChange,
-          onUsernameChange,
-          onSubmit,
-          onCancel,
-          photoDrafts: [photo],
-          videoDraft: video,
-          draft: 'Cafe',
-          username: '@luna',
-          place: { lat: 14.5, lng: 120.9, label: 'Stall' },
-        })}
-      />,
-    );
+    function Walk(): ReactElement {
+      const [draft, setDraft] = useState('');
+      return (
+        <ShopAddWizard
+          {...props({
+            onPickFiles,
+            onRemovePhoto,
+            onClearPhoto,
+            onDraftChange: (text) => {
+              onDraftChange(text);
+              setDraft(text);
+            },
+            onUsernameChange,
+            onSubmit,
+            onCancel,
+            photoDrafts: [photo],
+            videoDraft: video,
+            draft,
+            username: '@luna',
+            place: COMPLETE_PLACE,
+          })}
+        />
+      );
+    }
+    renderWizard(<Walk />);
     expect(screen.queryByLabelText('Shop text')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
@@ -149,20 +171,25 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(screen.getByText('2 / 5 · Place')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add a place' })).toBeTruthy();
-    expect(screen.queryByText('Stall')).toBeNull();
+    expect(screen.queryByText("Kiki's Bakery")).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove place' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: 'Cafe Luna' } });
-    expect(onDraftChange).toHaveBeenCalledWith('Cafe Luna');
+    expect(screen.getByText('Describe the shop in at least 20 more characters.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    fireEvent.change(screen.getByLabelText('Shop text'), { target: { value: SHOP_DESCRIPTION } });
+    expect(onDraftChange).toHaveBeenCalledWith(SHOP_DESCRIPTION);
+    expect(screen.queryByText('Describe the shop in at least 20 more characters.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'luna' } });
     expect(onUsernameChange).toHaveBeenCalledWith('luna');
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(screen.getByText('5 / 5 · Summary')).toBeTruthy();
     expect(screen.getByText('2')).toBeTruthy();
-    expect(screen.getByText('Stall')).toBeTruthy();
-    expect(screen.getByText('Cafe')).toBeTruthy();
+    expect(screen.getByText("Kiki's Bakery")).toBeTruthy();
+    expect(screen.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeTruthy();
+    expect(screen.getByText(SHOP_DESCRIPTION)).toBeTruthy();
     expect(screen.getByText('@luna')).toBeTruthy();
     const summary = screen.getByText('5 / 5 · Summary').closest('form');
     expect(summary).toBeTruthy();
@@ -184,7 +211,7 @@ describe('ShopAddWizard', () => {
     expect(onCancel).not.toHaveBeenCalled();
   });
 
-  it('summarises an empty shop and a pin without a name', () => {
+  it('keeps Next disabled until the place and description are complete', () => {
     renderWithLocale(
       <ShopAddWizard
         {...props({
@@ -194,16 +221,29 @@ describe('ShopAddWizard', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect(screen.getAllByText('None').length).toBeGreaterThanOrEqual(3);
-    expect(screen.getByText('1, 2')).toBeTruthy();
+    expect(screen.getByText('2 / 5 · Place')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     cleanup();
     renderWithLocale(
       <ShopAddWizard
         {...props({
-          place: { lat: 3, lng: 4, label: null },
+          place: COMPLETE_PLACE,
+          draft: 'Cafe',
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('3 / 5 · Text')).toBeTruthy();
+    expect(screen.getByText('Describe the shop in at least 16 more characters.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    cleanup();
+    renderWithLocale(
+      <ShopAddWizard
+        {...props({
+          place: COMPLETE_PLACE,
+          draft: SHOP_DESCRIPTION,
           photoDrafts: [photo],
         })}
       />,
@@ -213,8 +253,63 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect(screen.getByText('3, 4')).toBeTruthy();
+    expect(screen.getByText("Kiki's Bakery")).toBeTruthy();
+    expect(screen.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeTruthy();
+    expect(screen.getByText(SHOP_DESCRIPTION)).toBeTruthy();
     expect(screen.getByText('1')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Post' })).toHaveProperty('disabled', false);
+  });
+
+  it('keeps Next disabled when the description is not longer than the shop name', () => {
+    const longNamePlace: ForumPlacePin = {
+      ...COMPLETE_PLACE,
+      label: "Kiki's Bakery Extra Long Name",
+    };
+    function DraftHost(): ReactElement {
+      const [draft, setDraft] = useState(SHOP_DESCRIPTION);
+      return <ShopAddWizard {...props({ draft, onDraftChange: setDraft, place: longNamePlace })} />;
+    }
+    renderWizard(<DraftHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('The description must be longer than the shop name.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    fireEvent.change(screen.getByLabelText('Shop text'), {
+      target: { value: 'Fresh bread every morning here.' },
+    });
+    expect(screen.queryByText('The description must be longer than the shop name.')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+  });
+
+  it('shows coordinates on the summary when the pin has no name or address', () => {
+    function SummaryHost(): ReactElement {
+      const [place, setPlace] = useState<ForumPlacePin | null>(COMPLETE_PLACE);
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => setPlace({ lat: 47.3769, lng: 8.5417, label: null })}
+          >
+            Drop pin name
+          </button>
+          <ShopAddWizard {...props({ place, onPlaceChange: setPlace, draft: SHOP_DESCRIPTION })} />
+        </>
+      );
+    }
+    renderWizard(<SummaryHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText("Kiki's Bakery")).toBeTruthy();
+    expect(screen.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Drop pin name' }));
+    expect(screen.getByText('47.3769, 8.5417')).toBeTruthy();
+    expect(screen.queryByText("Kiki's Bakery")).toBeNull();
+    expect(screen.queryByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Post' })).toHaveProperty('disabled', true);
   });
 
   it('closes after a successful send and disables controls while posting', () => {
@@ -247,6 +342,8 @@ describe('ShopAddWizard', () => {
           ],
           onRemoveKept,
           onCancel,
+          place: COMPLETE_PLACE,
+          draft: SHOP_DESCRIPTION,
         })}
       />,
     );
@@ -268,6 +365,8 @@ describe('ShopAddWizard', () => {
         {...props({
           mode: 'edit',
           keptMedia: [{ url: 'blob:still', kind: 'photo' }],
+          place: COMPLETE_PLACE,
+          draft: SHOP_DESCRIPTION,
         })}
       />,
     );
@@ -285,6 +384,8 @@ describe('ShopAddWizard', () => {
           mode: 'edit',
           resetToken: 1,
           keptMedia: [{ url: 'blob:still', kind: 'photo' }],
+          place: COMPLETE_PLACE,
+          draft: SHOP_DESCRIPTION,
         })}
       />,
     );
@@ -297,7 +398,9 @@ describe('ShopAddWizard', () => {
     useAuthStore.setState({ session: 'sess', account: null });
     function DraftHost(): ReactElement {
       const [draft, setDraft] = useState('');
-      return <ShopAddWizard {...props({ draft, onDraftChange: setDraft })} />;
+      return (
+        <ShopAddWizard {...props({ draft, onDraftChange: setDraft, place: COMPLETE_PLACE })} />
+      );
     }
     renderWizard(<DraftHost />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
