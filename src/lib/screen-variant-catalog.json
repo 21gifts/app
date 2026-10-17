@@ -4860,24 +4860,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/statistics:places-full",
-    "label": "/statistics places-full",
-    "visual": "state-statistics-places-full",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/statistics:places-error",
-    "label": "/statistics places-error",
-    "visual": "state-statistics-places-error",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/statistics:places-loading",
-    "label": "/statistics places-loading",
-    "visual": "state-statistics-places-loading",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/statistics:loading",
     "label": "/statistics loading",
     "visual": "state-statistics-loading",

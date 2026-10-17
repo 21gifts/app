@@ -19306,9 +19306,7 @@ test.describe('profile funding states', () => {
     ).toBeVisible();
     await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
     await expect(
-      page
-        .getByRole('group', { name: 'Grant places' })
-        .getByText('10 of 10 places are free.'),
+      page.getByRole('group', { name: 'Grant places' }).getByText('10 of 10 places are free.'),
     ).toBeVisible();
     await shotScreen(page, 'screen-grants');
   });
