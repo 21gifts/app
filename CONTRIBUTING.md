@@ -639,9 +639,11 @@ is an undeclared deviation and is rejected. CI runs `e2e:check` in the Check
 job, behavioral specs in three parallel shard jobs (`chromium` project,
 `--shard=1/3` to `3/3`), and pixel compare in eight parallel visual shard jobs
 (each of the four visual combos in two shards, `--shard=1/2` and `2/2`). The
-E2E (behavior) job and the four Visual (<combo>) jobs run no tests: each is
-green only when every shard of its group is green. `npm run e2e:behavior` and
-`npm run e2e:visual` still run the whole suite locally.
+E2E (behavior) job and the four Visual (<combo>) jobs run no tests. E2E
+(behavior) is green only when every behavior shard is green, and each Visual
+(<combo>) job only when all eight visual shards are green.
+`npm run e2e:behavior` and `npm run e2e:visual` still run the whole suite
+locally.
 
 ### Screenshot baselines (hard requirement)
 
