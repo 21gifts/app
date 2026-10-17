@@ -5,6 +5,12 @@ import { fileURLToPath } from 'node:url';
 
 const appRoot = path.dirname(fileURLToPath(import.meta.url));
 
+/** Build id the app sends as `X-App-Build` (the deployed commit); unset or empty → `dev`. */
+function buildIdForBuild(): string {
+  const raw = process.env.NEXT_PUBLIC_BUILD_ID ?? 'dev';
+  return raw === '' ? 'dev' : raw;
+}
+
 function appVersionForBuild(): string {
   const raw = process.env.NEXT_PUBLIC_APP_VERSION ?? process.env.APP_VERSION ?? 'dev';
   if (raw === '') return 'dev';
@@ -28,6 +34,7 @@ const nextConfig: NextConfig = {
   },
   env: {
     NEXT_PUBLIC_APP_VERSION: appVersionForBuild(),
+    NEXT_PUBLIC_BUILD_ID: buildIdForBuild(),
   },
   async redirects() {
     return [

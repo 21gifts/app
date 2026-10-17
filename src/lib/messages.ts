@@ -271,6 +271,9 @@ const en = {
   'login.wrongAccount':
     'You signed in with the wrong account. Please try again with the correct account.',
   'login.retry': 'Try again',
+  'login.closed': '21.gifts is updating. Please try again a little later.',
+  'login.outdated': 'A new version is ready',
+  'login.reload': 'Reload',
   'login.choiceHeading': 'Do you already have an account?',
   'login.existing': 'Log in with existing account',
   'login.create': 'Open a new account',
@@ -1655,6 +1658,9 @@ const de = {
   'login.wrongAccount':
     'Sie haben sich mit dem falschen Konto angemeldet. Bitte versuchen Sie es nochmals mit dem richtigen Konto.',
   'login.retry': 'Erneut versuchen',
+  'login.closed': '21.gifts wird gerade aktualisiert. Bitte versuchen Sie es etwas später erneut.',
+  'login.outdated': 'Eine neue Version ist bereit',
+  'login.reload': 'Neu laden',
   'login.choiceHeading': 'Haben Sie schon ein Konto?',
   'login.existing': 'Mit bestehendem Konto einloggen',
   'login.create': 'Ein neues Konto eröffnen',
@@ -3075,6 +3081,9 @@ const es = {
   'login.wrongAccount':
     'Ha iniciado sesión con la cuenta equivocada. Inténtelo de nuevo con la cuenta correcta.',
   'login.retry': 'Intentar de nuevo',
+  'login.closed': '21.gifts se está actualizando. Inténtalo de nuevo un poco más tarde.',
+  'login.outdated': 'Hay una nueva versión lista',
+  'login.reload': 'Recargar',
   'login.choiceHeading': '¿Ya tienes una cuenta?',
   'login.existing': 'Iniciar sesión con una cuenta existente',
   'login.create': 'Abrir una cuenta nueva',
@@ -4465,6 +4474,9 @@ const fil = {
   'login.wrongAccount':
     'Nag-sign in kayo gamit ang maling account. Subukan ulit gamit ang tamang account.',
   'login.retry': 'Subukan ulit',
+  'login.closed': 'Nag-a-update ang 21.gifts. Subukan ulit mamaya.',
+  'login.outdated': 'May bagong bersyon na',
+  'login.reload': 'I-reload',
   'login.choiceHeading': 'May account ka na ba?',
   'login.existing': 'Mag-log in gamit ang existing account',
   'login.create': 'Magbukas ng bagong account',

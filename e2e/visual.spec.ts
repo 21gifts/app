@@ -4704,6 +4704,43 @@ test.describe('login variant baselines', () => {
     await shotScreen(page, 'state-login-error');
   });
 
+  test('login closed', async ({ page }) => {
+    await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Logins are paused for an update. Try again later.',
+          code: 'logins_closed',
+        }),
+      });
+    });
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(
+      page.getByText('21.gifts is updating. Please try again a little later.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-login-closed');
+  });
+
+  test('login outdated', async ({ page }) => {
+    await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 403,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'A new app version is ready. Reload the page.',
+          code: 'app_outdated',
+        }),
+      });
+    });
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page.getByText('A new version is ready')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
+    await shotScreen(page, 'state-login-outdated');
+  });
+
   test('login prf-unsupported', async ({ page }, testInfo) => {
     if (isMobileProject(testInfo)) {
       await stubCurrentIphone(page);
@@ -18475,6 +18512,66 @@ test.describe('onboarding screens', () => {
     ).toBeVisible();
     await expect(page.getByText('Could not set up a passkey. Please try again.')).toHaveCount(0);
     await shotScreen(page, 'state-view-claim-prf-unsupported');
+  });
+
+  /** Opens the unclaimed profile and presses Activate against one api refusal. */
+  async function openClaimRefused(
+    page: Page,
+    status: number,
+    body: { error: string; code: string },
+    text: string,
+  ): Promise<void> {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: null,
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+      await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await page.getByRole('button', { name: 'Activate' }).click();
+    await expect(page.getByText(text)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
+  }
+
+  test('screen /view/[viewKey] claim-closed', async ({ page }) => {
+    await openClaimRefused(
+      page,
+      503,
+      { error: 'Logins are paused for an update. Try again later.', code: 'logins_closed' },
+      '21.gifts is updating. Please try again a little later.',
+    );
+    await shotScreen(page, 'state-view-claim-closed');
+  });
+
+  test('screen /view/[viewKey] claim-outdated', async ({ page }) => {
+    await openClaimRefused(
+      page,
+      403,
+      { error: 'A new app version is ready. Reload the page.', code: 'app_outdated' },
+      'A new version is ready',
+    );
+    await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
+    await shotScreen(page, 'state-view-claim-outdated');
   });
 
   test('screen /view/[viewKey] in-app', async ({ page }) => {

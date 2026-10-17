@@ -11,8 +11,10 @@ import { bytesToBase64Url, requestOptionsFromJSON } from '@/lib/webauthn-browser
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { settlePhraseDerivations } from '@/lib/wallet/wallet-phrase';
 import {
+  AppOutdatedError,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
+  LoginsClosedError,
   startPasskeyAuthentication,
   startPasskeyRegistration,
   UnknownCredentialError,
@@ -2930,6 +2932,72 @@ describe('usePasskeyLogin', () => {
     expect(result.current.status).toBe('error');
     expect(finishPasskeyAuthentication).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
+  });
+
+  describe('login refusals from the api', () => {
+    it('login begin logins_closed shows closed, keeps no error, and does not retry', async () => {
+      vi.mocked(startPasskeyAuthentication).mockRejectedValue(new LoginsClosedError());
+      const { result } = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        result.current.login();
+      });
+      expect(result.current.status).toBe('closed');
+      expect(result.current.error).toBeNull();
+      expect(startPasskeyAuthentication).toHaveBeenCalledTimes(1);
+      expect(startPasskeyRegistration).not.toHaveBeenCalled();
+    });
+
+    it('authenticate finish app_outdated shows outdated', async () => {
+      const cred = { id: 'cred', type: 'public-key' };
+      vi.mocked(startPasskeyAuthentication).mockResolvedValue(beginWithRp);
+      vi.mocked(finishPasskeyAuthentication).mockRejectedValue(new AppOutdatedError());
+      vi.stubGlobal('navigator', {
+        ...navigator,
+        credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+      });
+      const { result } = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        result.current.authenticate();
+      });
+      expect(result.current.status).toBe('outdated');
+      expect(result.current.error).toBeNull();
+      vi.unstubAllGlobals();
+    });
+
+    it('a claim refused as logins_closed shows closed', async () => {
+      vi.mocked(startPasskeyRegistration).mockRejectedValue(new LoginsClosedError());
+      const { result } = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        result.current.register('a'.repeat(64));
+      });
+      expect(result.current.status).toBe('closed');
+      expect(startPasskeyRegistration).toHaveBeenCalledWith('a'.repeat(64));
+    });
+
+    it('a named register refused as app_outdated shows outdated', async () => {
+      vi.mocked(startPasskeyRegistration).mockRejectedValue(new AppOutdatedError());
+      const { result } = renderHook(() => usePasskeyLogin());
+      act(() => {
+        result.current.register();
+      });
+      await act(async () => {
+        result.current.submitName('ada');
+      });
+      expect(result.current.status).toBe('outdated');
+      expect(result.current.nameError).toBeNull();
+    });
+
+    it('keeps a held-back session when logins are closed', async () => {
+      vi.mocked(startPasskeyAuthentication).mockRejectedValue(new LoginsClosedError());
+      useAuthStore.setState({ lockedSession: 'held', lockedName: 'Ada' });
+      const { result } = renderHook(() => usePasskeyLogin());
+      await act(async () => {
+        result.current.authenticate();
+      });
+      expect(result.current.status).toBe('closed');
+      expect(useAuthStore.getState()).toMatchObject({ lockedSession: 'held', lockedName: 'Ada' });
+      useAuthStore.setState({ lockedSession: null, lockedName: null });
+    });
   });
 
   describe('in-app wallet phrase from PRF', () => {

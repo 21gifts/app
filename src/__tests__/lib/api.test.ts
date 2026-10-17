@@ -1,6 +1,10 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
+  APP_OUTDATED_CODE,
+  AppOutdatedError,
+  LOGINS_CLOSED_CODE,
+  LoginsClosedError,
   deleteMessage,
   OPEN_CREDIT_DELETE_ERROR,
   setMessagePlace,
@@ -179,6 +183,13 @@ function installNavigator(value: unknown): () => void {
     Object.defineProperty(globalThis, 'navigator', descriptor);
   };
 }
+
+/** Build id the passkey requests send as `X-App-Build` under test. */
+const BUILD = 'build-under-test';
+
+beforeEach(() => {
+  process.env.NEXT_PUBLIC_BUILD_ID = BUILD;
+});
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -5232,7 +5243,10 @@ describe('startPasskeyRegistration', () => {
   it('returns the validated begin payload', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
     await expect(startPasskeyRegistration()).resolves.toEqual(passkeyBegin);
-    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', { method: 'POST' });
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'X-App-Build': BUILD },
+    });
   });
 
   it('posts JSON viewKey when provided', async () => {
@@ -5241,7 +5255,7 @@ describe('startPasskeyRegistration', () => {
     await expect(startPasskeyRegistration(viewKey)).resolves.toEqual(passkeyBegin);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ viewKey }),
     });
   });
@@ -5251,7 +5265,7 @@ describe('startPasskeyRegistration', () => {
     await expect(startPasskeyRegistration(undefined, 'ada')).resolves.toEqual(passkeyBegin);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ name: 'ada' }),
     });
   });
@@ -5262,7 +5276,7 @@ describe('startPasskeyRegistration', () => {
     await expect(startPasskeyRegistration(viewKey, 'ada')).resolves.toEqual(passkeyBegin);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ viewKey }),
     });
   });
@@ -5272,7 +5286,7 @@ describe('startPasskeyRegistration', () => {
     await expect(startPasskeyRegistration('', 'ada')).resolves.toEqual(passkeyBegin);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ name: 'ada' }),
     });
   });
@@ -5280,7 +5294,10 @@ describe('startPasskeyRegistration', () => {
   it('posts with no body when name is empty', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
     await expect(startPasskeyRegistration(undefined, '')).resolves.toEqual(passkeyBegin);
-    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', { method: 'POST' });
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'X-App-Build': BUILD },
+    });
   });
 
   it('throws the exact invalid-username string on 400', async () => {
@@ -5332,7 +5349,7 @@ describe('finishPasskeyRegistration', () => {
     await expect(finishPasskeyRegistration('ch', { id: 'cred' })).resolves.toEqual(passkeySession);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/finish', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ challengeId: 'ch', credential: { id: 'cred' } }),
     });
   });
@@ -5380,7 +5397,10 @@ describe('startPasskeyAuthentication', () => {
   it('returns the validated begin payload', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
     await expect(startPasskeyAuthentication()).resolves.toEqual(passkeyBegin);
-    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/authenticate/begin', { method: 'POST' });
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/authenticate/begin', {
+      method: 'POST',
+      headers: { 'X-App-Build': BUILD },
+    });
   });
 
   it('throws on a non-ok response', async () => {
@@ -5430,6 +5450,84 @@ describe('finishPasskeyAuthentication', () => {
     const error = await finishPasskeyAuthentication('ch', {}).catch((err: unknown) => err);
     expect(error).toEqual(new Error('Failed to finish passkey authentication: 400'));
     expect(isUnknownCredentialError(error)).toBe(false);
+  });
+});
+
+describe('passkey login refusals', () => {
+  const steps: Array<[string, () => Promise<unknown>]> = [
+    ['startPasskeyRegistration', () => startPasskeyRegistration()],
+    ['finishPasskeyRegistration', () => finishPasskeyRegistration('ch', {})],
+    ['startPasskeyAuthentication', () => startPasskeyAuthentication()],
+    ['finishPasskeyAuthentication', () => finishPasskeyAuthentication('ch', {})],
+  ];
+
+  it.each(steps)('%s throws LoginsClosedError on 503 logins_closed', async (_name, run) => {
+    stubFetch({
+      ok: false,
+      status: 503,
+      body: {
+        error: 'Logins are paused for an update. Try again later.',
+        code: LOGINS_CLOSED_CODE,
+      },
+    });
+    const error = await run().catch((err: unknown) => err);
+    expect(error).toBeInstanceOf(LoginsClosedError);
+    expect((error as Error).message).toBe('logins_closed');
+  });
+
+  it.each(steps)('%s throws AppOutdatedError on 403 app_outdated', async (_name, run) => {
+    stubFetch({
+      ok: false,
+      status: 403,
+      body: { error: 'A new app version is ready. Reload the page.', code: APP_OUTDATED_CODE },
+    });
+    const error = await run().catch((err: unknown) => err);
+    expect(error).toBeInstanceOf(AppOutdatedError);
+    expect((error as Error).message).toBe('app_outdated');
+  });
+
+  it.each(steps)(
+    '%s keeps the generic failure for a code on the other status',
+    async (_name, run) => {
+      stubFetch({ ok: false, status: 403, body: { code: LOGINS_CLOSED_CODE } });
+      const closedOn403 = await run().catch((err: unknown) => err);
+      expect(closedOn403).not.toBeInstanceOf(LoginsClosedError);
+      stubFetch({ ok: false, status: 503, body: { code: APP_OUTDATED_CODE } });
+      const outdatedOn503 = await run().catch((err: unknown) => err);
+      expect(outdatedOn503).not.toBeInstanceOf(AppOutdatedError);
+    },
+  );
+
+  it.each(steps)(
+    '%s keeps the generic failure for a 503 without a JSON body',
+    async (_name, run) => {
+      const fake = {
+        ok: false,
+        status: 503,
+        json: () => Promise.reject(new Error('not json')),
+        clone: () => fake,
+      };
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(fake as unknown as Response));
+      const error = await run().catch((err: unknown) => err);
+      expect(error).not.toBeInstanceOf(LoginsClosedError);
+      expect(error).toBeInstanceOf(Error);
+    },
+  );
+
+  it.each(steps)('%s keeps the generic failure for a null body', async (_name, run) => {
+    stubFetch({ ok: false, status: 503, body: null });
+    const error = await run().catch((err: unknown) => err);
+    expect(error).not.toBeInstanceOf(LoginsClosedError);
+  });
+
+  it('sends X-App-Build on authenticate finish', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeySession });
+    await finishPasskeyAuthentication('ch', { id: 'cred' });
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/authenticate/finish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
+      body: JSON.stringify({ challengeId: 'ch', credential: { id: 'cred' } }),
+    });
   });
 });
 

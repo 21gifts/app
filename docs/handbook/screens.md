@@ -1402,6 +1402,18 @@ A valid name whose username is already in use stays on this form. Alert: That us
 
 ![21.gifts login name taken](images/login-name-taken.png)
 
+### Variant: closed
+
+A passkey begin or finish answered 503 `{ "code": "logins_closed" }`: operators closed new logins for an update. A clock and the calm line **21.gifts is updating. Please try again a little later.** (`login.closed`), nothing to press. Nothing retries on its own; the back arrow and a later visit stay. A held-back session stays held.
+
+![21.gifts login closed](images/login-closed.png)
+
+### Variant: outdated
+
+A passkey begin or finish answered 403 `{ "code": "app_outdated" }`: this tab still runs an older app build. **A new version is ready** (`login.outdated`) and **Reload** (`login.reload`), which loads the page again so the new build runs.
+
+![21.gifts login outdated](images/login-outdated.png)
+
 ### Variant: in-app
 
 Telegram or another in-app WebView detected. Heading **Open this page in your browser**; no **Log in** or **Open a new account** button; **Open in browser** and **Copy link** instead.
@@ -7196,6 +7208,18 @@ Valid known key whose profile already has a passkey (`hasPasskey: true`). Same r
 Unclaimed profile after **Activate** on a phone or browser whose new passkey gives no PRF output. Under the card, the alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) instead of **Could not set up a passkey. Please try again.**, then **Try again**. The profile stays unclaimed. On iOS below 18 the old-iOS sentence takes precedence, so the phone pictures of this variant use an iPhone on iOS 18.
 
 ![21.gifts public view claim prf unsupported](images/view-claim-prf-unsupported.png)
+
+### Variant: claim-closed
+
+Unclaimed profile after **Activate** while operators closed new logins (`logins_closed`). Under the card, the clock and **21.gifts is updating. Please try again a little later.** (`login.closed`) replace the yellow banner, nothing to press. The profile stays unclaimed.
+
+![21.gifts public view claim closed](images/view-claim-closed.png)
+
+### Variant: claim-outdated
+
+Unclaimed profile after **Activate** from a tab that runs an older app build (`app_outdated`). Under the card, **A new version is ready** (`login.outdated`) and **Reload** (`login.reload`) replace the yellow banner.
+
+![21.gifts public view claim outdated](images/view-claim-outdated.png)
 
 ### Variant: in-app
 

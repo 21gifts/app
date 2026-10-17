@@ -2558,6 +2558,15 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (method === 'POST' && pathName === '/auth/passkey/authenticate/begin') {
+    // One fixed old build id stands for an outdated tab: e2e proves the app's
+    // proxy passes the browser's X-App-Build through to the api unchanged.
+    if (req.headers['x-app-build'] === 'e2e-old-build') {
+      json(res, 403, {
+        error: 'A new app version is ready. Reload the page.',
+        code: 'app_outdated',
+      });
+      return;
+    }
     const challengeId = hex(randomBytes(32));
     byPasskey.set(challengeId, { type: 'authenticate' });
     json(res, 200, {

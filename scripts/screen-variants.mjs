@@ -199,6 +199,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'closed',
+    image: 'login-closed.png',
+    visual: 'state-login-closed',
+    needle: '21.gifts is updating. Please try again a little later.',
+  },
+  {
+    route: '/login',
+    id: 'outdated',
+    image: 'login-outdated.png',
+    visual: 'state-login-outdated',
+    needle: 'A new version is ready',
+  },
+  {
+    route: '/login',
     id: 'in-app',
     image: 'login-in-app.png',
     visual: 'state-login-in-app',
@@ -5331,6 +5345,20 @@ export const SCREEN_VARIANTS = [
     image: 'view-claim-prf-unsupported.png',
     visual: 'state-view-claim-prf-unsupported',
     needle: "shotScreen(page, 'state-view-claim-prf-unsupported')",
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'claim-closed',
+    image: 'view-claim-closed.png',
+    visual: 'state-view-claim-closed',
+    needle: "shotScreen(page, 'state-view-claim-closed')",
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'claim-outdated',
+    image: 'view-claim-outdated.png',
+    visual: 'state-view-claim-outdated',
+    needle: "shotScreen(page, 'state-view-claim-outdated')",
   },
   {
     route: '/view/[viewKey]',

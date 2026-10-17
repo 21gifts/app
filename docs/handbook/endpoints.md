@@ -52,14 +52,14 @@
 ## Endpoint: POST /auth/passkey/authenticate/begin
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/authenticate/begin`.
-- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Errors:** Upstream status, or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build; 503 `{ error, code: 'logins_closed' }` while operators closed logins (not on authenticate begin).
 - **Used by:** `startPasskeyAuthentication`.
 - **Auth:** Public.
 
 ## Endpoint: POST /auth/passkey/authenticate/finish
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/authenticate/finish`.
-- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Errors:** Upstream status, or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build; 503 `{ error, code: 'logins_closed' }` while operators closed logins (not on authenticate begin).
 - **Used by:** `finishPasskeyAuthentication`.
 - **Auth:** Public.
 
@@ -80,14 +80,14 @@
 ## Endpoint: POST /auth/passkey/register/begin
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/register/begin`. A new account posts JSON `{ name }`. `{ viewKey }` (64 hex) claims an existing public profile and sends no `name`. The empty body remains the old unnamed path; the new-account path of this app does not use it.
-- **Errors:** Upstream status (including 404 / 409 with `{ error }`), or 502 if the api is unreachable.
+- **Errors:** Upstream status (including 404 / 409 with `{ error }`), or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build; 503 `{ error, code: 'logins_closed' }` while operators closed logins (not on authenticate begin).
 - **Used by:** `startPasskeyRegistration`.
 - **Auth:** Public.
 
 ## Endpoint: POST /auth/passkey/register/finish
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/register/finish`.
-- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Errors:** Upstream status, or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build; 503 `{ error, code: 'logins_closed' }` while operators closed logins (not on authenticate begin).
 - **Used by:** `finishPasskeyRegistration`.
 - **Auth:** Public.
 
