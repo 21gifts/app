@@ -519,8 +519,9 @@ async function payHeartInvoice(
  * A heart that is not sent is reported to error reporting with its reason
  * code and the message id only, except `no_balance`, which is expected.
  * In a Playwright build, `?visual=heart-paid` (via {@link visualPin}) returns
- * paid without invoicing and `?visual=heart-needs-balance` returns
- * `no_balance`; those pins are ignored in production and do not override
+ * paid without invoicing, `?visual=heart-needs-balance` returns
+ * `no_balance`, and `?visual=heart-cannot-receive` returns
+ * `author_cannot_receive` without invoicing; those pins are ignored in production and do not override
  * signed-out or read-only. They are read before the Sunday check so a Sunday
  * clock cannot hide the shot.
  *
