@@ -1530,9 +1530,9 @@
     "fil": "Ipinapakita ang Aktibo na sarado; mas luma ang selyo ng huling pagdalaw kaysa sa hindi pa bayad na tala ni Bob; ang marka ng bilang 1 ay nakaupo sa saradong kontrol na iyon."
   },
   "/shops:table": {
-    "de": "Die Option Tabelle ist ausgewählt. Überschriften Name, Ort und Betreiber. Eine Zeile Cafe Luna, Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz, Betreiber @luna.",
-    "es": "La opción Tabla está seleccionada. Encabezados Nombre, Lugar y Operador. Una fila Cafe Luna, lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza, operador @luna.",
-    "fil": "Napili ang opsyon na Talahanayan. Mga paulo Pangalan, Lugar, at Operator. Isang hilera Cafe Luna, lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland, Operator @luna."
+    "de": "Die Option Tabelle ist ausgewählt. Überschriften Name, Ort und Betreiber. Eine Zeile Happyland, Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz, Betreiber @luna.",
+    "es": "La opción Tabla está seleccionada. Encabezados Nombre, Lugar y Operador. Una fila Happyland, lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza, operador @luna.",
+    "fil": "Napili ang opsyon na Talahanayan. Mga paulo Pangalan, Lugar, at Operator. Isang hilera Happyland, lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland, Operator @luna."
   },
   "/profile:large-usd": {
     "de": "Zweitagesserie mit kumuliertem USD 1425.00, Skala auf USD umgestellt, sodass die Achse $1'425 zeigt (schweizerische Standardgruppierung).",
@@ -1810,9 +1810,9 @@
     "fil": "Tauhan (moderator) na na-load ang pila na may hindi bababa sa isang bukas na mungkahi (paksa Rose, Iminungkahi ni Bob, Kumpirmahin bilang moderator, Tanggihan)."
   },
   "/shops:table-staff": {
-    "de": "Eine Moderatorsitzung. Tabelle ist ausgewählt. Shop-Eintrag bearbeiten steht neben dem Namen Cafe Luna. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiberin oder Betreiber @luna bleiben.",
-    "es": "Una sesión de moderación. Tabla está seleccionada. Editar la entrada de la tienda está junto al nombre Cafe Luna. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y la operadora o el operador @luna se quedan.",
-    "fil": "Isang sesyon ng moderator. Napili ang Talahanayan. Nakaupo ang Baguhin ang entry sa shop sa tabi ng pangalang Cafe Luna. Nanatili ang lugar na Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland at ang operator na @luna."
+    "de": "Eine Moderatorsitzung. Tabelle ist ausgewählt. Shop-Eintrag bearbeiten steht neben dem Namen Happyland. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiberin oder Betreiber @luna bleiben.",
+    "es": "Una sesión de moderación. Tabla está seleccionada. Editar la entrada de la tienda está junto al nombre Happyland. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y la operadora o el operador @luna se quedan.",
+    "fil": "Isang sesyon ng moderator. Napili ang Talahanayan. Nakaupo ang Baguhin ang entry sa shop sa tabi ng pangalang Happyland. Nanatili ang lugar na Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland at ang operator na @luna."
   },
   "/welcome:renew-failed": {
     "de": "Die Verlängerung hat nicht funktioniert. OK bestätigt das und schliesst den Dialog. Die Verlängerung startet nicht erneut. Das Konto hat weiterhin keinen Seed.",
@@ -3265,9 +3265,9 @@
     "fil": "Sagot na pwedeng bayaran pagkatapos ipakita ang mga reaksyon, nabuksan ang regalo, napunan ang halaga, hindi pa naisumite. Ang panawagan sa kilos ng halaga ay Magpatuloy (forum.payContinue) sa bawat ahente ng gumagamit. Kasalukuyang katumbas sa nais na pera ng fiat (walang tagapili). Walang mali, walang QR ng bayad, wala pang pindutan para magbayad gamit ang pitaka. Ang publikasyon mismo ay hindi nagpapakita ng Magpadala ng Bitcoin."
   },
   "/shops:table-edit-open": {
-    "de": "Ein Moderator hat neben Cafe Luna auf Shop-Eintrag bearbeiten geklickt. Schritt 1 von 5 · Bilder ist in der Tabelle geöffnet. Die Historie zeigt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt schliesst sich mit einem nur als Symbol sichtbaren Schliessen (X). Der barrierefreie Name lautet Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiber @luna bleiben.",
-    "es": "Un moderador hizo clic en Editar la entrada de la tienda junto a Cafe Luna. El paso 1 de 5 · Fotos está abierto en la tabla. El historial indica que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay ninguna palabra Cancelar visible. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y el operador @luna se mantienen.",
-    "fil": "Isang moderator ang nag-click sa Baguhin ang entry sa shop sa tabi ng Cafe Luna. Bukas sa talahanayan ang Hakbang 1 sa 5 · Mga larawan. Sinasabi ng kasaysayan na wala pang mga pagbabago. Ang hakbang ng litrato ay nagsasara sa isang Isara (X) na icon lang. Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Nanatili ang lugar na Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland at ang operator na @luna."
+    "de": "Ein Moderator hat neben Happyland auf Shop-Eintrag bearbeiten geklickt. Schritt 1 von 5 · Bilder ist in der Tabelle geöffnet. Die Historie zeigt, dass es noch keine Bearbeitungen gibt. Der Fotoschritt schliesst sich mit einem nur als Symbol sichtbaren Schliessen (X). Der barrierefreie Name lautet Abbrechen. Es gibt kein sichtbares Wort Abbrechen. Ort Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz und Betreiber @luna bleiben.",
+    "es": "Un moderador hizo clic en Editar la entrada de la tienda junto a Happyland. El paso 1 de 5 · Fotos está abierto en la tabla. El historial indica que aún no hay ediciones. El paso de fotos se cierra con un Cerrar (X) solo de icono. Su nombre accesible es Cancelar. No hay ninguna palabra Cancelar visible. El lugar Happyland · Bahnhofstrasse 12, 8001 Zürich, Suiza y el operador @luna se mantienen.",
+    "fil": "Isang moderator ang nag-click sa Baguhin ang entry sa shop sa tabi ng Happyland. Bukas sa talahanayan ang Hakbang 1 sa 5 · Mga larawan. Sinasabi ng kasaysayan na wala pang mga pagbabago. Ang hakbang ng litrato ay nagsasara sa isang Isara (X) na icon lang. Ang accessible na pangalan nito ay Kanselahin. Walang nakikitang salitang Kanselahin. Nanatili ang lugar na Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland at ang operator na @luna."
   },
   "/view/[viewKey]:about-photo": {
     "de": "Gültiger bekannter Schlüssel mit Text und Foto unter Über mich (aboutMe: 'I build on Bitcoin', aboutMeHasPhoto: true). Dieselbe schreibgeschützte Karte wie die Standardansicht plus die Überschrift Über mich, die Bio und das Foto (Foto zu Über mich, das ganze Bild, object-contain, max-h-80, kein Zuschnitt zum Ausfüllen). Copy-profile-link bleibt. Keine Bearbeitung.",

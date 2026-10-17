@@ -1883,19 +1883,19 @@ A moderator clicked **Edit shop note** beside **Ada · Happyland**. The note did
 
 ### Variant: table
 
-The **Table** option is selected. Headers **Name**, **Place**, and **Operator**. One row **Cafe Luna**, place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland**, operator **@luna**.
+The **Table** option is selected. Headers **Name**, **Place**, and **Operator**. One row **Happyland**, place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland**, operator **@luna**.
 
 ![21.gifts shops table](images/shops-table.png)
 
 ### Variant: table-staff
 
-A moderator session. **Table** is selected. **Edit shop note** sits beside the name **Cafe Luna**. Place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
+A moderator session. **Table** is selected. **Edit shop note** sits beside the name **Happyland**. Place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table staff](images/shops-table-staff.png)
 
 ### Variant: table-edit-open
 
-A moderator clicked **Edit shop note** beside **Cafe Luna**. Step **1 / 5 · Photos** is open in the table. **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. Place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
+A moderator clicked **Edit shop note** beside **Happyland**. Step **1 / 5 · Photos** is open in the table. **History** says there are no edits yet. The photo step dismisses with an icon-only Close (X). Its accessible name is Cancel. There is no visible Cancel word. Place **Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland** and operator **@luna** stay.
 
 ![21.gifts shops table edit open](images/shops-table-edit-open.png)
 
