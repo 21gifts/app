@@ -1,6 +1,6 @@
 'use client';
 
-import { type FormEvent, type ReactElement, useEffect, useRef, useState } from 'react';
+import { type FormEvent, type ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import { HomeWordmark } from '@/components/HomeWordmark';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -26,6 +26,15 @@ import {
   type ShopStickerPictogramPart,
 } from '@/lib/shop-sticker-pictogram';
 import { isSmartphoneUserAgent, lightningHref } from '@/lib/payment-link';
+import {
+  fetchShopInvoice,
+  fetchShopPayLink,
+  openShopPayment,
+  type ShopPayRequest,
+  type ShopPaymentStatus,
+  waitShopPayment,
+} from '@/lib/shop-payment';
+import type { MessageKey } from '@/lib/messages';
 
 function PayLinkAmount(props: {
   value: string;
@@ -172,6 +181,49 @@ function shopStroke(part: ShopStickerPictogramPart): {
 /** Five minutes, the same lock as an open till. */
 const PAYMENT_TTL_MS = 5 * 60 * 1000;
 
+/** Pause between two status reads, the pay poll of the forum's pay sheets. */
+const PAY_POLL_MS = 2000;
+
+/** A shop payment the page shows (`quote.payment` of the pay link). */
+interface ShopPaymentView {
+  /** Shop payment id. */
+  id: string;
+  /** Whole sats of the payment. */
+  sats: number;
+  /** End of the payment's window: the charge's `expiresAt`, or the payer's `expiresAt`. */
+  windowEndsAt: string;
+  /** The newest pay request read for this payment. */
+  request: ShopPayRequest;
+  /** Whether `request` is still the pay link's answer for this payment. */
+  quoteLive: boolean;
+  /** BOLT11 from the callback's Lightning detail, once read. */
+  invoice: string | null;
+  /** The Lightning detail could not be read. */
+  invoiceFailed: boolean;
+  /** Last `paymentStatus` from `GET /lnurlp/wait/:payment`. */
+  paymentStatus: ShopPaymentStatus;
+}
+
+/**
+ * Catalog key of a shop payment's status line.
+ *
+ * @param status - Last `paymentStatus`.
+ * @param windowLive - Whether the payment's window is still running.
+ * @returns "waiting", "on its way", "paid", or "ended".
+ */
+function shopStatusKey(status: ShopPaymentStatus, windowLive: boolean): MessageKey {
+  if (status === 'accepted') {
+    return 'pay.onItsWay';
+  }
+  if (status === 'paid') {
+    return 'pos.paid';
+  }
+  if (status === 'open' && windowLive) {
+    return 'forum.payWaiting';
+  }
+  return 'pos.expired';
+}
+
 /** Shop-sticker storefront, shown on a real pay link. */
 function ShopStickerIcon(): ReactElement {
   return (
@@ -189,10 +241,10 @@ function ShopStickerIcon(): ReactElement {
 }
 
 /**
- * Public LNURL payment form that creates one exact-amount BOLT11 invoice.
+ * Public LNURL payment page for one shop or member.
  *
  * @param props - Encoded LNURL from the `lightning` query parameter.
- * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
+ * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's invoice, one line per stablecoin method and asset with the quote's time left, and its status; otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
  */
 export function PayLinkScreen({ lightning }: { lightning: string }): ReactElement {
   const { t } = useTranslations();
@@ -204,13 +256,17 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const rateDay = useSpotRate(profile !== null);
   const [invalid, setInvalid] = useState(false);
   const [amount, setAmount] = useState('');
-  const [formError, setFormError] = useState<'amount' | 'rate' | 'failed' | null>(null);
+  const [formError, setFormError] = useState<
+    'amount' | 'rate' | 'failed' | 'start' | 'replaced' | null
+  >(null);
   const [posting, setPosting] = useState(false);
   const [invoice, setInvoice] = useState<string | null>(null);
   const [mintedSats, setMintedSats] = useState<number | null>(null);
   const [mintedExpiresAt, setMintedExpiresAt] = useState<string | null>(null);
   const [showInvoiceQr, setShowInvoiceQr] = useState(false);
   const [mintNonce, setMintNonce] = useState(0);
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const [shop, setShop] = useState<ShopPaymentView | null>(null);
   const postingRef = useRef(false);
   const generationRef = useRef(0);
 
@@ -226,6 +282,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setInvoice(null);
     setMintedSats(null);
     setMintedExpiresAt(null);
+    setShop(null);
     setFormError(null);
     setPosting(false);
     postingRef.current = false;
@@ -265,16 +322,21 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     return () => {
       active = false;
     };
-  }, [lightning]);
+  }, [lightning, reloadNonce]);
 
   const charge = profile?.charge ?? null;
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
   const chargeLive = charge !== null && remaining > 0;
   const mintedRemaining = mintedExpiresAt === null ? 0 : Date.parse(mintedExpiresAt) - now;
   const mintedLive = invoice !== null && mintedExpiresAt !== null && mintedRemaining > 0;
+  const shopId = shop?.id ?? null;
+  const quoteExpiresAt =
+    shop !== null && shop.paymentStatus === 'open' && shop.quoteLive
+      ? shop.request.quoteExpiresAt
+      : null;
 
   useEffect(() => {
-    if (charge === null && mintedExpiresAt === null) {
+    if (charge === null && mintedExpiresAt === null && shopId === null) {
       return;
     }
     const timer = setInterval(() => {
@@ -283,7 +345,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     return () => {
       clearInterval(timer);
     };
-  }, [charge, mintedExpiresAt]);
+  }, [charge, mintedExpiresAt, shopId]);
 
   useEffect(() => {
     if (charge !== null && !chargeLive) {
@@ -306,6 +368,51 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     setPosting(false);
   }, [invoice, mintedExpiresAt, now]);
 
+  /**
+   * Update the shown shop payment. A generation shows at most one shop payment
+   * and every caller checks its generation first, so this is that payment.
+   */
+  const patchShop = useCallback((patch: Partial<ShopPaymentView>): void => {
+    /* v8 ignore next -- callers check the generation, and a new generation starts without a shop payment */
+    setShop((current) => (current === null ? null : { ...current, ...patch }));
+  }, []);
+
+  /** Read the shop payment's BOLT11 from the callback's Lightning detail. */
+  const loadShopInvoice = useCallback(
+    async (request: ShopPayRequest, generation: number): Promise<void> => {
+      const pr = await fetchShopInvoice(request);
+      if (generationRef.current !== generation) {
+        return;
+      }
+      patchShop(pr === null ? { invoiceFailed: true } : { invoice: pr, invoiceFailed: false });
+    },
+    [patchShop],
+  );
+
+  /** Show a shop payment of the pay link and read its invoice; never mints. */
+  const showShopPayment = useCallback(
+    (
+      id: string,
+      sats: number,
+      windowEndsAt: string,
+      request: ShopPayRequest,
+      generation: number,
+    ): void => {
+      setShop({
+        id,
+        sats,
+        windowEndsAt,
+        request,
+        quoteLive: true,
+        invoice: null,
+        invoiceFailed: false,
+        paymentStatus: 'open',
+      });
+      void loadShopInvoice(request, generation);
+    },
+    [loadShopInvoice],
+  );
+
   useEffect(() => {
     if (!chargeLive || profile === null || charge === null) {
       return;
@@ -315,12 +422,27 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     postingRef.current = true;
     setPosting(true);
     setFormError(null);
-    void fetch(`/pay/${encodeURIComponent(profile.username)}/invoice`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ amountSats: charge.amountSats }),
-    })
-      .then(async (response) => {
+    void (async () => {
+      try {
+        const link = await fetchShopPayLink(profile.username);
+        if (!active || generationRef.current !== generation) {
+          return;
+        }
+        if (link.kind === 'payment') {
+          showShopPayment(
+            link.request.payment,
+            charge.amountSats,
+            charge.expiresAt,
+            link.request,
+            generation,
+          );
+          return;
+        }
+        const response = await fetch(`/pay/${encodeURIComponent(profile.username)}/invoice`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ amountSats: charge.amountSats }),
+        });
         const result = response.ok ? ((await response.json()) as { pr: string }) : null;
         if (!active || generationRef.current !== generation) {
           return;
@@ -330,18 +452,17 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
           return;
         }
         setInvoice(result.pr);
-      })
-      .catch(() => {
+      } catch {
         if (active && generationRef.current === generation) {
           setFormError('failed');
         }
-      })
-      .finally(() => {
+      } finally {
         if (active && generationRef.current === generation) {
           postingRef.current = false;
           setPosting(false);
         }
-      });
+      }
+    })();
     return () => {
       active = false;
       if (generationRef.current === generation) {
@@ -349,7 +470,72 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         setPosting(false);
       }
     };
-  }, [charge, chargeLive, mintNonce, profile]);
+  }, [charge, chargeLive, mintNonce, profile, showShopPayment]);
+
+  useEffect(() => {
+    if (shopId === null || quoteExpiresAt === null || profile === null) {
+      return;
+    }
+    const username = profile.username;
+    let active = true;
+    const timer = setTimeout(
+      () => {
+        void fetchShopPayLink(username).then((link) => {
+          if (!active) {
+            return;
+          }
+          patchShop(
+            link.kind === 'payment' && link.request.payment === shopId
+              ? { request: link.request, quoteLive: true }
+              : { quoteLive: false },
+          );
+        });
+      },
+      Math.max(0, Date.parse(quoteExpiresAt) - Date.now()),
+    );
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [shopId, quoteExpiresAt, profile, patchShop]);
+
+  useEffect(() => {
+    if (shopId === null) {
+      return;
+    }
+    const controller = new AbortController();
+    const generation = generationRef.current;
+    void (async () => {
+      let since: ShopPaymentStatus | null = null;
+      for (;;) {
+        const result = await waitShopPayment(shopId, since, controller.signal);
+        if (controller.signal.aborted || generationRef.current !== generation) {
+          return;
+        }
+        if (result !== null) {
+          since = result.paymentStatus;
+          if (result.status !== 'Pending' && result.paymentStatus !== 'paid') {
+            // Closed without payment: start again from the pay link.
+            setReloadNonce((nonce) => nonce + 1);
+            return;
+          }
+          patchShop({ paymentStatus: result.paymentStatus });
+          if (result.status !== 'Pending') {
+            return;
+          }
+        }
+        await new Promise((resolve) => {
+          setTimeout(resolve, PAY_POLL_MS);
+        });
+        if (controller.signal.aborted) {
+          return;
+        }
+      }
+    })();
+    return () => {
+      controller.abort();
+    };
+  }, [shopId, patchShop]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -381,6 +567,34 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     postingRef.current = true;
     setPosting(true);
     try {
+      const start = await openShopPayment(profile.username, amountSats);
+      if (generationRef.current !== generation) {
+        return;
+      }
+      if (start.kind === 'charge') {
+        setReloadNonce((nonce) => nonce + 1);
+        return;
+      }
+      if (start.kind === 'failed') {
+        setFormError('start');
+        return;
+      }
+      if (start.kind === 'opened') {
+        const link = await fetchShopPayLink(profile.username);
+        if (generationRef.current !== generation) {
+          return;
+        }
+        if (link.kind === 'error') {
+          setFormError('start');
+          return;
+        }
+        if (link.kind === 'plain' || link.request.payment !== start.payment) {
+          setFormError('replaced');
+          return;
+        }
+        showShopPayment(start.payment, amountSats, start.expiresAt, link.request, generation);
+        return;
+      }
       const response = await fetch(`/pay/${encodeURIComponent(profile.username)}/invoice`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -414,6 +628,10 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
 
   const activeSats = chargeLive && charge !== null ? charge.amountSats : mintedSats;
   const paymentActive = activeSats !== null && (chargeLive || invoice !== null);
+  const shopWindowLeft = shop === null ? 0 : Date.parse(shop.windowEndsAt) - now;
+  const shopOpen = shop !== null && shop.paymentStatus === 'open' && shopWindowLeft > 0;
+  const quoteLeft = quoteExpiresAt === null ? 0 : Date.parse(quoteExpiresAt) - now;
+  const shopLines = shop !== null && shopOpen && quoteLeft > 0 ? shop.request.lines : [];
 
   return (
     <PageChrome
@@ -434,7 +652,75 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
             <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
               {profile.name}
             </h1>
-            {paymentActive && activeSats !== null ? (
+            {shop !== null ? (
+              <div className="flex w-full flex-col items-center gap-3">
+                {shopOpen ? (
+                  <p className="text-center text-sm text-app-subtle">
+                    {t('pay.timeLeft', { time: formatLeft(shopWindowLeft) })}
+                  </p>
+                ) : null}
+                <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
+                  {formatBitcoin(shop.sats, numberFormat)}
+                </p>
+                <ChargeFiat amountSats={shop.sats} rateDay={rateDay} />
+                <p role="status" className="text-center text-sm text-app-subtle">
+                  {t(shopStatusKey(shop.paymentStatus, shopWindowLeft > 0))}
+                </p>
+                {shopOpen ? (
+                  <>
+                    {shop.invoiceFailed ? (
+                      <p role="alert" className="text-center text-sm text-app-danger">
+                        {t('pay.failed')}
+                      </p>
+                    ) : null}
+                    <div className={`flex max-w-full flex-col gap-3 ${INVOICE_QR_PLATE_WIDTH}`}>
+                      {shop.invoice !== null && showInvoiceQr ? (
+                        <QrCode value={shop.invoice} label={t('pay.invoiceQr')} />
+                      ) : null}
+                      <Button
+                        type="button"
+                        className="w-full"
+                        aria-label={t('forum.payOpenWalletAria')}
+                        disabled={shop.invoice === null && !shop.invoiceFailed}
+                        onClick={() => {
+                          if (shop.invoice !== null) {
+                            openWallet(shop.invoice);
+                            return;
+                          }
+                          patchShop({ invoiceFailed: false });
+                          void loadShopInvoice(shop.request, generationRef.current);
+                        }}
+                      >
+                        {t('forum.payOpenWallet')}
+                      </Button>
+                      {shopLines.length > 0 ? (
+                        <>
+                          <ul className="flex w-full flex-col gap-1 text-sm">
+                            {shopLines.map((line) => (
+                              <li
+                                key={`${line.method}-${line.asset}`}
+                                className="flex justify-between gap-3"
+                              >
+                                <span className="text-app-subtle">{line.method}</span>
+                                <span className="tabular-nums lining-nums text-app-fg">
+                                  {`${line.amount} ${line.asset}`}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                          <p className="text-center text-sm text-app-subtle">
+                            {t('pay.timeLeft', { time: formatLeft(quoteLeft) })}
+                          </p>
+                          <p className="text-center text-sm text-app-subtle">
+                            {t('pay.stablecoinScan')}
+                          </p>
+                        </>
+                      ) : null}
+                    </div>
+                  </>
+                ) : null}
+              </div>
+            ) : paymentActive && activeSats !== null ? (
               <div className="flex w-full flex-col items-center gap-3">
                 {chargeLive && charge !== null ? (
                   <p className="text-center text-sm text-app-subtle">
@@ -500,6 +786,16 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 {formError === 'failed' ? (
                   <p role="alert" className="text-sm text-app-danger">
                     {t('pay.failed')}
+                  </p>
+                ) : null}
+                {formError === 'start' ? (
+                  <p role="alert" className="text-sm text-app-danger">
+                    {t('pay.startFailed')}
+                  </p>
+                ) : null}
+                {formError === 'replaced' ? (
+                  <p role="alert" className="text-sm text-app-danger">
+                    {t('pay.replaced')}
                   </p>
                 ) : null}
               </form>

@@ -3102,7 +3102,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Public payment card: the person's name, an exact satoshi amount, and one BOLT11 invoice.
 - **Inputs:** `lightning` query string.
-- **Returns / side effects:** `PageChrome` with `ProfileChromeLeft` (wordmark `HomeWordmark`) and a light language switcher. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. Renders the shop sticker's storefront for a real pay link, and the welcome glyph only when the link is not valid. After `GET /pay/:username`, shows the name and amount form, or that open till. **Continue** posts the amount and then shows the active payment (locked sats, the default fiat when the spot rate is usable, and **Pay**, no amount field). One `useSpotRate` call, made once the pay profile is loaded, feeds both the amount field and that fiat line, so creating the payment does not ask for the rate again. **Pay** (aria **Pay with a Bitcoin wallet app**) is the width of the invoice QR plate, centered, not the page column. With an issued invoice, **Pay** sets `window.location.href` to the generic `lightning:` link from `lightningHref`, so the device opens whichever Bitcoin wallet app handles that scheme; no particular wallet is named and there is no wallet icon. Before the invoice exists **Pay** is disabled, except after a failed create, when it requests the invoice again. Off a smartphone the invoice QR shows above **Pay**. A smartphone does not show it (`isSmartphoneUserAgent`, not viewport), before or after the payment is active. A new `lightning` value clears the previous person, including an invoice that is still being created. A positive fiat amount that the spot rate cannot price in the preferred fiat (typed before that fiat changed to one without a price) shows an alert that names that currency. No forum and no auth gate.
+- **Returns / side effects:** `PageChrome` with `ProfileChromeLeft` (wordmark `HomeWordmark`) and a light language switcher. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. Renders the shop sticker's storefront for a real pay link, and the welcome glyph only when the link is not valid. After `GET /pay/:username`, shows the name and amount form, or that open till. **Continue** posts the amount and then shows the active payment (locked sats, the default fiat when the spot rate is usable, and **Pay**, no amount field). One `useSpotRate` call, made once the pay profile is loaded, feeds both the amount field and that fiat line, so creating the payment does not ask for the rate again. **Pay** (aria **Pay with a Bitcoin wallet app**) is the width of the invoice QR plate, centered, not the page column. With an issued invoice, **Pay** sets `window.location.href` to the generic `lightning:` link from `lightningHref`, so the device opens whichever Bitcoin wallet app handles that scheme; no particular wallet is named and there is no wallet icon. Before the invoice exists **Pay** is disabled, except after a failed create, when it requests the invoice again. Off a smartphone the invoice QR shows above **Pay**. A smartphone does not show it (`isSmartphoneUserAgent`, not viewport), before or after the payment is active. A new `lightning` value clears the previous person, including an invoice that is still being created. A positive fiat amount that the spot rate cannot price in the preferred fiat (typed before that fiat changed to one without a price) shows an alert that names that currency. An open till reads the pay link first (`fetchShopPayLink`): an OpenCryptoPay pay request shows its shop payment with the invoice from `fetchShopInvoice` and never mints; the plain Lightning request, or a pay link that cannot be read, mints the till's amount as before. **Continue** opens a shop payment with `openShopPayment`: `charge` loads the page again, `invoice` mints with `POST /pay/:username/invoice`, `failed` shows **This payment could not be started. Try again.** without minting, and `opened` checks that the pay link names that payment, or shows **Another payer entered an amount first. Enter yours again.** A shown shop payment lists one line per stablecoin method and asset with the quote's time left and the OpenCryptoPay wallet hint, reads the pay link again when the quote runs out, and follows `waitShopPayment` (first without `since`, then with the last status, pausing 2 s between reads): **Waiting for payment…**, **On its way**, **Paid ✓**, or **Expired**. Any status but waiting, and a window that ran out, hide the invoice QR, **Pay**, and the stablecoin lines; a final status without payment loads the page again. No forum and no auth gate.
 - **Used by:** `PayLinkPage`.
 
 ## Function: PayLinkPage
@@ -3111,6 +3111,34 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `searchParams` promise with an optional `lightning` string or array.
 - **Returns / side effects:** The payment screen. Does not 404 when the query is missing.
 - **Used by:** The App Router at `/pl`.
+
+## Function: fetchShopPayLink
+
+- **Purpose:** Read the shop's pay link (`GET /.well-known/lnurlp/:username` on this site, without `timeout`, `cache: 'no-store'`) and tell whether it carries a shop payment.
+- **Inputs:** `username` of the shop.
+- **Returns / side effects:** `{ kind: 'payment', request }` for an OpenCryptoPay pay request (`standard` is `OpenCryptoPay`, or `possibleStandards` contains it) with `callback`, `quote.id`, `quote.expiration`, and `quote.payment`; `request.lines` holds one entry per method and asset of `transferAmounts`, except the Lightning entry and an entry with `available` false. `{ kind: 'plain' }` for any other readable body, which is the plain Lightning pay request. `{ kind: 'error' }` for a failed request, an error status, an unreadable body, or an OpenCryptoPay body without a usable quote. Never throws.
+- **Used by:** `PayLinkScreen` (open till, the check after `openShopPayment`, and the refetch when a quote runs out).
+
+## Function: fetchShopInvoice
+
+- **Purpose:** Read a shop payment's BOLT11 from the callback's Lightning detail, so the page never mints a second invoice for a payment that has one.
+- **Inputs:** `request` from `fetchShopPayLink`; the call is `<callback>?quote=<quote id>&method=Lightning&asset=BTC` with `cache: 'no-store'`.
+- **Returns / side effects:** The `pr` string, or `null` for an error status (for example an expired quote), a missing or empty `pr`, a failed request, or a callback that is not a URL. Never throws.
+- **Used by:** `PayLinkScreen` (after showing a shop payment, and **Pay** after a failed read).
+
+## Function: openShopPayment
+
+- **Purpose:** Open a shop payment for an amount the payer entered (`POST /pay/:username/payment` with `{ amountSats }`).
+- **Inputs:** `username` of the shop and the whole `amountSats`.
+- **Returns / side effects:** `{ kind: 'opened', payment, expiresAt }` for a 200 with a payment id and a readable window end; `{ kind: 'charge' }` for 409 `payment_open`; `{ kind: 'invoice' }` for 503 `stablecoin_unavailable` or any other 4xx, which means mint with `POST /pay/:username/invoice`; `{ kind: 'failed' }` when the outcome stays unknown after one repeat. A failed request, an unreadable 200, and any other 5xx are unknown, because a payment may have been opened, so the same call is repeated once; a new payer amount replaces any payment the lost answer opened.
+- **Used by:** `PayLinkScreen` (**Continue**).
+
+## Function: waitShopPayment
+
+- **Purpose:** Read a shop payment's status from `GET /lnurlp/wait/:payment`, which the api serves without an app route.
+- **Inputs:** `payment` id, `since` (the last `paymentStatus` seen, or `null` for the first read, which answers at once), and an optional abort `signal`.
+- **Returns / side effects:** `{ status, paymentStatus }`, where `status` is the DFX status (`Pending` until the payment is paid or closed) and `paymentStatus` is `open`, `accepted`, `paid`, or `ended`; `null` for an error status (for example 429), an unknown `paymentStatus`, an unreadable body, or a failed or aborted request. With `since`, the api waits while the status still equals it.
+- **Used by:** `PayLinkScreen` (status line of a shown shop payment).
 
 ## Function: translate
 

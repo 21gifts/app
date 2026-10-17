@@ -5663,5 +5663,35 @@
     "de": "Angemeldeter Permalink von Marias Kredit, sobald er voll ist (sats gleich goalSats): Der Kreditblock zeigt Vollständig finanziert und bietet kein Leihen, und das Betragsfeld der offenen Karte behält die Beschriftung Betrag. Nachdem ₿210 gepostet wurde, zeigt das Zahlblatt in der Karte ₿210 · $0.21 zahlen, der Hinweis sagt Dieser Kredit ist bereits vollständig finanziert. Was Sie jetzt senden, ist ein Geschenk an Maria., und die Wallet-Schaltfläche bleibt Senden.",
     "es": "Enlace permanente con sesión iniciada del préstamo de Maria una vez lleno (sats igual a goalSats): el bloque del préstamo dice Totalmente financiado y no ofrece Prestar, y el campo de importe de la tarjeta abierta mantiene la etiqueta Importe. Tras publicar ₿210, la hoja de pago en la tarjeta dice Pagar ₿210 · $0.21, la nota dice Este préstamo ya está totalmente financiado. Lo que envíes ahora es un regalo para Maria., y el botón de la billetera sigue siendo Enviar.",
     "fil": "Naka-sign na permalink ng pautang ni Maria kapag buo na (katumbas ng sats ang goalSats): Buo na ang pondo ang nakasulat sa bloke ng pautang at walang Magpahiram, at nananatili ang tatak na Halaga sa field ng halaga ng bukas na kard. Pagkatapos i-post ang ₿210, Magbayad ng ₿210 · $0.21 ang nakasulat sa pay sheet sa loob ng kard, sinasabi ng paalala Buo na ang pondo ng utang na ito. Ang ipapadala mo ngayon ay regalo kay Maria., at nananatiling Ipadala ang button ng wallet."
+  },
+  "/pl:shop": {
+    "de": "Eine offene Kasse, deren Zahlungslink eine Shop-Zahlung trägt. Der Shop-Aufkleber, verbleibende Zeit, der Sat-Betrag, die Standard-Fiat der betrachtenden Person daneben, Zahlung wird erwartet…, am Desktop der QR der Bitcoin-Rechnung und Zahlen. Unter Zahlen eine Zeile pro Stablecoin-Methode und -Asset (zum Beispiel Polygon und 0.2 USDT), die verbleibende Zeit des Angebots und der Hinweis, den Sticker mit einer OpenCryptoPay-Wallet zu scannen. Kein Betragsfeld.",
+    "es": "Una caja abierta cuyo enlace de pago lleva un pago de tienda. La pegatina de la tienda, el tiempo restante, el importe en sats, el fiat predeterminado de quien mira al lado, Esperando el pago…, en escritorio el QR de la factura de Bitcoin, y Pagar. Debajo de Pagar, una línea por método y activo de stablecoin (por ejemplo Polygon y 0.2 USDT), el tiempo restante de la cotización y la indicación de escanear el adhesivo con una billetera OpenCryptoPay. Sin campo de importe.",
+    "fil": "Isang bukas na kaha na may shop payment ang payment link. Ang sticker ng tindahan, natitirang oras, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi nito, ang paghihintay sa bayad, sa desktop ang QR ng invoice ng Bitcoin, at Magbayad. Sa ilalim ng Magbayad, isang linya bawat stablecoin method at asset (halimbawa Polygon at 0.2 USDT), ang natitirang oras ng quote, at ang paalala na i-scan ang sticker gamit ang isang OpenCryptoPay wallet. Walang field ng halaga."
+  },
+  "/pl:on-its-way": {
+    "de": "Die Überweisung der Shop-Zahlung wurde angenommen. Der Shop-Aufkleber, der Sat-Betrag, die Standard-Fiat der betrachtenden Person daneben und Unterwegs. Keine verbleibende Zeit, kein Rechnungs-QR, kein Zahlen und keine Stablecoin-Zeilen.",
+    "es": "La transferencia del pago de tienda fue aceptada. La pegatina de la tienda, el importe en sats, el fiat predeterminado de quien mira al lado, y En camino. Sin tiempo restante, sin QR de la factura, sin Pagar y sin líneas de stablecoin.",
+    "fil": "Tinanggap ang transfer ng shop payment. Ang sticker ng tindahan, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi nito, at Papunta na. Walang natitirang oras, walang QR ng invoice, walang Magbayad, at walang linya ng stablecoin."
+  },
+  "/pl:paid": {
+    "de": "Die Shop-Zahlung ist bezahlt. Der Shop-Aufkleber, der Sat-Betrag, die Standard-Fiat der betrachtenden Person daneben und Bezahlt ✓. Keine verbleibende Zeit, kein Rechnungs-QR, kein Zahlen und keine Stablecoin-Zeilen.",
+    "es": "El pago de tienda está pagado. La pegatina de la tienda, el importe en sats, el fiat predeterminado de quien mira al lado, y Pagado ✓. Sin tiempo restante, sin QR de la factura, sin Pagar y sin líneas de stablecoin.",
+    "fil": "Bayad na ang shop payment. Ang sticker ng tindahan, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi nito, at ang marka ng bayad. Walang natitirang oras, walang QR ng invoice, walang Magbayad, at walang linya ng stablecoin."
+  },
+  "/pl:ended": {
+    "de": "Die Shop-Zahlung endete, bevor sie bezahlt wurde, und ihr endgültiger Status ist noch offen. Der Shop-Aufkleber, der Sat-Betrag, die Standard-Fiat der betrachtenden Person daneben und Abgelaufen. Keine verbleibende Zeit, kein Rechnungs-QR, kein Zahlen und keine Stablecoin-Zeilen.",
+    "es": "El pago de tienda terminó antes de pagarse y su estado final aún no se conoce. La pegatina de la tienda, el importe en sats, el fiat predeterminado de quien mira al lado, y Vencido. Sin tiempo restante, sin QR de la factura, sin Pagar y sin líneas de stablecoin.",
+    "fil": "Natapos ang shop payment bago ito nabayaran, at hindi pa alam ang huling status nito. Ang sticker ng tindahan, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi nito, at ang paso na status. Walang natitirang oras, walang QR ng invoice, walang Magbayad, at walang linya ng stablecoin."
+  },
+  "/pl:start-failed": {
+    "de": "Weiter konnte die Shop-Zahlung auch beim zweiten Versuch nicht eröffnen. Das Formular bleibt mit dem Betrag, darunter steht, dass diese Zahlung nicht gestartet werden konnte. Es wurde keine Rechnung erstellt. Weiter versucht es erneut.",
+    "es": "Continuar no pudo abrir el pago de tienda, tampoco al repetir. El formulario se queda con el importe y debajo dice que no se pudo iniciar este pago. No se creó ninguna factura. Continuar lo intenta de nuevo.",
+    "fil": "Hindi nabuksan ng Magpatuloy ang shop payment, kahit sa pag-ulit. Nananatili ang form kasama ang halaga, at sa ilalim nito ay sinasabing hindi masimulan ang bayad na ito. Walang ginawang invoice. Sinusubukan muli ng Magpatuloy."
+  },
+  "/pl:replaced": {
+    "de": "Weiter hat eine Shop-Zahlung eröffnet, aber der Zahlungslink nennt bereits den Betrag einer anderen Person. Das Formular bleibt mit dem Betrag, darunter steht, dass eine andere Person zuerst einen Betrag eingegeben hat.",
+    "es": "Continuar abrió un pago de tienda, pero el enlace de pago ya nombra el importe de otra persona. El formulario se queda con el importe y debajo dice que otra persona introdujo un importe primero.",
+    "fil": "Nagbukas ang Magpatuloy ng shop payment, pero ang payment link ay may halaga na ng ibang nagbabayad. Nananatili ang form kasama ang halaga, at sa ilalim nito ay sinasabing may ibang naglagay muna ng halaga."
   }
 }
