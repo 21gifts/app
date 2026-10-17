@@ -20043,6 +20043,10 @@ test.describe('shops screens', () => {
       page.getByText('The shop name must not contain the street or the postal code.'),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+    // Show the hint at the bottom of the detail scrollport.
+    await page
+      .getByText('The shop name must not contain the street or the postal code.')
+      .scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-add-place-name-address');
   });
 
@@ -20068,6 +20072,8 @@ test.describe('shops screens', () => {
     });
     await expect(page.getByText('Check the House number.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+    // Show the hint at the bottom of the detail scrollport.
+    await page.getByText('Check the House number.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-add-place-field-invalid');
   });
 
@@ -20133,7 +20139,7 @@ test.describe('shops screens', () => {
       (url) => new URL(url).pathname === '/forum/messages',
       async (route) => {
         if (route.request().method() !== 'POST') {
-          await route.continue();
+          await route.fallback();
           return;
         }
         await route.fulfill({
