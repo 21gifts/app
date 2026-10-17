@@ -89,6 +89,20 @@ test('Function: clearAppNavigation — the committed navigation removes the mark
 test('Function: capturePageLoad — a failed page-data request falls back to a full page load that reads and removes the marker', async ({
   page,
 }) => {
+  // Every document records each value read under the marker key; start-up
+  // (`capturePageLoad`) is the only reader, so the first read is what it found.
+  await page.addInitScript((key) => {
+    const reads: (string | null)[] = [];
+    (window as unknown as { e2eMarkerReads?: (string | null)[] }).e2eMarkerReads = reads;
+    const getItem = Storage.prototype.getItem;
+    Storage.prototype.getItem = function (this: Storage, name: string): string | null {
+      const value = getItem.call(this, name);
+      if (name === key) {
+        reads.push(value);
+      }
+      return value;
+    };
+  }, MARKER_KEY);
   await page.route('**/terms**', async (route) => {
     if (isTermsData(route)) {
       await route.abort('failed');
@@ -102,6 +116,10 @@ test('Function: capturePageLoad — a failed page-data request falls back to a f
   await page.waitForLoadState('load');
   // A new document: the tag of `/legal` is gone, and its start-up took the marker.
   await expect.poll(async () => readState(page)).toEqual({ marker: null, tag: null });
+  const reads = await page.evaluate(
+    () => (window as unknown as { e2eMarkerReads?: (string | null)[] }).e2eMarkerReads ?? [],
+  );
+  expect(reads[0]).toBe('app');
   const type = await page.evaluate(
     () => (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming).type,
   );
