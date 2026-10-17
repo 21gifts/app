@@ -131,3 +131,23 @@ export async function stubShopPayment(
     });
   });
 }
+
+/**
+ * Pay link `ada` as the plain Lightning pay request (no shop payment), so an
+ * open till mints its amount as before.
+ */
+export async function stubPlainPayLink(page: Page): Promise<void> {
+  await page.route('**/.well-known/lnurlp/ada', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        tag: 'payRequest',
+        callback: 'https://21.gifts/lnurlp/ada/invoice',
+        minSendable: 238_093_000,
+        maxSendable: 238_093_000,
+        metadata: '[["text/plain","Ada Lovelace"]]',
+      }),
+    });
+  });
+}

@@ -4875,7 +4875,7 @@ const fil = {
   'pay.amountInvalid': 'Maglagay ng buong bilang.',
   'pay.timeLeft': '{time} na lang',
   'pay.startFailed': 'Hindi masimulan ang bayad na ito. Subukan muli.',
-  'pay.replaced': 'May ibang nagbayad na naglagay muna ng halaga. Ilagay muli ang sa iyo.',
+  'pay.replaced': 'May ibang tao na naglagay muna ng halaga. Ilagay muli ang sa iyo.',
   'pay.onItsWay': 'Papunta na',
   'pay.stablecoinScan':
     'Para magbayad gamit ang USDT o USDC, i-scan ang sticker gamit ang isang OpenCryptoPay wallet.',

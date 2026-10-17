@@ -239,8 +239,10 @@ async function attemptShopPayment(
  * @returns `opened` with the payment id and its window end; `charge` on 409
  *   `payment_open` (a till charge is pending); `invoice` on 503
  *   `stablecoin_unavailable` or any other 4xx (mint with
- *   `POST /pay/:username/invoice` instead); `failed` when the repeat was
- *   unknown too (show the error, do not mint).
+ *   `POST /pay/:username/invoice` instead), only on the first answer; `failed`
+ *   when the repeat was unknown too, or answered 503 `stablecoin_unavailable`
+ *   or another 4xx, because the lost first answer may have opened a payment
+ *   (show the error, do not mint).
  */
 export async function openShopPayment(
   username: string,
@@ -250,8 +252,9 @@ export async function openShopPayment(
   if (first !== 'unknown') {
     return first;
   }
+  // The lost first answer may have opened a payment, so the repeat never mints.
   const second = await attemptShopPayment(username, amountSats);
-  return second === 'unknown' ? { kind: 'failed' } : second;
+  return second === 'unknown' || second.kind === 'invoice' ? { kind: 'failed' } : second;
 }
 
 /**

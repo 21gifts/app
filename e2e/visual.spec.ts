@@ -12,7 +12,7 @@ import {
 } from './no-prf';
 import { pageFrameProblems } from '../src/lib/page-frame';
 import { fulfillSpot, spotRatesFromStats } from './fx-spot';
-import { fulfillStablecoinUnavailable, stubShopPayment } from './shop-payment';
+import { fulfillStablecoinUnavailable, stubPlainPayLink, stubShopPayment } from './shop-payment';
 import {
   fulfillLedger,
   fulfillMyLoans,
@@ -1538,6 +1538,7 @@ test.describe('screen baselines', () => {
   });
 
   test('screen /pl charge', async ({ page }, testInfo) => {
+    await stubPlainPayLink(page);
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
     await fulfillRateDay(page);
     // pauseAt only moves forward, so the clock starts a minute earlier and freezes on the hour.
@@ -1581,6 +1582,7 @@ test.describe('screen baselines', () => {
   });
 
   test('screen /pl charge-failed', async ({ page }) => {
+    await stubPlainPayLink(page);
     const lnurl = 'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ';
     await fulfillRateDay(page);
     await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });

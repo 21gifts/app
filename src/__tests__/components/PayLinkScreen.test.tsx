@@ -990,6 +990,72 @@ describe('PayLinkScreen shop payment', () => {
     expect(details).toBe(2);
   });
 
+  it('keeps the lines and reads again when a quote refetch fails', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let links = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/.well-known/lnurlp/ada') {
+        links += 1;
+        if (links === 1) {
+          return Response.json(shopPayLink({ expiresInMs: 300 }));
+        }
+        if (links === 2) {
+          return new Response('busy', { status: 503 });
+        }
+        return Response.json(shopPayLink({ quote: 'q2', method: 'Arbitrum' }));
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        return pending();
+      }
+      return Response.json(chargeProfile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText('Polygon')).toBeTruthy();
+    await waitFor(() => {
+      expect(links).toBe(2);
+    });
+    await new Promise((resolve) => {
+      setTimeout(resolve, 50);
+    });
+    expect(screen.getByText('Polygon')).toBeTruthy();
+    expect(await screen.findByText('Arbitrum', undefined, { timeout: 4000 })).toBeTruthy();
+    expect(links).toBe(3);
+  }, 10_000);
+
+  it('shows the till error without minting when the pay link cannot be read', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let links = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/invoice')) {
+        throw new Error('should not mint');
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        links += 1;
+        return links === 1 ? new Response('busy', { status: 503 }) : Response.json(shopPayLink());
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        return pending();
+      }
+      return Response.json(chargeProfile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not create the invoice.');
+    expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }));
+    expect(await screen.findByText('Waiting for payment…')).toBeTruthy();
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(links).toBe(2);
+    expect(postedInvoice()).toBe(false);
+  });
+
   it('refetches the pay link when the quote expires', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     let links = 0;

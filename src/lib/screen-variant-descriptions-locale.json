@@ -2775,9 +2775,9 @@
     "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang Hakbang 2 sa 5 · Lugar. Sinasabi pa rin ng Kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng larawan. Hindi tinatakpan ng nakasarang lapis ang resultang ito."
   },
   "/pl:charge-failed": {
-    "de": "Offene Kasse, Mint fehlgeschlagen. Der Ladenaufkleber, die Restzeit, der Sat-Betrag, die Standard-Fiat des Betrachters daneben, Die Rechnung konnte nicht erstellt werden., und Zahlen. Kein Rechnungs-QR. Zahlen versucht den Mint erneut.",
-    "es": "Caja abierta, acuñación fallida. La pegatina de la tienda, el tiempo restante, la cantidad de sats, el fiat predeterminado del espectador al lado, No se pudo crear la factura., y Pagar. No hay código QR de factura. Pagar vuelve a intentar la acuñación.",
-    "fil": "Bukas na kaha, nabigo ang mint. Ang tatak ng tindahan, natitirang oras, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi, Hindi magawa ang invoice., at Magbayad. Walang QR ng resibo. Sinusubukan ulit ng Magbayad ang mint."
+    "de": "Offene Kasse, und der Zahlungslink konnte nicht gelesen werden oder die Rechnung schlug fehl. Der Ladenaufkleber, die Restzeit, der Sat-Betrag, die Standard-Fiat des Betrachters daneben, Die Rechnung konnte nicht erstellt werden., und Zahlen. Kein Rechnungs-QR. Zahlen liest den Zahlungslink erneut und erstellt nur beim einfachen Lightning-Zahlungsantrag eine Rechnung.",
+    "es": "Caja abierta, y no se pudo leer el enlace de pago o falló la factura. La pegatina de la tienda, el tiempo restante, la cantidad de sats, el fiat predeterminado del espectador al lado, No se pudo crear la factura., y Pagar. No hay código QR de factura. Pagar vuelve a leer el enlace de pago y solo crea una factura para la solicitud de pago Lightning simple.",
+    "fil": "Bukas na kaha, at hindi nabasa ang payment link o nabigo ang invoice. Ang tatak ng tindahan, natitirang oras, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi, Hindi magawa ang invoice., at Magbayad. Walang QR ng resibo. Binabasa ulit ng Magbayad ang payment link at gumagawa lang ng invoice para sa simpleng Lightning payment request."
   },
   "/welcome:ask-credit-posting-daily": {
     "de": "Kredit, Schritt 9 von 9, mit Täglich gedrückt, während Senden unterwegs ist. Die Zielleiste zeigt weiterhin den Rückzahlungsplan. Senden ist deaktiviert. Einmalig / Täglich ist nicht gespeichert. Der Zähler zeigt 9 von 9.",
@@ -5840,9 +5840,9 @@
     "fil": "Natapos ang shop payment bago ito nabayaran, at hindi pa alam ang huling status nito. Ang sticker ng tindahan, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi nito, at ang paso na status. Walang natitirang oras, walang QR ng invoice, walang Magbayad, at walang linya ng stablecoin."
   },
   "/pl:start-failed": {
-    "de": "Weiter konnte die Shop-Zahlung auch beim zweiten Versuch nicht eröffnen. Das Formular bleibt mit dem Betrag, darunter steht, dass diese Zahlung nicht gestartet werden konnte. Es wurde keine Rechnung erstellt. Weiter versucht es erneut.",
-    "es": "Continuar no pudo abrir el pago de tienda, tampoco al repetir. El formulario se queda con el importe y debajo dice que no se pudo iniciar este pago. No se creó ninguna factura. Continuar lo intenta de nuevo.",
-    "fil": "Hindi nabuksan ng Magpatuloy ang shop payment, kahit sa pag-ulit. Nananatili ang form kasama ang halaga, at sa ilalim nito ay sinasabing hindi masimulan ang bayad na ito. Walang ginawang invoice. Sinusubukan muli ng Magpatuloy."
+    "de": "Weiter konnte die Shop-Zahlung auch beim zweiten Versuch nicht eröffnen, oder der zweite Versuch antwortete mit 503 oder einem anderen 4xx. Das Formular bleibt mit dem Betrag, darunter steht, dass diese Zahlung nicht gestartet werden konnte. Es wurde keine Rechnung erstellt. Weiter versucht es erneut.",
+    "es": "Continuar no pudo abrir el pago de tienda, tampoco al repetir, o la repetición respondió 503 u otro 4xx. El formulario se queda con el importe y debajo dice que no se pudo iniciar este pago. No se creó ninguna factura. Continuar lo intenta de nuevo.",
+    "fil": "Hindi nabuksan ng Magpatuloy ang shop payment, kahit sa pag-ulit, o sumagot ang pag-ulit ng 503 o ibang 4xx. Nananatili ang form kasama ang halaga, at sa ilalim nito ay sinasabing hindi masimulan ang bayad na ito. Walang ginawang invoice. Sinusubukan muli ng Magpatuloy."
   },
   "/pl:replaced": {
     "de": "Weiter hat eine Shop-Zahlung eröffnet, aber der Zahlungslink nennt bereits den Betrag einer anderen Person. Das Formular bleibt mit dem Betrag, darunter steht, dass eine andere Person zuerst einen Betrag eingegeben hat.",

@@ -246,6 +246,40 @@ describe('openShopPayment', () => {
     expect(await openShopPayment('ada', 21)).toEqual({ kind: 'opened', ...opened });
     expect(calls).toBe(2);
   });
+
+  it('never mints after an unknown first answer', async () => {
+    const repeats: [() => Response, string][] = [
+      [
+        () =>
+          Response.json(
+            { error: 'Stablecoin payment is unavailable', code: 'stablecoin_unavailable' },
+            { status: 503 },
+          ),
+        'failed',
+      ],
+      [() => Response.json({ error: 'Enter a whole number of sats' }, { status: 400 }), 'failed'],
+      [
+        () =>
+          Response.json(
+            { error: 'A payment is already open', code: 'payment_open' },
+            { status: 409 },
+          ),
+        'charge',
+      ],
+    ];
+    for (const [repeat, kind] of repeats) {
+      let calls = 0;
+      stubFetch(async () => {
+        calls += 1;
+        if (calls === 1) {
+          throw new Error('offline');
+        }
+        return repeat();
+      });
+      expect(await openShopPayment('ada', 21)).toEqual({ kind });
+      expect(calls).toBe(2);
+    }
+  });
 });
 
 describe('waitShopPayment', () => {
