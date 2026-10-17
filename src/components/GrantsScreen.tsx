@@ -115,6 +115,9 @@ export function GrantsScreen(): ReactElement | null {
           <ButtonLink href="/grants/payments/amounts" variant="secondary" size="lg">
             {t('funding.daily.amountsLink')}
           </ButtonLink>
+          <ButtonLink href="/grants/payments/moderators" variant="secondary" size="lg">
+            {t('funding.daily.moderatorsLink')}
+          </ButtonLink>
         </>
       ) : null}
       {queue}
