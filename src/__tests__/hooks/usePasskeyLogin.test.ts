@@ -2575,6 +2575,30 @@ describe('usePasskeyLogin', () => {
       rejectFirst(new Error('late first'));
     });
     expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('second');
+  });
+
+  it('keeps closed when a superseded register fails late', async () => {
+    let rejectFirst!: (e: unknown) => void;
+    vi.mocked(startPasskeyRegistration).mockReturnValueOnce(
+      new Promise((_, reject) => {
+        rejectFirst = reject;
+      }),
+    );
+    vi.mocked(startPasskeyRegistration).mockRejectedValueOnce(new LoginsClosedError());
+    const { result } = renderHook(() => usePasskeyLogin());
+    act(() => {
+      result.current.register('a'.repeat(64));
+    });
+    await act(async () => {
+      result.current.register('a'.repeat(64));
+    });
+    expect(result.current.status).toBe('closed');
+    await act(async () => {
+      rejectFirst(new Error('late first'));
+    });
+    expect(result.current.status).toBe('closed');
+    expect(result.current.error).toBeNull();
   });
 
   it('ignores a superseded authenticate success and a late error', async () => {
@@ -2631,6 +2655,30 @@ describe('usePasskeyLogin', () => {
       rejectFirst(new Error('late first'));
     });
     expect(result.current.status).toBe('error');
+    expect(result.current.error).toBe('second');
+  });
+
+  it('keeps outdated when a superseded authenticate fails late', async () => {
+    let rejectFirst!: (e: unknown) => void;
+    vi.mocked(startPasskeyAuthentication).mockReturnValueOnce(
+      new Promise((_, reject) => {
+        rejectFirst = reject;
+      }),
+    );
+    vi.mocked(startPasskeyAuthentication).mockRejectedValueOnce(new AppOutdatedError());
+    const { result } = renderHook(() => usePasskeyLogin());
+    act(() => {
+      result.current.authenticate();
+    });
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(result.current.status).toBe('outdated');
+    await act(async () => {
+      rejectFirst(new Error('late first'));
+    });
+    expect(result.current.status).toBe('outdated');
+    expect(result.current.error).toBeNull();
   });
 
   it('omits signal on iPhone authenticate get', async () => {

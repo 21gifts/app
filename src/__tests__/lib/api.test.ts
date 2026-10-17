@@ -5527,8 +5527,8 @@ describe('passkey login refusals', () => {
     await expect(finishPasskeyAuthentication('ch', {})).rejects.toBeInstanceOf(WrongAccountError);
   });
 
-  it.each(steps)(
-    '%s keeps the generic failure for a code on the other status',
+  it.each(closedSteps)(
+    '%s keeps the generic failure for logins_closed on 403',
     async (_name, run) => {
       stubFetch({ ok: false, status: 403, body: { code: LOGINS_CLOSED_CODE } });
       const closedOn403 = await run().then(
@@ -5538,16 +5538,28 @@ describe('passkey login refusals', () => {
       expect(closedOn403).toBeInstanceOf(Error);
       expect(closedOn403).not.toBeInstanceOf(LoginsClosedError);
       expect(closedOn403).not.toBeInstanceOf(AppOutdatedError);
-      stubFetch({ ok: false, status: 503, body: { code: APP_OUTDATED_CODE } });
-      const outdatedOn503 = await run().then(
-        () => null,
-        (err: unknown) => err,
-      );
-      expect(outdatedOn503).toBeInstanceOf(Error);
-      expect(outdatedOn503).not.toBeInstanceOf(AppOutdatedError);
-      expect(outdatedOn503).not.toBeInstanceOf(LoginsClosedError);
     },
   );
+
+  it('startPasskeyAuthentication keeps the generic failure for another 403 code', async () => {
+    stubFetch({ ok: false, status: 403, body: { code: 'other_forbidden' } });
+    const error = await startPasskeyAuthentication().then(
+      () => null,
+      (err: unknown) => err,
+    );
+    expect(error).toEqual(new Error('Failed to start passkey authentication: 403'));
+  });
+
+  it.each(steps)('%s keeps the generic failure for app_outdated on 503', async (_name, run) => {
+    stubFetch({ ok: false, status: 503, body: { code: APP_OUTDATED_CODE } });
+    const outdatedOn503 = await run().then(
+      () => null,
+      (err: unknown) => err,
+    );
+    expect(outdatedOn503).toBeInstanceOf(Error);
+    expect(outdatedOn503).not.toBeInstanceOf(AppOutdatedError);
+    expect(outdatedOn503).not.toBeInstanceOf(LoginsClosedError);
+  });
 
   it.each(steps)(
     '%s keeps the generic failure for a 503 without a JSON body',
