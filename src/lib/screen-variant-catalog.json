@@ -3126,6 +3126,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/habit-tracker:comment-cannot-receive-sunday",
+    "label": "/habit-tracker comment-cannot-receive-sunday",
+    "visual": "state-habit-tracker-comment-cannot-receive-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/habit-tracker:sunday",
     "label": "/habit-tracker sunday",
     "visual": "state-habit-tracker-sunday",
@@ -3729,6 +3735,18 @@
     "id": "/members/[accountId]:heart-cannot-receive",
     "label": "/members/[accountId] heart-cannot-receive",
     "visual": "state-members-heart-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-cannot-receive",
+    "label": "/members/[accountId] posts-open-cannot-receive",
+    "visual": "state-members-posts-open-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-cannot-receive-reactions",
+    "label": "/members/[accountId] posts-open-cannot-receive-reactions",
+    "visual": "state-members-posts-open-cannot-receive-reactions",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5898,6 +5916,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:heart-cannot-receive-refreshed",
+    "label": "/welcome heart-cannot-receive-refreshed",
+    "visual": "state-welcome-heart-cannot-receive-refreshed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:heart-paid",
     "label": "/welcome heart-paid",
     "visual": "state-welcome-heart-paid",
@@ -6069,6 +6093,12 @@
     "id": "/shops:heart-cannot-receive",
     "label": "/shops heart-cannot-receive",
     "visual": "state-shops-heart-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:heart-cannot-receive-refreshed",
+    "label": "/shops heart-cannot-receive-refreshed",
+    "visual": "state-shops-heart-cannot-receive-refreshed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

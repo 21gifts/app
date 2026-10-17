@@ -522,15 +522,17 @@ function fallbackCopy(text: string): boolean {
  * viewer's own note, on a note that is not payable, and on a board without a
  * heart handler. When the author cannot receive yet (`cannotReceive`), the
  * heart and its count show disabled instead, so nobody taps a heart that can
- * only fail; an author-wallet line from an earlier refused heart
- * (`view.cannotReceive`) stays under it, so a feed refresh that disables the
- * heart does not drop it. Click stops the card from expanding. The count sits immediately
- * to the right of the icon; the fill remains after a tap. Who does not see the
- * heart does not see the count.
+ * only fail; a tap still in its +1 window keeps its fill, +1, and count there.
+ * An author-wallet line from an earlier refused heart (`view.cannotReceive`)
+ * stays until the next tap: under a heart a refresh disables, and alone when a
+ * refresh makes the note not payable. Click stops the card from expanding. The
+ * count sits immediately to the right of the icon; the fill remains after a
+ * tap. Who does not see the heart does not see the count.
  *
  * @param props - Message id, author id, deleted stamp, payable, cannotReceive,
  *   heartViewerId, server `heartCount` / `hearted`, visual state, click.
- * @returns The heart control, or `null` when it must not show.
+ * @returns The heart control, the author-wallet line alone, or `null` when
+ *   neither must show.
  */
 function ForumHeartControl({
   messageId,
@@ -565,28 +567,10 @@ function ForumHeartControl({
         {t('forum.payErrorAuthorWallet')}
       </p>
     ) : null;
-  if (cannotReceive) {
-    return (
-      <>
-        <span className="inline-flex items-center gap-1">
-          <IconButton
-            type="button"
-            size="sm"
-            variant="ghost"
-            aria-label={t('forum.heart')}
-            title={t('forum.heart')}
-            disabled
-          >
-            <Heart aria-hidden="true" className="h-4 w-4 shrink-0" fill="none" />
-          </IconButton>
-          <span className="text-xs tabular-nums text-app-subtle">{heartCount}</span>
-        </span>
-        {authorWalletLine}
-      </>
-    );
-  }
-  if (!payable) {
-    return null;
+  if (!cannotReceive && !payable) {
+    // No heart on a note that is not payable; a line from an earlier refused heart stays
+    // (an older api sends `payable: false` without `authorCanReceive`).
+    return authorWalletLine;
   }
   const extra = view?.extra ?? 0;
   const plusOne = view !== undefined && view.plusOne;
@@ -609,6 +593,7 @@ function ForumHeartControl({
             aria-label={t('forum.heart')}
             title={t('forum.heart')}
             className={buttonClass}
+            disabled={cannotReceive}
             onClick={(event) => {
               event.stopPropagation();
               onHeartTip(messageId);
@@ -948,6 +933,22 @@ export function ForumBoard({
   const scrollerRef = useRef<HTMLElement | null>(scroller);
   scrollerRef.current = scroller;
   const shownReplies = replies === null ? -1 : replies.length;
+  // A gift sheet or gift invoice whose author a refresh now reports as unable to
+  // receive is cancelled; the posting fee (`payHost` composer) pays 21.gifts, not
+  // the author, and stays.
+  const payTargetBlocked =
+    payMessageId !== null &&
+    payHost !== 'composer' &&
+    [...(messages ?? []), ...(Array.isArray(replies) ? replies : [])].some(
+      (row) => row.id === payMessageId && authorCannotReceive(row, viewerAccountId),
+    );
+  const onPayCancelRef = useRef(onPayCancel);
+  onPayCancelRef.current = onPayCancel;
+  useEffect(() => {
+    if (payTargetBlocked) {
+      onPayCancelRef.current();
+    }
+  }, [payTargetBlocked]);
   const scrollBeforeSheet = useRef<number | null>(null);
   const sheetWasOpen = useRef(false);
   // Where the page last came to rest: the reveal at the end of a move starts from here.
@@ -1452,6 +1453,7 @@ export function ForumBoard({
           const reactionPay =
             replyPayPreview !== null &&
             payInvoice !== null &&
+            !cannotReceive &&
             payMessageId === message.id &&
             payHost === 'card' &&
             payInvoice.messageId === message.id
@@ -1901,7 +1903,12 @@ export function ForumBoard({
               </div>
 
               <Collapse
-                show={!reactionPayPage && payMessageId === message.id && payHost !== 'composer'}
+                show={
+                  !reactionPayPage &&
+                  !cannotReceive &&
+                  payMessageId === message.id &&
+                  payHost !== 'composer'
+                }
               >
                 <SundayWritingGate notice="zap">
                   <ForumPaySheet
@@ -2184,7 +2191,13 @@ export function ForumBoard({
                                   />
                                 ) : null}
                               </div>
-                              <Collapse show={payMessageId === reply.id && payHost !== 'composer'}>
+                              <Collapse
+                                show={
+                                  !replyCannotReceive &&
+                                  payMessageId === reply.id &&
+                                  payHost !== 'composer'
+                                }
+                              >
                                 <SundayWritingGate notice="zap">
                                   <ForumPaySheet
                                     messageId={reply.id}

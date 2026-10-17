@@ -1275,7 +1275,7 @@ export function InboxScreen({
             {t('inbox.errorTooMany')}
           </p>
         ) : null}
-        {invoice !== null ? (
+        {invoice !== null && !counterpartCannotReceive ? (
           <div className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4">
             <div className="absolute left-3 top-3">
               <IconButton

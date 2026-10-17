@@ -378,6 +378,79 @@ describe('InboxLoader', () => {
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
+  it('drops a typed amount once a reloaded list says the counterpart cannot receive', async () => {
+    searchParams.set('c', 'conv-1');
+    let resolveReload: ((rows: Conversation[]) => void) | undefined;
+    listMock.mockResolvedValueOnce([THREAD]).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveReload = resolve;
+        }),
+    );
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    postMock.mockResolvedValue({
+      id: 'm2',
+      name: 'Ada',
+      text: 'Just text',
+      createdAt: '2026-08-28T13:00:00.000Z',
+      fromMe: true,
+      sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
+    });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Just text' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2' });
+    });
+    await act(async () => {
+      resolveReload?.([{ ...THREAD, canReceive: false }]);
+    });
+    await waitFor(() => {
+      expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    });
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('');
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess-2', 'conv-1', 'Just text');
+    });
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('drops an open invoice once a reloaded list says the counterpart cannot receive', async () => {
+    searchParams.set('c', 'conv-1');
+    let resolveReload: ((rows: Conversation[]) => void) | undefined;
+    listMock.mockResolvedValueOnce([THREAD]).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveReload = resolve;
+        }),
+    );
+    threadMock
+      .mockResolvedValueOnce(conversationPage([MESSAGE]))
+      .mockImplementation(() => new Promise(() => undefined));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    });
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2' });
+    });
+    await act(async () => {
+      resolveReload?.([{ ...THREAD, canReceive: false }]);
+    });
+    await waitFor(() => {
+      expect(screen.queryByText('Pay ₿21')).toBeNull();
+    });
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+  });
+
   it('mints an amount invoice, clears posting before polling, and applies the paid row', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([{ ...THREAD, unread: true, unreadMessageCount: 2 }, OLDER]);

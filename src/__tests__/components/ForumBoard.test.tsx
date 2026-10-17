@@ -10297,6 +10297,133 @@ describe('ForumBoard author who cannot receive', () => {
     );
   });
 
+  it('cancels an open gift sheet when a refresh says the reply author cannot receive', () => {
+    const onPayCancel = vi.fn();
+    const reply: ForumMessage = {
+      ...SAMPLE,
+      id: 'r1',
+      parentId: 'm1',
+      accountId: 'acc-bob',
+      payable: true,
+      text: 'A reply from Bob',
+    };
+    const props: Partial<ForumBoardProps> = {
+      messages: [{ ...SAMPLE, accountId: 'acc-carol' }],
+      expandedId: 'm1',
+      payMessageId: 'r1',
+      payHost: 'card',
+      payDraft: '21',
+      onPayCancel,
+    };
+    const { rerender } = renderWithLocale(board({ ...props, replies: [reply] }));
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(onPayCancel).not.toHaveBeenCalled();
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            ...props,
+            replies: [{ ...reply, payable: false, authorCanReceive: false }],
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+  });
+
+  it('cancels a reaction gift invoice when a refresh says the note author cannot receive', () => {
+    const onPayCancel = vi.fn();
+    const note: ForumMessage = { ...SAMPLE, accountId: 'acc-carol' };
+    const props: Partial<ForumBoardProps> = {
+      expandedId: 'm1',
+      replies: [],
+      payMessageId: 'm1',
+      payHost: 'card',
+      payInvoice: { messageId: 'm1', pr: 'lnbc1', amountSats: 21 },
+      replyPayPreview: 'Thanks for the bread',
+      onPayCancel,
+    };
+    const { rerender } = renderWithLocale(board({ ...props, messages: [note] }));
+    expect(screen.getByText('Thanks for the bread')).toBeTruthy();
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            ...props,
+            messages: [{ ...note, payable: false, authorCanReceive: false }],
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Thanks for the bread')).toBeNull();
+  });
+
+  it('keeps the posting-fee sheet on a note whose author cannot receive', () => {
+    const onPayCancel = vi.fn();
+    renderWithLocale(board({ payMessageId: 'm1', payHost: 'composer', onPayCancel }));
+    expect(onPayCancel).not.toHaveBeenCalled();
+  });
+
+  it('keeps a tap in its +1 window when a refresh then disables the heart', () => {
+    const views = {
+      m1: { pressed: true, plusOne: true, needsBalance: false, extra: 1 },
+    };
+    const live: ForumMessage = { ...SAMPLE, accountId: 'acc-bob', heartCount: 3 };
+    const { rerender } = renderWithLocale(
+      board({ messages: [live], onHeartTip: () => undefined, heartTipViews: views }),
+    );
+    const card = (): HTMLElement => document.querySelector('[data-message-id="m1"]') as HTMLElement;
+    expect(within(card()).getByText('+1')).toBeTruthy();
+    expect(within(card()).getByText('4')).toBeTruthy();
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            messages: [{ ...live, payable: false, authorCanReceive: false }],
+            onHeartTip: () => undefined,
+            heartTipViews: views,
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    const heart = within(card()).getByRole('button', { name: 'Send ₿1' }) as HTMLButtonElement;
+    expect(heart.disabled).toBe(true);
+    expect(heart.querySelector('svg')?.getAttribute('fill')).toBe('currentColor');
+    expect(within(card()).getByText('+1')).toBeTruthy();
+    expect(within(card()).getByText('4')).toBeTruthy();
+  });
+
+  it('keeps the author-wallet line when an older api answer makes the note not payable', () => {
+    const views = {
+      m1: { pressed: false, plusOne: false, needsBalance: false, cannotReceive: true },
+    };
+    const { rerender } = renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-bob' }],
+        onHeartTip: () => undefined,
+        heartTipViews: views,
+      }),
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+    const legacy: ForumMessage = { ...SAMPLE, accountId: 'acc-bob', payable: false };
+    delete legacy.authorCanReceive;
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({ messages: [legacy], onHeartTip: () => undefined, heartTipViews: views })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+  });
+
   it('keeps the author-wallet line when a refresh then disables the heart', () => {
     const views = {
       m1: { pressed: false, plusOne: false, needsBalance: false, cannotReceive: true },

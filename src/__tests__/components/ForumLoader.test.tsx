@@ -6001,6 +6001,48 @@ describe('ForumLoader', () => {
     expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3);
   });
 
+  it('updates authorCanReceive from the payable poll in both directions', async () => {
+    vi.useFakeTimers();
+    const blocked: ForumMessage = {
+      ...FRESH,
+      id: 'm-blocked',
+      accountId: 'acc_bob',
+      name: 'Bob',
+      text: 'Bob cannot receive yet',
+      payable: false,
+      authorCanReceive: false,
+    };
+    const open: ForumMessage = {
+      ...FRESH,
+      id: 'm-open',
+      accountId: 'acc_dan',
+      name: 'Dan',
+      text: 'Dan waits for a signature',
+      payable: false,
+      authorCanReceive: true,
+    };
+    fetchMock.mockResolvedValueOnce(forumPage([blocked, open])).mockResolvedValue(
+      forumPage([
+        { ...blocked, payable: true, authorCanReceive: true },
+        { ...open, authorCanReceive: false },
+      ]),
+    );
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const card = (id: string): HTMLElement =>
+      document.querySelector(`[data-message-id="${id}"]`) as HTMLElement;
+    expect(within(card('m-blocked')).getByText("Can't receive yet")).toBeTruthy();
+    expect(within(card('m-open')).queryByText("Can't receive yet")).toBeNull();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(within(card('m-blocked')).queryByText("Can't receive yet")).toBeNull();
+    expect(within(card('m-open')).getByText("Can't receive yet")).toBeTruthy();
+  });
+
   it('stops the payable poll once every listed row is payable', async () => {
     vi.useFakeTimers();
     const unsigned: ForumMessage = { ...SAMPLE, payable: false, replyCount: 1 };
@@ -8415,6 +8457,42 @@ describe('ForumLoader', () => {
     });
     expect(screen.queryByText('Fresh from refresh')).toBeNull();
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
+  });
+
+  it('updates authorCanReceive on shown notes while New posts holds unseen ones', async () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    const shown: ForumMessage = { ...SAMPLE, accountId: 'acc_bob', name: 'Bob' };
+    fetchMock
+      .mockResolvedValueOnce(forumPage([shown]))
+      .mockResolvedValueOnce(forumPage([shown]))
+      .mockResolvedValue(forumPage([FRESH, { ...shown, payable: false, authorCanReceive: false }]));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(screen.queryByText("Can't receive yet")).toBeNull();
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+    });
+    expect(screen.queryByText('Fresh from refresh')).toBeNull();
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
   });
 
   it('holds an unseen unpaid note behind New posts without counting it on the unpaid chip', async () => {

@@ -268,9 +268,9 @@ function appendMessages(
 }
 
 /**
- * Updates sats, payable, and the four payment snapshots on ids already in
- * `prev`. Does not insert unseen ids (those wait behind the New posts pill
- * while the visitor is scrolled down).
+ * Updates sats, payable, `authorCanReceive`, and the four payment snapshots on
+ * ids already in `prev`. Does not insert unseen ids (those wait behind the New
+ * posts pill while the visitor is scrolled down).
  *
  * @param prev - Current list, or `null` before the first successful load.
  * @param next - Fresh list from the payable poll GET.
@@ -287,6 +287,7 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
     if (
       fresh === undefined ||
       (fresh.payable === row.payable &&
+        fresh.authorCanReceive === row.authorCanReceive &&
         fresh.sats === row.sats &&
         fresh.amountUsd === row.amountUsd &&
         fresh.amountChf === row.amountChf &&
@@ -298,6 +299,7 @@ function mergePayableStatus(prev: ForumMessage[] | null, next: ForumMessage[]): 
     return {
       ...row,
       payable: fresh.payable,
+      authorCanReceive: fresh.authorCanReceive,
       sats: fresh.sats,
       amountUsd: fresh.amountUsd,
       amountChf: fresh.amountChf,
@@ -714,6 +716,12 @@ export function ForumLoader({
       const currentListed = listedNotes(messagesRef.current);
       const fetchedListed = filterListed(visibleNext);
       if (!replace && !forceApply && !atTop && hasUnseenForumPosts(currentListed, fetchedListed)) {
+        // Hold the unseen posts, but keep the rows already shown current: a
+        // note whose author can no longer receive must not stay payable.
+        setMessages((prev) =>
+          /* v8 ignore next -- a hold needs a shown list (hasUnseenForumPosts is false for null) */
+          prev === null ? prev : mergePayableStatus(prev, visibleNext),
+        );
         setNewPostsAvailable(true);
         return 'ok';
       }

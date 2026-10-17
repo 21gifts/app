@@ -66,7 +66,8 @@ export interface LoanRepayResult {
   /**
    * Catalog key of the failure line while phase is 'failed':
    * 'forum.payErrorRateLimit' | 'forum.payErrorRequest' | 'wallet.payUnavailable' |
-   * 'loans.errorCannotReceive' (the api answered `cannot_receive`: no lender can receive yet).
+   * 'loans.errorCannotReceive' (the api answered `cannot_receive`: a lender cannot receive yet;
+   * the answer does not say which).
    */
   errorKey:
     | 'forum.payErrorRateLimit'

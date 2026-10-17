@@ -3722,6 +3722,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/habit-tracker',
+    id: 'comment-cannot-receive-sunday',
+    image: 'habit-tracker-comment-cannot-receive-sunday.png',
+    visual: 'state-habit-tracker-comment-cannot-receive-sunday',
+    needle: "shotScreen(page, 'state-habit-tracker-comment-cannot-receive-sunday')",
+  },
+  {
+    route: '/habit-tracker',
     id: 'sunday',
     image: 'habit-tracker-sunday.png',
     visual: 'state-habit-tracker-sunday',
@@ -4426,6 +4433,20 @@ export const SCREEN_VARIANTS = [
     image: 'members-heart-cannot-receive.png',
     visual: 'state-members-heart-cannot-receive',
     needle: "shotScreen(page, 'state-members-heart-cannot-receive')",
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-cannot-receive',
+    image: 'members-posts-open-cannot-receive.png',
+    visual: 'state-members-posts-open-cannot-receive',
+    needle: "shotScreen(page, 'state-members-posts-open-cannot-receive')",
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-cannot-receive-reactions',
+    image: 'members-posts-open-cannot-receive-reactions.png',
+    visual: 'state-members-posts-open-cannot-receive-reactions',
+    needle: "shotScreen(page, 'state-members-posts-open-cannot-receive-reactions')",
   },
   {
     route: '/members/[accountId]',
@@ -6958,6 +6979,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'heart-cannot-receive-refreshed',
+    image: 'welcome-heart-cannot-receive-refreshed.png',
+    visual: 'state-welcome-heart-cannot-receive-refreshed',
+    needle: "shotScreen(page, 'state-welcome-heart-cannot-receive-refreshed')",
+  },
+  {
+    route: '/welcome',
     id: 'heart-paid',
     image: 'welcome-heart-paid.png',
     visual: 'state-welcome-heart-paid',
@@ -7158,6 +7186,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-heart-cannot-receive.png',
     visual: 'state-shops-heart-cannot-receive',
     needle: "shotScreen(page, 'state-shops-heart-cannot-receive')",
+  },
+  {
+    route: '/shops',
+    id: 'heart-cannot-receive-refreshed',
+    image: 'shops-heart-cannot-receive-refreshed.png',
+    visual: 'state-shops-heart-cannot-receive-refreshed',
+    needle: "shotScreen(page, 'state-shops-heart-cannot-receive-refreshed')",
   },
   {
     route: '/shops',
