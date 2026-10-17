@@ -4769,6 +4769,28 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-failed-who-open');
   });
 
+  test('state /loans/repay failed-cannot-receive', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-failed-cannot-receive',
+      text: "A lender's wallet can't receive yet.",
+    });
+    await shotScreen(page, 'state-loans-repay-failed-cannot-receive');
+  });
+
+  test('state /loans/repay failed-cannot-receive-who-open', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-failed-cannot-receive',
+      text: "A lender's wallet can't receive yet.",
+      pressWho: true,
+    });
+    await expect(page.getByText('Diego')).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-failed-cannot-receive-who-open');
+  });
+
   test('state /loans/repay collecting', async ({ page }) => {
     await loanShot(page, { loans: [collectingLoan], text: 'Not fully funded yet.' });
     await shotScreen(page, 'state-loans-repay-collecting');
@@ -11525,7 +11547,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: 'member@21.gifts',
+          lightningAddress: cannotReceive ? null : 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -11601,7 +11623,9 @@ test.describe('onboarding screens', () => {
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByRole('button', { name: 'Lend' })).toBeDisabled();
-    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByText("Can't receive yet").first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+    await expect(page.getByText(/carol@/)).toHaveCount(0);
     await shotScreen(page, 'state-members-posts-open-loan-lend-cannot-receive');
   });
 

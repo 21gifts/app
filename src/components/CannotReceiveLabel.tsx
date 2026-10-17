@@ -4,10 +4,11 @@ import type { ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 
 /**
- * Small muted label next to a disabled pay, gift, or heart control when the
- * member it targets cannot receive yet (the api sent `false` for
- * `authorCanReceive` or `canReceive`). Text only; the control it belongs to is
- * disabled by the caller.
+ * Small muted label next to a disabled pay, gift, heart, Lend, or amount
+ * control when the member it targets cannot receive yet (the api sent `false`
+ * for `authorCanReceive` or `canReceive`), or in place of the gifts address,
+ * QR, and sticker on the member card and `/view`. Text only; the caller
+ * disables the control.
  *
  * @returns The label.
  */

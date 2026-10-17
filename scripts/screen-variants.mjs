@@ -1461,6 +1461,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'failed-cannot-receive',
+    image: 'loans-repay-failed-cannot-receive.png',
+    visual: 'state-loans-repay-failed-cannot-receive',
+    needle: "shotScreen(page, 'state-loans-repay-failed-cannot-receive')",
+  },
+  {
+    route: '/loans/repay',
+    id: 'failed-cannot-receive-who-open',
+    image: 'loans-repay-failed-cannot-receive-who-open.png',
+    visual: 'state-loans-repay-failed-cannot-receive-who-open',
+    needle: "shotScreen(page, 'state-loans-repay-failed-cannot-receive-who-open')",
+  },
+  {
+    route: '/loans/repay',
     id: 'collecting',
     image: 'loans-repay-collecting.png',
     visual: 'state-loans-repay-collecting',

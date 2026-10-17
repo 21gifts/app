@@ -1079,6 +1079,7 @@ describe('useHeartTip', () => {
   });
 
   it('shows the author-wallet line when the api says the author cannot receive', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     vi.mocked(postMessageInvoice).mockRejectedValue(new CannotReceiveError());
     const { result } = renderHook(() => useHeartTip({ readOnly: false }));
     await clickHeart(result, 'h-cannot');
@@ -1093,6 +1094,16 @@ describe('useHeartTip', () => {
       'Heart not sent',
       expect.objectContaining({ tags: { heart_reason: 'author_cannot_receive' } }),
     );
+    act(() => {
+      vi.advanceTimersByTime(HEART_TIP_PLUS_ONE_MS);
+    });
+    expect(result.current.heartTipViews['h-cannot']).toEqual({
+      pressed: false,
+      plusOne: false,
+      needsBalance: false,
+      extra: 0,
+      cannotReceive: true,
+    });
   });
 
   it('keeps the author-wallet line when heartCounts catch up with an earlier heart', async () => {

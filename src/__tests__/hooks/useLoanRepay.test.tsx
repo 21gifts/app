@@ -2039,6 +2039,7 @@ describe('useLoanRepay visual pins', () => {
     ['repay-repaid-multi', 'repaid', 21_000],
     ['repay-unconfirmed', 'unconfirmed', 21_000],
     ['repay-failed', 'failed', 21_000],
+    ['repay-failed-cannot-receive', 'failed', 21_000],
   ] as const;
 
   it.each(pins)('pins %s only in a Playwright build', (visual, phase, balanceSats) => {
@@ -2081,6 +2082,9 @@ describe('useLoanRepay visual pins', () => {
     }
     if (visual === 'repay-failed') {
       expect(result.current.errorKey).toBe('forum.payErrorRequest');
+    }
+    if (visual === 'repay-failed-cannot-receive') {
+      expect(result.current.errorKey).toBe('loans.errorCannotReceive');
     }
   });
 
