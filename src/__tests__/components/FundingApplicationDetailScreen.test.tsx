@@ -392,6 +392,39 @@ describe('FundingApplicationDetailScreen', () => {
     expect(admitMock).toHaveBeenCalledTimes(1);
   });
 
+  it('shows no decision buttons from the stale detail while the settled person reloads', async () => {
+    const admit = pendingAdmit();
+    const first = renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    await admitFromTruthQuestion();
+    first.unmount();
+    renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    await screen.findByRole('button', { name: 'Yes' });
+    let resolveReload: ((value: FundingApplicationDetail) => void) | undefined;
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveReload = resolve;
+        }),
+    );
+    await act(async () => {
+      admit.done();
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(resolveReload).toBeDefined();
+    });
+    expect(screen.queryByRole('button', { name: 'Yes' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'No' })).toBeNull();
+    await act(async () => {
+      resolveReload?.(DETAIL);
+      await Promise.resolve();
+    });
+    expect(
+      ((await screen.findByRole('button', { name: 'Yes' })) as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(admitMock).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps the first person locked while a second decision is open on the same screen', async () => {
     const first = pendingAdmit();
     const view = renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);

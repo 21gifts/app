@@ -89,10 +89,13 @@ export function FundingApplicationDetailScreen({
   useEffect(() => {
     mounted.current = true;
     const onSettled = (settled: string, origin: symbol): void => {
-      // Another screen's decision for the person shown here settled: unlock and reload.
+      // Another screen's decision for the person shown here settled: drop the stale detail
+      // so its buttons cannot fire a second decision, then unlock and reload.
       if (origin === instance.current || settled !== shownAccountId.current) {
         return;
       }
+      setDetail(null);
+      setStep('principles');
       setDeciding(false);
       setDetailAttempt((current) => current + 1);
     };
