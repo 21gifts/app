@@ -105,6 +105,24 @@ test('Function: LoginsClosedError — logins_closed shows the closed line', asyn
   await expect(page.getByText('Something went wrong. Please try again.')).toHaveCount(0);
 });
 
+test('every passkey step without the current build id gets 403 app_outdated', async ({
+  request,
+}) => {
+  const steps = [
+    '/auth/passkey/register/begin',
+    '/auth/passkey/register/finish',
+    '/auth/passkey/authenticate/begin',
+    '/auth/passkey/authenticate/finish',
+  ];
+  for (const step of steps) {
+    for (const headers of [{}, { 'x-app-build': 'other-build' }]) {
+      const res = await request.post(step, { headers });
+      expect(res.status(), `${step} ${JSON.stringify(headers)}`).toBe(403);
+      expect(((await res.json()) as { code: string }).code).toBe('app_outdated');
+    }
+  }
+});
+
 test('Function: AppOutdatedError — the proxy passes an old build to the api', async ({
   page,
   request,

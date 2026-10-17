@@ -1,6 +1,9 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { fulfillSpot } from './fx-spot';
 
+/** The Playwright build's id, which the stub api requires on every passkey step. */
+const APP_BUILD = { 'x-app-build': 'dev' };
+
 /** The api stub, for reading what the app sent it. */
 const MOCK_API = 'http://127.0.0.1:3001';
 
@@ -19,11 +22,11 @@ type SentEvent = { name: string; at: string; path: string; props: Record<string,
  * @returns The session token.
  */
 async function newMember(request: APIRequestContext): Promise<string> {
-  const begin = await request.post('/auth/passkey/register/begin');
+  const begin = await request.post('/auth/passkey/register/begin', { headers: APP_BUILD });
   expect(begin.status()).toBe(200);
   const started = (await begin.json()) as { challengeId: string };
   const finish = await request.post('/auth/passkey/register/finish', {
-    headers: { origin: 'http://localhost:3000' },
+    headers: { ...APP_BUILD, origin: 'http://localhost:3000' },
     data: {
       challengeId: started.challengeId,
       credential: {
