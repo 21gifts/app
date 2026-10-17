@@ -1043,7 +1043,8 @@ export async function forwardCspReport(request: Request): Promise<Response> {
         fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/csp-report' },
-          body: JSON.stringify({ 'csp-report': report }),
+          // Through the same scrubber as every event: a kept origin can still spell an address.
+          body: JSON.stringify({ 'csp-report': scrubValue(report, 0) }),
         }),
       ),
     );

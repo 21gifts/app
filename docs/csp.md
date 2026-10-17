@@ -44,8 +44,11 @@ report is not an envelope. Each report is reduced before it leaves the app:
 | line, column, status  | whole numbers only                                                                                                            |
 | everything else       | dropped: script sample, referrer, policy text, query strings, fragments                                                       |
 
-The visitor's IP address, cookies, and headers are not forwarded. Without a
-DSN the route answers 404 and nothing is sent.
+The reduced report then goes through the same privacy scrubber as every
+error event (`scrubValue`), so an address, invoice, or key spelled inside a
+kept origin is replaced by `[Filtered]`. The visitor's IP address, cookies,
+and headers are not forwarded. Without a DSN the route answers 404 and
+nothing is sent.
 
 ## Nonce and inline code
 

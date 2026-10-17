@@ -1264,6 +1264,31 @@ describe('forwardCspReport', () => {
     ]);
   });
 
+  it('passes the reduced report through the privacy scrubber', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const address = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+    await forwardCspReport(
+      report({
+        'csp-report': {
+          'document-uri': 'https://21.gifts/wallet',
+          'effective-directive': 'connect-src',
+          'blocked-uri': `https://${address}.relay.example/x`,
+          'source-file': `https://${HEX64}.cdn.example/a.js`,
+        },
+      }),
+    );
+    expect(sent(fetchMock)).toEqual([
+      {
+        'document-uri': 'https://21.gifts/wallet',
+        'effective-directive': 'connect-src',
+        'violated-directive': 'connect-src',
+        'blocked-uri': 'https://[Filtered].relay.example',
+        'source-file': 'https://[Filtered].cdn.example',
+      },
+    ]);
+  });
+
   it('keeps a page segment only when it is a route of src/app', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);

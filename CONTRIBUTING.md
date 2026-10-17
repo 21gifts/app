@@ -1045,8 +1045,8 @@ it matches (not on the `/map` redirect) with a per-request nonce; the sources ar
 `entrypoint.sh` placeholder), so the same image switches by recreating the
 container with it set. Violation reports go to `POST /monitoring/csp`, which
 forwards them to the Sentry project's security endpoint reduced to the
-directive, origins, and route name (no query, member path, sample, or referrer), and
-answers 404 without a DSN.
+directive, origins, and route name (no query, member path, sample, or referrer)
+and passed through the same privacy scrubber, and answers 404 without a DSN.
 
 Rules:
 
