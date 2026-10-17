@@ -38,7 +38,7 @@ function setAdaSession(): void {
       role: 'basis',
       name: 'Ada',
       location: null,
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       lightningAddressVerified: false,
       forumLawsDismissed: false,
       createdAt: 1,

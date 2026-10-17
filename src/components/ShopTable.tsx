@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -9,6 +10,7 @@ import { fetchMessages } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
 import { isShopNote, SHOP_HASHTAG, stripShopHashtag } from '@/lib/forum-shop';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Page size, same as the shops post list. */
@@ -46,15 +48,25 @@ function placeText(message: ForumMessage): string | null {
 }
 
 /**
- * Table of loaded shop notes: name, place, and operator.
+ * Table of loaded shop notes: name, place, and operator. Place and operator
+ * are client-side links: the place opens `/shops?pin=…#map`, the operator
+ * `/members/:id`. With a country, only shops pinned in that country are
+ * loaded (`country` on `GET /forum/messages`).
  *
+ * @param props - Optional ISO 3166-1 alpha-2 `country` (null or omitted lists every shop) and
+ * `onShopsChanged`, run once per moderator save of a row's shop note (complete, or partly
+ * written once its editor closes or unmounts).
  * @returns The table, empty copy, or an error with retry. Null without a session.
  */
-export function ShopTable(): ReactElement | null {
+export function ShopTable({
+  country = null,
+  onShopsChanged,
+}: { country?: string | null; onShopsChanged?: () => void } = {}): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const router = useRouter();
-  const replaceRef = useRef(router.replace);
-  replaceRef.current = router.replace;
+  // next/navigation's identity is not stable, so the load effect reads it here.
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const { t } = useTranslations();
   const [rows, setRows] = useState<ForumMessage[] | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -74,6 +86,7 @@ export function ShopTable(): ReactElement | null {
       mode: 'all',
       limit: PAGE_LIMIT,
       hashtag: SHOP_HASHTAG,
+      ...(country !== null ? { country } : {}),
       ...(cursor !== null ? { cursor } : {}),
     })
       .then((page) => {
@@ -90,7 +103,7 @@ export function ShopTable(): ReactElement | null {
           return;
         }
         if (error instanceof MissingRequirementsError) {
-          replaceRef.current('/setup/rules');
+          returnToView('/setup/rules', routerRef.current);
           return;
         }
         setFailed(true);
@@ -99,7 +112,7 @@ export function ShopTable(): ReactElement | null {
     return () => {
       cancelled = true;
     };
-  }, [session, loadId, cursor]);
+  }, [session, loadId, cursor, country]);
 
   if (session === null) {
     return null;
@@ -163,6 +176,7 @@ export function ShopTable(): ReactElement | null {
                       {shopDisplayName(row)}
                       <ShopNoteEditControl
                         message={row}
+                        {...(onShopsChanged !== undefined ? { onSaved: onShopsChanged } : {})}
                         onUpdated={(updated) => {
                           setRows((current) => {
                             /* v8 ignore next 3 -- the table is on screen before a row editor can save */
@@ -179,18 +193,21 @@ export function ShopTable(): ReactElement | null {
                     {place === null ? (
                       t('shops.missing')
                     ) : (
-                      <a href={`/map?pin=${row.id}`} className="underline">
+                      <Link
+                        href={`/shops?pin=${encodeURIComponent(row.id)}#map`}
+                        className="underline"
+                      >
                         {place}
-                      </a>
+                      </Link>
                     )}
                   </td>
                   <td className="min-w-0 break-words align-top py-2">
                     {operator === undefined ? (
                       t('shops.missing')
                     ) : (
-                      <a href={`/members/${operator.id}`} className="underline">
+                      <Link href={`/members/${operator.id}`} className="underline">
                         @{operator.username}
-                      </a>
+                      </Link>
                     )}
                   </td>
                 </tr>

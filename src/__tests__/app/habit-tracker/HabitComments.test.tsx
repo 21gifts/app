@@ -68,7 +68,6 @@ function renderComments(
       payInvoice={null}
       rateDay={null}
       ratePending={false}
-      showPaymentQr={false}
       onPayOpen={vi.fn()}
       onPayDraftChange={vi.fn()}
       onPayUnitChange={vi.fn()}

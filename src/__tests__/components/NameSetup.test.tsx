@@ -6,8 +6,6 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/api', () => ({
   setName: vi.fn(),
-  setLightningAddress: vi.fn(),
-  unlinkLightningAddress: vi.fn(),
   skipSetup: vi.fn(),
 }));
 
@@ -39,7 +37,7 @@ afterEach(() => {
 });
 
 describe('NameSetup', () => {
-  it('asks for a name and not a Wallet of Satoshi address', () => {
+  it('asks for a name and not an address', () => {
     renderWithLocale(<NameSetup />);
     expect(screen.getByRole('heading', { name: 'Your name' }).className).toContain('sm:text-3xl');
     expect(screen.getByRole('button', { name: /continue/i })).toBeTruthy();

@@ -19,7 +19,7 @@ type NameError = { type: 'empty' } | { type: 'request' };
  *
  * Reads the current account and session token from the auth store and merges
  * the saved `name`, `setup`, and `missing` into that account so a concurrent
- * address write is not overwritten. Renders nothing when no account — or,
+ * location or rules write is not overwritten. Renders nothing when no account — or,
  * defensively, no session token — is present, since it is only mounted inside
  * the logged-in view.
  *
@@ -93,7 +93,7 @@ export function NameForm(
         if (current === null) {
           return;
         }
-        // Keep fields this form does not own so a concurrent address save
+        // Keep fields this form does not own so a concurrent location save
         // is not overwritten by a stale full-account response.
         setAccount({
           ...current,

@@ -8,7 +8,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/trust-chain` — signed-in diagram of who verified or appointed whom.
  *
- * Requires name + address + living-room rules agreement via
+ * Requires name + username + living-room rules agreement via
  * {@link OnboardingGate} `screen="welcome"`, same as `/notifications`. There is
  * no `route.ts` beside this page (Next.js forbids that); graph HTTP lives
  * under `/trust/graph`. Any logged-in completed account may view.

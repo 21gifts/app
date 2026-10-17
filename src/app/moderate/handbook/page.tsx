@@ -9,8 +9,8 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  * `/moderate/handbook` — signed-in staff handbook of how 21.gifts works.
  *
  * `/moderate/handbook` is the chapter list. The chrome back returns to the
- * previous in-app view (the card has no back control). Requires name +
- * address + living-room rules agreement via {@link OnboardingGate}
+ * previous in-app view (the card has no back control). Requires name + username +
+ * living-room rules agreement via {@link OnboardingGate}
  * `screen="welcome"`. There is no `route.ts` beside this page.
  *
  * @returns The handbook screen.

@@ -27,13 +27,13 @@ describe('screenVariantDescription', () => {
       throw new Error('missing English description for /welcome:repay-today');
     }
     expect(screenVariantDescription('de', '/welcome:repay-today', english, 'label')).toContain(
-      'Heutige Rate zahlen',
+      'Kredit zurückzahlen',
     );
     expect(screenVariantDescription('es', '/welcome:repay-today', english, 'label')).toContain(
-      'Pagar la cuota de hoy',
+      'Devolver tu préstamo',
     );
     expect(screenVariantDescription('fil', '/welcome:repay-today', english, 'label')).toContain(
-      'Bayaran ang hulog ngayon',
+      'Bayaran ang iyong utang',
     );
   });
 

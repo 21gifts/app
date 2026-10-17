@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { ReactElement, ReactNode } from 'react';
 import { HandbookCopyLink } from '@/components/HandbookCopyLink';
 import { HandbookFigure } from '@/components/HandbookFigure';
@@ -299,6 +300,14 @@ function renderInline(inline: HandbookInline, key: number): ReactNode {
     return <strong key={key}>{inline.value}</strong>;
   }
   if (inline.type === 'link') {
+    // An in-app path opens client-side. A hash or another site stays a plain anchor.
+    if (inline.href.startsWith('/') && !inline.href.startsWith('//')) {
+      return (
+        <Link key={key} href={inline.href} className="text-accent underline underline-offset-2">
+          {inline.children}
+        </Link>
+      );
+    }
     return (
       <a key={key} href={inline.href} className="text-accent underline underline-offset-2">
         {inline.children}

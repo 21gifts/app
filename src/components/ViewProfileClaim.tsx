@@ -6,11 +6,17 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, IconButton } from '@/components/ui';
+import { WalletLoginCard } from '@/components/WalletLoginCard';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
+import { useWalletOpen } from '@/hooks/useWalletOpen';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { nextOnboardingPath } from '@/lib/onboarding';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** `usePasskeyLogin` error when the new passkey returned no PRF output. */
+const PRF_UNSUPPORTED_ERROR = 'wallet.prfUnsupported';
 
 /**
  * Whether a passkey error means the profile is already claimed (HTTP 409).
@@ -26,10 +32,15 @@ function isAlreadyClaimedError(message: string | null): boolean {
  * Public passkey claim control under the `/view/[viewKey]` profile card.
  * Unclaimed profiles (`hasPasskey` false) show the yellow Activate banner in a
  * real browser even when another session is signed in. In Telegram or another
- * in-app browser, shows the shared escape card on mount instead.
+ * in-app browser, shows the shared escape card on mount instead. When the new
+ * passkey returns no PRF output, the alert says that this phone or browser
+ * cannot hold a 21.gifts wallet instead of the generic claim error.
  *
  * @param props - Dynamic route `viewKey` and whether the profile already has a passkey.
- * @returns Yellow activate banner, in-app escape card, spinner, error copy, or `null` when claimed.
+ * @returns Yellow activate banner, in-app escape card, spinner, error copy
+ *   (also for a failed **Log in instead** over a held-back session),
+ *   `WalletLoginCard` after a successful **Log in instead** until the wallet
+ *   is open (and while that session is held back), or `null` when claimed.
  */
 export function ViewProfileClaim({
   viewKey,
@@ -42,6 +53,8 @@ export function ViewProfileClaim({
   const router = useRouter();
   const { ready } = useHydrateSession();
   const account = useAuthStore((state) => state.account);
+  const lockedSession = useAuthStore((state) => state.lockedSession);
+  const walletOpen = useWalletOpen();
   const passkey = usePasskeyLogin();
   const claimAttemptedRef = useRef(false);
   const claimedLoginRef = useRef(false);
@@ -53,7 +66,7 @@ export function ViewProfileClaim({
 
   useEffect(() => {
     if (claimAttemptedRef.current && account !== null) {
-      router.replace(nextOnboardingPath(account));
+      returnToView(nextOnboardingPath(account), router);
     }
   }, [account, router]);
 
@@ -93,7 +106,9 @@ export function ViewProfileClaim({
     return (
       <div className="flex max-w-sm flex-col items-center gap-3">
         <p role="alert" className="text-center text-sm text-app-danger">
-          {t('view.claimError')}
+          {passkey.error === PRF_UNSUPPORTED_ERROR
+            ? t('wallet.prfUnsupported')
+            : t('view.claimError')}
         </p>
         <Button type="button" onClick={onRetry}>
           {t('view.retry')}
@@ -103,21 +118,31 @@ export function ViewProfileClaim({
   }
 
   if (claimedLoginRef.current) {
-    if (account !== null) {
-      return null;
-    }
-    if (passkey.status === 'starting') {
+    // While this login is still running, only its spinner shows: a held-back
+    // session's card (with its own login) would race it.
+    if (account === null && passkey.status === 'starting') {
       return (
         <div className="flex flex-col items-center gap-2">
           <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />
         </div>
       );
     }
-    if (passkey.status === 'unknown') {
+    // A failed attempt of this login keeps its own alert and retry, also
+    // over a held-back session.
+    if (account === null && passkey.status === 'unknown') {
       return claimFailedView(() => passkey.authenticate());
     }
-    if (passkey.status === 'error' && !isAlreadyClaimedError(passkey.error)) {
+    if (account === null && passkey.status === 'error' && !isAlreadyClaimedError(passkey.error)) {
       return claimFailedView(() => passkey.retry());
+    }
+    // Logging in here opens the wallet like everywhere else: until it is
+    // open, and while the session is held back after it could not be, the
+    // same login card stands in place, so its alert stays.
+    if ((account !== null && !walletOpen) || lockedSession !== null) {
+      return <WalletLoginCard />;
+    }
+    if (account !== null) {
+      return null;
     }
     return alreadyClaimedView();
   }

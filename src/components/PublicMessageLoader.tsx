@@ -17,27 +17,34 @@ import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
 import { PublicMessageThread } from '@/components/PublicMessageThread';
 import { Button, Card } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
+import { useActiveSession } from '@/hooks/useActiveSession';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import {
   fetchForumMessage,
-  fetchGiftStats,
   fetchPublicMessage,
-  fetchPublicMessagePhoto,
   fetchPublicReplies,
   fetchReplies,
   markNotificationsReadForMessage,
 } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
+import { forumPhotoSrc } from '@/lib/forum-photo';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
-import {
-  formatBitcoin,
-  latestRateDayFor,
-  type FiatCode,
-  type FiatRateDay,
-} from '@/lib/stats-money';
+import { formatBitcoin, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Eager first stills on the first two cards; everything else is lazy. */
+function publicStillPriority(
+  cardIndex: number,
+  photoIndex: number,
+): { loading: 'eager' | 'lazy'; fetchPriority: 'high' | 'low' } {
+  if ((cardIndex === 0 || cardIndex === 1) && photoIndex === 0) {
+    return { loading: 'eager', fetchPriority: 'high' };
+  }
+  return { loading: 'lazy', fetchPriority: 'low' };
+}
 
 function PublicThreadCard({
   note,
@@ -46,6 +53,7 @@ function PublicThreadCard({
   rateDay,
   fiat,
   knownNotes,
+  cardIndex,
 }: {
   note: ForumMessage;
   highlight: boolean;
@@ -53,55 +61,37 @@ function PublicThreadCard({
   rateDay: FiatRateDay | null;
   fiat: FiatCode;
   knownNotes: readonly ForumMessage[];
+  cardIndex: number;
 }): ReactElement {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const [photoUrls, setPhotoUrls] = useState<Record<number, string>>({});
+  const [deadPhotoKeys, setDeadPhotoKeys] = useState<ReadonlySet<string>>(() => new Set());
   const [videoFailed, setVideoFailed] = useState(false);
   const photoCount = note.photoCount ?? (note.hasPhoto ? 1 : 0);
-
-  useEffect(() => {
-    if (photoCount === 0) {
-      setPhotoUrls({});
-      return;
+  const loadedPhotoUrls = Array.from({ length: photoCount }, (_, index) => {
+    if (deadPhotoKeys.has(`${note.id}:${index}`)) {
+      return null;
     }
-
-    let cancelled = false;
-    const objectUrls: string[] = [];
-
-    void (async () => {
-      const next: Record<number, string> = {};
-      for (let index = 0; index < photoCount; index += 1) {
-        try {
-          const blob = await fetchPublicMessagePhoto(note.id, index);
-          if (cancelled) {
-            return;
-          }
-          const objectUrl = URL.createObjectURL(blob);
-          objectUrls.push(objectUrl);
-          next[index] = objectUrl;
-        } catch {
-          // Leave only this image out when its public photo request fails.
-        }
-      }
-      if (!cancelled) {
-        setPhotoUrls(next);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      for (const objectUrl of objectUrls) {
-        URL.revokeObjectURL(objectUrl);
-      }
+    return {
+      index,
+      url: forumPhotoSrc(note.id, index),
+      ...publicStillPriority(cardIndex, index),
     };
-  }, [note.id, photoCount]);
-
-  const photoUrl = photoUrls[0];
-  const loadedPhotoUrls = Array.from({ length: photoCount }, (_, index) => ({
-    index,
-    url: photoUrls[index],
-  })).filter((photo): photo is { index: number; url: string } => photo.url !== undefined);
+  }).filter(
+    (
+      photo,
+    ): photo is {
+      index: number;
+      url: string;
+      loading: 'eager' | 'lazy';
+      fetchPriority: 'high' | 'low';
+    } => photo !== null,
+  );
+  const photoUrl = loadedPhotoUrls[0]?.url;
+  const posterSrc =
+    (note.hasPhoto || photoCount >= 1) && !deadPhotoKeys.has(`${note.id}:0`)
+      ? forumPhotoSrc(note.id, 0)
+      : undefined;
   const fiatSuffix = preferredFiatSuffix(note.sats, rateDay, fiat, numberFormat, note);
 
   const card = (
@@ -142,7 +132,7 @@ function PublicThreadCard({
       {note.hasVideo && !videoFailed ? (
         <ForumVideo
           src={forumVideoSrc(note.id, note.videoContentType)}
-          poster={photoUrl ?? undefined}
+          poster={posterSrc}
           preload="metadata"
           className="mx-auto block h-auto w-auto max-h-80 max-w-full shrink-0 rounded-xl object-contain"
           onError={() => {
@@ -150,16 +140,25 @@ function PublicThreadCard({
           }}
         />
       ) : photoCount <= 1 && photoUrl !== undefined ? (
-        /* eslint-disable-next-line @next/next/no-img-element -- blob URL from fetchPublicMessagePhoto */
+        /* eslint-disable-next-line @next/next/no-img-element -- same-origin photo URL, not next/image */
         <img
           src={photoUrl}
           alt={t('forum.photoAlt', { name: note.name })}
           className="block h-auto max-h-80 w-full shrink-0 rounded-xl object-contain"
+          decoding="async"
+          loading={publicStillPriority(cardIndex, 0).loading}
+          fetchPriority={publicStillPriority(cardIndex, 0).fetchPriority}
+          onError={() => {
+            setDeadPhotoKeys((prev) => new Set(prev).add(`${note.id}:0`));
+          }}
         />
       ) : photoCount > 1 && loadedPhotoUrls.length > 0 ? (
         <ForumPhotoGallery
           photos={loadedPhotoUrls}
           alt={t('forum.photoAlt', { name: note.name })}
+          onPhotoError={(index) => {
+            setDeadPhotoKeys((prev) => new Set(prev).add(`${note.id}:${index}`));
+          }}
         />
       ) : null}
       {note.text !== '' ? (
@@ -184,7 +183,7 @@ function PublicThreadCard({
       ) : null}
       {note.parentId === undefined && note.place !== undefined ? (
         <Link
-          href={`/map?pin=${encodeURIComponent(note.id)}`}
+          href={`/shops?pin=${encodeURIComponent(note.id)}#map`}
           className="mt-2 inline-flex items-center gap-1 text-sm text-app-fg underline"
         >
           <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
@@ -258,12 +257,14 @@ function PublicThreadCard({
 
 /**
  * Client loader for `/messages/[id]`: validates the UUID, waits for session
- * hydrate, then fetches the note. Any session uses bearer
- * {@link fetchForumMessage} / {@link fetchReplies}. A hidden note is still
+ * hydrate, then fetches the note. A session whose wallet is open (or an
+ * account that cannot hold one) uses bearer {@link fetchForumMessage} /
+ * {@link fetchReplies}; a login whose wallet is still opening counts as
+ * signed out here until it is open. A hidden note is still
  * 404 for a non-moderator (missing). Everyone else uses the public fetch.
  * Opening a reply UUID still shows the parent thread. Unsigned visitors keep
- * the read-only cards. When hydrate is ready and both session and account are
- * set, mounts {@link PublicMessageThread} (`ForumBoard` with `composerHidden`)
+ * the read-only cards. When hydrate is ready, both session and account are
+ * set, and the wallet is open, mounts {@link PublicMessageThread} (`ForumBoard` with `composerHidden`)
  * so copy, reply, Gift on a payable nested reply, and staff delete work.
  * Passes optional `seedReply` when the highlighted row is a hidden reply. A
  * signed-in load that reaches ready with a root marks that root's
@@ -277,7 +278,9 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   const { t, locale } = useTranslations();
   const { fiat } = useFiatPreference();
   const { ready } = useHydrateSession();
-  const session = useAuthStore((state) => state.session);
+  // A login whose wallet is still opening counts as signed out here: no
+  // signed-in fetch and no notification marked read until it is open.
+  const session = useActiveSession();
   const account = useAuthStore((state) => state.account);
   const [status, setStatus] = useState<'loading' | 'missing' | 'error' | 'ready'>(() =>
     MESSAGE_ID_RE.test(id) ? 'loading' : 'missing',
@@ -286,8 +289,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   const [replies, setReplies] = useState<ForumMessage[]>([]);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const [rateSeries, setRateSeries] = useState<readonly FiatRateDay[] | null>(null);
-  const rateDay = rateSeries === null ? null : latestRateDayFor(rateSeries, fiat);
+  const rateDay = useSpotRate(MESSAGE_ID_RE.test(id));
   const markedRootStampRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -374,27 +376,6 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
     };
   }, [id, attempt, ready, session]);
 
-  useEffect(() => {
-    if (!MESSAGE_ID_RE.test(id)) {
-      return;
-    }
-    let cancelled = false;
-    void fetchGiftStats()
-      .then((stats) => {
-        if (!cancelled) {
-          setRateSeries(stats.spendOverTime);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRateSeries([]);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [id]);
-
   if (status === 'missing') {
     return <p className="text-center text-sm text-app-muted">{t('view.missing')}</p>;
   }
@@ -469,8 +450,9 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
             rateDay={rateDay}
             fiat={fiat}
             knownNotes={[root, ...replies]}
+            cardIndex={0}
           />
-          {replies.map((reply) => (
+          {replies.map((reply, replyIndex) => (
             <PublicThreadCard
               key={reply.id}
               note={reply}
@@ -479,6 +461,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
               rateDay={rateDay}
               fiat={fiat}
               knownNotes={[root, ...replies]}
+              cardIndex={replyIndex + 1}
             />
           ))}
         </>

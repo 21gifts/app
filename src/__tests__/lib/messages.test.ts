@@ -24,6 +24,36 @@ describe('getCatalog', () => {
     }
   });
 
+  it('keeps the shop-count plural copy in every catalog', () => {
+    expect(getCatalog('en')['profile.shopCount']).toBe(
+      '{count, plural, one {# shop} other {# shops}}',
+    );
+    expect(getCatalog('de')['profile.shopCount']).toBe(
+      '{count, plural, one {# Shop} other {# Shops}}',
+    );
+    expect(getCatalog('es')['profile.shopCount']).toBe(
+      '{count, plural, one {# tienda} other {# tiendas}}',
+    );
+    expect(getCatalog('fil')['profile.shopCount']).toBe(
+      '{count, plural, one {# tindahan} other {# tindahan}}',
+    );
+  });
+
+  it('keeps the credit-count plural copy in every catalog', () => {
+    expect(getCatalog('en')['profile.creditCount']).toBe(
+      '{count, plural, one {# credit} other {# credits}}',
+    );
+    expect(getCatalog('de')['profile.creditCount']).toBe(
+      '{count, plural, one {# Kredit} other {# Kredite}}',
+    );
+    expect(getCatalog('es')['profile.creditCount']).toBe(
+      '{count, plural, one {# crédito} other {# créditos}}',
+    );
+    expect(getCatalog('fil')['profile.creditCount']).toBe(
+      '{count, plural, one {# utang} other {# utang}}',
+    );
+  });
+
   it('keeps product tokens untranslated in every locale', () => {
     expect(getCatalog('en')['forum.payOpenWallet']).toBe('Pay');
     expect(getCatalog('de')['forum.payOpenWallet']).toBe('Zahlen');
@@ -47,19 +77,24 @@ describe('getCatalog', () => {
     );
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
-      expect(catalog['la.heading']).toBe('Wallet of Satoshi address');
-      expect(catalog['la.aria']).toBe('Wallet of Satoshi address');
-      expect(catalog['forum.payOpenWalletAria']).toContain('Wallet of Satoshi');
+      expect(catalog['forum.payOpenWalletAria']).toContain('Bitcoin');
       expect(catalog['forum.payOpenWalletAria'].trim().length).toBeGreaterThan(0);
+      expect(catalog['home.faq8A']).toContain('Bitcoin');
       expect(catalog['aria.github']).toBe('GitHub');
-      for (const [key, value] of Object.entries(catalog)) {
-        expect(value, `${locale}.${key}`).not.toMatch(/Wallet-of-Satoshi/);
+    }
+  });
+
+  it('names no third-party wallet app in any catalog value', () => {
+    const thirdPartyWallet = new RegExp(['wallet', 'of', 'satoshi'].join('[\\s-]*'), 'i');
+    for (const locale of LOCALES) {
+      for (const [key, value] of Object.entries(getCatalog(locale))) {
+        expect(value, `${locale}.${key}`).not.toMatch(thirdPartyWallet);
       }
     }
   });
 
-  it('contains no Lightning or LNURL jargon in any catalog value', () => {
-    const jargon = /Lightning|LNURL/i;
+  it('contains no Lightning, LNURL, or Spark jargon in any catalog value', () => {
+    const jargon = /Lightning|LNURL|\bSpark\b/i;
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
       for (const [key, value] of Object.entries(catalog)) {
@@ -68,21 +103,39 @@ describe('getCatalog', () => {
     }
   });
 
+  it('names no wallet key in the privacy answer of any locale', () => {
+    for (const locale of LOCALES) {
+      expect(getCatalog(locale)['home.faq3A'], `${locale}.home.faq3A`).not.toMatch(
+        /public key|Schlüssel|clave/i,
+      );
+    }
+  });
+
+  it('says the @21.gifts address ends with the service while the 12 words keep the Bitcoin', () => {
+    for (const locale of LOCALES) {
+      const catalog = getCatalog(locale);
+      for (const key of ['about.conv2Body', 'home.why3Body'] as const) {
+        expect(catalog[key], `${locale}.${key}`).toContain('@21.gifts');
+        expect(catalog[key], `${locale}.${key}`).toContain('12');
+      }
+    }
+    expect(getCatalog('en')['about.conv2Body']).toContain('address would stop working');
+  });
+
   it('prefixes home.step2BodyAfter with a period in every locale', () => {
     for (const locale of LOCALES) {
       expect(getCatalog(locale)['home.step2BodyAfter']).toMatch(/^\./);
     }
   });
 
-  it('contains no visitor-facing sats unit except Wallet of Satoshi and home.faq8A', () => {
+  it('contains no visitor-facing sats unit except home.faq8A', () => {
     for (const locale of LOCALES) {
       const catalog = getCatalog(locale);
       for (const [key, value] of Object.entries(catalog)) {
         if (key === 'home.faq8A') {
           continue;
         }
-        const withoutProduct = value.replaceAll('Wallet of Satoshi', '');
-        expect(withoutProduct, `${locale}.${key}`).not.toMatch(/\b[Ss]ats?\b/);
+        expect(value, `${locale}.${key}`).not.toMatch(/\b[Ss]ats?\b/);
       }
     }
   });

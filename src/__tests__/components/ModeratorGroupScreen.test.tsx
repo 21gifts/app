@@ -42,7 +42,9 @@ vi.mock('@/lib/api', () => ({
   fetchConversation: vi.fn(),
   postConversationMessage: vi.fn(),
   markConversationRead: vi.fn(),
-  fetchGiftStats: vi.fn().mockResolvedValue({ spendOverTime: [] }),
+  fetchFxSpot: vi
+    .fn()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchConversationMessagePhoto: vi.fn(),
   markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
   CONVERSATION_LIVE_POLL_MS: 5_000,
@@ -55,7 +57,7 @@ vi.mock('@/lib/app-badge', () => ({
 import {
   fetchConversation,
   fetchConversationMessagePhoto,
-  fetchGiftStats,
+  fetchFxSpot,
   fetchModeratorGroup,
   markConversationRead,
   postConversationMessage,
@@ -67,7 +69,6 @@ const groupMock = vi.mocked(fetchModeratorGroup);
 const threadMock = vi.mocked(fetchConversation);
 const postMock = vi.mocked(postConversationMessage);
 const markReadMock = vi.mocked(markConversationRead);
-const giftStatsMock = vi.mocked(fetchGiftStats);
 const bumpMock = vi.mocked(bumpUnreadAppBadgeEpoch);
 const refreshMock = vi.mocked(refreshUnreadAppBadge);
 const photoMock = vi.mocked(fetchConversationMessagePhoto);
@@ -79,7 +80,7 @@ const account: Account = {
   role: 'moderator',
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
@@ -124,6 +125,9 @@ function conversationPage(
 }
 
 beforeEach(() => {
+  vi.mocked(fetchFxSpot)
+    .mockReset()
+    .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} });
   vi.clearAllMocks();
   push.mockClear();
   push.mockReset();
@@ -131,8 +135,6 @@ beforeEach(() => {
   threadMock.mockResolvedValue(conversationPage([MESSAGE]));
   markReadMock.mockResolvedValue(undefined);
   refreshMock.mockResolvedValue(undefined);
-  giftStatsMock.mockReset();
-  giftStatsMock.mockResolvedValue({ spendOverTime: [] } as never);
   photoMock.mockResolvedValue(new Blob(['jpeg'], { type: 'image/jpeg' }));
   prepareMock.mockResolvedValue({
     ok: true,
@@ -387,17 +389,11 @@ describe('ModeratorGroupScreen', () => {
   });
 
   it('shows the viewer fiat on a sats message that stored no fiat', async () => {
-    giftStatsMock.mockResolvedValue({
-      spendOverTime: [
-        {
-          sats: 100_000_000,
-          usd: '100000.00',
-          chf: '80000.00',
-          eur: '90000.00',
-          php: '5600000.00',
-        },
-      ],
-    } as never);
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
     threadMock.mockResolvedValue(conversationPage([{ ...MESSAGE, sats: 21 }]));
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByText('Hello mods')).toBeTruthy();
@@ -405,14 +401,14 @@ describe('ModeratorGroupScreen', () => {
     expect(await screen.findByText('$0.02')).toBeTruthy();
   });
 
-  it('survives a failing stats fetch', async () => {
-    giftStatsMock.mockRejectedValueOnce(new Error('stats down'));
+  it('survives a failing spot rate fetch', async () => {
+    vi.mocked(fetchFxSpot).mockRejectedValueOnce(new Error('spot down'));
     threadMock.mockResolvedValue(conversationPage([{ ...MESSAGE, sats: 21 }]));
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByText('Hello mods')).toBeTruthy();
     expect(await screen.findByText('₿21')).toBeTruthy();
     await waitFor(() => {
-      expect(giftStatsMock).toHaveBeenCalled();
+      expect(fetchFxSpot).toHaveBeenCalled();
     });
     expect(screen.queryByText('$0.02')).toBeNull();
   });
@@ -439,7 +435,7 @@ describe('ModeratorGroupScreen', () => {
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -470,7 +466,7 @@ describe('ModeratorGroupScreen', () => {
     });
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -525,7 +521,7 @@ describe('ModeratorGroupScreen', () => {
     });
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const files = [
       new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' }),
       new File([new Uint8Array([0xff, 0xd8, 0xff])], 'b.jpg', { type: 'image/jpeg' }),
@@ -546,7 +542,7 @@ describe('ModeratorGroupScreen', () => {
   it('sets tooMany when more than 10 stills are chosen', async () => {
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const files = Array.from(
       { length: 11 },
       (_, i) => new File([new Uint8Array([0xff, 0xd8, 0xff])], `p${i}.jpg`, { type: 'image/jpeg' }),
@@ -562,7 +558,7 @@ describe('ModeratorGroupScreen', () => {
     prepareMock.mockResolvedValueOnce({ ok: false, error: 'tooLarge' });
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File(['x'], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -575,7 +571,7 @@ describe('ModeratorGroupScreen', () => {
     prepareMock.mockRejectedValueOnce(new Error('decode'));
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByLabelText('Your message')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File(['x'], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });
@@ -702,7 +698,7 @@ describe('ModeratorGroupScreen', () => {
     });
     renderWithLocale(<ModeratorGroupScreen />);
     expect(await screen.findByAltText('Photo from Ada')).toBeTruthy();
-    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
     await act(async () => {
       fireEvent.change(input, { target: { files: [file] } });

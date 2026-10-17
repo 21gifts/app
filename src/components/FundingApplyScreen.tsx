@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
@@ -16,6 +17,7 @@ import type { Account, ForumMessage } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { roleAtLeast } from '@/lib/roles';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 type FillStep = 'about' | 'photo' | 'location';
@@ -260,7 +262,7 @@ function OpenGrantApply(): ReactElement | null {
         return false;
       }
       if (err instanceof MissingRequirementsError && err.missing.includes('rules')) {
-        router.replace('/setup/rules');
+        returnToView('/setup/rules', router);
         return;
       }
       throw err;
@@ -328,7 +330,7 @@ function OpenGrantApply(): ReactElement | null {
           return;
         }
         setAccount({ ...current.account, funding: next });
-        router.push('/grants');
+        returnToView('/grants', router);
       } catch {
         /* v8 ignore next 3 — session gone during apply */
         if (useAuthStore.getState().session !== session) {
@@ -368,12 +370,12 @@ function OpenGrantApply(): ReactElement | null {
           {reviewStep === 'truth' ? t('funding.review.truth') : t('funding.review.question.self')}
         </p>
         {reviewStep === 'principles' ? (
-          <a
-            href="https://21.gifts/about"
+          <Link
+            href="/about"
             className="text-center text-sm text-app-fg underline underline-offset-2"
           >
             {t('nav.about')}
-          </a>
+          </Link>
         ) : null}
         {posts.length === 0 ? (
           <p className="text-center text-sm text-app-muted">{t('funding.detail.emptyPosts')}</p>

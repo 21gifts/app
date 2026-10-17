@@ -1,5 +1,5 @@
-import { cleanup, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ButtonLink } from '@/components/ui/ButtonLink';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -54,13 +54,13 @@ describe('ButtonLink', () => {
 
   it('renders a native anchor for wallet protocol hrefs', () => {
     renderWithLocale(
-      <ButtonLink href="walletofsatoshi:lnurl1" aria-label="Pay with Wallet of Satoshi">
+      <ButtonLink href="lightning:lnurl1" aria-label="Pay with a Lightning wallet">
         Pay
       </ButtonLink>,
     );
-    const link = screen.getByRole('link', { name: 'Pay with Wallet of Satoshi' });
+    const link = screen.getByRole('link', { name: 'Pay with a Lightning wallet' });
     expect(link.tagName).toBe('A');
-    expect(link.getAttribute('href')).toBe('walletofsatoshi:lnurl1');
+    expect(link.getAttribute('href')).toBe('lightning:lnurl1');
   });
 
   it('treats hash hrefs as internal links', () => {
@@ -87,5 +87,36 @@ describe('ButtonLink', () => {
       </ButtonLink>,
     );
     expect(screen.getByRole('link', { name: 'Log in' }).className).toContain('bg-accent');
+  });
+
+  it('uses the compact chrome size with 12px text on phones', () => {
+    renderWithLocale(
+      <ButtonLink href="/wallet" variant="secondary" size="chrome">
+        Wallet
+      </ButtonLink>,
+    );
+    const className = screen.getByRole('link', { name: 'Wallet' }).className;
+    expect(className).toContain('min-h-11 gap-1 px-1.5 py-1 text-xs sm:gap-1.5 sm:px-3 sm:text-sm');
+    expect(className).not.toContain('gap-2');
+  });
+
+  it('passes onClick to internal and external links', () => {
+    const clicked = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ButtonLink href="/loans/repay" onClick={clicked}>
+        Send
+      </ButtonLink>,
+    );
+    fireEvent.click(screen.getByRole('link', { name: 'Send' }));
+    expect(clicked).toHaveBeenCalledTimes(1);
+    rerender(
+      <ButtonLink href="https://21.gifts" onClick={clicked}>
+        Website
+      </ButtonLink>,
+    );
+    const website = screen.getByRole('link', { name: 'Website' });
+    website.addEventListener('click', (event) => event.preventDefault());
+    fireEvent.click(website);
+    expect(clicked).toHaveBeenCalledTimes(2);
   });
 });

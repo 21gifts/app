@@ -5,7 +5,12 @@
  * module. Keep it in sync with `src/types/env.d.ts`. `NEXT_PUBLIC_API_URL` is
  * a Dockerfile build placeholder that `entrypoint.sh` substitutes at container
  * start. `NEXT_PUBLIC_APP_VERSION` is baked at `next build`, not substituted by
- * `entrypoint.sh`.
+ * `entrypoint.sh`. `NEXT_PUBLIC_BREEZ_API_KEY` is read through `getBreezApiKey`.
+ * `NEXT_PUBLIC_PLATFORM_USERNAME`, `NEXT_PUBLIC_SENTRY_DSN`,
+ * `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, and `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`
+ * are optional Dockerfile placeholders: `entrypoint.sh` substitutes an empty
+ * string when the container has no value, which hides the donation address,
+ * turns error reporting off, or leaves the default trace sample rate.
  */
 
 /**
@@ -68,4 +73,102 @@ export function getE2eNow(): string | null {
     return null;
   }
   return value;
+}
+
+/**
+ * Optional Breez API key (`NEXT_PUBLIC_BREEZ_API_KEY`). Unset or empty disables
+ * the in-app wallet. The key is public by nature in a web bundle. Does not throw.
+ *
+ * Dot access is load-bearing so Next inlines the value when the build sets it.
+ *
+ * @returns The configured key, or `null` when unset or empty.
+ */
+export function getBreezApiKey(): string | null {
+  const value = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
+  if (value === undefined || value === '') {
+    return null;
+  }
+  return value;
+}
+
+/**
+ * Optional username of the 21.gifts platform account
+ * (`NEXT_PUBLIC_PLATFORM_USERNAME`), set per deployment. Donations to the
+ * project go to that account's in-app wallet address `<username>@<app host>`.
+ * Unset, empty, or blank means the landing page shows no donation address.
+ * Does not throw.
+ *
+ * In the Docker image the build inlines the `__NEXT_PUBLIC_PLATFORM_USERNAME__`
+ * placeholder and `entrypoint.sh` substitutes the container value, or an empty
+ * string, at start. The blank check is a regular expression on purpose: the
+ * minifier cannot fold it against the placeholder literal, so the substituted
+ * empty string still reads as unset.
+ *
+ * @returns The trimmed username, or `null` when unset or blank.
+ */
+export function getPlatformUsername(): string | null {
+  const value = process.env.NEXT_PUBLIC_PLATFORM_USERNAME;
+  if (value === undefined || !/\S/.test(value)) {
+    return null;
+  }
+  return value.trim();
+}
+
+/**
+ * Optional error-reporting DSN (`NEXT_PUBLIC_SENTRY_DSN`). Unset, empty, or
+ * blank turns error reporting off. Does not throw.
+ *
+ * In the Docker image the build inlines the `__NEXT_PUBLIC_SENTRY_DSN__`
+ * placeholder into the browser and server bundles, and `entrypoint.sh`
+ * substitutes the container value, or an empty string, at start. The blank
+ * check is a regular expression on purpose: the minifier cannot fold it
+ * against the placeholder literal, so the substituted empty string still
+ * reads as off.
+ *
+ * @returns The trimmed DSN, or `null` when unset or blank.
+ */
+export function getSentryDsn(): string | null {
+  const value = process.env.NEXT_PUBLIC_SENTRY_DSN;
+  if (value === undefined || !/\S/.test(value)) {
+    return null;
+  }
+  return value.trim();
+}
+
+/**
+ * Optional error-reporting environment name (`NEXT_PUBLIC_SENTRY_ENVIRONMENT`),
+ * e.g. `staging`. Unset, empty, or blank leaves the SDK default
+ * (`production`). Does not throw. Delivered like {@link getSentryDsn}.
+ *
+ * @returns The trimmed name, or `null` when unset or blank.
+ */
+export function getSentryEnvironment(): string | null {
+  const value = process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT;
+  if (value === undefined || !/\S/.test(value)) {
+    return null;
+  }
+  return value.trim();
+}
+
+/**
+ * Optional share of browser page loads, navigations, and wallet steps that
+ * send a performance trace (`NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`), a number
+ * from 0 to 1 such as `0.25`. Unset, empty, blank, or anything else (`1.5`,
+ * `-1`, `1e-2`, `abc`) returns `null`, and the caller uses its default. Only
+ * read while error reporting is on. Does not throw. Delivered like
+ * {@link getSentryDsn}.
+ *
+ * The value is read with a regular expression, not `Number`, on purpose: the
+ * minifier cannot fold it against the placeholder literal, so the substituted
+ * value is what counts.
+ *
+ * @returns The rate, or `null` when unset, blank, or not a number from 0 to 1.
+ */
+export function getSentryTracesSampleRate(): number | null {
+  const value = process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE;
+  if (value === undefined) {
+    return null;
+  }
+  const match = /^\s*(0(?:\.\d+)?|1(?:\.0+)?|\.\d+)\s*$/.exec(value);
+  return match === null ? null : Number(match[1]);
 }

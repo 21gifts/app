@@ -51,10 +51,32 @@ export function roleAtLeast(role: Role | null | undefined, min: Role): boolean {
 }
 
 /**
+ * True when the signed-in account wrote this note.
+ *
+ * A wallet cannot pay its own invoice, so nothing on your own note asks you to
+ * pay: no reply fee, no amount, no gift, no heart.
+ *
+ * @param viewerAccountId - Signed-in account id, or missing when signed out.
+ * @param noteAccountId - The note's `accountId`, if the api sent one.
+ * @returns Whether both ids are present and equal.
+ */
+export function isOwnNote(
+  viewerAccountId: string | null | undefined,
+  noteAccountId: string | undefined,
+): boolean {
+  return (
+    typeof viewerAccountId === 'string' &&
+    viewerAccountId !== '' &&
+    viewerAccountId === noteAccountId
+  );
+}
+
+/**
  * True when the signed-in account may reply without paying.
  *
- * Anyone at least verified is exempt. Basis, including the parent author, must
- * pay 1 sat to 21.gifts to write.
+ * Anyone at least verified is exempt, and every role is exempt on its own
+ * note ({@link isOwnNote}). Basis on someone else's note must pay 1 sat to
+ * 21.gifts to write.
  *
  * @param account - Live account, or `null` when the snapshot is missing.
  * @param parentAccountId - Parent note `accountId`, if the api sent one.
@@ -65,11 +87,10 @@ export function isReplyPaymentExempt(
   account: { id: string; role: Role } | null,
   parentAccountId: string | undefined,
 ): boolean {
-  void parentAccountId;
   if (account === null) {
     return false;
   }
-  return roleAtLeast(account.role, 'verified');
+  return isOwnNote(account.id, parentAccountId) || roleAtLeast(account.role, 'verified');
 }
 
 /**

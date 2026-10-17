@@ -1,15 +1,16 @@
 'use client';
 
-import { type ReactElement } from 'react';
-import Link from 'next/link';
+import { useCallback, useState, type ReactElement } from 'react';
 import { CreditLedger } from '@/components/CreditLedger';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
+import { LoanBlock } from '@/components/LoanBlock';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
+import type { RepaymentLedger } from '@/lib/api';
 import { FORUM_GOAL_AMOUNT_RE, type ForumGoalCurrency } from '@/lib/api-types';
 import { creditSmallestUnits, splitCreditPlan } from '@/lib/credit-plan';
-import { formatDefinedGoalAmount, forumFiatGoalPercent, forumGoalPercent } from '@/lib/forum-goal';
+import { forumAskPercent, formatDefinedGoalAmount } from '@/lib/forum-goal';
 import {
   formatBitcoin,
   formatFiatDisplay,
@@ -97,12 +98,17 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * plus the defined fiat when the ask was defined in fiat, `formatBitcoin(goalSats)`,
  * and the visitor's default fiat unless the ask was defined in that same fiat.
  * The visitor figure is the frozen snapshot when that string exists, otherwise
- * the gift-day rate. Lengths use
+ * the current spot rate. Lengths use
  * SVG `width` / `x` / `viewBox` attributes, not React `style`.
+ *
+ * A posted loan (`goalRepayable` with `messageId`, not the wizard preview)
+ * renders {@link LoanBlock} instead of these lines. The open note passes the
+ * ledger that {@link CreditLedger} loads into that block; a feed card loads
+ * no ledger.
  *
  * @param sats - Collected sats on the note.
  * @param goalSats - Whole-sat goal; `<= 0` → `null`.
- * @param rateDay - Latest gift-day totals. Fills the visitor's fiat when no
+ * @param rateDay - Current spot rate. Fills the visitor's fiat when no
  *   snapshot string is stored.
  * @param goalCurrency - Ask definition code when the api sent one.
  * @param goalAmount - Typed definition string when the api sent one.
@@ -119,6 +125,7 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * @param goalTermDays - Repayment days. With `goalRepayable`, also shows the daily plan.
  * @param messageId - Posted credit id. Omitted in the wizard, so the ledger stays off.
  * @param ledgerCollapsed - Feed lists show a repayment-list link and skip the ledger fetch. The note page leaves this false.
+ * @param onLend - Posted loan only: opens the money reaction, shown as **Lend** in the loan block.
  * @returns The bar, or `null`.
  */
 export function ForumGoalBar({
@@ -140,6 +147,7 @@ export function ForumGoalBar({
   goalTermDays,
   messageId,
   ledgerCollapsed = false,
+  onLend,
 }: {
   sats: number;
   goalSats: number;
@@ -161,10 +169,21 @@ export function ForumGoalBar({
   messageId?: string | undefined;
   /** Feed lists show a repayment-list link and skip the ledger fetch. The note page leaves this false. */
   ledgerCollapsed?: boolean | undefined;
+  /** Posted loan only: opens the money reaction of the note. Omit when the viewer cannot lend. */
+  onLend?: (() => void) | undefined;
 }): ReactElement | null {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
   const { numberFormat } = useNumberFormat();
+  const [loaded, setLoaded] = useState<{ messageId: string; ledger: RepaymentLedger } | null>(null);
+  const onLedger = useCallback(
+    (ledger: RepaymentLedger): void => {
+      if (messageId !== undefined) {
+        setLoaded({ messageId, ledger });
+      }
+    },
+    [messageId],
+  );
   if (!Number.isFinite(goalSats) || goalSats <= 0) {
     return null;
   }
@@ -187,16 +206,14 @@ export function ForumGoalBar({
   const defined = showDefinedFiat
     ? formatDefinedGoalAmount(goalAmount, goalCurrency, numberFormat)
     : '';
-  let percent = forumGoalPercent(sats, goalSats);
+  const percent = forumAskPercent({ sats, goalSats, goalCurrency, goalAmount, ...collectedByCode });
   let ratio = forumGoalRatio(sats, goalSats);
   if (
     isFiatGoalCurrency(goalCurrency) &&
     typeof goalAmount === 'string' &&
     FORUM_GOAL_AMOUNT_RE.test(goalAmount)
   ) {
-    const collected = collectedByCode[COLLECTED_FIELD[goalCurrency]];
-    percent = forumFiatGoalPercent(collected, goalAmount);
-    ratio = forumFiatGoalRatio(collected, goalAmount);
+    ratio = forumFiatGoalRatio(collectedByCode[COLLECTED_FIELD[goalCurrency]], goalAmount);
   }
   const fillWidth = Math.min(100, ratio * 100);
   const overflowWidth = percent > 100 ? Math.min(100, percent - 100) : 0;
@@ -212,19 +229,78 @@ export function ForumGoalBar({
     !definedInViewerFiat && frozenViewer === null
       ? preferredFiatSuffix(goalSats, rateDay, fiat, numberFormat)
       : null;
+  const askAmount = (
+    <>
+      {defined !== '' ? (
+        <>
+          <span>{defined}</span>
+          <span aria-hidden="true"> · </span>
+        </>
+      ) : null}
+      <span>{formatBitcoin(goalSats, numberFormat)}</span>
+      {frozenViewer}
+      {liveViewer}
+    </>
+  );
+  if (goalRepayable === true && messageId !== undefined && !preview) {
+    const withViewerFiat = (amountSats: number, stored: string | null | undefined): string => {
+      const bitcoin = formatBitcoin(amountSats, numberFormat);
+      const priced =
+        typeof stored === 'string' && COLLECTED_FIAT_RE.test(stored)
+          ? stored
+          : satsToFiatAmount(amountSats, rateDay, fiat);
+      return priced === null
+        ? bitcoin
+        : `${bitcoin} · ${formatFiatDisplay(priced, fiat, numberFormat)}`;
+    };
+    const collectedSats = Number.isFinite(sats) && sats > 0 ? sats : 0;
+    // Like the ask: the defined fiat, then bitcoin, then the visitor's fiat unless it is the defined one.
+    const withBitcoin = (amountSats: number, stored: string | null | undefined): string =>
+      definedInViewerFiat
+        ? formatBitcoin(amountSats, numberFormat)
+        : withViewerFiat(amountSats, stored);
+    const definedCode = defined !== '' && isFiatGoalCurrency(goalCurrency) ? goalCurrency : null;
+    const collectedDefined =
+      definedCode === null ? undefined : collectedByCode[COLLECTED_FIELD[definedCode]];
+    // A fiat loan counts in its own currency, like its percent: a missing snapshot is zero.
+    let collected: string;
+    if (definedCode === null) {
+      collected = withViewerFiat(collectedSats, collectedByCode[COLLECTED_FIELD[fiat]]);
+    } else if (typeof collectedDefined === 'string' && COLLECTED_FIAT_RE.test(collectedDefined)) {
+      collected = `${formatFiatDisplay(collectedDefined, definedCode, numberFormat)} · ${withBitcoin(
+        collectedSats,
+        collectedByCode[COLLECTED_FIELD[fiat]],
+      )}`;
+    } else {
+      collected = `${formatFiatDisplay('0.00', definedCode, numberFormat)} · ${withBitcoin(0, '0.00')}`;
+    }
+    const goalText =
+      definedCode === null
+        ? withViewerFiat(goalSats, viewerSnapshot)
+        : `${defined} · ${withBitcoin(goalSats, viewerSnapshot)}`;
+    return (
+      <>
+        <LoanBlock
+          messageId={messageId}
+          ask={askAmount}
+          collected={collected}
+          goal={goalText}
+          percent={percent}
+          funded={Number.isFinite(sats) && sats >= goalSats}
+          ledger={loaded !== null && loaded.messageId === messageId ? loaded.ledger : null}
+          ledgerLink={ledgerCollapsed}
+          onLend={onLend}
+        />
+        {ledgerCollapsed ? null : (
+          <CreditLedger messageId={messageId} list="summary" onLedger={onLedger} />
+        )}
+      </>
+    );
+  }
   return (
     <div className="mt-2 flex flex-col gap-1">
       <p className="text-xs font-medium tabular-nums lining-nums text-app-muted">
-        <span>{t('forum.askAmountLabel')}</span>{' '}
-        {defined !== '' ? (
-          <>
-            <span>{defined}</span>
-            <span aria-hidden="true"> · </span>
-          </>
-        ) : null}
-        <span>{formatBitcoin(goalSats, numberFormat)}</span>
-        {frozenViewer}
-        {liveViewer}
+        <span>{t('forum.askAmountLabel')}</span> {askAmount}
       </p>
       {goalRepayable === true && typeof goalTermDays === 'number' ? (
         <CreditPlanLines
@@ -263,23 +339,6 @@ export function ForumGoalBar({
           {t('forum.goalPercent', { percent: percentLabel })}
         </span>
       </div>
-      {goalRepayable === true && messageId !== undefined ? (
-        ledgerCollapsed ? (
-          <div className="mt-2">
-            <Link
-              href={`/messages/${encodeURIComponent(messageId)}/repayment-list`}
-              onClick={(event) => {
-                event.stopPropagation();
-              }}
-              className="text-xs font-medium text-app-fg underline decoration-app-border underline-offset-2"
-            >
-              {t('forum.creditList')}
-            </Link>
-          </div>
-        ) : (
-          <CreditLedger messageId={messageId} list="summary" />
-        )
-      ) : null}
     </div>
   );
 }

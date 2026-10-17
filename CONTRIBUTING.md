@@ -20,7 +20,7 @@ npm run dev    # → http://localhost:3000
 
 | Tool    | Version                | Purpose                       |
 | ------- | ---------------------- | ----------------------------- |
-| Node.js | ≥ 20 (CI runs 22)      | Runtime for all tooling       |
+| Node.js | ≥ 22                   | Runtime for all tooling       |
 | npm     | ≥ 10 (ships with Node) | Package manager (npm ci / CI) |
 
 ## Scripts
@@ -52,15 +52,16 @@ npm run dev    # → http://localhost:3000
 app/
 ├── src/
 │   ├── middleware.ts            # /map redirects to /shops#map and keeps the query string
+│   ├── instrumentation.ts       # Server/edge error reporting start (off without a DSN) + onRequestError
+│   ├── instrumentation-client.ts # Browser error reporting + sampled tracing start (off without a DSN), onRouterTransitionStart
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout: negotiated html lang, metadata, globals.css
-│   │   ├── (marketing)/         # Dark landing `/`, `/about`, `/legal`, `/handbook`, `/handbook/{screens,functions,endpoints}`, `/stats`
+│   │   ├── (marketing)/         # Dark landing `/`, `/about`, `/legal`, `/terms`, `/handbook`, `/handbook/{screens,functions,endpoints}`, `/stats`
 │   │   ├── rules/
 │   │   │   └── page.tsx         # GET /rules — public living-room rules
 │   │   ├── setup/
 │   │   │   ├── name/page.tsx    # GET /setup/name — first onboarding step
 │   │   │   ├── username/page.tsx # GET /setup/username — unique @21.gifts handle
-│   │   │   ├── address/page.tsx # GET /setup/address — Wallet of Satoshi link
 │   │   │   └── rules/page.tsx   # GET /setup/rules — agree to living-room rules
 │   │   ├── me/
 │   │   │   ├── route.ts         # GET /me same-origin proxy
@@ -71,14 +72,24 @@ app/
 │   │   │   ├── about/photo/route.ts  # GET /me/about/photo same-origin proxy
 │   │   │   ├── setup/skip/route.ts  # POST /me/setup/skip
 │   │   │   ├── rules-agreement/route.ts  # POST /me/rules-agreement
-│   │   │   ├── lightning-address/route.ts  # POST/DELETE /me/lightning-address
 │   │   │   ├── push-subscriptions/route.ts  # POST/DELETE /me/push-subscriptions
 │   │   │   ├── forum-laws-dismissed/route.ts  # POST /me/forum-laws-dismissed
+│   │   │   ├── wallet-intro-seen/route.ts  # POST /me/wallet-intro-seen (wallet tour seen)
 │   │   │   ├── notification-level/route.ts  # POST /me/notification-level
 │   │   │   ├── wallet-backup-seen/route.ts  # POST /me/wallet-backup-seen
+│   │   │   ├── wallet/route.ts  # PUT /me/wallet (claim the in-app wallet key)
+│   │   │   ├── wallet/report/route.ts  # POST /me/wallet/report (wallet data report)
+│   │   │   ├── wallet/hearts/route.ts  # POST /me/wallet/hearts (heart payment lookup)
+│   │   │   ├── events/route.ts  # POST /me/events (interaction log batch)
 │   │   │   └── activity/route.ts  # GET /me/activity → api GET /me/activity
 │   │   ├── push/
 │   │   │   └── vapid-public/route.ts  # GET /push/vapid-public same-origin proxy
+│   │   ├── lnurlpay/[pubkey]/
+│   │   │   ├── route.ts         # POST in-app wallet address registration → api
+│   │   │   ├── recover/route.ts # POST in-app wallet address lookup → api
+│   │   │   └── metadata/route.ts # GET payer notes on received payments → api
+│   │   ├── lnurlp/[username]/invoice/route.ts  # GET payment request for a verified in-app wallet → api, CORS *
+│   │   ├── verify/[paymentHash]/route.ts       # GET payment settled check → api, CORS *
 │   │   ├── contact/
 
 │   │   │   ├── page.tsx         # GET /contact — signed-in in-app contact
@@ -88,6 +99,9 @@ app/
 │   │   │   └── page.tsx         # GET /shops — signed-in shop listings (forum notes tagged #21GiftsShop)
 │   │   ├── maps/
 │   │   │   └── key/route.ts     # GET /maps/key — browser map key or null
+│   │   ├── lnurl/
+│   │   │   ├── pay-request/route.ts  # POST /lnurl/pay-request — outside address pay request
+│   │   │   └── invoice/route.ts      # POST /lnurl/invoice — outside address invoice
 │   │   ├── gifts/
 │   │   │   ├── route.ts         # GET /gifts same-origin proxy
 │   │   │   └── stats/
@@ -147,7 +161,7 @@ app/
 │   │   ├── donate/
 │   │   │   └── page.tsx         # GET /donate — Send help explainer, CTA to /welcome
 │   │   ├── profile/
-│   │   │   ├── page.tsx         # GET /profile — signed-in name + location + address + notification level + optional this-device On/Off pill
+│   │   │   ├── page.tsx         # GET /profile — signed-in identity: photo, banner, About me, name, location, facts, share link
 │   │   │   └── apply/page.tsx   # GET /profile/apply — redirect to /grants/apply
 │   │   ├── grants/
 │   │   │   ├── page.tsx         # GET /grants — grant status and the staff queue link
@@ -156,7 +170,11 @@ app/
 │   │   │       ├── page.tsx     # GET /grants/applications — grant queue
 │   │   │       └── [accountId]/page.tsx # GET /grants/applications/:id — principles, then truth
 │   │   ├── wallet/
-│   │   │   └── page.tsx         # GET /wallet — Add recovery phrase (missing passkeyCredentialId) or Show recovery phrase (set id)
+│   │   │   ├── page.tsx         # GET /wallet — home (balance, payments list while ready, Receive/Send), Send view with camera, Receive view
+│   │   │   ├── payment/page.tsx # GET /wallet/payment?id= — one payment's details
+│   │   │   └── phrase/page.tsx  # GET /wallet/phrase — add or show the recovery phrase
+│   │   ├── settings/
+│   │   │   └── page.tsx         # GET /settings — signed-in settings: Wallet, Display, Notifications, Account, About & legal
 │   │   ├── auth/passkey/replace/
 │   │   │   ├── begin/route.ts   # POST /auth/passkey/replace/begin
 │   │   │   └── finish/route.ts  # POST /auth/passkey/replace/finish
@@ -186,16 +204,19 @@ app/
 │   │   │       ├── activity/route.ts  # GET /view-key/:viewKey/activity → api GET /view/:viewKey/activity
 │   │   │       └── about/photo/route.ts  # GET /view-key/:viewKey/about/photo → api GET /view/:viewKey/about/photo
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
+│   │   ├── global-error.tsx     # Last-resort error boundary: reports the error, shows the Next.js error page
+│   │   ├── monitoring/
+│   │   │   └── route.ts         # POST /monitoring — same-origin error and transaction tunnel (404 without a DSN)
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
 │   ├── components/
 │   │   ├── HandbookCopyLink.tsx # Copy absolute #id URL beside handbook headings
 │   │   ├── HandbookIntro.tsx    # Localized handbook title/intro/nav chrome
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
-│   │   ├── LanguagePreferenceSwitcher.tsx # Profile locale SegmentedControl (endonyms)
+│   │   ├── LanguagePreferenceSwitcher.tsx # Settings locale SegmentedControl (endonyms)
 │   │   ├── NumberFormatSwitcher.tsx # Cookie numberFormat override (ch/us/de)
-│   │   ├── FiatPicker.tsx       # CHF|EUR|USD|PHP control (profile settings; unsigned chart/stats/day)
-│   │   ├── FiatPreferenceSwitcher.tsx # Profile cookie fiat override (CHF|EUR|USD|PHP)
+│   │   ├── FiatPicker.tsx       # CHF|EUR|USD|PHP control (settings; unsigned chart/stats/day)
+│   │   ├── FiatPreferenceSwitcher.tsx # Settings cookie fiat override (CHF|EUR|USD|PHP)
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
 │   │   ├── FiatPreferenceProvider.tsx # Client preferred-fiat context + cookie write
@@ -206,9 +227,29 @@ app/
 │   │   ├── ShopStickerOverlay.tsx # Member-profile shop sticker preview, second language, PDF/PNG/JPG/SVG download
 │   │   ├── AccountActivityChart.tsx # Compact Given/Received SVG from account activity series
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
-│   │   ├── ProfileScreen.tsx    # Signed-in profile card (totals + About me + name/location/address + notification level + optional this-device On/Off + language + theme + fiat + number format)
-│   │   ├── WalletScreen.tsx     # Add recovery phrase (missing passkeyCredentialId) or Show recovery phrase (set id)
-│   │   ├── WalletScreenView.tsx # Wallet card and the visible one-step Back
+│   │   ├── ProfileScreen.tsx    # Signed-in profile card (identity only: pictures + totals + About me + name/location + public facts)
+│   │   ├── WalletLoginCard.tsx  # LoginCard shown in place while a signed-in screen's wallet is not open in this tab
+│   │   ├── WalletScreen.tsx     # Wires useWallet + useWalletPhrase + useWalletSend into WalletScreenView (balance, payments list while ready, Receive/Send)
+│   │   ├── SettingsScreen.tsx   # Signed-in /settings (Wallet: recovery phrase, address, default amount; Display; Notifications; Account; About & legal)
+│   │   ├── MenuAccountHeader.tsx # Menu top card: photo, name, @username (profile link), balance link, payable loan row
+│   │   ├── HeaderBalance.tsx    # Signed-in header balance (₿ over fiat, link to /wallet, green bump on arrival)
+│   │   ├── ReceivedNotice.tsx   # In-app banner for a payment received while the app is open
+│   │   ├── WalletTour.tsx       # One-time wallet spotlight tour on /welcome (walletIntroSeen)
+│   │   ├── MoveFundsSheet.tsx   # Move Bitcoin from another wallet: intro, address, waiting, arrived
+│   │   ├── MoveFundsLink.tsx    # Root ?move=1 listener (kept through sign-in)
+│   │   ├── WalletScreenView.tsx # Wallet home, Send and Receive views, and the visible one-step Back
+│   │   ├── WalletFooterActions.tsx # Receive / Send footer buttons shared by /wallet and /welcome
+│   │   ├── WalletPanelView.tsx  # Open Receive or Send view as the page body (/wallet and over /welcome)
+│   │   ├── WalletReceive.tsx    # Receive view: address QR, 21.gifts address, Copy, Set an amount, Move Bitcoin from another wallet (hadExternalWallet)
+│   │   ├── WalletPaymentDetails.tsx # /wallet/payment one payment: amount, status, summary, technical details
+│   │   ├── WalletBalance.tsx    # /wallet large balance (connecting / ready with ₿/fiat tap / error or setup note)
+│   │   ├── WalletHistory.tsx    # /wallet payments card (newest first, paged on scroll)
+│   │   ├── WalletSetupNote.tsx  # Inline wallet setup note on money screens (Try again)
+│   │   ├── WalletSync.tsx       # Root-mounted wallet phrase and background setup listeners + wallet data report triggers (renders nothing)
+│   │   ├── InteractionLog.tsx   # Root-mounted interaction log: screen views, flush timer (renders nothing)
+│   │   ├── WalletPay.tsx        # In-app wallet pay slot of the gift pay sheets (the only way to pay)
+│   │   ├── WalletSend.tsx       # Wallet Send view (full-size camera, Paste, Enter manually, amount, confirm, sent)
+│   │   ├── QrScanner.tsx        # Live camera QR reader (BarcodeDetector, else jsqr) filling the Send camera area
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)
 │   │   ├── TrustChainScreen.tsx  # Signed-in /trust-chain body
 │   │   ├── ModerateScreen.tsx    # Signed-in /moderate hub (Hidden notes + Open proposals + moderator staff room + Handbook)
@@ -226,12 +267,12 @@ app/
 │   │   ├── InAppBrowserView.tsx # Shared in-app escape card (Open in browser + Copy link)
 │   │   ├── ViewProfileClaim.tsx # Public view Activate banner or in-app escape under the card
 │   │   ├── ViewProfileLoader.tsx # Public view fetch states + GET /view-key/:viewKey/activity
-│   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + About me + name/location/address, copy-link)
+│   │   ├── ViewProfileScreen.tsx # Public read-only profile card (chart + About me + name/location/21.gifts address, copy-link)
 │   │   ├── MemberProfileLoader.tsx # Signed-in member fetch states + GET /forum/members/:id/activity
 │   │   ├── MemberProfileScreen.tsx # Member identity card + About me + location + activity feeds
 │   │   ├── UsernameSetup.tsx    # Onboarding unique @21.gifts username (no Skip)
 │   │   ├── UsernameForm.tsx     # Username field + Continue (setup + overlay)
-│   │   ├── RequirementsOverlay.tsx # Add name, username, Wallet of Satoshi address, or agree to rules before retrying a post
+│   │   ├── RequirementsOverlay.tsx # Add name or username, agree to rules, or explain the missing wallet before retrying a post
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + Send-a-post/Ask-for-money pill + Post messenger + payable-reply pay sheet + expand/replies + copy-link + author profile links
@@ -242,6 +283,7 @@ app/
 │   │   ├── ForumLoader.tsx      # Fetch/post/photo/video/feed-mode/pay/laws-dismiss/expand-replies/Ask-wizard/requirements-overlay state for /welcome and /shops
 │   │   ├── ShopsScreen.tsx      # Signed-in /shops body (heading, Post/Map/Table pill, Card surface false)
 │   │   ├── ShopsViewSwitch.tsx  # Post / Map / Table pill on /shops
+│   │   ├── ShopsCountryFilter.tsx # Country select above that pill (All countries + countries with shops)
 │   │   ├── ShopTable.tsx        # Shop name, place, and operator table
 │   │   ├── PlaceField.tsx       # Optional place pin on the top-level forum composer
 │   │   ├── PlacesMapScreen.tsx  # Place list embedded on the shops map tab
@@ -270,15 +312,29 @@ app/
 │   │       └── index.ts         # Barrel export for ui primitives
 │   ├── hooks/
 │   │   ├── useAccountTotals.ts  # Profile given/received totals
-│   │   ├── useHydrateSession.ts # Restore session from cookie
-│   │   ├── useLatestRateDay.ts  # Latest fiat rate day
+│   │   ├── useHydrateSession.ts # Restore or hold back a stored session until its wallet is open
+│   │   ├── useSpotRate.ts       # Current BTC price for live fiat amounts
 │   │   ├── usePasskeyLogin.ts   # Register / authenticate / claim
 │   │   ├── useUnreadCount.ts    # Menu badge unread
-│   │   └── useWalletPhrase.ts   # In-tab PRF recovery phrase
+│   │   ├── useWallet.ts         # /wallet balance status, receive availability, and retry
+│   │   ├── useActiveSession.ts  # Session token public pages may act with (null while a login's wallet is opening)
+│   │   ├── useWalletOpen.ts     # Whether the account's wallet phrase is open in this tab
+│   │   ├── useHeartContext.ts   # Gift payment hashes resolved to the heart's forum post
+│   │   ├── useWalletHistory.ts  # /wallet payment pages, reloaded on every wallet sync
+│   │   ├── useWalletSetup.ts    # Inline setup-failure state, screenshot pins, and retry
+│   │   ├── useWalletPay.ts      # In-app pay path of one invoice (prepare, confirm, send, 60 s wait)
+│   │   ├── useWalletPhrase.ts   # In-tab PRF recovery phrase
+│   │   ├── useWalletSend.ts     # Wallet send flow steps
+│   │   ├── useWalletPanel.ts    # Receive / Send view over a page, its Back steps, scroll restore (/wallet, /welcome)
+│   │   ├── useWalletPayment.ts  # One payment by id for /wallet/payment, re-read after each sync
+│   │   ├── useIncomingPayment.ts # The payment that arrived last while the app is open, for a hold time
+│   │   └── useCopied.ts         # Clipboard copy with a two-second Copied state
 │   ├── lib/
-│   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
+│   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)
+│   │   ├── sentry.ts            # Error reporting + browser tracing: init options, privacy scrubber, traceWallet, tunnel forwarder
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
+│   │   ├── amount-unit.ts       # saveAmountUnit: the one ordered save of account.amountUnit
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
 │   │   ├── request-number-format.ts # Cookie numberFormat for the current request
 │   │   ├── request-fiat.ts      # Cookie fiat for the current request
@@ -287,7 +343,21 @@ app/
 │   │   ├── mention-search.ts    # GET /forum/mentions username suggestions
 │   │   ├── onboarding.ts        # nextOnboardingPath from account.setup + UI helpers
 │   │   ├── prf-mnemonic.ts      # WebAuthn PRF → BIP-39 English 12 words
-│   │   ├── tab-phrase.ts        # In-tab recovery phrase RAM (never localStorage)
+│   │   ├── tab-phrase.ts        # In-tab recovery phrase RAM + SESSION_PHRASE_EVENT (never localStorage)
+│   │   ├── interaction-log.ts   # Signed-in interaction events: queue, cleaned props, POST /me/events batches
+│   │   ├── move-funds.ts        # Tab-scoped move-funds request (source receive | link) + MOVE_FUNDS_EVENT
+│   │   ├── wallet/              # In-app Bitcoin wallet (SDK load, connect, phrase remember/unlock, pay, parse)
+│   │   │   ├── wallet-open.ts   # Login-to-open gate, hydration lock, and post-login wallet opening
+│   │   │   ├── wallet-sdk.ts    # Dynamic Breez SDK load + narrow WalletSdk surface
+│   │   │   ├── wallet-service.ts # connect / refresh / disconnect + phrase-event listener + register / list / prepare / send / parse
+│   │   │   ├── wallet-setup.ts  # Background one-time setup: connect → claim → register → refresh, retried
+│   │   │   ├── wallet-phrase.ts # rememberPhraseFromPrf, unlockWalletPhrase, canUnlockWallet
+│   │   │   ├── payment-display.ts # Payment title, message, and screen link for the list and /wallet/payment
+│   │   │   ├── payment-fixtures.ts # Synthetic SDK payments for the history-rows pin (invariants unit-tested)
+│   │   │   ├── heart-context.ts # fetchHeartPosts: gift payment hashes → POST /me/wallet/hearts
+│   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
+│   │   │   ├── payment-failure.ts # reportPaymentFailure: payment_failed event + `Payment failed` error report
+│   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
 │   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR; ?lang=Kikamba (no PDF library)
 │   │   ├── shop-sticker-artwork.ts # Generated fixed sticker artwork (outlined paths); do not edit by hand
@@ -297,13 +367,16 @@ app/
 │   │   ├── note-language.ts     # Small deterministic forum-note language detector
 │   │   ├── note-translate.ts    # Browser translation availability cache + POST helper
 │   │   ├── note-links.ts        # splitNoteLinks + isInternalAppUrl for note bodies
-│   │   ├── wos-deep-link.ts     # Wallet of Satoshi lightning:/intent hrefs + smartphone detection
+│   │   ├── payment-link.ts      # Generic lightning: link + smartphone detection (public pay link)
+│   │   ├── project-donate.ts    # Donation address: platform account username @ app host
 │   │   ├── utc-day.ts           # UTC YYYY-MM-DD calendar check
+│   │   ├── visual-pin.ts        # The one ?visual= screenshot pin reader (Playwright builds only)
 │   │   ├── account-activity.ts  # Align given/received series for the profile chart
 │   │   ├── forum-time.ts        # local display timestamps for forum rows
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter and unpaid new-count
 │   │   ├── forum-goal.ts        # parseForumAskAmount and forumGoalPercent for top-level Asks
 │   │   ├── forum-shop.ts        # #21GiftsShop token helpers (isShopNote, stripShopHashtag, ensureShopHashtag)
+│   │   ├── shop-country.ts      # /shops ?country= read and the country list with shop counts
 │   │   ├── forum-unpaid-seen.ts # Last No gifts yet visit stamp in localStorage
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
 │   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos
@@ -343,8 +416,13 @@ app/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
 │   ├── contact.spec.ts          # /contact composer, validation, success
-│   ├── login.spec.ts            # /login single Log in button + signed-in forms
-│   ├── wallet.spec.ts           # /wallet recovery-phrase Function titles
+│   ├── login.spec.ts            # /login Log in + Open a new account + signed-in forms
+│   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, Send (camera), Receive, and Function titles
+│   ├── data-collection.spec.ts  # POST /me/wallet/report, /me/wallet/hearts, and /me/events proxies, interaction log in the browser
+│   ├── camera.ts                # Stubbed getUserMedia (black stream, QR stream, blocked, none) for wallet specs
+│   ├── no-prf.ts                # Stubbed passkeys without PRF output + the one no-wallet sentence
+│   ├── wallet-pay.spec.ts       # In-app wallet pay slot on the gift pay sheet (pins, unavailable and failed states)
+│   ├── wallet-setup.spec.ts     # Background setup, inline notes, payments list, username freeze, address proxies
 │   ├── donate.spec.ts           # /donate Send help explainer + home CTA
 │   ├── i18n.spec.ts             # Accept-Language + locale cookie switcher
 │   ├── functions.spec.ts        # Playwright Function: <Name> tests through Next
@@ -359,7 +437,7 @@ app/
 ├── public/                      # Static assets served from /
 │   ├── sw.js                    # Push-only service worker (no asset/offline cache; short-lived push-open path)
 │   └── handbook-images/         # Built from visual baselines (gitignored *.png; keep .gitkeep)
-├── next.config.ts               # output: 'standalone'
+├── next.config.ts               # output: 'standalone'; withSentryConfig (no upload, no token)
 ├── vitest.config.ts             # 100% coverage threshold
 ├── playwright.config.ts         # chromium; mock api :3001 + standalone :3000
 ├── eslint.config.mjs            # Flat config (next/core-web-vitals + next/typescript)
@@ -382,10 +460,9 @@ app/
 | `staging` | Experimental testing               | staging       |
 | `main`    | Production releases                | PRD           |
 
-- Push to `develop` via **feature branch + PR**
-- `main` is protected — updates flow via an auto-generated Release PR (`develop → main`)
-- **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. A change that is good there is released to `develop` first (`Release: staging -> develop`). `main` receives changes only from `develop` (`Release: develop -> main`). `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
-- Feature pull requests always target `develop`, not `staging` and not `main`. Developers rebase `staging` onto `develop` regularly, because those pull requests land on `develop` and do not update `staging`.
+- Open feature work through a **feature branch and a pull request**. The pull request targets `staging` unless another base was explicitly requested. It must not target `main`. The GitHub default branch stays `develop`; that does not change the pull-request base.
+- `main` is protected. The only pull request that may target `main` is the automatic release (`Release: develop -> main`). Production still deploys when `main` itself is pushed.
+- **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. A change that is good there is released to `develop` by a release pull request (`Release: staging -> develop`). That release is the explicit request to target `develop`. `main` receives changes only through `Release: develop -> main`. `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
 - Never force-push, never amend published commits, except publishing a rebase of `staging` onto `develop` with `git push --force-with-lease` to `staging` only.
 
 ### Commit messages
@@ -415,8 +492,10 @@ update stuff
 - **Named exports** — default exports only where Next.js requires them (`layout.tsx`, `page.tsx`, config files)
 - **Path alias `@/`** points at `src/` (configured in `tsconfig.json` and `vitest.config.ts`)
 - Every `NEXT_PUBLIC_*` variable is read through `src/lib/config.ts` — never
-  `process.env` directly in components. Accessors throw on missing values; no
-  silent fallbacks.
+  `process.env` directly in components. Required accessors throw on missing
+  values; explicitly optional ones (`getE2eNow`, `getBreezApiKey`,
+  `getPlatformUsername`, `getSentryDsn`, `getSentryEnvironment`,
+  `getSentryTracesSampleRate`) return `null`. No silent fallbacks.
 - **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can. The one named exception is `canEditDailyPayoutRoster` in `src/lib/roles.ts`, because initiator and moderator share rank 2, so a rank check cannot exclude moderators. It is true only for initiator and founder. No further equality checks.
 
 ### Styling
@@ -499,8 +578,7 @@ runtime — no silent English fallback.
 New or changed visitor-facing copy goes through a catalog key in the **same
 PR**. Hard-coded UI strings are an undeclared deviation. Exceptions (do not
 catalogize): legal body copy (English), handbook markdown bodies for Functions
-and Endpoints, handbook chapter-navigation labels (English), product tokens such as
-`Wallet of Satoshi` / `GitHub`, language-switcher endonym labels (`English` /
+and Endpoints, handbook chapter-navigation labels (English), product tokens such as `GitHub`, language-switcher endonym labels (`English` /
 `Deutsch` / `Español` / `Filipino`), stats body copy (English), and
 document/social metadata (`title`, `description`, Open Graph alt text —
 English).
@@ -517,11 +595,11 @@ every locale shows the catalog label.
 The labeled vs icon-only table in `docs/ui.md` (control grammar) is the
 **binding** rule. New work follows that table, not “everything new is an icon”.
 
-| Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name/address), Ask-preview labeled **Post**, **Log in**, **Log in with existing account**, **Open a new account**, **Log out**, **Try again**, **Activate**, pay-sheet **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with Wallet of Satoshi”; a `Button` that sets `location.href`, not a `ButtonLink`), sentence-length empty-state CTA (**Write your About me**), wide-image confirm (**Use this crop**), **Message** (member profile DM CTA), member profile **Shop sticker** and the sticker overlay's **Download**, sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, send/post (forum Post-path + contact + inbox composers), copy, dismiss, **react** (Reply icon, `forum.react` “React”) on posts, **pay** (Gift icon, `forum.pay` “Send Bitcoin”) on payable replies, **translate** (Languages icon in the footer icon row, `forum.translate`), Menu **row** icons (the Menu _trigger_ stays labeled). The one top-left back arrow (profile, rules-setup, and an ask-wizard step) stays icon-only. Pay-sheet dismiss is `X` with `forum.payClose` (“Close”), not a back arrow. |
+| Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name), Ask-preview labeled **Post**, **Log in**, **Log in with existing account**, **Open a new account**, **Log out**, **Try again**, pay-sheet **Send** (on the posting fee **Pay {amount} and post**), wallet send **Continue**, **Send**, **Done**, the confirm step's **Cancel** (a small text button under **Send**), and the base-chain confirm step's speed rows **Fast** / **Medium** / **Slow** (each with its fee), wallet **Receive** and **Send** on `/wallet` and the forum home (Receive on the left), the wallet Send camera's floating **Paste** and **Enter manually** and its **Try again** under an alert (`Button variant="overlay"`), the Menu account header's balance link, the header balance link (`HeaderBalance`, ₿ and fiat to `/wallet`), the received-money banner's text link to `/wallet`, the wallet tour's **Next** / **Got it** and **Skip** (a small underlined text button), the Receive view's **Move Bitcoin from another wallet** (a small underlined text button), the move-funds flow's **Start**, **Copy my address** / **Copied**, **I sent it**, and **Done**, the Menu account header's profile link (photo or initial with the name and @username, to `/profile`), settings **Recovery phrase** and **Add recovery phrase**, wallet Receive **Copy** / **Copied** (the main action of that view, not an action inside a card), the wallet setup note's **Try again** (a secondary `Button`), **Activate**, pay-link **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with a Bitcoin wallet app”; a `Button` that sets `location.href` to a generic `lightning:` link, not a `ButtonLink`), pay-slot **Try again** (`wallet.payRetry`), requirements **Open your wallet** (`requirements.walletOpen`, a `ButtonLink` to `/wallet`), sentence-length empty-state CTA (**Write your About me**), wide-image confirm (**Use this crop**), **Message** (member profile DM CTA), member profile **Shop sticker** and the sticker overlay's **Download**, sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, **take a photo** (Camera icon, `camera.takePhoto` “Take a photo”, before every photo attach; `CameraPhotoButton`), send/post (forum Post-path + contact + inbox composers), copy, dismiss, **translate** (Languages icon in the footer icon row, `forum.translate`), **heart** (Heart icon, `forum.heart` “Send ₿1”) on those cards, **react** (Reply icon, `forum.react` “React”) on posts, **pay** (Gift icon, `forum.pay` “Send Bitcoin”) on payable replies, Menu **row** icons, and the signed-in Menu _trigger_ (lucide `Menu`, `aria.menu` “Menu”). The forum home **+** that opens the writer is icon-only (`IconButton size="xl"`, `forum.writerOpen` “Write a post”, lucide `Plus`). The one top-left back arrow (profile, rules-setup, and an ask-wizard step) stays icon-only. Pay-sheet dismiss is `X` with `forum.payClose` (“Close”), not a back arrow. The received-money banner's dismiss is the same ghost `X` with `wallet.receivedClose`, and the move-funds sheet's Close the same `X` with `moveFunds.close`. The wallet send amount step Close is the same `X` with `wallet.sendCancel` (“Cancel”); the wallet send confirm step has no `X` and shows **Cancel** as a labeled text button instead. The wallet Send manual-entry sheet's Close is the same `X` with `wallet.sendCancel`. Copy on a payment screen value is icon-only (`wallet.payment.copyValue`). |
 
-Content translation **Translate** is icon-only (`IconButton` + Languages, `aria-label` = `forum.translate`). Signed forum cards (`ForumBoard`) place it in the footer icon row with react / pay / copy. Surfaces without that row — unsigned public cards, About me, inbox, funding, and hidden notes — stack the control under the body. **Show original** / **Show translation** stay the same Languages icon. The accessible name is the only label; no visible text.
+Content translation **Translate** is icon-only (`IconButton` + Languages, `aria-label` = `forum.translate`). Signed forum cards (`ForumBoard`) place it in the footer icon row with the heart after Translate and before react / pay / copy. Surfaces without that row — unsigned public cards, About me, inbox, funding, and hidden notes — stack the control under the body. **Show original** / **Show translation** stay the same Languages icon. The accessible name is the only label; no visible text.
 
 Tests locate icon **buttons** with `getByRole('button', { name })` against
 the catalog `aria-label` and assert `queryByText` for the visible catalog
@@ -531,7 +609,8 @@ The Profile menu row is the label only. It shows no given or received amounts.
 A **new** control that is labeled when the table says icon-only (or
 icon-only when the table says labeled) is an undeclared deviation.
 
-The signed-in **Menu** trigger stays labeled (icon plus visible Menu word).
+The signed-in **Menu** trigger is icon-only: the lucide `Menu` icon with the
+accessible name `aria.menu` and no visible Menu word.
 **Log out**, **Continue**, **I agree to these rules**,
 **Activate**, **Try again**, pay-sheet **Pay**, and sentence-length
 links stay labeled. Shop wizard **Add a shop**, step **Next**, summary
@@ -543,15 +622,19 @@ Reviewers follow `REVIEW.md` and `docs/ui.md`.
 
 ### One back (hard requirement)
 
-Every screen in the app has exactly one back control. It is the top-left arrow beside the wordmark, including marketing pages, login, donate, the pay link, the public profile, setup name, username, and address, an unsigned public note, and the 404 page. A second back arrow, back link, or back button anywhere else — in the card, footer, wizard, sheet, 404 body, or any other region — is absolutely forbidden. That arrow returns to the in-app view this tab showed immediately before the current one. It does not jump to a fixed parent and it does not leave the site. If this tab has no earlier in-app view, the arrow opens the forum (`/welcome`). `/welcome` itself omits the arrow only when this tab has no earlier view, because that fallback would be the current page; an ask-wizard step still uses that same slot. The wordmark is not that control. A dismiss that stays on the same view is a close icon (`X`), not a back arrow. A handbook lightbox control that shows the previous image stays on the same view and is not a back control. An in-page step (wallet recovery words, wallet Advanced functions, a later rules-setup chapter, an ask-wizard step) is the previously displayed view: the same top-left arrow performs that step and is not joined by a second arrow. A new back control anywhere but that top-left arrow is an undeclared deviation. `npm run lint` runs `scripts/check-one-back.mjs`.
+Every screen in the app except the root info page `/` has exactly one back control. It is the top-left arrow beside the wordmark, including marketing pages, login, donate, the pay link, the public profile, setup name and username, an unsigned public note, and the 404 page. A second back arrow, back link, or back button anywhere else — in the card, footer, wizard, sheet, 404 body, or any other region — is absolutely forbidden. That arrow returns to the in-app view this tab showed immediately before the current one. It does not jump to a fixed parent and it does not leave the site. It opens that view with the client-side router (`next/link`, or `goToPreviousView` with `useRouter()`), never with a document load; when this document pushed the current entry on top of that view (`takeStepBack`), it takes the router's back step, so the arrow and the browser's back agree. A step that returns to the view it was opened from, and a redirect, use `returnToView`, so no view becomes its own back target and no second copy of it stays in the browser history. If this tab has no earlier in-app view, the arrow opens the forum (`/welcome`). The root info page `/` shows no back control at all: its header has no arrow, whatever this tab's view stack holds, and no wizard override can put one there (`hideHistoryArrow` and `hideOverride` in `MarketingHeader`); the other marketing pages (`/about`, `/stats`, `/handbook`, `/legal`, `/terms`) keep the arrow. `/welcome` itself, the forum home, never shows the arrow, whatever this tab's view stack holds; an ask-wizard step, or a wallet Receive or Send view opened over it, still uses that same slot as an in-page step. The signed-in Menu's **Home** clears this tab's view stack (`resetViewHistory`) and opens `/welcome` client-side, so the next screen's arrow returns to `/welcome`, as on a fresh tab. That clears only the in-app stack, not the browser's own history. The wordmark is not that control. A dismiss that stays on the same view is a close icon (`X`), not a back arrow. A handbook lightbox control that shows the previous image stays on the same view and is not a back control. An in-page step (wallet recovery words, the wallet Send or Receive view, a wallet send step, a later rules-setup chapter, an ask-wizard step) is the previously displayed view: the same top-left arrow performs that step and is not joined by a second arrow. A new back control anywhere but that top-left arrow is an undeclared deviation. `npm run lint` runs `scripts/check-one-back.mjs`.
+
+### No document load inside the app (hard requirement)
+
+The open wallet keeps its recovery phrase in the tab's memory only. A document load clears it, so the stored session is held back and the login card's passkey prompt must open the wallet before any signed-in screen appears. Only a real reload, a new tab, or closing the tab may require that login again. Moving between in-app views must therefore stay client-side: internal links use `next/link` (also inside an SVG chart), code navigates with `useRouter().push` or `replace`, or with `useRouter().back()` only for the same-document step back that `takeStepBack` claims, and an internal link never points at a path that only redirects (link to `/shops?pin=…#map`, not `/map?pin=…`). A raw `<a href="/…">`, `window.location.assign`, `location.href =`, or `location.replace` to an in-app path is an undeclared deviation. `window.location.reload()` is only allowed where nothing else can recover: **Try again** on the wallet balance, the pay slot, or the wallet setup note after the wallet’s initialisation failed (`walletNeedsReload`). The login card uses the PRF bytes returned by its passkey prompt, waits for `settlePhraseDerivations`, and asks for the seed passkey only when another passkey signed in. Never persist the recovery phrase or PRF bytes in `localStorage`, `sessionStorage`, IndexedDB, cookies, or a URL.
 
 ### Staff actions (hard requirement)
 
-A stack of labeled moderator or founder actions on a member card is not shown as loose buttons. One closed disclosure (`staff.functions`, English "Moderator functions") uses the same `details` / `summary` as wallet **Advanced functions**, not a full-width button, and reveals only the actions that viewer may take on that person. Founder-only actions such as appoint use the same disclosure. Delete on a note stays the icon in the footer icon row. Routes under `/moderate` are the opened workspace and do not wrap their own tools again. The Menu **Moderation** row stays. The staff inbox origin filter stays. Role pills are not actions. A new labeled staff-action stack on a member card that renders before this disclosure is opened is an undeclared deviation. The closed row and the screen after that control is pressed are separate screenshot states. Reviewers follow `docs/ui.md` principle **Staff action stacks stay closed.**
+A stack of labeled moderator or founder actions on a member card is not shown as loose buttons. One closed disclosure (`staff.functions`, English "Moderator functions") is a `details` / `summary` row, not a full-width button, and reveals only the actions that viewer may take on that person. Founder-only actions such as appoint use the same disclosure. Delete on a note stays the icon in the footer icon row. Routes under `/moderate` are the opened workspace and do not wrap their own tools again. The Menu **Moderation** row stays. The staff inbox origin filter stays. Role pills are not actions. A new labeled staff-action stack on a member card that renders before this disclosure is opened is an undeclared deviation. The closed row and the screen after that control is pressed are separate screenshot states. Reviewers follow `docs/ui.md` principle **Staff action stacks stay closed.**
 
 ### Amount entry (hard requirement)
 
-Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. A new amount field without the switch or the counter is an undeclared deviation. The daily payout roster on `/grants/payments/amounts` is not one of these fields: each amount is the USD figure spend stores and pays, so those inputs stay `Field` and the saved body stays `amountUsd`. Fiat mode is its own screenshot state. In the inbox composer the message, attach, and send stay on one row. The amount is the next row: the switch beside the input, the other unit under that input, and no visible label (the input keeps the accessible name).
+Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. Fiat entry uses the current spot rate. While the preferred fiat has no rate, that fiat is disabled on the switch, ₿ stays, and the line under the field reads **No exchange rate yet**, so a fiat amount is only typed while it can be converted. The point of sale never answers a fiat amount with a whole-number error. A new amount field without the switch or the counter is an undeclared deviation. The daily payout roster on `/grants/payments/amounts` is not one of these fields: each amount is the USD figure spend stores and pays, so those inputs stay `Field` and the saved body stays `amountUsd`. Fiat mode is its own screenshot state. In the inbox composer the message and send stay on one row, under the photo icon row (camera and attach). The amount is the next row: the switch beside the input, the other unit under that input, and no visible label (the input keeps the accessible name).
 
 ### Shown amounts (hard requirement)
 
@@ -559,33 +642,50 @@ Every place that shows a bitcoin amount also shows that amount in the visitor's 
 
 Signed in, the code is the currency stored for that person. `useFiatPreference` is that code: a profile choice they already stored wins. Signed out, there is no profile currency, so the code is the one implied by the UI language (`defaultFiatForLocale`: German CHF, English USD, Spanish EUR, Filipino PHP).
 
-The figure is the fiat string stored on that payment when the payment recorded one. A missing or null stored field uses the latest gift-day rate (`useLatestRateDay`). A missing or unusable rate is the only reason the fiat line is absent. A payment screen does not treat the amount as ready while that rate is still loading, and its visual baseline includes the fiat line. Omitting the fiat next to a shown bitcoin amount is an undeclared deviation. Reviewers follow `REVIEW.md`.
+The figure is the fiat string stored on that payment when the payment recorded one. A missing or null stored field uses the current spot rate (`useSpotRate`, `GET /fx/spot`: the price of 1 BTC now, refreshed every few minutes). The statistics pages are the only place that uses a gift day's own rate, because they show historical amounts. A missing or unusable rate is the only reason the fiat line is absent, except for a fee of ₿0 on the wallet send confirm step, which shows no fiat, and the **Pay {amount} and post** button on the posting fee, which shows its amount without fiat. A pay sheet's `WalletPay` slot shows no fee row for a fee of ₿0; a fee above ₿0 keeps its fiat. A payment screen does not treat the amount as ready while that rate is still loading, and its visual baseline includes the fiat line. Omitting the fiat next to a shown bitcoin amount is an undeclared deviation. Reviewers follow `REVIEW.md`.
 
-### Payment QR vs deep links (hard requirement)
+### Payment QR vs wallet links (hard requirement)
+
+The in-app wallet is the only wallet. A member's only address is
+`<username>@<app host>`. No screen names, links to, or opens another wallet
+app on a member's behalf, and members cannot link an external address.
 
 A smartphone shows the same payment QR as a desktop for the profile,
 member, public view, and point of sale. The Shop sticker is
 shown wherever that profile QR is shown.
 
-A specific invoice is different. Paying one on a smartphone is the
-wallet deep link only. The forum post pay sheet (`ForumBoard`, including
-the composer pay slot), the inbox pay sheet (`InboxScreen`), and the
-public pay link (`PayLinkScreen`, the open till and **Continue**) do not
-mount the invoice `QrCode` on a smartphone. The wallet button still opens
-Wallet of Satoshi (`walletofsatoshi:` on iOS, Android Intent on
-Android). Desktop and iPad show that invoice QR and the same button.
-The forum amount step is Continue on every user agent, then the same
-invoice card.
+A specific invoice is different. Member pay sheets — the forum post pay
+sheet (`ForumBoard`, including the composer pay slot for the posting fee and
+today's repayment), the reply pay page (`ForumReplyPayPage`), and the inbox
+pay sheet (`InboxScreen`) — pay from the member's in-app wallet only
+(`WalletPay`: the `sparkInvoice` when the api issued one, otherwise the
+payment request). The wallet is open whenever the member is signed in. The
+slot prepares the payment, shows its fee when it is above ₿0, then offers
+**Send** (or **Pay {amount} and post** for a posting fee).
+They never mount the invoice `QrCode` and never show a button to another
+wallet app, on any user agent. Without a usable wallet they say so; there is
+no fallback.
+
+The public pay link (`PayLinkScreen`, used by people without an account,
+the open till and **Continue**) hands its invoice to the visitor's own
+Bitcoin wallet app with a generic `lightning:` link (`lightningHref`) on
+**Pay**. Desktop and iPad also show that invoice QR. A smartphone does not
+mount it.
 
 Detect smartphones with `isSmartphoneUserAgent` on `navigator.userAgent`
 (iPhone, iPod, or Android **with** `Mobile`). Do **not** use viewport
 width: a narrow MacBook window is still a desktop. iPad is not a
 smartphone.
 
-Mounting any of those invoice QRs on a smartphone UA is an undeclared
-deviation and is rejected. Hiding a profile, member, public view, or
-point of sale QR on a smartphone UA is also rejected. Reviewers
-follow `REVIEW.md`.
+The address QR shown when the wallet balance is too low, and the QR in the
+`/wallet` Receive view, are the member's own profile QR and follow the
+profile rule.
+
+Mounting an invoice QR on a member pay sheet, mounting the public pay-link
+invoice QR on a smartphone UA, or adding a link or button to a named wallet
+app is an undeclared deviation and is rejected. Hiding a profile, member,
+public view, or point of sale QR on a smartphone UA is also rejected.
+Reviewers follow `REVIEW.md`.
 
 ### Handbook (hard requirement)
 
@@ -636,8 +736,14 @@ and **fails the PR** if a screen has no matching `goto`, a variant has no
 no `test('Function: <Name> …')` title. Adding a `page.tsx`, `route.ts`, or other `src/` export without an e2e
 spec (`page.goto` / `request.<verb>` / `Function: <Name>`) in the **same PR**
 is an undeclared deviation and is rejected. CI runs `e2e:check` in the Check
-job, behavioral specs in the parallel E2E (behavior) job (`chromium` project),
-and pixel compare in four parallel visual combo jobs.
+job, behavioral specs in three parallel shard jobs (`chromium` project,
+`--shard=1/3` to `3/3`), and pixel compare in eight parallel visual shard jobs
+(each of the four visual combos in two shards, `--shard=1/2` and `2/2`). The
+E2E (behavior) job and the four Visual (<combo>) jobs run no tests. E2E
+(behavior) is green only when every behavior shard is green, and each Visual
+(<combo>) job only when all eight visual shards are green.
+`npm run e2e:behavior` and `npm run e2e:visual` still run the whole suite
+locally.
 
 ### Screenshot baselines (hard requirement)
 
@@ -697,6 +803,18 @@ Every listed variant **must** have, in the **same PR**:
 Default screen shots use the `screen-…` args; extra states use `state-…` args.
 Every variant needs all four `BASELINE_COMBOS`.
 
+A screenshot pin (`?visual=…`, the `e2e-now` session value, or any other
+switch that makes a screen show fixture data or a forced state) is honoured
+**only in a Playwright build**: check `getE2eNow()` (`NEXT_PUBLIC_E2E_NOW`,
+unset in every deployed build) before reading the pin. `visualPin` does that
+for `useWallet` (including `?visual=balance-reopening`), `useWalletPay`, `useWalletSetup`, the login card's
+wallet gate, `sendHeartTip`, `useHeartTip`, and `useHeartContext`; `useWalletHistory`, `useWalletSend`, `useWalletPhrase`, and
+`PasskeyRenewNotice` check it themselves. Inline scripts that run before
+React check for the `e2e-now` meta tag, which only a Playwright build renders.
+Do not add a second mechanism. A production build must ignore every pin, and a
+unit test proves that for each new pin. A pin honoured in a deployed build is
+an undeclared deviation.
+
 Adding a screen or UI state without updating the baselines in the **same PR**
 is rejected. `npm run screenshot:check` (and CI) fails when a PNG is missing or
 a variant has no matching shot in `e2e/visual.spec.ts`. It also fails when an
@@ -705,7 +823,7 @@ unexpected PNG sits under `e2e/visual.spec.ts-snapshots/` (not a screen or
 `## Function: <Name>` section and an e2e `Function: <Name>` needle, not a
 screenshot of that markdown.
 `screenshot:check` still runs in the Check job. CI also runs the four visual
-combo projects as parallel jobs on every PR (each with a 10-minute budget) so
+combo projects in eight parallel shard jobs on every PR (each with a 10-minute budget) so
 pixel compare remains a gate.
 
 A PR's snapshot diff must contain only screens whose intended appearance
@@ -752,7 +870,7 @@ at commit `1b153cdf7a1ac3687ba98cad7d323743050fb54b`. Repo job selection:
 This is a **public** repository. GitHub-hosted runners execute the heavy suite
 (typecheck, handbook completeness, e2e completeness, screenshot baselines,
 Vitest with the coverage gate, the production build, Playwright behavior, and
-the four visual jobs). A38 does not replace those GitHub checks. The author
+the eight visual shard jobs). A38 does not replace those GitHub checks. The author
 report only covers the light local job in `.github/a38.json` (`npm run lint`
 on Node 22). Do not run Vitest, the production build, or Playwright locally
 for A38.
@@ -779,11 +897,28 @@ docker build -t 21gifts/app:dev .
 docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=https://dev-api.21.gifts 21gifts/app:dev
 ```
 
-**One image, multiple environments**: `next build` inlines `NEXT_PUBLIC_*`
-values into the bundles, so the image is built with literal placeholders
-(`__NEXT_PUBLIC_API_URL__`) and `entrypoint.sh` substitutes the runtime
-values at container start. The container refuses to start if a referenced
-variable is unset or empty.
+**One image per environment**: each deploy workflow builds its own image,
+because the Breez API key (`NEXT_PUBLIC_BREEZ_API_KEY`) and the build id
+(`NEXT_PUBLIC_BUILD_ID`) are baked in at `next build` (below). An image built
+for one environment is not deployed to another. `NEXT_PUBLIC_APP_VERSION` is
+baked in at `next build` too (from `APP_VERSION`, below). `NEXT_PUBLIC_API_URL`
+and the optional variables in the table below are runtime placeholders:
+`next build` inlines `NEXT_PUBLIC_*` values into the bundles, so the image is
+built with literal placeholders (`__NEXT_PUBLIC_API_URL__`) and
+`entrypoint.sh` substitutes the runtime values at container start. The
+container refuses to start if a required variable is unset or empty. The optional variables (`OPTIONAL_VARS` in
+`entrypoint.sh`) are substituted with an empty string instead, and the app
+reads that empty string as unset: no donation address, no error reporting, the
+SDK's default environment name, or the default trace sample rate (table below). Each deployment sets them in
+its container environment.
+
+| Variable                                | Required | Unset or empty                               |
+| --------------------------------------- | -------- | -------------------------------------------- |
+| `NEXT_PUBLIC_API_URL`                   | yes      | container refuses to start                   |
+| `NEXT_PUBLIC_PLATFORM_USERNAME`         | no       | landing page shows no donation               |
+| `NEXT_PUBLIC_SENTRY_DSN`                | no       | error reporting off                          |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT`        | no       | reports use the SDK default (`production`)   |
+| `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | no       | 0.1 of browser traces (also when not 0 to 1) |
 
 | Variable              | DEV                        | STAGING                        | PRD                    |
 | --------------------- | -------------------------- | ------------------------------ | ---------------------- |
@@ -798,27 +933,197 @@ workflows as `github.run_number`. It is inlined at `next build` as
 It is not substituted at container start and is not an `entrypoint.sh`
 placeholder. Local and Playwright builds without the arg show `dev`.
 
+`NEXT_PUBLIC_BREEZ_API_KEY` is a second Docker **build-arg** (no default),
+passed by every deploy from that environment's secret (see
+[Breez SDK Spark](#breez-sdk-spark)). It is inlined at `next build` and is not
+an `entrypoint.sh` placeholder. An unset or empty value still builds a local or
+DEV/staging image with the wallet off; `deploy-prd.yaml` fails before the build
+when `BREEZ_API_KEY_PRD` is empty.
+
+`NEXT_PUBLIC_PLATFORM_USERNAME` is an optional `entrypoint.sh` placeholder,
+set per deployment and read through `getPlatformUsername()`. It is the
+username of the 21.gifts platform account; the landing page shows that
+account's wallet address `<username>@<host>` for donations to the project.
+Unset or empty hides the donation section. Playwright builds set it to
+`21gifts` at build time.
+
+### Error reporting (Sentry)
+
+Browser and server errors go to the team's Sentry project through
+`@sentry/nextjs` (`src/instrumentation.ts`, `src/instrumentation-client.ts`,
+`src/app/global-error.tsx`, `src/lib/sentry.ts`). The browser also sends a
+sample of performance traces, to show where the app is slow for members: page
+loads, navigations, its fetch calls, and the in-app wallet's steps. Nothing
+Sentry-specific is in the repository; each deployment sets three optional
+variables:
+
+| Variable                                | Meaning                                                                                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SENTRY_DSN`                | Project DSN. **Empty or unset = error reporting and tracing off.**                                            |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT`        | Environment name on each report, e.g. `staging`.                                                              |
+| `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | Share of browser traces sent, a number from 0 to 1 (e.g. `0.25`). Empty, unset, or anything else means `0.1`. |
+
+All three are optional `entrypoint.sh` placeholders, read through
+`src/lib/config.ts`. The release is `NEXT_PUBLIC_APP_VERSION`.
+Without a DSN nothing starts: no SDK init, no network traffic, and
+`POST /monitoring` answers 404. Local development, unit tests, and Playwright
+(which sets all three empty) run with error reporting off. Source maps are not
+uploaded and the build needs no token.
+
+What a trace holds:
+
+- Page loads and App Router navigations (`onRouterTransitionStart`), with
+  their fetch spans, resource timings, and the LCP and CLS web vitals.
+- One transaction per wallet step, timed with `traceWallet` (`op: wallet`):
+  `wallet.sdk.load`, `wallet.connect`, `wallet.sync.first`, `wallet.balance`,
+  `wallet.prepare`, `wallet.send`, `wallet.address.register`, and
+  `wallet.passkey`. The only attributes are `route` (`spark`, `lightning`, or
+  `onchain`) and `prompt` (`login` or `unlock`). The browser never creates a
+  receive invoice; the api issues it, and that request is a fetch span.
+- Wallet steps start their own transaction in the page's trace, so a slow
+  connect does not stretch the page load, and all steps of a page share its
+  sampling decision.
+- Traces are sent whole (`traceLifecycle: 'static'`), so every span passes
+  `beforeSendTransaction`. INP is left out: the SDK sends it as a standalone
+  span, which would bypass that scrubber.
+
+Privacy rules (this app holds wallets):
+
+- The server sends errors only (`tracesSampleRate: 0`). No trace headers on
+  any outgoing request (`tracePropagationTargets: []`), so the api and its
+  CORS and proxy allow-lists see no `sentry-trace` or `baggage` header. No
+  sessions, no Session Replay, no profiling, no console or log capture, no
+  feedback widget.
+- With a DSN set, `withSentryConfig` makes each server-rendered page carry
+  `sentry-trace` and `baggage` meta tags: a random trace id, the release, the
+  environment, and the DSN's public key. They hold no personal data and are
+  absent without a DSN. The server samples no traces, so they say "not
+  sampled"; `src/instrumentation-client.ts` removes them before the browser
+  starts, so each page load starts its own trace at the configured rate.
+- No personal data: no user, IP address, cookies, request bodies, query
+  strings, or stack-frame local variables (`dataCollection`, the SDK 11
+  successor of `sendDefaultPii: false`). Never call `setUser` with a name or
+  username.
+- One scrubber (`beforeSend` / `beforeSendTransaction` / `beforeBreadcrumb` in
+  `src/lib/sentry.ts`) runs in the browser and on the server. It replaces
+  12–24-word recovery-phrase runs in any letter case;
+  `lnbc…`/`lntb…`/`lnurl…` strings and BOLT12 `lno1…`/`lni1…` strings;
+  `spark1…`/`sparkrt1…`/`sp1…`/`sprt1…`/`spt1…` addresses; Bitcoin base-chain
+  addresses (bech32 `bc1…`/`tb1…`/`bcrt1…`, and mixed-case base58 with a
+  digit); Lightning and e-mail addresses (`name@host.tld`); hex strings of
+  64+ digits; raw byte arrays (typed arrays such as `Uint8Array`); bearer
+  tokens and `Authorization` headers; the stored session token
+  (`21gifts.session`); URL query strings and fragments (the path stays); and
+  every value under keys such as `mnemonic`, `phrase`, `words`, `seed`,
+  `token`, `secret`, `prf`, `invoice`, `pr`, `query`, or `fragment`. In a
+  transaction that covers its name, every span description, and all span
+  data (`/pl/?lightning=…` is sent as `/pl/`). The SDK's own 16- or 32-digit
+  hex ids under `event_id`, `trace_id`, `span_id`, and `parent_span_id` stay
+  as they are (a random id can start with `bc1`). Of the request it keeps
+  method, path, User-Agent, and Referer. Console breadcrumbs are dropped;
+  `fetch`/`xhr` breadcrumbs keep method, path, and status only.
+- A transaction carries no span that reaches another origin than the page
+  (the wallet asking a receiver's Lightning address server or a chain
+  explorer would name the receiver or an address), no web-vital element
+  descriptor (`lcp.element`, `lcp.url`, `lcp.id`, `lcp.size`, `cls.source.N`), no request
+  or response body size (`http.response.body.size`, `http.request.body.size`,
+  their older names, and `Content-Length` header keys; the exact size of a
+  member's own response depends on what it holds), and no breadcrumbs (a
+  click label can spell a typed amount). Status and timing stay.
+- Span names and attributes are fixed words. Never put an amount, invoice,
+  address, Spark key, recovery word, PRF output, or token in one;
+  `traceWallet` only accepts the names and attributes listed above.
+- Browser reports go to the app's own origin, `POST /monitoring`, which
+  forwards them only to the configured DSN's host and project, only when
+  every item is an error or a transaction, and only up to 1 MiB (the largest
+  event the Sentry server accepts). It does not pass on the visitor's IP
+  address, cookies, or headers. The SDK's `tunnelRoute` option is not used: it
+  only rewrites to sentry.io hosts.
+
+Any new code that sends data to the error reporter, or adds a span, must go
+through this scrubber and through `traceWallet` or the SDK's automatic spans.
+
+## Wallet data and interaction log
+
+Using the platform is consent to the collection described in the Terms of Use
+("Wallet and data"). The app sends two first-party reports to the api, both
+only for a signed-in member and both through same-origin proxies:
+
+- **Wallet data report** (`reportWallet`, `POST /me/wallet/report`): after
+  every successful wallet read while signed in (login, each sync, after a
+  payment) and every five minutes while the app is open, the balance and
+  every payment the api has not acknowledged yet, in requests of at most 200
+  payments. The acknowledged cursor lives in tab memory only.
+- **Interaction log** (`logInteraction`, `POST /me/events`): named events
+  (`screen_view`, `post_created`, `gift_sent`, `payment_sent`, `search`, …)
+  with the path without query and a small flat `props` object, sent in
+  batches of at most 50 every ten seconds, when the page is hidden, and on
+  log out (`logout`, sent with the session it was recorded under before the
+  session is cleared). Visitors without a session are not recorded.
+  `payment_failed` (every wallet payment that did not go out: `stage`,
+  `reason`, `method`, `flow`, `amountSats`) and `wallet_open_failed`
+  (`reason` `timeout` or `error`) go out in batches of their own, and so do
+  the wallet tour and move-funds events (`wallet_tour_*`, `wallet_move_*`) as
+  a group of their own, so an api that does not accept those names yet cannot
+  drop another event with them.
+
+A payment that did not go out, and a wallet that did not open, are also sent
+to error reporting (`Payment failed`, one issue per stage and reason, and
+`Wallet did not open`, one per reason), errors-only like every other report.
+A wallet that did not open is opened again automatically, except while the
+wallet code needs a page reload (`walletNeedsReload`): then no automatic
+attempt runs and **Try again** reloads the page. Only the first
+failure sends `wallet_open_failed` and `Wallet did not open`, and nothing more
+goes out until the wallet has been ready again or was disconnected.
+Member state (too little balance, an amount below the minimum, no wallet
+connection) and hearts (`Heart not sent`) are not sent as `Payment failed`.
+Reason, stage, method, flow, and the error name and code are short codes; the
+text of an SDK or api error is never sent, because it can carry invoices,
+addresses, or keys.
+
+**Hard requirement:** neither report, nor any other request, log, or error
+report, ever carries the recovery phrase, the seed, PRF output, a preimage, or
+any private key. Free text that a member or a counterparty typed is not
+rewritten: a payment description or comment is sent as the SDK holds it (edge
+whitespace trimmed), and a search term (the lowercased prefix) passes the same
+prop filter as every event prop; the app never puts one of these secrets into
+either. The report payment is built field by field
+(`toWalletReportPayment`) and never copies an SDK object; event props drop
+secret-named keys and secret-shaped values. A change that widens either
+payload adds a unit test proving the new field cannot carry one of these. No
+third-party analytics; error reporting sends errors and sampled browser
+performance traces, both through its scrubber.
+
 ## CI / CD
 
-| Workflow               | Trigger                                                           | Action                                                                                                                                                                                                                    |
-| ---------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + E2E (behavior) + four visual combo jobs; **10 minutes each**; Playwright `v1.61.1-noble` |
-| `deploy-dev.yaml`      | push to `develop`                                                 | Docker build → push `21gifts/app:beta` → notify → wait for deploy                                                                                                                                                         |
-| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build → push `21gifts/app:staging` → notify → wait for deploy                                                                                                                                                      |
-| `deploy-prd.yaml`      | push to `main`                                                    | Docker build → push `21gifts/app:latest` → notify → wait for deploy                                                                                                                                                       |
-| `auto-release-pr.yaml` | push to `develop` or `staging`                                    | Open a missing release only (`staging → develop`, and `develop → main`). Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                    |
-| `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                |
+| Workflow               | Trigger                                                           | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yaml`              | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, screenshots, test (100% coverage), build on Node 22) + three behavior shard jobs (`E2E (behavior, shard 1/3)` to `3/3`) + E2E (behavior), green only when all three shards are green, + eight visual shard jobs (`Visual (<combo>, shard 1/2)` and `2/2`) + four Visual (<combo>) jobs, green only when all eight visual shards are green; **10 minutes each**; Playwright `v1.61.1-noble` |
+| `deploy-dev.yaml`      | push to `develop`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_DEV`) → push `21gifts/app:beta` and `21gifts/app:beta-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                                |
+| `deploy-staging.yaml`  | push to `staging`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` and `21gifts/app:staging-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                      |
+| `deploy-prd.yaml`      | push to `main`                                                    | Fail when `BREEZ_API_KEY_PRD` is empty → Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_PRD`) → push `21gifts/app:latest` and `21gifts/app:latest-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                   |
+| `auto-release-pr.yaml` | push to `develop` or `staging`                                    | Open a missing release only (`staging → develop`, and `develop → main`). Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                                                                                                                                                                                                                                                               |
+| `a38-guard.yml`        | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                                                                                                                                                                                                                                                           |
 
-Images target `linux/arm64`.
+Images target `linux/arm64`. Every deploy passes the build-arg
+`NEXT_PUBLIC_BUILD_ID` as the full commit SHA (`github.sha`), read by the
+Dockerfile's `ARG NEXT_PUBLIC_BUILD_ID`. Every deploy also pushes the image as
+`21gifts/app:<tag>-<sha>`, where `<tag>` is that workflow's moving tag
+(`beta`, `staging`, or `latest`) and `<sha>` is the full 40-character
+`github.sha`, for example `21gifts/app:latest-<sha>`. The image bakes
+environment-specific build-args, so the tag names the environment as well as
+the commit; no later commit writes it. A re-run for the same commit pushes the
+same tag again. The moving tags and the deploy dispatch are unchanged.
 
 Deploy workflows require these GitHub Actions secrets:
 
-| Secret            | Purpose                                             |
-| ----------------- | --------------------------------------------------- |
-| `DOCKER_USERNAME` | Docker Hub username for image push                  |
-| `DOCKER_PASSWORD` | Docker Hub token for image push                     |
-| `DISPATCH_TOKEN`  | PAT to dispatch `image-published` and read that run |
-| `DISPATCH_REPO`   | Target `owner/repo` that receives `image-published` |
+| Secret              | Purpose                                                                    |
+| ------------------- | -------------------------------------------------------------------------- |
+| `DOCKER_USERNAME`   | Docker Hub username for image push                                         |
+| `DOCKER_PASSWORD`   | Docker Hub token for image push                                            |
+| `DISPATCH_TOKEN`    | PAT to dispatch `image-published` and read that run                        |
+| `DISPATCH_REPO`     | Target `owner/repo` that receives `image-published`                        |
+| `BREEZ_API_KEY_PRD` | Breez API key baked into the PRD image; `deploy-prd.yaml` fails without it |
 
 If `DISPATCH_TOKEN` or `DISPATCH_REPO` is missing, deploy fails loud (the image
 may already be on Hub). After `image-published`, the job waits for the
@@ -827,17 +1132,28 @@ and fails if that run does not succeed. The wait is what makes a failed DEV depl
 
 ## Breez SDK Spark
 
+The app reads the key as `NEXT_PUBLIC_BREEZ_API_KEY` through `getBreezApiKey()`.
+It is inlined at `next build`. Unset or empty disables the in-app wallet. It
+is the only wallet, so members then cannot pay from the app: the pay sheets say
+that the wallet is not available here. Local use:
+`NEXT_PUBLIC_BREEZ_API_KEY=<key> npm run dev`. Playwright and CI builds leave
+it unset. Every deploy passes its own environment's key (see below).
+
 This repository stores three GitHub Actions secrets for the Breez SDK (Spark).
-Deploy workflows do not read them. A later workflow can read them as
-`secrets.BREEZ_API_KEY_PRD`, `secrets.BREEZ_API_KEY_DEV`, and
-`secrets.BREEZ_API_KEY_STAGING`. GitHub does not show the values again, and
-the values are not in git.
+Each deploy passes its own secret as the Docker build-arg
+`NEXT_PUBLIC_BREEZ_API_KEY`, which `next build` bakes into the app:
+`deploy-dev.yaml` reads `BREEZ_API_KEY_DEV`, `deploy-staging.yaml` reads
+`BREEZ_API_KEY_STAGING`, and `deploy-prd.yaml` reads `BREEZ_API_KEY_PRD`. On
+DEV and staging an unset or empty secret still builds with the wallet off.
+`deploy-prd.yaml` fails before the build, with an error that names
+`BREEZ_API_KEY_PRD`, when that secret is unset, empty, or only whitespace.
+GitHub does not show the values again, and the values are not in git.
 
 | Secret                  | Use                                                            |
 | ----------------------- | -------------------------------------------------------------- |
 | `BREEZ_API_KEY_PRD`     | Breez SDK API key for production (`https://api.21.gifts`)      |
 | `BREEZ_API_KEY_DEV`     | Breez SDK API key for development (`https://dev-api.21.gifts`) |
-| `BREEZ_API_KEY_STAGING` | Breez SDK API key for the future staging environment           |
+| `BREEZ_API_KEY_STAGING` | Breez SDK API key for staging (`https://staging-api.21.gifts`) |
 
 ```yaml
 env:

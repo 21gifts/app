@@ -18,7 +18,7 @@ test('Function: shortResourceUrl — copy writes an 8-hex short link', async ({ 
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddress: null,
         lightningAddressVerified: false,
         forumLawsDismissed: true,
         createdAt: 1,

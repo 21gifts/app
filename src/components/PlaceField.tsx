@@ -94,8 +94,9 @@ function placedBoxStyle(box: PlacedFrameBox, fill: boolean): CSSProperties {
 /**
  * Optional place pin control for a top-level forum composer or staff editor.
  *
- * @param props - Current pin, disabled flag, change handler, and optional
- * staff-commit overrides (size, variant, preview, label, `onCommit`).
+ * @param props - Current pin, disabled flag, change handler, optional
+ * `previewSlot`, and optional staff-commit overrides (size, variant, preview,
+ * label, `onCommit`).
  * @returns Attach button, optional preview, and map panel.
  */
 export function PlaceField(props: {
@@ -107,6 +108,7 @@ export function PlaceField(props: {
   showPreview?: boolean;
   ariaLabel?: string;
   onCommit?: (place: ForumPlacePin | null) => Promise<void>;
+  previewSlot?: HTMLElement | null;
 }): ReactElement {
   const { t } = useTranslations();
   const sunday = useLocalSunday();
@@ -359,7 +361,8 @@ export function PlaceField(props: {
   ]);
 
   useLayoutEffect(() => {
-    const showPreviewBox = !sunday && showPreview && props.place !== null && !open;
+    const showPreviewBox =
+      props.previewSlot === undefined && !sunday && showPreview && props.place !== null && !open;
     const showPanelBox = !sunday && open && !props.disabled && (unavailable || mapsKey !== null);
     const commitPlacedBox = (next: PlacedFrameBox | null): void => {
       if (samePlacedBox(placedBoxRef.current, next)) {
@@ -417,7 +420,16 @@ export function PlaceField(props: {
       viewport?.removeEventListener('resize', measure);
       viewport?.removeEventListener('scroll', measure);
     };
-  }, [open, showPreview, props.place, props.disabled, unavailable, mapsKey, sunday]);
+  }, [
+    open,
+    showPreview,
+    props.place,
+    props.disabled,
+    unavailable,
+    mapsKey,
+    sunday,
+    props.previewSlot,
+  ]);
 
   const previewText =
     props.place === null
@@ -560,11 +572,15 @@ export function PlaceField(props: {
             className={buttonSize === 'sm' ? 'h-4 w-4 shrink-0' : 'block h-5 w-5 shrink-0'}
           />
         </IconButton>
-        {!sunday && showPreview && props.place !== null && !open ? (
+        {props.previewSlot === undefined &&
+        !sunday &&
+        showPreview &&
+        props.place !== null &&
+        !open ? (
           placedBox !== null ? (
             createPortal(
               <div
-                className="fixed z-20 flex items-start gap-3 overflow-clip rounded-2xl border border-app-border bg-app-card-muted p-3"
+                className="fixed z-30 flex items-start gap-3 overflow-clip rounded-2xl border border-app-border bg-app-card-muted p-3"
                 style={placedBoxStyle(placedBox, false)}
               >
                 {previewBody}
@@ -572,11 +588,24 @@ export function PlaceField(props: {
               document.body,
             )
           ) : (
-            <div className="absolute left-0 top-full z-20 mt-2 flex w-64 items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+            <div className="absolute left-0 top-full z-30 mt-2 flex w-64 items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
               {previewBody}
             </div>
           )
         ) : null}
+        {props.previewSlot !== undefined &&
+        props.previewSlot !== null &&
+        !sunday &&
+        showPreview &&
+        props.place !== null &&
+        !open
+          ? createPortal(
+              <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+                {previewBody}
+              </div>,
+              props.previewSlot,
+            )
+          : null}
         {!sunday && open && !props.disabled && (unavailable || mapsKey !== null) ? (
           placedBox !== null ? (
             createPortal(

@@ -70,9 +70,16 @@ jobs:
         run: npm run build
 
   e2e:
-    name: E2E (behavior)
+    name: E2E (behavior, shard ${{ matrix.shard }}/${{ matrix.shards }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      # One job per shard keeps each inside the 10 minutes. Add a shard when one
+      # comes close: a new number in `shard` and the new total in `shards`.
+      matrix:
+        shard: [1, 2, 3]
+        shards: [3]
     # Same image that generated e2e/visual.spec.ts-snapshots (Linux Chromium).
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
@@ -84,8 +91,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: End-to-end tests (behavior)
-        run: npm run e2e:behavior
+      - name: End-to-end tests (behavior, shard ${{ matrix.shard }}/${{ matrix.shards }})
+        run: npm run e2e:behavior -- --shard=${{ matrix.shard }}/${{ matrix.shards }}
         env:
           HOSTNAME: 0.0.0.0
 
@@ -93,40 +100,80 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-output-behavior
+          name: playwright-output-behavior-${{ matrix.shard }}
           path: |
             test-results/
             e2e/visual.spec.ts-snapshots/
 
+  # The required check. It is green only when every behavior shard is green.
+  e2e-behavior:
+    name: E2E (behavior)
+    needs: e2e
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: All behavior shards passed
+        env:
+          SHARDS_RESULT: ${{ needs.e2e.result }}
+        run: |
+          echo "Behavior shards: $SHARDS_RESULT"
+          test "$SHARDS_RESULT" = "success"
+
+  visual-shards:
+    name: Visual (${{ matrix.project }}, shard ${{ matrix.shard }}/${{ matrix.shards }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      # One job per project and shard keeps each inside the 10 minutes. Add a
+      # shard when one comes close: a new number in `shard` and the new total in
+      # `shards`.
+      matrix:
+        project: [desktop-light, desktop-dark, mobile-light, mobile-dark]
+        shard: [1, 2]
+        shards: [2]
+    # Same image that generated e2e/visual.spec.ts-snapshots (Linux Chromium).
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --ipc=host
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Visual regression (${{ matrix.project }}, shard ${{ matrix.shard }}/${{ matrix.shards }})
+        run: npm run e2e:visual -- --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.shards }}
+        env:
+          HOSTNAME: 0.0.0.0
+
+      - name: Upload Playwright output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-output-${{ matrix.project }}-${{ matrix.shard }}
+          path: |
+            test-results/
+            e2e/visual.spec.ts-snapshots/
+
+  # The required checks Visual (<project>). Each is green only when every visual
+  # shard is green.
   visual:
     name: Visual (${{ matrix.project }})
+    needs: visual-shards
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
         project: [desktop-light, desktop-dark, mobile-light, mobile-dark]
-    # Same image that generated e2e/visual.spec.ts-snapshots (Linux Chromium).
-    container:
-      image: mcr.microsoft.com/playwright:v1.61.1-noble
-      options: --ipc=host
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Visual regression (${{ matrix.project }})
-        run: npm run e2e:visual -- --project=${{ matrix.project }}
+      - name: All visual shards passed
         env:
-          HOSTNAME: 0.0.0.0
-
-      - name: Upload Playwright output
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-output-${{ matrix.project }}
-          path: |
-            test-results/
-            e2e/visual.spec.ts-snapshots/
+          SHARDS_RESULT: ${{ needs.visual-shards.result }}
+        run: |
+          echo "Visual shards: $SHARDS_RESULT"
+          test "$SHARDS_RESULT" = "success"

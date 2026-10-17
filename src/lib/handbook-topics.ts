@@ -53,8 +53,8 @@ export function pathAnchor(path: string): string {
  * Path `/` becomes `root`; other paths drop the leading `/` and replace
  * remaining `/` with `-`. The variant is the segment after the last `:`.
  *
- * @param id - Catalog topic id (`/:default`, `/welcome:pay-qr`, …).
- * @returns Hyphenated anchor (`root-default`, `welcome-pay-qr`, …).
+ * @param id - Catalog topic id (`/:default`, `/welcome:wallet-pay-unavailable`, …).
+ * @returns Hyphenated anchor (`root-default`, `welcome-wallet-pay-unavailable`, …).
  */
 export function topicAnchor(id: string): string {
   const colon = id.lastIndexOf(':');

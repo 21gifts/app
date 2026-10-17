@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { ImagePlus, Loader2, Send, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -17,10 +18,11 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
-import { QrCode } from '@/components/QrCode';
+import { WalletPay } from '@/components/WalletPay';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { AmountEntry } from '@/components/AmountEntry';
+import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
 import {
   CONTACT_MESSAGE_MAX_LENGTH,
@@ -38,12 +40,6 @@ import {
   type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
-import {
-  isAndroidUserAgent,
-  isSmartphoneUserAgent,
-  walletOfSatoshiHref,
-  walletOfSatoshiIntentHref,
-} from '@/lib/wos-deep-link';
 
 /** Catalog key for each conversation.kind origin label. */
 const CONVERSATION_ORIGIN_KEY = {
@@ -193,6 +189,7 @@ export type InboxFormError =
   | 'amount'
   | 'rateLimit'
   | 'authorWallet'
+  | 'walletRequired'
   | 'unsupported'
   | 'tooLarge'
   | 'tooMany'
@@ -204,6 +201,8 @@ export interface InboxInvoice {
   pr: string;
   /** Whole satoshis on the invoice. */
   amountSats: number;
+  /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
+  sparkInvoice?: string | null | undefined;
 }
 
 /** Props for {@link InboxScreen}. */
@@ -259,10 +258,10 @@ export interface InboxScreenProps {
    * the closed staff room passes false (no gifts).
    */
   showAmount?: boolean;
-  /** Latest gift-day totals for unpaid invoice previews, or `null` without a usable rate. */
+  /** Current spot rate for unpaid invoice previews, or `null` without a usable rate. */
   rateDay?: FiatRateDay | null;
   /**
-   * Show the ImagePlus attach control and photo drafts. Default false for
+   * Show the camera, the ImagePlus attach control, and photo drafts. Default false for
    * callers that omit it; InboxLoader passes true on an open thread; the
    * staff room still passes true.
    */
@@ -345,7 +344,7 @@ const STORED_FIAT_FIELD = {
 
 /**
  * Plain-text ₿ amount plus the visitor's default fiat.
- * A stored string wins. Otherwise the gift-day rate. Bitcoin alone only
+ * A stored string wins. Otherwise the current spot rate. Bitcoin alone only
  * when neither figure exists.
  */
 function giftAmountText(
@@ -491,7 +490,7 @@ function ConversationListItem({
  * a 8000-character composer and a sats amount field (`showAmount` false
  * hides it; the staff room has no gifts). An open invoice hides that amount
  * row too: the pay sheet states the amount once, as bitcoin plus the
- * default fiat from the latest gift-day rate. Members (`showFilter`
+ * default fiat from the current spot rate. Members (`showFilter`
  * false) see inbound rows except `moderator_group`. Moderators
  * (`showFilter` true) see the origin control (Direct / Contact / Damus);
  * default Direct. Rows with `kind` `moderator_group` are never listed (the
@@ -506,8 +505,9 @@ function ConversationListItem({
  * bubbles use `forum.giftReply`; text+sats show the amount under the body.
  * Non-empty bodies go through {@link ForumQuotedBody} so a pasted
  * `https://21.gifts/messages/<uuid>` unfurls as a nested quoted-note card.
- * `showAttach` (default false for callers that omit it) adds the forum
- * ImagePlus control, still previews, and photo-only send for any caller
+ * `showAttach` (default false for callers that omit it) adds the camera
+ * (`CameraPhotoButton`) and the forum ImagePlus control in a row above the
+ * message, still previews, and photo-only send for any caller
  * that passes true (`/messages` open threads and the staff room);
  * `photoUrls` renders attached stills on bubbles. Settled thread sats amounts
  * show a preferred-fiat suffix via `preferredFiatSuffix` from the amount stored
@@ -516,8 +516,8 @@ function ConversationListItem({
  * same rate. Bitcoin alone only when neither figure exists. A message whose `giftFor` points at
  * another message renders via {@link groupThreadGifts} as a nested
  * `role="note"` line inside the parent's list item. An open `invoice` shows the
- * Wallet of Satoshi pay sheet. Desktop and iPad also show the invoice QR. A
- * smartphone does not (`isSmartphoneUserAgent`, not viewport). The
+ * pay sheet, where `WalletPay` pays from the member's in-app wallet; it shows
+ * no invoice QR on any device. The
  * open-thread heading is the counterpart name plus origin caption (no in-card
  * back). Unread inbound rows use a semibold counterpart name and `text-app-fg`
  * last-text (read inbound last-text stays muted). When the derived unread
@@ -599,7 +599,6 @@ export function InboxScreen({
   });
   const paySheetWasOpen = useRef(false);
   const payWaitingWasOn = useRef(false);
-  const payQrWasOn = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const threadColumnRef = useRef<HTMLDivElement | null>(null);
   const pinningRef = useRef(false);
@@ -610,7 +609,6 @@ export function InboxScreen({
   const prevOpenIdRef = useRef(openId);
   const [armedForOpenId, setArmedForOpenId] = useState<string | null>(null);
   const [filter, setFilter] = useState<InboxFilter>('direct');
-  const [showPaymentQr, setShowPaymentQr] = useState(false);
   const historyArmed = openId !== null && openId !== '' && armedForOpenId === openId;
 
   const messagesReady = messages !== null;
@@ -626,10 +624,6 @@ export function InboxScreen({
     /* v8 ignore next -- length > 0, so the last index exists */
     lastMessageId = last === undefined ? '' : last.id;
   }
-
-  useEffect(() => {
-    setShowPaymentQr(!isSmartphoneUserAgent(navigator.userAgent));
-  }, []);
 
   const pinOpenThread = (): void => {
     pinThreadEnd(
@@ -811,16 +805,14 @@ export function InboxScreen({
     const paySheetOpen = invoice !== null;
     const sheetOpened = paySheetOpen && !paySheetWasOpen.current;
     const waitingAppeared = paySheetOpen && payWaiting && !payWaitingWasOn.current;
-    const qrAppeared = paySheetOpen && showPaymentQr && !payQrWasOn.current;
     paySheetWasOpen.current = paySheetOpen;
     payWaitingWasOn.current = paySheetOpen && payWaiting;
-    payQrWasOn.current = paySheetOpen && showPaymentQr;
     if (
       threadOpen &&
       messagesReady &&
       messagesLoading === false &&
       messagesError === false &&
-      (sheetOpened || waitingAppeared || qrAppeared)
+      (sheetOpened || waitingAppeared)
     ) {
       pinOpenThread();
     }
@@ -833,7 +825,6 @@ export function InboxScreen({
     inShell,
     invoice,
     payWaiting,
-    showPaymentQr,
   ]);
 
   useEffect(() => {
@@ -902,44 +893,6 @@ export function InboxScreen({
     openId === null || conversations === null
       ? null
       : (conversations.find((row) => row.id === openId) ?? null);
-
-  /* v8 ignore start -- Android vs iOS wallet href */
-  const android =
-    typeof navigator !== 'undefined' ? isAndroidUserAgent(navigator.userAgent) : false;
-  const wosHref =
-    invoice === null
-      ? null
-      : android
-        ? walletOfSatoshiIntentHref(invoice.pr)
-        : walletOfSatoshiHref(invoice.pr);
-  /* v8 ignore stop */
-
-  const openWalletOfSatoshi = (href: string): void => {
-    window.location.href = href;
-  };
-
-  const walletButton =
-    wosHref === null ? null : (
-      <Button
-        type="button"
-        aria-label={t('forum.payOpenWalletAria')}
-        icon={
-          <img
-            src="/wos-icon.png"
-            alt=""
-            width={20}
-            height={20}
-            aria-hidden="true"
-            className="h-5 w-5 rounded-md ring-1 ring-white/30"
-          />
-        }
-        onClick={() => {
-          openWalletOfSatoshi(wosHref);
-        }}
-      >
-        {t('forum.payOpenWallet')}
-      </Button>
-    );
 
   let body: ReactElement;
   if (openId !== null) {
@@ -1140,36 +1093,42 @@ export function InboxScreen({
           </ul>
         ) : null}
         <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
+          {showAttach ? (
+            <div className="flex items-center gap-2">
+              <CameraPhotoButton
+                label={t('camera.takePhoto')}
+                size="lg"
+                disabled={posting || messagesLoading}
+                onChange={handleFileChange}
+              />
+              <IconButton
+                type="button"
+                size="lg"
+                variant="secondary"
+                aria-label={t('inbox.attach')}
+                disabled={posting || messagesLoading}
+                onClick={() => {
+                  fileInputRef.current?.click();
+                }}
+              >
+                <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
+              </IconButton>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                disabled={posting || messagesLoading}
+                onChange={handleFileChange}
+              />
+            </div>
+          ) : null}
           <div
             className={
               showAmount && invoice === null ? 'flex items-end gap-2' : 'flex items-center gap-2'
             }
           >
-            {showAttach ? (
-              <>
-                <IconButton
-                  type="button"
-                  size="lg"
-                  variant="secondary"
-                  aria-label={t('inbox.attach')}
-                  disabled={posting || messagesLoading}
-                  onClick={() => {
-                    fileInputRef.current?.click();
-                  }}
-                >
-                  <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
-                </IconButton>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  disabled={posting || messagesLoading}
-                  onChange={handleFileChange}
-                />
-              </>
-            ) : null}
             <MentionTextarea
               ariaLabel={t('inbox.composerLabel')}
               placeholder={t('inbox.placeholder')}
@@ -1198,7 +1157,7 @@ export function InboxScreen({
           {showAmount && invoice === null ? (
             <AmountEntry
               layout="composer"
-              className={showAttach ? 'max-w-sm ps-14' : 'max-w-sm'}
+              className="max-w-sm"
               label={t('inbox.amountLabel')}
               placeholder={t('forum.payAmountPlaceholder')}
               value={amountDraft}
@@ -1286,6 +1245,13 @@ export function InboxScreen({
             {t('inbox.errorAuthorWallet')}
           </p>
         ) : null}
+        {formError === 'walletRequired' ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            <Link href="/wallet" className="underline underline-offset-2">
+              {t('inbox.errorWalletRequired')}
+            </Link>
+          </p>
+        ) : null}
         {formError === 'unsupported' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('inbox.errorUnsupported')}
@@ -1303,24 +1269,30 @@ export function InboxScreen({
         ) : null}
         {invoice !== null ? (
           <div className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4">
-            <IconButton
-              type="button"
-              size="sm"
-              variant="ghost"
-              aria-label={t('forum.payClose')}
-              onClick={onPayCancel}
-              className="absolute left-2 top-2"
-            >
-              <X aria-hidden="true" className="h-4 w-4" />
-            </IconButton>
+            <div className="absolute left-3 top-3">
+              <IconButton
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-label={t('forum.payClose')}
+                onClick={onPayCancel}
+              >
+                <X aria-hidden="true" className="h-4 w-4" />
+              </IconButton>
+            </div>
             <p className="px-10 text-center text-sm text-app-muted">
               {t('forum.payConfirm', {
                 amount: formatBitcoin(invoice.amountSats, numberFormat),
               })}
               {preferredFiatSuffix(invoice.amountSats, rateDay, fiat, numberFormat)}
             </p>
-            {showPaymentQr ? <QrCode value={invoice.pr} label={t('forum.payInvoiceQr')} /> : null}
-            {walletButton}
+            <WalletPay
+              sparkInvoice={invoice.sparkInvoice}
+              pr={invoice.pr}
+              amountSats={invoice.amountSats}
+              rateDay={rateDay}
+              flow="inbox"
+            />
             {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
             {payWaiting ? (
               <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>

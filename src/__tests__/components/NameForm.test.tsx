@@ -245,7 +245,7 @@ describe('NameForm', () => {
     expect(screen.getByText('Ada')).toBeTruthy();
   });
 
-  it('keeps a concurrently saved address when the name response is stale', async () => {
+  it('keeps a concurrently saved location when the name response is stale', async () => {
     let resolve!: (value: Account) => void;
     const pending = new Promise<Account>((r) => {
       resolve = r;
@@ -259,18 +259,18 @@ describe('NameForm', () => {
     act(() => {
       useAuthStore.setState({
         session: 'sess',
-        account: { ...baseAccount, lightningAddress: 'me@walletofsatoshi.com' },
+        account: { ...baseAccount, location: 'Zürich' },
       });
     });
 
     await act(async () => {
-      resolve({ ...baseAccount, name: 'Ada', lightningAddress: null });
+      resolve({ ...baseAccount, name: 'Ada', location: null });
     });
 
     expect(useAuthStore.getState().account).toEqual({
       ...baseAccount,
       name: 'Ada',
-      lightningAddress: 'me@walletofsatoshi.com',
+      location: 'Zürich',
     });
   });
 

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import type { ReactElement } from 'react';
 import { HandbookCopyLink } from '@/components/HandbookCopyLink';
 import { HandbookIntro } from '@/components/HandbookIntro';
@@ -37,46 +38,46 @@ export default async function HandbookPage(): Promise<ReactElement> {
           <HandbookCopyLink targetId="handbook" label={translate(messages, 'handbook.title')} />
         }
       >
-        <a href="/handbook/screens" className="text-accent underline underline-offset-2">
+        <Link href="/handbook/screens" className="text-accent underline underline-offset-2">
           {screensTitle}
-        </a>
-        <a href="/handbook/functions" className="text-accent underline underline-offset-2">
+        </Link>
+        <Link href="/handbook/functions" className="text-accent underline underline-offset-2">
           {functionsTitle}
-        </a>
-        <a href="/handbook/endpoints" className="text-accent underline underline-offset-2">
+        </Link>
+        <Link href="/handbook/endpoints" className="text-accent underline underline-offset-2">
           {endpointsTitle}
-        </a>
+        </Link>
       </HandbookIntro>
       <ul className="mt-12 flex flex-col gap-8">
         <li>
           <h2 className="text-xl font-semibold text-accent">{screensTitle}</h2>
           <p className="mt-2 text-paper/60">{translate(messages, 'handbook.screensLead')}</p>
-          <a
+          <Link
             href="/handbook/screens"
             className="mt-2 inline-block text-accent underline underline-offset-2"
           >
             {screensTitle}
-          </a>
+          </Link>
         </li>
         <li>
           <h2 className="text-xl font-semibold text-accent">{functionsTitle}</h2>
           <p className="mt-2 text-paper/60">{translate(messages, 'handbook.functionsLead')}</p>
-          <a
+          <Link
             href="/handbook/functions"
             className="mt-2 inline-block text-accent underline underline-offset-2"
           >
             {functionsTitle}
-          </a>
+          </Link>
         </li>
         <li>
           <h2 className="text-xl font-semibold text-accent">{endpointsTitle}</h2>
           <p className="mt-2 text-paper/60">{translate(messages, 'handbook.endpointsLead')}</p>
-          <a
+          <Link
             href="/handbook/endpoints"
             className="mt-2 inline-block text-accent underline underline-offset-2"
           >
             {endpointsTitle}
-          </a>
+          </Link>
         </li>
       </ul>
     </main>

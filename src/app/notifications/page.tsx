@@ -9,7 +9,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
 /**
  * `/notifications` — signed-in notifications list.
  *
- * Requires name + address + living-room rules agreement via
+ * Requires name + username + living-room rules agreement via
  * {@link OnboardingGate} `screen="welcome"`, same as `/messages`. There is no
  * `route.ts` beside this page (Next.js forbids that); notification HTTP lives
  * under `/forum/notifications`. Public forum notes stay at `/messages/[id]`.

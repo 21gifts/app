@@ -141,6 +141,16 @@ export async function proxyMeActivityGet(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies GET /me/loans to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMeLoansGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/loans');
+}
+
+/**
  * Proxies POST /me/name to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).
@@ -251,6 +261,129 @@ export async function proxyMeWalletBackupSeenPost(request: Request): Promise<Res
 }
 
 /**
+ * Proxies PUT /me/wallet to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ sparkPubkey }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletPut(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet');
+}
+
+/**
+ * Proxies POST /me/wallet/report (wallet data report) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON
+ *   `{ balanceSats, syncedAt, payments }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletReportPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet/report');
+}
+
+/**
+ * Proxies POST /me/wallet/hearts (heart payment lookup) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ hashes }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletHeartsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet/hearts');
+}
+
+/**
+ * Proxies POST /me/events (interaction log batch) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ events }`).
+ * @returns The upstream response.
+ */
+export async function proxyMeEventsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/events');
+}
+
+/**
+ * Proxies POST /lnurlpay/:pubkey (wallet address registration) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (signed JSON body from the wallet).
+ * @param pubkey - Wallet identity public key from the path.
+ * @returns The upstream response.
+ */
+export async function proxyLnurlpayRegisterPost(
+  request: Request,
+  pubkey: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/lnurlpay/${encodeURIComponent(pubkey)}`);
+}
+
+/**
+ * Proxies POST /lnurlpay/:pubkey/recover (wallet address lookup) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (signed JSON body from the wallet).
+ * @param pubkey - Wallet identity public key from the path.
+ * @returns The upstream response.
+ */
+export async function proxyLnurlpayRecoverPost(
+  request: Request,
+  pubkey: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/lnurlpay/${encodeURIComponent(pubkey)}/recover`);
+}
+
+/**
+ * Proxies GET /lnurlpay/:pubkey/metadata (received-payment notes) to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (signed query from the wallet).
+ * @param pubkey - Wallet identity public key from the path.
+ * @returns The upstream response.
+ */
+export async function proxyLnurlpayMetadataGet(
+  request: Request,
+  pubkey: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/lnurlpay/${encodeURIComponent(pubkey)}/metadata`);
+}
+
+/**
+ * Copies an upstream response and allows any origin to read it.
+ *
+ * @param upstream - Proxied api response.
+ * @returns The same status and body with `Access-Control-Allow-Origin: *`.
+ */
+function withAnyOrigin(upstream: Response): Response {
+  const headers = new Headers(upstream.headers);
+  headers.set('Access-Control-Allow-Origin', '*');
+  return new Response(upstream.body, { status: upstream.status, headers });
+}
+
+/**
+ * Proxies GET /lnurlp/:username/invoice (a payer asks for a payment request
+ * to a member's in-app wallet) to the 21.gifts api. Any origin may read it.
+ *
+ * @param request - Incoming App Router request (query carries the amount).
+ * @param username - Member username from the path.
+ * @returns The upstream response with `Access-Control-Allow-Origin: *`.
+ */
+export async function proxyLnurlpInvoiceGet(request: Request, username: string): Promise<Response> {
+  return withAnyOrigin(
+    await proxyApiRequest(request, `/lnurlp/${encodeURIComponent(username)}/invoice`),
+  );
+}
+
+/**
+ * Proxies GET /verify/:paymentHash (a payer checks whether a payment
+ * settled) to the 21.gifts api. Any origin may read it.
+ *
+ * @param request - Incoming App Router request.
+ * @param paymentHash - Payment hash from the path.
+ * @returns The upstream response with `Access-Control-Allow-Origin: *`.
+ */
+export async function proxyVerifyGet(request: Request, paymentHash: string): Promise<Response> {
+  return withAnyOrigin(
+    await proxyApiRequest(request, `/verify/${encodeURIComponent(paymentHash)}`),
+  );
+}
+
+/**
  * Proxies POST /me/passkey-renew/report to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).
@@ -307,6 +440,31 @@ export async function proxyMembersPostsGet(request: Request, accountId: string):
 }
 
 /**
+ * Proxies GET /members/:accountId/shops to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param accountId - Member account id from the route.
+ * @returns The upstream response.
+ */
+export async function proxyMembersShopsGet(request: Request, accountId: string): Promise<Response> {
+  return proxyApiRequest(request, `/members/${encodeURIComponent(accountId)}/shops`);
+}
+
+/**
+ * Proxies GET /members/:accountId/credits to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param accountId - Member account id from the route.
+ * @returns The upstream response.
+ */
+export async function proxyMembersCreditsGet(
+  request: Request,
+  accountId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/members/${encodeURIComponent(accountId)}/credits`);
+}
+
+/**
  * Proxies GET /members/:accountId/replies to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session).
@@ -331,6 +489,16 @@ export async function proxyMeForumLawsDismissedPost(request: Request): Promise<R
 }
 
 /**
+ * Proxies POST /me/wallet-intro-seen to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletIntroSeenPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet-intro-seen');
+}
+
+/**
  * Proxies POST /me/notification-level to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON `{ level }`).
@@ -338,6 +506,16 @@ export async function proxyMeForumLawsDismissedPost(request: Request): Promise<R
  */
 export function proxyMeNotificationLevelPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/me/notification-level');
+}
+
+/**
+ * Proxies POST /me/heart-notifications to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ enabled }`).
+ * @returns The upstream response.
+ */
+export function proxyMeHeartNotificationsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/heart-notifications');
 }
 
 /**
@@ -371,26 +549,6 @@ export function proxyMeFiatPost(request: Request): Promise<Response> {
 }
 
 /**
- * Proxies POST /me/lightning-address to the 21.gifts api.
- *
- * @param request - Incoming App Router request (Bearer session + JSON body).
- * @returns The upstream response.
- */
-export async function proxyMeLightningAddressPost(request: Request): Promise<Response> {
-  return proxyApiRequest(request, '/me/lightning-address');
-}
-
-/**
- * Proxies DELETE /me/lightning-address to the 21.gifts api.
- *
- * @param request - Incoming App Router request (Bearer session).
- * @returns The upstream response.
- */
-export async function proxyMeLightningAddressDelete(request: Request): Promise<Response> {
-  return proxyApiRequest(request, '/me/lightning-address');
-}
-
-/**
  * Proxies POST /me/rules-agreement to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session, no body).
@@ -401,16 +559,6 @@ export async function proxyMeRulesAgreementPost(request: Request): Promise<Respo
 }
 
 /**
- * Proxies GET /lightning-address to the 21.gifts api.
- *
- * @param request - Incoming App Router request (`address` query param).
- * @returns The upstream response.
- */
-export async function proxyLightningAddressGet(request: Request): Promise<Response> {
-  return proxyApiRequest(request, '/lightning-address');
-}
-
-/**
  * Proxies GET /gifts/stats to the 21.gifts api (forwards `recipient` query).
  *
  * @param request - Incoming App Router request.
@@ -418,6 +566,18 @@ export async function proxyLightningAddressGet(request: Request): Promise<Respon
  */
 export async function proxyGiftsStatsGet(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/gifts/stats');
+}
+
+/**
+ * Proxies GET /fx/spot to the 21.gifts api.
+ *
+ * No session is required. The incoming request is forwarded as received.
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyFxSpotGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/fx/spot');
 }
 
 /**
@@ -897,6 +1057,38 @@ export async function proxyExternalAuthorPostsGet(
 }
 
 /**
+ * Proxies GET /messages/:id/external-shops to the 21.gifts api (public; no auth).
+ *
+ * App path is `/public-messages/:id/external-shops`.
+ *
+ * @param request - Incoming App Router request.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyExternalAuthorShopsGet(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/external-shops`);
+}
+
+/**
+ * Proxies GET /messages/:id/external-credits to the 21.gifts api (public; no auth).
+ *
+ * App path is `/public-messages/:id/external-credits`.
+ *
+ * @param request - Incoming App Router request.
+ * @param messageId - Forum message UUID.
+ * @returns The upstream response.
+ */
+export async function proxyExternalAuthorCreditsGet(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/external-credits`);
+}
+
+/**
  * Proxies GET /messages/:id/external-replies to the 21.gifts api (public; no auth).
  *
  * App path is `/public-messages/:id/external-replies`.
@@ -984,6 +1176,20 @@ export async function proxyMessagesRepaymentPost(
 }
 
 /**
+ * Proxies POST /messages/:id/repayment/due to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param messageId - Credit note id.
+ * @returns The upstream response.
+ */
+export async function proxyMessagesRepaymentDuePost(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/repayment/due`);
+}
+
+/**
  * Proxies POST /contact to the 21.gifts api (same-origin path `/contact/submit`).
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).
@@ -991,6 +1197,29 @@ export async function proxyMessagesRepaymentPost(
  */
 export async function proxyContactPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/contact');
+}
+
+/**
+ * Proxies POST /lnurl/pay-request to the 21.gifts api (pay request of a
+ * Lightning address or LNURL on another host).
+ *
+ * @param request - Incoming App Router request (Bearer session + `{ target }` JSON).
+ * @returns The upstream response.
+ */
+export async function proxyLnurlPayRequestPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/lnurl/pay-request');
+}
+
+/**
+ * Proxies POST /lnurl/invoice to the 21.gifts api (invoice from a Lightning
+ * address or LNURL on another host).
+ *
+ * @param request - Incoming App Router request (Bearer session +
+ * `{ target, amountMsat, comment? }` JSON).
+ * @returns The upstream response.
+ */
+export async function proxyLnurlInvoicePost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/lnurl/invoice');
 }
 
 /**
@@ -1182,6 +1411,26 @@ export async function proxyMessagesPhotoGet(
 ): Promise<Response> {
   const base = `/messages/${encodeURIComponent(id)}/photo`;
   return proxyApiRequest(request, file === undefined || file === '' ? base : `${base}/${file}`);
+}
+
+/**
+ * Proxies GET /messages/:id/photo.jpg without forwarding Authorization, so
+ * the edge can store the public still.
+ *
+ * @param request - Incoming App Router request.
+ * @param id - Forum message id from the dynamic route segment.
+ * @param ext - Still file extension (`jpg`).
+ * @returns The upstream response (raw image bytes).
+ */
+export async function proxyMessagesPhotoExtGet(
+  request: Request,
+  id: string,
+  ext: 'jpg',
+): Promise<Response> {
+  const headers = new Headers(request.headers);
+  headers.delete('authorization');
+  const stripped = new Request(request.url, { method: 'GET', headers });
+  return proxyApiRequest(stripped, `/messages/${encodeURIComponent(id)}/photo.${ext}`);
 }
 
 /**

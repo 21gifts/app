@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ViewProfileClaim } from '@/components/ViewProfileClaim';
 import { usePasskeyLogin, type PasskeyStatus } from '@/hooks/usePasskeyLogin';
 import { isInAppBrowser } from '@/lib/in-app-browser';
+import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -19,6 +20,11 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
+const walletOpen = vi.hoisted(() => ({ value: true }));
+vi.mock('@/hooks/useWalletOpen', () => ({ useWalletOpen: () => walletOpen.value }));
+vi.mock('@/components/WalletLoginCard', () => ({
+  WalletLoginCard: () => <p>wallet-login-card</p>,
+}));
 const hydrateReady = { current: true };
 vi.mock('@/hooks/useHydrateSession', () => ({
   useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady.current }),
@@ -35,7 +41,7 @@ const account = {
   role: 'basis' as const,
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1,
@@ -188,6 +194,95 @@ describe('ViewProfileClaim', () => {
     expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
   });
 
+  it('opens the wallet through the login card after login-instead, and keeps it while held back', () => {
+    mockPasskey('error', 'This profile already has a passkey');
+    const { rerender } = renderWithLocale(
+      <ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
+    mockPasskey('idle');
+    walletOpen.value = false;
+    try {
+      act(() => {
+        useAuthStore.setState({ session: 'tok', account: { id: 'acc' } as Account });
+      });
+      rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+      expect(screen.getByText('wallet-login-card')).toBeTruthy();
+      act(() => {
+        useAuthStore.setState({ session: null, account: null, lockedSession: 'tok' });
+      });
+      rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+      expect(screen.getByText('wallet-login-card')).toBeTruthy();
+      walletOpen.value = true;
+      act(() => {
+        useAuthStore.setState({
+          session: 'tok',
+          account: { id: 'acc' } as Account,
+          lockedSession: null,
+        });
+      });
+      rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+      expect(screen.queryByText('wallet-login-card')).toBeNull();
+    } finally {
+      walletOpen.value = true;
+      act(() => {
+        useAuthStore.setState({ session: null, account: null, lockedSession: null });
+      });
+    }
+  });
+
+  it.each([
+    ['error', 'Network down', 'Try again'],
+    ['unknown', null, 'Try again'],
+  ] as const)(
+    'shows the claim alert, not the held-back login card, when login-instead ends in %s',
+    (status, error, retryLabel) => {
+      mockPasskey('error', 'This profile already has a passkey');
+      const { rerender } = renderWithLocale(
+        <ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
+      mockPasskey(status, error);
+      try {
+        act(() => {
+          useAuthStore.setState({ session: null, account: null, lockedSession: 'tok' });
+        });
+        rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+        expect(screen.getByRole('alert')).toBeTruthy();
+        expect(screen.queryByText('wallet-login-card')).toBeNull();
+        const spy = status === 'error' ? retrySpy : authenticateSpy;
+        const before = spy.mock.calls.length;
+        fireEvent.click(screen.getByRole('button', { name: retryLabel }));
+        expect(spy).toHaveBeenCalledTimes(before + 1);
+      } finally {
+        act(() => {
+          useAuthStore.setState({ session: null, account: null, lockedSession: null });
+        });
+      }
+    },
+  );
+
+  it('keeps the spinner, not the held-back login card, while login-instead is starting', () => {
+    mockPasskey('error', 'This profile already has a passkey');
+    const { rerender, container } = renderWithLocale(
+      <ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
+    mockPasskey('starting');
+    try {
+      act(() => {
+        useAuthStore.setState({ session: null, account: null, lockedSession: 'tok' });
+      });
+      rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+      expect(container.querySelector('.animate-spin')).not.toBeNull();
+      expect(screen.queryByText('wallet-login-card')).toBeNull();
+    } finally {
+      act(() => {
+        useAuthStore.setState({ session: null, account: null, lockedSession: null });
+      });
+    }
+  });
+
   it('shows a spinner while login-instead is starting', () => {
     mockPasskey('error', 'This profile already has a passkey');
     const { rerender, container } = renderWithLocale(
@@ -262,6 +357,18 @@ describe('ViewProfileClaim', () => {
       <ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />,
     );
     expect(container.querySelector('.animate-spin')).toBeTruthy();
+  });
+
+  it('says this phone or browser cannot hold a wallet when the new passkey has no PRF', () => {
+    mockPasskey('error', 'wallet.prfUnsupported');
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe(
+      'This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.',
+    );
+    expect(screen.queryByText('Could not set up a passkey. Please try again.')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(retrySpy).toHaveBeenCalledTimes(1);
   });
 
   it('shows claimError copy on other errors', () => {

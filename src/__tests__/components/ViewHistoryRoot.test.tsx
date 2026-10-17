@@ -8,9 +8,11 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 const navigation = vi.hoisted(() => ({
   pathname: null as string | null,
   query: '',
+  back: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
+  useRouter: (): { back: () => void } => ({ back: navigation.back }),
   usePathname: (): string | null => navigation.pathname,
   useSearchParams: (): { toString: () => string } => ({
     toString: (): string => navigation.query,
@@ -239,5 +241,65 @@ describe('ViewHistoryRoot', () => {
     view.rerender(<Probe showSecond={false} />);
     expect(screen.getByText('first:forum.askBack')).toBeTruthy();
     expect(screen.queryByText('second:shops.back')).toBeNull();
+  });
+
+  it('keeps a view laid over the page on top while a page step registers again', () => {
+    function Caller({
+      name,
+      labelKey,
+      over,
+    }: {
+      name: string;
+      labelKey: 'forum.askBack' | 'nav.back';
+      over?: boolean;
+    }): ReactElement {
+      const { override, setOverride } = useChromeBack();
+      return (
+        <div>
+          <p>{`${name}:${override === null ? 'none' : override.labelKey}`}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setOverride({ labelKey, onClick: (): void => undefined, over: over === true });
+            }}
+          >
+            {`${name} set`}
+          </button>
+        </div>
+      );
+    }
+    renderWithLocale(
+      <ChromeBackProvider>
+        <Caller name="page" labelKey="forum.askBack" />
+        <Caller name="view" labelKey="nav.back" over />
+      </ChromeBackProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'page set' }));
+    fireEvent.click(screen.getByRole('button', { name: 'view set' }));
+    expect(screen.getByText('page:nav.back')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'page set' }));
+    expect(screen.getByText('page:nav.back')).toBeTruthy();
+  });
+
+  it('hands the router back step to the chrome, and none without the root', () => {
+    function Probe({ name }: { name: string }): ReactElement {
+      const { stepBack } = useChromeBack();
+      return (
+        <button type="button" onClick={() => stepBack?.()}>
+          {`${name}:${stepBack === null ? 'none' : 'step'}`}
+        </button>
+      );
+    }
+    renderWithLocale(
+      <>
+        <ViewHistoryRoot>
+          <Probe name="root" />
+        </ViewHistoryRoot>
+        <Probe name="bare" />
+      </>,
+    );
+    expect(screen.getByRole('button', { name: 'bare:none' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'root:step' }));
+    expect(navigation.back).toHaveBeenCalledTimes(1);
   });
 });

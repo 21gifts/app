@@ -468,44 +468,12 @@ describe('CreditLedger', () => {
       'fetch',
       vi.fn(async (input: RequestInfo) => {
         const url = String(input);
-        if (url.includes('/gifts/stats')) {
+        if (url.includes('/fx/spot')) {
           return new Response(
             JSON.stringify({
-              totalSats: 100_000_000,
-              totalBtc: '1.00000000',
-              totalUsd: '100000.00',
-              totalChf: '80000.00',
-              totalEur: '90000.00',
-              totalPhp: '5600000.00',
-              giftCount: 1,
-              recipientCount: 1,
-              firstPaidAt: '2026-09-26T00:00:00.000Z',
-              lastPaidAt: '2026-09-26T00:00:00.000Z',
-              spendOverTime: [
-                {
-                  day: '2026-09-26',
-                  sats: 100_000_000,
-                  cumulativeSats: 100_000_000,
-                  btc: '1.00000000',
-                  cumulativeBtc: '1.00000000',
-                  usd: '100000.00',
-                  cumulativeUsd: '100000.00',
-                  chf: '80000.00',
-                  cumulativeChf: '80000.00',
-                  eur: '90000.00',
-                  cumulativeEur: '90000.00',
-                  php: '5600000.00',
-                  cumulativePhp: '5600000.00',
-                },
-              ],
-              byRecipient: [],
-              byMonth: [],
-              fx: {
-                quote: 'BTC-USD',
-                dayBasis: 'utc',
-                source: 'coinbase-exchange-daily-close',
-                quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
-              },
+              asOf: '2026-09-26T00:00:00.000Z',
+              source: 'test',
+              rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
             }),
             { status: 200 },
           );
@@ -634,5 +602,63 @@ describe('CreditLedger', () => {
     renderWithLocale(<CreditLedger messageId="m1" />, 'de');
     expect(await screen.findByText(/Darlehen voll gegeben/)).toBeTruthy();
     expect(screen.queryByText(/Kredit/)).toBeNull();
+  });
+
+  it('hands every loaded ledger to onLedger, the first read and each refresh', async () => {
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    try {
+      ledger(btc);
+      const onLedger = vi.fn();
+      renderWithLocale(<CreditLedger messageId="m1" onLedger={onLedger} />);
+      expect(await screen.findByText('Given')).toBeTruthy();
+      expect(onLedger).toHaveBeenCalled();
+      expect(
+        onLedger.mock.calls
+          .at(-1)?.[0]
+          .repayments.some((row: { status: string }) => row.status === 'due'),
+      ).toBe(true);
+      ledger({
+        ...btc,
+        repayments: btc.repayments.map((row) =>
+          row.status === 'due' ? { ...row, status: 'paid' as const } : row,
+        ),
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4000);
+      });
+      expect(
+        onLedger.mock.calls
+          .at(-1)?.[0]
+          .repayments.every((row: { status: string }) => row.status !== 'due'),
+      ).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('shows the paid-back share in the loan block of the open note from that one read', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo) => {
+      const url = String(input);
+      if (url.includes('/gifts/stats')) {
+        return new Response(JSON.stringify({ spendOverTime: [] }), { status: 200 });
+      }
+      return new Response(
+        JSON.stringify({
+          ...btc,
+          repayments: btc.repayments.map((row, index) => ({
+            ...row,
+            status: index === 0 ? 'paid' : 'scheduled',
+          })),
+        }),
+        { status: 200 },
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<ForumGoalBar sats={21} goalSats={21} goalRepayable messageId="m1" />);
+    expect(await screen.findByText('Fully funded · being repaid')).toBeTruthy();
+    expect(screen.getByRole('img', { name: '47% paid back' })).toBeTruthy();
+    expect(
+      fetchMock.mock.calls.filter(([input]) => String(input).includes('/repayment')),
+    ).toHaveLength(1);
   });
 });

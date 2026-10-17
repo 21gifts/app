@@ -75,6 +75,17 @@ const ZAP: Notification = {
   readAt: null,
 };
 
+const HEART: Notification = {
+  id: 'n-heart',
+  type: 'heart',
+  parentId: 'parent-heart',
+  replyId: 'heart-1',
+  name: 'Ivy',
+  text: '1',
+  createdAt: '2026-08-23T11:00:00.000Z',
+  readAt: null,
+};
+
 const ZAP_EMPTY: Notification = {
   id: 'n7',
   type: 'zap',
@@ -155,6 +166,29 @@ describe('NotificationsScreen', () => {
     expect(screen.getByRole('heading', { name: 'Notifications' })).toBeTruthy();
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
+
+  it.each([
+    ['loading', null, false, true],
+    ['error', null, true, false],
+    ['empty', [], false, false],
+    ['listing', [UNREAD, READ], false, false],
+  ] as const)(
+    'links Notification settings to the Settings notifications section while %s',
+    (_label, notifications, error, loading) => {
+      renderWithLocale(
+        <NotificationsScreen
+          notifications={notifications === null ? null : [...notifications]}
+          error={error}
+          loading={loading}
+          onRetry={() => undefined}
+          onOpen={() => undefined}
+        />,
+      );
+      expect(screen.getByRole('link', { name: 'Notification settings' }).getAttribute('href')).toBe(
+        '/settings#notifications',
+      );
+    },
+  );
 
   it('shows an error and retries', () => {
     const onRetry = vi.fn();
@@ -377,6 +411,20 @@ describe('NotificationsScreen', () => {
     expect(row.textContent).toContain('21');
     fireEvent.click(row);
     expect(onOpen).toHaveBeenCalledWith(ZAP);
+  });
+
+  it('lists a heart by title and does not show the raw text 1', () => {
+    renderWithLocale(
+      <NotificationsScreen
+        notifications={[HEART]}
+        error={false}
+        loading={false}
+        onRetry={() => undefined}
+        onOpen={() => undefined}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /Ivy sent you a heart/ })).toBeTruthy();
+    expect(screen.queryByText('1')).toBeNull();
   });
 
   it('omits extra body copy when a zap has empty text', () => {

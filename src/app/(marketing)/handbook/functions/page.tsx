@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import type { ReactElement } from 'react';
 import { HandbookCopyLink } from '@/components/HandbookCopyLink';
 import { HandbookIntro } from '@/components/HandbookIntro';
@@ -36,15 +37,15 @@ export default async function HandbookFunctionsPage(): Promise<ReactElement> {
         navAria={translate(messages, 'aria.handbookSections')}
         headingAction={<HandbookCopyLink targetId="handbook" label={title} />}
       >
-        <a href="/handbook" className="text-accent underline underline-offset-2">
+        <Link href="/handbook" className="text-accent underline underline-offset-2">
           {translate(messages, 'handbook.title')}
-        </a>
-        <a href="/handbook/screens" className="text-accent underline underline-offset-2">
+        </Link>
+        <Link href="/handbook/screens" className="text-accent underline underline-offset-2">
           {translate(messages, 'handbook.screensTitle')}
-        </a>
-        <a href="/handbook/endpoints" className="text-accent underline underline-offset-2">
+        </Link>
+        <Link href="/handbook/endpoints" className="text-accent underline underline-offset-2">
           {translate(messages, 'handbook.endpointsTitle')}
-        </a>
+        </Link>
       </HandbookIntro>
       {doc !== undefined ? (
         <section id="functions" className="mt-12">

@@ -841,7 +841,7 @@ describe('daily payment subpages', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(await screen.findByRole('alert')).toHaveProperty(
       'textContent',
-      'This person has no Wallet of Satoshi address.',
+      "This person's wallet cannot receive Bitcoin payments yet.",
     );
     addMock.mockRejectedValueOnce(new Error('funding.daily.unknownPerson'));
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));

@@ -6,7 +6,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
-import { useLatestRateDay } from '@/hooks/useLatestRateDay';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { RepaymentPlanChart } from '@/components/RepaymentPlanChart';
 import { getRepayment, type RepaymentLedger, type RepaymentLine } from '@/lib/api';
 import type { MessageKey } from '@/lib/messages';
@@ -27,22 +27,26 @@ import {
  * slow read never keeps the last person's rows on screen.
  * `list="summary"` (default) shows givers, the explanation, the chart, and a
  * link to the repayment list. `list="page"` also shows the day-group rows and
- * omits that link.
+ * omits that link. `onLedger` hears every loaded ledger (the first read and
+ * each refresh), so the loan block above can show the paid-back share without
+ * a second request.
  *
- * @param props - Credit note id and which list to render.
+ * @param props - Credit note id, which list to render, and an optional listener for the loaded ledger.
  * @returns The two lists, or null.
  */
 export function CreditLedger({
   messageId,
   list = 'summary',
+  onLedger,
 }: {
   messageId: string;
   list?: 'summary' | 'page';
+  onLedger?: ((ledger: RepaymentLedger) => void) | undefined;
 }): ReactElement | null {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat: visitorFiat } = useFiatPreference();
-  const rateDay = useLatestRateDay();
+  const rateDay = useSpotRate();
   const [loaded, setLoaded] = useState<{
     messageId: string;
     ledger: RepaymentLedger;
@@ -59,6 +63,11 @@ export function CreditLedger({
       cancel = true;
     };
   }, [messageId]);
+  useEffect(() => {
+    if (ledger !== null) {
+      onLedger?.(ledger);
+    }
+  }, [ledger, onLedger]);
   useEffect(() => {
     if (ledger === null || !ledger.repayments.some((row) => row.status === 'due')) {
       return;
@@ -228,7 +237,7 @@ function rowAmount(
   row: RepaymentLine,
   fiat: FiatCode | null,
   visitorFiat: FiatCode,
-  rateDay: ReturnType<typeof useLatestRateDay>,
+  rateDay: ReturnType<typeof useSpotRate>,
   numberFormat: NumberFormatStyle,
 ): ReactElement | null {
   if (fiat !== null && row.amount !== null) {

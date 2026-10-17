@@ -211,7 +211,28 @@ describe('service worker dismiss push behavior', () => {
 });
 
 describe('service worker notification click behavior', () => {
-  it('posts the note to the focused window and navigates', async () => {
+  it('navigates a window that does not answer, when it can', async () => {
+    const focusNavigated = vi.fn(async () => undefined);
+    const navigate = vi.fn(async () => ({ focus: focusNavigated }));
+    const openWindow = vi.fn(async () => null);
+    const client = {
+      url: 'https://21.gifts/welcome',
+      focused: true,
+      focus: () => Promise.resolve(),
+      postMessage() {},
+      navigate,
+    };
+    const { click } = bootWorker({
+      matchAll: async () => [client],
+      openWindow,
+    });
+    await clickNotification(click, '/messages/note-1');
+    expect(navigate).toHaveBeenCalledWith('https://21.gifts/messages/note-1');
+    expect(focusNavigated).toHaveBeenCalled();
+    expect(openWindow).not.toHaveBeenCalled();
+  });
+
+  it('posts the note to the focused window and does not navigate it again', async () => {
     const posted: unknown[] = [];
     const navigate = vi.fn(async () => ({ focus: async () => undefined }));
     const openWindow = vi.fn(async () => null);
@@ -239,7 +260,7 @@ describe('service worker notification click behavior', () => {
     expect(posted).toEqual([
       expect.objectContaining({ type: '21gifts-push-open', url: '/messages/note-1' }),
     ]);
-    expect(navigate).toHaveBeenCalledWith('https://21.gifts/messages/note-1');
+    expect(navigate).not.toHaveBeenCalled();
     expect(openWindow).not.toHaveBeenCalled();
     expect(put).toHaveBeenCalled();
   });
