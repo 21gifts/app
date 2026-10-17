@@ -9791,4 +9791,40 @@ describe('ForumBoard author who cannot receive', () => {
       "The author's wallet cannot receive this Bitcoin payment",
     );
   });
+
+  it('keeps the author-wallet line when a refresh then disables the heart', () => {
+    const views = {
+      m1: { pressed: false, plusOne: false, needsBalance: false, cannotReceive: true },
+    };
+    const { rerender } = renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-bob' }],
+        onHeartTip: () => undefined,
+        heartTipViews: views,
+      }),
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            messages: [
+              { ...SAMPLE, accountId: 'acc-bob', payable: false, authorCanReceive: false },
+            ],
+            onHeartTip: () => undefined,
+            heartTipViews: views,
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect((screen.getByRole('button', { name: 'Send ₿1' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+  });
 });
