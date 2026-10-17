@@ -18603,7 +18603,7 @@ test.describe('shops screens', () => {
     place: {
       lat: 14.6,
       lng: 120.98,
-      label: 'Happyland',
+      label: 'Cafe Luna',
       address: COMPLETE_SHOP_PLACE.address,
     },
     shopAccount: { id: 'acc-luna', username: 'luna', name: 'Luna' },
@@ -18630,7 +18630,12 @@ test.describe('shops screens', () => {
       const cursor = new URL(route.request().url()).searchParams.get('cursor');
       const message =
         cursor === 'c2'
-          ? { ...shopTableRow, id: 'm-stall', text: 'Other stall\n\n#21GiftsShop' }
+          ? {
+              ...shopTableRow,
+              id: 'm-stall',
+              text: 'Other stall\n\n#21GiftsShop',
+              place: { ...shopTableRow.place, label: 'Other stall' },
+            }
           : shopTableRow;
       await route.fulfill({
         status: 200,
