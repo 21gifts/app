@@ -3,6 +3,7 @@ import path from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { formatForumTimeFromMs } from '../src/lib/forum-time';
 import { stubCamera, type CameraStub } from './camera';
+import { installFakeWebAuthn } from './fake-webauthn';
 import {
   installNoPrfWebAuthn,
   NO_PRF_REGISTER_BEGIN,
@@ -4705,7 +4706,8 @@ test.describe('login variant baselines', () => {
   });
 
   test('login closed', async ({ page }) => {
-    await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+    await installFakeWebAuthn(page, true);
+    await page.route(/\/auth\/passkey\/authenticate\/finish$/, async (route) => {
       await route.fulfill({
         status: 503,
         contentType: 'application/json',

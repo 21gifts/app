@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { installFakeWebAuthn } from './fake-webauthn';
 
 // Every test in this file gets its own cap; the run has its global timeout.
 test.describe.configure({ timeout: 60_000 });
@@ -6,9 +7,14 @@ test.describe.configure({ timeout: 60_000 });
 const CLOSED_LINE = '21.gifts is updating. Please try again a little later.';
 const OUTDATED_LINE = 'A new version is ready';
 
-/** Answers authenticate begin with the api's logins_closed refusal. */
+/**
+ * Lets authenticate begin and the passkey prompt through, then answers
+ * authenticate finish with the api's logins_closed refusal, as the api does
+ * once it knows the account.
+ */
 async function closeLogins(page: Page): Promise<void> {
-  await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+  await installFakeWebAuthn(page, true);
+  await page.route(/\/auth\/passkey\/authenticate\/finish$/, async (route) => {
     await route.fulfill({
       status: 503,
       contentType: 'application/json',
@@ -33,10 +39,10 @@ async function sendOldBuild(page: Page): Promise<void> {
 }
 
 test('login closed: the card shows the calm line and nothing to retry', async ({ page }) => {
-  let begins = 0;
+  let finishes = 0;
   page.on('request', (request) => {
-    if (request.url().endsWith('/auth/passkey/authenticate/begin')) {
-      begins += 1;
+    if (request.url().endsWith('/auth/passkey/authenticate/finish')) {
+      finishes += 1;
     }
   });
   await closeLogins(page);
@@ -46,7 +52,7 @@ test('login closed: the card shows the calm line and nothing to retry', async ({
   await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(0);
   await page.waitForTimeout(1_500);
-  expect(begins).toBe(1);
+  expect(finishes).toBe(1);
 });
 
 test('login outdated: Reload loads the page again', async ({ page }) => {

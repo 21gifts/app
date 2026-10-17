@@ -420,6 +420,7 @@ app/
 │   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, Send (camera), Receive, and Function titles
 │   ├── data-collection.spec.ts  # POST /me/wallet/report, /me/wallet/hearts, and /me/events proxies, interaction log in the browser
 │   ├── camera.ts                # Stubbed getUserMedia (black stream, QR stream, blocked, none) for wallet specs
+│   ├── fake-webauthn.ts         # Stubbed passkey that always succeeds with PRF output (login, login gate)
 │   ├── no-prf.ts                # Stubbed passkeys without PRF output + the one no-wallet sentence
 │   ├── wallet-pay.spec.ts       # In-app wallet pay slot on the gift pay sheet (pins, unavailable and failed states)
 │   ├── wallet-setup.spec.ts     # Background setup, inline notes, payments list, username freeze, address proxies
@@ -933,8 +934,9 @@ workflows as `github.run_number`. It is inlined at `next build` as
 It is not substituted at container start and is not an `entrypoint.sh`
 placeholder. Local and Playwright builds without the arg show `dev`.
 
-`NEXT_PUBLIC_BUILD_ID` is a Docker **build-arg** (default `dev`), passed by the
-deploy workflows as the deployed commit SHA. `next.config.ts` inlines it at
+`NEXT_PUBLIC_BUILD_ID` is a Docker **build-arg** (default `dev`), meant to be
+the deployed commit SHA; an image built without it sends `dev`, which the api
+accepts while `APP_BUILD_REQUIRED` is unset. `next.config.ts` inlines it at
 `next build` (unset or empty → `dev`), and `getBuildId()` reads it. Passkey
 begin and finish send it as `X-App-Build`; the same-origin proxy passes the
 browser's value through and never sets it. When the api has
