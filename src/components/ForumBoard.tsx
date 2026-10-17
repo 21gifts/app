@@ -522,7 +522,9 @@ function fallbackCopy(text: string): boolean {
  * viewer's own note, on a note that is not payable, and on a board without a
  * heart handler. When the author cannot receive yet (`cannotReceive`), the
  * heart and its count show disabled instead, so nobody taps a heart that can
- * only fail. Click stops the card from expanding. The count sits immediately
+ * only fail; an author-wallet line from an earlier refused heart
+ * (`view.cannotReceive`) stays under it, so a feed refresh that disables the
+ * heart does not drop it. Click stops the card from expanding. The count sits immediately
  * to the right of the icon; the fill remains after a tap. Who does not see the
  * heart does not see the count.
  *
@@ -557,21 +559,30 @@ function ForumHeartControl({
   if (onHeartTip === undefined || deletedAt !== undefined || heartViewerId === accountId) {
     return null;
   }
+  const authorWalletLine =
+    view?.cannotReceive === true ? (
+      <p role="alert" className="text-xs text-app-danger">
+        {t('forum.payErrorAuthorWallet')}
+      </p>
+    ) : null;
   if (cannotReceive) {
     return (
-      <span className="inline-flex items-center gap-1">
-        <IconButton
-          type="button"
-          size="sm"
-          variant="ghost"
-          aria-label={t('forum.heart')}
-          title={t('forum.heart')}
-          disabled
-        >
-          <Heart aria-hidden="true" className="h-4 w-4 shrink-0" fill="none" />
-        </IconButton>
-        <span className="text-xs tabular-nums text-app-subtle">{heartCount}</span>
-      </span>
+      <>
+        <span className="inline-flex items-center gap-1">
+          <IconButton
+            type="button"
+            size="sm"
+            variant="ghost"
+            aria-label={t('forum.heart')}
+            title={t('forum.heart')}
+            disabled
+          >
+            <Heart aria-hidden="true" className="h-4 w-4 shrink-0" fill="none" />
+          </IconButton>
+          <span className="text-xs tabular-nums text-app-subtle">{heartCount}</span>
+        </span>
+        {authorWalletLine}
+      </>
     );
   }
   if (!payable) {
@@ -631,11 +642,7 @@ function ForumHeartControl({
           {t('forum.heartNeedsBalance')}
         </p>
       ) : null}
-      {view?.cannotReceive === true ? (
-        <p role="alert" className="text-xs text-app-danger">
-          {t('forum.payErrorAuthorWallet')}
-        </p>
-      ) : null}
+      {authorWalletLine}
     </>
   );
 }

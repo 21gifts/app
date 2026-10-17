@@ -743,6 +743,37 @@ export function endHeartPlusOne(
 }
 
 /**
+ * The view of one heart after a send that did not pay. `extra` is this
+ * session's remaining extra after the rollback; `pressed` stays while it is
+ * above 0 or the +1 still shows. A refusal because the author cannot receive
+ * sets `cannotReceive`; any other outcome keeps a `cannotReceive` already on
+ * the view, so a concurrent failure never clears the author-wallet line. Only
+ * the next tap clears it.
+ *
+ * @param current - The heart's view before this result, if any.
+ * @param extra - This session's extra for the note after the rollback.
+ * @param outcome - The send's result.
+ * @returns The heart's next view.
+ */
+export function heartFailureView(
+  current: HeartTipView | undefined,
+  extra: number,
+  outcome: HeartTipOutcome,
+): HeartTipView {
+  const plusOne = current !== undefined && current.plusOne;
+  const cannotReceive =
+    current?.cannotReceive === true ||
+    (outcome.kind === 'failed' && outcome.reason === 'author_cannot_receive');
+  return {
+    pressed: extra > 0 || plusOne,
+    plusOne,
+    needsBalance: current !== undefined && current.needsBalance,
+    extra,
+    ...(cannotReceive ? { cannotReceive: true } : {}),
+  };
+}
+
+/**
  * Heart-click machine for a forum board: on every tap of a signed-in,
  * writable board, vibrate and show the filled heart with its +1 at once for
  * {@link HEART_TIP_PLUS_ONE_MS}, while {@link sendHeartTip} pays in the
@@ -751,7 +782,8 @@ export function endHeartPlusOne(
  * sends another heart and counts up; there is no undo. A heart that is not
  * sent rolls back that tap's `extra`; it is also reported, and a refusal
  * because the author cannot receive also shows the author-wallet line
- * (`cannotReceive` on the view). The one exception
+ * (`cannotReceive` on the view, see {@link heartFailureView}) until the next
+ * tap. The one exception
  * is a wallet snapshot whose balance cannot cover the heart: then there is no
  * vibrate, no new fill, and no +1, only the balance-required line, and
  * nothing is sent. A signed-out or read-only tap does nothing.
@@ -897,24 +929,14 @@ export function useHeartTip(options: {
           }
           writeHeartSentMap(sent);
         }
-        setHeartTipViews((prev) => {
-          const current = prev[messageId];
-          const nextExtra = mapExtra(sentRef.current, messageId);
-          const plusOne = current !== undefined && current.plusOne;
-          const needsBalance = current !== undefined && current.needsBalance;
-          const cannotReceive =
-            outcome.kind === 'failed' && outcome.reason === 'author_cannot_receive';
-          return {
-            ...prev,
-            [messageId]: {
-              pressed: nextExtra > 0 || plusOne,
-              plusOne,
-              needsBalance,
-              extra: nextExtra,
-              ...(cannotReceive ? { cannotReceive: true } : {}),
-            },
-          };
-        });
+        setHeartTipViews((prev) => ({
+          ...prev,
+          [messageId]: heartFailureView(
+            prev[messageId],
+            mapExtra(sentRef.current, messageId),
+            outcome,
+          ),
+        }));
       });
     },
     [readOnly],

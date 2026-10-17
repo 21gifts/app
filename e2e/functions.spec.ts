@@ -12777,6 +12777,32 @@ test('Function: useHeartTip — the +1 shows on the tap while the payment is sti
   ).toHaveCount(0);
 });
 
+test('Function: heartFailureView — a heart refused with cannot_receive keeps the author-wallet line after the +1', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeHeartNote(page, true);
+  await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: "The author's wallet cannot receive this Bitcoin payment",
+        code: 'cannot_receive',
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Hello from the heart list.')).toBeVisible();
+  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  const line = page
+    .locator('li', { hasText: 'Hello from the heart list.' })
+    .getByText("The author's wallet cannot receive this Bitcoin payment");
+  await expect(line).toBeVisible();
+  await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+  await expect(line).toBeVisible();
+});
+
 test('Function: endHeartPlusOne — the +1 leaves after the press window', async ({ page }) => {
   await seedAdaSession(page);
   await routeHeartNote(page, true);

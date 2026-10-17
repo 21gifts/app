@@ -8,6 +8,7 @@ import {
   HEART_TIP_PLUS_ONE_MS,
   HEART_TIP_UNSETTLED_MS,
   endHeartPlusOne,
+  heartFailureView,
   sendHeartTip,
   useHeartTip,
 } from '@/lib/heart-tip';
@@ -934,6 +935,42 @@ async function clickHeart(
     }
   });
 }
+
+describe('heartFailureView', () => {
+  it('sets cannotReceive on a refusal because the author cannot receive', () => {
+    expect(
+      heartFailureView({ pressed: true, plusOne: true, needsBalance: false, extra: 1 }, 0, {
+        kind: 'failed',
+        reason: 'author_cannot_receive',
+      }),
+    ).toEqual({ pressed: true, plusOne: true, needsBalance: false, extra: 0, cannotReceive: true });
+  });
+
+  it('keeps cannotReceive when a concurrent heart fails for another reason', () => {
+    const shown = heartFailureView(undefined, 0, {
+      kind: 'failed',
+      reason: 'author_cannot_receive',
+    });
+    expect(shown).toEqual({
+      pressed: false,
+      plusOne: false,
+      needsBalance: false,
+      extra: 0,
+      cannotReceive: true,
+    });
+    expect(heartFailureView(shown, 0, { kind: 'failed', reason: 'in_flight' })).toEqual(shown);
+    expect(heartFailureView(shown, 0, { kind: 'noop' }).cannotReceive).toBe(true);
+  });
+
+  it('adds no cannotReceive for another failure and keeps needsBalance and extra', () => {
+    expect(
+      heartFailureView({ pressed: true, plusOne: false, needsBalance: true, extra: 2 }, 1, {
+        kind: 'failed',
+        reason: 'request_failed',
+      }),
+    ).toEqual({ pressed: true, plusOne: false, needsBalance: true, extra: 1 });
+  });
+});
 
 describe('endHeartPlusOne', () => {
   it('returns the same object when the id has no row', () => {
