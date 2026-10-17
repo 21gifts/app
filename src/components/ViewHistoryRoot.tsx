@@ -169,7 +169,8 @@ function RecordLocation({ onRecorded }: { onRecorded: () => void }): null {
  * Re-renders when the search changes. The recorded path is the live location,
  * the same string as {@link pathFromLocation}, and only after that location
  * has reached the router pathname. A committed view also removes the marker
- * of a running client-side navigation (`clearAppNavigation`).
+ * of a running client-side navigation (`clearAppNavigation`); a router
+ * pathname the location has not reached keeps it.
  *
  * @param props - Stable callback that re-renders the chrome after a record.
  * @returns `null` (side-effect only).
@@ -189,9 +190,9 @@ function RecordQuery({ onRecorded }: { onRecorded: () => void }): null {
     }
   }, [onRecorded, pathname, query]);
   useEffect(() => {
-    clearAppNavigation();
     const live = pathFromLocation(pathname);
     if (live !== null) {
+      clearAppNavigation();
       recordCurrentView(live);
     }
   }, [pathname, query]);

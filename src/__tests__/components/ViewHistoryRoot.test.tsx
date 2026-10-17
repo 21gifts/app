@@ -21,6 +21,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 afterEach(() => {
+  sessionStorage.clear();
   resetViewHistory();
   navigation.pathname = null;
   navigation.query = '';
@@ -46,6 +47,24 @@ describe('ViewHistoryRoot', () => {
       </ViewHistoryRoot>,
     );
     expect(sessionStorage.getItem(APP_NAVIGATION_KEY)).toBeNull();
+  });
+
+  it('keeps the marker while the location has not reached the router pathname', () => {
+    navigation.pathname = '/welcome';
+    window.history.pushState(null, '', '/welcome');
+    const view = renderWithLocale(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    markAppNavigation();
+    navigation.pathname = '/wallet';
+    view.rerender(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    expect(sessionStorage.getItem(APP_NAVIGATION_KEY)).toBe('app');
   });
 
   it('records a pathname, then a query path, and skips a missing pathname', () => {

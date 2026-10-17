@@ -72,6 +72,9 @@ test('Function: markAppNavigation — a client-side navigation leaves the app ma
   expect((await readState(page)).marker).toBeNull();
   await page.locator('a[href="/terms"]').first().click();
   await expect.poll(async () => (await readState(page)).marker).toBe('app');
+  // The effects of the running navigation have run; the marker is still there.
+  await page.waitForTimeout(500);
+  expect(await readState(page)).toEqual({ marker: 'app', tag: 'legal' });
   release();
   await expect(page).toHaveURL(/\/terms$/);
 });
