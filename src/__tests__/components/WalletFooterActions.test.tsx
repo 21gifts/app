@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
 import { WalletFooterActions } from '@/components/WalletFooterActions';
+import { SCROLL_FOLLOW_ATTR } from '@/lib/reveal-in-scrollport';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 afterEach(() => {
@@ -142,6 +143,64 @@ describe('WalletFooterActions', () => {
     scrollTo(port, 120);
     expect(collapse(body)).toBe('1');
     scrollTo(port, 200);
+    expect(collapse(body)).toBe('1');
+  });
+
+  it('skips the scrolls of a reveal that follows a move and counts where it ends as one move', () => {
+    stubMotion(false);
+    const { port, body } = renderInShell();
+    port.toggleAttribute(SCROLL_FOLLOW_ATTR, true);
+    scrollTo(port, 15);
+    scrollTo(port, 40);
+    expect(collapse(body)).toBe('');
+    port.toggleAttribute(SCROLL_FOLLOW_ATTR, false);
+    // From the top to 60 in one move: 60 of the 80 px.
+    scrollTo(port, 60);
+    expect(collapse(body)).toBe('0.75');
+  });
+
+  it('does not settle in the middle of a followed reveal, and settles from where it ends', () => {
+    vi.useFakeTimers();
+    stubMotion(false);
+    const { port, body } = renderInShell();
+    scrollTo(port, 36);
+    expect(collapse(body)).toBe('0.45');
+    // The reveal starts following before the wait after the last scroll is over.
+    port.toggleAttribute(SCROLL_FOLLOW_ATTR, true);
+    scrollTo(port, 42);
+    act(() => {
+      vi.advanceTimersByTime(140);
+    });
+    expect(collapse(body)).toBe('0.45');
+    expect(body.hasAttribute('data-footer-snap')).toBe(false);
+    port.toggleAttribute(SCROLL_FOLLOW_ATTR, false);
+    // From 36 to 48 in one move: 0.45 + 12 / 80, then it settles to the nearer end.
+    scrollTo(port, 48);
+    expect(collapse(body)).toBe('0.6');
+    act(() => {
+      vi.advanceTimersByTime(140);
+    });
+    expect(collapse(body)).toBe('1');
+  });
+
+  it('does not settle while a followed reveal has not scrolled yet, and settles from where it ends', () => {
+    vi.useFakeTimers();
+    stubMotion(false);
+    const { port, body } = renderInShell();
+    scrollTo(port, 36);
+    // The form is already in view: the reveal follows without a scroll of its own.
+    port.toggleAttribute(SCROLL_FOLLOW_ATTR, true);
+    act(() => {
+      vi.advanceTimersByTime(140);
+    });
+    expect(collapse(body)).toBe('0.45');
+    expect(body.hasAttribute('data-footer-snap')).toBe(false);
+    port.toggleAttribute(SCROLL_FOLLOW_ATTR, false);
+    scrollTo(port, 48);
+    expect(collapse(body)).toBe('0.6');
+    act(() => {
+      vi.advanceTimersByTime(140);
+    });
     expect(collapse(body)).toBe('1');
   });
 

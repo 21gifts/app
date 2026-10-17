@@ -299,12 +299,13 @@ describe('WelcomeScreen writer', () => {
     expect(plus.querySelector('svg')?.getAttribute('class')).toContain('lucide-plus');
   });
 
-  it('opens the writer on +, hides the +, and the top-left Back closes it with the focus taken out', () => {
+  it('opens the writer on +, fades the + out, and the top-left Back closes it with the focus taken out', () => {
     renderWelcome();
     expect(screen.queryByTestId('writer')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Write a post' }));
     expect(screen.getByTestId('writer')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Write a post' })).toBeNull();
+    // The + stays mounted and fades out, so it cannot be seen, reached, or pressed.
+    expect(plusAside(screen.getByRole('button', { name: 'Write a post' }))).toBe(true);
     const field = screen.getByRole('textbox', { name: 'Writer field' });
     field.focus();
     expect(document.activeElement).toBe(field);
@@ -314,7 +315,7 @@ describe('WelcomeScreen writer', () => {
     expect(blur).toHaveBeenCalledTimes(1);
     expect(screen.queryByTestId('writer')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Write a post' })).toBeTruthy();
+    expect(plusAside(screen.getByRole('button', { name: 'Write a post' }))).toBe(false);
   });
 
   it('closes after a successful post, on the forum home event, and opens on a compose request', () => {
@@ -340,12 +341,19 @@ describe('WelcomeScreen writer', () => {
     expect(screen.getByTestId('writer')).toBeTruthy();
   });
 
-  it('hides the + while a wallet view is open', () => {
+  it('hides the + at once while a wallet view is open, and fades it otherwise', () => {
     vi.mocked(useWallet).mockReturnValue(walletWith('ready'));
     renderWelcome();
-    expect(screen.getByRole('button', { name: 'Write a post' })).toBeTruthy();
+    const plus = (): HTMLElement => screen.getByRole('button', { name: 'Write a post' });
+    expect(plusAside(plus())).toBe(false);
+    expect(plus().className).toContain('transition-[opacity,visibility]');
+    expect(plus().className).toContain('transition-[bottom,opacity,visibility]');
     fireEvent.click(screen.getByRole('button', { name: 'Receive' }));
-    expect(screen.queryByRole('button', { name: 'Write a post' })).toBeNull();
+    // The footer it sits above leaves in the same step: no fade and no glide (also not the one of a
+    // settled footer) that would show it dropping.
+    expect(plusAside(plus())).toBe(true);
+    expect(plus().className).not.toContain('transition-[opacity,visibility]');
+    expect(plus().className).not.toContain('transition-[bottom,opacity,visibility]');
   });
 
   it('brings the feed back at the scroll position it had when the writer opened', () => {
