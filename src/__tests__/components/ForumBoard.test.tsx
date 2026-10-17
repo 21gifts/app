@@ -10239,6 +10239,21 @@ describe('ForumBoard author who cannot receive', () => {
     expect(screen.getByText("Can't receive yet")).toBeTruthy();
   });
 
+  it('gates the disabled gift like a live one on the local Sunday', () => {
+    document.documentElement.dataset['localSunday'] = '1';
+    try {
+      renderWithLocale(board({ messages: [{ ...NOTE, id: 'r2', parentId: 'm1' }] }));
+      expect(screen.getByText('Zapping is paused on Sunday.')).toBeTruthy();
+      expect(
+        screen
+          .getByRole('button', { name: 'Send Bitcoin', hidden: true })
+          .closest('.sunday-write-field'),
+      ).toBeTruthy();
+    } finally {
+      delete document.documentElement.dataset['localSunday'];
+    }
+  });
+
   it('shows no label on the own note, a deleted note, an external note, or an older api body', () => {
     const { rerender } = renderWithLocale(board({ viewerAccountId: 'acc-bob' }));
     expect(screen.queryByText("Can't receive yet")).toBeNull();

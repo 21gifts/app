@@ -5096,6 +5096,12 @@ Device-local Sunday. The name, the empty About me sentence, the address, and the
 
 ![21.gifts profile sunday](images/profile-sunday.png)
 
+### Variant: cannot-receive
+
+Own profile of a member who cannot receive yet (`lightningAddress: null` on the own member card). The public facts show the label **Can't receive yet** in place of the 21.gifts address, the Open CryptoPay QR, and **Shop sticker**.
+
+![21.gifts profile cannot receive](images/profile-cannot-receive.png)
+
 ### Variant: sticker-open
 
 **Shop sticker** is open (`ShopStickerOverlay`, preview for `alice@21.gifts`) on desktop and mobile (smartphone UA). The closed **Second language** menu shows **None (English only)** above the preview, and the preview is the English-only sticker. File format and **Download** sit below the preview. Needle `state-profile-sticker-open`. These shots use the English UI. Without a known `lang`, the sticker is English only.

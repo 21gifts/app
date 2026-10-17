@@ -2724,6 +2724,11 @@
     "es": "El mapa está seleccionado y hay una clave de mapa. La chincheta no tiene etiqueta. El marco muestra la superficie de mapa de prueba. La fila dice Ada · 14.60000, 120.98000 y no está en seminegrita. No hay un segundo encabezado Mapa.",
     "fil": "Napili ang mapa at may nakatakdang susi ng mapa. Walang etiketa ang tuldok. Ipinapakita ng kuwadro ang pansamantalang ibabaw ng mapa. Ang hilera ay Ada · 14.60000, 120.98000 at hindi naka-seminegrita. Walang pangalawang pamagat na Mapa."
   },
+  "/profile:cannot-receive": {
+    "de": "Eigenes Profil eines Mitglieds, das noch nicht empfangen kann (lightningAddress: null auf der eigenen Mitgliedskarte). Die öffentlichen Angaben zeigen das Label Kann noch nicht empfangen statt der 21.gifts-Adresse, des Open-CryptoPay-QR und des Shop-Stickers.",
+    "es": "Perfil propio de un miembro que aún no puede recibir (lightningAddress: null en su tarjeta de miembro). Los datos públicos muestran la etiqueta Aún no puede recibir en lugar de la dirección 21.gifts, el QR de Open CryptoPay y la pegatina de tienda.",
+    "fil": "Sariling profile ng miyembrong hindi pa makatanggap (lightningAddress: null sa sariling member card). Ipinapakita ng mga pampublikong detalye ang label na Hindi pa makatanggap sa halip na ang 21.gifts address, ang Open CryptoPay QR, at ang shop sticker."
+  },
   "/profile:sunday": {
     "de": "Gerätesonntag. Der Name, der leere Satz Über mich, die Adresse und die Schaltflächen zum Hinzufügen eines Bildes bleiben. Die Stifte und Schreib dein Über mich sind weg. Am Sonntag ist das Schreiben pausiert.",
     "es": "Domingo según la hora del dispositivo. El nombre, la frase vacía Sobre mí, la dirección y los botones para añadir foto permanecen. Los lápices y Escribe tu Sobre mí han desaparecido. El domingo no se puede escribir.",

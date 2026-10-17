@@ -8950,6 +8950,36 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-profile-sunday');
   });
 
+  test('state /profile cannot-receive', async ({ page }) => {
+    await seedProfilePage(page);
+    await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          username: 'alice',
+          location: null,
+          role: 'basis',
+          lightningAddress: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 14,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.goto('/profile');
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByText('alice@21.gifts')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+    await page.getByText("Can't receive yet").scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-cannot-receive');
+  });
+
   test('state /profile sticker-open', async ({ page }) => {
     await seedProfilePage(page);
     await openProfile(page);
