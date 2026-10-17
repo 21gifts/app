@@ -1382,4 +1382,150 @@ describe('ShopNoteEditControl', () => {
     expect(onUpdated).toHaveBeenCalledWith(textResult);
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeTruthy();
   });
+
+  it('writes the place before the text when only the final name and description are valid together', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const oldName = 'N'.repeat(30);
+    const oldText = 'T'.repeat(40);
+    const newName = 'Abcde';
+    const newText = 'D'.repeat(22);
+    const oldPlace = { ...COMPLETE_PLACE, label: oldName };
+    const newPlace = { ...COMPLETE_PLACE, label: newName };
+    const stored: ForumMessage = {
+      ...shopMessage,
+      text: `${oldText}\n\n#21GiftsShop`,
+      place: oldPlace,
+    };
+    vi.mocked(setMessagePlace).mockResolvedValue({ ...stored, place: newPlace });
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...stored,
+      place: newPlace,
+      text: `${newText}\n\n#21GiftsShop`,
+    });
+    stubShopMaps();
+    renderEdit(<ShopNoteEditControl message={stored} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByLabelText('Shop name')).toHaveProperty('value', oldName);
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: newName } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: newText },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessagePlace).toHaveBeenCalled();
+      expect(setMessageShopText).toHaveBeenCalled();
+    });
+    const placeOrder = vi.mocked(setMessagePlace).mock.invocationCallOrder[0];
+    const textOrder = vi.mocked(setMessageShopText).mock.invocationCallOrder[0];
+    expect(typeof placeOrder).toBe('number');
+    expect(typeof textOrder).toBe('number');
+    expect(Number(placeOrder)).toBeLessThan(Number(textOrder));
+    expect(setMessagePlace).toHaveBeenCalledWith('token', 'shop1', newPlace);
+    expect(setMessageShopText).toHaveBeenCalledWith('token', 'shop1', newText);
+    delete (window as { google?: unknown }).google;
+    vi.unstubAllGlobals();
+  });
+
+  it('writes the text before the place when the new text is valid against the stored name', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const newName = 'Luna';
+    const newText = 'D'.repeat(22);
+    const newPlace = { ...COMPLETE_PLACE, label: newName };
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...shopMessage,
+      text: `${newText}\n\n#21GiftsShop`,
+    });
+    vi.mocked(setMessagePlace).mockResolvedValue({
+      ...shopMessage,
+      text: `${newText}\n\n#21GiftsShop`,
+      place: newPlace,
+    });
+    stubShopMaps();
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByLabelText('Shop name')).toHaveProperty('value', "Kiki's Bakery");
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: newName } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: newText },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessagePlace).toHaveBeenCalled();
+      expect(setMessageShopText).toHaveBeenCalled();
+    });
+    const placeOrder = vi.mocked(setMessagePlace).mock.invocationCallOrder[0];
+    const textOrder = vi.mocked(setMessageShopText).mock.invocationCallOrder[0];
+    expect(typeof placeOrder).toBe('number');
+    expect(typeof textOrder).toBe('number');
+    expect(Number(textOrder)).toBeLessThan(Number(placeOrder));
+    delete (window as { google?: unknown }).google;
+    vi.unstubAllGlobals();
+  });
+
+  it('writes the text before the place when the stored place has no address', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    const newText = 'Cafe Sol is open every morning.';
+    const pin = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: 'Happyland',
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    const stored: ForumMessage = {
+      ...shopMessage,
+      place: { lat: 47.3769, lng: 8.5417, label: 'Cafe Luna' },
+    };
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...stored,
+      text: `${newText}\n\n#21GiftsShop`,
+    });
+    vi.mocked(setMessagePlace).mockResolvedValue({ ...stored, place: pin });
+    stubShopMaps();
+    renderEdit(<ShopNoteEditControl message={stored} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByLabelText('Shop name')).toHaveProperty('value', 'Cafe Luna');
+    fillShopAddressFields('Happyland');
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: newText },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(setMessagePlace).toHaveBeenCalled();
+      expect(setMessageShopText).toHaveBeenCalled();
+    });
+    const placeOrder = vi.mocked(setMessagePlace).mock.invocationCallOrder[0];
+    const textOrder = vi.mocked(setMessageShopText).mock.invocationCallOrder[0];
+    expect(typeof placeOrder).toBe('number');
+    expect(typeof textOrder).toBe('number');
+    expect(Number(textOrder)).toBeLessThan(Number(placeOrder));
+    delete (window as { google?: unknown }).google;
+    vi.unstubAllGlobals();
+  });
 });

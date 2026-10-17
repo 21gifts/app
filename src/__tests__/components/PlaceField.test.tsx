@@ -1175,7 +1175,9 @@ describe('PlaceField', () => {
     expect(screen.queryByLabelText('Place name')).toBeNull();
     const shopName = screen.getByLabelText('Shop name', { exact: true });
     expect(shopName).toBeTruthy();
-    expect(shopName.getAttribute('id')).toBe('field-shop-name');
+    const shopNameLabel = screen.getByText('Shop name', { selector: 'label', exact: true });
+    expect((shopNameLabel as HTMLLabelElement).htmlFor).toBe(shopName.id);
+    expect(shopName.id.length).toBeGreaterThan(0);
     expect(shopName.parentElement?.tagName).toBe('DIV');
     expect(shopName.hasAttribute('required')).toBe(true);
     expect(shopName.getAttribute('maxlength')).toBe('80');
@@ -1341,5 +1343,57 @@ describe('PlaceField', () => {
     expect(screen.getByRole('alert').textContent).toContain('Enter the shop name.');
     expect(screen.getByRole('button', { name: 'Remove place' })).toBeTruthy();
     expect(screen.getByText('The map is not available.')).toBeTruthy();
+  });
+
+  it('gives each shop-mode instance distinct ids that match their own labels', async () => {
+    stubMaps();
+    const pin = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    renderWithLocale(
+      <>
+        <PlaceField place={pin} disabled={false} onChange={() => undefined} shopDetails />
+        <PlaceField place={pin} disabled={false} onChange={() => undefined} shopDetails />
+      </>,
+    );
+    const buttons = screen.getAllByRole('button', { name: 'Add a place' });
+    expect(buttons).toHaveLength(2);
+    fireEvent.click(buttons[0]!);
+    fireEvent.click(buttons[1]!);
+    await waitFor(() => {
+      expect(screen.getAllByLabelText('Shop name')).toHaveLength(2);
+    });
+    const names = screen.getAllByLabelText('Shop name');
+    expect(names[0]!.id).not.toBe(names[1]!.id);
+    const ids: string[] = [];
+    const allLabels = [...document.querySelectorAll('label')];
+    for (const input of names) {
+      const label = allLabels.find((node) => (node as HTMLLabelElement).htmlFor === input.id);
+      expect(label).toBeTruthy();
+      ids.push(input.id);
+    }
+    const roots = screen.getAllByTestId('shop-address-fields');
+    expect(roots).toHaveLength(2);
+    for (const root of roots) {
+      const labels = root.querySelectorAll('label');
+      expect(labels).toHaveLength(5);
+      for (const label of labels) {
+        const htmlFor = (label as HTMLLabelElement).htmlFor;
+        expect(document.getElementById(htmlFor)).not.toBe(null);
+        expect(root.contains(document.getElementById(htmlFor))).toBe(true);
+        ids.push(htmlFor);
+      }
+    }
+    expect(ids).toHaveLength(12);
+    expect(new Set(ids).size).toBe(12);
   });
 });

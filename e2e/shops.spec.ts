@@ -1032,3 +1032,20 @@ test('Function: ShopAddressFields — street, house number, postal code, city, c
   await expect(address.getByLabel('City', { exact: true })).toBeVisible();
   await expect(address.getByLabel('Country', { exact: true })).toBeVisible();
 });
+
+test('Function: ShopLabeledInput — label names the field, typed value is not part of the name', async ({
+  page,
+}) => {
+  await stubPlaceMap(page);
+  await seedSignedIn(page);
+  await fulfillForumMessages(page, []);
+  await page.goto('/shops');
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  const street = shopAddressFields(page).getByLabel('Street', { exact: true });
+  await street.fill('Bahnhofstrasse');
+  await expect(street).toHaveValue('Bahnhofstrasse');
+  await expect(street).toHaveAccessibleName('Street');
+});

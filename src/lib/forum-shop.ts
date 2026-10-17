@@ -1,5 +1,6 @@
 import type { ForumPlaceAddress, ForumPlacePin } from '@/lib/api-types';
 import { countryDisplayName, ISO_COUNTRIES } from '@/lib/countries';
+import type { MessageKey } from '@/lib/messages';
 
 /** Hashtag name without `#`. */
 export const SHOP_HASHTAG = '21GiftsShop';
@@ -22,6 +23,15 @@ export type ShopAddressProblem = 'street' | 'houseNumber' | 'postalCode' | 'city
 /** Exact API 400 bodies mapped to a shop form error. */
 export type ShopApiProblem =
   'shopName' | 'shopNameAddress' | 'shopAddress' | 'shopDescription' | 'placeAddress';
+
+/** Visitor-facing catalog key for each {@link ShopApiProblem} API 400 body. */
+export const SHOP_API_MESSAGE: Record<ShopApiProblem, MessageKey> = {
+  shopName: 'shops.problemName',
+  shopNameAddress: 'shops.problemNameAddress',
+  shopAddress: 'shops.problemAddress',
+  shopDescription: 'shops.problemDescription',
+  placeAddress: 'shops.problemAddressInvalid',
+};
 
 const HOUSE_NUMBER = /^[0-9][0-9A-Za-z/ .&–-]{0,31}$/;
 const POSTAL_CH_LI = /^[0-9]{4}$/;

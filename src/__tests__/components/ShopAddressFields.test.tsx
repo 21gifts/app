@@ -7,6 +7,14 @@ afterEach(() => {
   cleanup();
 });
 
+function expectAssociated(labelText: string): HTMLElement {
+  const control = screen.getByLabelText(labelText, { exact: true });
+  const label = screen.getByText(labelText, { selector: 'label', exact: true });
+  expect((label as HTMLLabelElement).htmlFor).toBe(control.id);
+  expect(control.id.length).toBeGreaterThan(0);
+  return control;
+}
+
 const ADDRESS = {
   street: 'Bahnhofstrasse',
   houseNumber: '12',
@@ -20,21 +28,15 @@ describe('ShopAddressFields', () => {
     renderWithLocale(
       <ShopAddressFields value={null} disabled={false} onChange={() => undefined} />,
     );
-    const street = screen.getByLabelText('Street', { exact: true });
+    const street = expectAssociated('Street');
     expect(street.closest('[data-testid="shop-address-fields"]')).not.toBe(null);
     expect(street.parentElement?.tagName).toBe('DIV');
-    expect(street.getAttribute('id')).toBe('field-street');
-    expect(screen.getByLabelText('House number', { exact: true }).getAttribute('id')).toBe(
-      'field-house-number',
-    );
-    expect(screen.getByLabelText('Postal code', { exact: true }).getAttribute('id')).toBe(
-      'field-postal-code',
-    );
-    expect(screen.getByLabelText('City', { exact: true }).getAttribute('id')).toBe('field-city');
-    const country = screen.getByLabelText('Country', { exact: true });
+    expectAssociated('House number');
+    expectAssociated('Postal code');
+    expectAssociated('City');
+    const country = expectAssociated('Country');
     expect(country.tagName).toBe('SELECT');
     expect(country.parentElement?.tagName).toBe('DIV');
-    expect(country.getAttribute('id')).toBe('field-shop-address-country');
     expect(street).toHaveProperty('value', '');
     expect(screen.getByLabelText('House number', { exact: true })).toHaveProperty('value', '');
     expect(screen.getByLabelText('Postal code', { exact: true })).toHaveProperty('value', '');
@@ -75,5 +77,31 @@ describe('ShopAddressFields', () => {
     expect(screen.getByLabelText('Postal code').hasAttribute('disabled')).toBe(true);
     expect(screen.getByLabelText('City').hasAttribute('disabled')).toBe(true);
     expect(screen.getByLabelText('Country', { exact: true }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('gives each instance distinct ids that match their own labels', () => {
+    renderWithLocale(
+      <>
+        <ShopAddressFields value={null} disabled={false} onChange={() => undefined} />
+        <ShopAddressFields value={ADDRESS} disabled={false} onChange={() => undefined} />
+      </>,
+    );
+    const roots = screen.getAllByTestId('shop-address-fields');
+    expect(roots).toHaveLength(2);
+    const ids: string[] = [];
+    for (const root of roots) {
+      const labels = root.querySelectorAll('label');
+      expect(labels).toHaveLength(5);
+      for (const label of labels) {
+        const htmlFor = (label as HTMLLabelElement).htmlFor;
+        expect(htmlFor.length).toBeGreaterThan(0);
+        const control = document.getElementById(htmlFor);
+        expect(control).not.toBe(null);
+        expect(root.contains(control)).toBe(true);
+        ids.push(htmlFor);
+      }
+    }
+    expect(ids).toHaveLength(10);
+    expect(new Set(ids).size).toBe(10);
   });
 });

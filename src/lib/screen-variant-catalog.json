@@ -4164,6 +4164,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:add-place-name-address",
+    "label": "/shops add-place-name-address",
+    "visual": "state-shops-add-place-name-address",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:add-place-field-invalid",
+    "label": "/shops add-place-field-invalid",
+    "visual": "state-shops-add-place-field-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:add-place-complete",
     "label": "/shops add-place-complete",
     "visual": "state-shops-add-place-complete",
@@ -4176,6 +4188,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:add-text-long",
+    "label": "/shops add-text-long",
+    "visual": "state-shops-add-text-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:add-text-not-longer",
+    "label": "/shops add-text-not-longer",
+    "visual": "state-shops-add-text-not-longer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:add-user",
     "label": "/shops add-user",
     "visual": "state-shops-add-user",
@@ -4185,6 +4209,12 @@
     "id": "/shops:add-summary",
     "label": "/shops add-summary",
     "visual": "state-shops-add-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:add-post-rejected",
+    "label": "/shops add-post-rejected",
+    "visual": "state-shops-add-post-rejected",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4362,6 +4392,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:edit-save-rejected",
+    "label": "/shops edit-save-rejected",
+    "visual": "state-shops-edit-save-rejected",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:edit-history-error",
     "label": "/shops edit-history-error",
     "visual": "state-shops-edit-history-error",
@@ -4413,6 +4449,12 @@
     "id": "/shops:staff-place-edit-error",
     "label": "/shops staff-place-edit-error",
     "visual": "state-shops-staff-place-edit-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:staff-place-edit-rejected",
+    "label": "/shops staff-place-edit-rejected",
+    "visual": "state-shops-staff-place-edit-rejected",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -3,6 +3,7 @@
 import { MapPin, X } from 'lucide-react';
 import {
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -17,6 +18,7 @@ import { Button, IconButton } from '@/components/ui';
 import { Scrollport } from '@/components/ui/Scrollport';
 import type { ForumPlaceAddress, ForumPlacePin } from '@/lib/api-types';
 import {
+  SHOP_API_MESSAGE,
   formatPlacePinText,
   shopAddressProblem,
   shopApiProblem,
@@ -33,25 +35,12 @@ const EMPTY_ADDRESS: ForumPlaceAddressDraft = {
   country: '',
 };
 
-const SHOP_NAME_ID = 'field-shop-name';
-
 const SHOP_NAME_CONTROL_CLASS = [
   'w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card',
   'px-4 py-2 text-base text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50',
 ].join(' ');
 
 const SHOP_NAME_WRAP_CLASS = 'flex flex-col gap-1 text-left text-sm text-app-fg';
-
-const SHOP_API_MESSAGE: Record<
-  'shopName' | 'shopNameAddress' | 'shopAddress' | 'shopDescription' | 'placeAddress',
-  MessageKey
-> = {
-  shopName: 'shops.problemName',
-  shopNameAddress: 'shops.problemNameAddress',
-  shopAddress: 'shops.problemAddress',
-  shopDescription: 'shops.problemDescription',
-  placeAddress: 'shops.problemAddressInvalid',
-};
 
 const ADDRESS_FIELD_KEY: Record<
   'street' | 'houseNumber' | 'postalCode' | 'city' | 'country',
@@ -192,6 +181,7 @@ export function PlaceField(props: {
 }): ReactElement {
   const { t, locale } = useTranslations();
   const sunday = useLocalSunday();
+  const shopNameId = `${useId()}-shop-name`;
   const shopDetails = props.shopDetails === true;
   const buttonSize = props.buttonSize ?? 'lg';
   const buttonVariant = props.buttonVariant ?? 'secondary';
@@ -604,9 +594,9 @@ export function PlaceField(props: {
       {shopDetails ? (
         <Scrollport className="mt-3 flex min-h-24 flex-1 flex-col gap-3">
           <div className={SHOP_NAME_WRAP_CLASS}>
-            <label htmlFor={SHOP_NAME_ID}>{t('shops.placeName')}</label>
+            <label htmlFor={shopNameId}>{t('shops.placeName')}</label>
             <input
-              id={SHOP_NAME_ID}
+              id={shopNameId}
               className={SHOP_NAME_CONTROL_CLASS}
               required
               maxLength={80}
