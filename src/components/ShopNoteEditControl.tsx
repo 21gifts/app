@@ -497,7 +497,11 @@ export function ShopNoteEditControl({
               mode="edit"
               posting={saving}
               draft={draft}
-              onDraftChange={setDraft}
+              onDraftChange={(value) => {
+                setDraft(value);
+                setSaveError(false);
+                setSaveErrorKey(null);
+              }}
               photoDrafts={photoDrafts}
               videoDraft={null}
               onPickFiles={(files) => {
@@ -510,9 +514,17 @@ export function ShopNoteEditControl({
               }}
               onClearPhoto={clearPendingPhotos}
               place={place}
-              onPlaceChange={setPlace}
+              onPlaceChange={(next) => {
+                setPlace(next);
+                setSaveError(false);
+                setSaveErrorKey(null);
+              }}
               username={username}
-              onUsernameChange={setUsername}
+              onUsernameChange={(value) => {
+                setUsername(value);
+                setSaveError(false);
+                setSaveErrorKey(null);
+              }}
               onSubmit={() => {
                 void save();
               }}

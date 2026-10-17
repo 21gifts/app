@@ -479,6 +479,101 @@ describe('ShopNoteEditControl', () => {
     );
   });
 
+  it('clears a mapped save error when the shop text changes', async () => {
+    signIn('founder');
+    stubShopMaps();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockRejectedValue(new Error('Shop name is required'));
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('Enter the shop name.');
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning now.' },
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('clears a mapped save error when the place changes', async () => {
+    signIn('founder');
+    const listeners = stubShopMaps();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockRejectedValue(new Error('Shop name is required'));
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('Enter the shop name.');
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    fillShopAddressFields("Kiki's Cafe");
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('clears a mapped save error when the account draft changes', async () => {
+    signIn('founder');
+    stubShopMaps();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockRejectedValue(new Error('Shop name is required'));
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('Enter the shop name.');
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'luna' } });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('clears a mapped save error when the editor is reopened', async () => {
+    signIn('founder');
+    stubShopMaps();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockRejectedValue(new Error('Shop name is required'));
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect((await screen.findByRole('alert')).textContent).toContain('Enter the shop name.');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByRole('button', { name: 'Next' })).toBeTruthy();
+    expect(screen.queryByText('Enter the shop name.')).toBeNull();
+  });
+
   it('saves a place, a user, and replaced stills, and ignores a bad file', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);

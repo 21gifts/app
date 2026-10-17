@@ -15,12 +15,20 @@ import { useAuthStore } from '@/stores/auth-store';
 const PAGE_LIMIT = 20;
 
 /**
- * Shop name for the table: the first real line of the note, else the stored name.
+ * Shop name for the table: the place label when the pin is a structured shop,
+ * otherwise the first real line of the note, else the stored name.
  *
  * @param message - Shop note.
  * @returns Display name.
  */
 function shopDisplayName(message: ForumMessage): string {
+  const place = message.place;
+  if (place !== undefined) {
+    const label = place.label?.trim() ?? '';
+    if (label !== '' && place.address !== undefined && place.address !== null) {
+      return label;
+    }
+  }
   const line = stripShopHashtag(message.text)
     .split('\n')
     .map((part) => part.trim())
