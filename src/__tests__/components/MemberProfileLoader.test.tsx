@@ -163,6 +163,7 @@ describe('MemberProfileLoader', () => {
     renderWithLocale(<MemberProfileLoader accountId={memberId} />);
     expect(await screen.findByText('Carol')).toBeTruthy();
     expect(await screen.findByText('Could not load gifts.')).toBeTruthy();
+    expect(await screen.findByText('Could not load loans.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
   });
 
@@ -254,5 +255,61 @@ describe('MemberProfileLoader', () => {
     view.unmount();
     rejectActivity?.(new Error('gone'));
     await Promise.resolve();
+  });
+
+  it('shows loan empty copy when activity omits loan fields', async () => {
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    vi.mocked(fetchMemberActivity).mockResolvedValue(EMPTY_ACTIVITY);
+    renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    expect(await screen.findByText('Carol')).toBeTruthy();
+    expect(screen.getByText('No loans yet.')).toBeTruthy();
+  });
+
+  it('renders debt and credit legend when loan series are present', async () => {
+    vi.mocked(fetchMember).mockResolvedValue(profile);
+    vi.mocked(fetchMemberActivity).mockResolvedValue({
+      ...EMPTY_ACTIVITY,
+      owedSats: 100,
+      creditSats: 50,
+      owedOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 100,
+          cumulativeSats: 100,
+          btc: '0.00000100',
+          cumulativeBtc: '0.00000100',
+          usd: '0.10',
+          cumulativeUsd: '0.10',
+          chf: '0.08',
+          eur: '0.09',
+          php: '5.60',
+          cumulativeChf: '0.08',
+          cumulativeEur: '0.09',
+          cumulativePhp: '5.60',
+        },
+      ],
+      creditOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 50,
+          cumulativeSats: 50,
+          btc: '0.00000050',
+          cumulativeBtc: '0.00000050',
+          usd: '0.05',
+          cumulativeUsd: '0.05',
+          chf: '0.04',
+          eur: '0.05',
+          php: '2.80',
+          cumulativeChf: '0.04',
+          cumulativeEur: '0.05',
+          cumulativePhp: '2.80',
+        },
+      ],
+    });
+    renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    expect(await screen.findByText('Carol')).toBeTruthy();
+    expect(screen.getByText('Debt')).toBeTruthy();
+    expect(screen.getByText('Credit')).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Debt and credit in ₿' })).toBeTruthy();
   });
 });

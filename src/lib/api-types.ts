@@ -472,17 +472,71 @@ export const activitySpendDaySchema = spendDaySchema
   });
 
 /**
+ * One UTC day on a loan balance series (`owedOverTime` / `creditOverTime`).
+ *
+ * Unlike {@link activitySpendDaySchema} / {@link spendDaySchema}, sats and
+ * amount strings may be negative (open debt or credit can fall below zero).
+ * Own signed regexes — does not relax the unsigned gift-day schemas.
+ */
+export const loanSpendDaySchema = z.object({
+  day: z.string(),
+  giftCount: z.number().int().nonnegative().optional(),
+  officialCount: z.number().int().nonnegative().optional(),
+  sats: z.number().int(),
+  cumulativeSats: z.number().int(),
+  btc: z.string().regex(/^-?\d+\.\d{8}$/),
+  cumulativeBtc: z.string().regex(/^-?\d+\.\d{8}$/),
+  usd: z.string().regex(/^-?\d+\.\d{2}$/),
+  cumulativeUsd: z.string().regex(/^-?\d+\.\d{2}$/),
+  chf: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
+  eur: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
+  php: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
+  cumulativeChf: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
+  cumulativeEur: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
+  cumulativePhp: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
+});
+
+/**
+ * One day on an owed or credit loan series.
+ */
+export type LoanSpendDay = z.infer<typeof loanSpendDaySchema>;
+
+/**
  * Runtime schema for signed-in, member, and public-view activity
  * (`GET /me/activity`, `GET /members/:id/activity`, `GET /view/:viewKey/activity`).
  *
  * Series share the gift-stats day shape, with optional CHF/EUR/PHP and
- * nullable USD. Totals include house gifts and forum zaps.
+ * nullable USD. Totals include house gifts and forum zaps. Optional loan
+ * balance fields (`owedSats` / `creditSats` and their over-time series) are
+ * omitted on older api bodies; the app treats missing as empty / 0.
  */
 export const accountActivitySchema = z.object({
   donatedSats: z.number().int().nonnegative(),
   receivedSats: z.number().int().nonnegative(),
   donatedOverTime: z.array(activitySpendDaySchema),
   receivedOverTime: z.array(activitySpendDaySchema),
+  owedSats: z.number().int().optional(),
+  creditSats: z.number().int().optional(),
+  owedOverTime: z.array(loanSpendDaySchema).optional(),
+  creditOverTime: z.array(loanSpendDaySchema).optional(),
   fx: activityFxSchema,
 });
 

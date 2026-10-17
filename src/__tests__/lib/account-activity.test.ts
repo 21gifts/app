@@ -4,11 +4,16 @@ import {
   activityMaxY,
   activityValue,
   alignActivitySeries,
+  alignLoanSeries,
+  loanAxis,
+  loanValue,
   type ActivityPoint,
+  type LoanPoint,
 } from '@/lib/account-activity';
 import type { AccountActivity } from '@/lib/api-types';
 
 type SpendPoint = AccountActivity['receivedOverTime'][number];
+type LoanDay = NonNullable<AccountActivity['owedOverTime']>[number];
 
 function fiatFromUsd(usd: string): { chf: string; eur: string; php: string } {
   switch (usd) {
@@ -286,5 +291,222 @@ describe('activityValue', () => {
     const first = aligned[0];
     expect(first?.cumulativeReceivedChf).toBe(0);
     expect(first && activityValue(first, 'received', 'fiat', 'CHF')).toBe(0);
+  });
+});
+
+function loanDay(day: string, cumulativeSats: number, cumulativeUsd: string, sats = 0): LoanDay {
+  const absBtc = Math.abs(cumulativeSats) / 1e8;
+  const btcSign = cumulativeSats < 0 ? '-' : '';
+  const cumulativeBtc = `${btcSign}${absBtc.toFixed(8)}`;
+  return {
+    day,
+    sats,
+    cumulativeSats,
+    btc: cumulativeBtc,
+    cumulativeBtc,
+    usd: cumulativeUsd,
+    cumulativeUsd,
+    chf: cumulativeUsd,
+    eur: cumulativeUsd,
+    php: cumulativeUsd,
+    cumulativeChf: cumulativeUsd,
+    cumulativeEur: cumulativeUsd,
+    cumulativePhp: cumulativeUsd,
+  };
+}
+
+const ZERO_LOAN_FIAT = {
+  cumulativeOwedChf: 0,
+  cumulativeCreditChf: 0,
+  cumulativeOwedEur: 0,
+  cumulativeCreditEur: 0,
+  cumulativeOwedPhp: 0,
+  cumulativeCreditPhp: 0,
+} as const;
+
+describe('alignLoanSeries', () => {
+  it('returns empty when both series are empty', () => {
+    expect(alignLoanSeries([], [])).toEqual([]);
+  });
+
+  it('zeros credit cumulatives on owed days only', () => {
+    const owed = [loanDay('2026-06-01', 100, '0.10', 100)];
+    expect(alignLoanSeries(owed, [])).toEqual([
+      {
+        day: '2026-06-01',
+        cumulativeOwedSats: 100,
+        cumulativeCreditSats: 0,
+        cumulativeOwedUsd: 0.1,
+        cumulativeCreditUsd: 0,
+        cumulativeOwedChf: 0.1,
+        cumulativeCreditChf: 0,
+        cumulativeOwedEur: 0.1,
+        cumulativeCreditEur: 0,
+        cumulativeOwedPhp: 0.1,
+        cumulativeCreditPhp: 0,
+      },
+    ]);
+  });
+
+  it('zeros owed cumulatives when only credit is present', () => {
+    const credit = [loanDay('2026-06-01', 50, '0.05', 50)];
+    expect(alignLoanSeries([], credit)).toEqual([
+      {
+        day: '2026-06-01',
+        cumulativeOwedSats: 0,
+        cumulativeCreditSats: 50,
+        cumulativeOwedUsd: 0,
+        cumulativeCreditUsd: 0.05,
+        cumulativeOwedChf: 0,
+        cumulativeCreditChf: 0.05,
+        cumulativeOwedEur: 0,
+        cumulativeCreditEur: 0.05,
+        cumulativeOwedPhp: 0,
+        cumulativeCreditPhp: 0.05,
+      },
+    ]);
+  });
+
+  it('unions disjoint ranges and carries cumulatives forward', () => {
+    const owed = [loanDay('2026-06-01', 100, '0.10', 100), loanDay('2026-06-03', 40, '0.04', -60)];
+    const credit = [loanDay('2026-06-02', 50, '0.05', 50)];
+    expect(alignLoanSeries(owed, credit)).toEqual([
+      {
+        day: '2026-06-01',
+        cumulativeOwedSats: 100,
+        cumulativeCreditSats: 0,
+        cumulativeOwedUsd: 0.1,
+        cumulativeCreditUsd: 0,
+        cumulativeOwedChf: 0.1,
+        cumulativeCreditChf: 0,
+        cumulativeOwedEur: 0.1,
+        cumulativeCreditEur: 0,
+        cumulativeOwedPhp: 0.1,
+        cumulativeCreditPhp: 0,
+      },
+      {
+        day: '2026-06-02',
+        cumulativeOwedSats: 100,
+        cumulativeCreditSats: 50,
+        cumulativeOwedUsd: 0.1,
+        cumulativeCreditUsd: 0.05,
+        cumulativeOwedChf: 0.1,
+        cumulativeCreditChf: 0.05,
+        cumulativeOwedEur: 0.1,
+        cumulativeCreditEur: 0.05,
+        cumulativeOwedPhp: 0.1,
+        cumulativeCreditPhp: 0.05,
+      },
+      {
+        day: '2026-06-03',
+        cumulativeOwedSats: 40,
+        cumulativeCreditSats: 50,
+        cumulativeOwedUsd: 0.04,
+        cumulativeCreditUsd: 0.05,
+        cumulativeOwedChf: 0.04,
+        cumulativeCreditChf: 0.05,
+        cumulativeOwedEur: 0.04,
+        cumulativeCreditEur: 0.05,
+        cumulativeOwedPhp: 0.04,
+        cumulativeCreditPhp: 0.05,
+      },
+    ]);
+  });
+
+  it('maps null loan fiat cumulatives to 0 and keeps negatives', () => {
+    const owed: LoanDay[] = [
+      {
+        ...loanDay('2026-06-01', -60, '-0.06', -60),
+        cumulativeChf: null,
+        cumulativeEur: null,
+        cumulativePhp: null,
+      },
+    ];
+    const aligned = alignLoanSeries(owed, []);
+    const first = aligned[0];
+    expect(first?.cumulativeOwedSats).toBe(-60);
+    expect(first?.cumulativeOwedUsd).toBe(-0.06);
+    expect(first?.cumulativeOwedChf).toBe(0);
+    expect(first?.cumulativeOwedEur).toBe(0);
+    expect(first?.cumulativeOwedPhp).toBe(0);
+  });
+});
+
+describe('loanValue', () => {
+  const point: LoanPoint = {
+    day: '2026-06-01',
+    cumulativeOwedSats: 10,
+    cumulativeCreditSats: 20,
+    cumulativeOwedUsd: 1.5,
+    cumulativeCreditUsd: 2.5,
+    cumulativeOwedChf: 1.2,
+    cumulativeCreditChf: 2.0,
+    cumulativeOwedEur: 1.3,
+    cumulativeCreditEur: 2.2,
+    cumulativeOwedPhp: 80,
+    cumulativeCreditPhp: 140,
+  };
+
+  it('reads sat and fiat cumulatives per series', () => {
+    expect(loanValue(point, 'owed', 'sat')).toBe(10);
+    expect(loanValue(point, 'credit', 'sat')).toBe(20);
+    expect(loanValue(point, 'owed', 'fiat', 'USD')).toBe(1.5);
+    expect(loanValue(point, 'credit', 'fiat', 'USD')).toBe(2.5);
+    expect(loanValue(point, 'owed', 'fiat', 'CHF')).toBe(1.2);
+    expect(loanValue(point, 'credit', 'fiat', 'CHF')).toBe(2.0);
+    expect(loanValue(point, 'owed', 'fiat', 'EUR')).toBe(1.3);
+    expect(loanValue(point, 'credit', 'fiat', 'EUR')).toBe(2.2);
+    expect(loanValue(point, 'owed', 'fiat', 'PHP')).toBe(80);
+    expect(loanValue(point, 'credit', 'fiat', 'PHP')).toBe(140);
+    expect(loanValue(point, 'credit', 'fiat')).toBe(2.5);
+    expect(loanValue(point, 'owed', 'sat', 'CHF')).toBe(10);
+  });
+});
+
+describe('loanAxis', () => {
+  it('returns min 0 max 0 span 1 when empty', () => {
+    expect(loanAxis([], 'sat')).toEqual({ minY: 0, maxY: 0, span: 1 });
+  });
+
+  it('keeps min at 0 for non-negative values', () => {
+    const points: LoanPoint[] = [
+      {
+        day: '2026-06-01',
+        cumulativeOwedSats: 100,
+        cumulativeCreditSats: 40,
+        cumulativeOwedUsd: 0.1,
+        cumulativeCreditUsd: 0.04,
+        ...ZERO_LOAN_FIAT,
+      },
+    ];
+    expect(loanAxis(points, 'sat')).toEqual({ minY: 0, maxY: 100, span: 100 });
+  });
+
+  it('spans mixed signs from min to max', () => {
+    const points: LoanPoint[] = [
+      {
+        day: '2026-06-01',
+        cumulativeOwedSats: -60,
+        cumulativeCreditSats: 40,
+        cumulativeOwedUsd: -0.06,
+        cumulativeCreditUsd: 0.04,
+        ...ZERO_LOAN_FIAT,
+      },
+    ];
+    expect(loanAxis(points, 'sat')).toEqual({ minY: -60, maxY: 40, span: 100 });
+  });
+
+  it('keeps max at 0 for only-negative values', () => {
+    const points: LoanPoint[] = [
+      {
+        day: '2026-06-01',
+        cumulativeOwedSats: -60,
+        cumulativeCreditSats: -10,
+        cumulativeOwedUsd: -0.06,
+        cumulativeCreditUsd: -0.01,
+        ...ZERO_LOAN_FIAT,
+      },
+    ];
+    expect(loanAxis(points, 'sat')).toEqual({ minY: -60, maxY: 0, span: 60 });
   });
 });

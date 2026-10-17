@@ -14,9 +14,10 @@ const ACCOUNT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 
 /**
  * Client loader for `/members/[accountId]`: validates the id, fetches the
- * member profile, then given/received activity for the chart (even when the
- * Lightning Address is blank). An activity fetch failure that is not
+ * member profile, then given/received and loan activity for the charts (even
+ * when the Lightning Address is blank). An activity fetch failure that is not
  * `MissingRequirementsError` keeps the card and sets `activityFailed`.
+ * Missing loan fields become empty series.
  *
  * @param props - Dynamic route `accountId`.
  * @returns Loading note, missing, error, or the member profile screen.
@@ -31,6 +32,8 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [received, setReceived] = useState<AccountActivity['receivedOverTime']>([]);
   const [donated, setDonated] = useState<AccountActivity['donatedOverTime']>([]);
+  const [owed, setOwed] = useState<NonNullable<AccountActivity['owedOverTime']>>([]);
+  const [credit, setCredit] = useState<NonNullable<AccountActivity['creditOverTime']>>([]);
   const [activityFailed, setActivityFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
@@ -40,6 +43,8 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
       setProfile(null);
       setReceived([]);
       setDonated([]);
+      setOwed([]);
+      setCredit([]);
       setActivityFailed(false);
       return;
     }
@@ -52,6 +57,8 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
     setProfile(null);
     setReceived([]);
     setDonated([]);
+    setOwed([]);
+    setCredit([]);
     setActivityFailed(false);
 
     void (async () => {
@@ -68,6 +75,8 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
         setStatus('ready');
         setReceived([]);
         setDonated([]);
+        setOwed([]);
+        setCredit([]);
         setActivityFailed(false);
 
         try {
@@ -77,6 +86,8 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
           }
           setReceived(activity.receivedOverTime);
           setDonated(activity.donatedOverTime);
+          setOwed(activity.owedOverTime ?? []);
+          setCredit(activity.creditOverTime ?? []);
           setActivityFailed(false);
         } catch (activityErr) {
           if (cancelled) {
@@ -88,6 +99,8 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
           }
           setReceived([]);
           setDonated([]);
+          setOwed([]);
+          setCredit([]);
           setActivityFailed(true);
         }
       } catch (err) {
@@ -145,6 +158,8 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
       profile={readyProfile}
       received={received}
       donated={donated}
+      owed={owed}
+      credit={credit}
       activityFailed={activityFailed}
     />
   );

@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
+import { LoanBalanceChart } from '@/components/LoanBalanceChart';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { Card } from '@/components/ui';
@@ -15,8 +16,8 @@ import { profileQrLogo } from '@/lib/profile-qr-logo';
  * Public read-only identity card matching signed-in profile chrome without
  * edit or message actions; chart never replaced by `forum.loading`.
  *
- * @param props - Public profile, view key, both activity series, and optional
- *   `activityFailed` for the chart.
+ * @param props - Public profile, view key, gift and loan activity series, and
+ *   optional `activityFailed` for both charts.
  * @returns The presentational card.
  */
 export function ViewProfileScreen({
@@ -24,12 +25,16 @@ export function ViewProfileScreen({
   viewKey,
   received,
   donated = [],
+  owed = [],
+  credit = [],
   activityFailed = false,
 }: {
   profile: ViewProfile;
   viewKey: string;
   received: AccountActivity['receivedOverTime'];
   donated?: AccountActivity['donatedOverTime'];
+  owed?: NonNullable<AccountActivity['owedOverTime']>;
+  credit?: NonNullable<AccountActivity['creditOverTime']>;
   activityFailed?: boolean;
 }): ReactElement {
   const { t } = useTranslations();
@@ -58,6 +63,7 @@ export function ViewProfileScreen({
         {t('profile.title')}
       </h1>
       <AccountActivityChart received={received} donated={donated} failed={activityFailed} />
+      <LoanBalanceChart owed={owed} credit={credit} failed={activityFailed} />
       <AboutMeSection
         mode="public"
         aboutMe={profile.aboutMe}

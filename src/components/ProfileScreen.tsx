@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ChangeEvent, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
+import { LoanBalanceChart } from '@/components/LoanBalanceChart';
 import { FiatPreferenceSwitcher } from '@/components/FiatPreferenceSwitcher';
 import { LanguagePreferenceSwitcher } from '@/components/LanguagePreferenceSwitcher';
 import { LightningAddressForm } from '@/components/LightningAddressForm';
@@ -353,7 +354,8 @@ function profileWithoutStaffTag(profile: MemberProfile): MemberProfile {
 export function ProfileScreen(): ReactElement {
   const { t } = useTranslations();
   const router = useRouter();
-  const { receiveOverTime, donateOverTime, failed } = useAccountTotals();
+  const { receiveOverTime, donateOverTime, owedOverTime, creditOverTime, failed } =
+    useAccountTotals();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const setAccount = useAuthStore((state) => state.setAccount);
@@ -427,6 +429,7 @@ export function ProfileScreen(): ReactElement {
         {t('profile.title')}
       </h1>
       <AccountActivityChart received={receiveOverTime} donated={donateOverTime} failed={failed} />
+      <LoanBalanceChart owed={owedOverTime} credit={creditOverTime} failed={failed} />
       {account !== null && session !== null ? (
         <AboutMeSection
           mode="owner"

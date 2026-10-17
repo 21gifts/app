@@ -1965,4 +1965,70 @@ describe('accountActivitySchema', () => {
     };
     expect(accountActivitySchema.parse(activity)).toEqual(activity);
   });
+
+  it('accepts signed loan balance fields and days', () => {
+    const activity = {
+      donatedSats: 0,
+      receivedSats: 0,
+      donatedOverTime: [],
+      receivedOverTime: [],
+      owedSats: -60,
+      creditSats: 40,
+      owedOverTime: [
+        {
+          day: '2026-06-01',
+          sats: -160,
+          cumulativeSats: -60,
+          btc: '-0.00000160',
+          cumulativeBtc: '-0.00000060',
+          usd: '-0.06',
+          cumulativeUsd: '-0.06',
+          chf: null,
+          eur: null,
+          php: null,
+          cumulativeChf: null,
+          cumulativeEur: null,
+          cumulativePhp: null,
+        },
+      ],
+      creditOverTime: [
+        {
+          day: '2026-06-01',
+          sats: 40,
+          cumulativeSats: 40,
+          btc: '0.00000040',
+          cumulativeBtc: '0.00000040',
+          usd: '0.04',
+          cumulativeUsd: '0.04',
+          chf: '0.03',
+          eur: '0.04',
+          php: '2.20',
+          cumulativeChf: '0.03',
+          cumulativeEur: '0.04',
+          cumulativePhp: '2.20',
+        },
+      ],
+      fx: {
+        quote: 'BTC-USD' as const,
+        dayBasis: 'utc' as const,
+        source: 'coinbase-exchange-daily-close' as const,
+        quotes: [
+          { code: 'USD' as const, pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+          { code: 'CHF' as const, pair: 'USD-CHF', source: 'ecb-daily' },
+          { code: 'EUR' as const, pair: 'USD-EUR', source: 'ecb-daily' },
+          { code: 'PHP' as const, pair: 'USD-PHP', source: 'ecb-daily' },
+        ],
+      },
+    };
+    const parsed = accountActivitySchema.parse(activity);
+    expect(parsed.owedSats).toBe(-60);
+    expect(parsed.creditSats).toBe(40);
+    expect(parsed.owedOverTime).toEqual(activity.owedOverTime);
+    expect(parsed.creditOverTime).toEqual(activity.creditOverTime);
+    expect(parsed.owedOverTime?.[0]?.sats).toBe(-160);
+    expect(parsed.owedOverTime?.[0]?.cumulativeSats).toBe(-60);
+    expect(parsed.owedOverTime?.[0]?.btc).toBe('-0.00000160');
+    expect(parsed.owedOverTime?.[0]?.usd).toBe('-0.06');
+    expect(parsed.owedOverTime?.[0]?.chf).toBeNull();
+  });
 });
