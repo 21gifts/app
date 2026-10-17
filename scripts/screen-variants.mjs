@@ -3792,6 +3792,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/profile',
+    id: 'cannot-receive',
+    image: 'profile-cannot-receive.png',
+    visual: 'state-profile-cannot-receive',
+    needle: "shotScreen(page, 'state-profile-cannot-receive')",
+  },
+  {
+    route: '/profile',
     id: 'funding-program-press',
     image: 'profile-funding-program-press.png',
     visual: 'state-profile-funding-program-press',

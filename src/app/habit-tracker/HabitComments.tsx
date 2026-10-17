@@ -140,7 +140,7 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
                       </SundayWritingGate>
                     ) : null}
                     {giftBlocked ? (
-                      <>
+                      <SundayWritingGate notice="zap">
                         <CannotReceiveLabel />
                         <IconButton
                           type="button"
@@ -151,7 +151,7 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
                         >
                           <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
                         </IconButton>
-                      </>
+                      </SundayWritingGate>
                     ) : showGift ? (
                       <SundayWritingGate notice="zap">
                         <IconButton

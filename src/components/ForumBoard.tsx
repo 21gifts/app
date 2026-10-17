@@ -81,7 +81,7 @@ import {
 import { forumPhotoSrc, type ForumPhotoPayload } from '@/lib/forum-photo';
 import { MessageKindTags, noteKinds } from '@/components/MessageKindTags';
 import { isShopNote, stripShopHashtag } from '@/lib/forum-shop';
-import { isOwnNote } from '@/lib/roles';
+import { authorCannotReceive, isOwnNote } from '@/lib/roles';
 import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
@@ -512,24 +512,6 @@ function fallbackCopy(text: string): boolean {
   }
   ta.remove();
   return ok;
-}
-
-/**
- * Whether a pay action on `message` targets a member who cannot receive yet:
- * the api sent `authorCanReceive: false` for a live member note that is not
- * the viewer's own. An older api body without the field is not this case.
- *
- * @param message - Forum row.
- * @param viewerAccountId - Signed-in account id, or `null`.
- * @returns True when the pay controls show disabled with a label.
- */
-function authorCannotReceive(message: ForumMessage, viewerAccountId: string | null): boolean {
-  return (
-    message.authorCanReceive === false &&
-    message.accountId !== undefined &&
-    message.deletedAt === undefined &&
-    !isOwnNote(viewerAccountId, message.accountId)
-  );
 }
 
 /**
@@ -1678,15 +1660,17 @@ export function ForumBoard({
                       </IconButton>
                     </SundayWritingGate>
                   ) : message.parentId !== undefined && cannotReceive && !readOnly ? (
-                    <IconButton
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      aria-label={t('forum.pay')}
-                      disabled
-                    >
-                      <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
-                    </IconButton>
+                    <SundayWritingGate notice="zap">
+                      <IconButton
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        aria-label={t('forum.pay')}
+                        disabled
+                      >
+                        <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                      </IconButton>
+                    </SundayWritingGate>
                   ) : null}
                   <IconButton
                     type="button"
@@ -1970,15 +1954,17 @@ export function ForumBoard({
                                   </IconButton>
                                 </SundayWritingGate>
                               ) : replyCannotReceive && !readOnly ? (
-                                <IconButton
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  aria-label={t('forum.pay')}
-                                  disabled
-                                >
-                                  <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
-                                </IconButton>
+                                <SundayWritingGate notice="zap">
+                                  <IconButton
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    aria-label={t('forum.pay')}
+                                    disabled
+                                  >
+                                    <Gift aria-hidden="true" className="h-4 w-4 shrink-0" />
+                                  </IconButton>
+                                </SundayWritingGate>
                               ) : null}
                               <IconButton
                                 type="button"

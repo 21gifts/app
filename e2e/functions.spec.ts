@@ -11599,6 +11599,42 @@ test('Function: isOwnNote — a Basis reply to someone else still pays 1 sat', a
   expect(seen.replyBodies).toEqual([]);
 });
 
+test('Function: authorCannotReceive — an empty reaction to an author who cannot receive sends no gift', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'basis');
+  const note = {
+    id: 'm-bob',
+    accountId: 'acc_bob',
+    name: 'Bob',
+    text: 'Hello from Bob',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    authorCanReceive: false,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+  };
+  const seen = await routeOwnReplyForum(page, note);
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await expect(page.getByText("Can't receive yet")).toBeVisible();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const composer = page.getByPlaceholder('Write a reaction');
+  await expect(composer).toBeVisible();
+  await expect(page.locator('#forum-reply-amount')).toBeDisabled();
+  await composer.locator('xpath=ancestor::form').getByRole('button', { name: 'Post' }).click();
+  await expect(page.getByText('Enter a message or add a photo or video')).toBeVisible();
+  await composer.fill('Hi Bob');
+  await composer.locator('xpath=ancestor::form').getByRole('button', { name: 'Post' }).click();
+  await expect.poll(() => seen.invoiceUrls).toEqual(['/messages/compose-fee/invoice']);
+  expect(seen.invoiceBodies[0]).toMatchObject({ sats: 1, text: 'inReplyTo:m-bob\nHi Bob' });
+  expect(seen.replyBodies).toEqual([]);
+});
+
 test('Function: ViewProfilePage — public view heading is visible', async ({ page }) => {
   const key = 'a'.repeat(64);
   await page.route(new RegExp(`/view-key/${key}$`), async (route) => {
