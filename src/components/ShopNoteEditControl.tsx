@@ -424,11 +424,12 @@ export function ShopNoteEditControl({
         }
       }
       let latest = message;
+      const stored = message.place ?? null;
       const placeFirst =
         textChanged &&
         placeChanged &&
-        shopPlaceComplete(message.place ?? null) &&
-        shopDescriptionProblem(draft, message.place?.label ?? null) !== null;
+        shopPlaceComplete(stored) &&
+        shopDescriptionProblem(draft, stored.label) !== null;
       if (placeChanged && placeFirst) {
         latest = await setMessagePlace(token, message.id, place);
         onUpdated(latest);

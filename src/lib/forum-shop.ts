@@ -242,16 +242,16 @@ export function shopNameProblem(
  * must be 20–1000 characters and strictly longer than the pin label.
  *
  * @param text - Composer or stored note text.
- * @param label - Pin label, or `null` when the note has none.
+ * @param label - Pin label, or `null` / `undefined` when the note has none.
  * @returns `'short'` | `'long'` | `'notLonger'` | `null`.
  */
 export function shopDescriptionProblem(
   text: string,
-  label: string | null,
+  label: string | null | undefined,
 ): 'short' | 'long' | 'notLonger' | null {
   const lf = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const description = stripShopHashtag(lf);
-  const name = label === null ? '' : label;
+  const name = label ?? '';
   if (description.length < SHOP_DESCRIPTION_MIN) {
     return 'short';
   }
@@ -310,9 +310,9 @@ export function formatPlacePinText(place: ForumPlacePin, locale: string): string
  * Whether a shop pin has a valid name and structured address.
  *
  * @param place - Composer pin, or `null` when unset.
- * @returns `true` when both name and address pass the API rules.
+ * @returns `true` when both name and address pass the API rules (narrows to a pin).
  */
-export function shopPlaceComplete(place: ForumPlacePin | null): boolean {
+export function shopPlaceComplete(place: ForumPlacePin | null): place is ForumPlacePin {
   if (place === null) {
     return false;
   }
