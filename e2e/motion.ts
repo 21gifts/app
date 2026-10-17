@@ -11,6 +11,12 @@ const MOVING =
 const QUIET_MS = 100;
 
 /**
+ * How often the test looks again while something moves, in ms. A move lasts a few hundred ms, so
+ * the growing default intervals of `expect.poll` would look again long after it has ended.
+ */
+const POLL_MS = 50;
+
+/**
  * Waits until every fold, swap and height glide on the page has settled. Their last steps run on
  * timers, which a screenshot's `animations: 'disabled'` does not finish, and a box measured while
  * one of them moves is not where it comes to rest. The page has to stay quiet over a short pause
@@ -24,7 +30,7 @@ export async function motionSettled(page: Page): Promise<void> {
   const quiet = (): Promise<boolean> =>
     page.evaluate((selector) => document.querySelector(selector) === null, MOVING);
   for (;;) {
-    await expect.poll(quiet).toBe(true);
+    await expect.poll(quiet, { intervals: [POLL_MS] }).toBe(true);
     await page.waitForTimeout(QUIET_MS);
     if (await quiet()) {
       return;
