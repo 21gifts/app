@@ -892,12 +892,13 @@ docker run -p 3000:3000 -e NEXT_PUBLIC_API_URL=https://dev-api.21.gifts 21gifts/
 **One image per environment**: each deploy workflow builds its own image,
 because the Breez API key (`NEXT_PUBLIC_BREEZ_API_KEY`) and the build id
 (`NEXT_PUBLIC_BUILD_ID`) are baked in at `next build` (below). An image built
-for one environment is not deployed to another. The other `NEXT_PUBLIC_*`
-values are runtime placeholders: `next build` inlines `NEXT_PUBLIC_*` values
-into the bundles, so the image is built with literal placeholders
-(`__NEXT_PUBLIC_API_URL__`) and `entrypoint.sh` substitutes the runtime values
-at container start. The container refuses to start if a required
-variable is unset or empty. The optional variables (`OPTIONAL_VARS` in
+for one environment is not deployed to another. `NEXT_PUBLIC_APP_VERSION` is
+baked in at `next build` too (from `APP_VERSION`, below). `NEXT_PUBLIC_API_URL`
+and the optional variables in the table below are runtime placeholders:
+`next build` inlines `NEXT_PUBLIC_*` values into the bundles, so the image is
+built with literal placeholders (`__NEXT_PUBLIC_API_URL__`) and
+`entrypoint.sh` substitutes the runtime values at container start. The
+container refuses to start if a required variable is unset or empty. The optional variables (`OPTIONAL_VARS` in
 `entrypoint.sh`) are substituted with an empty string instead, and the app
 reads that empty string as unset: no donation address, no error reporting, the
 SDK's default environment name, or the default trace sample rate (table below). Each deployment sets them in

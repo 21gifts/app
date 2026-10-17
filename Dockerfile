@@ -11,11 +11,12 @@
 # One image per environment: each deploy builds its own image, because the
 # Breez API key (NEXT_PUBLIC_BREEZ_API_KEY) and the build id
 # (NEXT_PUBLIC_BUILD_ID) are baked in at `next build`; an image built for one
-# environment is not deployed to another. The other NEXT_PUBLIC_* values are
-# runtime placeholders: `next build` inlines NEXT_PUBLIC_* values into the
-# emitted bundles, so the image is built with literal placeholders
-# (__NEXT_PUBLIC_API_URL__) and entrypoint.sh substitutes the real runtime
-# values at container start.
+# environment is not deployed to another. NEXT_PUBLIC_APP_VERSION is baked in
+# at `next build` too (from APP_VERSION, below). NEXT_PUBLIC_API_URL and the
+# optional entrypoint.sh variables are runtime placeholders: `next build`
+# inlines NEXT_PUBLIC_* values into the emitted bundles, so the image is built
+# with literal placeholders (__NEXT_PUBLIC_API_URL__) and entrypoint.sh
+# substitutes the real runtime values at container start.
 #
 # APP_VERSION is a Docker build-arg (default `dev`), baked into
 # NEXT_PUBLIC_APP_VERSION at `next build` and shown as Version in the
