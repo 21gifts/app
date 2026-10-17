@@ -5582,7 +5582,7 @@ Opening `/profile/apply` lands on the apply walk at its first step, **First, wri
 
 ## Screen: /grants/apply
 
-- **Purpose:** Signed-in applications screen. Applications are open to every verified member. A verified account with status `none` or `rejected` sees the apply walk: About me, photo, and location steps, then the two questions. Pending, trial, and admitted keep their copy. A basis account sees **You are not verified yet.** and does not post. Admission is limited per round on the staff side; the free places are on `/grants`, `/grants/goals`, and `/statistics`.
+- **Purpose:** Signed-in applications screen. Applications are open to every verified member. A verified account with status `none` or `rejected` sees the apply walk: About me, photo, and location steps, then the two questions. Pending, trial, and admitted keep their copy. A basis account sees **You are not verified yet.** and does not post. Admission is limited per round on the staff side; the free places are on `/grants` and `/grants/goals`.
 - **Inputs:** Account and funding status from the auth store; the member's posts for the questions.
 - **Actions:** Fill About me, photo, and location; answer whether the posts match the core principles and whether they are true. Yes on the truth question posts the application and returns to `/grants`: a step back when this page was opened from `/grants` (`returnToView`), otherwise a replace, so `/grants` does not lead back to this page. Pending, trial, and admitted read their status. A basis account reads **You are not verified yet.** and does not post. The top-left arrow returns to the previous in-app view or `/welcome`. No second arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/apply` (`FundingApplyPage`).
