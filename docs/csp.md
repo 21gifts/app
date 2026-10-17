@@ -36,7 +36,7 @@ report is not an envelope. Each report is reduced before it leaves the app:
 | Field                 | Sent as                                                                                                                       |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `document-uri`        | origin and first path segment if it is a route of `src/app` (`https://21.gifts/view`), else origin and `/`; no key, id, query |
-| `blocked-uri`         | origin, or a keyword (`inline`, `eval`, `wasm-eval`, `data`, `blob`); else empty                                              |
+| `blocked-uri`         | http(s) origin; else the lowercase word before `:` (`inline`, `eval`, `wasm-eval`, `data`, `blob`, `wss`); else empty         |
 | `effective-directive` | as sent                                                                                                                       |
 | `violated-directive`  | directive name only (the rest is the policy with its nonce); else the effective directive                                     |
 | `disposition`         | `report` or `enforce`; else dropped                                                                                           |
