@@ -369,6 +369,53 @@ describe('FundingApplicationDetailScreen', () => {
     expect(admitMock).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps a reopened screen locked, then unlocks and reloads it when the first decision settles', async () => {
+    const admit = pendingAdmit();
+    const first = renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    await admitFromTruthQuestion();
+    first.unmount();
+    renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    const yes = await screen.findByRole('button', { name: 'Yes' });
+    expect((yes as HTMLButtonElement).disabled).toBe(true);
+    const loadsBefore = fetchMock.mock.calls.length;
+    await act(async () => {
+      admit.done();
+      await Promise.resolve();
+    });
+    expect(push).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(loadsBefore);
+    });
+    expect(
+      ((await screen.findByRole('button', { name: 'Yes' })) as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(admitMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the first person locked while a second decision is open on the same screen', async () => {
+    const first = pendingAdmit();
+    const view = renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    await admitFromTruthQuestion();
+    view.rerender(<FundingApplicationDetailScreen accountId="acc_other" />);
+    const second = pendingAdmit();
+    await admitFromTruthQuestion();
+    view.rerender(<FundingApplicationDetailScreen accountId="acc_rose" />);
+    const yes = await screen.findByRole('button', { name: 'Yes' });
+    expect((yes as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => {
+      second.done();
+      await Promise.resolve();
+    });
+    expect((screen.getByRole('button', { name: 'Yes' }) as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => {
+      first.fail(new Error('All grant places are taken'));
+      await Promise.resolve();
+    });
+    expect(await screen.findByText(FULL)).toBeTruthy();
+    expect(admitMock).toHaveBeenCalledTimes(2);
+    expect(push).not.toHaveBeenCalled();
+  });
+
   it('applies the answer when only the session reloads the same application', async () => {
     const admit = pendingAdmit();
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
@@ -392,7 +439,13 @@ describe('FundingApplicationDetailScreen', () => {
   });
 
   it('disables decision buttons and shows a spinner while a POST is in flight', async () => {
-    rejectMock.mockImplementation(() => new Promise(() => undefined));
+    let settle: () => void = () => undefined;
+    rejectMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          settle = () => resolve(DECISION);
+        }),
+    );
     renderWithLocale(<FundingApplicationDetailScreen accountId="acc_rose" />);
     fireEvent.click(await screen.findByRole('button', { name: 'No' }));
     const unmet = screen.getByRole('button', { name: 'No' }) as HTMLButtonElement;
@@ -404,6 +457,10 @@ describe('FundingApplicationDetailScreen', () => {
     fireEvent.click(unmet);
     expect(rejectMock).toHaveBeenCalledTimes(1);
     expect(admitMock).not.toHaveBeenCalled();
+    await act(async () => {
+      settle();
+      await Promise.resolve();
+    });
   });
 
   it('ignores a stale resolve after unmount', async () => {
