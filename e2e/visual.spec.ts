@@ -23985,6 +23985,8 @@ test.describe('habit tracker baselines', () => {
       'aria-pressed',
       'true',
     );
+    // Weekly scrolls only to itself, by a layout-timed offset; show Add habit for a stable shot.
+    await page.getByRole('button', { name: 'Add habit' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-habit-tracker-add-weekly');
   });
 
