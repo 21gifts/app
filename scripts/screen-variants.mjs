@@ -318,6 +318,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'balance-locked-closed',
+    image: 'wallet-balance-locked-closed.png',
+    visual: 'state-wallet-balance-locked-closed',
+    needle: "shotScreen(page, 'state-wallet-balance-locked-closed')",
+  },
+  {
+    route: '/wallet',
+    id: 'balance-locked-outdated',
+    image: 'wallet-balance-locked-outdated.png',
+    visual: 'state-wallet-balance-locked-outdated',
+    needle: "shotScreen(page, 'state-wallet-balance-locked-outdated')",
+  },
+  {
+    route: '/wallet',
     id: 'balance-connecting',
     image: 'wallet-balance-connecting.png',
     visual: 'state-wallet-balance-connecting',
@@ -1696,6 +1710,20 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-held-session.png',
     visual: 'state-welcome-held-session',
     needle: 'held-back session: a reload on /welcome shows the login card, not the guest feed',
+  },
+  {
+    route: '/welcome',
+    id: 'held-session-closed',
+    image: 'welcome-held-session-closed.png',
+    visual: 'state-welcome-held-session-closed',
+    needle: "shotScreen(page, 'state-welcome-held-session-closed')",
+  },
+  {
+    route: '/welcome',
+    id: 'held-session-outdated',
+    image: 'welcome-held-session-outdated.png',
+    visual: 'state-welcome-held-session-outdated',
+    needle: "shotScreen(page, 'state-welcome-held-session-outdated')",
   },
   {
     route: '/welcome',

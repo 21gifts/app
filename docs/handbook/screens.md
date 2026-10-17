@@ -240,6 +240,18 @@ Pinned fixture (`?visual=balance-locked-error`, Playwright builds only), not a l
 
 ![21.gifts wallet balance locked error](images/wallet-balance-locked-error.png)
 
+### Variant: balance-locked-closed
+
+The in-place login card on `/wallet` (`?visual=balance-locked`) after **Log in** while logins are closed: authenticate finish answered 503 `{ "code": "logins_closed" }`. `LoginBlockedNotice` replaces the whole card: a clock and the calm line **21.gifts is updating. Please try again a little later.** (`login.closed`), nothing to press. No wallet content is mounted, and the stored session stays held back; nothing retries on its own.
+
+![21.gifts wallet balance locked, logins closed](images/wallet-balance-locked-closed.png)
+
+### Variant: balance-locked-outdated
+
+The in-place login card on `/wallet` (`?visual=balance-locked`) after **Log in** from a tab that runs an older app build: authenticate begin answered 403 `{ "code": "app_outdated" }`. `LoginBlockedNotice` replaces the whole card: **A new version is ready** (`login.outdated`) and **Reload** (`login.reload`), which loads the page again so the new build runs. No wallet content is mounted.
+
+![21.gifts wallet balance locked, new version](images/wallet-balance-locked-outdated.png)
+
 ### Variant: balance-connecting
 
 Pinned fixture (`?visual=balance-connecting`, Playwright builds only), not a live wallet. Region **Balance** shows the pending line **Opening your wallet…**.
@@ -1718,6 +1730,18 @@ One author row on the welcome forum. Beside the name, a static Software Develope
 A signed-in member reloaded the page (pinned with `?visual=held-session`, Playwright builds only): the stored session is held back until the wallet is open again, so the forum home shows the login card in place of the feed, not the guest view. The card greets **Welcome back, Ada** above **Log in with your device**, with the muted line **Confirm to open your wallet** above **Log in**, **New to 21.gifts?**, and **Open a new account**, and no **Log out**. The top right shows neither **Log in** nor the **Menu**. One tap on **Log in**, one passkey prompt, and the member is back on `/welcome`, signed in with the wallet open. A visitor without any stored session still sees the guest forum with **Log in** top right.
 
 ![21.gifts welcome for a held-back session](images/welcome-held-session.png)
+
+### Variant: held-session-closed
+
+The held-back session on `/welcome` (`?visual=held-session`) after **Log in** while logins are closed: authenticate finish answered 503 `{ "code": "logins_closed" }`. `LoginBlockedNotice` replaces the login card in place of the feed: a clock and **21.gifts is updating. Please try again a little later.** (`login.closed`), nothing to press. The session stays held back, and the top right still shows neither **Log in** nor the **Menu**.
+
+![21.gifts welcome for a held-back session, logins closed](images/welcome-held-session-closed.png)
+
+### Variant: held-session-outdated
+
+The held-back session on `/welcome` (`?visual=held-session`) after **Log in** from a tab that runs an older app build: authenticate begin answered 403 `{ "code": "app_outdated" }`. `LoginBlockedNotice` replaces the login card: **A new version is ready** (`login.outdated`) and **Reload** (`login.reload`), which loads the page again so the new build runs.
+
+![21.gifts welcome for a held-back session, new version](images/welcome-held-session-outdated.png)
 
 ### Variant: wallet-buttons
 

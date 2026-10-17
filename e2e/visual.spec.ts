@@ -1798,6 +1798,110 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-balance-locked-error');
   });
 
+  /** Fulfils authenticate finish with 503 `logins_closed`, as the api does while logins are closed. */
+  async function refuseLoginClosed(page: Page): Promise<void> {
+    await page.route(/\/auth\/passkey\/authenticate\/finish$/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Logins are paused for an update. Try again later.',
+          code: 'logins_closed',
+        }),
+      });
+    });
+  }
+
+  /** Fulfils authenticate begin with 403 `app_outdated`, as the api does for an older build. */
+  async function refuseLoginOutdated(page: Page): Promise<void> {
+    await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 403,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'A new app version is ready. Reload the page.',
+          code: 'app_outdated',
+        }),
+      });
+    });
+  }
+
+  /** Opens `/wallet?visual=balance-locked` with Ada's stored session and no phrase in the tab. */
+  async function openBalanceLocked(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/wallet?visual=balance-locked');
+    await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  }
+
+  test('wallet balance-locked-closed', async ({ page }) => {
+    await installFakeWebAuthn(page, true);
+    await refuseLoginClosed(page);
+    await openBalanceLocked(page);
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
+    await expect(
+      page.getByText('21.gifts is updating. Please try again a little later.'),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-balance-locked-closed');
+  });
+
+  test('wallet balance-locked-outdated', async ({ page }) => {
+    await refuseLoginOutdated(page);
+    await openBalanceLocked(page);
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
+    await expect(page.getByText('A new version is ready')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-balance-locked-outdated');
+  });
+
+  test('welcome held-session-closed', async ({ page }) => {
+    await installFakeWebAuthn(page, true);
+    await refuseLoginClosed(page);
+    await openHeldSession(page, '/welcome');
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
+    await expect(
+      page.getByText('21.gifts is updating. Please try again a little later.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-held-session-closed');
+  });
+
+  test('welcome held-session-outdated', async ({ page }) => {
+    await refuseLoginOutdated(page);
+    await openHeldSession(page, '/welcome');
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
+    await expect(page.getByText('A new version is ready')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-held-session-outdated');
+  });
+
   test('wallet balance-connecting', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
