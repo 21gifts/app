@@ -2402,7 +2402,7 @@ First post free: while the signed-in member is below verified and has no missing
 
 ## Function: CannotReceiveLabel
 
-- **Purpose:** Small muted label **Can't receive yet** (`member.cannotReceive`) next to a pay, gift, heart, or Lend control that is disabled because the member it targets cannot receive yet. Text only; the caller disables the control. Used wherever the api sends `authorCanReceive: false`, `canReceive: false`, `lightningAddress: null` (member card), or `lightningAddressVerified: false` (`/view`).
+- **Purpose:** Small muted label **Can't receive yet** (`member.cannotReceive`) next to a pay, gift, heart, or Lend control that is disabled because the member it targets cannot receive yet. Text only; the caller disables the control. On the member card and on `/view` it stands in place of the gifts block (address, QR and, on the member card, **Shop sticker**) instead of next to a control. Used wherever the api sends `authorCanReceive: false`, `canReceive: false`, `lightningAddress: null` (member card), or `lightningAddressVerified: false` (`/view`).
 - **Inputs:** None.
 - **Returns / side effects:** A `<span class="text-xs text-app-muted" data-cannot-receive>` with the catalog text. No network.
 - **Used by:** `ForumBoard` (note and reply action rows), `InboxScreen` (amount field), `HabitComments` (comment gift), `MemberProfileScreen` and `ViewProfileScreen` (gifts block).
@@ -4741,7 +4741,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Per-`messageId` heart machine for the three callers. A tap on a signed-in, writable board vibrates and shows the filled heart with **+1** at once, before any request, for `HEART_TIP_PLUS_ONE_MS` (700 ms, the length of the `+1` animation); `sendHeartTip` pays in the background. After 700 ms only the **+1** leaves; the fill and the count remain. Session hearts not yet in the server `heartCount` are `extra`. A second tap sends another heart and counts up; there is no undo. A heart that is not sent rolls back that tap's `extra`; it is also reported. The one exception is a wallet snapshot that is ready with less than 1 sat (or the `heart-needs-balance` pin): then there is no vibrate, no new fill, and no **+1**, only the `role="alert"` line `forum.heartNeedsBalance` under the heart, and nothing is sent. A signed-out or read-only tap does nothing.
 - **Inputs:** `{ readOnly }` matching the board, and `heartCounts` (id to the server heart count of notes the board actually shows; omit for `{}`).
-- **Returns / side effects:** `{ onHeartTip, heartTipViews }` passed to `ForumBoard`; each view is `{ pressed, plusOne, needsBalance, extra }`, plus `cannotReceive: true` after a heart the api refused with `cannot_receive` (the board shows `forum.payErrorAuthorWallet`; the next tap clears it).
+- **Returns / side effects:** `{ onHeartTip, heartTipViews }` passed to `ForumBoard`; each view is `{ pressed, plusOne, needsBalance, extra }`, plus `cannotReceive: true` after a heart the api refused with `cannot_receive` (the board shows `forum.payErrorAuthorWallet`; a heart-count update keeps it and the next tap clears it).
 - **Used by:** `ForumLoader`, `MemberProfileScreen`, `PublicMessageThread`.
 
 ## Function: proxyMessagesComposeTargetGet
