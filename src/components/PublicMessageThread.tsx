@@ -152,7 +152,9 @@ function withSeededHiddenReply(
 /**
  * Signed-in permalink thread: one root note on {@link ForumBoard} with the
  * same copy, expand/reply, photo, translate, and staff delete actions as
- * `/welcome`. Gift only on a payable nested reply. Auto-expands the root so
+ * `/welcome`. Gift only on a payable nested reply, shown disabled with
+ * `CannotReceiveLabel` when that reply's author cannot receive yet; a reply
+ * to such an author never invoices a gift. Auto-expands the root so
  * the thread and in-card reply composer are available. No top-level composer,
  * feed filters, or envelope.
  *
