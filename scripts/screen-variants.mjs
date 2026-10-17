@@ -199,6 +199,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/login',
+    id: 'closed',
+    image: 'login-closed.png',
+    visual: 'state-login-closed',
+    needle: '21.gifts is updating. Please try again a little later.',
+  },
+  {
+    route: '/login',
+    id: 'outdated',
+    image: 'login-outdated.png',
+    visual: 'state-login-outdated',
+    needle: 'A new version is ready',
+  },
+  {
+    route: '/login',
     id: 'in-app',
     image: 'login-in-app.png',
     visual: 'state-login-in-app',
@@ -301,6 +315,20 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-balance-locked-error.png',
     visual: 'state-wallet-balance-locked-error',
     needle: 'balance-locked-error pin shows the login error above Log in',
+  },
+  {
+    route: '/wallet',
+    id: 'balance-locked-closed',
+    image: 'wallet-balance-locked-closed.png',
+    visual: 'state-wallet-balance-locked-closed',
+    needle: "shotScreen(page, 'state-wallet-balance-locked-closed')",
+  },
+  {
+    route: '/wallet',
+    id: 'balance-locked-outdated',
+    image: 'wallet-balance-locked-outdated.png',
+    visual: 'state-wallet-balance-locked-outdated',
+    needle: "shotScreen(page, 'state-wallet-balance-locked-outdated')",
   },
   {
     route: '/wallet',
@@ -1682,6 +1710,20 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-held-session.png',
     visual: 'state-welcome-held-session',
     needle: 'held-back session: a reload on /welcome shows the login card, not the guest feed',
+  },
+  {
+    route: '/welcome',
+    id: 'held-session-closed',
+    image: 'welcome-held-session-closed.png',
+    visual: 'state-welcome-held-session-closed',
+    needle: "shotScreen(page, 'state-welcome-held-session-closed')",
+  },
+  {
+    route: '/welcome',
+    id: 'held-session-outdated',
+    image: 'welcome-held-session-outdated.png',
+    visual: 'state-welcome-held-session-outdated',
+    needle: "shotScreen(page, 'state-welcome-held-session-outdated')",
   },
   {
     route: '/welcome',
@@ -5331,6 +5373,20 @@ export const SCREEN_VARIANTS = [
     image: 'view-claim-prf-unsupported.png',
     visual: 'state-view-claim-prf-unsupported',
     needle: "shotScreen(page, 'state-view-claim-prf-unsupported')",
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'claim-closed',
+    image: 'view-claim-closed.png',
+    visual: 'state-view-claim-closed',
+    needle: "shotScreen(page, 'state-view-claim-closed')",
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'claim-outdated',
+    image: 'view-claim-outdated.png',
+    visual: 'state-view-claim-outdated',
+    needle: "shotScreen(page, 'state-view-claim-outdated')",
   },
   {
     route: '/view/[viewKey]',

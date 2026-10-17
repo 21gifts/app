@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
 
+/** The Playwright build's id, which the stub api requires on every passkey step. */
+const APP_BUILD = { 'x-app-build': 'dev' };
+
 test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.get('/auth/lnurl')).status()).toBe(404);
   expect((await request.get('/auth/session')).status()).toBe(404);
@@ -108,10 +111,18 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/funding/admit')).status()).toBe(401);
   expect((await request.post('/funding/reject')).status()).toBe(401);
   expect((await request.get('/gifts')).status()).toBe(400);
-  expect((await request.post('/auth/passkey/register/begin')).status()).toBe(200);
-  expect((await request.post('/auth/passkey/register/finish')).status()).toBe(400);
-  expect((await request.post('/auth/passkey/authenticate/begin')).status()).toBe(200);
-  expect((await request.post('/auth/passkey/authenticate/finish')).status()).toBe(400);
+  expect(
+    (await request.post('/auth/passkey/register/begin', { headers: APP_BUILD })).status(),
+  ).toBe(200);
+  expect(
+    (await request.post('/auth/passkey/register/finish', { headers: APP_BUILD })).status(),
+  ).toBe(400);
+  expect(
+    (await request.post('/auth/passkey/authenticate/begin', { headers: APP_BUILD })).status(),
+  ).toBe(200);
+  expect(
+    (await request.post('/auth/passkey/authenticate/finish', { headers: APP_BUILD })).status(),
+  ).toBe(400);
   expect((await request.post('/auth/passkey/replace/begin')).status()).toBe(401);
   expect((await request.post('/auth/passkey/replace/finish')).status()).toBe(401);
   expect((await request.post('/auth/passkey/seed/begin')).status()).toBe(401);

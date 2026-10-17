@@ -3,6 +3,7 @@
 import { AlertTriangle, Fingerprint, Loader2 } from 'lucide-react';
 import { useEffect, useState, type FormEvent, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
+import { LoginBlockedNotice } from '@/components/LoginBlockedNotice';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, Field } from '@/components/ui';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
@@ -24,7 +25,12 @@ type VersionBlock = {
 
 /**
  * The `/login` card: Log in, account choice, unknown passkey, name,
- * preparing, error, or in-app browser escape.
+ * preparing, error, logins closed, new version ready, or in-app browser escape.
+ *
+ * When the api refuses to create a session because operators closed logins
+ * (`logins_closed`) or this tab runs an older build (`app_outdated`), the card
+ * shows {@link LoginBlockedNotice} instead of every other view, also over a
+ * held-back session (that session stays held).
  *
  * While a stored session is held back (`lockedSession`), the start view is
  * the same, with **Welcome back, {name}** above the heading when the account
@@ -99,6 +105,8 @@ export function LoginCard({
     body = <InAppBrowserView />;
   } else if (passkey.status === 'starting') {
     body = <StartingView />;
+  } else if (passkey.status === 'closed' || passkey.status === 'outdated') {
+    body = <LoginBlockedNotice kind={passkey.status} />;
   } else if (
     lockedSession !== null &&
     passkey.status !== 'name' &&

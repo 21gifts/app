@@ -108,6 +108,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/login:closed",
+    "label": "/login closed",
+    "visual": "state-login-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/login:outdated",
+    "label": "/login outdated",
+    "visual": "state-login-outdated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/login:in-app",
     "label": "/login in-app",
     "visual": "state-login-in-app",
@@ -195,6 +207,18 @@
     "id": "/wallet:balance-locked-error",
     "label": "/wallet balance-locked-error",
     "visual": "state-wallet-balance-locked-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-locked-closed",
+    "label": "/wallet balance-locked-closed",
+    "visual": "state-wallet-balance-locked-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-locked-outdated",
+    "label": "/wallet balance-locked-outdated",
+    "visual": "state-wallet-balance-locked-outdated",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1377,6 +1401,18 @@
     "id": "/welcome:held-session",
     "label": "/welcome held-session",
     "visual": "state-welcome-held-session",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:held-session-closed",
+    "label": "/welcome held-session-closed",
+    "visual": "state-welcome-held-session-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:held-session-outdated",
+    "label": "/welcome held-session-outdated",
+    "visual": "state-welcome-held-session-outdated",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4503,6 +4539,18 @@
     "id": "/view/[viewKey]:claim-prf-unsupported",
     "label": "/view/[viewKey] claim-prf-unsupported",
     "visual": "state-view-claim-prf-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:claim-closed",
+    "label": "/view/[viewKey] claim-closed",
+    "visual": "state-view-claim-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:claim-outdated",
+    "label": "/view/[viewKey] claim-outdated",
+    "visual": "state-view-claim-outdated",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

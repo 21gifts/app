@@ -2441,6 +2441,25 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // As the api with APP_BUILD_REQUIRED set: every passkey step that leads to
+  // a session needs the Playwright build's id (`dev`) in X-App-Build, checked
+  // before anything else. A missing header or another id (e2e uses
+  // `e2e-old-build` for an outdated tab) is 403 app_outdated.
+  if (
+    method === 'POST' &&
+    (pathName === '/auth/passkey/register/begin' ||
+      pathName === '/auth/passkey/register/finish' ||
+      pathName === '/auth/passkey/authenticate/begin' ||
+      pathName === '/auth/passkey/authenticate/finish') &&
+    req.headers['x-app-build'] !== 'dev'
+  ) {
+    json(res, 403, {
+      error: 'A new app version is ready. Reload the page.',
+      code: 'app_outdated',
+    });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/auth/passkey/register/begin') {
     const challengeId = hex(randomBytes(32));
     let parsed = null;

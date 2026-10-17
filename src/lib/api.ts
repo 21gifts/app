@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { getBuildId } from '@/lib/config';
 import { closeLocalPushNotifications, currentPushEndpoint } from '@/lib/push';
 import {
   accountSchema,
@@ -171,6 +172,76 @@ export class CannotReceiveError extends Error {
     super('cannot_receive');
     this.name = 'CannotReceiveError';
   }
+}
+
+/** Api error `code` (HTTP 503) when operators closed new logins for an update. */
+export const LOGINS_CLOSED_CODE = 'logins_closed';
+
+/** Api error `code` (HTTP 403) when this app build is older than the one the api requires. */
+export const APP_OUTDATED_CODE = 'app_outdated';
+
+/**
+ * Api answer with `code` {@link LOGINS_CLOSED_CODE} on a step that would
+ * create a session. Recognised by the 503 status together with the body's
+ * `code`, never by text; screens show catalog copy.
+ */
+export class LoginsClosedError extends Error {
+  constructor() {
+    super('logins_closed');
+    this.name = 'LoginsClosedError';
+  }
+}
+
+/**
+ * Api answer with `code` {@link APP_OUTDATED_CODE} on a step that would
+ * create a session: a newer app build is live and this tab must reload.
+ * Recognised by the 403 status together with the body's `code`, never by
+ * text; screens show catalog copy.
+ */
+export class AppOutdatedError extends Error {
+  constructor() {
+    super('app_outdated');
+    this.name = 'AppOutdatedError';
+  }
+}
+
+/**
+ * Throws the typed login refusal when a 503 body carries `code`
+ * {@link LOGINS_CLOSED_CODE} or a 403 body carries {@link APP_OUTDATED_CODE}.
+ * Reads a clone, so the caller can still read the body; any other status,
+ * body, or code passes through.
+ *
+ * @param response - The raw fetch response of a passkey begin or finish.
+ * @returns Resolves when the response is not a login refusal.
+ * @throws {@link LoginsClosedError} for `logins_closed`, {@link AppOutdatedError} for `app_outdated`.
+ */
+async function throwIfLoginBlocked(response: Response): Promise<void> {
+  if (response.status !== 503 && response.status !== 403) {
+    return;
+  }
+  const body: unknown = await response
+    .clone()
+    .json()
+    .catch(() => null);
+  const code =
+    body !== null && typeof body === 'object' ? (body as { code?: unknown }).code : undefined;
+  if (response.status === 503 && code === LOGINS_CLOSED_CODE) {
+    throw new LoginsClosedError();
+  }
+  if (response.status === 403 && code === APP_OUTDATED_CODE) {
+    throw new AppOutdatedError();
+  }
+}
+
+/**
+ * Headers every passkey begin and finish sends: this build's id, which the
+ * api compares with the build it requires.
+ *
+ * @param extra - Further headers for this request.
+ * @returns Headers with `X-App-Build`.
+ */
+function passkeyHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  return { ...extra, 'X-App-Build': getBuildId() };
 }
 
 /**
@@ -3684,6 +3755,7 @@ export async function deletePushSubscription(
  * when `viewKey` is absent or empty: a non-empty string POSTs JSON `{ name }`.
  * Otherwise POSTs with no body.
  * @returns Challenge id plus WebAuthn creation options JSON.
+ * @throws {@link LoginsClosedError} or {@link AppOutdatedError} on that api `code`.
  * @throws Error with the api `{ error }` string when present on non-2xx, otherwise
  * a status fallback; or when the body fails validation.
  */
@@ -3696,16 +3768,17 @@ export async function startPasskeyRegistration(
   const response = hasViewKey
     ? await fetch('/auth/passkey/register/begin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: passkeyHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ viewKey }),
       })
     : hasName
       ? await fetch('/auth/passkey/register/begin', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: passkeyHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ name }),
         })
-      : await fetch('/auth/passkey/register/begin', { method: 'POST' });
+      : await fetch('/auth/passkey/register/begin', { method: 'POST', headers: passkeyHeaders() });
+  await throwIfLoginBlocked(response);
   if (!response.ok) {
     const raw = await readApiError(response);
     throw new Error(
@@ -3721,6 +3794,7 @@ export async function startPasskeyRegistration(
  * @param challengeId - Id returned by {@link startPasskeyRegistration}.
  * @param credential - Browser attestation JSON (`PublicKeyCredential.toJSON()`).
  * @returns Token plus account (`linkingKey` is null).
+ * @throws {@link LoginsClosedError} or {@link AppOutdatedError} on that api `code`.
  * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
  * @throws Error `'Username is already in use'` on 409 with that exact api string.
  * @throws Error on any other non-2xx status or a body that fails validation.
@@ -3731,9 +3805,10 @@ export async function finishPasskeyRegistration(
 ): Promise<PasskeySession> {
   const response = await fetch('/auth/passkey/register/finish', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: passkeyHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ challengeId, credential }),
   });
+  await throwIfLoginBlocked(response);
   await throwIfWrongAccount(response);
   if (response.status === 409) {
     const raw = await readApiError(response);
@@ -3751,10 +3826,16 @@ export async function finishPasskeyRegistration(
  * Starts a passkey authentication ceremony.
  *
  * @returns Challenge id plus WebAuthn request options JSON.
+ * @throws {@link AppOutdatedError} on api `code` `app_outdated` (the api
+ *   checks closed logins on authenticate finish, not here).
  * @throws Error on a non-2xx status or a body that fails validation.
  */
 export async function startPasskeyAuthentication(): Promise<PasskeyBegin> {
-  const response = await fetch('/auth/passkey/authenticate/begin', { method: 'POST' });
+  const response = await fetch('/auth/passkey/authenticate/begin', {
+    method: 'POST',
+    headers: passkeyHeaders(),
+  });
+  await throwIfLoginBlocked(response);
   if (!response.ok) {
     throw new Error(`Failed to start passkey authentication: ${response.status}`);
   }
@@ -3767,6 +3848,7 @@ export async function startPasskeyAuthentication(): Promise<PasskeyBegin> {
  * @param challengeId - Id returned by {@link startPasskeyAuthentication}.
  * @param credential - Browser assertion JSON.
  * @returns Token plus account.
+ * @throws {@link LoginsClosedError} or {@link AppOutdatedError} on that api `code`.
  * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
  * @throws {@link UnknownCredentialError} on 400 with the unknown-credential api string.
  * @throws Error on any other non-2xx status or a body that fails validation.
@@ -3777,9 +3859,10 @@ export async function finishPasskeyAuthentication(
 ): Promise<PasskeySession> {
   const response = await fetch('/auth/passkey/authenticate/finish', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: passkeyHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ challengeId, credential }),
   });
+  await throwIfLoginBlocked(response);
   await throwIfWrongAccount(response);
   if (response.status === 400) {
     const raw = await readApiError(response);

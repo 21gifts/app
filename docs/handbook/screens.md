@@ -240,6 +240,18 @@ Pinned fixture (`?visual=balance-locked-error`, Playwright builds only), not a l
 
 ![21.gifts wallet balance locked error](images/wallet-balance-locked-error.png)
 
+### Variant: balance-locked-closed
+
+The in-place login card on `/wallet` (`?visual=balance-locked`) after **Log in** while logins are closed: authenticate finish answered 503 `{ "code": "logins_closed" }`. `LoginBlockedNotice` replaces the whole card: a clock and the calm line **21.gifts is updating. Please try again a little later.** (`login.closed`), nothing to press. No wallet content is mounted, and the stored session stays held back; nothing retries on its own.
+
+![21.gifts wallet balance locked, logins closed](images/wallet-balance-locked-closed.png)
+
+### Variant: balance-locked-outdated
+
+The in-place login card on `/wallet` (`?visual=balance-locked`) after **Log in** from a tab that runs an older app build: authenticate begin answered 403 `{ "code": "app_outdated" }`. `LoginBlockedNotice` replaces the whole card: **A new version is ready** (`login.outdated`) and **Reload** (`login.reload`), which loads the page again so the new build runs. No wallet content is mounted.
+
+![21.gifts wallet balance locked, new version](images/wallet-balance-locked-outdated.png)
+
 ### Variant: balance-connecting
 
 Pinned fixture (`?visual=balance-connecting`, Playwright builds only), not a live wallet. Region **Balance** shows the pending line **Opening your wallet…**.
@@ -1402,6 +1414,18 @@ A valid name whose username is already in use stays on this form. Alert: That us
 
 ![21.gifts login name taken](images/login-name-taken.png)
 
+### Variant: closed
+
+A passkey begin or finish answered 503 `{ "code": "logins_closed" }`: operators closed new logins for an update. A clock and the calm line **21.gifts is updating. Please try again a little later.** (`login.closed`), nothing to press. Nothing retries on its own; the back arrow and a later visit stay. A held-back session stays held.
+
+![21.gifts login closed](images/login-closed.png)
+
+### Variant: outdated
+
+A passkey begin or finish answered 403 `{ "code": "app_outdated" }`: this tab still runs an older app build. **A new version is ready** (`login.outdated`) and **Reload** (`login.reload`), which loads the page again so the new build runs.
+
+![21.gifts login outdated](images/login-outdated.png)
+
 ### Variant: in-app
 
 Telegram or another in-app WebView detected. Heading **Open this page in your browser**; no **Log in** or **Open a new account** button; **Open in browser** and **Copy link** instead.
@@ -1706,6 +1730,18 @@ One author row on the welcome forum. Beside the name, a static Software Develope
 A signed-in member reloaded the page (pinned with `?visual=held-session`, Playwright builds only): the stored session is held back until the wallet is open again, so the forum home shows the login card in place of the feed, not the guest view. The card greets **Welcome back, Ada** above **Log in with your device**, with the muted line **Confirm to open your wallet** above **Log in**, **New to 21.gifts?**, and **Open a new account**, and no **Log out**. The top right shows neither **Log in** nor the **Menu**. One tap on **Log in**, one passkey prompt, and the member is back on `/welcome`, signed in with the wallet open. A visitor without any stored session still sees the guest forum with **Log in** top right.
 
 ![21.gifts welcome for a held-back session](images/welcome-held-session.png)
+
+### Variant: held-session-closed
+
+The held-back session on `/welcome` (`?visual=held-session`) after **Log in** while logins are closed: authenticate finish answered 503 `{ "code": "logins_closed" }`. `LoginBlockedNotice` replaces the login card in place of the feed: a clock and **21.gifts is updating. Please try again a little later.** (`login.closed`), nothing to press. The session stays held back, and the top right still shows neither **Log in** nor the **Menu**.
+
+![21.gifts welcome for a held-back session, logins closed](images/welcome-held-session-closed.png)
+
+### Variant: held-session-outdated
+
+The held-back session on `/welcome` (`?visual=held-session`) after **Log in** from a tab that runs an older app build: authenticate begin answered 403 `{ "code": "app_outdated" }`. `LoginBlockedNotice` replaces the login card: **A new version is ready** (`login.outdated`) and **Reload** (`login.reload`), which loads the page again so the new build runs.
+
+![21.gifts welcome for a held-back session, new version](images/welcome-held-session-outdated.png)
 
 ### Variant: wallet-buttons
 
@@ -7196,6 +7232,18 @@ Valid known key whose profile already has a passkey (`hasPasskey: true`). Same r
 Unclaimed profile after **Activate** on a phone or browser whose new passkey gives no PRF output. Under the card, the alert **This phone or browser cannot hold a 21.gifts wallet. Please use an up-to-date phone or browser that supports passkeys.** (`wallet.prfUnsupported`) instead of **Could not set up a passkey. Please try again.**, then **Try again**. The profile stays unclaimed. On iOS below 18 the old-iOS sentence takes precedence, so the phone pictures of this variant use an iPhone on iOS 18.
 
 ![21.gifts public view claim prf unsupported](images/view-claim-prf-unsupported.png)
+
+### Variant: claim-closed
+
+Unclaimed profile after **Activate** while operators closed new logins (`logins_closed`). Under the card, the clock and **21.gifts is updating. Please try again a little later.** (`login.closed`) replace the yellow banner, nothing to press. The profile stays unclaimed.
+
+![21.gifts public view claim closed](images/view-claim-closed.png)
+
+### Variant: claim-outdated
+
+Unclaimed profile after **Activate** from a tab that runs an older app build (`app_outdated`). Under the card, **A new version is ready** (`login.outdated`) and **Reload** (`login.reload`) replace the yellow banner.
+
+![21.gifts public view claim outdated](images/view-claim-outdated.png)
 
 ### Variant: in-app
 

@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  AppOutdatedError,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   isUnknownCredentialError,
   isWrongAccountError,
+  LoginsClosedError,
   startPasskeyAuthentication,
   startPasskeyRegistration,
   WRONG_ACCOUNT_ERROR,
@@ -59,9 +61,23 @@ function normalizeUsername(raw: string): string | null {
  * because the server returned `Unknown credential`.
  *
  * `name` is the username form after `register()` with no view key, before create.
+ *
+ * `closed` is the api refusing a new session because operators closed logins
+ * for an update (`logins_closed`). It is not retried on its own.
+ *
+ * `outdated` is the api refusing this tab's app build (`app_outdated`); only a
+ * reload of the page loads the new build.
  */
 export type PasskeyStatus =
-  'idle' | 'starting' | 'error' | 'unsupported' | 'choice' | 'unknown' | 'name';
+  | 'idle'
+  | 'starting'
+  | 'error'
+  | 'unsupported'
+  | 'choice'
+  | 'unknown'
+  | 'name'
+  | 'closed'
+  | 'outdated';
 
 /** Public surface returned by {@link usePasskeyLogin}. */
 export interface UsePasskeyLogin {
@@ -901,6 +917,16 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         unknownOfferedRef.current = true;
         setLastError(null);
         setStatus('unknown');
+        return;
+      }
+      if (error instanceof LoginsClosedError) {
+        setLastError(null);
+        setStatus('closed');
+        return;
+      }
+      if (error instanceof AppOutdatedError) {
+        setLastError(null);
+        setStatus('outdated');
         return;
       }
       setLastError(error instanceof Error ? error.message : String(error));

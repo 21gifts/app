@@ -27,6 +27,9 @@ import {
 import { fitBoxInFrame, pageFrameProblems } from '../src/lib/page-frame';
 import { fulfillLedger, fulfillMyLoans, ledgerA, loanA, loanWith, myLoans } from './loan-fixtures';
 
+/** The Playwright build's id, which the stub api requires on every passkey step. */
+const APP_BUILD = { 'x-app-build': 'dev' };
+
 async function chooseForumView(page: Page, name: string): Promise<void> {
   await page.getByRole('combobox', { name: 'Forum view' }).click();
   await page.getByRole('option', { name, exact: true }).click();
@@ -673,11 +676,11 @@ async function signInWithPasskeyThenAgain(page: Page): Promise<void> {
 }
 
 async function loginHttp(request: APIRequestContext): Promise<string> {
-  const begin = await request.post('/auth/passkey/register/begin');
+  const begin = await request.post('/auth/passkey/register/begin', { headers: APP_BUILD });
   expect(begin.status()).toBe(200);
   const started = (await begin.json()) as { challengeId: string };
   const finish = await request.post('/auth/passkey/register/finish', {
-    headers: { origin: 'http://localhost:3000' },
+    headers: { ...APP_BUILD, origin: 'http://localhost:3000' },
     data: {
       challengeId: started.challengeId,
       credential: {
@@ -714,7 +717,7 @@ test('Function: GET — healthz is ok', async ({ request }) => {
 });
 
 test('Function: getApiUrl — proxy reaches the stub', async ({ request }) => {
-  const res = await request.post('/auth/passkey/register/begin');
+  const res = await request.post('/auth/passkey/register/begin', { headers: APP_BUILD });
   expect(res.status()).toBe(200);
   const body = (await res.json()) as { challengeId: string };
   expect(body.challengeId.length).toBeGreaterThan(8);
@@ -735,7 +738,7 @@ test('Function: getE2eNow — the document pins the test clock', async ({ page }
 });
 
 test('Function: proxyApiRequest — POST passkey register begin is 200', async ({ request }) => {
-  const res = await request.post('/auth/passkey/register/begin');
+  const res = await request.post('/auth/passkey/register/begin', { headers: APP_BUILD });
   expect(res.status()).toBe(200);
 });
 
@@ -6756,7 +6759,7 @@ test('Function: defaultFiatForLocale — English stats default to USD', async ({
 test('Function: proxyAuthPasskeyRegisterBeginPost — POST begin returns a challenge', async ({
   request,
 }) => {
-  const res = await request.post('/auth/passkey/register/begin');
+  const res = await request.post('/auth/passkey/register/begin', { headers: APP_BUILD });
   expect(res.status()).toBe(200);
   const body = (await res.json()) as { challengeId: string; options: { challenge: string } };
   expect(body.challengeId.length).toBeGreaterThan(8);
@@ -6854,7 +6857,7 @@ test('Function: startPasskeyRegistration — create passkey reaches the signed-i
 test('Function: proxyAuthPasskeyRegisterFinishPost — POST finish without body is 400', async ({
   request,
 }) => {
-  const res = await request.post('/auth/passkey/register/finish');
+  const res = await request.post('/auth/passkey/register/finish', { headers: APP_BUILD });
   expect(res.status()).toBe(400);
 });
 
@@ -6872,7 +6875,7 @@ test('Function: finishPasskeyRegistration — create passkey reaches the signed-
 test('Function: proxyAuthPasskeyAuthenticateBeginPost — POST begin returns a challenge', async ({
   request,
 }) => {
-  const res = await request.post('/auth/passkey/authenticate/begin');
+  const res = await request.post('/auth/passkey/authenticate/begin', { headers: APP_BUILD });
   expect(res.status()).toBe(200);
   expect(((await res.json()) as { challengeId: string }).challengeId.length).toBeGreaterThan(8);
 });
@@ -6886,7 +6889,7 @@ test('Function: startPasskeyAuthentication — continue with passkey reaches the
 test('Function: proxyAuthPasskeyAuthenticateFinishPost — POST finish without body is 400', async ({
   request,
 }) => {
-  const res = await request.post('/auth/passkey/authenticate/finish');
+  const res = await request.post('/auth/passkey/authenticate/finish', { headers: APP_BUILD });
   expect(res.status()).toBe(400);
 });
 

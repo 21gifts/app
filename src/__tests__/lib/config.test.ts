@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getApiUrl,
   getAppVersion,
+  getBuildId,
   getBreezApiKey,
   getE2eNow,
   getPlatformUsername,
@@ -13,6 +14,7 @@ import {
 
 const ORIGINAL = process.env.NEXT_PUBLIC_API_URL;
 const ORIGINAL_APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION;
+const ORIGINAL_BUILD_ID = process.env.NEXT_PUBLIC_BUILD_ID;
 const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
 const ORIGINAL_BREEZ = process.env.NEXT_PUBLIC_BREEZ_API_KEY;
 const ORIGINAL_PLATFORM_USERNAME = process.env.NEXT_PUBLIC_PLATFORM_USERNAME;
@@ -60,6 +62,33 @@ describe('getApiUrl', () => {
   it('throws when the variable is empty', () => {
     process.env.NEXT_PUBLIC_API_URL = '';
     expect(() => getApiUrl()).toThrow('NEXT_PUBLIC_API_URL is not set');
+  });
+});
+
+describe('getBuildId', () => {
+  afterEach(() => {
+    if (ORIGINAL_BUILD_ID === undefined) {
+      delete process.env.NEXT_PUBLIC_BUILD_ID;
+    } else {
+      process.env.NEXT_PUBLIC_BUILD_ID = ORIGINAL_BUILD_ID;
+    }
+  });
+
+  it('returns the baked build id', () => {
+    process.env.NEXT_PUBLIC_BUILD_ID = '0123abcd';
+    expect(getBuildId()).toBe('0123abcd');
+  });
+
+  it('returns dev for a local build', () => {
+    process.env.NEXT_PUBLIC_BUILD_ID = 'dev';
+    expect(getBuildId()).toBe('dev');
+  });
+
+  it('throws when the variable is unset or empty', () => {
+    delete process.env.NEXT_PUBLIC_BUILD_ID;
+    expect(() => getBuildId()).toThrow('NEXT_PUBLIC_BUILD_ID');
+    process.env.NEXT_PUBLIC_BUILD_ID = '';
+    expect(() => getBuildId()).toThrow('NEXT_PUBLIC_BUILD_ID');
   });
 });
 

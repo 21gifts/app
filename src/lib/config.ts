@@ -4,8 +4,8 @@
  * Every `NEXT_PUBLIC_*` variable read anywhere in the app goes through this
  * module. Keep it in sync with `src/types/env.d.ts`. `NEXT_PUBLIC_API_URL` is
  * a Dockerfile build placeholder that `entrypoint.sh` substitutes at container
- * start. `NEXT_PUBLIC_APP_VERSION` is baked at `next build`, not substituted by
- * `entrypoint.sh`. `NEXT_PUBLIC_BREEZ_API_KEY` is read through `getBreezApiKey`.
+ * start. `NEXT_PUBLIC_APP_VERSION` and `NEXT_PUBLIC_BUILD_ID` are baked at
+ * `next build`, not substituted by `entrypoint.sh`. `NEXT_PUBLIC_BREEZ_API_KEY` is read through `getBreezApiKey`.
  * `NEXT_PUBLIC_PLATFORM_USERNAME`, `NEXT_PUBLIC_SENTRY_DSN`,
  * `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, and `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`
  * are optional Dockerfile placeholders: `entrypoint.sh` substitutes an empty
@@ -54,6 +54,29 @@ export function getAppVersion(): string {
     );
   }
   return value; // do not slice
+}
+
+/**
+ * Returns the build id of this app bundle (`NEXT_PUBLIC_BUILD_ID`): the
+ * deployed commit, or `dev`. Passkey begin and finish send it as
+ * `X-App-Build`, so the api can refuse a tab that still runs an older build.
+ *
+ * Read exclusively through this accessor. `next.config.ts` bakes it at
+ * `next build` from Docker ARG `NEXT_PUBLIC_BUILD_ID` (unset or empty → `dev`).
+ *
+ * @returns The build id.
+ * @throws Error when `NEXT_PUBLIC_BUILD_ID` is unset or empty.
+ */
+export function getBuildId(): string {
+  // Dot access is load-bearing: Next.js inlines `NEXT_PUBLIC_*` variables at
+  // build time only for literal `process.env.NEXT_PUBLIC_BUILD_ID` expressions.
+  const value = process.env.NEXT_PUBLIC_BUILD_ID;
+  if (value === undefined || value === '') {
+    throw new Error(
+      'NEXT_PUBLIC_BUILD_ID is not set. Provide it at build time (Docker ARG NEXT_PUBLIC_BUILD_ID or next.config.ts env).',
+    );
+  }
+  return value;
 }
 
 /**
