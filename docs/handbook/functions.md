@@ -4685,7 +4685,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** POST `/auth/passkey/register/begin` and parse options.
 - **Inputs:** Optional `viewKey` string and optional `name` string. A non-empty `viewKey` POSTs JSON `{ viewKey }` with `Content-Type: application/json` and ignores `name`. Otherwise a non-empty `name` POSTs JSON `{ name }` with `Content-Type: application/json`. Otherwise POSTs with no body and no Content-Type.
-- **Returns / side effects:** `{ challengeId, options }`. On `!ok`, throws the api `{ error }` string when present, otherwise a status fallback. Sends `X-App-Build` (`getBuildId`). 503 `code` `logins_closed` throws `LoginsClosedError`; 403 `code` `app_outdated` throws `AppOutdatedError` (checked before the wrong-account 403).
+- **Returns / side effects:** `{ challengeId, options }`. On `!ok`, throws the api `{ error }` string when present, otherwise a status fallback. Sends `X-App-Build` (`getBuildId`). 503 `code` `logins_closed` throws `LoginsClosedError`; 403 `code` `app_outdated` throws `AppOutdatedError`.
 - **Used by:** `usePasskeyLogin.submitName` for a new account, and `usePasskeyLogin.register` only with a view key.
 
 ## Function: usePasskeyLogin

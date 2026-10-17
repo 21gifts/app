@@ -5490,11 +5490,21 @@ describe('passkey login refusals', () => {
     '%s keeps the generic failure for a code on the other status',
     async (_name, run) => {
       stubFetch({ ok: false, status: 403, body: { code: LOGINS_CLOSED_CODE } });
-      const closedOn403 = await run().catch((err: unknown) => err);
+      const closedOn403 = await run().then(
+        () => null,
+        (err: unknown) => err,
+      );
+      expect(closedOn403).toBeInstanceOf(Error);
       expect(closedOn403).not.toBeInstanceOf(LoginsClosedError);
+      expect(closedOn403).not.toBeInstanceOf(AppOutdatedError);
       stubFetch({ ok: false, status: 503, body: { code: APP_OUTDATED_CODE } });
-      const outdatedOn503 = await run().catch((err: unknown) => err);
+      const outdatedOn503 = await run().then(
+        () => null,
+        (err: unknown) => err,
+      );
+      expect(outdatedOn503).toBeInstanceOf(Error);
       expect(outdatedOn503).not.toBeInstanceOf(AppOutdatedError);
+      expect(outdatedOn503).not.toBeInstanceOf(LoginsClosedError);
     },
   );
 
@@ -5508,15 +5518,22 @@ describe('passkey login refusals', () => {
         clone: () => fake,
       };
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(fake as unknown as Response));
-      const error = await run().catch((err: unknown) => err);
-      expect(error).not.toBeInstanceOf(LoginsClosedError);
+      const error = await run().then(
+        () => null,
+        (err: unknown) => err,
+      );
       expect(error).toBeInstanceOf(Error);
+      expect(error).not.toBeInstanceOf(LoginsClosedError);
     },
   );
 
   it.each(steps)('%s keeps the generic failure for a null body', async (_name, run) => {
     stubFetch({ ok: false, status: 503, body: null });
-    const error = await run().catch((err: unknown) => err);
+    const error = await run().then(
+      () => null,
+      (err: unknown) => err,
+    );
+    expect(error).toBeInstanceOf(Error);
     expect(error).not.toBeInstanceOf(LoginsClosedError);
   });
 
