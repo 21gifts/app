@@ -201,6 +201,42 @@ function inboxScreenProps(overrides: Partial<InboxScreenProps> = {}): InboxScree
   };
 }
 
+describe('InboxScreen counterpart who cannot receive', () => {
+  it('disables the amount and shows the label when canReceive is false', () => {
+    renderWithLocale(
+      <InboxScreen {...inboxScreenProps({ conversations: [{ ...THREAD, canReceive: false }] })} />,
+    );
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+  });
+
+  it('keeps the amount enabled when canReceive is true or absent', () => {
+    const { rerender } = renderWithLocale(
+      <InboxScreen {...inboxScreenProps({ conversations: [{ ...THREAD, canReceive: true }] })} />,
+    );
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(false);
+    expect(screen.queryByText("Can't receive yet")).toBeNull();
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <InboxScreen {...inboxScreenProps()} />
+      </LocaleProvider>,
+    );
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(false);
+  });
+
+  it('shows no label without the amount field', () => {
+    renderWithLocale(
+      <InboxScreen
+        {...inboxScreenProps({
+          conversations: [{ ...THREAD, canReceive: false }],
+          showAmount: false,
+        })}
+      />,
+    );
+    expect(screen.queryByText("Can't receive yet")).toBeNull();
+  });
+});
+
 describe('groupThreadGifts', () => {
   it('returns one empty-gifts group per plain message in list order', () => {
     const first = { ...MESSAGE, id: 'm1', text: 'A' };

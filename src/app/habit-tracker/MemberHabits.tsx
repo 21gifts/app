@@ -9,6 +9,7 @@ import { InlineConfirm } from '@/components/InlineConfirm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { useSpotRateState } from '@/hooks/useSpotRate';
+import { CannotReceiveError } from '@/lib/api';
 import { messageInvoiceSchema, type AmountUnit } from '@/lib/api-types';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
@@ -375,7 +376,7 @@ export function MemberHabits(): ReactElement {
           setPayError('rateLimit');
           return;
         }
-        if (/author's wallet cannot receive this Bitcoin payment/i.test(caught.message)) {
+        if (caught instanceof CannotReceiveError) {
           setPayError('authorWallet');
           return;
         }

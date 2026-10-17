@@ -2179,7 +2179,13 @@ describe('MemberHabits', () => {
             posts.push({ amountSats: body.amountSats, zone });
           }
           if (body.amountSats === 21) {
-            return json({ error: "The author's wallet cannot receive this Bitcoin payment" }, 409);
+            return json(
+              {
+                error: "The author's wallet cannot receive this Bitcoin payment",
+                code: 'cannot_receive',
+              },
+              409,
+            );
           }
           if (body.amountSats === 22) {
             return json({ error: 'Too many payments' }, 429);

@@ -48,7 +48,7 @@ test.beforeEach(async ({ page }) => {
         username: 'alice',
         location: null,
         role: 'basis',
-        lightningAddress: null,
+        lightningAddress: 'member@21.gifts',
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: null,
         profileMessage: null,
@@ -3113,7 +3113,7 @@ test('Function: MemberProfileScreen — public card shows About me, copy-profile
         name: 'Carol',
         location: null,
         role: 'verified',
-        lightningAddress: null,
+        lightningAddress: 'member@21.gifts',
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: 'Hello from Carol.',
         profileMessage: {
@@ -3189,7 +3189,7 @@ test('Function: MemberProfileScreen — reply without a set-up wallet opens the 
         name: 'Carol',
         location: null,
         role: 'verified',
-        lightningAddress: null,
+        lightningAddress: 'member@21.gifts',
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: 'Hello from Carol.',
         profileMessage: {
@@ -5150,7 +5150,7 @@ test('Function: openConversation — Message is on another member profile', asyn
         name: 'Carol',
         location: null,
         role: 'verified',
-        lightningAddress: null,
+        lightningAddress: 'member@21.gifts',
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: 'Hello from Carol.',
         profileMessage: {
@@ -11602,6 +11602,42 @@ test('Function: isOwnNote — a Basis reply to someone else still pays 1 sat', a
   expect(seen.replyBodies).toEqual([]);
 });
 
+test('Function: authorCannotReceive — an empty reaction to an author who cannot receive sends no gift', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'basis');
+  const note = {
+    id: 'm-bob',
+    accountId: 'acc_bob',
+    name: 'Bob',
+    text: 'Hello from Bob',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    authorCanReceive: false,
+    hasPhoto: false,
+    hasVideo: false,
+    videoContentType: null,
+    role: 'basis',
+    replyCount: 0,
+  };
+  const seen = await routeOwnReplyForum(page, note);
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await expect(page.getByText("Can't receive yet")).toBeVisible();
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const composer = page.getByPlaceholder('Write a reaction');
+  await expect(composer).toBeVisible();
+  await expect(page.locator('#forum-reply-amount')).toBeDisabled();
+  await composer.locator('xpath=ancestor::form').getByRole('button', { name: 'Post' }).click();
+  await expect(page.getByText('Enter a message or add a photo or video')).toBeVisible();
+  await composer.fill('Hi Bob');
+  await composer.locator('xpath=ancestor::form').getByRole('button', { name: 'Post' }).click();
+  await expect.poll(() => seen.invoiceUrls).toEqual(['/messages/compose-fee/invoice']);
+  expect(seen.invoiceBodies[0]).toMatchObject({ sats: 1, text: 'inReplyTo:m-bob\nHi Bob' });
+  expect(seen.replyBodies).toEqual([]);
+});
+
 test('Function: ViewProfilePage — public view heading is visible', async ({ page }) => {
   const key = 'a'.repeat(64);
   await page.route(new RegExp(`/view-key/${key}$`), async (route) => {
@@ -11611,8 +11647,8 @@ test('Function: ViewProfilePage — public view heading is visible', async ({ pa
       body: JSON.stringify({
         name: 'Ada',
         location: null,
-        lightningAddress: null,
-        lightningAddressVerified: false,
+        lightningAddress: 'member@21.gifts',
+        lightningAddressVerified: true,
         createdAt: 1,
         hasPasskey: false,
         aboutMe: null,
@@ -11653,8 +11689,8 @@ test('Function: ViewProfileScreen — public card shows the name', async ({ page
       body: JSON.stringify({
         name: 'Ada',
         location: null,
-        lightningAddress: null,
-        lightningAddressVerified: false,
+        lightningAddress: 'member@21.gifts',
+        lightningAddressVerified: true,
         createdAt: 1,
         hasPasskey: false,
         aboutMe: null,
@@ -11688,8 +11724,8 @@ test('Function: ViewProfileClaim — public view shows the passkey claim control
       body: JSON.stringify({
         name: 'Ada',
         location: null,
-        lightningAddress: null,
-        lightningAddressVerified: false,
+        lightningAddress: 'member@21.gifts',
+        lightningAddressVerified: true,
         createdAt: 1,
         hasPasskey: false,
         aboutMe: null,
@@ -11719,8 +11755,8 @@ test('Function: fetchViewProfile — public view card loads via the client fetch
       body: JSON.stringify({
         name: 'Ada',
         location: null,
-        lightningAddress: null,
-        lightningAddressVerified: false,
+        lightningAddress: 'member@21.gifts',
+        lightningAddressVerified: true,
         createdAt: 1,
         hasPasskey: false,
         aboutMe: null,
@@ -11778,8 +11814,8 @@ test('Function: fetchViewActivity — public view card shows empty activity copy
       body: JSON.stringify({
         name: 'Ada',
         location: null,
-        lightningAddress: null,
-        lightningAddressVerified: false,
+        lightningAddress: 'member@21.gifts',
+        lightningAddressVerified: true,
         createdAt: 1,
         hasPasskey: false,
         aboutMe: null,
@@ -12424,6 +12460,32 @@ test('Function: useHeartTip — the +1 shows on the tap while the payment is sti
   await expect(
     page.locator('li', { hasText: 'Hello from the heart list.' }).getByRole('alert'),
   ).toHaveCount(0);
+});
+
+test('Function: heartFailureView — a heart refused with cannot_receive keeps the author-wallet line after the +1', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeHeartNote(page, true);
+  await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: "The author's wallet cannot receive this Bitcoin payment",
+        code: 'cannot_receive',
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Hello from the heart list.')).toBeVisible();
+  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  const line = page
+    .locator('li', { hasText: 'Hello from the heart list.' })
+    .getByText("The author's wallet cannot receive this Bitcoin payment");
+  await expect(line).toBeVisible();
+  await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+  await expect(line).toBeVisible();
 });
 
 test('Function: endHeartPlusOne — the +1 leaves after the press window', async ({ page }) => {
@@ -13134,7 +13196,7 @@ test('Function: MemberTrustActions — ordinary members have no verify action', 
         name: 'Ada',
         location: null,
         role: 'basis',
-        lightningAddress: null,
+        lightningAddress: 'member@21.gifts',
         createdAt: '2026-01-15T12:00:00.000Z',
         profileMessage: null,
         postCount: 0,
@@ -13167,7 +13229,7 @@ test('Function: StaffFunctions — moderator actions stay closed until opened', 
         name: 'Ada',
         location: null,
         role: 'basis',
-        lightningAddress: null,
+        lightningAddress: 'member@21.gifts',
         createdAt: '2026-01-15T12:00:00.000Z',
         profileMessage: null,
         postCount: 0,

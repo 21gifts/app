@@ -72,7 +72,7 @@ import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/l
 import { useHeartTip } from '@/lib/heart-tip';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { closeLocalPushNotifications, pushTagForNotification } from '@/lib/push';
-import { isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { authorCannotReceive, isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -2501,6 +2501,7 @@ export function ForumLoader({
     const own = isOwnNote(account?.id, parentAccountId);
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
+    const blocked = parentRow !== undefined && authorCannotReceive(parentRow, account?.id);
     const composeOverhead = `inReplyTo:${parentId}\n`.length;
     if (!exempt && trimmed.length + composeOverhead > FORUM_MESSAGE_MAX_LENGTH) {
       setReplyFormError('tooLong');
@@ -2514,6 +2515,17 @@ export function ForumLoader({
           return Promise.resolve();
         }
         return runReplyPost(trimmed, parentId, parentBaseline, isRetry, true);
+      }
+      // The author cannot receive yet: the amount field is disabled, so the
+      // reply never invoices a gift to the author.
+      if (blocked) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return exempt
+          ? runReplyPost(trimmed, parentId, parentBaseline, isRetry)
+          : runComposePay(trimmed, parentId, 1, isRetry);
       }
       if (parsed === 'invalid') {
         setReplyFormError('amount');

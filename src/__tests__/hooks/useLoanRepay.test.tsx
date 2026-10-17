@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLoanRepay } from '@/hooks/useLoanRepay';
 import { WALLET_PAY_BALANCE_POLL_MS, WALLET_PAY_CONFIRM_WAIT_MS } from '@/hooks/useWalletPay';
 import {
+  CannotReceiveError,
   postRepaymentDue,
   WalletRequiredError,
   type MyLoan,
@@ -287,6 +288,11 @@ describe('useLoanRepay preparation', () => {
     act(() => result.current.pay([loan()]));
     await waitFor(() => expect(result.current.phase).toBe('failed'));
     expect(result.current.errorKey).toBe('wallet.payUnavailable');
+
+    vi.mocked(postRepaymentDue).mockRejectedValueOnce(new CannotReceiveError());
+    act(() => result.current.pay([loan()]));
+    await waitFor(() => expect(result.current.phase).toBe('failed'));
+    expect(result.current.errorKey).toBe('loans.errorCannotReceive');
 
     vi.mocked(postRepaymentDue).mockRejectedValueOnce(new Error('other'));
     act(() => result.current.pay([loan()]));
@@ -2033,6 +2039,7 @@ describe('useLoanRepay visual pins', () => {
     ['repay-repaid-multi', 'repaid', 21_000],
     ['repay-unconfirmed', 'unconfirmed', 21_000],
     ['repay-failed', 'failed', 21_000],
+    ['repay-failed-cannot-receive', 'failed', 21_000],
   ] as const;
 
   it.each(pins)('pins %s only in a Playwright build', (visual, phase, balanceSats) => {
@@ -2075,6 +2082,9 @@ describe('useLoanRepay visual pins', () => {
     }
     if (visual === 'repay-failed') {
       expect(result.current.errorKey).toBe('forum.payErrorRequest');
+    }
+    if (visual === 'repay-failed-cannot-receive') {
+      expect(result.current.errorKey).toBe('loans.errorCannotReceive');
     }
   });
 

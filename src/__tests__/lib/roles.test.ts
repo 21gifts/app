@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ROLE_ORDER,
+  authorCannotReceive,
   canEditDailyPayoutRoster,
   isOwnNote,
   isReplyPaymentExempt,
@@ -69,6 +70,28 @@ describe('canEditDailyPayoutRoster', () => {
     expect(canEditDailyPayoutRoster('basis')).toBe(false);
     expect(canEditDailyPayoutRoster(null)).toBe(false);
     expect(canEditDailyPayoutRoster(undefined)).toBe(false);
+  });
+});
+
+describe('authorCannotReceive', () => {
+  const note = { authorCanReceive: false, accountId: 'acc_2' };
+
+  it('is true for a live member note whose author cannot receive', () => {
+    expect(authorCannotReceive(note, 'acc_1')).toBe(true);
+    expect(authorCannotReceive(note, null)).toBe(true);
+  });
+
+  it('is false when the api says the author can receive or sends no field', () => {
+    expect(authorCannotReceive({ ...note, authorCanReceive: true }, 'acc_1')).toBe(false);
+    expect(authorCannotReceive({ accountId: 'acc_2' }, 'acc_1')).toBe(false);
+  });
+
+  it('is false on an own note, a note without an author, and a deleted note', () => {
+    expect(authorCannotReceive(note, 'acc_2')).toBe(false);
+    expect(authorCannotReceive({ authorCanReceive: false }, 'acc_1')).toBe(false);
+    expect(authorCannotReceive({ ...note, deletedAt: '2026-08-28T10:00:00.000Z' }, 'acc_1')).toBe(
+      false,
+    );
   });
 });
 

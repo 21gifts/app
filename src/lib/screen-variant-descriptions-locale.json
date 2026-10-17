@@ -589,6 +589,16 @@
     "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
     "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
+  "/messages/[id]:heart-cannot-receive": {
+    "de": "Angemeldeter Permalink der Notiz eines anderen Mitglieds nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Permalink con sesión iniciada de la nota de otro miembro tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Naka-sign na permalink ng tala ng ibang miyembro, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+  },
+  "/messages/[id]:author-cannot-receive": {
+    "de": "Angemeldeter Permalink einer Notiz eines Mitglieds ohne verifizierte Wallet (authorCanReceive: false). Die Aktionszeile zeigt vor dem Herz Kann noch nicht empfangen, Herz samt Zähler sind deaktiviert, und das Betragsfeld der Reaktion der offenen Karte ist deaktiviert (Text geht weiterhin).",
+    "es": "Permalink con sesión iniciada de una nota de un miembro que aún no tiene wallet verificada (authorCanReceive: false). La fila de acciones muestra Aún no puede recibir antes del corazón, el corazón con su contador está desactivado, y el campo Importe de la reacción de la tarjeta abierta está desactivado (el texto se sigue publicando).",
+    "fil": "Naka-sign na permalink ng tala ng miyembrong wala pang verified na wallet (authorCanReceive: false). Ipinapakita ng hanay ng aksyon ang Hindi pa makatanggap bago ang puso, naka-disable ang puso at ang bilang nito, at naka-disable ang field na Halaga ng reaksyon ng bukas na kard (naipo-post pa rin ang teksto)."
+  },
   "/messages/[id]:heart-paid": {
     "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
     "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
@@ -2134,6 +2144,11 @@
     "es": "La misma publicación en alemán en el feed de publicaciones tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
     "fil": "Parehong post sa German sa feed ng mga post pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
+  "/members/[accountId]:heart-cannot-receive": {
+    "de": "Ada auf Carols Profil, Beiträge geöffnet, nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden bei Carols Notiz: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Ada en el perfil de Carol, publicaciones abiertas, tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1 en la nota de Carol: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Si Ada sa profile ni Carol, bukas ang mga post, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1 sa tala ni Carol: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+  },
   "/members/[accountId]:heart-paid": {
     "de": "Derselbe deutsche Beitrag nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
     "es": "La misma publicación en alemán tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
@@ -2724,6 +2739,11 @@
     "es": "El mapa está seleccionado y hay una clave de mapa. La chincheta no tiene etiqueta. El marco muestra la superficie de mapa de prueba. La fila dice Ada · 14.60000, 120.98000 y no está en seminegrita. No hay un segundo encabezado Mapa.",
     "fil": "Napili ang mapa at may nakatakdang susi ng mapa. Walang etiketa ang tuldok. Ipinapakita ng kuwadro ang pansamantalang ibabaw ng mapa. Ang hilera ay Ada · 14.60000, 120.98000 at hindi naka-seminegrita. Walang pangalawang pamagat na Mapa."
   },
+  "/profile:cannot-receive": {
+    "de": "Eigenes Profil eines Mitglieds, das noch nicht empfangen kann (lightningAddress: null auf der eigenen Mitgliedskarte). Die öffentlichen Angaben zeigen das Label Kann noch nicht empfangen statt der 21.gifts-Adresse, des Open-CryptoPay-QR und des Shop-Stickers.",
+    "es": "Perfil propio de un miembro que aún no puede recibir (lightningAddress: null en su tarjeta de miembro). Los datos públicos muestran la etiqueta Aún no puede recibir en lugar de la dirección 21.gifts, el QR de Open CryptoPay y la pegatina de tienda.",
+    "fil": "Sariling profile ng miyembrong hindi pa makatanggap (lightningAddress: null sa sariling member card). Ipinapakita ng mga pampublikong detalye ang label na Hindi pa makatanggap sa halip na ang 21.gifts address, ang Open CryptoPay QR, at ang shop sticker."
+  },
   "/profile:sunday": {
     "de": "Gerätesonntag. Der Name, der leere Satz Über mich, die Adresse und die Schaltflächen zum Hinzufügen eines Bildes bleiben. Die Stifte und Schreib dein Über mich sind weg. Am Sonntag ist das Schreiben pausiert.",
     "es": "Domingo según la hora del dispositivo. El nombre, la frase vacía Sobre mí, la dirección y los botones para añadir foto permanecen. Los lápices y Escribe tu Sobre mí han desaparecido. El domingo no se puede escribir.",
@@ -3193,6 +3213,21 @@
     "de": "Shop-Beitragsfeed mit Cafe Luna nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
     "es": "Feed de publicaciones de tienda con Cafe Luna tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
     "fil": "Feed ng post ng tindahan na may Cafe Luna pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
+  },
+  "/shops:heart-cannot-receive": {
+    "de": "Angemeldete Shop-Notiz eines anderen Mitglieds nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Nota de tienda de otro miembro con sesión iniciada tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Shop note ng ibang miyembro habang naka-sign in, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+  },
+  "/shops:author-cannot-receive": {
+    "de": "Eine Shop-Notiz eines Mitglieds ohne verifizierte Wallet (authorCanReceive: false). Die Aktionszeile zeigt vor dem Herz das kleine graue Label Kann noch nicht empfangen, und Herz samt Zähler sind deaktiviert.",
+    "es": "Una nota de tienda de un miembro que aún no tiene wallet verificada (authorCanReceive: false). La fila de acciones muestra antes del corazón la etiqueta gris Aún no puede recibir, y el corazón con su contador está desactivado.",
+    "fil": "Isang shop note ng miyembrong wala pang verified na wallet (authorCanReceive: false). Ipinapakita ng hanay ng aksyon bago ang puso ang maliit na label na Hindi pa makatanggap, at naka-disable ang puso at ang bilang nito."
+  },
+  "/shops:author-cannot-receive-open": {
+    "de": "Dieselbe Shop-Notiz nach Reaktionen anzeigen. Das Betragsfeld der Reaktion ist deaktiviert (Text geht weiterhin), und eine Antwort eines anderen Mitglieds, das noch nicht empfangen kann, zeigt Kann noch nicht empfangen mit einem deaktivierten Geschenk Bitcoin senden, das kein Blatt öffnet.",
+    "es": "La misma nota de tienda tras Mostrar reacciones. El campo Importe de la reacción está desactivado (el texto se sigue publicando), y una respuesta de otro miembro que aún no puede recibir muestra Aún no puede recibir con un regalo Enviar Bitcoin desactivado que no abre ninguna hoja.",
+    "fil": "Ang parehong shop note matapos ang Ipakita ang mga reaksyon. Naka-disable ang field na Halaga ng reaksyon (naipo-post pa rin ang teksto), at ang sagot ng ibang miyembrong hindi pa makatanggap ay nagpapakita ng Hindi pa makatanggap kasama ang naka-disable na Magpadala ng Bitcoin na regalo na walang binubuksang sheet."
   },
   "/shops:heart-paid": {
     "de": "Dieselbe Cafe-Luna-Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
@@ -5384,6 +5419,16 @@
     "es": "El estado de envío fallido con Quién recibe el pago abierto. La tarjeta conserva ₿1'000 · $1.00 y muestra en rojo No se pudo iniciar el pago de Bitcoin. La lista muestra Bruno ₿500 · $0.50, Carla ₿300 · $0.30 y Diego ₿200 · $0.20. Debajo vuelven Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿1'000 · $1.00.",
     "fil": "Ang nabigong pagpapadala na bukas ang Sino ang babayaran. Nananatili sa due card ang ₿1'000 · $1.00 at ipinapakita sa pula ang Hindi masimulan ang Bitcoin payment. Ipinapakita ng listahan sina Bruno ₿500 · $0.50, Carla ₿300 · $0.30, at Diego ₿200 · $0.20. Bumabalik sa ilalim ang Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿1'000 · $1.00."
   },
+  "/loans/repay:failed-cannot-receive": {
+    "de": "Der fehlgeschlagene Sendezustand, wenn die API für den Anteil eines Kreditgebers cannot_receive meldete. Die Fälligkeitskarte behält ₿1'000 · $1.00 und zeigt rot Eine Wallet kann noch nicht empfangen. Darunter kehren Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿1'000 · $1.00 senden zurück.",
+    "es": "El estado de envío fallido cuando la API respondió cannot_receive para la parte de un prestamista. La tarjeta conserva ₿1'000 · $1.00 y muestra en rojo Una wallet aún no puede recibir. Debajo vuelven Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿1'000 · $1.00.",
+    "fil": "Ang nabigong pagpapadala kapag sumagot ang API ng cannot_receive para sa bahagi ng isang nagpahiram. Nananatili sa due card ang ₿1'000 · $1.00 at ipinapakita sa pula ang Hindi pa makatanggap ang isang wallet. Bumabalik sa ilalim ang Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿1'000 · $1.00."
+  },
+  "/loans/repay:failed-cannot-receive-who-open": {
+    "de": "Derselbe Zustand mit geöffnetem „Wer wird bezahlt?“ Die Liste zeigt Bruno ₿500 · $0.50, Carla ₿300 · $0.30 und Diego ₿200 · $0.20 unter dem roten Hinweis Eine Wallet kann noch nicht empfangen.",
+    "es": "El mismo estado con Quién recibe el pago abierto. La lista muestra Bruno ₿500 · $0.50, Carla ₿300 · $0.30 y Diego ₿200 · $0.20 bajo el aviso rojo Una wallet aún no puede recibir.",
+    "fil": "Parehong kalagayan na bukas ang Sino ang babayaran. Ipinapakita ng listahan sina Bruno ₿500 · $0.50, Carla ₿300 · $0.30, at Diego ₿200 · $0.20 sa ilalim ng pulang paalala na Hindi pa makatanggap ang isang wallet."
+  },
   "/loans/repay:collecting": {
     "de": "Während Kredit A noch sammelt, gibt es keine Fälligkeitskarte. Ihr Kredit zeigt den Nähmaschinen-Text, ₿30'000 · $30.00 · 30 Tage · ₿1'000 · $1.00 pro Tag, Noch nicht vollständig finanziert. und Rückzahlungsliste; dieser Bildschirm zeigt keinen Finanzierungsbalken.",
     "es": "Mientras el préstamo A aún recauda, no hay tarjeta de vencimiento. Tu préstamo muestra el texto de la máquina de coser, ₿30'000 · $30.00 · 30 días · ₿1'000 · $1.00 al día, Aún no está totalmente financiado. y Lista de devolución; esta pantalla no muestra una barra de financiación.",
@@ -5669,6 +5714,11 @@
     "es": "El préstamo de Maria que aún reúne fondos (sats: 10500 de goalSats: 21000, 30 días), después de pulsar Prestar en su bloque. La tarjeta abre su reacción con dinero: el campo de importe dice Importe a prestar y tiene el foco, luego la línea de reacción y Publicar.",
     "fil": "Ang pautang ni Maria na nag-iipon pa (sats: 10500 sa goalSats: 21000, 30 araw), pagkatapos pindutin ang Magpahiram sa bloke nito. Binubuksan ng kard ang reaksyong may pera: Halagang ipapahiram ang tatak ng field ng halaga at nasa ito ang focus, pagkatapos ang linya ng reaksyon at I-post."
   },
+  "/welcome:loan-lend-cannot-receive": {
+    "de": "Derselbe sammelnde Kredit eines Mitglieds, das noch nicht empfangen kann (authorCanReceive: false). Leihen im Kreditblock ist deaktiviert und öffnet nichts, und die Aktionszeile zeigt Kann noch nicht empfangen.",
+    "es": "El mismo préstamo que aún reúne fondos, de un miembro que aún no puede recibir (authorCanReceive: false). Prestar en el bloque del préstamo está desactivado y no abre nada, y la fila de acciones muestra Aún no puede recibir.",
+    "fil": "Parehong pautang na nag-iipon pa, ng miyembrong hindi pa makatanggap (authorCanReceive: false). Naka-disable ang Magpahiram sa bloke ng pautang at walang binubuksan, at ipinapakita ng hanay ng aksyon ang Hindi pa makatanggap."
+  },
   "/welcome:loan-pay": {
     "de": "Derselbe Kredit, nachdem ₿210 und Count me in! gepostet wurden. Der Zahlschritt zeigt Sie leihen ₿210 · $0.21, dann einen gedämpften Hinweis Sie leihen Maria Geld. Sobald der Kredit vollständig finanziert ist, erhalten Sie es in 30 täglichen Zahlungen zurück. und die Wallet-Schaltfläche ₿210 · $0.21 leihen (die Bestätigungsansicht der App-Wallet).",
     "es": "El mismo préstamo después de publicar ₿210 y Count me in!. El paso de pago dice Prestas ₿210 · $0.21, luego una nota atenuada Le prestas a Maria. Cuando el préstamo esté totalmente financiado, lo recibes de vuelta en 30 pagos diarios. y el botón de la billetera Prestar ₿210 · $0.21 (la vista de confirmación de la billetera de la app).",
@@ -5688,6 +5738,11 @@
     "de": "Angemeldete Ada auf Carols Profil; Beiträge gedrückt; Carols einziger Beitrag ist ein Kredit, der noch sammelt (sats: 10500 von goalSats: 21000, 30 Tage). Nachdem Leihen in seinem Kreditblock gedrückt wurde, öffnet die Karte ihre Geld-Reaktion: Das Betragsfeld heißt Betrag zum Leihen und hat den Fokus, darunter die Reaktionszeile und Senden.",
     "es": "Ada con sesión iniciada en el perfil de Carol; publicaciones pulsadas; la única publicación de Carol es un préstamo que aún reúne fondos (sats: 10500 de goalSats: 21000, 30 días). Tras pulsar Prestar en su bloque, la tarjeta abre su reacción con dinero: el campo de importe dice Importe a prestar y tiene el foco, luego la línea de reacción y Publicar.",
     "fil": "Naka-log-in na si Ada sa profile ni Carol; pinindot ang mga post; ang nag-iisang post ni Carol ay pautang na nag-iipon pa (sats: 10500 sa goalSats: 21000, 30 araw). Pagkatapos pindutin ang Magpahiram sa bloke nito, binubuksan ng kard ang reaksyong may pera: Halagang ipapahiram ang tatak ng field ng halaga at nasa ito ang focus, pagkatapos ang linya ng reaksyon at I-post."
+  },
+  "/members/[accountId]:posts-open-loan-lend-cannot-receive": {
+    "de": "Derselbe sammelnde Kredit eines Mitglieds, das noch nicht empfangen kann (authorCanReceive: false). Leihen im Kreditblock ist deaktiviert und öffnet nichts, und die Aktionszeile zeigt Kann noch nicht empfangen.",
+    "es": "El mismo préstamo que aún reúne fondos, de un miembro que aún no puede recibir (authorCanReceive: false). Prestar en el bloque del préstamo está desactivado y no abre nada, y la fila de acciones muestra Aún no puede recibir.",
+    "fil": "Parehong pautang na nag-iipon pa, ng miyembrong hindi pa makatanggap (authorCanReceive: false). Naka-disable ang Magpahiram sa bloke ng pautang at walang binubuksan, at ipinapakita ng hanay ng aksyon ang Hindi pa makatanggap."
   },
   "/members/[accountId]:posts-open-loan-pay": {
     "de": "Derselbe Kredit, nachdem ₿210 und Count me in! gepostet wurden. Eine Profilkarte hat keine Reaktions-Zahlseite, daher öffnet sich das Zahlblatt in der Karte: Sie leihen ₿210 · $0.21, der gedämpfte Hinweis Sie leihen Carol Geld. Sobald der Kredit vollständig finanziert ist, erhalten Sie es in 30 täglichen Zahlungen zurück. und die Wallet-Schaltfläche ₿210 · $0.21 leihen (die Bestätigungsansicht der App-Wallet).",
@@ -5709,9 +5764,49 @@
     "es": "Enlace permanente con sesión iniciada del préstamo de Maria que aún reúne fondos (sats: 10500 de goalSats: 21000, 30 días). La página de la nota ya abre la tarjeta, así que pulsar Prestar en el bloque del préstamo pone el foco en el campo de importe de la reacción, Importe a prestar.",
     "fil": "Naka-sign na permalink ng pautang ni Maria na nag-iipon pa (sats: 10500 sa goalSats: 21000, 30 araw). Bukas na ang kard sa pahina ng tala, kaya inilalagay ng pagpindot sa Magpahiram sa bloke ng pautang ang focus sa field ng halaga ng reaksyon, Halagang ipapahiram."
   },
+  "/messages/[id]:loan-lend-cannot-receive": {
+    "de": "Derselbe sammelnde Kredit eines Mitglieds, das noch nicht empfangen kann (authorCanReceive: false). Leihen im Kreditblock ist deaktiviert und öffnet nichts, und die Aktionszeile zeigt Kann noch nicht empfangen.",
+    "es": "El mismo préstamo que aún reúne fondos, de un miembro que aún no puede recibir (authorCanReceive: false). Prestar en el bloque del préstamo está desactivado y no abre nada, y la fila de acciones muestra Aún no puede recibir.",
+    "fil": "Parehong pautang na nag-iipon pa, ng miyembrong hindi pa makatanggap (authorCanReceive: false). Naka-disable ang Magpahiram sa bloke ng pautang at walang binubuksan, at ipinapakita ng hanay ng aksyon ang Hindi pa makatanggap."
+  },
   "/messages/[id]:loan-pay-full": {
     "de": "Angemeldeter Permalink von Marias Kredit, sobald er voll ist (sats gleich goalSats): Der Kreditblock zeigt Vollständig finanziert und bietet kein Leihen, und das Betragsfeld der offenen Karte behält die Beschriftung Betrag. Nachdem ₿210 gepostet wurde, zeigt das Zahlblatt in der Karte ₿210 · $0.21 zahlen, der Hinweis sagt Dieser Kredit ist bereits vollständig finanziert. Was Sie jetzt senden, ist ein Geschenk an Maria., und die Wallet-Schaltfläche bleibt Senden.",
     "es": "Enlace permanente con sesión iniciada del préstamo de Maria una vez lleno (sats igual a goalSats): el bloque del préstamo dice Totalmente financiado y no ofrece Prestar, y el campo de importe de la tarjeta abierta mantiene la etiqueta Importe. Tras publicar ₿210, la hoja de pago en la tarjeta dice Pagar ₿210 · $0.21, la nota dice Este préstamo ya está totalmente financiado. Lo que envíes ahora es un regalo para Maria., y el botón de la billetera sigue siendo Enviar.",
     "fil": "Naka-sign na permalink ng pautang ni Maria kapag buo na (katumbas ng sats ang goalSats): Buo na ang pondo ang nakasulat sa bloke ng pautang at walang Magpahiram, at nananatili ang tatak na Halaga sa field ng halaga ng bukas na kard. Pagkatapos i-post ang ₿210, Magbayad ng ₿210 · $0.21 ang nakasulat sa pay sheet sa loob ng kard, sinasabi ng paalala Buo na ang pondo ng utang na ito. Ang ipapadala mo ngayon ay regalo kay Maria., at nananatiling Ipadala ang button ng wallet."
+  },
+  "/welcome:heart-cannot-receive": {
+    "de": "Angemeldete Notiz eines anderen Mitglieds nach dem Öffnen von ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden. Die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Nota de otro miembro con sesión iniciada tras abrir ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1. La API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Tala ng ibang miyembro habang naka-sign in, matapos buksan ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1. Tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+  },
+  "/welcome:author-cannot-receive": {
+    "de": "Eine Notiz eines Mitglieds ohne verifizierte Wallet (authorCanReceive: false). Die Aktionszeile zeigt vor dem Herz das kleine graue Label Kann noch nicht empfangen, und Herz samt Zähler sind deaktiviert, damit niemand eine Zahlung startet, die nur scheitern kann.",
+    "es": "Una nota de un miembro que aún no tiene wallet verificada (authorCanReceive: false). La fila de acciones muestra antes del corazón la etiqueta gris Aún no puede recibir, y el corazón con su contador está desactivado, para que nadie inicie un pago que solo puede fallar.",
+    "fil": "Isang tala ng miyembrong wala pang verified na wallet (authorCanReceive: false). Ipinapakita ng hanay ng aksyon bago ang puso ang maliit na label na Hindi pa makatanggap, at naka-disable ang puso at ang bilang nito, para walang magsimula ng bayad na mabibigo lang."
+  },
+  "/welcome:author-cannot-receive-open": {
+    "de": "Dieselbe Notiz nach Reaktionen anzeigen. Das Betragsfeld der Reaktion ist deaktiviert (Text geht weiterhin), und eine Antwort eines anderen Mitglieds, das noch nicht empfangen kann, zeigt Kann noch nicht empfangen mit einem deaktivierten Geschenk Bitcoin senden, das kein Blatt öffnet.",
+    "es": "La misma nota tras Mostrar reacciones. El campo Importe de la reacción está desactivado (el texto se sigue publicando), y una respuesta de otro miembro que aún no puede recibir muestra Aún no puede recibir con un regalo Enviar Bitcoin desactivado que no abre ninguna hoja.",
+    "fil": "Ang parehong tala matapos ang Ipakita ang mga reaksyon. Naka-disable ang field na Halaga ng reaksyon (naipo-post pa rin ang teksto), at ang sagot ng ibang miyembrong hindi pa makatanggap ay nagpapakita ng Hindi pa makatanggap kasama ang naka-disable na Magpadala ng Bitcoin na regalo na walang binubuksang sheet."
+  },
+  "/members/[accountId]:cannot-receive": {
+    "de": "Profil eines Mitglieds, das noch nicht empfangen kann (lightningAddress: null auf der Mitgliedskarte). Der Geschenkbereich zeigt das Label Kann noch nicht empfangen statt der 21.gifts-Adresse, des Open-CryptoPay-QR und des Shop-Stickers.",
+    "es": "Perfil de un miembro que aún no puede recibir (lightningAddress: null en la tarjeta de miembro). El bloque de regalos muestra la etiqueta Aún no puede recibir en lugar de la dirección 21.gifts, el QR de Open CryptoPay y la pegatina de tienda.",
+    "fil": "Profile ng miyembrong hindi pa makatanggap (lightningAddress: null sa member card). Ipinapakita ng bloke ng regalo ang label na Hindi pa makatanggap sa halip na ang 21.gifts address, ang Open CryptoPay QR, at ang shop sticker."
+  },
+  "/view/[viewKey]:cannot-receive": {
+    "de": "Öffentliches Profil eines Mitglieds, das noch nicht empfangen kann (lightningAddressVerified: false). Der Geschenkbereich zeigt das Label Kann noch nicht empfangen statt der 21.gifts-Adresse und des Open-CryptoPay-QR.",
+    "es": "Perfil público de un miembro que aún no puede recibir (lightningAddressVerified: false). El bloque de regalos muestra la etiqueta Aún no puede recibir en lugar de la dirección 21.gifts y el QR de Open CryptoPay.",
+    "fil": "Pampublikong profile ng miyembrong hindi pa makatanggap (lightningAddressVerified: false). Ipinapakita ng bloke ng regalo ang label na Hindi pa makatanggap sa halip na ang 21.gifts address at ang Open CryptoPay QR."
+  },
+  "/messages:thread-cannot-receive": {
+    "de": "Offener Thread mit einem Mitglied, das noch nicht empfangen kann (canReceive: false in der Unterhaltung). Das Betragsfeld unter dem Eingabefeld ist deaktiviert und darunter steht Kann noch nicht empfangen. Textnachrichten gehen weiterhin.",
+    "es": "Hilo abierto con un miembro que aún no puede recibir (canReceive: false en la conversación). El campo Importe bajo el compositor está desactivado y debajo aparece Aún no puede recibir. Los mensajes de texto se siguen enviando.",
+    "fil": "Bukas na thread kasama ang miyembrong hindi pa makatanggap (canReceive: false sa usapan). Naka-disable ang field na Halaga sa ilalim ng composer at nasa ilalim nito ang Hindi pa makatanggap. Naipapadala pa rin ang mga text message."
+  },
+  "/habit-tracker:comment-cannot-receive": {
+    "de": "Adas Sitzung. Ein Kommentar eines Mitglieds, das noch nicht empfangen kann (canReceive: false), zeigt das Label Kann noch nicht empfangen und ein deaktiviertes Geschenk Bitcoin senden; es öffnet kein Blatt.",
+    "es": "Sesión de Ada. Un comentario de un miembro que aún no puede recibir (canReceive: false) muestra la etiqueta Aún no puede recibir y un regalo Enviar Bitcoin desactivado; no abre ninguna hoja.",
+    "fil": "Session ni Ada. Ang komento ng miyembrong hindi pa makatanggap (canReceive: false) ay nagpapakita ng label na Hindi pa makatanggap at naka-disable na Magpadala ng Bitcoin na regalo; walang binubuksang sheet."
   }
 }

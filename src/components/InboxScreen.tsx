@@ -22,6 +22,7 @@ import { WalletPay } from '@/components/WalletPay';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { AmountEntry } from '@/components/AmountEntry';
+import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
 import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
 import {
@@ -488,7 +489,9 @@ function ConversationListItem({
 /**
  * Presentational signed-in inbox: conversation list or one open thread with
  * a 8000-character composer and a sats amount field (`showAmount` false
- * hides it; the staff room has no gifts). An open invoice hides that amount
+ * hides it; the staff room has no gifts). When the open conversation has
+ * `canReceive: false`, the amount field is disabled and a "Can't receive yet"
+ * label shows under it; text still sends. An open invoice hides that amount
  * row too: the pay sheet states the amount once, as bitcoin plus the
  * default fiat from the current spot rate. Members (`showFilter`
  * false) see inbound rows except `moderator_group`. Moderators
@@ -893,6 +896,8 @@ export function InboxScreen({
     openId === null || conversations === null
       ? null
       : (conversations.find((row) => row.id === openId) ?? null);
+  // The api sends `canReceive: false` when the counterpart has no verified wallet yet.
+  const counterpartCannotReceive = open !== null && open.canReceive === false;
 
   let body: ReactElement;
   if (openId !== null) {
@@ -1161,11 +1166,14 @@ export function InboxScreen({
               label={t('inbox.amountLabel')}
               placeholder={t('forum.payAmountPlaceholder')}
               value={amountDraft}
-              disabled={posting || messagesLoading}
+              disabled={posting || messagesLoading || counterpartCannotReceive}
               rateDay={rateDay}
               onValueChange={onAmountDraftChange}
               onUnitChange={amountUnitChange}
             />
+          ) : null}
+          {showAmount && invoice === null && counterpartCannotReceive ? (
+            <CannotReceiveLabel />
           ) : null}
           {showAttach && photoDrafts.length === 1 ? (
             <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">

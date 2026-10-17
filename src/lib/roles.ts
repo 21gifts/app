@@ -72,6 +72,34 @@ export function isOwnNote(
 }
 
 /**
+ * True when a pay action on this note targets a member who cannot receive yet:
+ * the api sent `authorCanReceive: false` for a live member note that is not
+ * the viewer's own. An older api body without the field is not this case.
+ *
+ * Every pay control toward that author shows disabled, and a reply to that
+ * note never invoices a gift to the author.
+ *
+ * @param note - The note's `authorCanReceive`, `accountId`, and `deletedAt`.
+ * @param viewerAccountId - Signed-in account id, or missing when signed out.
+ * @returns Whether the pay controls toward the author show disabled.
+ */
+export function authorCannotReceive(
+  note: {
+    authorCanReceive?: boolean | undefined;
+    accountId?: string | undefined;
+    deletedAt?: string | undefined;
+  },
+  viewerAccountId: string | null | undefined,
+): boolean {
+  return (
+    note.authorCanReceive === false &&
+    note.accountId !== undefined &&
+    note.deletedAt === undefined &&
+    !isOwnNote(viewerAccountId, note.accountId)
+  );
+}
+
+/**
  * True when the signed-in account may reply without paying.
  *
  * Anyone at least verified is exempt, and every role is exempt on its own

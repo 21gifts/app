@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
+import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
 import { MemberTrustActions } from '@/components/MemberTrustActions';
 import {
   ForumBoard,
@@ -51,6 +52,7 @@ import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shopStickerLangFromLocation } from '@/lib/shop-sticker';
 import { shortResourceUrl } from '@/lib/short-link';
 import {
+  authorCannotReceive,
   isOwnNote,
   isReplyPaymentExempt,
   roleAtLeast,
@@ -217,7 +219,9 @@ function FundingProgramMark({
  * is a number, copy-profile-link, optional Message, post/reply counts, optional
  * positive shop and credit counts, stacked activity feeds, and staff Trust Chain actions
  * when the viewer is a moderator and the subject is someone else. About me is
- * not a forum post.
+ * not a forum post. When the member cannot receive yet (`lightningAddress`
+ * null), the gifts block shows a "Can't receive yet" label instead of the
+ * address, QR, and shop sticker.
  *
  * @param props - Member profile and both activity series for the chart.
  *   `factsOnly` (default false) keeps every hook and returns only the public
@@ -321,8 +325,10 @@ export function MemberProfileScreen({
   const creditsLoadGen = useRef(0);
   /* v8 ignore next -- SSR: no window */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
-  const address = giftsLightningAddress(listedProfile.username, host);
-  const qr = openCryptoPayQrValue(listedProfile.username, host);
+  // The api sends `lightningAddress: null` when this member cannot receive yet.
+  const cannotReceive = listedProfile.lightningAddress === null;
+  const address = cannotReceive ? null : giftsLightningAddress(listedProfile.username, host);
+  const qr = cannotReceive ? null : openCryptoPayQrValue(listedProfile.username, host);
   const [showQr, setShowQr] = useState(false);
   const [stickerOpen, setStickerOpen] = useState(false);
   const kikambaStickerOpened = useRef(false);
@@ -1236,6 +1242,7 @@ export function MemberProfileScreen({
     const own = isOwnNote(account?.id, parentAccountId);
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
+    const blocked = parentRow !== undefined && authorCannotReceive(parentRow, account?.id);
     const continueReply = (isRetry: boolean): Promise<void> => {
       // Your own note shows no amount field: the reply is posted without a payment.
       if (own) {
@@ -1244,6 +1251,17 @@ export function MemberProfileScreen({
           return Promise.resolve();
         }
         return runReplyPost(token, trimmed, parentId, isRetry, true);
+      }
+      // The author cannot receive yet: the amount field is disabled, so the
+      // reply never invoices a gift to the author.
+      if (blocked) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return exempt
+          ? runReplyPost(token, trimmed, parentId, isRetry)
+          : runComposePay(token, trimmed, parentId, 1, isRetry);
       }
       if (parsed === 'invalid') {
         setReplyFormError('amount');
@@ -1396,7 +1414,11 @@ export function MemberProfileScreen({
       <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
         {t('profile.giftsHeading')}
       </p>
-      {address !== null && address.trim() !== '' ? (
+      {cannotReceive ? (
+        <p className="text-center">
+          <CannotReceiveLabel />
+        </p>
+      ) : address !== null && address.trim() !== '' ? (
         <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">{address}</p>
       ) : (
         <p className="min-w-0 truncate text-center text-sm text-app-fg">

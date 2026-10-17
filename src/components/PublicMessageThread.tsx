@@ -24,7 +24,7 @@ import {
 import { FORUM_MESSAGE_MAX_LENGTH, type AmountUnit, type ForumMessage } from '@/lib/api-types';
 import { useHeartTip } from '@/lib/heart-tip';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
-import { isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
+import { authorCannotReceive, isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
@@ -152,7 +152,9 @@ function withSeededHiddenReply(
 /**
  * Signed-in permalink thread: one root note on {@link ForumBoard} with the
  * same copy, expand/reply, photo, translate, and staff delete actions as
- * `/welcome`. Gift only on a payable nested reply. Auto-expands the root so
+ * `/welcome`. Gift only on a payable nested reply, shown disabled with
+ * `CannotReceiveLabel` when that reply's author cannot receive yet; a reply
+ * to such an author never invoices a gift. Auto-expands the root so
  * the thread and in-card reply composer are available. No top-level composer,
  * feed filters, or envelope.
  *
@@ -991,6 +993,7 @@ export function PublicMessageThread(props: {
     const own = isOwnNote(account?.id, note.accountId);
     const exempt = isReplyPaymentExempt(account, note.accountId);
     const authorUnknown = note.accountId === undefined;
+    const blocked = authorCannotReceive(note, account?.id);
     const continueReply = (isRetry: boolean): Promise<void> => {
       // Your own note shows no amount field: the reply is posted without a payment.
       if (own) {
@@ -999,6 +1002,17 @@ export function PublicMessageThread(props: {
           return Promise.resolve();
         }
         return runReplyPost(token, trimmed, parentId, isRetry, true);
+      }
+      // The author cannot receive yet: the amount field is disabled, so the
+      // reply never invoices a gift to the author.
+      if (blocked) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return exempt
+          ? runReplyPost(token, trimmed, parentId, isRetry)
+          : runComposePay(token, trimmed, parentId, 1, isRetry);
       }
       if (parsed === 'invalid') {
         setReplyFormError('amount');
