@@ -84,7 +84,10 @@ These must be green on the PR. A missing or red gate is rejected:
 - `npm run build`
 - `npm run e2e` locally (behavior + four visual combos). CI splits that
   into `E2E (behavior)` plus `Visual (desktop-light|desktop-dark|mobile-light|mobile-dark)`;
-  all must be green.
+  all must be green. `E2E (behavior)` is green only when its three shard jobs
+  `E2E (behavior, shard 1/3)` to `3/3` are green. Each `Visual (<combo>)` is green
+  only when all eight visual shard jobs (`Visual (<combo>, shard 1/2)` and `2/2`)
+  are green.
 
 ## Other CONTRIBUTING rules
 
