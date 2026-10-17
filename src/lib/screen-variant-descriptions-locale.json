@@ -5379,6 +5379,16 @@
     "es": "El estado de envío fallido con Quién recibe el pago abierto. La tarjeta conserva ₿1'000 · $1.00 y muestra en rojo No se pudo iniciar el pago de Bitcoin. La lista muestra Bruno ₿500 · $0.50, Carla ₿300 · $0.30 y Diego ₿200 · $0.20. Debajo vuelven Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿1'000 · $1.00.",
     "fil": "Ang nabigong pagpapadala na bukas ang Sino ang babayaran. Nananatili sa due card ang ₿1'000 · $1.00 at ipinapakita sa pula ang Hindi masimulan ang Bitcoin payment. Ipinapakita ng listahan sina Bruno ₿500 · $0.50, Carla ₿300 · $0.30, at Diego ₿200 · $0.20. Bumabalik sa ilalim ang Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿1'000 · $1.00."
   },
+  "/loans/repay:failed-cannot-receive": {
+    "de": "Der fehlgeschlagene Sendezustand, wenn die API für den Anteil eines Kreditgebers cannot_receive meldete. Die Fälligkeitskarte behält ₿1'000 · $1.00 und zeigt rot Eine Wallet kann noch nicht empfangen. Darunter kehren Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿1'000 · $1.00 senden zurück.",
+    "es": "El estado de envío fallido cuando la API respondió cannot_receive para la parte de un prestamista. La tarjeta conserva ₿1'000 · $1.00 y muestra en rojo Una wallet aún no puede recibir. Debajo vuelven Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿1'000 · $1.00.",
+    "fil": "Ang nabigong pagpapadala kapag sumagot ang API ng cannot_receive para sa bahagi ng isang nagpahiram. Nananatili sa due card ang ₿1'000 · $1.00 at ipinapakita sa pula ang Hindi pa makatanggap ang isang wallet. Bumabalik sa ilalim ang Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿1'000 · $1.00."
+  },
+  "/loans/repay:failed-cannot-receive-who-open": {
+    "de": "Derselbe Zustand mit geöffnetem „Wer wird bezahlt?“ Die Liste zeigt Bruno ₿500 · $0.50, Carla ₿300 · $0.30 und Diego ₿200 · $0.20 unter dem roten Hinweis Eine Wallet kann noch nicht empfangen.",
+    "es": "El mismo estado con Quién recibe el pago abierto. La lista muestra Bruno ₿500 · $0.50, Carla ₿300 · $0.30 y Diego ₿200 · $0.20 bajo el aviso rojo Una wallet aún no puede recibir.",
+    "fil": "Parehong kalagayan na bukas ang Sino ang babayaran. Ipinapakita ng listahan sina Bruno ₿500 · $0.50, Carla ₿300 · $0.30, at Diego ₿200 · $0.20 sa ilalim ng pulang paalala na Hindi pa makatanggap ang isang wallet."
+  },
   "/loans/repay:collecting": {
     "de": "Während Kredit A noch sammelt, gibt es keine Fälligkeitskarte. Ihr Kredit zeigt den Nähmaschinen-Text, ₿30'000 · $30.00 · 30 Tage · ₿1'000 · $1.00 pro Tag, Noch nicht vollständig finanziert. und Rückzahlungsliste; dieser Bildschirm zeigt keinen Finanzierungsbalken.",
     "es": "Mientras el préstamo A aún recauda, no hay tarjeta de vencimiento. Tu préstamo muestra el texto de la máquina de coser, ₿30'000 · $30.00 · 30 días · ₿1'000 · $1.00 al día, Aún no está totalmente financiado. y Lista de devolución; esta pantalla no muestra una barra de financiación.",

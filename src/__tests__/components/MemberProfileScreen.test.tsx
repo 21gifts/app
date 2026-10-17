@@ -1942,13 +1942,16 @@ describe('MemberProfileScreen', () => {
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
-      expect(
-        vi.mocked(postMessage).mock.calls.length + vi.mocked(postMessageInvoice).mock.calls.length,
-      ).toBe(1);
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${note.id}\nreply`,
+        NO_RATE_SHOWN,
+      );
     });
-    for (const call of vi.mocked(postMessageInvoice).mock.calls) {
-      expect(call[1]).not.toBe(note.id);
-    }
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    expect(postMessage).not.toHaveBeenCalled();
   });
 
   it('posts a verified reply unpaid when the author cannot receive', async () => {

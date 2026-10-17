@@ -1152,6 +1152,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:failed-cannot-receive",
+    "label": "/loans/repay failed-cannot-receive",
+    "visual": "state-loans-repay-failed-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:failed-cannot-receive-who-open",
+    "label": "/loans/repay failed-cannot-receive-who-open",
+    "visual": "state-loans-repay-failed-cannot-receive-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:collecting",
     "label": "/loans/repay collecting",
     "visual": "state-loans-repay-collecting",

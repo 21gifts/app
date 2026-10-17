@@ -232,6 +232,12 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
     balanceSats: 21_000,
     errorKey: 'forum.payErrorRequest',
   },
+  'repay-failed-cannot-receive': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    errorKey: 'loans.errorCannotReceive',
+  },
 };
 
 /** Shares reserved from the start of their send until it is known they did not go out. */
