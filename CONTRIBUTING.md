@@ -934,9 +934,8 @@ workflows as `github.run_number`. It is inlined at `next build` as
 It is not substituted at container start and is not an `entrypoint.sh`
 placeholder. Local and Playwright builds without the arg show `dev`.
 
-`NEXT_PUBLIC_BUILD_ID` is a Docker **build-arg** (default `dev`), meant to be
-the deployed commit SHA; an image built without it sends `dev`, which the api
-accepts while `APP_BUILD_REQUIRED` is unset. `next.config.ts` inlines it at
+`NEXT_PUBLIC_BUILD_ID` is a Docker **build-arg** (default `dev`), passed by
+every deploy as the commit SHA (see CI / CD). `next.config.ts` inlines it at
 `next build` (unset or empty → `dev`), and `getBuildId()` reads it. Passkey
 begin and finish send it as `X-App-Build`; the same-origin proxy passes the
 browser's value through and never sets it. When the api has
