@@ -6,6 +6,7 @@ import { expect, test, type APIRequestContext, type Locator, type Page } from '@
 import { fetchPublicMessagePhoto } from '../src/lib/api';
 import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import { fulfillSpot, SPOT_RATES, spotRatesFromStats } from './fx-spot';
+import { motionSettled } from './motion';
 import {
   buildShopStickerPdf,
   buildShopStickerSvg,
@@ -5707,12 +5708,21 @@ async function openReactionPayPage(page: Page, invoiceStatus: number = 200): Pro
   await openReactionForm(page, invoiceStatus);
   await page.getByLabel('Amount').fill('21');
   await page.getByLabel('Your reaction').fill(REACTION_PAY_ANSWER);
+  // The line under the amount eases in: click once it has come to rest.
+  await motionSettled(page);
   const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
   await form.getByRole('button', { name: 'Post' }).click();
 }
 
-/** Signed-in welcome with one foreign note open on its reaction form. */
-async function openReactionForm(page: Page, invoiceStatus: number = 200): Promise<void> {
+/**
+ * Signed-in welcome with one foreign note open on its reaction form. `beforeOpen` runs once the
+ * page has loaded, right before the note is clicked.
+ */
+async function openReactionForm(
+  page: Page,
+  invoiceStatus: number = 200,
+  beforeOpen: () => Promise<void> = async () => undefined,
+): Promise<void> {
   await seedAdaSession(page);
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     await route.fulfill({
@@ -5801,6 +5811,8 @@ async function openReactionForm(page: Page, invoiceStatus: number = 200): Promis
     });
   });
   await page.goto('/welcome');
+  await expect(page.getByText(REACTION_PAY_NOTE)).toBeVisible();
+  await beforeOpen();
   await page.getByText(REACTION_PAY_NOTE).click();
   await expect(page.getByLabel('Your reaction')).toBeVisible();
 }
@@ -6012,6 +6024,57 @@ test('Function: Collapse — with reduced motion a gift sheet opens and closes a
     log.some((entry) => entry.startsWith('collapse:closed') && entry.endsWith(':inert')),
     log.join(' '),
   ).toBe(false);
+});
+
+test('Function: afterTransition — the reaction fold settles on its own transition end while the page clock is paused', async ({
+  page,
+}) => {
+  await page.clock.install();
+  // Every page timer is held from here on, the fallback timer of the fold too: only the browser's
+  // own transition end can settle it.
+  await openReactionForm(page, 200, async () => {
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+  });
+  const fold = page.locator('[data-collapse]', { has: page.getByLabel('Your reaction') }).first();
+  await expect(fold).toHaveAttribute('data-collapse', 'open');
+});
+
+test('Function: announceSettle — the reaction fold tells the page it has settled while it still reads opening, and reads open right after', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const seen: string[] = [];
+    (window as unknown as { settles: string[] }).settles = seen;
+    document.addEventListener('21gifts:motion-settle', (event) => {
+      const el = event.target as HTMLElement;
+      if (el.hasAttribute('data-collapse') && el.querySelector('textarea') !== null) {
+        seen.push(String(el.getAttribute('data-collapse')));
+        // Runs once the task that sent the event is done, before React renders the settled state.
+        queueMicrotask(() => {
+          seen.push(`then:${String(el.getAttribute('data-collapse'))}`);
+        });
+      }
+    });
+  });
+  await openReactionForm(page);
+  const fold = page.locator('[data-collapse]', { has: page.getByLabel('Your reaction') }).first();
+  await expect(fold).toHaveAttribute('data-collapse', 'open');
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { settles: string[] }).settles))
+    .toEqual(['opening', 'then:open']);
+});
+
+test('Function: prefersReducedMotion — with reduced motion the reaction fold is open at once, without an opening step', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await recordMotion(page, 'textarea');
+  await openReactionForm(page);
+  const fold = page.locator('[data-collapse]', { has: page.getByLabel('Your reaction') }).first();
+  await expect(fold).toHaveAttribute('data-collapse', 'open');
+  const log = await motionLog(page);
+  expect(log, log.join(' ')).toContain('collapse:open');
+  expect(log, log.join(' ')).not.toContain('collapse:opening');
 });
 
 test('Function: AutoHeight — the open reaction box glides to the height its content needs and clips only while moving', async ({

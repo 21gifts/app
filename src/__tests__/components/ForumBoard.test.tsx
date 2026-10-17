@@ -8248,9 +8248,7 @@ describe('reply form size', () => {
       </AppShell>
     );
     const settleFold = (): void => {
-      const fold = screen
-        .getByLabelText('Your reaction')
-        .closest('[data-collapse]') as HTMLElement;
+      const fold = screen.getByLabelText('Your reaction').closest('[data-collapse]') as HTMLElement;
       act(() => {
         fold.dispatchEvent(new Event(MOTION_SETTLE_EVENT, { bubbles: true }));
       });
