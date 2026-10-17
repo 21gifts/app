@@ -478,6 +478,33 @@ describe('sendHeartTip', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('returns author_cannot_receive for visual=heart-cannot-receive in a Playwright build without invoicing', async () => {
+    vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
+    window.history.replaceState({}, '', '/welcome?visual=heart-cannot-receive');
+    await expect(sendHeartTip(BASE)).resolves.toEqual({
+      kind: 'failed',
+      reason: 'author_cannot_receive',
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('ignores visual=heart-cannot-receive in a production build and still pays', async () => {
+    window.history.replaceState({}, '', '/welcome?visual=heart-cannot-receive');
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      method: 'spark',
+      send,
+    });
+    await expect(sendHeartTip({ ...BASE, messageId: 'pin-prod-cr' })).resolves.toEqual({
+      kind: 'paid',
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+  });
+
   it('stays silent when signed out or read-only even with visual=heart-paid in Playwright', async () => {
     vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
     window.history.replaceState({}, '', '/welcome?visual=heart-paid');
@@ -1049,6 +1076,23 @@ describe('useHeartTip', () => {
       needsBalance: false,
       extra: 0,
     });
+  });
+
+  it('shows the author-wallet line when the api says the author cannot receive', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CannotReceiveError());
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    await clickHeart(result, 'h-cannot');
+    expect(result.current.heartTipViews['h-cannot']).toEqual({
+      pressed: true,
+      plusOne: true,
+      needsBalance: false,
+      extra: 0,
+      cannotReceive: true,
+    });
+    expect(captureMessage).toHaveBeenCalledWith(
+      'Heart not sent',
+      expect.objectContaining({ tags: { heart_reason: 'author_cannot_receive' } }),
+    );
   });
 
   it('shows the press and +1 on a Sunday tap and reports it without invoicing', async () => {

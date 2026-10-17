@@ -126,6 +126,7 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * @param messageId - Posted credit id. Omitted in the wizard, so the ledger stays off.
  * @param ledgerCollapsed - Feed lists show a repayment-list link and skip the ledger fetch. The note page leaves this false.
  * @param onLend - Posted loan only: opens the money reaction, shown as **Lend** in the loan block.
+ * @param lendBlocked - Posted loan only: the borrower cannot receive yet, so **Lend** shows disabled.
  * @returns The bar, or `null`.
  */
 export function ForumGoalBar({
@@ -148,6 +149,7 @@ export function ForumGoalBar({
   messageId,
   ledgerCollapsed = false,
   onLend,
+  lendBlocked = false,
 }: {
   sats: number;
   goalSats: number;
@@ -171,6 +173,8 @@ export function ForumGoalBar({
   ledgerCollapsed?: boolean | undefined;
   /** Posted loan only: opens the money reaction of the note. Omit when the viewer cannot lend. */
   onLend?: (() => void) | undefined;
+  /** Posted loan only: the borrower cannot receive yet, so **Lend** shows disabled. */
+  lendBlocked?: boolean | undefined;
 }): ReactElement | null {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
@@ -290,6 +294,7 @@ export function ForumGoalBar({
           ledger={loaded !== null && loaded.messageId === messageId ? loaded.ledger : null}
           ledgerLink={ledgerCollapsed}
           onLend={onLend}
+          lendBlocked={lendBlocked}
         />
         {ledgerCollapsed ? null : (
           <CreditLedger messageId={messageId} list="summary" onLedger={onLedger} />

@@ -5713,5 +5713,40 @@
     "de": "Angemeldeter Permalink von Marias Kredit, sobald er voll ist (sats gleich goalSats): Der Kreditblock zeigt Vollständig finanziert und bietet kein Leihen, und das Betragsfeld der offenen Karte behält die Beschriftung Betrag. Nachdem ₿210 gepostet wurde, zeigt das Zahlblatt in der Karte ₿210 · $0.21 zahlen, der Hinweis sagt Dieser Kredit ist bereits vollständig finanziert. Was Sie jetzt senden, ist ein Geschenk an Maria., und die Wallet-Schaltfläche bleibt Senden.",
     "es": "Enlace permanente con sesión iniciada del préstamo de Maria una vez lleno (sats igual a goalSats): el bloque del préstamo dice Totalmente financiado y no ofrece Prestar, y el campo de importe de la tarjeta abierta mantiene la etiqueta Importe. Tras publicar ₿210, la hoja de pago en la tarjeta dice Pagar ₿210 · $0.21, la nota dice Este préstamo ya está totalmente financiado. Lo que envíes ahora es un regalo para Maria., y el botón de la billetera sigue siendo Enviar.",
     "fil": "Naka-sign na permalink ng pautang ni Maria kapag buo na (katumbas ng sats ang goalSats): Buo na ang pondo ang nakasulat sa bloke ng pautang at walang Magpahiram, at nananatili ang tatak na Halaga sa field ng halaga ng bukas na kard. Pagkatapos i-post ang ₿210, Magbayad ng ₿210 · $0.21 ang nakasulat sa pay sheet sa loob ng kard, sinasabi ng paalala Buo na ang pondo ng utang na ito. Ang ipapadala mo ngayon ay regalo kay Maria., at nananatiling Ipadala ang button ng wallet."
+  },
+  "/welcome:heart-cannot-receive": {
+    "de": "Angemeldete Notiz eines anderen Mitglieds nach dem Öffnen von ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf Send ₿1. Die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Nota de otro miembro con sesión iniciada tras abrir ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Send ₿1. La API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Tala ng ibang miyembro habang naka-sign in, matapos buksan ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Send ₿1. Tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+  },
+  "/welcome:author-cannot-receive": {
+    "de": "Eine Notiz eines Mitglieds ohne verifizierte Wallet (authorCanReceive: false). Die Aktionszeile zeigt vor dem Herz das kleine graue Label Kann noch nicht empfangen, und Herz samt Zähler sind deaktiviert, damit niemand eine Zahlung startet, die nur scheitern kann.",
+    "es": "Una nota de un miembro que aún no tiene wallet verificada (authorCanReceive: false). La fila de acciones muestra antes del corazón la etiqueta gris Aún no puede recibir, y el corazón con su contador está desactivado, para que nadie inicie un pago que solo puede fallar.",
+    "fil": "Isang tala ng miyembrong wala pang verified na wallet (authorCanReceive: false). Ipinapakita ng hanay ng aksyon bago ang puso ang maliit na label na Hindi pa makatanggap, at naka-disable ang puso at ang bilang nito, para walang magsimula ng bayad na mabibigo lang."
+  },
+  "/welcome:author-cannot-receive-open": {
+    "de": "Dieselbe Notiz nach Reaktionen anzeigen. Das Betragsfeld der Reaktion ist deaktiviert (Text geht weiterhin), und eine Antwort eines anderen Mitglieds, das noch nicht empfangen kann, zeigt Kann noch nicht empfangen mit einem deaktivierten Send-Bitcoin-Geschenk, das kein Blatt öffnet.",
+    "es": "La misma nota tras Mostrar reacciones. El campo Importe de la reacción está desactivado (el texto se sigue publicando), y una respuesta de otro miembro que aún no puede recibir muestra Aún no puede recibir con un regalo Send Bitcoin desactivado que no abre ninguna hoja.",
+    "fil": "Ang parehong tala matapos ang Ipakita ang mga reaksyon. Naka-disable ang field na Halaga ng reaksyon (naipo-post pa rin ang teksto), at ang sagot ng ibang miyembrong hindi pa makatanggap ay nagpapakita ng Hindi pa makatanggap kasama ang naka-disable na Send Bitcoin na regalo na walang binubuksang sheet."
+  },
+  "/members/[accountId]:cannot-receive": {
+    "de": "Profil eines Mitglieds, das noch nicht empfangen kann (lightningAddress: null auf der Mitgliedskarte). Der Geschenkbereich zeigt das Label Kann noch nicht empfangen statt der 21.gifts-Adresse, des Open-CryptoPay-QR und des Shop-Stickers.",
+    "es": "Perfil de un miembro que aún no puede recibir (lightningAddress: null en la tarjeta de miembro). El bloque de regalos muestra la etiqueta Aún no puede recibir en lugar de la dirección 21.gifts, el QR de Open CryptoPay y la pegatina de tienda.",
+    "fil": "Profile ng miyembrong hindi pa makatanggap (lightningAddress: null sa member card). Ipinapakita ng bloke ng regalo ang label na Hindi pa makatanggap sa halip na ang 21.gifts address, ang Open CryptoPay QR, at ang shop sticker."
+  },
+  "/view/[viewKey]:cannot-receive": {
+    "de": "Öffentliches Profil eines Mitglieds, das noch nicht empfangen kann (lightningAddressVerified: false). Der Geschenkbereich zeigt das Label Kann noch nicht empfangen statt der 21.gifts-Adresse und des Open-CryptoPay-QR.",
+    "es": "Perfil público de un miembro que aún no puede recibir (lightningAddressVerified: false). El bloque de regalos muestra la etiqueta Aún no puede recibir en lugar de la dirección 21.gifts y el QR de Open CryptoPay.",
+    "fil": "Pampublikong profile ng miyembrong hindi pa makatanggap (lightningAddressVerified: false). Ipinapakita ng bloke ng regalo ang label na Hindi pa makatanggap sa halip na ang 21.gifts address at ang Open CryptoPay QR."
+  },
+  "/messages:thread-cannot-receive": {
+    "de": "Offener Thread mit einem Mitglied, das noch nicht empfangen kann (canReceive: false in der Unterhaltung). Das Betragsfeld unter dem Eingabefeld ist deaktiviert und darunter steht Kann noch nicht empfangen. Textnachrichten gehen weiterhin.",
+    "es": "Hilo abierto con un miembro que aún no puede recibir (canReceive: false en la conversación). El campo Importe bajo el compositor está desactivado y debajo aparece Aún no puede recibir. Los mensajes de texto se siguen enviando.",
+    "fil": "Bukas na thread kasama ang miyembrong hindi pa makatanggap (canReceive: false sa usapan). Naka-disable ang field na Halaga sa ilalim ng composer at nasa ilalim nito ang Hindi pa makatanggap. Naipapadala pa rin ang mga text message."
+  },
+  "/habit-tracker:comment-cannot-receive": {
+    "de": "Adas Sitzung. Ein Kommentar eines Mitglieds, das noch nicht empfangen kann (canReceive: false), zeigt das Label Kann noch nicht empfangen und ein deaktiviertes Send-Bitcoin-Geschenk; es öffnet kein Blatt.",
+    "es": "Sesión de Ada. Un comentario de un miembro que aún no puede recibir (canReceive: false) muestra la etiqueta Aún no puede recibir y un regalo Send Bitcoin desactivado; no abre ninguna hoja.",
+    "fil": "Session ni Ada. Ang komento ng miyembrong hindi pa makatanggap (canReceive: false) ay nagpapakita ng label na Hindi pa makatanggap at naka-disable na Send Bitcoin na regalo; walang binubuksang sheet."
   }
 }

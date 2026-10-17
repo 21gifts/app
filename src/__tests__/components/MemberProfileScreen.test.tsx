@@ -157,7 +157,7 @@ const profile: MemberProfile = {
   username: 'carol',
   location: null,
   role: 'verified',
-  lightningAddress: null,
+  lightningAddress: 'carol@21.gifts',
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
   aboutMeHasPhoto: false,
@@ -4369,6 +4369,20 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByTestId('staff-functions')).toBeNull();
   });
 
+  it('shows the cannot-receive label instead of the address, QR, and sticker', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, lightningAddress: null }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    expect(screen.queryByText(/carol@/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Shop sticker' })).toBeNull();
+    expect(screen.queryByText('No 21.gifts address')).toBeNull();
+  });
+
   it('shows unnamed and no-address copy when fields are null', () => {
     renderWithLocale(
       <MemberProfileScreen
@@ -4376,7 +4390,6 @@ describe('MemberProfileScreen', () => {
           ...profile,
           name: null,
           username: null,
-          lightningAddress: null,
           role: 'basis',
         }}
         received={[]}

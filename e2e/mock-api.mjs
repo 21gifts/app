@@ -241,7 +241,7 @@ const E2E_MEMBER_PROFILE = {
   username: 'carol',
   location: 'Zug',
   role: 'verified',
-  lightningAddress: null,
+  lightningAddress: 'carol@21.gifts',
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
   aboutMeHasPhoto: false,
@@ -342,6 +342,23 @@ const E2E_MEMBER_REPLIES = [
  * no photo, no video, and 0 sats, so the app's note schema cannot show it.
  */
 const E2E_EMPTY_ABOUT_MEMBER_ID = '77777777-7777-4777-8777-777777777777';
+
+/** Canned member who cannot receive yet (no verified wallet: `lightningAddress` null). */
+const E2E_CANNOT_RECEIVE_MEMBER_ID = '12121212-1212-4212-8212-121212121212';
+const E2E_CANNOT_RECEIVE_PROFILE = {
+  id: E2E_CANNOT_RECEIVE_MEMBER_ID,
+  name: 'Erin',
+  username: 'erin',
+  location: 'Tondo',
+  role: 'basis',
+  lightningAddress: null,
+  createdAt: '2026-03-01T12:00:00.000Z',
+  aboutMe: null,
+  aboutMeHasPhoto: false,
+  profileMessage: null,
+  postCount: 0,
+  replyCount: 0,
+};
 const E2E_EMPTY_ABOUT_NOTE = {
   id: '88888888-8888-4888-8888-888888888888',
   accountId: E2E_EMPTY_ABOUT_MEMBER_ID,
@@ -366,7 +383,7 @@ const E2E_EMPTY_ABOUT_PROFILE = {
   username: 'dana',
   location: null,
   role: 'basis',
-  lightningAddress: null,
+  lightningAddress: 'dana@21.gifts',
   createdAt: '2026-02-01T12:00:00.000Z',
   aboutMe: '',
   aboutMeHasPhoto: false,
@@ -1851,6 +1868,10 @@ const server = http.createServer(async (req, res) => {
       json(res, 200, E2E_EMPTY_ABOUT_PROFILE);
       return;
     }
+    if (id === E2E_CANNOT_RECEIVE_MEMBER_ID) {
+      json(res, 200, E2E_CANNOT_RECEIVE_PROFILE);
+      return;
+    }
     if (id === account.id) {
       json(res, 200, {
         id: account.id,
@@ -1858,7 +1879,9 @@ const server = http.createServer(async (req, res) => {
         username: account.username ?? null,
         location: account.location,
         role: account.role,
-        lightningAddress: account.lightningAddress,
+        // The stub's own account receives unless a spec set `cannotReceive`.
+        lightningAddress:
+          account.cannotReceive === true ? null : (account.lightningAddress ?? 'stub@21.gifts'),
         createdAt: new Date(account.createdAt).toISOString(),
         aboutMe: account.aboutMe ?? null,
         aboutMeHasPhoto: account.aboutMeHasPhoto === true,
@@ -1928,8 +1951,10 @@ const server = http.createServer(async (req, res) => {
       name: found.name,
       username: found.username ?? null,
       location: found.location,
-      lightningAddress: found.lightningAddress,
-      lightningAddressVerified: found.lightningAddressVerified,
+      // The stub's accounts receive unless a spec set `cannotReceive`.
+      lightningAddress:
+        found.cannotReceive === true ? null : (found.lightningAddress ?? 'stub@21.gifts'),
+      lightningAddressVerified: found.cannotReceive !== true,
       createdAt: found.createdAt,
       hasPasskey,
       aboutMe: found.aboutMe ?? null,
@@ -2393,6 +2418,18 @@ const server = http.createServer(async (req, res) => {
       shopCount: 0,
     }));
     json(res, 200, { days });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/e2e/cannot-receive') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    account.cannotReceive = true;
+    json(res, 200, { ok: true });
     return;
   }
 

@@ -10151,3 +10151,134 @@ describe('ForumBoard loan block', () => {
     expect(screen.queryByRole('region', { name: 'Loan request' })).toBeNull();
   });
 });
+
+describe('ForumBoard author who cannot receive', () => {
+  const NOTE: ForumMessage = {
+    ...SAMPLE,
+    accountId: 'acc-bob',
+    payable: false,
+    authorCanReceive: false,
+    heartCount: 3,
+  };
+
+  function board(props: Partial<ForumBoardProps> = {}): ReactElement {
+    return (
+      <ForumBoard
+        messages={[NOTE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        viewerAccountId="acc-ada"
+        {...modeProps('all')}
+        {...props}
+      />
+    );
+  }
+
+  it('shows the label and a disabled heart with its count, and a tap sends nothing', () => {
+    const onHeartTip = vi.fn();
+    renderWithLocale(board({ onHeartTip }));
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    const heart = screen.getByRole('button', { name: 'Send ₿1' }) as HTMLButtonElement;
+    expect(heart.disabled).toBe(true);
+    expect(screen.getByText('3')).toBeTruthy();
+    fireEvent.click(heart);
+    expect(onHeartTip).not.toHaveBeenCalled();
+  });
+
+  it('disables the amount of a reaction on that note', () => {
+    renderWithLocale(board({ expandedId: 'm1', replies: [] }));
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+  });
+
+  it('shows the label and a disabled gift on a reply in the thread', () => {
+    const onPayOpen = vi.fn();
+    renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-carol' }],
+        expandedId: 'm1',
+        onPayOpen,
+        replies: [
+          {
+            ...SAMPLE,
+            id: 'r1',
+            parentId: 'm1',
+            accountId: 'acc-bob',
+            payable: false,
+            authorCanReceive: false,
+            text: 'A reply from Bob',
+          },
+        ],
+      }),
+    );
+    expect(screen.getAllByText("Can't receive yet")).toHaveLength(1);
+    const gift = screen.getByRole('button', { name: 'Send Bitcoin' }) as HTMLButtonElement;
+    expect(gift.disabled).toBe(true);
+    fireEvent.click(gift);
+    expect(onPayOpen).not.toHaveBeenCalled();
+  });
+
+  it('shows a disabled gift on a listed reply unless the board is read-only', () => {
+    const reply: ForumMessage = { ...NOTE, id: 'r2', parentId: 'm1' };
+    const { rerender } = renderWithLocale(board({ messages: [reply] }));
+    expect(
+      (screen.getByRole('button', { name: 'Send Bitcoin' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>{board({ messages: [reply], readOnly: true })}</ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+  });
+
+  it('shows no label on the own note, a deleted note, an external note, or an older api body', () => {
+    const { rerender } = renderWithLocale(board({ viewerAccountId: 'acc-bob' }));
+    expect(screen.queryByText("Can't receive yet")).toBeNull();
+    for (const message of [
+      { ...NOTE, deletedAt: '2026-08-29T15:00:00.000Z' },
+      { ...NOTE, accountId: undefined },
+      { ...NOTE, authorCanReceive: undefined },
+    ]) {
+      rerender(
+        <LocaleProvider locale="en" messages={getCatalog('en')}>
+          <ThemeProvider>{board({ messages: [message] })}</ThemeProvider>
+        </LocaleProvider>,
+      );
+      expect(screen.queryByText("Can't receive yet")).toBeNull();
+    }
+  });
+
+  it('shows Lend disabled on a loan whose borrower cannot receive', () => {
+    renderWithLocale(
+      board({
+        messages: [
+          { ...NOTE, sats: 10_500, goalSats: 21_000, goalRepayable: true, goalTermDays: 30 },
+        ],
+      }),
+    );
+    expect((screen.getByRole('button', { name: 'Lend' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('shows the author-wallet line after a heart the api refused', () => {
+    renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-bob' }],
+        onHeartTip: () => undefined,
+        heartTipViews: {
+          m1: { pressed: false, plusOne: false, needsBalance: false, cannotReceive: true },
+        },
+      }),
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+  });
+});

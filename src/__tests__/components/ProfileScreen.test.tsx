@@ -191,7 +191,7 @@ const OWN_MEMBER: MemberProfile = {
   username: 'alice',
   location: null,
   role: 'verified',
-  lightningAddress: null,
+  lightningAddress: 'alice@21.gifts',
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
   aboutMeHasPhoto: false,
