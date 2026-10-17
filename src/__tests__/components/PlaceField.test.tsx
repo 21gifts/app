@@ -661,6 +661,147 @@ describe('PlaceField', () => {
     });
   });
 
+  it('disables shop fields and ignores map clicks while onCommit is pending', async () => {
+    let resolveCommit!: () => void;
+    const onCommit = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveCommit = resolve;
+        }),
+    );
+    const listeners = new Map<string, (event?: unknown) => void>();
+    const markerListeners = new Map<string, () => void>();
+    const setPosition = vi.fn();
+    const marker = {
+      setPosition,
+      getPosition: () => ({ lat: () => 47.3769, lng: () => 8.5417 }),
+      addListener: (event: string, handler: () => void) => {
+        markerListeners.set(event, handler);
+      },
+    };
+    const map = {
+      setCenter: vi.fn(),
+      addListener: (event: string, handler: (event?: unknown) => void) => {
+        listeners.set(event, handler);
+      },
+    };
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => map),
+        Marker: vi.fn(() => marker),
+        event: { trigger: vi.fn() },
+      },
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
+    vi.stubGlobal('navigator', { geolocation: undefined });
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={onCommit}
+        shopDetails
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
+    fillShopAddress();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    expect((screen.getByLabelText('Shop name') as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByLabelText('Street') as HTMLInputElement).disabled).toBe(true);
+    expect(screen.getByRole('button', { name: 'Add a place' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'Use this place' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+    setPosition.mockClear();
+    listeners.get('click')?.({ latLng: { lat: () => 1, lng: () => 2 } });
+    markerListeners.get('dragend')?.();
+    expect(setPosition).not.toHaveBeenCalled();
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith({
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    });
+    await act(async () => {
+      resolveCommit();
+    });
+  });
+
+  it('ignores a saved-marker drag while onCommit is pending', async () => {
+    let resolveCommit!: () => void;
+    const onCommit = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveCommit = resolve;
+        }),
+    );
+    const listeners = new Map<string, (event?: unknown) => void>();
+    const markerListeners = new Map<string, () => void>();
+    const setPosition = vi.fn();
+    const map = {
+      setCenter: vi.fn(),
+      addListener: (event: string, handler: (event?: unknown) => void) => {
+        listeners.set(event, handler);
+      },
+    };
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => map),
+        Marker: vi.fn(() => ({
+          setPosition,
+          getPosition: () => ({ lat: () => 1, lng: () => 2 }),
+          addListener: (event: string, handler: () => void) => {
+            markerListeners.set(event, handler);
+          },
+        })),
+        event: { trigger: vi.fn() },
+      },
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
+    vi.stubGlobal('navigator', { geolocation: undefined });
+    renderWithLocale(
+      <PlaceField
+        place={{
+          lat: 47.3769,
+          lng: 8.5417,
+          label: "Kiki's Bakery",
+          address: {
+            street: 'Bahnhofstrasse',
+            houseNumber: '12',
+            postalCode: '8001',
+            city: 'Zürich',
+            country: 'CH',
+          },
+        }}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={onCommit}
+        shopDetails
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByRole('button', { name: 'Use this place' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    setPosition.mockClear();
+    markerListeners.get('dragend')?.();
+    listeners.get('click')?.({ latLng: { lat: () => 1, lng: () => 2 } });
+    expect(setPosition).not.toHaveBeenCalled();
+    await act(async () => {
+      resolveCommit();
+    });
+  });
+
   it('uses custom size, variant, and accessible name', () => {
     renderWithLocale(
       <PlaceField
@@ -1322,6 +1463,99 @@ describe('PlaceField', () => {
     expect(screen.getByRole('alert').textContent).toContain(
       'The place could not be saved. Please try again.',
     );
+  });
+
+  it('clears a mapped save error when the shop name changes', async () => {
+    const onCommit = vi.fn().mockRejectedValue(new Error('Shop name is required'));
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={onCommit}
+        shopDetails
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
+    fillShopAddress();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: "Kiki's Cafe" } });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('clears a mapped save error when an address field changes', async () => {
+    const onCommit = vi.fn().mockRejectedValue(new Error('Shop name is required'));
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={onCommit}
+        shopDetails
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
+    fillShopAddress();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Limmatquai' } });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('clears a mapped save error when the panel is reopened', async () => {
+    const onCommit = vi.fn().mockRejectedValue(new Error('Shop name is required'));
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={onCommit}
+        shopDetails
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
+    fillShopAddress();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Shop name')).toBeTruthy();
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('clears a save error when the place name changes', async () => {
+    const onCommit = vi.fn().mockRejectedValue(new Error('denied'));
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField place={null} disabled={false} onChange={() => undefined} onCommit={onCommit} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Stall' } });
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('shows a mapped shop 400 on the unavailable panel when removing a pin fails', async () => {

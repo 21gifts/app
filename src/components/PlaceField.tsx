@@ -200,10 +200,19 @@ export function PlaceField(props: {
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
   const authFailedRef = useRef(false);
+  // Map click and drag listeners are registered once; they read this ref.
+  const savingRef = useRef(false);
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const [placedBox, setPlacedBox] = useState<PlacedFrameBox | null>(null);
   const placedBoxRef = useRef<PlacedFrameBox | null>(null);
   const mapPlaced = placedBox !== null;
+  savingRef.current = saving;
+  const fieldsDisabled = props.disabled || saving;
+
+  function clearSaveError(): void {
+    setSaveError(false);
+    setSaveErrorKey(null);
+  }
 
   useEffect(() => {
     if (props.disabled) {
@@ -373,6 +382,9 @@ export function PlaceField(props: {
         draggable: true,
       });
       savedMarker.addListener('dragend', () => {
+        if (savingRef.current) {
+          return;
+        }
         const next = savedMarker.getPosition();
         if (next === null) {
           return;
@@ -382,6 +394,9 @@ export function PlaceField(props: {
       markerRef.current = savedMarker;
     }
     map.addListener('click', (event: GoogleMapMouseEvent) => {
+      if (savingRef.current) {
+        return;
+      }
       if (event.latLng === null) {
         return;
       }
@@ -391,6 +406,9 @@ export function PlaceField(props: {
       } else {
         const marker = new maps.Marker({ position: pos, map, draggable: true });
         marker.addListener('dragend', () => {
+          if (savingRef.current) {
+            return;
+          }
           const next = marker.getPosition();
           if (next === null) {
             return;
@@ -547,7 +565,7 @@ export function PlaceField(props: {
         size="sm"
         variant="secondary"
         aria-label={t('forum.placeRemove')}
-        disabled={props.disabled || saving}
+        disabled={fieldsDisabled}
         onClick={() => {
           void commit(null);
         }}
@@ -572,7 +590,7 @@ export function PlaceField(props: {
           variant="secondary"
           className="mt-3 shrink-0"
           aria-label={t('forum.placeRemove')}
-          disabled={props.disabled || saving}
+          disabled={fieldsDisabled}
           onClick={() => {
             void commit(null);
           }}
@@ -602,8 +620,9 @@ export function PlaceField(props: {
               maxLength={80}
               autoComplete="off"
               value={labelDraft}
-              disabled={props.disabled}
+              disabled={fieldsDisabled}
               onChange={(event) => {
+                clearSaveError();
                 setLabelDraft(event.target.value);
               }}
             />
@@ -611,8 +630,11 @@ export function PlaceField(props: {
           <p className="text-sm text-app-muted">{t('shops.placeNameHint')}</p>
           <ShopAddressFields
             value={addressValue}
-            disabled={props.disabled}
-            onChange={setAddressDraft}
+            disabled={fieldsDisabled}
+            onChange={(next) => {
+              clearSaveError();
+              setAddressDraft(next);
+            }}
           />
           {shopHint !== null ? <p className="text-sm text-app-muted">{shopHint}</p> : null}
         </Scrollport>
@@ -622,8 +644,9 @@ export function PlaceField(props: {
           maxLength={80}
           aria-label={t('forum.placeLabel')}
           value={labelDraft}
-          disabled={props.disabled}
+          disabled={fieldsDisabled}
           onChange={(event) => {
+            clearSaveError();
             setLabelDraft(event.target.value);
           }}
           className="mt-3 w-full shrink-0 rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
@@ -639,7 +662,7 @@ export function PlaceField(props: {
           type="button"
           variant="secondary"
           className="mt-3 shrink-0"
-          disabled={props.disabled || saving || shopCommitBlocked}
+          disabled={fieldsDisabled || shopCommitBlocked}
           onClick={() => {
             const trimmed = labelDraft.trim();
             if (shopDetails) {
@@ -673,7 +696,7 @@ export function PlaceField(props: {
           variant="secondary"
           className="mt-3 shrink-0"
           aria-label={t('forum.placeRemove')}
-          disabled={props.disabled || saving}
+          disabled={fieldsDisabled}
           onClick={() => {
             void commit(null);
           }}
@@ -694,8 +717,11 @@ export function PlaceField(props: {
           aria-label={ariaLabel}
           title={ariaLabel}
           aria-expanded={open}
-          disabled={props.disabled}
+          disabled={fieldsDisabled}
           onClick={() => {
+            if (!open) {
+              clearSaveError();
+            }
             setOpen((current) => !current);
           }}
         >

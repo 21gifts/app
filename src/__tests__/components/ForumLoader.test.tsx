@@ -4070,6 +4070,115 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('shows the mapped shop description after the compose fee when the post fails', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    postMock.mockRejectedValue(
+      new Error('Shop description must be 20 to 1000 characters and longer than the shop name'),
+    );
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    await submitShopWizard(SHOP_DESCRIPTION);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'The description must be 20 to 1000 characters and longer than the shop name.',
+      );
+    });
+    expect(screen.queryByText('Could not post your message')).toBeNull();
+  });
+
+  it('shows rate-limit copy when the paid shop POST is rate limited', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    postMock.mockRejectedValue(new Error('Too many messages'));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    await submitShopWizard(SHOP_DESCRIPTION);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Too many messages. Please wait a moment and try again.',
+      );
+    });
+  });
+
+  it('shows a request error when the paid shop POST rejects a non-Error value', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    fetchMock.mockResolvedValue(forumPage([]));
+    publicFetchMock.mockResolvedValue({
+      id: 'fee-note',
+      name: '21.gifts',
+      text: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      sats: 1,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+    });
+    postMock.mockRejectedValue('offline');
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    await submitShopWizard(SHOP_DESCRIPTION);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
+  });
+
   it('does not count a zero-sat note posted from unpaid as unseen on Active', async () => {
     window.localStorage.setItem('21gifts.forum-unpaid-seen', '2026-01-01T00:00:00.000Z');
     useAuthStore.setState({
@@ -4659,6 +4768,53 @@ describe('ForumLoader', () => {
 
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe(localized);
+  });
+
+  it('clears a mapped shop error when the place draft changes', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockRejectedValue(
+      new Error('Shop description must be 20 to 1000 characters and longer than the shop name'),
+    );
+    const listeners = new Map<string, (event?: unknown) => void>();
+    const map = {
+      setCenter: vi.fn(),
+      addListener: (event: string, handler: (event?: unknown) => void) => {
+        listeners.set(event, handler);
+      },
+    };
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => map),
+        Marker: vi.fn(() => ({
+          setPosition: () => undefined,
+          getPosition: () => ({ lat: () => 14.6, lng: () => 120.98 }),
+          addListener: () => undefined,
+        })),
+      },
+    };
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue({ json: () => Promise.resolve({ key: 'k' }) } as Response);
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      'The description must be 20 to 1000 characters and longer than the shop name.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
+    fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Stall' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+    fetchSpy.mockRestore();
+    delete (window as { google?: unknown }).google;
   });
 
   it('shows rate-limit copy when posting is rate limited', async () => {

@@ -138,6 +138,104 @@ describe('ShopTable', () => {
         })
         .getAttribute('href'),
     ).toBe('/map?pin=m-address');
+    expect(screen.getByText("Kiki's Bakery")).toBeTruthy();
+    expect(screen.queryByText('Cafe Luna')).toBeNull();
+  });
+
+  it('keeps the place label as the name after a text-only edit', async () => {
+    const moderator = {
+      id: 'acc',
+      linkingKey: '02',
+      role: 'moderator',
+      name: 'Ada',
+      location: null,
+      lightningAddress: null,
+      lightningAddressVerified: false,
+      forumLawsDismissed: true,
+      createdAt: 1,
+      rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      setup: null,
+      missing: [],
+    } as Account;
+    useAuthStore.setState({ session: 'tok', account: moderator });
+    const structured = {
+      ...SHOP,
+      id: 'm-address',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+      place: {
+        lat: 47.3769,
+        lng: 8.5417,
+        label: "  Kiki's Bakery  ",
+        address: {
+          street: 'Bahnhofstrasse',
+          houseNumber: '12',
+          postalCode: '8001',
+          city: 'Zürich',
+          country: 'CH',
+        },
+      },
+    };
+    fetchMessagesMock.mockResolvedValue({
+      messages: [structured, { ...SHOP, id: 'm-old', text: 'Old stall\n\n#21GiftsShop' }],
+      nextCursor: null,
+    });
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...structured,
+      text: 'Cafe Sol is open every morning.\n\n#21GiftsShop',
+    });
+    renderWithLocale(<ShopTable />);
+    expect(await screen.findByText("Kiki's Bakery")).toBeTruthy();
+    expect(screen.getByText('Old stall')).toBeTruthy();
+    expect(screen.queryByText('Cafe Luna is open every morning.')).toBeNull();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Edit shop note' })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every morning.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+    });
+    expect(screen.getByText("Kiki's Bakery")).toBeTruthy();
+    expect(screen.queryByText('Cafe Sol is open every morning.')).toBeNull();
+    expect(screen.getByText('Old stall')).toBeTruthy();
+  });
+
+  it('uses the first note line when a pin has no address or only a blank name', async () => {
+    useAuthStore.setState({ session: 'tok' });
+    fetchMessagesMock.mockResolvedValue({
+      messages: [
+        SHOP,
+        {
+          ...SHOP,
+          id: 'm-blank',
+          text: 'Blank name stall\n\n#21GiftsShop',
+          place: {
+            lat: 47.3769,
+            lng: 8.5417,
+            label: '   ',
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          },
+        },
+      ],
+      nextCursor: null,
+    });
+    renderWithLocale(<ShopTable />);
+    expect(await screen.findByText('Cafe Luna')).toBeTruthy();
+    expect(screen.getByText('Blank name stall')).toBeTruthy();
   });
 
   it('retries a failed show more', async () => {
@@ -285,7 +383,11 @@ describe('ShopTable', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-    expect(await screen.findByText('Cafe Sol is open every morning.')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+    });
+    expect(screen.getByText("Kiki's Bakery")).toBeTruthy();
+    expect(screen.queryByText('Cafe Sol is open every morning.')).toBeNull();
     expect(screen.getByText('Other stall')).toBeTruthy();
   });
 });
