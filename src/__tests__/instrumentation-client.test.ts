@@ -89,9 +89,23 @@ describe('instrumentation-client', () => {
     document.head.innerHTML = '';
   });
 
-  it('hands App Router navigations to the SDK', async () => {
+  it('marks App Router navigations as the app’s and hands them to the SDK', async () => {
     vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', '');
+    sessionStorage.clear();
     const { onRouterTransitionStart } = await import('@/instrumentation-client');
-    expect(onRouterTransitionStart).toBe(sentry.captureRouterTransitionStart);
+    const { APP_NAVIGATION_KEY } = await import('@/lib/page-load');
+    onRouterTransitionStart('/wallet', 'push');
+    expect(sessionStorage.getItem(APP_NAVIGATION_KEY)).toBe('app');
+    expect(sentry.captureRouterTransitionStart).toHaveBeenCalledWith('/wallet', 'push');
+    sessionStorage.clear();
+  });
+
+  it('reads why the page was loaded before any navigation can mark it', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SENTRY_DSN', '');
+    const { APP_NAVIGATION_KEY } = await import('@/lib/page-load');
+    sessionStorage.setItem(APP_NAVIGATION_KEY, 'app');
+    vi.resetModules();
+    await import('@/instrumentation-client');
+    expect(sessionStorage.getItem(APP_NAVIGATION_KEY)).toBeNull();
   });
 });

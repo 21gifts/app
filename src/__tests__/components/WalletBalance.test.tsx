@@ -46,6 +46,14 @@ describe('WalletBalance', () => {
     expect(useSpotRate).toHaveBeenCalledWith(false);
   });
 
+  it('says the wallet is downloading while its code is still being downloaded', () => {
+    renderWithLocale(
+      <WalletBalance status="connecting" balanceSats={null} onRetry={vi.fn()} downloading />,
+    );
+    expect(screen.getByRole('status').textContent).toBe('Downloading wallet…');
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
   it('renders bitcoin and preferred fiat with a usable rate', () => {
     vi.mocked(useSpotRate).mockReturnValue(RATE_DAY);
     renderWithLocale(<WalletBalance status="ready" balanceSats={21_000} onRetry={vi.fn()} />);

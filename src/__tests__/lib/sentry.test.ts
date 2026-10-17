@@ -496,21 +496,34 @@ describe('traceWallet', () => {
     vi.mocked(startSpan).mockClear();
   });
 
-  it('starts a wallet span of its own with a fixed name and no attributes by default', async () => {
+  // jsdom reports no navigation entry and the tab holds no marker.
+  const PAGE_LOAD = { load: 'unknown', load_trigger: 'other' };
+
+  it('starts a wallet span of its own with a fixed name and only the page load by default', async () => {
     await expect(traceWallet('wallet.connect', async () => 'connected')).resolves.toBe('connected');
     expect(startSpan).toHaveBeenCalledWith(
-      { name: 'wallet.connect', op: 'wallet', attributes: {}, parentSpan: null },
+      { name: 'wallet.connect', op: 'wallet', attributes: PAGE_LOAD, parentSpan: null },
       expect.any(Function),
     );
   });
 
-  it('passes the fixed route or prompt attribute on', async () => {
+  it('passes the fixed route or prompt attribute on beside the page load', async () => {
     await traceWallet('wallet.send', async () => undefined, { route: 'spark' });
     await traceWallet('wallet.passkey', async () => undefined, { prompt: 'login' });
     expect(vi.mocked(startSpan).mock.calls.map(([options]) => options.attributes)).toEqual([
-      { route: 'spark' },
-      { prompt: 'login' },
+      { ...PAGE_LOAD, route: 'spark' },
+      { ...PAGE_LOAD, prompt: 'login' },
     ]);
+  });
+
+  it('carries only fixed words: no value of the page load is free text', async () => {
+    await traceWallet('wallet.passkey', async () => undefined, { prompt: 'unlock' });
+    const attributes = vi.mocked(startSpan).mock.calls[0]?.[0].attributes ?? {};
+    expect(Object.keys(attributes).sort()).toEqual(['load', 'load_trigger', 'prompt']);
+    expect(['navigate', 'reload', 'back_forward', 'prerender', 'unknown']).toContain(
+      attributes['load'],
+    );
+    expect(['app', 'other']).toContain(attributes['load_trigger']);
   });
 
   it('passes a rejection on unchanged', async () => {

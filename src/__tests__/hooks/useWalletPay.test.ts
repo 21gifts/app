@@ -5,7 +5,6 @@ import {
   WALLET_PAY_CONFIRM_WAIT_MS,
   useWalletPay,
 } from '@/hooks/useWalletPay';
-import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import {
   connectWallet,
   payFromWallet,
@@ -26,7 +25,6 @@ vi.mock('@/lib/wallet/wallet-service', () => ({
 
 vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 vi.mock('@/lib/wallet/payment-failure', () => ({ reportPaymentFailure: vi.fn() }));
-vi.mock('@/lib/wallet/wallet-sdk', () => ({ walletNeedsReload: vi.fn(() => false) }));
 
 const account = {
   id: 'acc_1',
@@ -83,7 +81,6 @@ beforeEach(() => {
   vi.mocked(payFromWallet).mockReset();
   vi.mocked(connectWallet).mockReset().mockResolvedValue(undefined);
   vi.mocked(refreshWallet).mockReset().mockResolvedValue(undefined);
-  vi.mocked(walletNeedsReload).mockReset().mockReturnValue(false);
   vi.mocked(logInteraction).mockClear();
   vi.mocked(reportPaymentFailure).mockClear();
 });
@@ -787,7 +784,6 @@ describe('useWalletPay visual pins', () => {
     });
     expect(payFromWallet).not.toHaveBeenCalled();
     expect(connectWallet).not.toHaveBeenCalled();
-    expect(walletNeedsReload).not.toHaveBeenCalled();
   });
 
   it('pins a view without a sparkInvoice', () => {
@@ -835,7 +831,6 @@ describe('useWalletPay retry', () => {
     expect(result.current.feeSats).toBe(2);
     expect(payFromWallet).toHaveBeenCalledTimes(2);
     expect(connectWallet).not.toHaveBeenCalled();
-    expect(walletNeedsReload).not.toHaveBeenCalled();
   });
 
   it('prepares again after an amount mismatch', async () => {
@@ -862,14 +857,12 @@ describe('useWalletPay retry', () => {
     act(() => {
       result.current.retry();
     });
-    expect(walletNeedsReload).toHaveBeenCalledTimes(1);
     expect(connectWallet).toHaveBeenCalledTimes(1);
     expect(result.current.view).toBe('failed');
   });
 
-  it('reloads the page when the wallet library failed to load', () => {
+  it('never reloads the page to connect again', () => {
     setWallet('error');
-    vi.mocked(walletNeedsReload).mockReturnValue(true);
     const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     const previous = window.location;
     const reload = vi.fn();
@@ -881,8 +874,8 @@ describe('useWalletPay retry', () => {
       result.current.retry();
     });
     Object.defineProperty(window, 'location', { configurable: true, value: previous });
-    expect(reload).toHaveBeenCalledTimes(1);
-    expect(connectWallet).not.toHaveBeenCalled();
+    expect(reload).not.toHaveBeenCalled();
+    expect(connectWallet).toHaveBeenCalledTimes(1);
   });
 
   it('ignores a prepare result from before the retry', async () => {

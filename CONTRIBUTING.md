@@ -626,7 +626,7 @@ Every screen in the app except the root info page `/` has exactly one back contr
 
 ### No document load inside the app (hard requirement)
 
-The open wallet keeps its recovery phrase in the tab's memory only. A document load clears it, so the stored session is held back and the login card's passkey prompt must open the wallet before any signed-in screen appears. Only a real reload, a new tab, or closing the tab may require that login again. Moving between in-app views must therefore stay client-side: internal links use `next/link` (also inside an SVG chart), code navigates with `useRouter().push` or `replace`, or with `useRouter().back()` only for the same-document step back that `takeStepBack` claims, and an internal link never points at a path that only redirects (link to `/shops?pin=…#map`, not `/map?pin=…`). A raw `<a href="/…">`, `window.location.assign`, `location.href =`, or `location.replace` to an in-app path is an undeclared deviation. `window.location.reload()` is only allowed where nothing else can recover: **Try again** on the wallet balance, the pay slot, or the wallet setup note after the wallet’s initialisation failed (`walletNeedsReload`). The login card uses the PRF bytes returned by its passkey prompt, waits for `settlePhraseDerivations`, and asks for the seed passkey only when another passkey signed in. Never persist the recovery phrase or PRF bytes in `localStorage`, `sessionStorage`, IndexedDB, cookies, or a URL.
+The open wallet keeps its recovery phrase in the tab's memory only. A document load clears it, so the stored session is held back and the login card's passkey prompt must open the wallet before any signed-in screen appears. Only a real reload, a new tab, or closing the tab may require that login again. Moving between in-app views must therefore stay client-side: internal links use `next/link` (also inside an SVG chart), code navigates with `useRouter().push` or `replace`, or with `useRouter().back()` only for the same-document step back that `takeStepBack` claims, and an internal link never points at a path that only redirects (link to `/shops?pin=…#map`, not `/map?pin=…`). A raw `<a href="/…">`, `window.location.assign`, `location.href =`, or `location.replace` to an in-app path is an undeclared deviation. The app never calls `window.location.reload()`: a failed or still running download or initialisation of the wallet code is started again in the same page (`loadWalletSdk`), so **Try again** on the wallet balance, the pay slot, or the wallet setup note connects again without a document load. The login card uses the PRF bytes returned by its passkey prompt, waits for `settlePhraseDerivations`, and asks for the seed passkey only when another passkey signed in. Never persist the recovery phrase or PRF bytes in `localStorage`, `sessionStorage`, IndexedDB, cookies, or a URL.
 
 ### Staff actions (hard requirement)
 
@@ -978,7 +978,12 @@ What a trace holds:
   `wallet.sdk.load`, `wallet.connect`, `wallet.sync.first`, `wallet.balance`,
   `wallet.prepare`, `wallet.send`, `wallet.address.register`, and
   `wallet.passkey`. The only attributes are `route` (`spark`, `lightning`, or
-  `onchain`) and `prompt` (`login` or `unlock`). The browser never creates a
+  `onchain`), `prompt` (`login` or `unlock`), and on every wallet span why the
+  page was loaded: `load` (`navigate`, `reload`, `back_forward`, `prerender`,
+  or `unknown`) and `load_trigger` (`app` when App Router fell back to a full
+  page load during a client-side navigation, otherwise `other`;
+  `src/lib/page-load.ts`). That lets passkey prompts be counted per page load
+  and cause; there is no member id on any span. The browser never creates a
   receive invoice; the api issues it, and that request is a fetch span.
 - Wallet steps start their own transaction in the page's trace, so a slow
   connect does not stretch the page load, and all steps of a page share its
@@ -1070,9 +1075,9 @@ only for a signed-in member and both through same-origin proxies:
 A payment that did not go out, and a wallet that did not open, are also sent
 to error reporting (`Payment failed`, one issue per stage and reason, and
 `Wallet did not open`, one per reason), errors-only like every other report.
-A wallet that did not open is opened again automatically, except while the
-wallet code needs a page reload (`walletNeedsReload`): then no automatic
-attempt runs and **Try again** reloads the page. Only the first
+A wallet that did not open is opened again automatically, in the same page:
+a failed download of the wallet code is downloaded again, and the download
+itself is not cut off by the connect deadline. Only the first
 failure sends `wallet_open_failed` and `Wallet did not open`, and nothing more
 goes out until the wallet has been ready again or was disconnected.
 Member state (too little balance, an amount below the minimum, no wallet

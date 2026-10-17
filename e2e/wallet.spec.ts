@@ -785,6 +785,16 @@ test('wallet balance-connecting pin shows pending status', async ({ page }) => {
   await expect(region.getByRole('button')).toHaveCount(0);
 });
 
+test('wallet balance-downloading pin says the wallet code is still downloading', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  await page.goto('/wallet?visual=balance-downloading');
+  const region = page.getByRole('region', { name: 'Balance' });
+  await expect(region.getByRole('status')).toHaveText('Downloading wallet…');
+  await expect(region.getByRole('button')).toHaveCount(0);
+});
+
 test('wallet balance-ready pin shows bitcoin and fiat', async ({ page }) => {
   await signInWalletEligible(page);
   await page.route('**/gifts/stats**', async (route) => {
@@ -955,11 +965,17 @@ test('Function: WalletBalance — error pin shows Try again', async ({ page }) =
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
 
-test('Function: walletNeedsReload — error pin keeps Try again in place', async ({ page }) => {
+test('wallet Try again after a failed open stays in this document', async ({ page }) => {
   await signInWalletEligible(page);
   await page.goto('/wallet?visual=balance-error');
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+  await page.evaluate(() => {
+    (window as unknown as { e2eDocument?: string }).e2eDocument = 'wallet';
+  });
   await page.getByRole('button', { name: 'Try again' }).click();
+  expect(
+    await page.evaluate(() => (window as unknown as { e2eDocument?: string }).e2eDocument),
+  ).toBe('wallet');
   await expect(page.getByRole('region', { name: 'Balance' }).getByRole('alert')).toHaveText(
     'Your wallet could not be opened. Please try again.',
   );

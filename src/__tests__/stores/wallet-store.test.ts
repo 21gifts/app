@@ -93,6 +93,26 @@ describe('useWalletStore', () => {
     expect(useWalletStore.getState().retrying).toBe(false);
   });
 
+  it('setDownloading records a running download; ready, error, and reset clear it', () => {
+    process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
+    useWalletStore.getState().reset();
+    expect(useWalletStore.getState().downloading).toBe(false);
+    for (const clear of [
+      (): void => useWalletStore.getState().setReady(21_000, IDENTITY),
+      (): void => useWalletStore.getState().setError(),
+      (): void => useWalletStore.getState().reset(),
+    ]) {
+      useWalletStore.getState().setConnecting();
+      useWalletStore.getState().setDownloading(true);
+      expect(useWalletStore.getState()).toMatchObject({ status: 'connecting', downloading: true });
+      clear();
+      expect(useWalletStore.getState().downloading).toBe(false);
+    }
+    useWalletStore.getState().setDownloading(true);
+    useWalletStore.getState().setDownloading(false);
+    expect(useWalletStore.getState().downloading).toBe(false);
+  });
+
   it('reset returns to the resting status for the current key', () => {
     process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-breez-api-key';
     useWalletStore.getState().setReady(21_000, IDENTITY);

@@ -2,7 +2,6 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWalletSetup, walletSetupPin } from '@/hooks/useWalletSetup';
 import type { Account } from '@/lib/api-types';
-import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { retryWalletSetup } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
@@ -11,10 +10,6 @@ vi.mock('@/lib/wallet/wallet-setup', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-setup')>();
   return { ...actual, retryWalletSetup: vi.fn() };
 });
-
-vi.mock('@/lib/wallet/wallet-sdk', () => ({
-  walletNeedsReload: vi.fn(() => false),
-}));
 
 const SESSION = 'session-1';
 const originalHref = window.location.href;
@@ -58,7 +53,6 @@ beforeEach(() => {
   useAuthStore.setState({ session: SESSION, account: account(), wrongAccount: false });
   useWalletStore.setState({ setupFailedSession: null });
   vi.mocked(retryWalletSetup).mockReset().mockResolvedValue('done');
-  vi.mocked(walletNeedsReload).mockReset().mockReturnValue(false);
 });
 
 afterEach(() => {
@@ -149,12 +143,10 @@ describe('useWalletSetup', () => {
     window.history.replaceState({}, '', '/wallet?visual=wallet-pay-setup-failed');
     const { result } = renderHook(() => useWalletSetup());
     act(() => result.current.retry());
-    expect(walletNeedsReload).not.toHaveBeenCalled();
     expect(retryWalletSetup).not.toHaveBeenCalled();
   });
 
-  it('reloads when the SDK requires it', () => {
-    vi.mocked(walletNeedsReload).mockReturnValue(true);
+  it('retries setup in this page, never by reloading it', () => {
     const previous = window.location;
     const reload = vi.fn();
     Object.defineProperty(window, 'location', {
@@ -164,17 +156,10 @@ describe('useWalletSetup', () => {
     try {
       const { result } = renderHook(() => useWalletSetup());
       act(() => result.current.retry());
-      expect(reload).toHaveBeenCalledTimes(1);
-      expect(retryWalletSetup).not.toHaveBeenCalled();
+      expect(retryWalletSetup).toHaveBeenCalledTimes(1);
+      expect(reload).not.toHaveBeenCalled();
     } finally {
       Object.defineProperty(window, 'location', { configurable: true, value: previous });
     }
-  });
-
-  it('retries setup without reloading otherwise', () => {
-    const { result } = renderHook(() => useWalletSetup());
-    act(() => result.current.retry());
-    expect(walletNeedsReload).toHaveBeenCalledTimes(1);
-    expect(retryWalletSetup).toHaveBeenCalledTimes(1);
   });
 });

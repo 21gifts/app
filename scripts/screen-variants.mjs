@@ -311,6 +311,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'balance-downloading',
+    image: 'wallet-balance-downloading.png',
+    visual: 'state-wallet-balance-downloading',
+    needle: 'Downloading wallet…',
+  },
+  {
+    route: '/wallet',
     id: 'balance-ready',
     image: 'wallet-balance-ready.png',
     visual: 'state-wallet-balance-ready',

@@ -371,6 +371,7 @@ export function WalletPaymentDetails(): ReactElement {
           balanceSats={null}
           onRetry={wallet.retry}
           setupFailed={wallet.setupFailed}
+          downloading={wallet.downloading}
         />
       ) : null}
     </Card>
