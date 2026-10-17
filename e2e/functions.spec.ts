@@ -6,6 +6,7 @@ import { expect, test, type APIRequestContext, type Locator, type Page } from '@
 import { fetchPublicMessagePhoto } from '../src/lib/api';
 import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import { fulfillSpot, SPOT_RATES, spotRatesFromStats } from './fx-spot';
+import { fulfillStablecoinUnavailable, stubShopPayment } from './shop-payment';
 import {
   buildShopStickerPdf,
   buildShopStickerSvg,
@@ -394,6 +395,10 @@ async function stubPayLinkInvoice(page: Page): Promise<void> {
   await page.route(
     (url) => new URL(url).pathname.startsWith('/pay/'),
     async (route) => {
+      if (route.request().url().endsWith('/payment')) {
+        await fulfillStablecoinUnavailable(route);
+        return;
+      }
       if (route.request().method() === 'POST') {
         await route.fulfill({
           status: 200,
@@ -7364,6 +7369,116 @@ test('Endpoint: GET /pay/[username] — checker literal', async ({ request }) =>
 
 test('Endpoint: POST /pay/[username]/invoice — checker literal', async ({ request }) => {
   await request.post('/pay/[username]/invoice');
+});
+
+test('Endpoint: POST /pay/[username]/payment — proxies the shop payment opening', async ({
+  request,
+}) => {
+  // The mock api has no shop payments, as the default api boots without them.
+  const response = await request.post('/pay/shop/payment', { data: { amountSats: 7_000 } });
+  expect(response.status()).toBe(404);
+  expect(await response.json()).toEqual({ error: 'Not found' });
+  await request.post('/pay/[username]/payment');
+});
+
+/** Records every request whose URL contains `part`. */
+function recordRequests(page: Page, part: string): string[] {
+  const urls: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes(part)) {
+      urls.push(request.url());
+    }
+  });
+  return urls;
+}
+
+test('Function: fetchShopPayLink — an open till shows the shop payment of the pay link', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const opens = recordRequests(page, '/pay/ada/payment');
+  await stubShopPayment(page, { charge: true });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  await expect(page.getByText('238.21 USDT')).toBeVisible();
+  await expect(page.getByText('Polygon')).toHaveCount(2);
+  await expect(page.getByText('Arbitrum')).toHaveCount(1);
+  await expect(page.getByText('Lightning')).toHaveCount(0);
+  expect(opens).toEqual([]);
+});
+
+test("Function: fetchShopInvoice — Pay opens the callback's invoice, never a mint", async ({
+  page,
+}) => {
+  await stubWalletLocationAssign(page);
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const minted = recordRequests(page, '/invoice');
+  const opens = recordRequests(page, '/pay/ada/payment');
+  const detail = page.waitForRequest((request) => request.url().includes('/lnurlp/cb/ada?'));
+  await stubShopPayment(page, { charge: true });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  expect(new URL((await detail).url()).search).toBe('?quote=q1&method=Lightning&asset=BTC');
+  const pay = page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' });
+  await expect(pay).toBeEnabled();
+  await pay.click();
+  await expect.poll(() => recordedWalletAssign(page)).toBe('lightning:lnbc2380930n1shop');
+  expect(minted).toEqual([]);
+  expect(opens).toEqual([]);
+});
+
+test('Function: openShopPayment — Continue opens a shop payment, a repeat failure mints nothing', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const bodies: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().endsWith('/pay/ada/payment')) {
+      bodies.push(`${request.method()} ${request.postData() ?? ''}`);
+    }
+  });
+  const minted = recordRequests(page, '/invoice');
+  await stubShopPayment(page, { start: 'failed' });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('This payment could not be started. Try again.')).toBeVisible();
+  const posted = `POST ${JSON.stringify({ amountSats: 21 })}`;
+  expect(bodies).toEqual([posted, posted]);
+  expect(minted).toEqual([]);
+  await page.unrouteAll();
+  await stubShopPayment(page, {});
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  await expect(page.getByText('238.19 USDT')).toBeVisible();
+  expect(bodies).toEqual([posted, posted, posted]);
+  expect(minted).toEqual([]);
+});
+
+test('Function: waitShopPayment — on its way hides Pay, paid stops the reads', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const waits = recordRequests(page, '/lnurlp/wait/p1');
+  const opens = recordRequests(page, '/pay/ada/payment');
+  await stubShopPayment(page, {
+    charge: true,
+    waits: [
+      { status: 'Pending', paymentStatus: 'accepted' },
+      { status: 'Completed', paymentStatus: 'paid' },
+    ],
+  });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await expect(page.getByText('On its way')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
+  await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+  await page.clock.fastForward(2_000);
+  await expect(page.getByText('Paid ✓')).toBeVisible();
+  await page.clock.fastForward(5_000);
+  await expect(page.getByText('Paid ✓')).toBeVisible();
+  expect(waits.map((url) => new URL(url).search)).toEqual(['', '?since=accepted']);
+  expect(opens).toEqual([]);
 });
 
 test('Function: encodeLnurl — BIP-173 LNURL of a cleartext URL', async ({ page, request }) => {

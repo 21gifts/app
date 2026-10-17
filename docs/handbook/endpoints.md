@@ -25,7 +25,14 @@
 
 - **Purpose:** Proxies one exact-amount BOLT11 mint. Body `{ amountSats, comment? }`. Response `{ pr, amountSats, sparkInvoice }`. With a pending charge, `sparkInvoice` is a Spark invoice for that charge when `amountSats` is its amount. Without one, it is a Spark invoice for exactly `amountSats` to the member's verified wallet, carrying the message when one is sent. It is `null` when the api issues no Spark invoice.
 - **Errors:** Upstream 400 for a bad amount, 404 when the person cannot be paid, 502 when the invoice cannot be created.
-- **Used by:** `PayLinkScreen` after **Continue**; `fetchShopChargeInvoice` and `fetchMemberSparkInvoice` for the in-app wallet.
+- **Used by:** `PayLinkScreen` after **Continue** when `POST /pay/[username]/payment` answers 503 `stablecoin_unavailable` or a 4xx other than 409, on the first answer or its one repeat, and for an open till whose pay link is the plain Lightning request; `fetchShopChargeInvoice` and `fetchMemberSparkInvoice` for the in-app wallet.
+- **Auth:** none.
+
+## Endpoint: POST /pay/[username]/payment
+
+- **Purpose:** Proxies the opening of one shop payment for an amount the payer entered on `/pl`. Body `{ amountSats }`. Response `{ payment, expiresAt }`: the shop payment id, which the pay link then names as `quote.payment`, and the end of its five-minute window. A new payer amount replaces an open payer payment.
+- **Errors:** Upstream `{ error, code }` bodies: 404 when the person cannot be paid, 502 when the wallet or the mint fails, 400 for a bad amount, 409 `payment_open` while a till charge is pending, 503 `stablecoin_unavailable` when this shop has no stablecoin payment or it is switched off or rate limited. A username that is not one path segment answers 404 here without calling the api.
+- **Used by:** `openShopPayment` from `PayLinkScreen` after **Continue**.
 - **Auth:** none.
 
 ## Endpoint: OPTIONS /.well-known/lnurlp/[username]
