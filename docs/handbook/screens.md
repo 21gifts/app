@@ -2027,15 +2027,9 @@ Signed in. The member opened **Shops** from the Menu (its arrow returns to `/wel
 
 ### Variant: daily-payout-stopped
 
-Signed in, no grant application. The notice title is **Daily payout stopped**, then **Applications are currently paused. You can apply again when shop transactions have increased.**, then the link `https://21.gifts/statistics`. No apply control. The living room underneath is the default welcome.
+Signed in, no grant application. The notice title is **Daily payout stopped**, then **Your daily payout has stopped because you have not applied for the 21 gifts grant. Apply so a moderator can review your posts.**, then the large **Apply for the 21 gifts grant** link to `/grants/apply`. Applications are open to every verified member. The living room underneath is the default welcome.
 
 ![21.gifts welcome daily payout stopped](images/welcome-daily-payout-stopped.png)
-
-### Variant: daily-payout-stopped-apply
-
-Username joey-rosima, of any role, sees the Apply link under Daily payout stopped, not the paused sentence. That link is not the apply walk.
-
-![21.gifts welcome daily payout stopped apply](images/welcome-daily-payout-stopped-apply.png)
 
 ### Variant: renew
 
@@ -5260,106 +5254,136 @@ Owner editor with `role="alert"` save error after stubbing PUT /me/about to 500,
 
 ## Screen: /grants
 
-- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`. The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. An initiator or founder also sees two secondary large links, **Daily payment text** to `/grants/payments/comment` and **Daily payment amounts** to `/grants/payments/amounts`. Those links do not load the roster. A moderator does not see them. An account at least moderator (`roleAtLeast(role, 'moderator')`), including an initiator and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`, then the public **Grant places** panel (`GrantPlacesPanel`: free places, admissions, that applications stay open, and the 20-shop goal that opens the next round). The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. An initiator or founder also sees two secondary large links, **Daily payment text** to `/grants/payments/comment` and **Daily payment amounts** to `/grants/payments/amounts`. Those links do not load the roster. A moderator does not see them. An account at least moderator (`roleAtLeast(role, 'moderator')`), including an initiator and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification or grant status. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy, for every username. A verified account with status none or rejected named `joey-rosima`, `vincent`, or `jewel-bacolbas` opens Apply. Every other verified account with status none or rejected reads the paused sentence and the statistics link. Signed-in accounts open **Goals** (`/grants/goals`). An initiator or founder opens **Daily payment text** or **Daily payment amounts**. An account at least moderator, including an initiator and a founder, opens **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
+- **Actions:** Read verification or grant status. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy. A verified account with status none or rejected reads the daily-gift sentence, opens About, or opens Apply. Every visitor reads the free grant places of the current round. Signed-in accounts open **Goals** (`/grants/goals`). An initiator or founder opens **Daily payment text** or **Daily payment amounts**. An account at least moderator, including an initiator and a founder, opens **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
 
-Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, the paused sentence **Applications are currently paused. You can apply again when shop transactions have increased.**, the link `https://21.gifts/statistics`, and **Goals**. No About link and no Apply button. Public paused screenshots are unchanged because those fixtures are not `joey-rosima`, `vincent`, or `jewel-bacolbas`.
+Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, **Admitted members receive the daily gift. Apply so a moderator can review your posts.**, the **About** link, and the large **Apply for the 21 gifts grant** link. Under the card the **Grant places** panel reads **10 of 10 places are free.**, **Moderators have admitted 0 people in this round.**, the open-applications sentence, and **When 20 shops are active, the grant program opens for more people.** Then **Goals**.
 
 ![21.gifts grants](images/grants.png)
 
-### Variant: funding-apply
+### Variant: places-full
 
-Verified username joey-rosima with status none or rejected sees Apply for the 21 gifts grant instead of the paused sentence.
+Verified owner with status none when every place of the round is taken. The card still offers **Apply for the 21 gifts grant**. The **Grant places** panel reads **0 of 10 places are free.** and **All 10 places of this round are taken. Applications stay open.**, then the 20-shop goal. Needle `state-grants-places-full`.
 
-![21.gifts grants funding apply](images/grants-funding-apply.png)
+![21.gifts grants places full](images/grants-places-full.png)
+
+### Variant: places-error
+
+Verified owner with status none when `GET /funding/places` fails. The card and **Apply for the 21 gifts grant** stay. The panel shows **Could not load the grant places. Please try again.** and **Try again**. Needle `state-grants-places-error`.
+
+![21.gifts grants places error](images/grants-places-error.png)
+
+### Variant: places-loading
+
+Verified owner with status none while `GET /funding/places` has not answered. The card and **Apply for the 21 gifts grant** stay. The **Grant places** panel shows **Loading…**. Needle `state-grants-places-loading`.
+
+![21.gifts grants places loading](images/grants-places-loading.png)
 
 ### Variant: funding-not-verified
 
-Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus how in-person verification works. No apply button.
+Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus how in-person verification works. No apply button. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding not verified](images/profile-funding-not-verified.png)
 
 ### Variant: funding-pending
 
-Verified owner with `funding.status` **pending**. Copy **Your application is open. A moderator will review your posts.**
+Verified owner with `funding.status` **pending**. Copy **Your application is open. A moderator will review your posts.** The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding pending](images/profile-funding-pending.png)
 
 ### Variant: funding-trial
 
-Verified owner with `funding.status` **trial**. Copy **You are on a one-day trial. Review repeats tomorrow.**
+Verified owner with `funding.status` **trial**. Copy **You are on a one-day trial. Review repeats tomorrow.** The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding trial](images/profile-funding-trial.png)
 
 ### Variant: funding-admitted
 
-Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**. When `reviewedByName` is set, that sentence names the reviewer. Trial, pending, and rejected do not show a name. The funding-program icon on the public facts is closed here. The pressed result is **funding-program-open**.
+Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**. When `reviewedByName` is set, that sentence names the reviewer. Trial, pending, and rejected do not show a name. The funding-program icon on the public facts is closed here. The pressed result is **funding-program-open**. The **Grant places** panel under the card reads **10 of 10 places are free.**
 ![21.gifts profile funding admitted](images/profile-funding-admitted.png)
 
 ### Variant: funding-program-open
 
-Admitted owner on `/grants`. The participation sentence **Takes part in the 21.gifts funding program since {date}** is visible on the grant card. Viewport capture after scrolling that line into view.
+Admitted owner on `/grants`. The participation sentence **Takes part in the 21.gifts funding program since {date}** is visible on the grant card. Viewport capture after scrolling that line into view. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding program open](images/profile-funding-program-open.png)
 
 ### Variant: open-applications
 
-Moderator on `/grants` with two open grant applications. The grant card is shown, and **Open applications (2)** links to `/grants/applications`. When the list is empty this control is the sentence **No open applications.** and not a link; that state is **no-applications**. Needle `state-grants-open-applications`.
+Moderator on `/grants` with two open grant applications. The grant card is shown, and **Open applications (2)** links to `/grants/applications`. When the list is empty this control is the sentence **No open applications.** and not a link; that state is **no-applications**. Needle `state-grants-open-applications`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants open applications](images/grants-open-applications.png)
 
 ### Variant: no-applications
 
-Moderator on `/grants` when no grant application is open. The sentence **No open applications.** is plain text, not a button or link. Needle `state-grants-no-applications`.
+Moderator on `/grants` when no grant application is open. The sentence **No open applications.** is plain text, not a button or link. Needle `state-grants-no-applications`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants no applications](images/grants-no-applications.png)
 
 ### Variant: applications-loading
 
-Moderator on `/grants` while open applications are still loading. Copy **Loading…** is plain text, not a link. Needle `state-grants-applications-loading`.
+Moderator on `/grants` while open applications are still loading. Copy **Loading…** is plain text, not a link. Needle `state-grants-applications-loading`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants applications loading](images/grants-applications-loading.png)
 
 ### Variant: applications-error
 
-Moderator on `/grants` when the open-application load fails. Copy **Could not load open applications. Please try again.** and button **Try again**. Not a link to the queue. Needle `state-grants-applications-error`.
+Moderator on `/grants` when the open-application load fails. Copy **Could not load open applications. Please try again.** and button **Try again**. Not a link to the queue. Needle `state-grants-applications-error`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants applications error](images/grants-applications-error.png)
 
 ### Variant: daily-payments
 
-Founder on `/grants` sees a secondary **Goals** link, secondary **Daily payment text** and **Daily payment amounts** links, plus **Open applications (2)**. Needle `Daily payment text`.
+Founder on `/grants` sees a secondary **Goals** link, secondary **Daily payment text** and **Daily payment amounts** links, plus **Open applications (2)**. Needle `Daily payment text`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants daily payments](images/grants-daily-payments.png)
 
 ## Screen: /grants/goals
 
-- **Purpose:** Signed-in grant goal. States that the program continues at 10 active shops, that a shop is active with at least one transaction on 5 of the last 7 days, and what a transaction is. Shows how many shops meet that rule and a 7-day shop chart. The chart is not the public statistics series.
-- **Inputs:** Session via `OnboardingGate screen="profile"` / `useAuthStore`. `GET /funding/goal` when a session exists.
+- **Purpose:** Signed-in grant goal. States that the 10-active-shop goal is reached and the grant program is open again, then the public **Grant places** panel (free places, admissions, and the 20-shop goal for the next round), that a shop is active with at least one transaction on 5 of the last 7 days, and what a transaction is. Shows how many shops meet that rule and a 7-day shop chart. The chart is not the public statistics series.
+- **Inputs:** Session via `OnboardingGate screen="profile"` / `useAuthStore`. `GET /funding/goal` when a session exists. Public `GET /funding/places` for the panel.
 - **Actions:** Read the goal, the transaction definition, the qualifying count, and the chart. **Try again** repeats the load after an error. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/goals` (`GrantGoalsPage`). The **Goals** link on `/grants` opens it.
 
 ### Variant: default
 
-Signed-in page with the goal loaded. Heading **Goals**. Copy **The grant program continues when we reach 10 active shops.** A shop is active on 5 of the last 7 days. The transaction sentence names https://21.gifts/pos. The count and **Shops per UTC day** chart are shown. The lighter bar is today, still open.
+Signed-in page with the goal and the places loaded. Heading **Goals**. Copy **Goal reached: 10 active shops. The grant program is open again.** The **Grant places** panel reads **10 of 10 places are free.** and **When 20 shops are active, the grant program opens for more people.** A shop is active on 5 of the last 7 days. The transaction sentence names https://21.gifts/pos. The count and **Shops per UTC day** chart are shown. The lighter bar is today, still open.
 
 ![21.gifts grant goals](images/grants-goals.png)
 
 ### Variant: loading
 
-Signed-in page while `GET /funding/goal` has not returned. Heading, the 10-shop sentence, the 5-of-the-last-7 sentence, and the transaction sentence stay. The measurement says **Loading…**. No chart. Needle `state-grants-goals-loading`.
+Signed-in page while `GET /funding/goal` has not returned. Heading, the goal-reached sentence, the places panel, the 5-of-the-last-7 sentence, and the transaction sentence stay. The measurement says **Loading…**. No chart. Needle `state-grants-goals-loading`.
 
 ![21.gifts grant goals loading](images/grants-goals-loading.png)
 
 ### Variant: error
 
-Signed-in page when `GET /funding/goal` fails. Heading and the three sentences stay. Copy **Could not load the shop goal. Please try again.** and button **Try again**. No chart. Needle `state-grants-goals-error`.
+Signed-in page when `GET /funding/goal` fails. Heading, the places panel, and the three sentences stay. Copy **Could not load the shop goal. Please try again.** and button **Try again**. No chart. Needle `state-grants-goals-error`.
 
 ![21.gifts grant goals error](images/grants-goals-error.png)
+
+### Variant: places-full
+
+Signed-in page when every place of the round is taken (`placesLeft` 0). The **Grant places** panel reads **0 of 10 places are free.** and **All 10 places of this round are taken. Applications stay open.**, then the 20-shop sentence. The goal measurement still loads.
+
+![21.gifts grant goals places full](images/grants-goals-places-full.png)
+
+### Variant: places-error
+
+Signed-in page when `GET /funding/places` fails. The panel shows **Could not load the grant places. Please try again.** and **Try again**. The goal measurement still loads on its own.
+
+![21.gifts grant goals places error](images/grants-goals-places-error.png)
+
+### Variant: places-loading
+
+Signed-in page while `GET /funding/places` has not answered. The goal measurement is loaded. The **Grant places** panel shows **Loading…**. Needle `state-grants-goals-places-loading`.
+
+![21.gifts grant goals places loading](images/grants-goals-places-loading.png)
 
 ## Screen: /grants/payments/comment
 
@@ -5545,35 +5569,29 @@ Founder types `@`, picks **@cara**, and spend answers that the person has no Lig
 
 ## Screen: /profile/apply
 
-- **Purpose:** Permanent redirect to `/grants/apply`. That page shows the pause sentence and `https://21.gifts/statistics` for a verified account with status `none` or `rejected` whose username is not `joey-rosima`, `vincent`, or `jewel-bacolbas`. A verified account with one of those names and status `none` or `rejected` sees the apply walk. Pending, trial, and admitted keep their copy for every verified username. A basis account named joey-rosima, vincent, or jewel-bacolbas sees **You are not verified yet.** and does not post. Any other basis account whose status is not pending, trial, or admitted sees the pause card. A basis account with one of those statuses sees **You are not verified yet.** and does not post. This path renders no grant UI of its own.
+- **Purpose:** Permanent redirect to `/grants/apply`. That page shows the apply walk to a verified account with status `none` or `rejected`. Pending, trial, and admitted keep their copy. A basis account sees **You are not verified yet.** and does not post. This path renders no grant UI of its own.
 - **Inputs:** None. The browser lands on `/grants/apply`.
 - **Actions:** `redirect('/grants/apply')`.
 - **Used by:** Old links to `/profile/apply`.
 
 ### Variant: redirect
 
-Opening `/profile/apply` lands on the paused applications screen. Public paused screenshots are unchanged because those fixtures are not `joey-rosima`, `vincent`, or `jewel-bacolbas`.
+Opening `/profile/apply` lands on the apply walk at its first step, **First, write a short About me so people can get to know you.**
 
 ![21.gifts apply](images/profile-apply.png)
 
 ## Screen: /grants/apply
 
-- **Purpose:** Signed-in applications screen. While applications are paused, a verified account with status `none` or `rejected` whose username is not `joey-rosima`, `vincent`, or `jewel-bacolbas` sees the pause sentence and the link `https://21.gifts/statistics`, with no About-me steps, no questions, and no POST. Pending, trial, and admitted keep their copy for every verified username. A verified account with one of those three names and status `none` or `rejected` sees the apply walk. A basis account named joey-rosima, vincent, or jewel-bacolbas sees **You are not verified yet.** and does not post. Any other basis account whose status is not pending, trial, or admitted sees the pause card. A basis account with one of those statuses sees **You are not verified yet.** and does not post. The apply walk stays in the code. While the switch is on it is shown only for a verified account named `joey-rosima`, `vincent`, or `jewel-bacolbas` with status `none` or `rejected`. When the switch is off, a verified account with status `none` or `rejected` sees it. Pending, trial, and admitted stay status copy. A basis account on that card sees **You are not verified yet.**
-- **Inputs:** Account username and funding status from the auth store. Public paused fixtures do not fetch posts and do not POST apply.
-- **Actions:** Read the paused sentence and open `https://21.gifts/statistics`, unless the signed-in username is `joey-rosima`, `vincent`, or `jewel-bacolbas`, or the funding status is pending, trial, or admitted. A verified account with one of those names and status `none` or `rejected` fills the apply walk. Pending, trial, and admitted read their status. A basis account named joey-rosima, vincent, or jewel-bacolbas reads **You are not verified yet.** and does not post. Any other basis account whose status is not pending, trial, or admitted reads the pause card. A basis account with one of those statuses reads **You are not verified yet.** and does not post. Yes on the truth question posts the application and returns to `/grants`: a step back when this page was opened from `/grants` (`returnToView`), otherwise a replace, so `/grants` does not lead back to this page. The top-left arrow returns to the previous in-app view or `/welcome`. No second arrow. The wordmark is not that control.
+- **Purpose:** Signed-in applications screen. Applications are open to every verified member. A verified account with status `none` or `rejected` sees the apply walk: About me, photo, and location steps, then the two questions. Pending, trial, and admitted keep their copy. A basis account sees **You are not verified yet.** and does not post. Admission is limited per round on the staff side; the free places are on `/grants` and `/grants/goals`.
+- **Inputs:** Account and funding status from the auth store; the member's posts for the questions.
+- **Actions:** Fill About me, photo, and location; answer whether the posts match the core principles and whether they are true. Yes on the truth question posts the application and returns to `/grants`: a step back when this page was opened from `/grants` (`returnToView`), otherwise a replace, so `/grants` does not lead back to this page. Pending, trial, and admitted read their status. A basis account reads **You are not verified yet.** and does not post. The top-left arrow returns to the previous in-app view or `/welcome`. No second arrow. The wordmark is not that control.
 - **Used by:** Route `/grants/apply` (`FundingApplyPage`).
 
 ### Variant: default
 
-Verified member, funding none. Heading **21 gifts grant**. The paused sentence. Link `https://21.gifts/statistics`. No Apply control. Public paused screenshots are unchanged because those fixtures are not `joey-rosima`, `vincent`, or `jewel-bacolbas`.
+Verified member, funding none, no About me yet. Heading **Apply for the 21 gifts grant**. The first step **First, write a short About me so people can get to know you.**
 
 ![21.gifts apply](images/profile-apply.png)
-
-### Variant: about
-
-Verified username joey-rosima with status none or rejected sees the first apply step, First, write a short About me so people can get to know you.
-
-![21.gifts apply about](images/grants-apply-about.png)
 
 ### Variant: sunday
 
@@ -5637,7 +5655,7 @@ A failed translate shows Could not translate this note. Please try again.
 
 ### Variant: forbidden
 
-A basis account named joey-rosima, vincent, or jewel-bacolbas sees **You are not verified yet.** Any other basis account whose status is not pending, trial, or admitted sees the pause card. A basis account with one of those statuses sees **You are not verified yet.**
+A basis account sees **You are not verified yet.** and does not post.
 
 ![21.gifts apply forbidden](images/profile-apply-forbidden.png)
 
@@ -6394,6 +6412,12 @@ Staff (founder) detail fetch failed. Copy **Could not load this application. Ple
 Staff (founder) Reject POST failed after **No**. Copy **Could not update this member. Please try again.**
 
 ![21.gifts grant application decide failed](images/moderate-applications-accountId-decide-failed.png)
+
+### Variant: decide-full
+
+Staff (founder) Admit after **Yes** and **Yes** when the api answers 409 **All grant places are taken**. Copy **All places of this round are taken. Nobody else can be admitted until the next round opens.** The member stays on the detail page; the grant is unchanged.
+
+![21.gifts grant application decide full](images/moderate-applications-accountId-decide-full.png)
 
 ### Variant: deciding
 

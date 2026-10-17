@@ -165,7 +165,7 @@ app/
 │   │   │   └── apply/page.tsx   # GET /profile/apply — redirect to /grants/apply
 │   │   ├── grants/
 │   │   │   ├── page.tsx         # GET /grants — grant status and the staff queue link
-│   │   │   ├── apply/page.tsx   # GET /grants/apply — paused applications screen
+│   │   │   ├── apply/page.tsx   # GET /grants/apply — grant application walk
 │   │   │   └── applications/
 │   │   │       ├── page.tsx     # GET /grants/applications — grant queue
 │   │   │       └── [accountId]/page.tsx # GET /grants/applications/:id — principles, then truth

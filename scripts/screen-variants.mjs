@@ -2063,13 +2063,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'daily-payout-stopped-apply',
-    image: 'welcome-daily-payout-stopped-apply.png',
-    visual: 'state-welcome-daily-payout-stopped-apply',
-    needle: 'Apply for the 21 gifts grant',
-  },
-  {
-    route: '/welcome',
     id: 'renew',
     image: 'welcome-renew.png',
     visual: 'state-welcome-renew',
@@ -4768,15 +4761,28 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'grants.png',
     visual: 'screen-grants',
-    needle:
-      'Applications are currently paused. You can apply again when shop transactions have increased.',
+    needle: 'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
   },
   {
     route: '/grants',
-    id: 'funding-apply',
-    image: 'grants-funding-apply.png',
-    visual: 'state-grants-funding-apply',
-    needle: 'Apply for the 21 gifts grant',
+    id: 'places-full',
+    image: 'grants-places-full.png',
+    visual: 'state-grants-places-full',
+    needle: 'state-grants-places-full',
+  },
+  {
+    route: '/grants',
+    id: 'places-error',
+    image: 'grants-places-error.png',
+    visual: 'state-grants-places-error',
+    needle: 'state-grants-places-error',
+  },
+  {
+    route: '/grants',
+    id: 'places-loading',
+    image: 'grants-places-loading.png',
+    visual: 'state-grants-places-loading',
+    needle: 'state-grants-places-loading',
   },
   {
     route: '/grants',
@@ -4853,7 +4859,7 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'grants-goals.png',
     visual: 'screen-grants-goals',
-    needle: 'The grant program continues when we reach 10 active shops.',
+    needle: 'Goal reached: 10 active shops. The grant program is open again.',
   },
   {
     route: '/grants/goals',
@@ -4868,6 +4874,27 @@ export const SCREEN_VARIANTS = [
     image: 'grants-goals-error.png',
     visual: 'state-grants-goals-error',
     needle: 'state-grants-goals-error',
+  },
+  {
+    route: '/grants/goals',
+    id: 'places-full',
+    image: 'grants-goals-places-full.png',
+    visual: 'state-grants-goals-places-full',
+    needle: 'All 10 places of this round are taken. Applications stay open.',
+  },
+  {
+    route: '/grants/goals',
+    id: 'places-error',
+    image: 'grants-goals-places-error.png',
+    visual: 'state-grants-goals-places-error',
+    needle: 'Could not load the grant places. Please try again.',
+  },
+  {
+    route: '/grants/goals',
+    id: 'places-loading',
+    image: 'grants-goals-places-loading.png',
+    visual: 'state-grants-goals-places-loading',
+    needle: 'state-grants-goals-places-loading',
   },
   {
     route: '/grants/payments/comment',
@@ -5077,14 +5104,6 @@ export const SCREEN_VARIANTS = [
     id: 'default',
     image: 'profile-apply.png',
     visual: 'screen-grants-apply',
-    needle:
-      'Applications are currently paused. You can apply again when shop transactions have increased.',
-  },
-  {
-    route: '/grants/apply',
-    id: 'about',
-    image: 'grants-apply-about.png',
-    visual: 'state-grants-apply-about',
     needle: 'First, write a short About me so people can get to know you.',
   },
   {
@@ -6143,6 +6162,14 @@ export const SCREEN_VARIANTS = [
     image: 'moderate-applications-accountId-decide-failed.png',
     visual: 'state-moderate-applications-accountId-decide-failed',
     needle: 'Could not update this member. Please try again.',
+  },
+  {
+    route: '/grants/applications/[accountId]',
+    id: 'decide-full',
+    image: 'moderate-applications-accountId-decide-full.png',
+    visual: 'state-moderate-applications-accountId-decide-full',
+    needle:
+      'All places of this round are taken. Nobody else can be admitted until the next round opens.',
   },
   {
     route: '/grants/applications/[accountId]',

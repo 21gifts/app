@@ -1,19 +1,10 @@
 import { cleanup, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { FundingStatusCard } from '@/components/FundingStatusCard';
 import type { Account, OwnerFunding } from '@/lib/api-types';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
-import { grantApplicationsPaused } from '@/lib/grant-applications';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
-
-vi.mock('@/lib/grant-applications', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/grant-applications')>();
-  return {
-    ...actual,
-    grantApplicationsPaused: vi.fn(actual.grantApplicationsPaused),
-  };
-});
 
 const account: Account = {
   id: 'acc_1',
@@ -47,7 +38,6 @@ const pending: OwnerFunding = {
 };
 
 beforeEach(() => {
-  vi.mocked(grantApplicationsPaused).mockReturnValue(true);
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -82,121 +72,35 @@ describe('FundingStatusCard', () => {
     expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
   });
 
-  it('shows the Apply link for username vincent when status is none', () => {
+  it('shows not-verified copy for a basis account', () => {
     useAuthStore.setState({
       session: 'sess',
-      account: { ...account, username: 'vincent' },
-    });
-    renderWithLocale(<FundingStatusCard />);
-    expect(
-      screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
-    ).toBe('/grants/apply');
-    expect(
-      screen.queryByText(
-        'Applications are currently paused. You can apply again when shop transactions have increased.',
-      ),
-    ).toBeNull();
-  });
-
-  it('shows pending copy and no Apply link for username vincent', () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: { ...account, username: 'vincent', funding: pending },
-    });
-    renderWithLocale(<FundingStatusCard />);
-    expect(
-      screen.getByText('Your application is open. A moderator will review your posts.'),
-    ).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
-  });
-
-  it('shows not-verified copy for a basis account even with an open username', () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: { ...account, role: 'basis', username: 'vincent', funding: null },
+      account: { ...account, role: 'basis', funding: null },
     });
     renderWithLocale(<FundingStatusCard />);
     expect(screen.getByText('You are not verified yet.')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
   });
 
-  it('shows paused copy for none status', () => {
-    renderWithLocale(<FundingStatusCard />);
-    expect(screen.queryByText('You are not admitted to daily 21.gifts grant payouts.')).toBeNull();
-    expect(
-      screen.queryByText(
-        'Daily grants go to people whose living-room posts reflect the three convictions.',
-      ),
-    ).toBeNull();
-    expect(screen.queryByText('Giving is a duty')).toBeNull();
-    expect(screen.queryByText('Direct, with no middleman')).toBeNull();
-    expect(screen.queryByText('Bitcoin is the most effective money')).toBeNull();
-    expect(
-      screen.queryByText(
-        'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
-      ),
-    ).toBeNull();
-    expect(
-      screen.getByText(
-        'Applications are currently paused. You can apply again when shop transactions have increased.',
-      ),
-    ).toBeTruthy();
-    expect(
-      screen.getByRole('link', { name: 'https://21.gifts/statistics' }).getAttribute('href'),
-    ).toBe('https://21.gifts/statistics');
-    expect(screen.queryByRole('link', { name: 'About' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Apply for the 21 gifts grant' })).toBeNull();
-  });
-
-  it('treats missing funding as none for verified accounts', () => {
-    useAuthStore.setState({ session: 'sess', account: { ...account, funding: undefined } });
+  it.each([
+    ['none', account.funding],
+    ['missing', undefined],
+    [
+      'rejected',
+      { status: 'rejected', trialUtcDate: null, admittedAt: null, reviewedByName: null },
+    ],
+  ] as const)('offers About and Apply for %s funding', (_label, funding) => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, funding } });
     renderWithLocale(<FundingStatusCard />);
     expect(
       screen.getByText(
-        'Applications are currently paused. You can apply again when shop transactions have increased.',
-      ),
-    ).toBeTruthy();
-    expect(
-      screen.getByRole('link', { name: 'https://21.gifts/statistics' }).getAttribute('href'),
-    ).toBe('https://21.gifts/statistics');
-    expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
-    expect(
-      screen.queryByText(
         'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
       ),
-    ).toBeNull();
-    expect(screen.queryByRole('link', { name: 'About' })).toBeNull();
-  });
-
-  it('shows paused copy for rejected status', () => {
-    useAuthStore.setState({
-      session: 'sess',
-      account: {
-        ...account,
-        funding: { status: 'rejected', trialUtcDate: null, admittedAt: null, reviewedByName: null },
-      },
-    });
-    renderWithLocale(<FundingStatusCard />);
-    expect(screen.queryByText('You are not admitted to daily 21.gifts grant payouts.')).toBeNull();
-    expect(screen.queryByText('Giving is a duty')).toBeNull();
-    expect(screen.queryByText('Direct, with no middleman')).toBeNull();
-    expect(screen.queryByText('Bitcoin is the most effective money')).toBeNull();
-    expect(
-      screen.queryByText(
-        'Admitted members receive the daily gift. Apply so a moderator can review your posts.',
-      ),
-    ).toBeNull();
-    expect(
-      screen.getByText(
-        'Applications are currently paused. You can apply again when shop transactions have increased.',
-      ),
     ).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'About' }).getAttribute('href')).toBe('/about');
     expect(
-      screen.getByRole('link', { name: 'https://21.gifts/statistics' }).getAttribute('href'),
-    ).toBe('https://21.gifts/statistics');
-    expect(screen.queryByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'About' })).toBeNull();
+      screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
+    ).toBe('/grants/apply');
   });
 
   it('shows pending copy and no apply button', () => {
@@ -299,7 +203,6 @@ describe('FundingStatusCard', () => {
   });
 
   it('offers the apply link', () => {
-    vi.mocked(grantApplicationsPaused).mockReturnValue(false);
     renderWithLocale(<FundingStatusCard />);
     expect(
       screen.getByText(

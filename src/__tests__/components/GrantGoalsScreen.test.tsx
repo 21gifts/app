@@ -5,6 +5,10 @@ import type { Account, GrantContinuation } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
+vi.mock('@/components/GrantPlacesPanel', () => ({
+  GrantPlacesPanel: () => <div data-testid="grant-places-panel" />,
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchGrantContinuation: vi.fn(),
 }));
@@ -62,8 +66,9 @@ describe('GrantGoalsScreen', () => {
     renderWithLocale(<GrantGoalsScreen />);
     expect(screen.getByRole('heading', { name: 'Goals' })).toBeTruthy();
     expect(
-      screen.getByText('The grant program continues when we reach 10 active shops.'),
+      screen.getByText('Goal reached: 10 active shops. The grant program is open again.'),
     ).toBeTruthy();
+    expect(screen.getByTestId('grant-places-panel')).toBeTruthy();
     expect(
       screen.getByText(
         'A shop is active when it has at least one transaction on 5 of the last 7 days.',

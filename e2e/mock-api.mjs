@@ -2410,6 +2410,18 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/funding/places') {
+    json(res, 200, {
+      round: 1,
+      startsAt: '2026-10-16T00:00:00.000Z',
+      places: 10,
+      admitted: 0,
+      placesLeft: 10,
+      nextGoalShops: 20,
+    });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/funding/goal') {
     if (bearer(req) === null) {
       json(res, 401, { error: 'Unauthorized' });
@@ -3031,16 +3043,6 @@ const server = http.createServer(async (req, res) => {
     }
     if (account.role === 'basis') {
       json(res, 403, { error: 'Forbidden' });
-      return;
-    }
-    // Same allowlist as GRANT_APPLICATION_STILL_OPEN_USERNAMES. The api
-    // refuses every other username while applications are paused.
-    if (
-      account.username !== 'joey-rosima' &&
-      account.username !== 'vincent' &&
-      account.username !== 'jewel-bacolbas'
-    ) {
-      json(res, 403, { error: 'Applications are paused' });
       return;
     }
     json(res, 200, {

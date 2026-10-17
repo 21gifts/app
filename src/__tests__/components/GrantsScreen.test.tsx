@@ -21,6 +21,10 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+vi.mock('@/components/GrantPlacesPanel', () => ({
+  GrantPlacesPanel: () => <div data-testid="grant-places-panel" />,
+}));
+
 vi.mock('@/lib/api', () => ({
   fetchFundingApplications: vi.fn(),
 }));
@@ -102,6 +106,7 @@ describe('GrantsScreen', () => {
   it('shows the grant card without the staff queue for a verified member', () => {
     renderWithLocale(<GrantsScreen />);
     expect(screen.getByText('21 gifts grant')).toBeTruthy();
+    expect(screen.getByTestId('grant-places-panel')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Goals' }).getAttribute('href')).toBe('/grants/goals');
     expect(screen.queryByRole('link', { name: 'Daily payment text' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Daily payment amounts' })).toBeNull();

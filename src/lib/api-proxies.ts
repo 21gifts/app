@@ -593,6 +593,18 @@ export async function proxyShopActivityGet(request: Request): Promise<Response> 
 }
 
 /**
+ * Proxies GET /funding/places to the 21.gifts api.
+ *
+ * No session is required. The incoming request is forwarded as received.
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyFundingPlacesGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/funding/places');
+}
+
+/**
  * Proxies GET /funding/goal to the 21.gifts api.
  *
  * Forwards the incoming Authorization header. Does not add one.
