@@ -761,11 +761,11 @@ Draft pull requests run the GitHub CI jobs. GitHub holds fork runs from
 external contributors as `action_required`. Ready does not start CI. After a
 fresh A38 enforce pass on the current head, `dfx pr guard` approves those
 waiting initial runs, then sets Ready when the required GitHub jobs are green
-and the PR is mergeable. The newest well-formed second review comment on the
-current head returns a Ready pull request to draft when its `blocks_merge` is
-true and it counts at least one defect; a newer well-formed second review with
-`blocks_merge` false clears that. The merger does not click Approve and run
-workflows.
+and the PR is mergeable. The newest well-formed second review comment that
+covers the current head returns a Ready pull request to draft when its
+`blocks_merge` is true and it counts at least one defect; a newer well-formed
+second review with `blocks_merge` false clears that. The merger does not click
+Approve and run workflows.
 Do not ask a maintainer to approve workflow runs. Post the light A38 report
 on the current head. Every new head needs a new report. Authors with write
 access to `21gifts/app` do not need a report.
