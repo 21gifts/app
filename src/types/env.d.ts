@@ -83,6 +83,14 @@ declare global {
        * when baking `NEXT_PUBLIC_APP_VERSION`. Not an `entrypoint.sh` placeholder.
        */
       APP_VERSION?: string;
+      /**
+       * Content-Security-Policy mode, read by the middleware on every request
+       * through `getCspMode()` in `src/lib/csp.ts`. `enforce` sends
+       * `Content-Security-Policy`; unset or any other value sends
+       * `Content-Security-Policy-Report-Only`. A runtime variable, not a
+       * build placeholder. Tests assign it.
+       */
+      CSP_MODE?: string;
       /** Set by CI systems (GitHub Actions sets `"true"`); read by `playwright.config.ts`. */
       readonly CI?: string;
     }
