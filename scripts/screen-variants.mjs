@@ -4352,6 +4352,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'heart-cannot-receive',
+    image: 'members-heart-cannot-receive.png',
+    visual: 'state-members-heart-cannot-receive',
+    needle: "shotScreen(page, 'state-members-heart-cannot-receive')",
+  },
+  {
+    route: '/members/[accountId]',
     id: 'cannot-receive',
     image: 'members-cannot-receive.png',
     visual: 'state-members-cannot-receive',
@@ -7063,6 +7070,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
+    id: 'heart-cannot-receive',
+    image: 'shops-heart-cannot-receive.png',
+    visual: 'state-shops-heart-cannot-receive',
+    needle: "shotScreen(page, 'state-shops-heart-cannot-receive')",
+  },
+  {
+    route: '/shops',
+    id: 'author-cannot-receive',
+    image: 'shops-author-cannot-receive.png',
+    visual: 'state-shops-author-cannot-receive',
+    needle: "shotScreen(page, 'state-shops-author-cannot-receive')",
+  },
+  {
+    route: '/shops',
+    id: 'author-cannot-receive-open',
+    image: 'shops-author-cannot-receive-open.png',
+    visual: 'state-shops-author-cannot-receive-open',
+    needle: "shotScreen(page, 'state-shops-author-cannot-receive-open')",
+  },
+  {
+    route: '/shops',
     id: 'heart-paid',
     image: 'shops-heart-paid.png',
     visual: 'state-shops-heart-paid',
@@ -7774,6 +7802,20 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-heart-needs-balance.png',
     visual: 'state-messages-id-heart-needs-balance',
     needle: 'A Bitcoin balance is required for this.',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'heart-cannot-receive',
+    image: 'messages-id-heart-cannot-receive.png',
+    visual: 'state-messages-id-heart-cannot-receive',
+    needle: "shotScreen(page, 'state-messages-id-heart-cannot-receive')",
+  },
+  {
+    route: '/messages/[id]',
+    id: 'author-cannot-receive',
+    image: 'messages-id-author-cannot-receive.png',
+    visual: 'state-messages-id-author-cannot-receive',
+    needle: "shotScreen(page, 'state-messages-id-author-cannot-receive')",
   },
   {
     route: '/messages/[id]',

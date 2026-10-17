@@ -3537,6 +3537,24 @@ Shop post feed with **Cafe Luna** after opening `?visual=heart-needs-balance` (a
 
 ![21.gifts shops heart needs balance](images/shops-heart-needs-balance.png)
 
+### Variant: heart-cannot-receive
+
+Signed-in shop note by another member after opening `?visual=heart-cannot-receive` (Playwright builds only) and clicking Send ₿1. The api refused the heart because the author cannot receive (`cannot_receive`), so the tap is rolled back and the catalog line **The author's wallet cannot receive this Bitcoin payment** shows under the heart, in the place of the balance-required line.
+
+![21.gifts shops heart cannot receive](images/shops-heart-cannot-receive.png)
+
+### Variant: author-cannot-receive
+
+A shop note by a member who has no verified wallet yet (`authorCanReceive: false`). The action row shows the small muted label **Can't receive yet** before the heart, and the heart with its count is disabled.
+
+![21.gifts shops author cannot receive](images/shops-author-cannot-receive.png)
+
+### Variant: author-cannot-receive-open
+
+The same shop note after **Show reactions**. The reaction amount field is disabled (text still posts), and a reply by another member who cannot receive yet shows **Can't receive yet** with a disabled **Send Bitcoin** gift that opens no sheet.
+
+![21.gifts shops author cannot receive open](images/shops-author-cannot-receive-open.png)
+
 ### Variant: heart-paid
 
 Same Cafe Luna post after opening `?visual=heart-paid` and clicking Send ₿1. The filled heart and **+1** that every tap shows are held for the shot.
@@ -4657,6 +4675,12 @@ Same German post after POST /translate fails. Alert **Could not translate this n
 Same German post in the posts feed after opening `?visual=heart-needs-balance` (a ready wallet below 1 sat) and clicking Send ₿1. No press and no **+1**; nothing is sent. Copy **A Bitcoin balance is required for this.**
 
 ![21.gifts member heart needs balance](images/members-heart-needs-balance.png)
+
+### Variant: heart-cannot-receive
+
+Signed-in Ada on Carol's profile, posts pressed, after opening `?visual=heart-cannot-receive` (Playwright builds only) and clicking Send ₿1 on Carol's note. The api refused the heart because the author cannot receive (`cannot_receive`), so the tap is rolled back and the catalog line **The author's wallet cannot receive this Bitcoin payment** shows under the heart, in the place of the balance-required line.
+
+![21.gifts member heart cannot receive](images/members-heart-cannot-receive.png)
 
 ### Variant: cannot-receive
 
@@ -6877,6 +6901,18 @@ After POST /translate 502: **Could not translate this note. Please try again.**
 Same signed-in public thread after opening `?visual=heart-needs-balance` (a ready wallet below 1 sat) and clicking Send ₿1. No press and no **+1**; nothing is sent. Copy **A Bitcoin balance is required for this.**
 
 ![21.gifts public message heart needs balance](images/messages-id-heart-needs-balance.png)
+
+### Variant: heart-cannot-receive
+
+Signed-in permalink of another member's note after opening `?visual=heart-cannot-receive` (Playwright builds only) and clicking Send ₿1. The api refused the heart because the author cannot receive (`cannot_receive`), so the tap is rolled back and the catalog line **The author's wallet cannot receive this Bitcoin payment** shows under the heart, in the place of the balance-required line.
+
+![21.gifts public message heart cannot receive](images/messages-id-heart-cannot-receive.png)
+
+### Variant: author-cannot-receive
+
+Signed-in permalink of a note by a member who has no verified wallet yet (`authorCanReceive: false`). The action row shows **Can't receive yet** before the heart, the heart with its count is disabled, and the open card's reaction amount field is disabled (text still posts).
+
+![21.gifts public message author cannot receive](images/messages-id-author-cannot-receive.png)
 
 ### Variant: heart-paid
 
