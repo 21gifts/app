@@ -8,6 +8,8 @@ import { useTranslations } from '@/components/LocaleProvider';
  * member it targets cannot receive yet (the api sent `false` for
  * `authorCanReceive` or `canReceive`). Text only; the control it belongs to is
  * disabled by the caller.
+ *
+ * @returns The label.
  */
 export function CannotReceiveLabel(): ReactElement {
   const { t } = useTranslations();

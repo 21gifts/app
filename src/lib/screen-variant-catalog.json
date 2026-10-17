@@ -1980,6 +1980,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:loan-lend-cannot-receive",
+    "label": "/welcome loan-lend-cannot-receive",
+    "visual": "state-welcome-loan-lend-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:loan-pay",
     "label": "/welcome loan-pay",
     "visual": "state-welcome-loan-pay",
@@ -3501,6 +3507,12 @@
     "id": "/members/[accountId]:posts-open-loan-lend",
     "label": "/members/[accountId] posts-open-loan-lend",
     "visual": "state-members-posts-open-loan-lend",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-lend-cannot-receive",
+    "label": "/members/[accountId] posts-open-loan-lend-cannot-receive",
+    "visual": "state-members-posts-open-loan-lend-cannot-receive",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5541,6 +5553,12 @@
     "id": "/messages/[id]:loan-lend",
     "label": "/messages/[id] loan-lend",
     "visual": "state-messages-id-loan-lend",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-lend-cannot-receive",
+    "label": "/messages/[id] loan-lend-cannot-receive",
+    "visual": "state-messages-id-loan-lend-cannot-receive",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

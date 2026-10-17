@@ -2385,6 +2385,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'loan-lend-cannot-receive',
+    image: 'welcome-loan-lend-cannot-receive.png',
+    visual: 'state-welcome-loan-lend-cannot-receive',
+    needle: 'state /welcome loan-lend-cannot-receive',
+  },
+  {
+    route: '/welcome',
     id: 'loan-pay',
     image: 'welcome-loan-pay.png',
     visual: 'state-welcome-loan-pay',
@@ -4160,6 +4167,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-posts-open-loan-lend.png',
     visual: 'state-members-posts-open-loan-lend',
     needle: 'state /members posts-open-loan-lend',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-loan-lend-cannot-receive',
+    image: 'members-posts-open-loan-lend-cannot-receive.png',
+    visual: 'state-members-posts-open-loan-lend-cannot-receive',
+    needle: 'state /members posts-open-loan-lend-cannot-receive',
   },
   {
     route: '/members/[accountId]',
@@ -6542,6 +6556,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-loan-lend.png',
     visual: 'state-messages-id-loan-lend',
     needle: 'state /messages/[id] loan-lend',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'loan-lend-cannot-receive',
+    image: 'messages-id-loan-lend-cannot-receive.png',
+    visual: 'state-messages-id-loan-lend-cannot-receive',
+    needle: 'state /messages/[id] loan-lend-cannot-receive',
   },
   {
     route: '/messages/[id]',
