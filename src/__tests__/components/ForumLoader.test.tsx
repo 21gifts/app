@@ -1371,6 +1371,35 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('feed="shops" returns to the username field when the submit lookup no longer finds it', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    vi.mocked(searchMentionAccounts)
+      .mockResolvedValueOnce([{ id: 'acc-luna', username: 'luna', name: 'Luna' }])
+      .mockResolvedValueOnce([]);
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    await submitShopWizard(SHOP_DESCRIPTION, 'luna');
+    expect(await screen.findByText('No account with that username.')).toBeTruthy();
+    expect(screen.getByText('4 / 5 · 21.gifts user')).toBeTruthy();
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('feed="shops" shows a request error when the submit username lookup fails', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    vi.mocked(searchMentionAccounts)
+      .mockResolvedValueOnce([{ id: 'acc-luna', username: 'luna', name: 'Luna' }])
+      .mockRejectedValueOnce(new Error('offline'));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    await submitShopWizard(SHOP_DESCRIPTION, 'luna');
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not post your message');
+    expect(postMock).not.toHaveBeenCalled();
+  });
+
   it('feed="shops" invoices a basis post with #21GiftsShop', async () => {
     useAuthStore.setState({
       session: 'sess',

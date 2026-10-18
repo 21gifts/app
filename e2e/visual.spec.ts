@@ -20111,7 +20111,11 @@ test.describe('shops screens', () => {
     const box = page.getByLabel('Shop text');
     await box.evaluate((node) => {
       const field = node as HTMLTextAreaElement;
-      field.value = 'Fresh bread\u0001 every morning.';
+      const setValue = Object.getOwnPropertyDescriptor(
+        HTMLTextAreaElement.prototype,
+        'value',
+      )?.set;
+      setValue?.call(field, 'Fresh bread\u0001 every morning.');
       field.dispatchEvent(new Event('input', { bubbles: true }));
     });
     await expect(

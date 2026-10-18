@@ -602,12 +602,9 @@ export function PlaceField(props: {
                     variant="secondary"
                     disabled={fieldsDisabled || blocked}
                     onClick={() => {
-                      if (markerPos === null) {
-                        return;
-                      }
                       const label = labelDraft.trim();
                       void commit({
-                        ...markerPos,
+                        ...markerPos!,
                         label: label === '' ? null : label,
                         ...(shopDetails
                           ? {

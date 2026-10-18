@@ -85,24 +85,41 @@ describe('ShopAddressFields', () => {
       <ShopAddressFields
         value={ADDRESS}
         disabled={false}
-        errors={{ houseNumber: 'Starts with a digit.', country: 'Choose a country.' }}
+        errors={{
+          street: 'Enter the street.',
+          houseNumber: 'Starts with a digit.',
+          country: 'Choose a country.',
+        }}
         onBlur={onBlur}
         onChange={() => undefined}
       />,
     );
+    const street = screen.getByLabelText('Street');
     const house = screen.getByLabelText('House number');
+    const postalCode = screen.getByLabelText('Postal code');
+    const city = screen.getByLabelText('City');
     const country = screen.getByLabelText('Country');
+    expect(street.getAttribute('aria-invalid')).toBe('true');
     expect(house.getAttribute('aria-invalid')).toBe('true');
     expect(country.getAttribute('aria-invalid')).toBe('true');
+    expect(document.getElementById(street.getAttribute('aria-describedby')!)?.textContent).toBe(
+      'Enter the street.',
+    );
     expect(document.getElementById(house.getAttribute('aria-describedby')!)?.textContent).toBe(
       'Starts with a digit.',
     );
     expect(document.getElementById(country.getAttribute('aria-describedby')!)?.textContent).toBe(
       'Choose a country.',
     );
+    fireEvent.blur(street);
     fireEvent.blur(house);
+    fireEvent.blur(postalCode);
+    fireEvent.blur(city);
     fireEvent.blur(country);
+    expect(onBlur).toHaveBeenCalledWith('street');
     expect(onBlur).toHaveBeenCalledWith('houseNumber');
+    expect(onBlur).toHaveBeenCalledWith('postalCode');
+    expect(onBlur).toHaveBeenCalledWith('city');
     expect(onBlur).toHaveBeenCalledWith('country');
   });
 

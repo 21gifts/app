@@ -292,10 +292,6 @@ export function ShopAccountControl({
       setErrorKey('missing');
       return;
     }
-    if (formatProblem !== null) {
-      setErrorKey('format');
-      return;
-    }
     setSaving(true);
     setErrorKey(null);
     try {

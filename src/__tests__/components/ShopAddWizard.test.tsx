@@ -280,6 +280,45 @@ describe('ShopAddWizard', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 
+  it('shows the map-unavailable reason when the place disappears on the summary', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ json: () => Promise.resolve({ key: null }) } as Response),
+    );
+    function SummaryHost(): ReactElement {
+      const [place, setPlace] = useState<ForumPlacePin | null>(COMPLETE_PLACE);
+      return (
+        <>
+          <button type="button" onClick={() => setPlace(null)}>
+            Drop summary place
+          </button>
+          <ShopAddWizard
+            {...props({
+              place,
+              onPlaceChange: setPlace,
+              draft: SHOP_DESCRIPTION,
+            })}
+          />
+        </>
+      );
+    }
+    renderWizard(<SummaryHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findAllByText('The map is not available.')).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('5 / 5 · Summary')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Drop summary place' }));
+    expect(
+      screen.getByText('The map is unavailable, so a shop place cannot be added.'),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Post' })).toHaveProperty('disabled', true);
+  });
+
   it('keeps Next disabled when the description is not longer than the shop name', () => {
     const longNamePlace: ForumPlacePin = {
       ...COMPLETE_PLACE,
@@ -330,6 +369,38 @@ describe('ShopAddWizard', () => {
     expect(screen.queryByText("Kiki's Bakery")).toBeNull();
     expect(screen.queryByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeNull();
     expect(screen.getByText("Add the shop's place and address.")).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Post' })).toHaveProperty('disabled', true);
+  });
+
+  it('shows a pending username check when the account changes on the summary', async () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    searchPeople.mockImplementation(() => new Promise<never>(() => undefined));
+    function SummaryHost(): ReactElement {
+      const [username, setUsername] = useState('');
+      return (
+        <>
+          <button type="button" onClick={() => setUsername('luna')}>
+            Set summary username
+          </button>
+          <ShopAddWizard
+            {...props({
+              place: COMPLETE_PLACE,
+              draft: SHOP_DESCRIPTION,
+              username,
+              onUsernameChange: setUsername,
+            })}
+          />
+        </>
+      );
+    }
+    renderWizard(<SummaryHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Set summary username' }));
+    expect(await screen.findByText('Checking that account…')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Post' })).toHaveProperty('disabled', true);
   });
 

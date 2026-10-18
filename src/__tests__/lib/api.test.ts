@@ -5934,6 +5934,13 @@ describe('setMessageShopPhotos', () => {
     );
   });
 
+  it('throws the generic shop-note error for a non-400 photo response', async () => {
+    stubFetch({ ok: false, status: 500, body: {} });
+    await expect(setMessageShopPhotos('token', 'm1', [])).rejects.toThrow(
+      'Could not save shop note',
+    );
+  });
+
   it('preserves a known shop reason from a 400', async () => {
     stubFetch({ ok: false, status: 400, body: { error: 'Shop address is required' } });
     await expect(setMessageShopPhotos('token', 'm1', [])).rejects.toThrow(

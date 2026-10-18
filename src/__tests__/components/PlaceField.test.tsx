@@ -108,6 +108,13 @@ describe('PlaceField', () => {
     view.unmount();
   });
 
+  it('says the map is unavailable when the key response is a primitive', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse('missing')));
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await expectMapUnavailable();
+  });
+
   it('drops a pin, ignores an empty click, and confirms a label', async () => {
     const onChange = vi.fn();
     const listeners = new Map<string, (event?: unknown) => void>();
@@ -1030,6 +1037,8 @@ describe('PlaceField', () => {
     expect(shopName.getAttribute('aria-describedby')).toContain(requiredName.id);
     fireEvent.change(shopName, { target: { value: 'x'.repeat(81) } });
     expect(screen.getByText('The shop name must be at most 80 characters.')).toBeTruthy();
+    fireEvent.change(shopName, { target: { value: 'Kiki\u0001' } });
+    expect(screen.getByText('The shop name must not contain control characters.')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: "Kiki's Bakery" } });
     expect(
       screen.getByText(/Fill in: street, house number, postal code, city, country/),
@@ -1072,6 +1081,8 @@ describe('PlaceField', () => {
     });
     listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
     fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: "Kiki's Bakery" } });
+    fireEvent.blur(screen.getByLabelText('Street'));
+    expect(screen.getByText('Enter the street (1–120 characters).')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
     fireEvent.change(screen.getByLabelText('House number'), { target: { value: 'abc' } });
     fireEvent.change(screen.getByLabelText('Postal code'), { target: { value: '80' } });

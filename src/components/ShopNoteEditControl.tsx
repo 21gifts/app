@@ -18,7 +18,6 @@ import {
 import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
 import { prepareForumPhoto, type ForumPhotoPayload } from '@/lib/forum-photo';
 import {
-  SHOP_API_MESSAGE,
   formatPlacePinText,
   isShopNote,
   shopApiProblem,
@@ -27,7 +26,6 @@ import {
   stripShopHashtag,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
-import type { MessageKey } from '@/lib/messages';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
 import { roleAtLeast } from '@/lib/roles';
@@ -243,7 +241,6 @@ export function ShopNoteEditControl({
   const [photoDrafts, setPhotoDrafts] = useState<ForumPhotoPayload[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
-  const [saveErrorKey, setSaveErrorKey] = useState<MessageKey | null>(null);
   const [saveProblem, setSaveProblem] = useState<ShopApiProblem | null>(null);
   const [photoError, setPhotoError] = useState<'unsupported' | 'tooLarge' | 'tooMany' | null>(null);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
@@ -301,7 +298,6 @@ export function ShopNoteEditControl({
       setUsername(message.shopAccount?.username ?? '');
       setPhotoDrafts([]);
       setSaveError(false);
-      setSaveErrorKey(null);
       setSaveProblem(null);
       setPhotoError(null);
       setHistory(null);
@@ -403,7 +399,6 @@ export function ShopNoteEditControl({
   async function save(): Promise<void> {
     setSaving(true);
     setSaveError(false);
-    setSaveErrorKey(null);
     setSaveProblem(null);
     try {
       const keptPhotos = kept.filter((item) => item.kind === 'photo');
@@ -471,7 +466,6 @@ export function ShopNoteEditControl({
       setSaveError(true);
       const problem = error instanceof Error ? shopApiProblem(error.message) : null;
       setSaveProblem(problem);
-      setSaveErrorKey(problem === null ? null : SHOP_API_MESSAGE[problem]);
     } finally {
       setSaving(false);
     }
@@ -514,7 +508,6 @@ export function ShopNoteEditControl({
               onDraftChange={(value) => {
                 setDraft(value);
                 setSaveError(false);
-                setSaveErrorKey(null);
                 setSaveProblem(null);
               }}
               photoDrafts={photoDrafts}
@@ -533,14 +526,12 @@ export function ShopNoteEditControl({
               onPlaceChange={(next) => {
                 setPlace(next);
                 setSaveError(false);
-                setSaveErrorKey(null);
                 setSaveProblem(null);
               }}
               username={username}
               onUsernameChange={(value) => {
                 setUsername(value);
                 setSaveError(false);
-                setSaveErrorKey(null);
                 setSaveProblem(null);
               }}
               onSubmit={() => {
@@ -548,7 +539,6 @@ export function ShopNoteEditControl({
               }}
               onCancel={() => {
                 setSaveError(false);
-                setSaveErrorKey(null);
                 setSaveProblem(null);
                 setOpen(false);
               }}
@@ -566,7 +556,7 @@ export function ShopNoteEditControl({
           </SundayWritingGate>
           {saveError && saveProblem === null ? (
             <p role="alert" className="text-xs text-app-danger">
-              {saveErrorKey !== null ? t(saveErrorKey) : t('forum.editShopNoteFailed')}
+              {t('forum.editShopNoteFailed')}
             </p>
           ) : null}
           <h3 className="text-xs font-medium text-app-fg">{t('forum.editHistory')}</h3>

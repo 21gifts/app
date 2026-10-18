@@ -106,6 +106,17 @@ describe('ShopAccountControl', () => {
     expect(button).toBeTruthy();
   });
 
+  it('shows the missing error when the untouched account picker is saved', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    expect(screen.getByLabelText('Username')).toHaveProperty('value', '@');
+    fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
+    expect(await screen.findByText('No account with that username.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Save account' })).toBeTruthy();
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
+  });
+
   it('saves a username and calls onUpdated with the returned account', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     vi.mocked(setMessageShopAccount).mockResolvedValue({

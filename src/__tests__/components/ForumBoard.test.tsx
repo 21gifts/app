@@ -2739,6 +2739,29 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('alert').textContent).toBe('You can add up to 10 photos');
   });
 
+  it('shows tooMany photo feedback inside the shop composer', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="tooMany"
+        shopComposer
+        shopUsername=""
+        onShopUsernameChange={() => undefined}
+        {...idleProps}
+        {...modeProps('all')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    expect(screen.getByText('You can add up to 10 photos')).toBeTruthy();
+  });
+
   it('shows formError ask alert', () => {
     renderWithLocale(
       <ForumBoard
