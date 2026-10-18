@@ -7,6 +7,7 @@ import { DiagnosticsListener } from '@/components/DiagnosticsListener';
 import { ScrollSurfaceGuard } from '@/components/ScrollSurfaceGuard';
 import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
 import { LocaleProvider } from '@/components/LocaleProvider';
+import { LocaleRouteSync } from '@/components/LocaleRouteSync';
 import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { PushOpenListener } from '@/components/PushOpenListener';
@@ -160,6 +161,7 @@ export default async function RootLayout({
             <FiatPreferenceProvider initial={fiat}>
               <ThemeProvider>
                 <AccountPreferenceSync />
+                <LocaleRouteSync />
                 <PushOpenListener />
                 <Suspense fallback={null}>
                   <RememberWalletReturn />

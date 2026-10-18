@@ -239,18 +239,39 @@
 - **Returns / side effects:** The home screen element. The donate action points at `/{locale}/donate`.
 - **Used by:** Routes `/`, `/en`, `/de`, `/es`, and `/fil`.
 
+## Function: writeLocaleCookie
+
+- **Purpose:** Write the visitor's language into the `locale` cookie for one year. Shared by the language controls, account sync, and route sync so each caller stores the same attributes.
+- **Inputs:** `locale`, one supported locale (`en`, `de`, `es`, or `fil`).
+- **Returns / side effects:** Sets `document.cookie` to `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax`, and appends `; Secure` when the page is HTTPS. Returns void. Does not navigate or refresh.
+- **Used by:** `LanguageSwitcher`, `LanguagePreferenceSwitcher`, `AccountPreferenceSync`, and `LocaleRouteSync`.
+
+## Function: readLocaleCookie
+
+- **Purpose:** Read the supported language stored in the `locale` cookie.
+- **Inputs:** None. Reads `document.cookie`.
+- **Returns / side effects:** That locale when the value is exactly `en`, `de`, `es`, or `fil`; otherwise `null` (missing or unsupported). Does not write.
+- **Used by:** `LocaleRouteSync`.
+
+## Function: LocaleRouteSync
+
+- **Purpose:** Keep the root layout on the language of the path that is showing. Mounted once under the root provider. Renders nothing. A client navigation does not re-render the root layout, so a mismatch refreshes it. The language switcher does not do this.
+- **Inputs:** None. Reads the pathname, the provider locale, the auth account's saved language, and the locale cookie via `readLocaleCookie`.
+- **Returns / side effects:** Returns `null`. On a pathname change, and on `pageshow` when `persisted` is true, a language URL whose cookie differs is stored with `writeLocaleCookie` when the account has no saved language. The language the server should render is the URL language, otherwise the saved account language, otherwise the cookie. When that differs from the provider locale, `router.refresh()` runs once for that path and language. A `pageshow` that is not persisted, a plain event, a cookie that already matches, an account with a saved language, and unmounting do not write.
+- **Used by:** `RootLayout`.
+
 ## Function: LanguageSwitcher
 
 - **Purpose:** Custom language listbox (not a native `<select>`) that persists the visitor's override in a `locale` cookie, stores it on the account when signed in, and either opens the localized public URL or refreshes the App Router tree. Public / unsigned chrome only (Globe pill + absolute popover). Signed-in language lives on Profile.
 - **Inputs:** `tone` (`dark` for marketing chrome, `light` for login, donate, unsigned `/rules`, unsigned `/messages/[id]`, and `/view/[viewKey]`). Reads current locale via `useTranslations` and an optional session token from storage. No `embedded` prop.
-- **Returns / side effects:** Combobox + absolute popover listbox with endonym labels (English/Deutsch/Español/Filipino). With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not navigate, while success merges only `locale` onto the current same-id account. After that successful save, the path and the target are read again from the URL as it is then. A signed-out choice keeps the path read before the click. It then writes `locale=<code>; Path=/; Max-Age=31536000; SameSite=Lax` plus `; Secure` on HTTPS. Public Home, About, Donate, and Rules choices fully load the corresponding `/{locale}` URL so the page, shared navigation, and footer all use the new language; other unsigned app routes call `router.refresh()`. Choosing the current language on an already localized URL is a no-op; choosing it on a legacy URL opens its stable URL. The switcher never sets the cookie on a first visit; a public language URL sets it in `middleware`. When the browser restores a public language page from the back/forward cache (`pageshow` with `persisted` true), or when an in-app navigation makes a language URL the active page (`usePathname`, not a prefetch), and that URL's language differs from the `locale` cookie, the switcher writes the URL's language with the same cookie attributes and does not navigate or refresh, except when the auth store has an account with a saved language. A `pageshow` that is not persisted, a path with no language prefix, a cookie that already matches, an account with a saved language, and unmounting the switcher do not write.
+- **Returns / side effects:** Combobox + absolute popover listbox with endonym labels (English/Deutsch/Español/Filipino). With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not navigate, while success merges only `locale` onto the current same-id account. After that successful save, the path and the target are read again from the URL as it is then. A signed-out choice keeps the path read before the click. It then calls `writeLocaleCookie`. Public Home, About, Donate, and Rules choices fully load the corresponding `/{locale}` URL so the page, shared navigation, and footer all use the new language; other unsigned app routes call `router.refresh()`. Choosing the current language on an already localized URL is a no-op; choosing it on a legacy URL opens its stable URL. The switcher never sets the cookie on a first visit; a public language URL sets it in `middleware` when the browser opens that URL as a page. The switcher does not watch the path and does not listen for `pageshow`. `LocaleRouteSync` aligns the cookie and the rendered language for an in-app navigation and for a page restored from the back/forward cache.
 - **Used by:** `MarketingHeader` (always visible), `/login`, `/donate`, unsigned `/rules`, unsigned `/messages/[id]`, `/view/[viewKey]`.
 
 ## Function: LanguagePreferenceSwitcher
 
 - **Purpose:** Profile identity-card settings section: uppercase `language.label` kicker and `SegmentedControl tone="neutral"` (default one-row `rounded-full` track, same as ThemeSwitcher) for English / Deutsch / Español / Filipino. Always visible on the signed-in Profile card. Not page chrome, not a Menu disclosure.
 - **Inputs:** None. Reads current locale via `useTranslations` and an optional session token from storage. Catalog keys `language.label`, `aria.language`. Option labels are native endonyms (not catalogized).
-- **Returns / side effects:** Settings row matching `PushToggle` chrome. A same-locale click is a no-op. With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not refresh, while success merges only `locale` onto the current same-id account before writing the cookie and refreshing. Without a token it does not bump or POST and writes the locale cookie, including `Secure` on HTTPS, then refreshes as before.
+- **Returns / side effects:** Settings row matching `PushToggle` chrome. A same-locale click is a no-op. With a session token, a new locale first calls `bumpLocaleGeneration()`, then `setAccountLocale(token, next, false)`; failure, a stale generation, or a response for a different account writes no cookie and does not refresh, while success merges only `locale` onto the current same-id account before `writeLocaleCookie` and refreshing. Without a token it does not bump or POST and calls `writeLocaleCookie`, then refreshes as before.
 - **Used by:** `ProfileScreen`.
 
 ## Function: NumberFormatSwitcher
@@ -320,7 +341,7 @@
 
 - **Purpose:** Reconciles nullable signed-in account locale and fiat preferences with the screen and supported preference cookies once per account id.
 - **Inputs:** Hydrated auth `session` and `account`, screen locale, fiat context, preference generations, and the router.
-- **Returns / side effects:** Returns `null`; fills explicit `null` values with `onlyIfUnset=true` only when the generation captured before hydration still matches, mirrors a stored fiat into its cookie even when the visible code already matches, merges only that one field onto the current account, stops when the session is gone, ignores missing keys, and discards a stale response without replacing the other preference.
+- **Returns / side effects:** Returns `null`; fills explicit `null` values with `onlyIfUnset=true` only when the generation captured before hydration still matches, writes a differing locale through `writeLocaleCookie` and refreshes, mirrors a stored fiat into its cookie even when the visible code already matches, merges only that one field onto the current account, stops when the session is gone, ignores missing keys, and discards a stale response without replacing the other preference.
 - **Used by:** `RootLayout` inside `FiatPreferenceProvider`.
 
 ## Function: bumpLocaleGeneration
@@ -1936,7 +1957,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: RootLayout
 
-- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, `FiatPreferenceProvider` with `initial` from `getRequestFiat()`, and `ThemeProvider`. `AccountPreferenceSync` and `PushOpenListener` sit inside `ThemeProvider` beside `RememberWalletReturn`, and `ViewHistoryRoot` wraps the page children. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Nest is Locale → NumberFormat → FiatPreference → Theme.
+- **Purpose:** Root HTML shell: negotiated `lang` (`en`/`de`/`es`/`fil`), global CSS, English metadata (title, icons, Open Graph, Twitter), blocking `APP_HEIGHT_BOOTSTRAP_SCRIPT` then `THEME_BOOTSTRAP_SCRIPT` in `<head>`, `suppressHydrationWarning` on `<html>`, token body classes (`bg-app-bg text-app-fg`), `AppHeightSync`, `LocaleProvider` with the request catalog, `NumberFormatProvider` with `initial` from `getRequestNumberFormat()`, `FiatPreferenceProvider` with `initial` from `getRequestFiat()`, and `ThemeProvider`. `AccountPreferenceSync`, `LocaleRouteSync`, and `PushOpenListener` sit inside `ThemeProvider` beside `RememberWalletReturn`, and `ViewHistoryRoot` wraps the page children. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. Nest is Locale → NumberFormat → FiatPreference → Theme.
 - **Inputs:** `children` React nodes. Calls `getRequestLocale()` for `html lang` and messages, `getRequestNumberFormat()` for the number-format provider, and `getRequestFiat(locale)` for the fiat provider.
 - **Returns / side effects:** The document wrapper for every route.
 - **Used by:** All screens.

@@ -12,8 +12,9 @@ export const DEFAULT_LOCALE: Locale = 'en';
  *
  * Written by the language switcher, the profile, account sync, and middleware
  * when the browser opens a language URL as a page, including a prerender.
- * The switcher also writes it when an in-app navigation lands on a language
- * URL, unless the account has a saved language. Prefetches do not set it.
+ * `LocaleRouteSync` writes it when an in-app navigation or a restored
+ * back/forward page shows a language URL, unless the account has a saved
+ * language. Prefetches do not set it.
  */
 export const LOCALE_COOKIE = 'locale';
 

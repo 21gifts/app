@@ -9,6 +9,7 @@ vi.mock('next/font/google', () => ({
 
 import RootLayout, { metadata, SITE_JSON_LD, viewport } from '@/app/layout';
 import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
+import { LocaleRouteSync } from '@/components/LocaleRouteSync';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { DiagnosticsListener } from '@/components/DiagnosticsListener';
 import { ScrollSurfaceGuard } from '@/components/ScrollSurfaceGuard';
@@ -247,15 +248,16 @@ describe('RootLayout', () => {
     const themeChildren = themeProvider.props.children as ReactNode[];
     expect(Array.isArray(themeChildren)).toBe(true);
     expect((themeChildren[0] as ReactElement).type).toBe(AccountPreferenceSync);
-    expect((themeChildren[1] as ReactElement).type).toBe(PushOpenListener);
-    const suspense = themeChildren[2] as ReactElement<{
+    expect((themeChildren[1] as ReactElement).type).toBe(LocaleRouteSync);
+    expect((themeChildren[2] as ReactElement).type).toBe(PushOpenListener);
+    const suspense = themeChildren[3] as ReactElement<{
       fallback: null;
       children: ReactElement;
     }>;
     expect(suspense.type).toBe(Suspense);
     expect(suspense.props.fallback).toBe(null);
     expect(suspense.props.children.type).toBe(RememberWalletReturn);
-    const viewHistory = themeChildren[3] as ReactElement<{ children: ReactNode }>;
+    const viewHistory = themeChildren[4] as ReactElement<{ children: ReactNode }>;
     expect(viewHistory.type).toBe(ViewHistoryRoot);
     expect(viewHistory.props.children).toBe('content');
   });

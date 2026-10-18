@@ -187,6 +187,89 @@ test.describe('language URL keeps the language for the next page', () => {
   });
 });
 
+test('Function: LocaleRouteSync — a client navigation onto a German page keeps German', async ({
+  page,
+  context,
+}) => {
+  expect((await context.cookies()).some((cookie) => cookie.name === 'locale')).toBe(false);
+  await page.goto('/en');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const next = (window as unknown as { next?: { router?: { push?: unknown } } }).next;
+        return typeof next?.router?.push === 'function';
+      }),
+    )
+    .toBe(true);
+  let documents = 0;
+  page.on('request', (request) => {
+    if (request.isNavigationRequest() && request.resourceType() === 'document') {
+      documents += 1;
+    }
+  });
+  await page.evaluate(() => {
+    const next = (window as unknown as { next: { router: { push: (href: string) => void } } }).next;
+    next.router.push('/de/about');
+  });
+  await expect(page).toHaveURL(/\/de\/about$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+  await expect(page.locator('header')).toContainText('Über 21.gifts');
+  await expect(page.getByRole('contentinfo')).toContainText('Matthäus 10,8');
+  const localeCookies = (await context.cookies()).filter((cookie) => cookie.name === 'locale');
+  expect(localeCookies.map((cookie) => cookie.value)).toEqual(['de']);
+  await page.getByRole('link', { name: 'Anmelden' }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+  expect(documents).toBe(0);
+});
+
+test('Function: writeLocaleCookie — the language switcher stores the chosen language', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/login');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  expect((await context.cookies()).some((cookie) => cookie.name === 'locale')).toBe(false);
+  await page.getByLabel('Language').click();
+  await page.getByRole('option', { name: 'Deutsch' }).click();
+  await expect
+    .poll(async () => {
+      const localeCookies = (await context.cookies()).filter((cookie) => cookie.name === 'locale');
+      return localeCookies.map((cookie) => cookie.value);
+    })
+    .toEqual(['de']);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+});
+
+test('Function: readLocaleCookie — a stored language follows client navigation to login', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/en');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const next = (window as unknown as { next?: { router?: { push?: unknown } } }).next;
+        return typeof next?.router?.push === 'function';
+      }),
+    )
+    .toBe(true);
+  let documents = 0;
+  page.on('request', (request) => {
+    if (request.isNavigationRequest() && request.resourceType() === 'document') {
+      documents += 1;
+    }
+  });
+  await context.addCookies([{ name: 'locale', value: 'de', url: 'http://localhost:3000' }]);
+  await page.getByRole('link', { name: 'Ask for help' }).first().click();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+  await expect(page.getByRole('heading', { name: 'Melde dich mit deinem Gerät an' })).toBeVisible();
+  expect(documents).toBe(0);
+});
+
 test('sitemap lists the sixteen localized public pages', async ({ request }) => {
   const response = await request.get('/sitemap.xml');
   expect(response.status()).toBe(200);

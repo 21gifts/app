@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, ChevronDown, Globe } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   useEffect,
   useRef,
@@ -11,13 +11,10 @@ import {
 } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { setAccountLocale } from '@/lib/api';
-import { LOCALES, LOCALE_COOKIE, parseSupportedLocale, type Locale } from '@/lib/locale';
+import { LOCALES, type Locale } from '@/lib/locale';
+import { writeLocaleCookie } from '@/lib/locale-cookie';
 import { bumpLocaleGeneration, localeGeneration } from '@/lib/preference-generation';
-import {
-  localizedPublicPath,
-  parseLocalizedPublicPath,
-  publicPathFromUrl,
-} from '@/lib/public-locale-path';
+import { localizedPublicPath, publicPathFromUrl } from '@/lib/public-locale-path';
 import { loadSession } from '@/lib/session-storage';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -68,68 +65,6 @@ function localeAt(index: number): Locale {
     default:
       return 'fil';
   }
-}
-
-/**
- * Writes the locale cookie with the attributes the language switcher uses.
- *
- * @param next - Locale to store.
- */
-function writeLocaleCookie(next: Locale): void {
-  const secure = globalThis.location.protocol === 'https:' ? '; Secure' : '';
-  document.cookie = `${LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
-}
-
-/**
- * True when the signed-in account has a saved language.
- *
- * That language is authoritative. A missing account, or an account whose
- * locale is absent, is not a saved language.
- *
- * @returns Whether the auth store holds a string locale.
- */
-function hasSavedAccountLocale(): boolean {
-  const locale = useAuthStore.getState().account?.locale;
-  return typeof locale === 'string';
-}
-
-/**
- * Writes the locale cookie to the language of the active public URL.
- *
- * Shared by back/forward restore and in-app navigation. A prefetch does not
- * call this. Does nothing when the path has no language, the cookie already
- * matches, or the account has a saved language.
- *
- * @param pathname - Path of the page that is actually showing.
- */
-function syncLocaleCookieToActivePath(pathname: string): void {
-  const localized = parseLocalizedPublicPath(pathname);
-  if (localized === null) {
-    return;
-  }
-  if (hasSavedAccountLocale()) {
-    return;
-  }
-  const match = document.cookie.match(new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`));
-  if (parseSupportedLocale(match?.[1]) === localized.locale) {
-    return;
-  }
-  writeLocaleCookie(localized.locale);
-}
-
-/**
- * Rewrites the locale cookie when the browser restores a public language page
- * from the back/forward cache. That restore does not run middleware, so the
- * cookie can still name a language chosen later. Does not navigate or refresh.
- * An account with a saved language is left unchanged.
- *
- * @param event - Browser `pageshow` event.
- */
-function syncLocaleCookieOnPageShow(event: Event): void {
-  if (!(event instanceof PageTransitionEvent) || !event.persisted) {
-    return;
-  }
-  syncLocaleCookieToActivePath(globalThis.location.pathname);
 }
 
 /**
@@ -200,23 +135,11 @@ export function LanguageSwitcher(props: { tone: 'dark' | 'light' }): ReactElemen
   const { tone } = props;
   const { locale, t } = useTranslations();
   const router = useRouter();
-  const pathname = usePathname();
   const label = t('language.label');
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState<Locale>(locale);
-
-  useEffect(() => {
-    globalThis.addEventListener('pageshow', syncLocaleCookieOnPageShow);
-    return () => {
-      globalThis.removeEventListener('pageshow', syncLocaleCookieOnPageShow);
-    };
-  }, []);
-
-  useEffect(() => {
-    syncLocaleCookieToActivePath(pathname);
-  }, [pathname]);
 
   useEffect(() => {
     if (!open) {
