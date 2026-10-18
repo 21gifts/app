@@ -531,7 +531,9 @@ describe('ShopNoteEditControl', () => {
     signIn('founder');
     stubShopMaps();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
-    vi.mocked(setMessageShopText).mockRejectedValue(new Error('Shop name is required'));
+    vi.mocked(setMessageShopText).mockRejectedValue(
+      new Error('Shop description must be 20 to 1000 characters and longer than the shop name'),
+    );
     renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
@@ -542,13 +544,20 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-    expect(await screen.findAllByText('Enter the shop name.')).toHaveLength(2);
-    expect(screen.getByText('2 / 5 · Place')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(await screen.findByText('3 / 5 · Text')).toBeTruthy();
+    expect(
+      screen.getAllByText(
+        'The description must be 20 to 1000 characters and longer than the shop name.',
+      ).length,
+    ).toBeGreaterThan(0);
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
       target: { value: 'Cafe Sol is open every morning now.' },
     });
-    expect(screen.queryByText('Enter the shop name.')).toBeNull();
+    expect(
+      screen.queryAllByText(
+        'The description must be 20 to 1000 characters and longer than the shop name.',
+      ),
+    ).toHaveLength(0);
   });
 
   it('clears a mapped save error when the place changes', async () => {
@@ -566,9 +575,10 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-    expect(await screen.findAllByText('Enter the shop name.')).toHaveLength(2);
-    expect(screen.getByText('2 / 5 · Place')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByText('2 / 5 · Place')).toBeTruthy();
+    expect(
+      within(await screen.findByRole('dialog')).getAllByText('Enter the shop name.').length,
+    ).toBeGreaterThan(0);
     await waitFor(() => {
       expect(listeners.has('click')).toBe(true);
     });
@@ -581,7 +591,7 @@ describe('ShopNoteEditControl', () => {
     signIn('founder');
     stubShopMaps();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
-    vi.mocked(setMessageShopText).mockRejectedValue(new Error('Shop name is required'));
+    vi.mocked(setMessageShopText).mockRejectedValue(new Error('No account with that username'));
     renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
@@ -592,12 +602,10 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-    expect(await screen.findAllByText('Enter the shop name.')).toHaveLength(2);
-    expect(screen.getByText('2 / 5 · Place')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(await screen.findByText('4 / 5 · 21.gifts user')).toBeTruthy();
+    expect(screen.getAllByText('No account with that username.').length).toBeGreaterThan(0);
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'luna' } });
-    expect(screen.queryByText('Enter the shop name.')).toBeNull();
+    expect(screen.queryAllByText('No account with that username.')).toHaveLength(0);
   });
 
   it('clears a mapped save error when the editor is reopened', async () => {
