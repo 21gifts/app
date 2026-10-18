@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, renderHook, screen } from '@testing-library/react';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useLayoutEffect, useState, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Collapse } from '@/components/Collapse';
 import {
@@ -220,6 +220,24 @@ describe('PaySheet', () => {
     const onClose = vi.fn();
     renderWithLocale(sheet(true, onClose));
     fireEvent.click(scrim());
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes on Escape from the first frame, before the page runs its effects', () => {
+    const onClose = vi.fn();
+    /** Presses Escape in a layout effect: after the sheet's own layout effects, before any effect. */
+    function EscapeOnFirstFrame(): null {
+      useLayoutEffect(() => {
+        fireEvent.keyDown(window, { key: 'Escape' });
+      }, []);
+      return null;
+    }
+    renderWithLocale(
+      <>
+        {sheet(true, onClose)}
+        <EscapeOnFirstFrame />
+      </>,
+    );
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
