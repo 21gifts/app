@@ -15,6 +15,7 @@ import {
   type ForumPayInvoice,
   type ForumWriter,
 } from '@/components/ForumBoard';
+import { PaySheetFailed } from '@/components/PaySheet';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
@@ -461,6 +462,12 @@ export function ForumLoader({
   const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
+  // The post behind a paid posting fee failed, so its sheet leaves without Paid and posted. The next
+  // payment that opens starts clean.
+  const [payPostFailed, setPayPostFailed] = useState(false);
+  if (payPostFailed && payInvoice !== null) {
+    setPayPostFailed(false);
+  }
   const rateDay = useSpotRate();
   const rateDayRef = useRef(rateDay);
   rateDayRef.current = rateDay;
@@ -1497,6 +1504,7 @@ export function ForumLoader({
                   pendingComposeShopUsernameRef.current = null;
                 } catch {
                   setFormError('request');
+                  setPayPostFailed(true);
                   composeFeePaidRef.current = true;
                   const keptCaption = pendingComposeTextRef.current;
                   if (keptCaption !== null && keptCaption !== '') {
@@ -2598,300 +2606,301 @@ export function ForumLoader({
           onSatisfied={onOverlaySatisfied}
         />
       ) : null}
-      <ForumBoard
-        readOnly={session === null}
-        messages={listed}
-        {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
-        {...(feed === 'shops' ? { modeSelector: false as const } : {})}
-        {...(feed === 'shops' ? { allowAsk: false as const } : {})}
-        {...(feed === 'shops' ? { composerMaxLength } : {})}
-        {...(writer === undefined ? {} : { writer })}
-        {...(feed === 'shops'
-          ? {
-              shopComposer: true as const,
-              shopUsername,
-              onShopUsernameChange: (value: string) => {
-                setShopUsername(value);
-                setFormError(null);
-              },
-              shopResetToken,
-            }
-          : {})}
-        {...(feed === 'shops'
-          ? {
-              shopPlaceEdit: true as const,
-              onShopPlaceUpdated: (messageId: string, place: ForumPlacePin | null) => {
-                onShopsChanged?.();
-                setMessages((prev) =>
-                  prev!.map((row) => {
-                    if (row.id !== messageId) {
-                      return row;
-                    }
-                    if (place === null) {
-                      const next = { ...row };
-                      delete next.place;
-                      return next;
-                    }
-                    return { ...row, place };
-                  }),
-                );
-              },
-              shopAccountEdit: true as const,
-              onShopAccountUpdated: (
-                messageId: string,
-                shopAccount: { id: string; username: string; name: string } | null,
-              ) => {
-                setMessages((prev) =>
-                  prev!.map((row) => {
-                    if (row.id !== messageId) {
-                      return row;
-                    }
-                    if (shopAccount === null) {
-                      const next = { ...row };
-                      delete next.shopAccount;
-                      return next;
-                    }
-                    return { ...row, shopAccount };
-                  }),
-                );
-              },
-            }
-          : {})}
-        newPostsAvailable={newPostsAvailable}
-        onShowNewPosts={showNewPosts}
-        moderatorAppointedAvailable={moderatorAppointedId !== null}
-        onShowModeratorAppointed={showModeratorAppointed}
-        {...(account !== null && roleAtLeast(account.role, 'moderator')
-          ? {
-              shopNoteEdit: true as const,
-              ...(onShopsChanged !== undefined ? { onShopNoteSaved: onShopsChanged } : {}),
-              onShopNoteUpdated: (updated: ForumMessage) => {
-                setPhotoUrls((prev) => {
-                  const prefix = `${updated.id}:`;
-                  let changed = false;
-                  const next = { ...prev };
-                  for (const [key, url] of Object.entries(next)) {
-                    if (!key.startsWith(prefix)) {
-                      continue;
-                    }
-                    URL.revokeObjectURL(url);
-                    delete next[key];
-                    changed = true;
-                  }
-                  return changed ? next : prev;
-                });
-                setPhotoVersions((prev) => ({ ...prev, [updated.id]: String(Date.now()) }));
-                setMessages((prev) =>
-                  prev!.map((row) => {
-                    if (row.id !== updated.id) {
-                      return row;
-                    }
-                    const next = {
-                      ...row,
-                      text: updated.text,
-                      hasPhoto: updated.hasPhoto,
-                      photoCount: updated.photoCount,
-                      hasVideo: updated.hasVideo,
-                    };
-                    if (updated.place === undefined) {
-                      delete next.place;
-                    } else {
-                      next.place = updated.place;
-                    }
-                    if (updated.shopAccount === undefined) {
-                      delete next.shopAccount;
-                    } else {
-                      next.shopAccount = updated.shopAccount;
-                    }
-                    return next;
-                  }),
-                );
-              },
-            }
-          : {})}
-        {...(account !== null && roleAtLeast(account.role, 'moderator')
-          ? {
-              onDeleted: (messageId: string) => {
-                /* v8 ignore next 3 -- a second confirm for the same id is a remount race */
-                if (deletedIds.current.has(messageId)) {
-                  return;
-                }
-                deletedIds.current.add(messageId);
-                const isListedPost =
-                  messagesRef.current?.some((row) => row.id === messageId) === true;
-                if (!isListedPost) {
-                  const parentId = replyParentById.current.get(messageId);
-                  if (expandedIdRef.current === parentId) {
-                    setReplies((prev) => {
-                      /* v8 ignore next 3 -- replies are null only before the first fetch returns */
-                      if (prev === null) {
-                        return prev;
-                      }
-                      return prev.filter((row) => !deletedIds.current.has(row.id));
-                    });
-                  }
-                  if (payMessageIdRef.current === messageId) {
-                    clearPaySheet();
-                  }
-                  /* v8 ignore next 3 -- a reply delete without a remembered parent cannot decrement */
-                  if (parentId === undefined) {
-                    return;
-                  }
-                  /* v8 ignore next -- applySessionReplyCount seeds the parent id with 0 before any delete */
-                  const prevHidden = hiddenReplyCounts.current.get(parentId) ?? 0;
-                  hiddenReplyCounts.current.set(parentId, prevHidden + 1);
+      <PaySheetFailed failed={payPostFailed}>
+        <ForumBoard
+          readOnly={session === null}
+          messages={listed}
+          {...(feed === 'shops' ? { emptyKey: 'shops.empty' as const } : {})}
+          {...(feed === 'shops' ? { modeSelector: false as const } : {})}
+          {...(feed === 'shops' ? { allowAsk: false as const } : {})}
+          {...(feed === 'shops' ? { composerMaxLength } : {})}
+          {...(writer === undefined ? {} : { writer })}
+          {...(feed === 'shops'
+            ? {
+                shopComposer: true as const,
+                shopUsername,
+                onShopUsernameChange: (value: string) => {
+                  setShopUsername(value);
+                  setFormError(null);
+                },
+                shopResetToken,
+              }
+            : {})}
+          {...(feed === 'shops'
+            ? {
+                shopPlaceEdit: true as const,
+                onShopPlaceUpdated: (messageId: string, place: ForumPlacePin | null) => {
+                  onShopsChanged?.();
                   setMessages((prev) =>
                     prev!.map((row) => {
-                      if (row.id !== parentId) {
+                      if (row.id !== messageId) {
                         return row;
                       }
-                      return {
-                        ...row,
-                        replyCount: Math.max(0, row.replyCount - 1),
-                      };
+                      if (place === null) {
+                        const next = { ...row };
+                        delete next.place;
+                        return next;
+                      }
+                      return { ...row, place };
                     }),
                   );
-                  return;
-                }
-                if (feed === 'shops') {
-                  onShopsChanged?.();
-                }
-                setMessages((prev) => prev!.filter((row) => row.id !== messageId));
-                const wasExpanded = expandedIdRef.current === messageId;
-                if (wasExpanded) {
-                  setExpandedId(null);
-                  setReplies(null);
-                }
-                if (payMessageIdRef.current === messageId || wasExpanded) {
-                  clearPaySheet();
-                }
-              },
+                },
+                shopAccountEdit: true as const,
+                onShopAccountUpdated: (
+                  messageId: string,
+                  shopAccount: { id: string; username: string; name: string } | null,
+                ) => {
+                  setMessages((prev) =>
+                    prev!.map((row) => {
+                      if (row.id !== messageId) {
+                        return row;
+                      }
+                      if (shopAccount === null) {
+                        const next = { ...row };
+                        delete next.shopAccount;
+                        return next;
+                      }
+                      return { ...row, shopAccount };
+                    }),
+                  );
+                },
+              }
+            : {})}
+          newPostsAvailable={newPostsAvailable}
+          onShowNewPosts={showNewPosts}
+          moderatorAppointedAvailable={moderatorAppointedId !== null}
+          onShowModeratorAppointed={showModeratorAppointed}
+          {...(account !== null && roleAtLeast(account.role, 'moderator')
+            ? {
+                shopNoteEdit: true as const,
+                ...(onShopsChanged !== undefined ? { onShopNoteSaved: onShopsChanged } : {}),
+                onShopNoteUpdated: (updated: ForumMessage) => {
+                  setPhotoUrls((prev) => {
+                    const prefix = `${updated.id}:`;
+                    let changed = false;
+                    const next = { ...prev };
+                    for (const [key, url] of Object.entries(next)) {
+                      if (!key.startsWith(prefix)) {
+                        continue;
+                      }
+                      URL.revokeObjectURL(url);
+                      delete next[key];
+                      changed = true;
+                    }
+                    return changed ? next : prev;
+                  });
+                  setPhotoVersions((prev) => ({ ...prev, [updated.id]: String(Date.now()) }));
+                  setMessages((prev) =>
+                    prev!.map((row) => {
+                      if (row.id !== updated.id) {
+                        return row;
+                      }
+                      const next = {
+                        ...row,
+                        text: updated.text,
+                        hasPhoto: updated.hasPhoto,
+                        photoCount: updated.photoCount,
+                        hasVideo: updated.hasVideo,
+                      };
+                      if (updated.place === undefined) {
+                        delete next.place;
+                      } else {
+                        next.place = updated.place;
+                      }
+                      if (updated.shopAccount === undefined) {
+                        delete next.shopAccount;
+                      } else {
+                        next.shopAccount = updated.shopAccount;
+                      }
+                      return next;
+                    }),
+                  );
+                },
+              }
+            : {})}
+          {...(account !== null && roleAtLeast(account.role, 'moderator')
+            ? {
+                onDeleted: (messageId: string) => {
+                  /* v8 ignore next 3 -- a second confirm for the same id is a remount race */
+                  if (deletedIds.current.has(messageId)) {
+                    return;
+                  }
+                  deletedIds.current.add(messageId);
+                  const isListedPost =
+                    messagesRef.current?.some((row) => row.id === messageId) === true;
+                  if (!isListedPost) {
+                    const parentId = replyParentById.current.get(messageId);
+                    if (expandedIdRef.current === parentId) {
+                      setReplies((prev) => {
+                        /* v8 ignore next 3 -- replies are null only before the first fetch returns */
+                        if (prev === null) {
+                          return prev;
+                        }
+                        return prev.filter((row) => !deletedIds.current.has(row.id));
+                      });
+                    }
+                    if (payMessageIdRef.current === messageId) {
+                      clearPaySheet();
+                    }
+                    /* v8 ignore next 3 -- a reply delete without a remembered parent cannot decrement */
+                    if (parentId === undefined) {
+                      return;
+                    }
+                    /* v8 ignore next -- applySessionReplyCount seeds the parent id with 0 before any delete */
+                    const prevHidden = hiddenReplyCounts.current.get(parentId) ?? 0;
+                    hiddenReplyCounts.current.set(parentId, prevHidden + 1);
+                    setMessages((prev) =>
+                      prev!.map((row) => {
+                        if (row.id !== parentId) {
+                          return row;
+                        }
+                        return {
+                          ...row,
+                          replyCount: Math.max(0, row.replyCount - 1),
+                        };
+                      }),
+                    );
+                    return;
+                  }
+                  if (feed === 'shops') {
+                    onShopsChanged?.();
+                  }
+                  setMessages((prev) => prev!.filter((row) => row.id !== messageId));
+                  const wasExpanded = expandedIdRef.current === messageId;
+                  if (wasExpanded) {
+                    setExpandedId(null);
+                    setReplies(null);
+                  }
+                  if (payMessageIdRef.current === messageId || wasExpanded) {
+                    clearPaySheet();
+                  }
+                },
+              }
+            : {})}
+          error={error}
+          loading={loading}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          posting={posting || preparing}
+          draft={draft}
+          placeDraft={placeDraft}
+          onPlaceDraftChange={setPlaceDraft}
+          onDraftChange={(value) => {
+            setDraft(value);
+            setFormError(null);
+          }}
+          askDraft={askDraft}
+          askDraftUnit={askDraftUnit}
+          onAskDraftUnit={setAskDraftUnit}
+          onAskDraftChange={(value) => {
+            setAskDraft(value);
+            setFormError(null);
+          }}
+          composeIntent={composeIntent}
+          onComposeIntentChange={(intent) => {
+            setComposeIntent(intent);
+            if (intent === 'ask') {
+              setPlaceDraft(null);
+              pendingComposePlaceRef.current = null;
             }
-          : {})}
-        error={error}
-        loading={loading}
-        refreshing={refreshing}
-        onRefresh={onRefresh}
-        posting={posting || preparing}
-        draft={draft}
-        placeDraft={placeDraft}
-        onPlaceDraftChange={setPlaceDraft}
-        onDraftChange={(value) => {
-          setDraft(value);
-          setFormError(null);
-        }}
-        askDraft={askDraft}
-        askDraftUnit={askDraftUnit}
-        onAskDraftUnit={setAskDraftUnit}
-        onAskDraftChange={(value) => {
-          setAskDraft(value);
-          setFormError(null);
-        }}
-        composeIntent={composeIntent}
-        onComposeIntentChange={(intent) => {
-          setComposeIntent(intent);
-          if (intent === 'ask') {
-            setPlaceDraft(null);
-            pendingComposePlaceRef.current = null;
+            if (intent === 'post') {
+              setAskStep(1);
+            }
+            setFormError(null);
+          }}
+          askStep={askStep}
+          onAskStepChange={setAskStep}
+          askCadence={askCadence}
+          onAskCadenceChange={setAskCadence}
+          askObligation={askObligation}
+          onAskObligationChange={setAskObligation}
+          onCreditTermDays={setCreditTermDays}
+          authorName={account?.name ?? ''}
+          onPost={onPost}
+          onRetry={() => {
+            setAttempt((n) => n + 1);
+          }}
+          formError={formError}
+          firstPostFree={firstPostFree}
+          photoDrafts={photoDrafts}
+          videoDraft={videoDraft}
+          onPickFiles={onPickFiles}
+          onRemovePhoto={onRemovePhoto}
+          onClearPhoto={() => {
+            revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
+            pickGeneration.current += 1;
+            setPhotoDrafts([]);
+            setVideoDraft(null);
+            setFormError(null);
+          }}
+          photoUrls={photoUrls}
+          photoVersions={photoVersions}
+          videoUrls={videoUrls}
+          payMessageId={payMessageId}
+          payHost={payHost}
+          payDraft={payDraft}
+          payBusy={payBusy}
+          payError={payError}
+          payInvoice={payInvoice}
+          replyPayPreview={replyPayPreview}
+          onPayOpen={(messageId) => {
+            bumpPayPollGeneration();
+            setPayMessageId(messageId);
+            setPayHost('card');
+            setPayDraft('');
+            setPayError(null);
+            setPayInvoice(null);
+            setReplyPayPreview(null);
+            setPayWaiting(false);
+            setPayBusy(false);
+          }}
+          viewerAccountId={account?.id ?? null}
+          heartViewerId={account?.id ?? null}
+          onHeartTip={onHeartTip}
+          heartTipViews={heartTipViews}
+          repayLink
+          onPayUnitChange={setPayShownUnit}
+          onReplyUnitChange={setReplyShownUnit}
+          onPayDraftChange={(value) => {
+            setPayDraft(value);
+            setPayError(null);
+          }}
+          onPaySubmit={onPaySubmit}
+          onPayCancel={clearPaySheet}
+          rateDay={rateDay}
+          mode={feedMode}
+          onModeChange={onModeChange}
+          nearEndRef={nearEndRef}
+          unpaidNewCount={
+            feedMode === 'unpaid' || messages === null
+              ? 0
+              : unpaidNewCount(filterListed(messages), unpaidSeenAt)
           }
-          if (intent === 'post') {
-            setAskStep(1);
-          }
-          setFormError(null);
-        }}
-        askStep={askStep}
-        onAskStepChange={setAskStep}
-        askCadence={askCadence}
-        onAskCadenceChange={setAskCadence}
-        askObligation={askObligation}
-        onAskObligationChange={setAskObligation}
-        onCreditTermDays={setCreditTermDays}
-        authorName={account?.name ?? ''}
-        onPost={onPost}
-        onRetry={() => {
-          setAttempt((n) => n + 1);
-        }}
-        formError={formError}
-        firstPostFree={firstPostFree}
-        photoDrafts={photoDrafts}
-        videoDraft={videoDraft}
-        onPickFiles={onPickFiles}
-        onRemovePhoto={onRemovePhoto}
-        onClearPhoto={() => {
-          revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
-          pickGeneration.current += 1;
-          setPhotoDrafts([]);
-          setVideoDraft(null);
-          setFormError(null);
-        }}
-        photoUrls={photoUrls}
-        photoVersions={photoVersions}
-        videoUrls={videoUrls}
-        payMessageId={payMessageId}
-        payHost={payHost}
-        payDraft={payDraft}
-        payBusy={payBusy}
-        payError={payError}
-        payInvoice={payInvoice}
-        replyPayPreview={replyPayPreview}
-        payWaiting={payWaiting}
-        onPayOpen={(messageId) => {
-          bumpPayPollGeneration();
-          setPayMessageId(messageId);
-          setPayHost('card');
-          setPayDraft('');
-          setPayError(null);
-          setPayInvoice(null);
-          setReplyPayPreview(null);
-          setPayWaiting(false);
-          setPayBusy(false);
-        }}
-        viewerAccountId={account?.id ?? null}
-        heartViewerId={account?.id ?? null}
-        onHeartTip={onHeartTip}
-        heartTipViews={heartTipViews}
-        repayLink
-        onPayUnitChange={setPayShownUnit}
-        onReplyUnitChange={setReplyShownUnit}
-        onPayDraftChange={(value) => {
-          setPayDraft(value);
-          setPayError(null);
-        }}
-        onPaySubmit={onPaySubmit}
-        onPayCancel={clearPaySheet}
-        rateDay={rateDay}
-        mode={feedMode}
-        onModeChange={onModeChange}
-        nearEndRef={nearEndRef}
-        unpaidNewCount={
-          feedMode === 'unpaid' || messages === null
-            ? 0
-            : unpaidNewCount(filterListed(messages), unpaidSeenAt)
-        }
-        lawsVisible={feed === 'shops' ? false : lawsVisible}
-        onDismissLaws={onDismissLaws}
-        expandedId={expandedId}
-        onToggleExpand={onToggleExpand}
-        replies={expandedId === null ? null : replies}
-        repliesLoading={expandedId !== null && repliesLoading}
-        repliesError={expandedId !== null && repliesError}
-        onRetryReplies={() => {
-          setRepliesAttempt((n) => n + 1);
-        }}
-        replyDraft={replyDraft}
-        onReplyDraftChange={(value) => {
-          setReplyDraft(value);
-          setReplyFormError(null);
-        }}
-        replyAmountDraft={replyAmountDraft}
-        onReplyAmountDraftChange={(value) => {
-          setReplyAmountDraft(value);
-          setReplyFormError(null);
-        }}
-        onReplyPost={onReplyPost}
-        replyPosting={replyPosting}
-        replyFormError={replyFormError}
-      />
+          lawsVisible={feed === 'shops' ? false : lawsVisible}
+          onDismissLaws={onDismissLaws}
+          expandedId={expandedId}
+          onToggleExpand={onToggleExpand}
+          replies={expandedId === null ? null : replies}
+          repliesLoading={expandedId !== null && repliesLoading}
+          repliesError={expandedId !== null && repliesError}
+          onRetryReplies={() => {
+            setRepliesAttempt((n) => n + 1);
+          }}
+          replyDraft={replyDraft}
+          onReplyDraftChange={(value) => {
+            setReplyDraft(value);
+            setReplyFormError(null);
+          }}
+          replyAmountDraft={replyAmountDraft}
+          onReplyAmountDraftChange={(value) => {
+            setReplyAmountDraft(value);
+            setReplyFormError(null);
+          }}
+          onReplyPost={onReplyPost}
+          replyPosting={replyPosting}
+          replyFormError={replyFormError}
+        />
+      </PaySheetFailed>
     </>
   );
 }

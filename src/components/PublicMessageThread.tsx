@@ -93,7 +93,6 @@ const IDLE_BOARD = {
   payBusy: false,
   payError: null as ForumPayError,
   payInvoice: null as ForumPayInvoice | null,
-  payWaiting: false,
   onPayOpen: (): void => undefined,
   onPayDraftChange: (): void => undefined,
   onPaySubmit: (): void => undefined,
@@ -185,7 +184,6 @@ export function PublicMessageThread(props: {
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
-  const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payPollGeneration = useRef(0);
@@ -214,6 +212,8 @@ export function PublicMessageThread(props: {
   const [repliesError, setRepliesError] = useState(false);
   const [replyDraft, setReplyDraft] = useState('');
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
+  // A paid reaction's text while its pay sheet is open: the form keeps it, disabled, behind the sheet.
+  const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
@@ -378,6 +378,7 @@ export function PublicMessageThread(props: {
     baselineSats: number,
     replyParentId: string | null = null,
     baselineReceivedSats?: number,
+    clearReplyDraft = false,
   ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
@@ -386,7 +387,6 @@ export function PublicMessageThread(props: {
       return;
     }
     const signal = controller.signal;
-    setPayWaiting(true);
     void (async () => {
       const composePay = replyParentId !== null;
       const countOwn = async (): Promise<number> => {
@@ -462,13 +462,18 @@ export function PublicMessageThread(props: {
                   return { ...row, ...next };
                 });
               });
-              setPayWaiting(false);
               setPayInvoice(null);
               setPayMessageId(null);
               setPayHost(null);
               setPayDraft('');
               setPayError(null);
               setReplyPosting(false);
+              // The paid reaction went out: its text and amount leave the form with the sheet.
+              if (clearReplyDraft) {
+                setReplyDraft('');
+                setReplyAmountDraft('');
+              }
+              setReplyPayPreview(null);
               const current = useAuthStore.getState();
               /* v8 ignore next 3 -- session cleared while the pay poll was in flight */
               if (current.session !== session) {
@@ -736,11 +741,10 @@ export function PublicMessageThread(props: {
         sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('card');
-      setReplyDraft('');
-      setReplyAmountDraft('');
+      setReplyPayPreview(trimmed);
       pendingPostRef.current = null;
       setReplyPosting(false);
-      startPayPoll(parentId, baselineSats);
+      startPayPoll(parentId, baselineSats, null, undefined, true);
     } catch (err) {
       /* v8 ignore start -- pay sheet closed while the reply invoice failed */
       if (generation !== payPollGeneration.current) {
@@ -806,7 +810,7 @@ export function PublicMessageThread(props: {
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
-    setPayWaiting(false);
+    setReplyPayPreview(null);
     setPayBusy(false);
   };
 
@@ -915,13 +919,17 @@ export function PublicMessageThread(props: {
     setPayError(null);
     setPayInvoice(null);
     setPayBusy(false);
-    setPayWaiting(false);
     setPayHost(null);
+    setReplyPayPreview(null);
     setReplyPosting(false);
   };
 
   const handleToggleExpand = (messageId: string): void => {
     if (replyPosting) {
+      return;
+    }
+    // A paid reaction's sheet is open over this card: its form stays as it is until the sheet closes.
+    if (replyPayPreview !== null) {
       return;
     }
     if (
@@ -1151,7 +1159,7 @@ export function PublicMessageThread(props: {
         payBusy={payBusy}
         payError={payError}
         payInvoice={payInvoice}
-        payWaiting={payWaiting}
+        replyPayPreview={replyPayPreview}
         onPayOpen={handlePayOpen}
         viewerAccountId={account?.id ?? null}
         heartViewerId={account?.id ?? null}

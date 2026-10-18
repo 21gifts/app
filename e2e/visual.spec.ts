@@ -179,6 +179,59 @@ const PAY_UNAVAILABLE = 'Your 21.gifts wallet is not available here, so this can
 /** Any QR image; member pay sheets never show an invoice QR. */
 const ANY_QR = /QR/;
 
+/**
+ * Waits until the pay sheet has slid up over the dimmed page and the page behind it has come to
+ * rest. The slide and the scrim fade are plain transitions, which `motionSettled` does not watch.
+ *
+ * @param page - Page under test.
+ * @returns The open sheet (`[data-pay-sheet]`, the dialog).
+ */
+async function paySheetAtRest(page: Page): Promise<Locator> {
+  await expect(page.locator('[data-pay-sheet-layer="open"]')).toBeAttached();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document.getAnimations().filter((animation) => {
+            const target = (animation.effect as KeyframeEffect | null)?.target;
+            return (
+              animation instanceof CSSTransition &&
+              target instanceof Element &&
+              target.closest('[data-pay-sheet-layer]') !== null
+            );
+          }).length,
+      ),
+    )
+    .toBe(0);
+  await motionSettled(page);
+  return page.locator('[data-pay-sheet]');
+}
+
+/**
+ * Whether `locator` lies wholly inside the frame body (`[data-app-body]`). The pay sheet sits in
+ * the frame's overlay layer, outside the scrollport, so `insideShell` does not apply to it.
+ *
+ * @param locator - Element to check.
+ * @returns True when its box is inside the frame body.
+ */
+async function insideFrameBody(locator: Locator): Promise<boolean> {
+  return locator.evaluate((node) => {
+    const body = node.closest('[data-app-body]');
+    if (!(body instanceof HTMLElement)) {
+      return false;
+    }
+    const box = node.getBoundingClientRect();
+    const frame = body.getBoundingClientRect();
+    return (
+      box.height > 0 &&
+      box.top >= frame.top - 1 &&
+      box.bottom <= frame.bottom + 1 &&
+      box.left >= frame.left - 1 &&
+      box.right <= frame.right + 1
+    );
+  });
+}
+
 /** Signed-in wallet account for the setup, history, and username-freeze shots. */
 async function stubWalletSetupAccount(
   page: Page,
@@ -7530,13 +7583,17 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-reaction-submitting');
   });
 
-  test('state /welcome reaction-pay', async ({ page }) => {
-    await installReactionThread(page, [REACTION_REPLY]);
+  /** Stubs Bob's reaction invoice (with `sparkInvoice` when given) and his note's permalink. */
+  async function stubReactionInvoice(page: Page, sparkInvoice?: string): Promise<void> {
     await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ pr: 'lnbc21n1example', amountSats: 21 }),
+        body: JSON.stringify(
+          sparkInvoice === undefined
+            ? { pr: 'lnbc21n1example', amountSats: 21 }
+            : { pr: 'lnbc21n1example', amountSats: 21, sparkInvoice },
+        ),
       });
     });
     await page.route(/\/public-messages\/m-bob/, async (route) => {
@@ -7546,185 +7603,134 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify(REACTION_NOTE),
       });
     });
-    await fillReaction(page);
+  }
+
+  /**
+   * Posts the typed reaction and waits until its pay sheet has slid up over the thread.
+   *
+   * @returns The sheet (**Send to Bob**).
+   */
+  async function postReaction(page: Page): Promise<Locator> {
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
     await form.getByRole('button', { name: 'Post' }).click();
-    const payPage = page.locator('[data-reply-pay-page]');
-    await expect(payPage).toBeVisible();
-    // The pay page glides in after the form has faded out: scroll by where it comes to rest.
-    await motionSettled(page);
-    await expect(payPage.getByText(REACTION_ANSWER)).toBeVisible();
-    await expect(page.getByLabel('Your reaction')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Close' })).toBeVisible();
-    await expect(page.getByText(/Pay ₿21/)).toBeVisible();
+    const sheet = page.getByRole('dialog', { name: 'Send to Bob' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    return sheet;
+  }
+
+  test('state /welcome reaction-pay', async ({ page }) => {
+    await installReactionThread(page, [REACTION_REPLY]);
+    await stubReactionInvoice(page);
+    await fillReaction(page);
+    const sheet = await postReaction(page);
+    await expect(sheet.getByRole('heading', { name: 'Send to Bob' })).toBeVisible();
+    await expect(sheet.getByText('₿21', { exact: true })).toBeVisible();
+    await expect(sheet.locator('p').filter({ hasText: /^\$0\.02$/ })).toBeVisible();
+    await expect(sheet.getByRole('button', { name: 'Close' })).toBeVisible();
+    // The reaction form stays where it was, disabled, with the reaction still in it.
+    await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_ANSWER);
     expect(await insideShell(page.getByText(REACTION_NOTE_TEXT))).toBe(true);
+    expect(await insideFrameBody(sheet)).toBe(true);
     await shotScreen(page, 'state-welcome-reaction-pay');
   });
 
   test('state /welcome reaction-pay-sheet', async ({ page }) => {
     await installReactionThread(page, [REACTION_REPLY]);
-    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ pr: 'lnbc21n1example', amountSats: 21 }),
-      });
-    });
-    await page.route(/\/public-messages\/m-bob/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(REACTION_NOTE),
-      });
-    });
+    await stubReactionInvoice(page);
     await fillReaction(page);
-    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
-    await form.getByRole('button', { name: 'Post' }).click();
-    const sheet = page.locator('[data-reply-pay-page]');
-    await expect(sheet).toBeVisible();
-    // The pay page glides in after the form has faded out: scroll by where it comes to rest.
-    await motionSettled(page);
-    await expect(sheet.getByText(REACTION_ANSWER)).toBeVisible();
-    await sheet.evaluate((node) => {
-      node.scrollIntoView({ block: 'start', inline: 'nearest' });
-    });
-    const waiting = page.getByText('Waiting for payment…');
-    if (!(await insideShell(waiting))) {
-      await waiting.evaluate((node) => {
-        node.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const sheet = await postReaction(page);
+    // The thread behind the dimmed page, with the disabled form in the middle of the window.
+    await page
+      .getByLabel('Your reaction')
+      .locator('xpath=ancestor::form')
+      .evaluate((node) => {
+        node.scrollIntoView({ block: 'center', inline: 'nearest' });
       });
-    }
-    const payControl = page.getByText(PAY_UNAVAILABLE);
+    await expect(sheet.getByRole('status')).toHaveText(PAY_UNAVAILABLE);
     await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
-    expect(await insideShell(page.getByRole('button', { name: 'Close' }))).toBe(true);
-    expect(await insideShell(page.getByText(/Pay ₿21/))).toBe(true);
-    expect(await insideShell(payControl)).toBe(true);
-    expect(await insideShell(waiting)).toBe(true);
+    await expect(sheet.getByText(REACTION_ANSWER)).toHaveCount(0);
+    await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
+    // Close sits at the right of the title row, not top-left where the back arrow is.
+    const [title, close] = await Promise.all([
+      sheet.getByRole('heading', { name: 'Send to Bob' }).boundingBox(),
+      sheet.getByRole('button', { name: 'Close' }).boundingBox(),
+    ]);
+    expect(close!.x).toBeGreaterThan(title!.x + title!.width - 1);
+    expect(await insideFrameBody(sheet)).toBe(true);
+    expect(await insideShell(page.getByLabel('Your reaction'))).toBe(true);
     await shotScreen(page, 'state-welcome-reaction-pay-sheet');
   });
 
   /**
-   * Opens the reaction pay page with an invoice that carries a `sparkInvoice`
+   * Opens the reaction pay sheet with an invoice that carries a `sparkInvoice`
    * and an in-app wallet pin (`?visual=wallet-pay-…`).
    */
   async function openReactionWalletPay(page: Page, visual: string): Promise<Locator> {
     await installReactionThread(page, [REACTION_REPLY]);
-    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          pr: 'lnbc21n1example',
-          amountSats: 21,
-          sparkInvoice: 'spark1visualreaction',
-        }),
-      });
-    });
-    await page.route(/\/public-messages\/m-bob/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(REACTION_NOTE),
-      });
-    });
+    await stubReactionInvoice(page, 'spark1visualreaction');
     await fillReaction(page, `/welcome?visual=${visual}`);
-    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
-    await form.getByRole('button', { name: 'Post' }).click();
-    const sheet = page.locator('[data-reply-pay-page]');
-    await expect(sheet).toBeVisible();
-    // The pay page glides in after the form has faded out: scroll by where it comes to rest.
-    await motionSettled(page);
-    return sheet;
+    return postReaction(page);
   }
 
   test('state /welcome reaction-wallet-pay-preparing', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-preparing');
-    await expect(page.getByText('Checking your wallet…')).toBeVisible();
-    await sheet.evaluate((node) => {
-      node.scrollIntoView({ block: 'start', inline: 'nearest' });
-    });
+    await expect(sheet.getByRole('status')).toHaveText('Checking your wallet…');
     await shotScreen(page, 'state-welcome-reaction-wallet-pay-preparing');
   });
 
   test('state /welcome reaction-wallet-pay-confirm', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-confirm');
-    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
-    await sheet.evaluate((node) => {
-      node.scrollIntoView({ block: 'start', inline: 'nearest' });
-    });
+    await expect(
+      sheet.getByRole('button', { name: 'Send ₿21 · $0.02', exact: true }),
+    ).toBeVisible();
+    await expect(sheet.getByText(/Fee ₿/)).toHaveCount(0);
     await shotScreen(page, 'state-welcome-reaction-wallet-pay-confirm');
   });
 
   test('state /welcome reaction-wallet-pay-paying', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-paying');
-    await expect(page.getByText('Paying from your wallet…')).toBeVisible();
-    await sheet.evaluate((node) => {
-      node.scrollIntoView({ block: 'start', inline: 'nearest' });
-    });
+    await expect(sheet.getByRole('status')).toHaveText('Paying from your wallet…');
+    await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-reaction-wallet-pay-paying');
   });
 
   test('state /welcome reaction-wallet-pay-insufficient', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-insufficient');
-    await expect(
-      page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
-    ).toBeVisible();
-    await expect(page.getByText(/^Still missing: ₿/)).toBeVisible();
-    await sheet.evaluate((node) => {
-      node.scrollIntoView({ block: 'start', inline: 'nearest' });
-    });
+    await expect(sheet.getByRole('alert')).toHaveText(
+      'Your wallet does not have enough Bitcoin for this payment.',
+    );
+    await expect(sheet.getByText(/^Still missing: ₿/)).toHaveText('Still missing: ₿21 · $0.02');
+    await expect(sheet.getByRole('button', { name: 'Add Bitcoin' })).toBeVisible();
+    await expect(sheet.getByRole('img')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-reaction-wallet-pay-insufficient');
   });
 
   test('state /welcome reaction-wallet-pay-unconfirmed', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-unconfirmed');
-    await expect(
-      page.getByText('This payment is not confirmed yet. Check your balance again later.'),
-    ).toBeVisible();
-    await sheet.evaluate((node) => {
-      node.scrollIntoView({ block: 'start', inline: 'nearest' });
-    });
+    await expect(sheet.getByRole('status')).toHaveText(
+      'This payment is not confirmed yet. Check your balance again later.',
+    );
     await shotScreen(page, 'state-welcome-reaction-wallet-pay-unconfirmed');
   });
 
   test('state /welcome reaction-pay-kept', async ({ page }) => {
     await installReactionThread(page, [REACTION_REPLY]);
-    await page.route(/\/messages\/m-bob\/invoice$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ pr: 'lnbc21n1example', amountSats: 21 }),
-      });
-    });
-    await page.route(/\/public-messages\/m-bob/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(REACTION_NOTE),
-      });
-    });
+    await stubReactionInvoice(page);
     await fillReaction(page);
-    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
-    await form.getByRole('button', { name: 'Post' }).click();
-    const payPage = page.locator('[data-reply-pay-page]');
-    const preview = payPage.getByText(REACTION_ANSWER);
-    await expect(preview).toBeVisible();
-    await motionSettled(page);
-    expect(
-      await preview.evaluate((node) => {
-        return (
-          !(node instanceof HTMLInputElement) &&
-          !(node instanceof HTMLTextAreaElement) &&
-          node.closest('input, textarea') === null
-        );
-      }),
-    ).toBe(true);
-    await preview.evaluate((node) => {
-      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    const sheet = await postReaction(page);
+    // The typed reaction and its amount stay in the form behind the sheet, disabled.
+    const field = page.getByLabel('Your reaction');
+    await expect(field).toBeDisabled();
+    await expect(field).toHaveValue(REACTION_ANSWER);
+    await expect(page.getByLabel('Amount')).toBeDisabled();
+    await expect(page.getByLabel('Amount')).toHaveValue('21');
+    await expect(sheet.getByText(REACTION_ANSWER)).toHaveCount(0);
+    await field.locator('xpath=ancestor::form').evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
-    expect(await insideShell(preview)).toBe(true);
-    await expect(page.getByLabel('Amount')).toHaveCount(0);
-    await expect(page.getByLabel('Your reaction')).toHaveCount(0);
+    expect(await insideShell(field)).toBe(true);
     await shotScreen(page, 'state-welcome-reaction-pay-kept');
   });
 
@@ -7897,6 +7903,8 @@ test.describe('onboarding screens', () => {
     const posted = page.getByText(REACTION_ANSWER);
     await expect(posted).toBeVisible();
     await expect(page.getByLabel('Your reaction')).toHaveValue('');
+    // The posted reply can arrive while the pay sheet still fades out: shoot once it is gone.
+    await expect(page.locator('[data-pay-sheet]')).toHaveCount(0);
     await motionSettled(page);
     await posted.evaluate((node) => {
       node.scrollIntoView({ block: 'center', inline: 'nearest' });
@@ -11777,15 +11785,25 @@ test.describe('onboarding screens', () => {
     // The line under the amount eases in: click once it has come to rest.
     await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
-    const sheet = page.locator('[data-pay-sheet]');
-    await expect(sheet.getByText('You lend ₿210 · $0.21')).toBeVisible();
-    await expect(sheet.locator('[data-loan-notice="lend"]')).toHaveText(
+    const sheet = page.getByRole('dialog', { name: 'Lend to Carol' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
+    await expect(sheet.getByText('$0.21', { exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Lend ₿210 · $0.21', exact: true }),
+    ).toBeVisible();
+    await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
+    // How the loan comes back stays on the page, at the top of the disabled form behind the sheet.
+    await expect(form.locator('[data-loan-notice="lend"]')).toHaveText(
       'You are lending to Carol. Once the loan is fully funded, you get it back in 30 daily payments.',
     );
-    await expect(sheet.getByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeVisible();
-    await motionSettled(page);
-    await sheet.evaluate((node) => {
-      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    // The paid reaction keeps its text in the form; no gift amount box opens.
+    await expect(page.getByLabel('Your reaction')).toHaveValue('Count me in!');
+    await expect(page.locator('[data-pay-amount]')).toHaveCount(0);
+    await form.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
     await shotScreen(page, 'state-members-posts-open-loan-pay');
   });
@@ -11806,17 +11824,99 @@ test.describe('onboarding screens', () => {
     // The line under the amount eases in: click once it has come to rest.
     await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
-    const sheet = page.locator('[data-pay-sheet]');
-    await expect(sheet.getByText('Pay ₿210 · $0.21')).toBeVisible();
-    await expect(sheet.locator('[data-loan-notice="full"]')).toHaveText(
+    const sheet = page.getByRole('dialog', { name: 'Send to Carol' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
+    await expect(sheet.getByText('$0.21', { exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Send ₿210 · $0.21', exact: true }),
+    ).toBeVisible();
+    await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
+    await expect(form.locator('[data-loan-notice="full"]')).toHaveText(
       'This loan is already fully funded. What you send now is a gift to Carol.',
     );
-    await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
-    await motionSettled(page);
-    await sheet.evaluate((node) => {
-      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    // The paid reaction keeps its text in the form; no gift amount box opens.
+    await expect(page.getByLabel('Your reaction')).toHaveValue('Thank you, Carol!');
+    await expect(page.locator('[data-pay-amount]')).toHaveCount(0);
+    await form.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
     await shotScreen(page, 'state-members-posts-open-loan-pay-full');
+  });
+
+  test('state /members posts-open-loan-lent', async ({ page }) => {
+    const memberId = await seedCarolLoan(page);
+    const loanId = '44444444-4444-4444-8444-444444444444';
+    let paid = false;
+    // The payment poll: the loan's sats rise once the wallet's payment arrived.
+    await page.route(new RegExp(`/public-messages/${loanId}\\?`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: loanId,
+          accountId: '22222222-2222-4222-8222-222222222222',
+          name: 'Carol',
+          text: 'A loan for a sewing machine, paid back every day from the orders.',
+          createdAt: '2026-08-02T10:00:00.000Z',
+          sats: paid ? 10710 : 10500,
+          goalSats: 21000,
+          goalRepayable: true,
+          goalTermDays: 30,
+          payable: true,
+          hasPhoto: false,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'verified',
+          replyCount: 0,
+        }),
+      });
+    });
+    // The page clock holds the success step: its 1.4 s and the sheet's hold run on page timers.
+    await page.clock.install({ time: new Date('2026-10-07T10:00:00.000Z') });
+    await page.goto(`/members/${memberId}?visual=wallet-pay-paying`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByRole('button', { name: 'Lend' }).click();
+    // The reply block eases open first: type where the fields come to rest.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
+    await page.getByLabel('Amount to lend').fill('210');
+    await page.getByLabel('Your reaction').fill('Count me in!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Lend to Carol' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByRole('status')).toHaveText('Paying from your wallet…');
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    paid = true;
+    // Move the clock only to the payment poll's next look; once the payment closed the sheet, its
+    // success step stays until the clock moves on.
+    const success = page.locator('[data-pay-sheet="success"]');
+    await expect(async () => {
+      await page.clock.runFor(500);
+      await expect(success.getByRole('status')).toContainText('Lent to Carol', {
+        timeout: 1_000,
+      });
+    }).toPass();
+    const status = success.getByRole('status');
+    await expect(status).toContainText('₿210');
+    await expect(success.locator('[data-swap="success"]')).toBeVisible();
+    await expect(page.locator('[data-pay-sheet-layer="open"]')).toBeAttached();
+    await expect(success.getByRole('button')).toHaveCount(0);
+    // Behind the dimmed page the loan counts the new sats; the emptied reaction form stays disabled.
+    await expect(page.getByText(/^₿10'710 · \$10\.71 of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
+    await expect(page.getByLabel('Amount to lend')).toHaveValue('');
+    await expect(page.getByLabel('Your reaction')).toHaveValue('');
+    await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    await paySheetAtRest(page);
+    expect(await insideFrameBody(success)).toBe(true);
+    await shotScreen(page, 'state-members-posts-open-loan-lent');
   });
 
   test('state /members posts-open-loan-tag-open', async ({ page }) => {
@@ -16869,15 +16969,25 @@ test.describe('onboarding screens', () => {
     // The line under the amount eases in: click once it has come to rest.
     await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
-    const sheet = page.locator('[data-pay-sheet]');
-    await expect(sheet.getByText('You lend ₿210 · $0.21')).toBeVisible();
-    await expect(sheet.locator('[data-loan-notice="lend"]')).toHaveText(
+    const sheet = page.getByRole('dialog', { name: 'Lend to Maria' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
+    await expect(sheet.getByText('$0.21', { exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Lend ₿210 · $0.21', exact: true }),
+    ).toBeVisible();
+    await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
+    // How the loan comes back stays on the page, at the top of the disabled form behind the sheet.
+    await expect(form.locator('[data-loan-notice="lend"]')).toHaveText(
       'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
     );
-    await expect(sheet.getByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeVisible();
-    await motionSettled(page);
-    await sheet.evaluate((node) => {
-      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    // The paid reaction keeps its text in the form; no gift amount box opens.
+    await expect(page.getByLabel('Your reaction')).toHaveValue('Count me in!');
+    await expect(page.locator('[data-pay-amount]')).toHaveCount(0);
+    await form.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
     await shotScreen(page, 'state-messages-id-loan-pay');
   });
@@ -16893,17 +17003,95 @@ test.describe('onboarding screens', () => {
     // The line under the amount eases in: click once it has come to rest.
     await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
-    const sheet = page.locator('[data-pay-sheet]');
-    await expect(sheet.getByText('Pay ₿210 · $0.21')).toBeVisible();
-    await expect(sheet.locator('[data-loan-notice="full"]')).toHaveText(
+    const sheet = page.getByRole('dialog', { name: 'Send to Maria' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
+    await expect(sheet.getByText('$0.21', { exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Send ₿210 · $0.21', exact: true }),
+    ).toBeVisible();
+    await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
+    await expect(form.locator('[data-loan-notice="full"]')).toHaveText(
       'This loan is already fully funded. What you send now is a gift to Maria.',
     );
-    await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
-    await motionSettled(page);
-    await sheet.evaluate((node) => {
-      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    // The paid reaction keeps its text in the form; no gift amount box opens.
+    await expect(page.getByLabel('Your reaction')).toHaveValue('Thank you, Maria!');
+    await expect(page.locator('[data-pay-amount]')).toHaveCount(0);
+    await form.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
     await shotScreen(page, 'state-messages-id-loan-pay-full');
+  });
+
+  test('state /messages/[id] loan-lent', async ({ page }) => {
+    const id = await seedMariaLoanNote(page);
+    let paid = false;
+    // The payment poll: the loan's sats rise once the wallet's payment arrived.
+    await page.route(new RegExp(`/public-messages/${id}\\?`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          accountId: 'acc_maria',
+          name: 'Maria',
+          text: 'The burner at our food stall broke. A loan for a new one, paid back every day from what we sell.',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: paid ? 10710 : 10500,
+          goalSats: 21000,
+          goalRepayable: true,
+          goalTermDays: 30,
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    // The page clock holds the success step: its 1.4 s and the sheet's hold run on page timers.
+    await page.clock.install({ time: new Date('2026-10-07T10:00:00.000Z') });
+    await page.goto(`/messages/${id}?visual=wallet-pay-paying`);
+    await page.getByRole('button', { name: 'Lend' }).click();
+    await expect(page.getByLabel('Amount to lend')).toBeFocused();
+    // The reply block eases open first: type once the form has come to rest.
+    await motionSettled(page);
+    await page.getByLabel('Amount to lend').fill('210');
+    await page.getByLabel('Your reaction').fill('Count me in!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Lend to Maria' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByRole('status')).toHaveText('Paying from your wallet…');
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    paid = true;
+    // Move the clock only to the payment poll's next look; once the payment closed the sheet, its
+    // success step stays until the clock moves on.
+    const success = page.locator('[data-pay-sheet="success"]');
+    await expect(async () => {
+      await page.clock.runFor(500);
+      await expect(success.getByRole('status')).toContainText('Lent to Maria', {
+        timeout: 1_000,
+      });
+    }).toPass();
+    const status = success.getByRole('status');
+    await expect(status).toContainText('₿210');
+    await expect(success.locator('[data-swap="success"]')).toBeVisible();
+    await expect(page.locator('[data-pay-sheet-layer="open"]')).toBeAttached();
+    await expect(success.getByRole('button')).toHaveCount(0);
+    // Behind the dimmed page the loan counts the new sats; the emptied reaction form stays disabled.
+    await expect(page.getByText(/^₿10'710 · \$10\.71 of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
+    await expect(page.getByLabel('Amount to lend')).toHaveValue('');
+    await expect(page.getByLabel('Your reaction')).toHaveValue('');
+    await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    await paySheetAtRest(page);
+    expect(await insideFrameBody(success)).toBe(true);
+    await shotScreen(page, 'state-messages-id-loan-lent');
   });
 
   test('state /messages/[id] shop-edit', async ({ page }) => {
@@ -21210,7 +21398,7 @@ test.describe('welcome forum variants', () => {
   }
 
   /** Opens the Gift pay sheet with an in-app wallet pin (`?visual=wallet-pay-…`). */
-  async function openWalletPaySheet(page: Page, visual: string): Promise<void> {
+  async function openWalletPaySheet(page: Page, visual: string): Promise<Locator> {
     await seedAda(page);
     await stubPayInvoice(page, 'spark1visualgiftinvoice');
     await fulfillRateDay(page);
@@ -21223,18 +21411,37 @@ test.describe('welcome forum variants', () => {
     await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
-    await expect(page.getByText('$0.02').first()).toBeVisible();
+    return giftSheetAtRest(page);
+  }
+
+  /**
+   * Waits until Carol's gift sheet has slid up over the forum, with the amount box behind it.
+   *
+   * @returns The sheet (**Send to Carol**).
+   */
+  async function giftSheetAtRest(page: Page): Promise<Locator> {
+    const sheet = page.getByRole('dialog', { name: 'Send to Carol' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByText('₿21', { exact: true })).toBeVisible();
+    await expect(sheet.locator('p').filter({ hasText: /^\$0\.02$/ })).toBeVisible();
+    // The amount box stays in the reply card, disabled, behind the dimmed page.
+    const replyCard = page.locator('[data-reply-id="r-pay"]');
+    await expect(replyCard.getByLabel('Amount')).toBeDisabled();
+    await expect(replyCard.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
       0,
     );
+    expect(await insideFrameBody(sheet)).toBe(true);
+    return sheet;
   }
 
-  async function openPaySheet(page: Page): Promise<void> {
+  async function openPaySheet(page: Page): Promise<Locator> {
     await fulfillRateDay(page);
     await page.goto('/welcome');
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
@@ -21245,13 +21452,14 @@ test.describe('welcome forum variants', () => {
     await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
-    await expect(page.getByText(PAY_UNAVAILABLE)).toBeVisible();
-    await expect(page.getByText('$0.02').first()).toBeVisible();
+    const sheet = await giftSheetAtRest(page);
+    await expect(sheet.getByRole('status')).toHaveText(PAY_UNAVAILABLE);
+    return sheet;
   }
 
   for (const state of ['moderation', 'delete-confirm', 'deleting', 'delete-error'] as const) {
@@ -21937,15 +22145,22 @@ test.describe('welcome forum variants', () => {
     // The line under the amount eases in: click once it has come to rest.
     await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
-    const payPage = page.locator('[data-reply-pay-page]');
-    await expect(payPage.getByText('You lend ₿210 · $0.21')).toBeVisible();
-    await expect(payPage.locator('[data-loan-notice="lend"]')).toHaveText(
+    const sheet = page.getByRole('dialog', { name: 'Lend to Maria' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
+    await expect(sheet.getByText('$0.21', { exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Lend ₿210 · $0.21', exact: true }),
+    ).toBeVisible();
+    await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
+    // How the loan comes back stays on the page, at the top of the disabled form behind the sheet.
+    await expect(form.locator('[data-loan-notice="lend"]')).toHaveText(
       'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
     );
-    await expect(payPage.getByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeVisible();
-    await motionSettled(page);
-    await payPage.evaluate((node) => {
-      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    await form.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
     await shotScreen(page, 'state-welcome-loan-pay');
   });
@@ -21965,15 +22180,21 @@ test.describe('welcome forum variants', () => {
     // The line under the amount eases in: click once it has come to rest.
     await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
-    const payPage = page.locator('[data-reply-pay-page]');
-    await expect(payPage.getByText('Pay ₿210 · $0.21')).toBeVisible();
-    await expect(payPage.locator('[data-loan-notice="full"]')).toHaveText(
+    const sheet = page.getByRole('dialog', { name: 'Send to Maria' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
+    await expect(sheet.getByText('$0.21', { exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Send ₿210 · $0.21', exact: true }),
+    ).toBeVisible();
+    await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
+    await expect(form.locator('[data-loan-notice="full"]')).toHaveText(
       'This loan is already fully funded. What you send now is a gift to Maria.',
     );
-    await expect(payPage.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
-    await motionSettled(page);
-    await payPage.evaluate((node) => {
-      node.scrollIntoView({ block: 'end', inline: 'nearest' });
+    await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    await form.evaluate((node) => {
+      node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
     await shotScreen(page, 'state-welcome-loan-pay-full');
   });
@@ -23850,7 +24071,7 @@ test.describe('welcome forum variants', () => {
   }
 
   /** Opens the posting-fee pay slot with an in-app wallet pin (`?visual=wallet-pay-…`). */
-  async function openComposerWalletPay(page: Page, visual: string): Promise<void> {
+  async function openComposerWalletPay(page: Page, visual: string): Promise<Locator> {
     await seedAda(page, 'basis', true);
     await emptyForum(page);
     await stubComposeInvoice(page, 'spark1visualcomposer');
@@ -23860,7 +24081,23 @@ test.describe('welcome forum variants', () => {
     await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Hello gifts');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
-    await expect(page.getByText(/^Pay ₿1\b(?! and post)/)).toBeVisible();
+    return postingFeeSheetAtRest(page);
+  }
+
+  /**
+   * Waits until the posting fee's sheet has slid up over the forum, with the writer behind it.
+   *
+   * @returns The sheet (**Pay to post**).
+   */
+  async function postingFeeSheetAtRest(page: Page): Promise<Locator> {
+    const sheet = page.getByRole('dialog', { name: 'Pay to post' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByText('₿1', { exact: true })).toBeVisible();
+    // The writer stays open behind the dimmed page.
+    await expect(page.locator('[data-writing-composer]')).toBeVisible();
+    expect(await insideFrameBody(sheet)).toBe(true);
+    return sheet;
   }
 
   const TINY_GIF = Buffer.from(
@@ -24376,48 +24613,173 @@ test.describe('welcome forum variants', () => {
     await openHomeWriter(page);
     await page.getByLabel('Your message').fill('Hello gifts');
     await page.getByRole('button', { name: 'Post', exact: true }).click();
-    await expect(page.getByText(PAY_UNAVAILABLE)).toBeVisible();
+    const sheet = await postingFeeSheetAtRest(page);
+    await expect(sheet.getByRole('status')).toHaveText(PAY_UNAVAILABLE);
     await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
-    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-pay-composer');
   });
 
   test('welcome composer-wallet-pay-preparing', async ({ page }) => {
-    await openComposerWalletPay(page, 'wallet-pay-preparing');
-    await expect(page.getByText('Checking your wallet…')).toBeVisible();
+    const sheet = await openComposerWalletPay(page, 'wallet-pay-preparing');
+    await expect(sheet.getByRole('status')).toHaveText('Checking your wallet…');
     await shotScreen(page, 'state-welcome-composer-wallet-pay-preparing');
   });
 
   test('welcome composer-wallet-pay-confirm', async ({ page }) => {
-    await openComposerWalletPay(page, 'wallet-pay-confirm');
-    await expect(page.getByRole('button', { name: /^Pay ₿1 and post/ })).toHaveText(
+    const sheet = await openComposerWalletPay(page, 'wallet-pay-confirm');
+    await expect(sheet.getByRole('button', { name: /^Pay ₿1 and post/ })).toHaveText(
       'Pay ₿1 and post',
     );
-    await expect(page.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
+    await expect(sheet.getByRole('button', { name: /^Send/ })).toHaveCount(0);
+    await expect(sheet.getByText(/Fee ₿/)).toHaveCount(0);
     await shotScreen(page, 'state-welcome-composer-wallet-pay-confirm');
   });
 
   test('welcome composer-wallet-pay-paying', async ({ page }) => {
-    await openComposerWalletPay(page, 'wallet-pay-paying');
-    await expect(page.getByText('Paying from your wallet…')).toBeVisible();
+    const sheet = await openComposerWalletPay(page, 'wallet-pay-paying');
+    await expect(sheet.getByRole('status')).toHaveText('Paying from your wallet…');
+    await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-composer-wallet-pay-paying');
   });
 
   test('welcome composer-wallet-pay-insufficient', async ({ page }) => {
-    await openComposerWalletPay(page, 'wallet-pay-insufficient');
-    await expect(
-      page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
-    ).toBeVisible();
-    await expect(page.getByText(/^Still missing: ₿/)).toBeVisible();
+    const sheet = await openComposerWalletPay(page, 'wallet-pay-insufficient');
+    await expect(sheet.getByRole('alert')).toHaveText(
+      'Your wallet does not have enough Bitcoin for this payment.',
+    );
+    await expect(sheet.getByText(/^Still missing: ₿/)).toBeVisible();
+    await expect(sheet.getByRole('button', { name: 'Add Bitcoin' })).toBeVisible();
+    await expect(sheet.getByRole('img')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-composer-wallet-pay-insufficient');
   });
 
   test('welcome composer-wallet-pay-unconfirmed', async ({ page }) => {
-    await openComposerWalletPay(page, 'wallet-pay-unconfirmed');
-    await expect(
-      page.getByText('This payment is not confirmed yet. Check your balance again later.'),
-    ).toBeVisible();
+    const sheet = await openComposerWalletPay(page, 'wallet-pay-unconfirmed');
+    await expect(sheet.getByRole('status')).toHaveText(
+      'This payment is not confirmed yet. Check your balance again later.',
+    );
     await shotScreen(page, 'state-welcome-composer-wallet-pay-unconfirmed');
+  });
+
+  /**
+   * Posting fee of `text` that the stubbed api settles once `paid()` is called: from then on the
+   * fee note counts the sat and the forum lists the visitor's new post, as the api does when the
+   * wallet's payment arrived.
+   */
+  async function stubPostingFee(page: Page, text: string): Promise<{ paid: () => void }> {
+    let settled = false;
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      const request = route.request();
+      if (request.method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      const mode = new URL(request.url()).searchParams.get('mode');
+      const messages =
+        mode === 'all' && settled
+          ? [
+              {
+                id: 'm-new',
+                accountId: 'acc_e2e',
+                name: 'Ada',
+                text,
+                createdAt: '2026-10-07T09:59:00.000Z',
+                sats: 0,
+                payable: true,
+                hasPhoto: false,
+                role: 'basis',
+                replyCount: 0,
+              },
+            ]
+          : [];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages }),
+      });
+    });
+    await page.route('**/messages/compose-target', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messageId: 'fee-note', sats: 0 }),
+      });
+    });
+    await page.route('**/messages/fee-note/invoice', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          pr: 'lnbc10n1postingfee',
+          amountSats: 1,
+          sparkInvoice: 'spark1visualcomposer',
+        }),
+      });
+    });
+    await page.route('**/public-messages/fee-note**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'fee-note',
+          accountId: 'acc_platform',
+          name: '21.gifts',
+          text: 'Posting fees go here.',
+          createdAt: '2026-10-07T09:00:00.000Z',
+          sats: settled ? 1 : 0,
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    return {
+      paid: () => {
+        settled = true;
+      },
+    };
+  }
+
+  test('welcome pay-sheet-success', async ({ page }) => {
+    await seedAda(page, 'basis', true);
+    const fee = await stubPostingFee(page, 'Hello gifts');
+    await fulfillRateDay(page);
+    // The page clock holds the success step: its 1.4 s and the sheet's hold run on page timers.
+    await page.clock.install({ time: new Date('2026-10-07T10:00:00.000Z') });
+    await page.goto('/welcome?visual=wallet-pay-paying');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await openHomeWriter(page);
+    await page.getByLabel('Your message').fill('Hello gifts');
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
+    const sheet = await postingFeeSheetAtRest(page);
+    await expect(sheet.getByRole('status')).toHaveText('Paying from your wallet…');
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    fee.paid();
+    // Move the clock only to the payment poll's next look; once the payment closed the sheet, its
+    // success step stays until the clock moves on.
+    const success = page.locator('[data-pay-sheet="success"]');
+    await expect(async () => {
+      await page.clock.runFor(500);
+      await expect(success.getByRole('status')).toContainText('Paid and posted', {
+        timeout: 1_000,
+      });
+    }).toPass();
+    const status = success.getByRole('status');
+    await expect(status).toContainText('₿1');
+    await expect(success.locator('[data-swap="success"]')).toBeVisible();
+    await expect(page.locator('[data-pay-sheet-layer="open"]')).toBeAttached();
+    await expect(success.getByRole('button')).toHaveCount(0);
+    await expect(page.getByText('Hello gifts')).toBeVisible();
+    await expect(page.locator('[data-writing-composer]')).toHaveCount(0);
+    await expect(page.getByRole('combobox', { name: 'Forum view' })).toContainText('All');
+    // The pay host's fold has folded away and holds the sheet for this step, inert, at rest.
+    await expect(page.locator('[data-collapse="held"][inert]')).toHaveCount(1);
+    await paySheetAtRest(page);
+    expect(await insideFrameBody(success)).toBe(true);
+    await shotScreen(page, 'state-welcome-pay-sheet-success');
   });
 
   test('welcome error-too-large', async ({ page }) => {
@@ -24867,8 +25229,8 @@ test.describe('welcome forum variants', () => {
     await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
@@ -24882,70 +25244,81 @@ test.describe('welcome forum variants', () => {
     ).toHaveCount(0);
     await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
     await expect(page.getByText('$0.02').first()).toBeVisible();
+    // The sheet only opens after Continue.
+    await expect(page.locator('[data-pay-sheet]')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-pay-amount');
   });
 
   test('welcome wallet-pay-unavailable', async ({ page }) => {
     await seedAda(page);
     await stubPayInvoice(page);
-    await openPaySheet(page);
+    const sheet = await openPaySheet(page);
     await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
-      0,
-    );
+    await expect(sheet.getByRole('button', { name: /^Send/ })).toHaveCount(0);
+    await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-wallet-pay-unavailable');
   });
 
   test('welcome wallet-pay-preparing', async ({ page }) => {
-    await openWalletPaySheet(page, 'wallet-pay-preparing');
-    await expect(page.getByText('Checking your wallet…')).toBeVisible();
+    const sheet = await openWalletPaySheet(page, 'wallet-pay-preparing');
+    await expect(sheet.getByRole('status')).toHaveText('Checking your wallet…');
     await shotScreen(page, 'state-welcome-wallet-pay-preparing');
   });
 
   test('welcome wallet-pay-confirm', async ({ page }) => {
-    await openWalletPaySheet(page, 'wallet-pay-confirm');
-    await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
-    await expect(page.locator('[data-pay-sheet]').getByText(/Fee ₿/)).toHaveCount(0);
+    const sheet = await openWalletPaySheet(page, 'wallet-pay-confirm');
+    const send = sheet.getByRole('button', { name: 'Send ₿21 · $0.02', exact: true });
+    await expect(send).toBeVisible();
+    await expect(sheet.getByText(/Fee ₿/)).toHaveCount(0);
+    // The button takes the full width of the pay slot.
+    const widths = await send.evaluate((node) => [
+      node.getBoundingClientRect().width,
+      (node.parentElement as HTMLElement).getBoundingClientRect().width,
+    ]);
+    expect(widths[0]).toBe(widths[1]);
     await shotScreen(page, 'state-welcome-wallet-pay-confirm');
   });
 
   test('welcome wallet-pay-paying', async ({ page }) => {
-    await openWalletPaySheet(page, 'wallet-pay-paying');
-    await expect(page.getByText('Paying from your wallet…')).toBeVisible();
+    const sheet = await openWalletPaySheet(page, 'wallet-pay-paying');
+    await expect(sheet.getByRole('status')).toHaveText('Paying from your wallet…');
+    await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-wallet-pay-paying');
   });
 
   test('welcome wallet-pay-insufficient', async ({ page }) => {
-    await openWalletPaySheet(page, 'wallet-pay-insufficient');
-    await expect(
-      page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
-    ).toBeVisible();
-    await expect(page.getByText(/^Still missing: ₿/)).toBeVisible();
-    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+    const sheet = await openWalletPaySheet(page, 'wallet-pay-insufficient');
+    await expect(sheet.getByRole('alert')).toHaveText(
+      'Your wallet does not have enough Bitcoin for this payment.',
+    );
+    await expect(sheet.getByText(/^Still missing: ₿/)).toHaveText('Still missing: ₿21 · $0.02');
+    await expect(sheet.getByRole('button', { name: 'Add Bitcoin' })).toBeVisible();
+    await expect(sheet.getByRole('img')).toHaveCount(0);
+    await expect(sheet.getByText(/^alice@/)).toHaveCount(0);
     await shotScreen(page, 'state-welcome-wallet-pay-insufficient');
   });
 
   test('welcome wallet-pay-failed', async ({ page }) => {
-    await openWalletPaySheet(page, 'wallet-pay-failed');
-    await expect(
-      page.getByText('Your wallet could not prepare this payment. Please try again.'),
-    ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    const sheet = await openWalletPaySheet(page, 'wallet-pay-failed');
+    await expect(sheet.getByRole('alert')).toHaveText(
+      'Your wallet could not prepare this payment. Please try again.',
+    );
+    await expect(sheet.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-pay-failed');
   });
 
   test('welcome wallet-pay-setup-failed', async ({ page }) => {
-    await openWalletPaySheet(page, 'wallet-pay-setup-failed');
-    await expect(page.getByText('Your wallet could not be set up yet.')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    const sheet = await openWalletPaySheet(page, 'wallet-pay-setup-failed');
+    await expect(sheet.getByText('Your wallet could not be set up yet.')).toBeVisible();
+    await expect(sheet.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-welcome-wallet-pay-setup-failed');
   });
 
   test('welcome wallet-pay-unconfirmed', async ({ page }) => {
-    await openWalletPaySheet(page, 'wallet-pay-unconfirmed');
-    await expect(
-      page.getByText('This payment is not confirmed yet. Check your balance again later.'),
-    ).toBeVisible();
+    const sheet = await openWalletPaySheet(page, 'wallet-pay-unconfirmed');
+    await expect(sheet.getByRole('status')).toHaveText(
+      'This payment is not confirmed yet. Check your balance again later.',
+    );
     await shotScreen(page, 'state-welcome-wallet-pay-unconfirmed');
   });
 
@@ -25021,8 +25394,8 @@ test.describe('welcome forum variants', () => {
     await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
@@ -25033,6 +25406,8 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
       0,
     );
+    // The error stays in the amount box; no sheet opens.
+    await expect(page.locator('[data-pay-sheet]')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-pay-author-wallet');
   });
 
@@ -25209,8 +25584,8 @@ test.describe('welcome forum variants', () => {
     await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
@@ -25219,6 +25594,8 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
       0,
     );
+    // The error stays in the amount box; no sheet opens.
+    await expect(page.locator('[data-pay-sheet]')).toHaveCount(0);
     await shotScreen(page, 'state-welcome-pay-deleted');
   });
 
@@ -29039,6 +29416,22 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-thread-text-sats');
   });
 
+  /**
+   * Waits until the gift sheet of the open thread has slid up over it.
+   *
+   * @returns The sheet (**Send to 21.gifts**).
+   */
+  async function inboxSheetAtRest(page: Page): Promise<Locator> {
+    const sheet = page.getByRole('dialog', { name: 'Send to 21.gifts' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByText('₿21', { exact: true })).toBeVisible();
+    await expect(sheet.locator('p').filter({ hasText: /^\$0\.02$/ })).toBeVisible();
+    await expect(sheet.getByRole('button', { name: 'Close' })).toBeVisible();
+    expect(await insideFrameBody(sheet)).toBe(true);
+    return sheet;
+  }
+
   test('messages thread-pay-sheet', async ({ page }) => {
     await fulfillRateDay(page);
     await seedAda(page);
@@ -29107,14 +29500,23 @@ test.describe('inbox screens', () => {
     // The line under the amount eases in: click once it has come to rest.
     await motionSettled(page);
     await page.getByRole('button', { name: 'Send' }).click();
-    await expect(page.getByText(PAY_UNAVAILABLE)).toBeVisible();
+    const sheet = await inboxSheetAtRest(page);
+    await expect(sheet.getByRole('status')).toHaveText(PAY_UNAVAILABLE);
     await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
-    await expect(page.getByText('$0.02').first()).toBeVisible();
+    await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
     await shotScreen(page, 'state-messages-thread-pay-sheet');
   });
 
-  /** Inbox thread whose gift invoice carries a `sparkInvoice`, opened with a wallet pin. */
-  async function openInboxWalletPay(page: Page, visual: string): Promise<void> {
+  /**
+   * Inbox thread whose gift invoice carries a `sparkInvoice`, opened with a wallet pin. The
+   * payment poll (`sinceMessageId`) hangs, or, given `paymentSeen`, answers with the messages it
+   * resolves to.
+   */
+  async function openInboxWalletPay(
+    page: Page,
+    visual: string,
+    paymentSeen?: Promise<unknown[]>,
+  ): Promise<Locator> {
     await fulfillRateDay(page);
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
@@ -29170,8 +29572,17 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/sinceMessageId=/, async () => {
-      /* hang — keep payWaiting while the sheet is open */
+    await page.route(/sinceMessageId=/, async (route) => {
+      if (paymentSeen === undefined) {
+        /* hang — keep payWaiting while the sheet is open */
+        return;
+      }
+      const messages = await paymentSeen;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages }),
+      });
     });
     await page.goto(`/messages?c=conv-21&visual=${visual}`);
     await expect(page.getByText('Hello team')).toBeVisible();
@@ -29179,43 +29590,94 @@ test.describe('inbox screens', () => {
     // The line under the amount eases in: click once it has come to rest.
     await motionSettled(page);
     await page.getByRole('button', { name: 'Send' }).click();
-    await expect(page.getByRole('paragraph').filter({ hasText: /^Pay ₿21\b/ })).toBeVisible();
+    return inboxSheetAtRest(page);
   }
 
   test('messages thread-wallet-pay-preparing', async ({ page }) => {
-    await openInboxWalletPay(page, 'wallet-pay-preparing');
-    await expect(page.getByText('Checking your wallet…')).toBeVisible();
+    const sheet = await openInboxWalletPay(page, 'wallet-pay-preparing');
+    await expect(sheet.getByRole('status')).toHaveText('Checking your wallet…');
     await shotScreen(page, 'state-messages-thread-wallet-pay-preparing');
   });
 
   test('messages thread-wallet-pay-confirm', async ({ page }) => {
-    await openInboxWalletPay(page, 'wallet-pay-confirm');
-    // The pay card's labeled Send, not the composer's icon-only Send (aria-label).
-    await expect(page.locator('button:not([aria-label])', { hasText: /^Send$/ })).toBeVisible();
+    const sheet = await openInboxWalletPay(page, 'wallet-pay-confirm');
+    await expect(
+      sheet.getByRole('button', { name: 'Send ₿21 · $0.02', exact: true }),
+    ).toBeVisible();
+    await expect(sheet.getByText(/Fee ₿/)).toHaveCount(0);
     await shotScreen(page, 'state-messages-thread-wallet-pay-confirm');
   });
 
   test('messages thread-wallet-pay-paying', async ({ page }) => {
-    await openInboxWalletPay(page, 'wallet-pay-paying');
-    await expect(page.getByText('Paying from your wallet…')).toBeVisible();
+    const sheet = await openInboxWalletPay(page, 'wallet-pay-paying');
+    await expect(sheet.getByRole('status')).toHaveText('Paying from your wallet…');
+    await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
     await shotScreen(page, 'state-messages-thread-wallet-pay-paying');
   });
 
   test('messages thread-wallet-pay-insufficient', async ({ page }) => {
-    await openInboxWalletPay(page, 'wallet-pay-insufficient');
-    await expect(
-      page.getByText('Your wallet does not have enough Bitcoin for this payment.'),
-    ).toBeVisible();
-    await expect(page.getByText(/^Still missing: ₿/)).toBeVisible();
+    const sheet = await openInboxWalletPay(page, 'wallet-pay-insufficient');
+    await expect(sheet.getByRole('alert')).toHaveText(
+      'Your wallet does not have enough Bitcoin for this payment.',
+    );
+    await expect(sheet.getByText(/^Still missing: ₿/)).toBeVisible();
+    await expect(sheet.getByRole('button', { name: 'Add Bitcoin' })).toBeVisible();
+    await expect(sheet.getByRole('img')).toHaveCount(0);
     await shotScreen(page, 'state-messages-thread-wallet-pay-insufficient');
   });
 
   test('messages thread-wallet-pay-unconfirmed', async ({ page }) => {
-    await openInboxWalletPay(page, 'wallet-pay-unconfirmed');
-    await expect(
-      page.getByText('This payment is not confirmed yet. Check your balance again later.'),
-    ).toBeVisible();
+    const sheet = await openInboxWalletPay(page, 'wallet-pay-unconfirmed');
+    await expect(sheet.getByRole('status')).toHaveText(
+      'This payment is not confirmed yet. Check your balance again later.',
+    );
     await shotScreen(page, 'state-messages-thread-wallet-pay-unconfirmed');
+  });
+
+  test('messages thread-pay-sheet-success', async ({ page }) => {
+    let seen: (messages: unknown[]) => void = () => undefined;
+    const paymentSeen = new Promise<unknown[]>((resolve) => {
+      seen = resolve;
+    });
+    // The page clock holds the success step: its 1.4 s and the sheet's hold run on page timers.
+    await page.clock.install({ time: new Date('2026-10-07T10:00:00.000Z') });
+    const sheet = await openInboxWalletPay(page, 'wallet-pay-paying', paymentSeen);
+    await expect(sheet.getByRole('status')).toHaveText('Paying from your wallet…');
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    // The long poll sees the gift: the inbox closes the payment while the wallet reports it out.
+    seen([
+      {
+        id: 'm1',
+        name: '21.gifts',
+        text: 'Hello team',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        fromMe: false,
+        sats: 0,
+      },
+      {
+        id: 'gift-1',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-10-07T09:59:00.000Z',
+        fromMe: true,
+        sats: 21,
+      },
+    ]);
+    const success = page.locator('[data-pay-sheet="success"]');
+    const status = success.getByRole('status');
+    await expect(status).toContainText('Sent to 21.gifts');
+    await expect(status).toContainText('₿21');
+    await expect(success.locator('[data-swap="success"]')).toBeVisible();
+    await expect(page.locator('[data-pay-sheet-layer="open"]')).toBeAttached();
+    await expect(success.getByRole('button')).toHaveCount(0);
+    await expect(page.getByText('send ₿21')).toBeVisible();
+    // The amount stays disabled beside the held sheet, now empty.
+    await expect(page.getByLabel('Amount')).toBeDisabled();
+    await expect(page.getByLabel('Amount')).toHaveValue('');
+    await paySheetAtRest(page);
+    expect(await insideFrameBody(success)).toBe(true);
+    await shotScreen(page, 'state-messages-thread-pay-sheet-success');
   });
 
   test('messages thread-wallet-required', async ({ page }) => {
@@ -32603,8 +33065,8 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     await expect(page.getByLabel('Amount')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
@@ -32617,8 +33079,8 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     const cont = page.getByRole('button', { name: 'Continue' });
     await expect(cont).toBeDisabled();
@@ -32652,8 +33114,8 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     await page.getByLabel('Amount').fill('1000');
     await expect(page.getByText('$1.00')).toBeVisible();
@@ -32690,14 +33152,19 @@ test.describe('habit tracker baselines', () => {
     await fulfillRateDay(page);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
-    await expect(
-      page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
-    ).toBeVisible();
-    await expect(page.getByText('$0.02')).toBeVisible();
+    const sheet = page.getByRole('dialog', { name: 'Send to Bea' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByText('₿21', { exact: true })).toBeVisible();
+    await expect(sheet.locator('p').filter({ hasText: /^\$0\.02$/ })).toBeVisible();
+    await expect(sheet.getByRole('status')).toHaveText(PAY_UNAVAILABLE);
+    // The amount box stays under the comment, disabled, behind the dimmed page.
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    expect(await insideFrameBody(sheet)).toBe(true);
     await shotScreen(page, 'state-habit-tracker-donate-invoice');
   });
 
@@ -32706,8 +33173,8 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('0');
@@ -32742,8 +33209,8 @@ test.describe('habit tracker baselines', () => {
     });
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
@@ -32775,8 +33242,8 @@ test.describe('habit tracker baselines', () => {
     });
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
@@ -32813,8 +33280,8 @@ test.describe('habit tracker baselines', () => {
     });
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
@@ -32853,8 +33320,8 @@ test.describe('habit tracker baselines', () => {
     });
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-    // The sheet mounts a moment after the click; then wait until it has eased open.
-    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    // The amount box mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');

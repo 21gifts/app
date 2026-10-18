@@ -21,6 +21,7 @@ const askStep = vi.hoisted(() => ({ on: false, inWriter: false, back: vi.fn() })
 vi.mock('@/components/ForumLoader', async () => {
   const { useChromeBack } = await import('@/components/ViewHistoryRoot');
   const { useLayoutEffect, useState } = await import('react');
+  const { AddBitcoinButton } = await import('@/components/OpenReceive');
   /** Like an ask-wizard step: registers the Back it gets from its parent's render. */
   function AskStep({ onBack }: { onBack: () => void }): ReactNode {
     const { setOverride } = useChromeBack();
@@ -90,6 +91,7 @@ vi.mock('@/components/ForumLoader', async () => {
           Forum re-render
         </button>
         <AskStep onBack={() => undefined} />
+        <AddBitcoinButton />
         <button type="button" onClick={() => writer?.onOpen()}>
           Stub compose request
         </button>
@@ -690,6 +692,16 @@ describe('WelcomeScreen wallet', () => {
     expect(screen.getByRole('heading', { name: 'Welcome, Ada' }).closest('.hidden')).toBeNull();
     expect(screen.getByRole('button', { name: 'Receive' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+  });
+
+  it('opens Receive here from Add Bitcoin in a pay sheet, closing the writer first', () => {
+    vi.mocked(useWallet).mockReturnValue(walletWith('ready'));
+    renderWelcome();
+    fireEvent.click(screen.getByRole('button', { name: 'Write a post' }));
+    expect(screen.getByTestId('writer')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Add Bitcoin', hidden: true }));
+    expect(screen.queryByTestId('writer')).toBeNull();
+    expect(screen.getByText('Panel receive')).toBeTruthy();
   });
 
   it('opens Send while ready, and the forum home event closes it', () => {

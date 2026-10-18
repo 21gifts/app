@@ -3,7 +3,8 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
-import { MOTION_FOLD_MS, MOTION_SWAP_FADE_MS } from '@/lib/motion';
+import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
+import { PAY_SHEET_HOLD_MS, PAY_SHEET_SUCCESS_MS } from '@/components/PaySheet';
 import { ForumLoader } from '@/components/ForumLoader';
 import { SPOT_REFRESH_MS } from '@/hooks/useSpotRate';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -21,12 +22,19 @@ import { getCatalog } from '@/lib/messages';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
+import { useWalletPay } from '@/hooks/useWalletPay';
 import {
   SPARK_INVOICE,
   confirmResult,
   resetWallet,
+  sentWalletPay,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
+  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
+});
 
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
@@ -268,6 +276,18 @@ function clickGiftOnReply(replyId = 'r-pay'): HTMLElement {
   return replyCard;
 }
 
+/** The pay sheet (`role="dialog"` with `data-pay-sheet`), or `null` while none is mounted. */
+function paySheet(): HTMLElement | null {
+  return document.querySelector<HTMLElement>('[role="dialog"][data-pay-sheet]');
+}
+
+/** Clicks the Close X inside the pay sheet (the scrim, also named Close, sits outside the dialog). */
+function closePaySheet(): void {
+  const sheet = paySheet();
+  expect(sheet).not.toBeNull();
+  fireEvent.click(within(sheet!).getByRole('button', { name: 'Close' }));
+}
+
 const FRESH: ForumMessage = {
   id: 'm-new',
   accountId: 'acc_carol',
@@ -461,6 +481,7 @@ afterEach(() => {
   cleanup();
   vi.clearAllTimers();
   vi.useRealTimers();
+  vi.mocked(useWalletPay).mockRestore();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
   Element.prototype.getBoundingClientRect = originalGetBoundingClientRect;
   vi.unstubAllGlobals();
@@ -3745,13 +3766,18 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(paySheet()?.getAttribute('aria-label')).toBe('Pay to post');
+    closePaySheet();
     expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe(
       'Hello gifts',
     );
-    await waitFor(() => {
-      expect(screen.queryByText(WALLET_UNAVAILABLE)).toBeNull();
-    });
+    // The closed sheet stays mounted, inert, for the hold, then unmounts.
+    await waitFor(
+      () => {
+        expect(screen.queryByText(WALLET_UNAVAILABLE)).toBeNull();
+      },
+      { timeout: PAY_SHEET_HOLD_MS + 1000 },
+    );
   });
 
   it('switches to All after a compose-pay confirms', async () => {
@@ -4228,6 +4254,57 @@ describe('ForumLoader', () => {
       });
       expect(postMock).not.toHaveBeenCalled();
     });
+  });
+
+  it('lets the posting fee sheet slide away without Paid and posted when the paid photo POST fails', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    setWalletUsable('ready');
+    let settle: () => void = () => undefined;
+    const settled = new Promise<void>((resolve) => {
+      settle = resolve;
+    });
+    const send = vi.fn(async () => {
+      settle();
+      return { kind: 'paid' as const };
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send, 1));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1, sparkInvoice: SPARK_INVOICE });
+    fetchMock.mockResolvedValue(forumPage([]));
+    publicFetchMock.mockImplementation(async () => {
+      await settled;
+      return { ...SAMPLE, id: 'fee-note', accountId: 'acc_platform', text: 'Fees', sats: 1 };
+    });
+    postMock.mockRejectedValue(new Error('offline'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'blob:photo' },
+    });
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: {
+        files: [new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' })],
+      },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'with photo' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    fireEvent.click(await screen.findByRole('button', { name: /^Pay ₿1 and post/ }));
+    expect(send).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
+    expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(screen.queryByText('Paid and posted')).toBeNull();
+    expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('with photo');
   });
 
   it('shows a request error when the paid basis photo POST fails', async () => {
@@ -5088,7 +5165,8 @@ describe('ForumLoader', () => {
         signal: expect.any(AbortSignal),
       }),
     );
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    // The poll saw the payment at once: no sheet stays open to pay.
+    expect(paySheet()?.getAttribute('data-pay-sheet') ?? null).not.toBe('pay');
   });
 
   it('keeps list order when a public pay fetch updates the first of two notes', async () => {
@@ -5131,7 +5209,7 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(paySheet()?.getAttribute('data-pay-sheet') ?? null).not.toBe('pay');
     const items = [...document.querySelectorAll('[data-message-id]')];
     expect(items).toHaveLength(2);
     expect(items[0]!.textContent).toContain('Hello from Ada');
@@ -5165,12 +5243,17 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
+    closePaySheet();
     await act(async () => {
       resolvePoll?.({ ...PAYABLE_REPLY, sats: 21 });
       await Promise.resolve();
     });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    // A close by the member shows no success step; the sheet unmounts after the hold.
+    expect(paySheet()?.getAttribute('data-pay-sheet')).not.toBe('success');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PAY_SHEET_HOLD_MS);
+    });
+    expect(paySheet()).toBeNull();
   });
 
   it('aborts the public pay poll signal on Back so a late higher-sats resolve does not keep the QR', async () => {
@@ -5203,17 +5286,22 @@ describe('ForumLoader', () => {
     });
     expect(seenSignal).toBeDefined();
     expect(seenSignal?.aborted).toBe(false);
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
+    closePaySheet();
     expect(seenSignal?.aborted).toBe(true);
     await act(async () => {
       resolvePoll?.({ ...PAYABLE_REPLY, sats: 21 });
       await Promise.resolve();
     });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(paySheet()?.getAttribute('data-pay-sheet')).not.toBe('success');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PAY_SHEET_HOLD_MS);
+    });
+    expect(paySheet()).toBeNull();
   });
 
   it('keeps the QR and retries after a failed public fetch, then closes when sats increase', async () => {
     vi.useFakeTimers();
+    vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
     fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
@@ -5234,19 +5322,26 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    // The view swaps in after the old one has faded out.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
     });
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(paySheet()?.getAttribute('aria-label')).toBe('Send to Bob');
+    expect(within(paySheet()!).getByText('₿21')).toBeTruthy();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    // The closed sheet folds away before it unmounts.
+    // The payment closed the sheet: it shows the success step, then unmounts after the hold.
+    expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('success');
+    // The success step fades in once the pay step has faded out.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
+      await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
     });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(paySheet()?.textContent).toContain('Sent to Bob');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PAY_SHEET_HOLD_MS);
+    });
+    expect(paySheet()).toBeNull();
   });
 
   it('does not mark hasPosted on a swapped session after a paid poll', async () => {
@@ -5342,19 +5437,24 @@ describe('ForumLoader', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    // The view swaps in after the old one has faded out.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
     });
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
+    expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(paySheet()?.getAttribute('aria-label')).toBe('Send to Bob');
+    expect(within(paySheet()!).getByText('₿21')).toBeTruthy();
+    closePaySheet();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(1);
     });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(paySheet()?.getAttribute('data-pay-sheet')).not.toBe('success');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PAY_SHEET_HOLD_MS);
+    });
+    expect(paySheet()).toBeNull();
     expect(publicFetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -5382,11 +5482,13 @@ describe('ForumLoader', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(16_000);
     });
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(within(paySheet()!).getByText('₿21')).toBeTruthy();
   });
 
   it('closes the QR when a later public fetch reports sats 21 after unpaid waits', async () => {
     vi.useFakeTimers();
+    vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
     fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
@@ -5409,16 +5511,23 @@ describe('ForumLoader', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(16_000);
     });
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(within(paySheet()!).getByText('₿21')).toBeTruthy();
     publicFetchMock.mockResolvedValue({ ...PAYABLE_REPLY, sats: 21 });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    // The closed sheet folds away before it unmounts.
+    // The payment closed the sheet: it shows the success step, then unmounts after the hold.
+    expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('success');
+    // The success step fades in once the pay step has faded out.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
+      await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
     });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(paySheet()?.textContent).toContain('Sent to Bob');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PAY_SHEET_HOLD_MS);
+    });
+    expect(paySheet()).toBeNull();
   });
 
   it('requests an invoice and shows the wallet pay slot without a QR', async () => {
@@ -5441,8 +5550,9 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'r-pay', 21, undefined, NO_RATE_SHOWN);
       expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
-      expect(screen.getByText('Pay ₿21')).toBeTruthy();
+      expect(paySheet()?.getAttribute('aria-label')).toBe('Send to Bob');
     });
+    expect(within(paySheet()!).getByText('₿21')).toBeTruthy();
     expect(screen.queryByRole('img', { name: /QR/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /wallet app/i })).toBeNull();
     expect(
@@ -7230,6 +7340,7 @@ describe('ForumLoader', () => {
   });
 
   it('keeps the reply text until the paid reaction settles', async () => {
+    vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
     let resolvePublic!: (message: ForumMessage) => void;
     fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);
@@ -7256,10 +7367,11 @@ describe('ForumLoader', () => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'm-bob', 21, 'Hi Bob', NO_RATE_SHOWN);
     });
     await waitFor(() => {
-      expect(document.querySelector('[data-reply-pay-page]')?.textContent).toContain('Hi Bob');
-      expect(screen.queryByLabelText('Your reaction')).toBeNull();
-      expect(screen.queryByLabelText('Amount')).toBeNull();
+      expect(paySheet()?.getAttribute('aria-label')).toBe('Send to Bob');
     });
+    // The reaction form stays behind the sheet with its text, disabled.
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('Hi Bob');
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(true);
     await act(async () => {
       resolvePublic({ ...FOREIGN, sats: 21, replyCount: 1 });
     });
@@ -7267,7 +7379,16 @@ describe('ForumLoader', () => {
       expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('');
     });
     expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('');
-    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(false);
+    // Behind the success step the form stays disabled, then frees up.
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(true);
+    await waitFor(
+      () => {
+        expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(
+          false,
+        );
+      },
+      { timeout: PAY_SHEET_SUCCESS_MS + 1000 },
+    );
   });
 
   it('keeps the reply text when payment is cancelled', async () => {
@@ -7288,15 +7409,20 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Close' })).toBeTruthy();
+      expect(paySheet()).not.toBeNull();
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    closePaySheet();
     await waitFor(() => {
-      expect(document.querySelector('[data-reply-pay-page]')).toBeNull();
       expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('Hi Bob');
       expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('21');
+      expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(false);
     });
-    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(false);
+    await waitFor(
+      () => {
+        expect(paySheet()).toBeNull();
+      },
+      { timeout: PAY_SHEET_HOLD_MS + 1000 },
+    );
   });
 
   it('does not collapse while a reaction pay page is open', async () => {
@@ -7317,11 +7443,11 @@ describe('ForumLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
-      expect(document.querySelector('[data-reply-pay-page]')?.textContent).toContain('Hi Bob');
+      expect(paySheet()?.getAttribute('aria-label')).toBe('Send to Bob');
     });
     fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
-    expect(document.querySelector('[data-reply-pay-page]')?.textContent).toContain('Hi Bob');
-    expect(screen.queryByLabelText('Your reaction')).toBeNull();
+    expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('pay');
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('Hi Bob');
     expect(screen.getByRole('button', { name: 'Hide reactions' })).toBeTruthy();
   });
 
@@ -10383,6 +10509,7 @@ it('pays a payable reply and polls that reply id', async () => {
 });
 
 it('keeps a reply pay sheet until receivedSats rises', async () => {
+  vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
   const payableReply: ForumMessage = {
     ...NESTED_REPLY,
     payable: true,
@@ -10415,20 +10542,18 @@ it('keeps a reply pay sheet until receivedSats rises', async () => {
       signal: expect.any(AbortSignal),
     }),
   );
-  // The view swaps in after the old one has faded out.
-  await act(async () => {
-    await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
-  });
-  expect(within(replyCard).getByText('Pay ₿21')).toBeTruthy();
+  expect(within(replyCard).getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+  expect(within(within(replyCard).getByRole('dialog')).getByText('₿21')).toBeTruthy();
   publicFetchMock.mockResolvedValue({ ...payableReply, sats: 5, receivedSats: 21 });
   await act(async () => {
     await vi.advanceTimersByTimeAsync(2000);
   });
-  // The closed sheet folds away before it unmounts.
+  // The payment closed the sheet: success step first, then it unmounts after the hold.
+  expect(within(replyCard).getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
   await act(async () => {
-    await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
+    await vi.advanceTimersByTimeAsync(PAY_SHEET_HOLD_MS);
   });
-  expect(within(replyCard).queryByText('Pay ₿21')).toBeNull();
+  expect(within(replyCard).queryByRole('dialog')).toBeNull();
 });
 
 it('keeps a reply pay sheet when Active hides the parent note', async () => {
@@ -11088,7 +11213,8 @@ describe('ForumLoader in-app wallet pay', () => {
     const replyCard = await clickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send ₿21' })).toBeTruthy();
+    expect(paySheet()?.getAttribute('aria-label')).toBe('Send to Bob');
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 
@@ -11110,8 +11236,8 @@ describe('ForumLoader in-app wallet pay', () => {
     });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
-    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
-    expect(document.querySelector('[data-reply-pay-page]')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send ₿21' })).toBeTruthy();
+    expect(paySheet()?.getAttribute('aria-label')).toBe('Send to Bob');
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 
@@ -11131,7 +11257,8 @@ describe('ForumLoader in-app wallet pay', () => {
     fireEvent.change(await screen.findByLabelText('Your reaction'), { target: { value: 'Hi' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     expect(await screen.findByRole('button', { name: /^Pay ₿1 and post/ })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+    expect(within(paySheet()!).queryByRole('button', { name: /^Send ₿/ })).toBeNull();
+    expect(paySheet()?.getAttribute('aria-label')).toBe('Pay to post');
     expect(invoiceMock).toHaveBeenCalledWith(
       'sess',
       'fee-note',
@@ -11205,9 +11332,11 @@ describe('ForumLoader in-app wallet pay', () => {
     fireEvent.click(await screen.findByRole('button', { name: /^Pay ₿1 and post/ }));
     expect(send).toHaveBeenCalledTimes(1);
     await waitFor(() => {
-      expect(screen.queryByText('Waiting for payment…')).toBeNull();
+      expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('success');
     });
-    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull();
+    await waitFor(() => {
+      expect(paySheet()?.textContent).toContain('Paid and posted');
+    });
     expect(await screen.findByText('Hello gifts')).toBeTruthy();
     expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('All');
     expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
@@ -11257,7 +11386,7 @@ describe('ForumLoader in-app wallet pay', () => {
     fireEvent.click(await screen.findByRole('button', { name: /^Pay ₿1 and post/ }));
     expect(send).toHaveBeenCalledTimes(1);
     await waitFor(() => {
-      expect(screen.queryByText('Waiting for payment…')).toBeNull();
+      expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('success');
     });
     expect(await screen.findByText('Hello gifts')).toBeTruthy();
     expect(screen.getByRole('combobox', { name: 'Forum view' }).textContent).toContain('All');

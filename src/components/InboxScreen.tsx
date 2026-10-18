@@ -18,6 +18,8 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
+import { Collapse } from '@/components/Collapse';
+import { PAY_SHEET_HOLD_MS, PaySheet, usePaySheetHold } from '@/components/PaySheet';
 import { WalletPay } from '@/components/WalletPay';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -491,9 +493,10 @@ function ConversationListItem({
  * a 8000-character composer and a sats amount field (`showAmount` false
  * hides it; the staff room has no gifts). When the open conversation has
  * `canReceive: false`, the amount field is disabled and a "Can't receive yet"
- * label shows under it; text still sends. An open invoice hides that amount
- * row too: the pay sheet states the amount once, as bitcoin plus the
- * default fiat from the current spot rate. Members (`showFilter`
+ * label shows under it; text still sends, and no pay sheet opens. An open
+ * invoice keeps that amount row on the page, disabled behind the pay sheet
+ * and through its success step; the sheet shows the amount as bitcoin plus
+ * the default fiat from the current spot rate. Members (`showFilter`
  * false) see inbound rows except `moderator_group`. Moderators
  * (`showFilter` true) see the origin control (Direct / Contact / Damus);
  * default Direct. Rows with `kind` `moderator_group` are never listed (the
@@ -612,6 +615,9 @@ export function InboxScreen({
   const prevOpenIdRef = useRef(openId);
   const [armedForOpenId, setArmedForOpenId] = useState<string | null>(null);
   const [filter, setFilter] = useState<InboxFilter>('direct');
+  // After a payment the sheet still shows its success step: the amount row stays disabled behind it.
+  // Keyed by the invoice, so a held sheet's late report never reaches the next invoice.
+  const payHold = usePaySheetHold(invoice === null ? null : invoice.pr);
   const historyArmed = openId !== null && openId !== '' && armedForOpenId === openId;
 
   const messagesReady = messages !== null;
@@ -1129,11 +1135,7 @@ export function InboxScreen({
               />
             </div>
           ) : null}
-          <div
-            className={
-              showAmount && invoice === null ? 'flex items-end gap-2' : 'flex items-center gap-2'
-            }
-          >
+          <div className={showAmount ? 'flex items-end gap-2' : 'flex items-center gap-2'}>
             <MentionTextarea
               ariaLabel={t('inbox.composerLabel')}
               placeholder={t('inbox.placeholder')}
@@ -1159,14 +1161,21 @@ export function InboxScreen({
               )}
             </IconButton>
           </div>
-          {showAmount && invoice === null ? (
+          {/* The amount stays on the page, disabled behind the pay sheet. */}
+          {showAmount ? (
             <AmountEntry
               layout="composer"
               className="max-w-sm"
               label={t('inbox.amountLabel')}
               placeholder={t('forum.payAmountPlaceholder')}
               value={amountDraft}
-              disabled={posting || messagesLoading || counterpartCannotReceive}
+              disabled={
+                posting ||
+                messagesLoading ||
+                counterpartCannotReceive ||
+                invoice !== null ||
+                payHold.held !== null
+              }
               rateDay={rateDay}
               onValueChange={onAmountDraftChange}
               onUnitChange={amountUnitChange}
@@ -1275,39 +1284,38 @@ export function InboxScreen({
             {t('inbox.errorTooMany')}
           </p>
         ) : null}
-        {invoice !== null && !counterpartCannotReceive ? (
-          <div className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4">
-            <div className="absolute left-3 top-3">
-              <IconButton
-                type="button"
-                size="sm"
-                variant="ghost"
-                aria-label={t('forum.payClose')}
-                onClick={onPayCancel}
-              >
-                <X aria-hidden="true" className="h-4 w-4" />
-              </IconButton>
-            </div>
-            <p className="px-10 text-center text-sm text-app-muted">
-              {t('forum.payConfirm', {
-                amount: formatBitcoin(invoice.amountSats, numberFormat),
-              })}
-              {preferredFiatSuffix(invoice.amountSats, rateDay, fiat, numberFormat)}
-            </p>
-            <WalletPay
-              sparkInvoice={invoice.sparkInvoice}
-              pr={invoice.pr}
+        {/* The sheet draws itself over the page; the fold only keeps it for its success step. A
+            counterpart who cannot receive never gets one. */}
+        <Collapse show={invoice !== null && !counterpartCannotReceive} holdMs={PAY_SHEET_HOLD_MS}>
+          {invoice === null ? null : (
+            <PaySheet
+              title={
+                open === null
+                  ? t('paySheet.titleSend')
+                  : t('paySheet.titleSendTo', { name: open.name })
+              }
               amountSats={invoice.amountSats}
               rateDay={rateDay}
-              flow="inbox"
-            />
-            {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
-            {payWaiting ? (
-              <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>
-            ) : null}
-            {/* v8 ignore stop */}
-          </div>
-        ) : null}
+              successTitle={
+                open === null ? t('paySheet.sent') : t('paySheet.sentTo', { name: open.name })
+              }
+              onClose={() => {
+                payHold.closedByMember();
+                onPayCancel();
+              }}
+              onSentChange={(sent) => payHold.sentChange(invoice.pr, sent)}
+            >
+              <WalletPay
+                sparkInvoice={invoice.sparkInvoice}
+                pr={invoice.pr}
+                amountSats={invoice.amountSats}
+                rateDay={rateDay}
+                flow="inbox"
+                confirmLabel={(amount) => t('paySheet.sendAmount', { amount })}
+              />
+            </PaySheet>
+          )}
+        </Collapse>
       </div>
     );
   } else if (loading && conversations === null) {

@@ -387,7 +387,7 @@ async function openPayInvoice(page: Page, request: APIRequestContext): Promise<v
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
   await replyCard.getByLabel('Amount').fill('21');
   await submitPayAmount(page);
-  await expect(page.getByText('Pay ₿21')).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'Send to Carol' })).toBeVisible();
 }
 
 /** The 21.gifts wallet sentence a Playwright build (no wallet key) shows in a pay sheet. */
@@ -3928,7 +3928,7 @@ test('Function: parseScreenVariantDescriptions — wallet-pay-unavailable descri
   await page.goto('/handbook/screens');
   await expect(
     page.getByText(
-      /No invoice QR and no button to another wallet app, on desktop and on a smartphone alike/,
+      /no invoice QR and no button to another wallet app, on desktop and on a smartphone alike/,
     ),
   ).toBeVisible();
 });
@@ -5676,7 +5676,7 @@ test('Function: ForumPaySheet — the amount form keeps its controls clear of th
   await page.getByRole('button', { name: 'Show reactions' }).click();
   const replyCard = page.locator('[data-reply-id="r-pay"]');
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
-  const sheet = replyCard.locator('[data-pay-sheet]');
+  const sheet = replyCard.locator('[data-pay-amount]');
   const close = sheet.getByRole('button', { name: 'Close' });
   await expect(close).toBeVisible();
   const sheetBox = await sheet.boundingBox();
@@ -5707,8 +5707,12 @@ const REACTION_PAY_ANSWER = 'This is my answer';
 const REACTION_PAY_NOTE = 'Thank you so much to all donors.';
 
 /** Signed-in welcome, one foreign note, a paid reaction invoice that stays waiting. */
-async function openReactionPayPage(page: Page, invoiceStatus: number = 200): Promise<void> {
-  await openReactionForm(page, invoiceStatus);
+async function openReactionPayPage(
+  page: Page,
+  invoiceStatus: number = 200,
+  path: string = '/welcome',
+): Promise<void> {
+  await openReactionForm(page, invoiceStatus, async () => undefined, path);
   await page.getByLabel('Amount').fill('21');
   await page.getByLabel('Your reaction').fill(REACTION_PAY_ANSWER);
   // The line under the amount eases in: click once it has come to rest.
@@ -5725,6 +5729,7 @@ async function openReactionForm(
   page: Page,
   invoiceStatus: number = 200,
   beforeOpen: () => Promise<void> = async () => undefined,
+  path: string = '/welcome',
 ): Promise<void> {
   await seedAdaSession(page);
   await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -5813,25 +5818,69 @@ async function openReactionForm(
       }),
     });
   });
-  await page.goto('/welcome');
+  await page.goto(path);
   await expect(page.getByText(REACTION_PAY_NOTE)).toBeVisible();
   await beforeOpen();
   await page.getByText(REACTION_PAY_NOTE).click();
   await expect(page.getByLabel('Your reaction')).toBeVisible();
 }
 
-test('Function: ForumReplyPayPage — paid reaction replaces the reply composer', async ({
+test('Function: usePaySheetHold — the reaction form stays disabled behind the success step, then frees up', async ({
+  page,
+}) => {
+  // The slot is paying: the payment is out when the poll sees Bob's note rise.
+  await openReactionPayPage(page, 200, '/welcome?visual=wallet-pay-paying');
+  const sheet = page.getByRole('dialog', { name: 'Send to Bob' });
+  await expect(sheet).toBeVisible();
+  await page.route(/\/public-messages\/m-bob/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'm-bob',
+        accountId: 'acc_bob',
+        name: 'Bob',
+        text: REACTION_PAY_NOTE,
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 1021,
+        payable: true,
+        hasPhoto: false,
+        photoCount: 0,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 2,
+      }),
+    });
+  });
+  await expect(sheet.getByRole('status')).toContainText('Sent to Bob', { timeout: 15_000 });
+  // The reaction went out: the form behind the success step stays disabled.
+  await expect(page.getByLabel('Your reaction')).toBeDisabled();
+  await expect(page.locator('[data-pay-sheet]')).toHaveCount(0);
+  await expect(page.getByLabel('Your reaction')).toBeEnabled();
+});
+
+test('Function: ForumReplyPayPage — a paid reaction opens the pay sheet over the thread, with the reaction form kept behind it', async ({
   page,
 }) => {
   await openReactionPayPage(page);
-  const payPage = page.locator('[data-reply-pay-page]');
-  await expect(payPage).toBeVisible();
-  await expect(payPage.getByText(REACTION_PAY_ANSWER)).toBeVisible();
-  await expect(payPage.getByText('Waiting for payment…')).toBeVisible();
-  await expect(payPage.getByText(WALLET_UNAVAILABLE)).toBeVisible();
+  const sheet = page.getByRole('dialog', { name: 'Send to Bob' });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByText('₿21', { exact: true })).toBeVisible();
+  await expect(sheet.getByText(WALLET_UNAVAILABLE)).toBeVisible();
+  // The sheet holds neither the reaction's text nor a waiting line.
+  await expect(sheet.getByText(REACTION_PAY_ANSWER)).toHaveCount(0);
+  await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(0);
   await expect(page.getByRole('img', { name: 'Bitcoin payment QR code' })).toHaveCount(0);
-  await expect(page.getByLabel('Your reaction')).toHaveCount(0);
+  // The form stays where it was, disabled, with the reaction still in it.
+  await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_PAY_ANSWER);
+  await expect(page.getByLabel('Your reaction')).toBeDisabled();
+  await sheet.getByRole('button', { name: 'Close' }).click();
+  await expect(page.locator('[data-pay-sheet-layer="closed"]')).toBeAttached();
+  await expect(page.locator('[data-pay-sheet]')).toHaveCount(0);
+  await expect(page.getByLabel('Your reaction')).toBeEnabled();
+  await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_PAY_ANSWER);
 });
 
 /**
@@ -5944,43 +5993,11 @@ function inOrder(log: string[], wanted: string[]): boolean {
   return at === wanted.length;
 }
 
-test('Function: Swap — the reply form fades out in place, then the pay page fades in, and Close swaps back', async ({
-  page,
-}) => {
-  await recordMotion(page, '[data-pay-sheet]');
-  await openReactionPayPage(page);
-  const payPage = page.locator('[data-swap="pay"] [data-reply-pay-page]');
-  await expect(payPage).toBeVisible();
-  await expect(page.getByLabel('Your reaction')).toHaveCount(0);
-  const opened = await motionLog(page);
-  expect(
-    inOrder(opened, ['swap:form', 'swap:form:faded:inert', 'swap:pay']),
-    opened.join(' '),
-  ).toBe(true);
-  await payPage.getByRole('button', { name: 'Close' }).click();
-  await expect(page.locator('[data-swap="form"]').getByLabel('Your reaction')).toBeVisible();
-  await expect(page.getByLabel('Your reaction')).toHaveValue(REACTION_PAY_ANSWER);
-  const closed = await motionLog(page);
-  expect(inOrder(closed, ['swap:pay', 'swap:pay:faded:inert', 'swap:form']), closed.join(' ')).toBe(
-    true,
-  );
-});
-
-test('Function: Swap — with reduced motion the pay page replaces the reply form at once', async ({
-  page,
-}) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await recordMotion(page, '[data-pay-sheet]');
-  await openReactionPayPage(page);
-  await expect(page.locator('[data-swap="pay"] [data-reply-pay-page]')).toBeVisible();
-  expect(await motionLog(page)).not.toContain('swap:form:faded:inert');
-});
-
 test('Function: Collapse — a gift sheet eases open and folds away, inert, before it unmounts', async ({
   page,
   request,
 }) => {
-  await recordMotion(page, '[data-pay-sheet]');
+  await recordMotion(page, '[data-pay-amount]');
   await stubPayableNote(page);
   await signInViaStub(page, request);
   await agreeToLivingRoomRules(page);
@@ -5990,7 +6007,7 @@ test('Function: Collapse — a gift sheet eases open and folds away, inert, befo
   await page.getByRole('button', { name: 'Show reactions' }).click();
   const replyCard = page.locator('[data-reply-id="r-pay"]');
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
-  const fold = replyCard.locator('[data-collapse]', { has: page.locator('[data-pay-sheet]') });
+  const fold = replyCard.locator('[data-collapse]', { has: page.locator('[data-pay-amount]') });
   await expect(fold).toHaveAttribute('data-collapse', 'open');
   await expect(fold.getByRole('button', { name: 'Continue' })).toBeVisible();
   await fold.getByRole('button', { name: 'Close' }).click();
@@ -6007,7 +6024,7 @@ test('Function: Collapse — with reduced motion a gift sheet opens and closes a
   request,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await recordMotion(page, '[data-pay-sheet]');
+  await recordMotion(page, '[data-pay-amount]');
   await stubPayableNote(page);
   await signInViaStub(page, request);
   await agreeToLivingRoomRules(page);
@@ -6019,15 +6036,16 @@ test('Function: Collapse — with reduced motion a gift sheet opens and closes a
   await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
   await expect(replyCard.getByRole('button', { name: 'Continue' })).toBeVisible();
   await replyCard.getByRole('button', { name: 'Close' }).click();
-  await expect(replyCard.locator('[data-pay-sheet]')).toHaveCount(0);
-  // It never eases open and never folds: no opening step, no inert closed step.
+  // Closed at once: the box takes no room in the same frame. A pay host holds it, inert and at
+  // rest (`held`), for the pay sheet's success step (holdMs), then unmounts it.
+  const fold = replyCard.locator('[data-collapse]', { has: page.locator('[data-pay-amount]') });
+  await expect(fold).toHaveAttribute('data-collapse', 'held');
+  expect(await fold.evaluate((el) => el.getBoundingClientRect().height)).toBe(0);
+  await expect(replyCard.locator('[data-pay-amount]')).toHaveCount(0);
+  // It never eases open: no opening step.
   const log = await motionLog(page);
   expect(log, log.join(' ')).toContain('collapse:open');
   expect(log, log.join(' ')).not.toContain('collapse:opening');
-  expect(
-    log.some((entry) => entry.startsWith('collapse:closed') && entry.endsWith(':inert')),
-    log.join(' '),
-  ).toBe(false);
 });
 
 test('Function: afterTransition — the reaction fold settles on its own transition end while the page clock is paused', async ({
@@ -6379,7 +6397,7 @@ test("Function: CannotReceiveError — a cannot_receive forum invoice says the a
   await expect(
     page.getByText("The author's wallet cannot receive this Bitcoin payment"),
   ).toBeVisible();
-  await expect(page.getByText('Pay ₿21')).toHaveCount(0);
+  await expect(page.locator('[data-pay-sheet]')).toHaveCount(0);
 });
 
 test('Function: NoteDeletedError — deleted reply invoice shows the note-deleted alert', async ({
@@ -6387,7 +6405,7 @@ test('Function: NoteDeletedError — deleted reply invoice shows the note-delete
 }) => {
   await openReactionPayPage(page, 404);
   await expect(page.getByRole('alert').filter({ hasText: 'This note was deleted.' })).toBeVisible();
-  await expect(page.locator('[data-reply-pay-page]')).toHaveCount(0);
+  await expect(page.locator('[data-pay-sheet]')).toHaveCount(0);
 });
 
 test('Function: shownFiatForSats — pay sheet sends the shown amounts', async ({
@@ -8359,11 +8377,11 @@ test('Function: revealPaySheet — paying a reaction keeps the note on screen', 
   await field.fill('This is my answer');
   await page.getByLabel('Amount').fill('21');
   await field.locator('xpath=ancestor::form').getByRole('button', { name: 'Post' }).click();
-  const back = page.getByRole('button', { name: 'Close' });
-  await expect(back).toBeVisible();
-  const payPage = page.locator('[data-reply-pay-page]');
-  await expect(payPage.getByText('This is my answer')).toBeVisible();
-  await expect(field).toHaveCount(0);
+  const sheet = page.getByRole('dialog', { name: 'Send to Ada' });
+  await expect(sheet).toBeVisible();
+  // The reaction form stays in place behind the sheet, disabled, with the reaction in it.
+  await expect(field).toHaveValue('This is my answer');
+  await expect(field).toBeDisabled();
   const noteStillVisible = await page.getByText('Hello from Ada').evaluate((node) => {
     const scroller = node.closest('[data-scrollport]');
     if (!(scroller instanceof HTMLElement)) {
@@ -8374,16 +8392,18 @@ test('Function: revealPaySheet — paying a reaction keeps the note on screen', 
     return note.top >= shell.top - 1 && note.top <= shell.bottom;
   });
   expect(noteStillVisible).toBe(true);
-  const backIsLeft = await back.evaluate((node) => {
-    const sheet = node.closest('[data-pay-sheet]');
-    if (!(sheet instanceof HTMLElement)) {
+  // The sheet's Close sits at the right end of its title row; it is not where Back would be.
+  const close = sheet.getByRole('button', { name: 'Close' });
+  const closeIsRight = await close.evaluate((node) => {
+    const panel = node.closest('[data-pay-sheet]');
+    if (!(panel instanceof HTMLElement)) {
       return false;
     }
     const button = node.getBoundingClientRect();
-    const card = sheet.getBoundingClientRect();
-    return button.left < card.left + card.width / 2;
+    const card = panel.getBoundingClientRect();
+    return button.left > card.left + card.width / 2;
   });
-  expect(backIsLeft).toBe(true);
+  expect(closeIsRight).toBe(true);
 });
 
 test('Function: ForumAskWizard — welcome loads', async ({ page }) => {

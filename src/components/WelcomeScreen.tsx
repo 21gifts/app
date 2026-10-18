@@ -23,6 +23,7 @@ import { WalletTour } from '@/components/WalletTour';
 import { Card, IconButton } from '@/components/ui';
 import { useWallet } from '@/hooks/useWallet';
 import { useWalletPanel } from '@/hooks/useWalletPanel';
+import { OpenReceiveProvider } from '@/components/OpenReceive';
 import { useWalletSend } from '@/hooks/useWalletSend';
 import { FORUM_HOME_EVENT } from '@/lib/forum-feed';
 import { useAuthStore } from '@/stores/auth-store';
@@ -341,6 +342,12 @@ export function WelcomeScreen(): ReactElement {
   });
   const closeWriterRef = useRef(closeWriter);
   closeWriterRef.current = closeWriter;
+  const panelOpenReceive = panel.openReceive;
+  // Add Bitcoin in a pay sheet opens Receive here; the writer closes first, so Receive is not under it.
+  const openReceive = useCallback((): void => {
+    closeWriter();
+    panelOpenReceive();
+  }, [closeWriter, panelOpenReceive]);
 
   useEffect(() => {
     const onForumHome = (): void => {
@@ -356,7 +363,7 @@ export function WelcomeScreen(): ReactElement {
   }, []);
 
   return (
-    <>
+    <OpenReceiveProvider onOpen={hasWallet ? openReceive : null}>
       {signedIn ? <WalletTour blocked={shown !== 'none' || writerOpen || fieldFocused} /> : null}
       {shown === 'none' ? null : <PanelChromeBack onBack={panel.stepBack} over />}
       {writerOpen ? <PanelChromeBack onBack={closeWriter} over={false} /> : null}
@@ -402,6 +409,6 @@ export function WelcomeScreen(): ReactElement {
           </IconButton>
         </AppShellOverlay>
       ) : null}
-    </>
+    </OpenReceiveProvider>
   );
 }
