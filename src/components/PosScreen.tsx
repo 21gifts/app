@@ -610,7 +610,7 @@ export function PosTill(): ReactElement {
   const paidSats = till.paid?.amountSats ?? 0;
   const paidFor = till.stateSession;
   useEffect(() => {
-    if (paidId !== null && !paidSeen.has(paidId)) {
+    if (paidId !== null && paidFor !== null && !paidSeen.has(paidId)) {
       paidSeen.add(paidId);
       // Recorded where the paid charge shows, for the member whose till showed it.
       logInteraction('pos_charge_paid_seen', { chargeId: paidId, amountSats: paidSats }, paidFor);

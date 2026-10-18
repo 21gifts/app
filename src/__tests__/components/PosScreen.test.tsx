@@ -1573,6 +1573,42 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
+    it('records a wallet-paid charge as seen only once the till of its session is in', async () => {
+      let answer: (response: Response) => void = () => undefined;
+      const fetchMock = vi
+        .fn()
+        .mockImplementationOnce(async () => jsonResponse({ charge: OPEN, history: [OPEN] }))
+        .mockImplementationOnce(
+          () =>
+            new Promise<Response>((resolve) => {
+              answer = resolve;
+            }),
+        );
+      vi.stubGlobal('fetch', fetchMock);
+      vi.mocked(logInteraction).mockClear();
+      // The amount page hears the payment; it never records a paid charge itself.
+      const amountPage = renderWithLocale(<PosAmount />);
+      await waitFor(() => {
+        expect(received.listeners.size).toBe(1);
+      });
+      await act(async () => undefined);
+      receive(21);
+      amountPage.unmount();
+      renderWithLocale(<PosScreen />);
+      expect(await confirmation()).toBeTruthy();
+      expect(logInteraction).not.toHaveBeenCalled();
+      await act(async () => {
+        answer(jsonResponse({ charge: OPEN, history: [OPEN] }));
+      });
+      await waitFor(() => {
+        expect(logInteraction).toHaveBeenCalledWith(
+          'pos_charge_paid_seen',
+          { chargeId: 'c1', amountSats: 21 },
+          'tok',
+        );
+      });
+    });
+
     it('never asks the api on a timer while a charge is open', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
       const fetchMock = vi
