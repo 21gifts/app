@@ -6,6 +6,7 @@ import { expect, test, type APIRequestContext, type Locator, type Page } from '@
 import { fetchPublicMessagePhoto } from '../src/lib/api';
 import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import { fulfillSpot, SPOT_RATES, spotRatesFromStats } from './fx-spot';
+import { motionSettled } from './motion';
 import { fulfillStablecoinUnavailable, stubShopPayment } from './shop-payment';
 import {
   buildShopStickerPdf,

@@ -12,6 +12,7 @@ import {
 } from './no-prf';
 import { pageFrameProblems } from '../src/lib/page-frame';
 import { fulfillSpot, spotRatesFromStats } from './fx-spot';
+import { motionSettled } from './motion';
 import { fulfillStablecoinUnavailable, stubPlainPayLink, stubShopPayment } from './shop-payment';
 import {
   fulfillLedger,
