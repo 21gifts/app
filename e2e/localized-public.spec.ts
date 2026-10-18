@@ -194,6 +194,8 @@ test('Function: LocaleRouteSync — a client navigation onto a German page keeps
   expect((await context.cookies()).some((cookie) => cookie.name === 'locale')).toBe(false);
   await page.goto('/en');
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  // Next 15 sets window.next.router (next/dist/client/components/app-router-instance.js).
+  // It drives a client navigation to another language URL without the language switcher.
   await expect
     .poll(() =>
       page.evaluate(() => {
