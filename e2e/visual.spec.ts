@@ -7905,6 +7905,8 @@ test.describe('onboarding screens', () => {
     const posted = page.getByText(REACTION_ANSWER);
     await expect(posted).toBeVisible();
     await expect(page.getByLabel('Your reaction')).toHaveValue('');
+    // The posted reply can arrive while the pay sheet still fades out: shoot once it is gone.
+    await expect(page.locator('[data-pay-sheet]')).toHaveCount(0);
     await motionSettled(page);
     await posted.evaluate((node) => {
       node.scrollIntoView({ block: 'center', inline: 'nearest' });
