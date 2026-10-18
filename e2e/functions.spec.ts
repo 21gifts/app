@@ -5232,11 +5232,11 @@ test('Function: DonatePage — send-help explainer renders', async ({ page }) =>
   await expect(page.getByRole('heading', { name: 'Send help' })).toBeVisible();
 });
 
-test('Function: LoginCard — Log in and Open a new account are visible', async ({ page }) => {
+test('Function: LoginCard — only Log in is visible', async ({ page }) => {
   await page.goto('/login');
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in' })).toHaveCount(1);
-  await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open a new account' })).toHaveCount(0);
 });
 
 test('Function: LoginCard — choice heading is reachable', async ({ page }) => {
