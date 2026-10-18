@@ -180,6 +180,35 @@ const PAY_UNAVAILABLE = 'Your 21.gifts wallet is not available here, so this can
 const ANY_QR = /QR/;
 
 /**
+ * Types an amount into a gift amount field the way a tap does: the field takes the focus without a
+ * scroll of its own, the app reveals it (`AppHeightSync`), and the value is typed once the page has
+ * come to rest. Letting `fill` scroll the field into view first races that reveal while the footer
+ * slims, and the page can come to rest 2 px apart from one run to the next.
+ *
+ * @param field - The amount field.
+ * @param value - Amount to type.
+ */
+async function fillPayAmount(field: Locator, value: string): Promise<void> {
+  const page = field.page();
+  await field.evaluate((node) => {
+    (node as HTMLInputElement).focus({ preventScroll: true });
+  });
+  await motionSettled(page);
+  // The footer slims or grows back on its own timer after a scroll; the reveal is done once it rests.
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const body = document.querySelector('[data-app-body]');
+        const value =
+          body instanceof HTMLElement ? body.style.getPropertyValue('--footer-collapse') : '';
+        return value === '' || value === '0' || value === '1';
+      }),
+    )
+    .toBe(true);
+  await field.fill(value);
+}
+
+/**
  * Waits until the pay sheet has slid up over the dimmed page and the page behind it has come to
  * rest. The slide and the scrim fade are plain transitions, which `motionSettled` does not watch.
  *
@@ -21414,7 +21443,7 @@ test.describe('welcome forum variants', () => {
     // The amount box mounts a moment after the click; then wait until it has eased open.
     await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
-    await replyCard.getByLabel('Amount').fill('21');
+    await fillPayAmount(replyCard.getByLabel('Amount'), '21');
     await submitPayAmount(page);
     return giftSheetAtRest(page);
   }
@@ -21455,7 +21484,7 @@ test.describe('welcome forum variants', () => {
     // The amount box mounts a moment after the click; then wait until it has eased open.
     await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
-    await replyCard.getByLabel('Amount').fill('21');
+    await fillPayAmount(replyCard.getByLabel('Amount'), '21');
     await submitPayAmount(page);
     const sheet = await giftSheetAtRest(page);
     await expect(sheet.getByRole('status')).toHaveText(PAY_UNAVAILABLE);
@@ -25232,7 +25261,7 @@ test.describe('welcome forum variants', () => {
     // The amount box mounts a moment after the click; then wait until it has eased open.
     await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
-    await replyCard.getByLabel('Amount').fill('21');
+    await fillPayAmount(replyCard.getByLabel('Amount'), '21');
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Pay', exact: true })).toHaveCount(0);
     await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
@@ -25397,7 +25426,7 @@ test.describe('welcome forum variants', () => {
     // The amount box mounts a moment after the click; then wait until it has eased open.
     await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
-    await replyCard.getByLabel('Amount').fill('21');
+    await fillPayAmount(replyCard.getByLabel('Amount'), '21');
     await submitPayAmount(page);
     await expect(
       page.getByText("The author's wallet cannot receive this Bitcoin payment"),
@@ -25587,7 +25616,7 @@ test.describe('welcome forum variants', () => {
     // The amount box mounts a moment after the click; then wait until it has eased open.
     await expect(page.locator('[data-pay-amount]')).toBeVisible();
     await motionSettled(page);
-    await replyCard.getByLabel('Amount').fill('21');
+    await fillPayAmount(replyCard.getByLabel('Amount'), '21');
     await submitPayAmount(page);
     await expect(page.getByText('This note was deleted.')).toBeVisible();
     await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
