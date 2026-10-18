@@ -157,9 +157,7 @@ test('a German URL keeps English document metadata and a German canonical', asyn
   const html = await response.text();
   expect(html).toContain('<title>Help people with Bitcoin | 21.gifts</title>');
   expect(html).toContain('/og.png');
-  expect(html).toContain(
-    '21.gifts: Peer-to-peer, Bitcoin, Wallet of Satoshi. Direct human-to-human gifts. No middleman. No custody.',
-  );
+  expect(html).toContain('21.gifts: Help people. With Bitcoin. Your wallet to their wallet.');
   expect(html).toContain('rel="canonical" href="https://21.gifts/de"');
   expect(html).not.toContain('/og-de.png');
 });

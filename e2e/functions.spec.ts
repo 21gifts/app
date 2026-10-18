@@ -68,9 +68,7 @@ test('Function: marketingMetadata — homepage has its own search and social tit
   const germanHtml = await german.text();
   expect(germanHtml).toContain('<title>Help people with Bitcoin | 21.gifts</title>');
   expect(germanHtml).toContain('/og.png');
-  expect(germanHtml).toContain(
-    '21.gifts: Peer-to-peer, Bitcoin, Wallet of Satoshi. Direct human-to-human gifts. No middleman. No custody.',
-  );
+  expect(germanHtml).toContain('21.gifts: Help people. With Bitcoin. Your wallet to their wallet.');
   expect(germanHtml).toContain('rel="canonical" href="https://21.gifts/de"');
   expect(germanHtml).not.toContain('/og-de.png');
 });
