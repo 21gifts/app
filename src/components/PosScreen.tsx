@@ -3,7 +3,7 @@
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactElement } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -131,12 +131,72 @@ let tillWrite: Promise<void> | null = null;
 const paidSeen = new Set<string>();
 
 /**
- * Drop a till write and the paid charges recorded as seen, left behind by a
- * test. Production clears the write when the request settles.
+ * What this tab's wallet settled for one session, shared by `/pos` and
+ * `/pos/amount` so a page change keeps it: the last open charge (a payment
+ * just after its end still counts), the charges the wallet saw paid before
+ * the api may know it, and the paid charges whose confirmation was closed.
+ */
+type WalletSettled = {
+  session: string | null;
+  open: PosCharge | null;
+  paid: Map<string, PosCharge>;
+  closed: Set<string>;
+};
+
+let walletSettled: WalletSettled | null = null;
+
+/** Tills that re-render when {@link walletSettled} changes. */
+const walletSettledListeners = new Set<() => void>();
+
+/** The settled memory of `session`; another session starts it over. */
+function settledFor(session: string | null): WalletSettled {
+  if (walletSettled === null || walletSettled.session !== session) {
+    walletSettled = { session, open: null, paid: new Map(), closed: new Set() };
+  }
+  return walletSettled;
+}
+
+/** Re-render every till after the settled memory changed. */
+function settledChanged(): void {
+  for (const listener of walletSettledListeners) {
+    listener();
+  }
+}
+
+/**
+ * The open charge of `session` is paid the moment this tab's wallet receives
+ * its amount (or the amount after its fee): while it is open the receiving
+ * address takes no other amount. Up to {@link POS_LATE_PAID_MS} after its end
+ * still counts. No reading of the api in between.
+ */
+function settleOpen(
+  session: string | null,
+  payment: Pick<WalletPayment, 'amountSats' | 'feesSats'>,
+): void {
+  const memory = settledFor(session);
+  const open = memory.open;
+  if (
+    open === null ||
+    (payment.amountSats !== open.amountSats &&
+      payment.amountSats + payment.feesSats !== open.amountSats) ||
+    Date.now() > Date.parse(open.expiresAt) + POS_LATE_PAID_MS
+  ) {
+    return;
+  }
+  memory.open = null;
+  memory.paid.set(open.id, { ...open, status: 'paid', paidAt: new Date().toISOString() });
+  settledChanged();
+}
+
+/**
+ * Drop a till write, the paid charges recorded as seen, and what the wallet
+ * settled, left behind by a test. Production clears the write when the
+ * request settles.
  */
 export function resetPosTillWriteForTests(): void {
   tillWrite = null;
   paidSeen.clear();
+  walletSettled = null;
 }
 
 /** Remember `work` until it settles so a later till load does not race it. */
@@ -208,15 +268,23 @@ function usePosTillState(): PosTillState {
   const [now, setNow] = useState(() => Date.now());
   const [showQr, setShowQr] = useState(false);
   const [reload, setReload] = useState(0);
-  // Charges the wallet saw paid, by id, before the api may know it.
-  const [walletPaid, setWalletPaid] = useState<ReadonlyMap<string, PosCharge>>(new Map());
-  // Paid charges whose confirmation was closed.
-  const [closed, setClosed] = useState<ReadonlySet<string>>(new Set());
-  // The last open charge, so a payment that lands just after it ran out still counts.
-  const lastOpen = useRef<PosCharge | null>(null);
+  const [, setSettledVersion] = useState(0);
+  const memory = settledFor(session);
+  const walletPaid = memory.paid;
+  const closed = memory.closed;
 
   useEffect(() => {
     setShowQr(true);
+  }, []);
+
+  useEffect(() => {
+    const listener = (): void => {
+      setSettledVersion((n) => n + 1);
+    };
+    walletSettledListeners.add(listener);
+    return () => {
+      walletSettledListeners.delete(listener);
+    };
   }, []);
 
   useEffect(() => {
@@ -297,42 +365,24 @@ function usePosTillState(): PosTillState {
 
   useEffect(() => {
     if (charge !== null) {
-      lastOpen.current = charge;
+      settledFor(session).open = charge;
     }
-  }, [charge]);
-
-  // The open charge is paid the moment this wallet receives its amount: while it is open the
-  // receiving address takes no other amount. No reading of the api in between.
-  const settleOpen = useCallback(
-    (payment: Pick<WalletPayment, 'amountSats' | 'feesSats'>): void => {
-      const open = lastOpen.current;
-      if (
-        open === null ||
-        (payment.amountSats !== open.amountSats &&
-          payment.amountSats + payment.feesSats !== open.amountSats) ||
-        Date.now() > Date.parse(open.expiresAt) + POS_LATE_PAID_MS
-      ) {
-        return;
-      }
-      lastOpen.current = null;
-      const settled: PosCharge = { ...open, status: 'paid', paidAt: new Date().toISOString() };
-      setWalletPaid((before) => new Map(before).set(open.id, settled));
-    },
-    [],
-  );
+  }, [charge, session]);
 
   useEffect(() => {
     if (session === null) {
       return;
     }
-    return onPaymentReceived(settleOpen);
-  }, [session, settleOpen]);
+    return onPaymentReceived((payment) => {
+      settleOpen(session, payment);
+    });
+  }, [session]);
 
   useEffect(() => {
     if (charge !== null && visualPin() === POS_RECEIVED_VISUAL_PIN) {
-      settleOpen({ amountSats: charge.amountSats, feesSats: 0 });
+      settleOpen(session, { amountSats: charge.amountSats, feesSats: 0 });
     }
-  }, [charge, settleOpen]);
+  }, [charge, session]);
 
   useEffect(() => {
     // Back on the tab, read the till once: it may have changed while it was hidden.
@@ -457,13 +507,14 @@ function usePosTillState(): PosTillState {
     }
     busyRef.current = true;
     setBusy(true);
-    // A cancelled charge is no longer paid by a payment that lands now.
-    lastOpen.current = null;
     const mine = ++generation.current;
     setError(null);
     const work = (async (): Promise<void> => {
       try {
         await cancelPosCharge(session);
+        // A cancelled charge is no longer paid by a payment that lands now; one whose cancel
+        // failed still is.
+        settledFor(session).open = null;
         const seq = startRead(reads);
         const next = await fetchPosState(session);
         whenCurrent(generation, mine, () => {
@@ -515,7 +566,8 @@ function usePosTillState(): PosTillState {
       setReload((n) => n + 1);
     },
     closePaid: (id) => {
-      setClosed((before) => new Set(before).add(id));
+      settledFor(session).closed.add(id);
+      settledChanged();
       setReload((n) => n + 1);
     },
   };

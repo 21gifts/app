@@ -1451,6 +1451,72 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
+    it('keeps a wallet-paid charge paid on the amount page and back on the till', async () => {
+      // The api has not seen the payment yet and keeps returning the charge open.
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] })),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      till.unmount();
+      const amountPage = renderWithLocale(<PosAmount />);
+      expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+      expect(replace).not.toHaveBeenCalled();
+      expect(back).not.toHaveBeenCalled();
+      amountPage.unmount();
+      renderWithLocale(<PosScreen />);
+      expect(await confirmation()).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    });
+
+    it('keeps a closed confirmation closed on the next till', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] })),
+      );
+      const first = renderWithLocale(<PosScreen />);
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      first.unmount();
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
+    it('starts over for another session', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] })),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      act(() => {
+        useAuthStore.setState({ session: 'other' });
+      });
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+    });
+
+    it('still counts a payment when Cancel failed', async () => {
+      const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
+        init?.method === 'DELETE'
+          ? jsonResponse({ error: 'down' }, 502)
+          : jsonResponse({ charge: OPEN, history: [OPEN] }),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+    });
+
     it('never asks the api on a timer while a charge is open', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
       const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] }));
