@@ -911,18 +911,26 @@ describe('PayLinkScreen shop payment', () => {
     expect(waits).toBe(2);
   }, 10_000);
 
-  it('shows an ended payment as expired, keeps reading until it is closed, and keeps it on screen', async () => {
+  it('shows an ended payment as Ended, keeps reading until it is closed, then mints a live till by Lightning', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     let profiles = 0;
+    let links = 0;
     let waits = 0;
     let releaseClosed: (response: Response) => void = () => undefined;
-    mockShopFetch(async (input) => {
+    const mints: string[] = [];
+    mockShopFetch(async (input, init) => {
       const url = String(input);
       if (url === '/.well-known/lnurlp/ada') {
-        return Response.json(shopPayLink());
+        links += 1;
+        // Once the payment closed, the pending charge is today's plain Lightning request.
+        return Response.json(links === 1 ? shopPayLink() : { tag: 'payRequest' });
       }
       if (url === DETAIL) {
         return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url === '/pay/ada/invoice') {
+        mints.push(String(init?.body));
+        return Response.json({ pr: 'lnbc210n1mint', amountSats: 21 });
       }
       if (url.startsWith('/lnurlp/wait/')) {
         waits += 1;
@@ -943,7 +951,7 @@ describe('PayLinkScreen shop payment', () => {
     });
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect(await screen.findByText('Waiting for payment…')).toBeTruthy();
-    expect(await screen.findByText('Expired', undefined, { timeout: 4000 })).toBeTruthy();
+    expect(await screen.findByText('Ended', undefined, { timeout: 4000 })).toBeTruthy();
     expect(screen.queryByRole('img', { name: 'Bitcoin invoice' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
@@ -953,14 +961,25 @@ describe('PayLinkScreen shop payment', () => {
       },
       { timeout: 4000 },
     );
+    expect(links).toBe(1);
     await act(async () => {
       releaseClosed(Response.json({ status: 'Expired', paymentStatus: 'ended' }));
     });
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(screen.queryByText('Ended')).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+    expect(screen.getByText('5:00 left')).toBeTruthy();
+    expect(links).toBe(2);
+    expect(mints).toEqual([JSON.stringify({ amountSats: 21 })]);
+    const hrefs = captureHrefs(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }));
+    });
+    expect(hrefs).toEqual(['lightning:lnbc210n1mint']);
     await new Promise((resolve) => {
       setTimeout(resolve, 2_300);
     });
-    expect(screen.getByText('Expired')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
     expect(profiles).toBe(1);
     expect(fetchedUrls().filter((url) => url.startsWith('/lnurlp/wait/'))).toEqual([
       '/lnurlp/wait/p1',
@@ -968,6 +987,145 @@ describe('PayLinkScreen shop payment', () => {
       '/lnurlp/wait/p1?since=ended',
     ]);
   }, 15_000);
+
+  it('never shows a closed payment again and lets Pay read the pay link of a live till', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let links = 0;
+    let waits = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/invoice')) {
+        throw new Error('should not mint');
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        links += 1;
+        return Response.json(shopPayLink());
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        waits += 1;
+        return Response.json({ status: 'Cancelled', paymentStatus: 'ended' });
+      }
+      return Response.json(chargeProfile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not create the invoice.');
+    expect(links).toBe(2);
+    expect(waits).toBe(1);
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByText('5:00 left')).toBeTruthy();
+    const pay = screen.getByRole('button', {
+      name: 'Pay with a Bitcoin wallet app',
+    }) as HTMLButtonElement;
+    expect(pay.disabled).toBe(false);
+    fireEvent.click(pay);
+    await waitFor(() => {
+      expect(links).toBe(3);
+    });
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not create the invoice.');
+    expect(waits).toBe(1);
+    expect(postedInvoice()).toBe(false);
+  });
+
+  it('shows the amount form once the payment of a till that ran out is closed', async () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let links = 0;
+    let releaseClosed: (response: Response) => void = () => undefined;
+    let waits = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/invoice')) {
+        throw new Error('should not mint');
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        links += 1;
+        return Response.json(shopPayLink());
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        waits += 1;
+        if (waits === 1) {
+          return Response.json({ status: 'Pending', paymentStatus: 'ended' });
+        }
+        return new Promise((resolve) => {
+          releaseClosed = resolve;
+        });
+      }
+      return Response.json(chargeProfile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByText('Ended')).toBeTruthy();
+    now.mockReturnValue(FIXED + 300_001);
+    await waitFor(
+      () => {
+        expect(waits).toBe(2);
+      },
+      { timeout: 4000 },
+    );
+    expect(screen.getByText('Ended')).toBeTruthy();
+    await act(async () => {
+      releaseClosed(Response.json({ status: 'Expired', paymentStatus: 'ended' }));
+    });
+    expect(await screen.findByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    expect(screen.queryByText('Ended')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText(/left/)).toBeNull();
+    expect(links).toBe(1);
+  }, 10_000);
+
+  it('returns an entered amount whose payment closed unpaid to the amount form', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let opens = 0;
+    let waits = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url.endsWith('/invoice')) {
+        throw new Error('should not mint');
+      }
+      if (url === '/pay/ada/payment') {
+        opens += 1;
+        return Response.json({
+          payment: 'p1',
+          expiresAt: new Date(FIXED + 300_000).toISOString(),
+        });
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(shopPayLink());
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        waits += 1;
+        return waits === 1
+          ? Response.json({ status: 'Pending', paymentStatus: 'ended' })
+          : Response.json({ status: 'Cancelled', paymentStatus: 'ended' });
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    expect(await screen.findByText('Ended')).toBeTruthy();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+    const continueButton = (await screen.findByRole(
+      'button',
+      { name: 'Continue' },
+      { timeout: 4000 },
+    )) as HTMLButtonElement;
+    expect(continueButton.disabled).toBe(false);
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('21');
+    expect(screen.queryByText('Ended')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText(/left/)).toBeNull();
+    expect(opens).toBe(1);
+    expect(waits).toBe(2);
+    expect(postedInvoice()).toBe(false);
+  }, 10_000);
 
   it('starts again from the pay link once when the api does not know the payment', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
@@ -1109,7 +1267,7 @@ describe('PayLinkScreen shop payment', () => {
     expect(screen.getByText('Waiting for payment…')).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeTruthy();
-    expect(screen.queryByText('Expired')).toBeNull();
+    expect(screen.queryByText('Ended')).toBeNull();
   });
 
   it('retries a failed Lightning detail from Pay without minting', async () => {
@@ -1432,7 +1590,7 @@ describe('PayLinkScreen shop payment', () => {
     expect(screen.getByLabelText('Amount')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
     expect(screen.queryByText('Waiting for payment…')).toBeNull();
-    expect(screen.queryByText('Expired')).toBeNull();
+    expect(screen.queryByText('Ended')).toBeNull();
     expect(links).toBe(1);
     expect(postedInvoice()).toBe(false);
   });
@@ -1441,7 +1599,7 @@ describe('PayLinkScreen shop payment', () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     const cases = [
       { paymentStatus: 'accepted', line: 'On its way' },
-      { paymentStatus: 'ended', line: 'Expired' },
+      { paymentStatus: 'ended', line: 'Ended' },
     ];
     for (const { paymentStatus, line } of cases) {
       let links = 0;

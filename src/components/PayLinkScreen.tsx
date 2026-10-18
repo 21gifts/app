@@ -217,6 +217,8 @@ interface ShopPaymentView {
   invoiceFailed: boolean;
   /** Last `paymentStatus` from `GET /lnurlp/wait/:payment`. */
   paymentStatus: ShopPaymentStatus;
+  /** `status` is no longer `Pending`: the payment is paid or closed and never changes again. */
+  final: boolean;
 }
 
 /**
@@ -235,7 +237,7 @@ function shopStatusKey(status: ShopPaymentStatus): MessageKey {
   if (status === 'open') {
     return 'pay.waiting';
   }
-  return 'pos.expired';
+  return 'pay.ended';
 }
 
 /** Shop-sticker storefront, shown on a real pay link. */
@@ -258,7 +260,7 @@ function ShopStickerIcon(): ReactElement {
  * Public LNURL payment page for one shop or member.
  *
  * @param props - Encoded LNURL from the `lightning` query parameter.
- * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's invoice, one line per stablecoin method and asset with the quote's time left, and its status; otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
+ * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's invoice, one line per stablecoin method and asset with the quote's time left, and its status; once that payment closed without being paid, the page returns to the amount form, or reads the pay link of a till that is still open again; otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
  */
 export function PayLinkScreen({ lightning }: { lightning: string }): ReactElement {
   const { t } = useTranslations();
@@ -285,6 +287,8 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const generationRef = useRef(0);
   /** Payment ids the page already started again for once, after the api did not know them. */
   const restartedRef = useRef(new Set<string>());
+  /** Payment ids that closed without being paid; the page never shows them again. */
+  const closedRef = useRef(new Set<string>());
 
   useEffect(() => {
     setShowInvoiceQr(!isSmartphoneUserAgent(navigator.userAgent));
@@ -437,6 +441,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         invoice: null,
         invoiceFailed: false,
         paymentStatus: 'open',
+        final: false,
       });
       if (request !== null) {
         void loadShopInvoice(request, generation);
@@ -465,6 +470,11 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       try {
         const link = await fetchShopPayLink(profile.username);
         if (!active || generationRef.current !== generation) {
+          return;
+        }
+        if (link.kind === 'payment' && closedRef.current.has(link.request.payment)) {
+          // That payment closed unpaid and is never shown again; a pay request never mints.
+          setFormError('failed');
           return;
         }
         if (link.kind === 'payment') {
@@ -613,9 +623,10 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         }
         if (result !== null && result !== 'missing') {
           since = result.paymentStatus;
-          patchShop({ paymentStatus: result.paymentStatus });
-          if (result.status !== 'Pending') {
-            // Final: Paid or Expired stays on screen, nothing changes any more.
+          const final = result.status !== 'Pending';
+          patchShop({ paymentStatus: result.paymentStatus, final });
+          if (final) {
+            // Paid stays on screen; a closed payment leaves it (see the effect below).
             return;
           }
         }
@@ -634,6 +645,24 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       wake?.();
     };
   }, [shopId, patchShop]);
+
+  useEffect(() => {
+    if (shop === null || !shop.final || shop.paymentStatus !== 'ended') {
+      return;
+    }
+    // Closed unpaid, it never changes again: back to the page's flow, as an expired minted
+    // invoice. A till still in its window reads its pay link again and stays payable by
+    // Lightning; a till that ran out shows the amount form.
+    closedRef.current.add(shop.id);
+    generationRef.current += 1;
+    setShop(null);
+    setFormError(null);
+    postingRef.current = false;
+    setPosting(false);
+    if (chargeLive) {
+      setMintNonce((nonce) => nonce + 1);
+    }
+  }, [shop, chargeLive]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();

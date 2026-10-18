@@ -342,7 +342,7 @@ export const SCREEN_VARIANTS = [
     id: 'ended',
     image: 'pl-ended.png',
     visual: 'state-pl-ended',
-    needle: 'Expired',
+    needle: "getByText('Ended', { exact: true })",
   },
   {
     route: '/pl',

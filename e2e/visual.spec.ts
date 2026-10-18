@@ -1772,7 +1772,7 @@ test.describe('screen baselines', () => {
     await page.goto(
       `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
     );
-    await expect(page.getByText('Expired')).toBeVisible();
+    await expect(page.getByText('Ended', { exact: true })).toBeVisible();
     await expect(page.getByText('$238.09')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toHaveCount(
       0,

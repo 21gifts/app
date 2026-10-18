@@ -538,6 +538,7 @@ const en = {
   'pay.onItsWay': 'On its way',
   'pay.stablecoinScan': 'To pay with USDT or USDC, scan the sticker with an OpenCryptoPay wallet.',
   'pay.waiting': 'Waiting for payment…',
+  'pay.ended': 'Ended',
   'forum.attach': 'Add a photo or video',
   'camera.takePhoto': 'Take a photo',
   'forum.previewAlt': 'Selected photo',
@@ -1973,6 +1974,7 @@ const de = {
   'pay.stablecoinScan':
     'Um mit USDT oder USDC zu zahlen, scannen Sie den Sticker mit einer OpenCryptoPay-Wallet.',
   'pay.waiting': 'Zahlung wird erwartet…',
+  'pay.ended': 'Beendet',
   'forum.attach': 'Foto oder Video hinzufügen',
   'camera.takePhoto': 'Foto aufnehmen',
   'forum.previewAlt': 'Ausgewähltes Foto',
@@ -3439,6 +3441,7 @@ const es = {
   'pay.stablecoinScan':
     'Para pagar con USDT o USDC, escanea el adhesivo con una billetera OpenCryptoPay.',
   'pay.waiting': 'Esperando el pago…',
+  'pay.ended': 'Finalizado',
   'forum.attach': 'Añadir una foto o un vídeo',
   'camera.takePhoto': 'Tomar una foto',
   'forum.previewAlt': 'Foto seleccionada',
@@ -4883,6 +4886,7 @@ const fil = {
   'pay.stablecoinScan':
     'Para magbayad gamit ang USDT o USDC, i-scan ang sticker gamit ang isang OpenCryptoPay wallet.',
   'pay.waiting': 'Naghihintay ng bayad…',
+  'pay.ended': 'Hindi na aktibo',
   'forum.attach': 'Magdagdag ng litrato o bidyo',
   'camera.takePhoto': 'Kumuha ng litrato',
   'forum.previewAlt': 'Napiling litrato',
