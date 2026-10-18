@@ -1,11 +1,16 @@
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, type ReactElement } from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { Collapse } from '@/components/Collapse';
+import { Collapse, usePresent } from '@/components/Collapse';
 import { MOTION_EASE_MS, MOTION_FOLD_MS, MOTION_SETTLE_EVENT } from '@/lib/motion';
 import { advance, endTransition, motionEnv, installMotionHooks } from '@/__tests__/motion-fixture';
 
 installMotionHooks();
+
+/** Says whether the fold around it still shows it. */
+function Presence(): ReactElement {
+  return <p>{usePresent() ? 'present' : 'leaving'}</p>;
+}
 
 function fold(): HTMLElement {
   return document.querySelector('[data-collapse]') as HTMLElement;
@@ -327,5 +332,84 @@ describe('Collapse', () => {
     expect(screen.getByText('Body')).toBeTruthy();
     advance(MOTION_FOLD_MS);
     expect(screen.queryByText('Body')).toBeNull();
+  });
+
+  it('tells its content whether it is still shown, and is present outside a fold', () => {
+    const view = render(
+      <Collapse show>
+        <Presence />
+      </Collapse>,
+    );
+    expect(screen.getByText('present')).toBeTruthy();
+    view.rerender(<Collapse show={false}>{null}</Collapse>);
+    expect(screen.getByText('leaving')).toBeTruthy();
+    view.rerender(<Presence />);
+    expect(screen.getByText('present')).toBeTruthy();
+  });
+
+  it('holds closed content, inert, for holdMs instead of the fold', () => {
+    const view = render(
+      <Collapse show holdMs={1000}>
+        <Presence />
+      </Collapse>,
+    );
+    view.rerender(
+      <Collapse show={false} holdMs={1000}>
+        {null}
+      </Collapse>,
+    );
+    expect(fold().getAttribute('data-collapse')).toBe('closed');
+    expect(fold().hasAttribute('inert')).toBe(true);
+    // The fold's own end does not unmount it.
+    endTransition(fold(), 'grid-template-rows');
+    advance(999);
+    expect(screen.getByText('leaving')).toBeTruthy();
+    advance(1);
+    expect(document.querySelector('[data-collapse]')).toBeNull();
+  });
+
+  it('holds closed content for holdMs also with reduced motion', () => {
+    motionEnv.reducedMotion = true;
+    const view = render(
+      <Collapse show holdMs={1000}>
+        <Presence />
+      </Collapse>,
+    );
+    view.rerender(
+      <Collapse show={false} holdMs={1000}>
+        {null}
+      </Collapse>,
+    );
+    expect(screen.getByText('leaving')).toBeTruthy();
+    advance(999);
+    expect(screen.getByText('leaving')).toBeTruthy();
+    advance(1);
+    expect(document.querySelector('[data-collapse]')).toBeNull();
+  });
+
+  it('drops the hold when shown again, and lets instant win over it', () => {
+    const view = render(
+      <Collapse show holdMs={1000}>
+        <Presence />
+      </Collapse>,
+    );
+    view.rerender(
+      <Collapse show={false} holdMs={1000}>
+        {null}
+      </Collapse>,
+    );
+    view.rerender(
+      <Collapse show holdMs={1000}>
+        <Presence />
+      </Collapse>,
+    );
+    advance(1000);
+    expect(screen.getByText('present')).toBeTruthy();
+    view.rerender(
+      <Collapse show={false} holdMs={1000} instant>
+        {null}
+      </Collapse>,
+    );
+    expect(document.querySelector('[data-collapse]')).toBeNull();
   });
 });

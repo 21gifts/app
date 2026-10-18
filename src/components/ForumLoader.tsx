@@ -2834,7 +2834,6 @@ export function ForumLoader({
         payError={payError}
         payInvoice={payInvoice}
         replyPayPreview={replyPayPreview}
-        payWaiting={payWaiting}
         onPayOpen={(messageId) => {
           bumpPayPollGeneration();
           setPayMessageId(messageId);

@@ -669,10 +669,10 @@ A smartphone shows the same payment QR as a desktop for the profile,
 member, public view, and point of sale. The Shop sticker is
 shown wherever that profile QR is shown.
 
-A specific invoice is different. Member pay sheets — the forum post pay
-sheet (`ForumBoard`, including the composer pay slot for the posting fee and
-today's repayment), the reply pay page (`ForumReplyPayPage`), and the inbox
-pay sheet (`InboxScreen`) — pay from the member's in-app wallet only
+A specific invoice is different. Member pay sheets — the one bottom sheet
+(`PaySheet`) of a forum gift (`ForumBoard`, including the posting fee), a
+money reaction (`ForumReplyPayPage`), a habit comment gift, and the inbox
+(`InboxScreen`) — pay from the member's in-app wallet only
 (`WalletPay`: the `sparkInvoice` when the api issued one, otherwise the
 payment request). The wallet is open whenever the member is signed in. The
 slot prepares the payment, shows its fee when it is above ₿0, then offers

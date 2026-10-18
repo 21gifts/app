@@ -75,12 +75,25 @@ import {
 import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
 import { prepareForumPhoto } from '@/lib/forum-photo';
 
-/** The pay card's labeled **Send** (the composer's icon Send carries an aria-label instead). */
+/** The pay sheet's **Send ₿21** (the composer's icon Send carries an aria-label instead). */
 function paySend(): HTMLElement | null {
   return (
-    screen.queryAllByRole('button', { name: 'Send' }).find((b) => !b.hasAttribute('aria-label')) ??
-    null
+    screen
+      .queryAllByRole('button', { name: 'Send ₿21' })
+      .find((b) => !b.hasAttribute('aria-label')) ?? null
   );
+}
+
+/** The pay step of an open pay sheet, or `null` once it closed, left, or turned into its success step. */
+function payStep(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(
+    '[data-pay-sheet-layer="open"] [data-pay-sheet="pay"]',
+  );
+}
+
+/** The open pay sheet's own **Close** (the dimmed page behind it carries one too). */
+function payClose(): HTMLElement {
+  return within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' });
 }
 
 const listMock = vi.mocked(fetchConversations);
@@ -538,7 +551,7 @@ describe('InboxLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you', NO_RATE_SHOWN);
-      expect(screen.getByText('Pay ₿21')).toBeTruthy();
+      expect(payStep()).not.toBeNull();
       expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
     });
     const pollCall = threadMock.mock.calls[1];
@@ -551,7 +564,7 @@ describe('InboxLoader', () => {
     });
     await waitFor(() => {
       expect(screen.getByText('For you')).toBeTruthy();
-      expect(screen.queryByText('Pay ₿21')).toBeNull();
+      expect(payStep()).toBeNull();
       expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('');
       expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('');
     });
@@ -589,7 +602,7 @@ describe('InboxLoader', () => {
       expect(invoiceMock).toHaveBeenCalled();
     });
     await waitFor(() => {
-      expect(screen.queryByText('Pay ₿21')).toBeNull();
+      expect(payStep()).toBeNull();
     });
     searchParams.delete('c');
     view.rerender(<InboxLoader />);
@@ -612,7 +625,7 @@ describe('InboxLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you', NO_RATE_SHOWN);
-      expect(screen.getByText('Pay ₿21')).toBeTruthy();
+      expect(payStep()).not.toBeNull();
       expect(screen.getByRole('button', { name: 'Send' }).hasAttribute('disabled')).toBe(false);
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
@@ -782,15 +795,17 @@ describe('InboxLoader', () => {
     });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    expect(await screen.findByText('Pay ₿21')).toBeTruthy();
+    await waitFor(() => {
+      expect(payStep()).not.toBeNull();
+    });
     const signal = threadMock.mock.calls[1]?.[2]?.signal;
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(payClose());
     expect(signal?.aborted).toBe(true);
     await act(async () => {
       await Promise.resolve();
     });
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(payStep()).toBeNull();
   });
 
   it('shows a request error when the paid-row poll fails', async () => {
@@ -808,7 +823,7 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(await screen.findByText('Could not send your message')).toBeTruthy();
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(payStep()).toBeNull();
   });
 
   it('aborts and resets invoice state when ?c= changes', async () => {
@@ -825,13 +840,15 @@ describe('InboxLoader', () => {
     });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    expect(await screen.findByText('Pay ₿21')).toBeTruthy();
+    await waitFor(() => {
+      expect(payStep()).not.toBeNull();
+    });
     const signal = threadMock.mock.calls[1]?.[2]?.signal;
     threadMock.mockImplementationOnce(() => new Promise(() => undefined));
     searchParams.set('c', 'conv-2');
     view.rerender(<InboxLoader />);
     expect(signal?.aborted).toBe(true);
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(payStep()).toBeNull();
     expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('');
   });
 
@@ -859,7 +876,7 @@ describe('InboxLoader', () => {
     await act(async () => {
       resolveMint?.({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-late' });
     });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(payStep()).toBeNull();
   });
 
   it('drops a late paid-row poll after the open thread changes', async () => {
@@ -880,7 +897,9 @@ describe('InboxLoader', () => {
     });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-    expect(await screen.findByText('Pay ₿21')).toBeTruthy();
+    await waitFor(() => {
+      expect(payStep()).not.toBeNull();
+    });
     searchParams.set('c', 'conv-2');
     view.rerender(<InboxLoader />);
     await act(async () => {
@@ -1771,7 +1790,7 @@ describe('InboxLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you', NO_RATE_SHOWN);
-      expect(screen.getByText('Pay ₿21')).toBeTruthy();
+      expect(payStep()).not.toBeNull();
     });
     const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
     const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'p.jpg', { type: 'image/jpeg' });
@@ -1784,7 +1803,7 @@ describe('InboxLoader', () => {
     });
     await waitFor(() => {
       expect(screen.getByText('For you')).toBeTruthy();
-      expect(screen.queryByText('Pay ₿21')).toBeNull();
+      expect(payStep()).toBeNull();
     });
     expect(screen.queryByAltText('Selected photo')).toBeNull();
     expect((screen.getByRole('button', { name: 'Send' }) as HTMLButtonElement).disabled).toBe(
@@ -1826,7 +1845,7 @@ describe('InboxLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'conv-1', 21, 'For you', NO_RATE_SHOWN);
-      expect(screen.getByText('Pay ₿21')).toBeTruthy();
+      expect(payStep()).not.toBeNull();
     });
     expect(postMock).not.toHaveBeenCalled();
     await act(async () => {
@@ -1834,7 +1853,7 @@ describe('InboxLoader', () => {
     });
     await waitFor(() => {
       expect(screen.getByText('For you')).toBeTruthy();
-      expect(screen.queryByText('Pay ₿21')).toBeNull();
+      expect(payStep()).toBeNull();
       expect(screen.queryByAltText('Selected photo')).toBeNull();
     });
     expect(postMock).not.toHaveBeenCalled();
@@ -2333,7 +2352,7 @@ describe('conversation thread pages', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(screen.queryByText('Pay ₿21')).toBeNull();
+      expect(payStep()).toBeNull();
     });
     await waitFor(() => {
       expect(FakeIntersectionObserver.instances[0]?.observed).toHaveLength(1);
@@ -2455,7 +2474,9 @@ describe('InboxLoader in-app wallet pay', () => {
     });
     await waitFor(() => {
       expect(screen.queryByText('Paying from your wallet…')).toBeNull();
-      expect(screen.queryByText('Pay ₿21')).toBeNull();
+      expect(payStep()).toBeNull();
     });
+    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
+    expect(await screen.findByText('Sent to 21.gifts')).toBeTruthy();
   });
 });

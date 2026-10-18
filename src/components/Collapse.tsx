@@ -1,6 +1,14 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import { AutoHeight } from '@/components/AutoHeight';
 import {
   MOTION_FOLD_MS,
@@ -8,6 +16,21 @@ import {
   announceSettle,
   prefersReducedMotion,
 } from '@/lib/motion';
+
+/** Whether the nearest {@link Collapse} shows its content; true outside one. */
+const PresenceContext = createContext(true);
+
+/**
+ * Whether the nearest {@link Collapse} still shows its content. It turns false as soon as the box
+ * starts to fold (or to hold, with `holdMs`), so a layer drawn elsewhere from inside it (a bottom
+ * sheet in the frame's overlay) knows it is closing and can leave in its own way.
+ *
+ * @returns False while the content around the caller is closing, true otherwise (also outside a
+ * `Collapse`).
+ */
+export function usePresent(): boolean {
+  return useContext(PresenceContext);
+}
 
 /** Props for {@link Collapse}. */
 export interface CollapseProps {
@@ -21,6 +44,12 @@ export interface CollapseProps {
    * step (a second copy of it must not stay mounted while the first folds). Opening still eases.
    */
   instant?: boolean | undefined;
+  /**
+   * How long closed content stays mounted, inert, in ms, instead of until it has folded away; also
+   * with reduced motion. For content that draws a layer elsewhere that leaves on its own clock
+   * (`PaySheet` shows its success step meanwhile, see {@link usePresent}). `instant` wins.
+   */
+  holdMs?: number | undefined;
 }
 
 /**
@@ -30,9 +59,12 @@ export interface CollapseProps {
  * content shown on the first render does not animate. While open, a change in
  * the content's height glides too ({@link AutoHeight}). The box clips only while it moves, so
  * focus rings and pop-up lists stay visible at rest, and it never grows wider than its parent.
+ * With `holdMs` closed content stays mounted for that long instead; inside, {@link usePresent}
+ * says whether it is still shown.
  *
- * @param props - `show`, the content, and optional inner classes.
- * @returns The folding box (`data-collapse` `closed`, `opening`, or `open` once settled), or
+ * @param props - `show`, the content, optional inner classes, `instant`, and `holdMs`.
+ * @returns The folding box (`data-collapse` `closed`, `opening`, `open` once settled, or `held` once
+ * folded away while `holdMs` keeps it), or
  * `null` while closed.
  */
 export function Collapse({
@@ -40,6 +72,7 @@ export function Collapse({
   children,
   className,
   instant = false,
+  holdMs,
 }: CollapseProps): ReactElement | null {
   const [mounted, setMounted] = useState(show);
   const [open, setOpen] = useState(show);
@@ -49,6 +82,8 @@ export function Collapse({
   const shown = useRef(show);
   const closeAtOnce = useRef(instant);
   closeAtOnce.current = instant;
+  const hold = useRef(holdMs);
+  hold.current = holdMs;
   if (show) {
     last.current = children;
   }
@@ -83,6 +118,20 @@ export function Collapse({
     }
     setSettled(false);
     setOpen(false);
+    if (hold.current !== undefined && !closeAtOnce.current) {
+      const timer = window.setTimeout(() => setMounted(false), hold.current);
+      // Folded away and only held: at rest (`held`), so nothing waits for the hold to end.
+      const stopFold = reduced
+        ? (): void => undefined
+        : afterTransition(el, 'grid-template-rows', MOTION_FOLD_MS, () => setSettled(true));
+      if (reduced) {
+        setSettled(true);
+      }
+      return () => {
+        window.clearTimeout(timer);
+        stopFold();
+      };
+    }
     if (reduced || closeAtOnce.current) {
       setMounted(false);
       return;
@@ -105,20 +154,24 @@ export function Collapse({
 
   // Shown content mounts in the same commit as `show`, so code that looks for it right after finds
   // it; an instant close removes it in the same commit too.
-  if (!show && (!mounted || instant || atOnce)) {
+  if (!show && (!mounted || instant || (atOnce && holdMs === undefined))) {
     return null;
   }
   return (
     <div
       ref={box}
-      data-collapse={isOpen ? (isSettled ? 'open' : 'opening') : 'closed'}
+      data-collapse={isOpen ? (isSettled ? 'open' : 'opening') : isSettled ? 'held' : 'closed'}
       inert={!show}
       className={`grid grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity] duration-280 ease-glide motion-reduce:transition-none ${
         isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
       }`}
     >
       <div className={isOpen && isSettled ? 'min-h-0' : 'min-h-0 overflow-hidden'}>
-        <AutoHeight className={className}>{show ? children : last.current}</AutoHeight>
+        <AutoHeight className={className}>
+          <PresenceContext.Provider value={show}>
+            {show ? children : last.current}
+          </PresenceContext.Provider>
+        </AutoHeight>
       </div>
     </div>
   );

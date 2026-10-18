@@ -12,10 +12,13 @@ import {
   type ReactNode,
 } from 'react';
 import { AppShellOverlay } from '@/components/AppShell';
+import { usePresent } from '@/components/Collapse';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
+import { Swap } from '@/components/Swap';
 import { IconButton } from '@/components/ui';
+import { MOTION_FOLD_MS } from '@/lib/motion';
 import {
   formatBitcoin,
   formatFiatDisplay,
@@ -23,17 +26,18 @@ import {
   type FiatRateDay,
 } from '@/lib/stats-money';
 
-/** How long the success step shows before the sheet slides away, in ms. */
+/**
+ * How long the success step shows before the sheet slides away, in ms, counted from the moment the
+ * payment went out (the pay step's fade out included).
+ */
 export const PAY_SHEET_SUCCESS_MS = 1400;
 
-/** Length of the slide and the scrim fade (`duration-280`), plus a short settle, in ms. */
-const SLIDE_MS = 320;
-
 /**
- * How long a host keeps a closed pay sheet mounted, in ms: the success step, then the slide away.
- * A sheet the member closed slides away at once and is only kept, inert and hidden, for the rest.
+ * How long a host's `Collapse` keeps a closed pay sheet mounted (`holdMs`), in ms: the success
+ * step, then the slide away (`duration-280`, settled at the latest after `MOTION_FOLD_MS`). A sheet
+ * the member closed slides away at once and is only kept, inert and hidden, for the rest.
  */
-export const PAY_SHEET_HOLD_MS = PAY_SHEET_SUCCESS_MS + SLIDE_MS;
+export const PAY_SHEET_HOLD_MS = PAY_SHEET_SUCCESS_MS + MOTION_FOLD_MS;
 
 const PaySheetCloseContext = createContext<(() => void) | null>(null);
 
@@ -57,11 +61,6 @@ export interface PaySheetProps {
   rateDay: FiatRateDay | null;
   /** Heading of the success step, e.g. **Sent to Ana**, **Lent to Ana**, **Paid and posted**, or **Sent**. */
   successTitle: string;
-  /**
-   * True while the payment is open. The host turns it false when the payment went out; then the
-   * sheet shows the success step and slides away. A close by the member never shows that step.
-   */
-  open: boolean;
   /** Called when the member closes the sheet (Close, a tap on the dimmed page, Escape, Add Bitcoin). */
   onClose: () => void;
   /** The pay slot. */
@@ -72,11 +71,13 @@ export interface PaySheetProps {
  * Bottom sheet that holds the last tap of every payment from the in-app wallet in the forum and the
  * inbox. It slides up from the bottom of the frame body over a dimmed page (centred on a wide frame)
  * with the title, the amount with its fiat, a Close, and the pay slot. Close, a tap on the dimmed
- * page, and Escape close it at once. When the host closes it instead (the payment went out), it shows
- * a short success step with the amount, then slides away; the host keeps it mounted for
- * {@link PAY_SHEET_HOLD_MS} meanwhile. With reduced motion it appears and leaves without a slide.
+ * page, and Escape close it at once. The host renders it inside a `Collapse` with `holdMs`
+ * {@link PAY_SHEET_HOLD_MS}: when that closes without the member closing the sheet (the payment went
+ * out, {@link usePresent} turns false), the pay step fades into a short success step with the amount
+ * ({@link Swap}), then the sheet slides away. With reduced motion it appears and leaves without a
+ * slide or a fade.
  *
- * @param props - Title, amount, rate, success heading, open state, close handler, and the pay slot.
+ * @param props - Title, amount, rate, success heading, close handler, and the pay slot.
  * @returns The sheet in the frame's overlay layer.
  */
 export function PaySheet({
@@ -84,13 +85,13 @@ export function PaySheet({
   amountSats,
   rateDay,
   successTitle,
-  open,
   onClose,
   children,
 }: PaySheetProps): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
+  const present = usePresent();
   const [entered, setEntered] = useState(false);
   const [succeeded, setSucceeded] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -105,8 +106,8 @@ export function PaySheet({
   }, [leaving, onClose]);
 
   // The host closed the payment while the member did not: it went out. Adjusted during render, so
-  // no frame shows the pay slot of a closed payment.
-  if (!open && !leaving && !succeeded) {
+  // no frame shows the pay slot of a closed payment as if it were still open.
+  if (!present && !leaving && !succeeded) {
     setSucceeded(true);
   }
 
@@ -191,36 +192,40 @@ export function PaySheet({
               aria-hidden="true"
               className="mx-auto h-1 w-10 shrink-0 rounded-full bg-app-border"
             />
-            {succeeded ? (
-              <div role="status" className="flex flex-col items-center gap-3 py-6">
-                <CircleCheck
-                  aria-hidden="true"
-                  className="h-14 w-14 text-app-success"
-                  strokeWidth={1.75}
-                />
-                <p className="text-lg font-semibold text-app-fg">{successTitle}</p>
-                {amount}
-              </div>
-            ) : (
-              <>
-                <div className="relative flex min-h-9 items-center justify-center">
-                  <h2 className="px-10 text-center text-base font-semibold text-app-fg">{title}</h2>
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2">
-                    <IconButton
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      aria-label={t('forum.payClose')}
-                      onClick={close}
-                    >
-                      <X aria-hidden="true" className="h-4 w-4" />
-                    </IconButton>
-                  </div>
+            <Swap viewKey={succeeded ? 'success' : 'pay'} className="flex flex-col gap-4">
+              {succeeded ? (
+                <div role="status" className="flex flex-col items-center gap-3 py-6">
+                  <CircleCheck
+                    aria-hidden="true"
+                    className="h-14 w-14 text-app-success"
+                    strokeWidth={1.75}
+                  />
+                  <p className="text-lg font-semibold text-app-fg">{successTitle}</p>
+                  {amount}
                 </div>
-                {amount}
-                <div className="flex flex-col items-stretch gap-3">{children}</div>
-              </>
-            )}
+              ) : (
+                <>
+                  <div className="relative flex min-h-9 items-center justify-center">
+                    <h2 className="px-10 text-center text-base font-semibold text-app-fg">
+                      {title}
+                    </h2>
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                      <IconButton
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        aria-label={t('forum.payClose')}
+                        onClick={close}
+                      >
+                        <X aria-hidden="true" className="h-4 w-4" />
+                      </IconButton>
+                    </div>
+                  </div>
+                  {amount}
+                  <div className="flex flex-col items-stretch gap-3">{children}</div>
+                </>
+              )}
+            </Swap>
           </div>
         </div>
       </PaySheetCloseContext.Provider>

@@ -3337,6 +3337,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'pay-sheet-success',
+    image: 'welcome-pay-sheet-success.png',
+    visual: 'state-welcome-pay-sheet-success',
+    needle: "shotScreen(page, 'state-welcome-pay-sheet-success')",
+  },
+  {
+    route: '/welcome',
     id: 'error-too-large-with-text',
     image: 'welcome-error-too-large-with-text.png',
     visual: 'state-welcome-error-too-large-with-text',

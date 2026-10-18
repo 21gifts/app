@@ -919,10 +919,13 @@ test('Function: ForumPaySheet — a habit comment uses the forum pay sheet', asy
   await page.goto('/habit-tracker');
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('Pay ₿21')).toBeVisible();
+  const sheet = page.getByRole('dialog', { name: 'Send to Bea' });
+  await expect(sheet.getByText('₿21', { exact: true })).toBeVisible();
   await expect(
-    page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+    sheet.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
   ).toBeVisible();
+  // The amount box stays behind the sheet, disabled.
+  await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
 });
 
 test('Function: HabitTrackerPage — a signed-out visitor reads the public list', async ({
@@ -1171,6 +1174,8 @@ test('Function: postMemberHabit — Time-Zone is sent only for add, comment, del
   await expect(cont).toBeEnabled();
   await cont.click();
   await expect.poll(() => posts.length).toBe(6);
+  // The pay sheet covers the page until it is closed.
+  await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
 
   await page.getByRole('button', { name: 'Archive' }).click();
   await page.getByRole('button', { name: 'Confirm archive' }).click();
@@ -1185,4 +1190,38 @@ test('Function: postMemberHabit — Time-Zone is sent only for add, comment, del
   expect(zoneOf('comment')).toBeTruthy();
   expect(zoneOf('deleteComment')).toBeTruthy();
   expect(zoneOf('invoice')).toBeTruthy();
+});
+
+test('Function: useReceiveLink — Add Bitcoin away from the forum home opens the wallet with Receive, and the arrow closes Receive first', async ({
+  page,
+}) => {
+  await seedAda(page);
+  await page.route('**/habits', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ pr: 'lnbc1', amountSats: 21 }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(PUBLIC_LIST),
+    });
+  });
+  await page.goto('/habit-tracker?visual=wallet-pay-insufficient');
+  await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Send to Bea' });
+  await sheet.getByRole('button', { name: 'Add Bitcoin' }).click();
+  // The wallet opens on Receive, and the address no longer asks for it.
+  await expect(page).toHaveURL(/\/wallet$/);
+  await expect(page.getByText(/^alice@/)).toBeVisible();
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
+  await expect(page.getByText(/^alice@/)).toHaveCount(0);
+  await expect(page).toHaveURL(/\/wallet$/);
+  await page.getByRole('link', { name: 'Back', exact: true }).click();
+  await expect(page).toHaveURL(/\/habit-tracker/);
 });

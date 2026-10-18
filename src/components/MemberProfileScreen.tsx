@@ -142,7 +142,6 @@ const IDLE_BOARD = {
   payBusy: false,
   payError: null as ForumPayError,
   payInvoice: null as ForumPayInvoice | null,
-  payWaiting: false,
   onPayOpen: (): void => undefined,
   onPayDraftChange: (): void => undefined,
   onPaySubmit: (): void => undefined,
@@ -256,7 +255,6 @@ export function MemberProfileScreen({
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
-  const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payPollGeneration = useRef(0);
@@ -441,7 +439,6 @@ export function MemberProfileScreen({
     setPayError(null);
     setPayInvoice(null);
     setPayBusy(false);
-    setPayWaiting(false);
     setPayHost(null);
     setReplyPosting(false);
   };
@@ -501,7 +498,6 @@ export function MemberProfileScreen({
       return;
     }
     const signal = controller.signal;
-    setPayWaiting(true);
     void (async () => {
       const composePay = replyParentId !== null;
       const countOwn = async (): Promise<number> => {
@@ -610,7 +606,6 @@ export function MemberProfileScreen({
                 }
                 return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
               });
-              setPayWaiting(false);
               setPayInvoice(null);
               setPayMessageId(null);
               setPayHost(null);
@@ -1071,7 +1066,6 @@ export function MemberProfileScreen({
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
-    setPayWaiting(false);
     setPayBusy(false);
   };
 
@@ -1331,7 +1325,6 @@ export function MemberProfileScreen({
     payBusy,
     payError,
     payInvoice,
-    payWaiting,
     onPayOpen: handlePayOpen,
     onPayDraftChange: (value: string): void => {
       setPayDraft(value);

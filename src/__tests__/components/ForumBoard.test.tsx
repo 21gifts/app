@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { useState, type ReactElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
+import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
 import { MOTION_FOLD_MS, MOTION_SETTLE_EVENT, MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import { SCROLL_FOLLOW_ATTR } from '@/lib/reveal-in-scrollport';
 import { LocaleProvider } from '@/components/LocaleProvider';
@@ -176,7 +177,6 @@ const idleProps: Pick<
   | 'payBusy'
   | 'payError'
   | 'payInvoice'
-  | 'payWaiting'
   | 'onPayOpen'
   | 'onPayDraftChange'
   | 'onPaySubmit'
@@ -209,7 +209,6 @@ const idleProps: Pick<
   payBusy: false,
   payError: null,
   payInvoice: null,
-  payWaiting: false,
   onPayOpen: () => undefined,
   onPayDraftChange: () => undefined,
   onPaySubmit: () => undefined,
@@ -2673,7 +2672,6 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
         payMessageId="fee-note"
         payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
-        payWaiting
         replies={[{ ...SAMPLE, id: 'r1' }]}
       />,
     );
@@ -2697,7 +2695,6 @@ describe('ForumBoard', () => {
         {...modeProps('active')}
         payMessageId="fee-note"
         payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
-        payWaiting
       />,
     );
     expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
@@ -2721,7 +2718,6 @@ describe('ForumBoard', () => {
         payMessageId="fee-note"
         payHost="composer"
         payInvoice={{ messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 }}
-        payWaiting
       />,
     );
     expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
@@ -2744,7 +2740,6 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
         payMessageId="r1"
         payInvoice={{ messageId: 'r1', pr: 'lnbc1', amountSats: 1 }}
-        payWaiting
         replies={[{ ...SAMPLE, id: 'r1', parentId: SAMPLE.id }]}
       />,
     );
@@ -3002,25 +2997,30 @@ describe('ForumBoard', () => {
         {...idleProps}
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
-        payWaiting={true}
         onPayCancel={onPayCancel}
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
-    expect(screen.getByRole('status').textContent).toBe(WALLET_UNAVAILABLE);
+    const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+    expect(sheet.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(within(sheet).getByRole('heading', { level: 2 }).textContent).toBe('Send to Ada');
+    expect(within(sheet).getByText('₿21')).toBeTruthy();
+    expect(within(sheet).getByRole('status').textContent).toBe(WALLET_UNAVAILABLE);
     expectWalletOnly();
-    expect(document.querySelector('[data-pay-sheet] img')).toBeNull();
+    expect(sheet.querySelector('img')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
     expect(screen.queryByText('Back')).toBeNull();
-    const back = screen.getByRole('button', { name: 'Close' });
-    expect(back.parentElement?.className).toContain('absolute');
-    expect(back.parentElement?.className).toContain('left-3');
-    expect(back.parentElement?.className).toContain('top-3');
-    expect(back.closest('[data-pay-sheet]')).toBeTruthy();
-    fireEvent.click(back);
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    // The amount form stays behind the sheet, with its own Close in the corner.
+    const form = document.querySelector('form[data-pay-amount]');
+    expect(form).not.toBeNull();
+    const formClose = within(form as HTMLElement).getByRole('button', { name: 'Close' });
+    expect(formClose.parentElement?.className).toContain('absolute');
+    expect(formClose.parentElement?.className).toContain('left-3');
+    expect(formClose.parentElement?.className).toContain('top-3');
+    const close = within(sheet).getByRole('button', { name: 'Close' });
+    fireEvent.click(close);
     expect(onPayCancel).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
   });
 
   it('shows a fiat equivalent on the pay confirm line', () => {
@@ -3038,7 +3038,6 @@ describe('ForumBoard', () => {
         {...idleProps}
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
-        payWaiting={true}
         rateDay={{
           sats: 100_000_000,
           usd: '100000.00',
@@ -3049,8 +3048,11 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText(/Pay ₿21/)).toBeTruthy();
-    expect(screen.getByText('$0.02')).toBeTruthy();
+    const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+    expect(within(sheet).getByText('₿21')).toBeTruthy();
+    // The fiat sits on its own line under the amount, without a separator.
+    expect(within(sheet).getByText('$0.02').tagName).toBe('P');
+    expect(within(sheet).queryByText(/·/)).toBeNull();
     expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
   });
 
@@ -3080,13 +3082,13 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText(/Pay ₿42/)).toBeTruthy();
-    expect(screen.getByText('$0.04')).toBeTruthy();
+    const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+    expect(within(sheet).getByText('₿42')).toBeTruthy();
+    expect(within(sheet).getByText('$0.04')).toBeTruthy();
     expect(screen.queryByText('$0.02')).toBeNull();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
   });
 
-  it('shows waiting copy after the invoice is minted', () => {
+  it('keeps the amount form behind the sheet, disabled, once the invoice is minted', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, parentId: 'p1' }]}
@@ -3101,14 +3103,96 @@ describe('ForumBoard', () => {
         {...idleProps}
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
-        payWaiting={true}
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Send to Ada' })).toBeTruthy();
     expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
+    const form = document.querySelector('form[data-pay-amount]') as HTMLElement;
+    expect(form).not.toBeNull();
+    expect((within(form).getByRole('textbox') as HTMLInputElement).disabled).toBe(true);
+    expect(
+      (within(form).getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
+  it('names the author of a reply in the title of its pay sheet', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[SAMPLE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        expandedId="m1"
+        replies={[{ ...SAMPLE, id: 'r1', parentId: SAMPLE.id, name: 'Bob', text: 'Hi' }]}
+        payMessageId="r1"
+        payInvoice={{ messageId: 'r1', pr: 'lnbc1', amountSats: 5 }}
+        {...modeProps('all')}
+      />,
+    );
+    const sheet = screen.getByRole('dialog', { name: 'Send to Bob' });
+    expect(within(sheet).getByText('₿5')).toBeTruthy();
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+  });
+
+  it('shows the success step when the payment closes the card sheet, then unmounts after the hold', () => {
+    vi.useFakeTimers();
+    try {
+      const board = (open: boolean): ReactElement => (
+        <ForumBoard
+          messages={[{ ...SAMPLE, parentId: 'p1' }]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          {...(open
+            ? {
+                payMessageId: 'm1',
+                payInvoice: { messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 },
+              }
+            : {})}
+          {...modeProps('all')}
+        />
+      );
+      const view = renderWithLocale(board(true));
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+      // The host's poll saw the payment and closed the slot: the sheet says so for a moment.
+      view.rerender(board(false));
+      const sheet = screen.getByRole('dialog');
+      expect(sheet.getAttribute('data-pay-sheet')).toBe('success');
+      // The pay step fades out while the success step fades in.
+      act(() => {
+        vi.advanceTimersByTime(MOTION_SWAP_FADE_MS);
+      });
+      expect(within(sheet).getByRole('status').textContent).toContain('Sent to Ada');
+      expect(within(sheet).getByText('₿21')).toBeTruthy();
+      expect(within(sheet).queryByText(WALLET_UNAVAILABLE)).toBeNull();
+      // The closed amount form stays mounted, inert, for the hold.
+      expect(document.querySelector('form[data-pay-amount]')?.closest('[inert]')).not.toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(PAY_SHEET_HOLD_MS - MOTION_SWAP_FADE_MS - 1);
+      });
+      expect(screen.queryByRole('dialog')).not.toBeNull();
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(document.querySelector('form[data-pay-amount]')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('disables the amount field and Continue while pay is busy', () => {
@@ -8470,7 +8554,7 @@ describe('reply form size', () => {
     resize();
     expect(port.scrollTop).toBe(0);
     outer.toggleAttribute('data-gliding', false);
-    // The box right around the form glides (a view swap): the reveal follows again.
+    // The box right around the form glides (a line in the form folds in): the reveal follows again.
     const form = screen.getByLabelText('Your reaction').closest('form') as HTMLFormElement;
     const box = form.closest('[data-auto-height]') as HTMLElement;
     box.toggleAttribute('data-gliding', true);
@@ -8534,7 +8618,7 @@ describe('reply form size', () => {
     globalThis.ResizeObserver = previous;
   });
 
-  it('watches the pay sheet instead of pinning the reply form', () => {
+  it('keeps watching the reply form, disabled, behind the reaction pay sheet', () => {
     const observed: Element[] = [];
     class FakeResizeObserver {
       constructor(private readonly onResize: ResizeObserverCallback) {
@@ -8573,21 +8657,22 @@ describe('reply form size', () => {
           payMessageId="m1"
           payHost="card"
           payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 }}
-          payWaiting
           {...modeProps('all')}
         />
       </AppShell>,
     );
+    // The sheet draws itself in the frame's overlay, outside the board: the reveal keeps the
+    // reaction form, which stays in place behind it, disabled, with the text kept.
+    const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+    expect(sheet.closest('[data-message-id]')).toBeNull();
     expect(
-      observed.some((node) => node instanceof HTMLElement && node.hasAttribute('data-pay-sheet')),
-    ).toBe(true);
-    expect(
-      observed.some(
-        (node) => node instanceof HTMLElement && node.hasAttribute('data-reply-pay-page'),
-      ),
-    ).toBe(true);
-    expect(screen.getByText('Hi Bob')).toBeTruthy();
-    expect(screen.queryByLabelText('Your reaction')).toBeNull();
+      observed.some((node) => node instanceof HTMLElement && node.hasAttribute('data-pay-amount')),
+    ).toBe(false);
+    expect(observed.some((node) => node instanceof HTMLFormElement)).toBe(true);
+    const field = screen.getByLabelText('Your reaction') as HTMLTextAreaElement;
+    expect(field.value).toBe('Hi Bob');
+    expect(field.disabled).toBe(true);
+    expect(within(sheet).queryByText('Hi Bob')).toBeNull();
     globalThis.ResizeObserver = previous;
   });
 
@@ -8726,8 +8811,6 @@ describe('reply form size', () => {
                 payMessageId: 'm1' as const,
                 payHost: 'card' as const,
                 payInvoice: { messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 },
-                payWaiting: true,
-                replyPayPreview: 'Hi Bob',
               }
             : {})}
           {...modeProps('all')}
@@ -8757,13 +8840,11 @@ describe('reply form size', () => {
     port.scrollTop = 48;
     port.dispatchEvent(new Event('scroll'));
     view.rerender(board(true, []));
-    // The reply form fades out first; the pay page mounts after the swap fade.
-    expect(document.querySelector('[data-reply-pay-page]')).toBeNull();
-    act(() => {
-      vi.advanceTimersByTime(MOTION_SWAP_FADE_MS);
-    });
-    expect(document.querySelector('[data-reply-pay-page]')).not.toBeNull();
-    // The box glides to the pay page's height, and the observer of the fold hears it.
+    // The card's amount form opens in its fold under the note, with the sheet over the page.
+    expect(document.querySelector('form[data-pay-amount]')).not.toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Send to Ada' })).toBeTruthy();
+    expect(port.scrollTop).toBe(48);
+    // The fold glides open, and the observer of the fold hears it.
     act(() => {
       for (const onResize of resized) {
         onResize([], {} as ResizeObserver);
@@ -8797,8 +8878,10 @@ describe('reply form size', () => {
         {...modeProps('all')}
       />,
     );
-    expect(document.querySelector('[data-pay-sheet]')).toBeTruthy();
-    expect(document.querySelector('[data-reply-pay-page]')).toBeNull();
+    // The card's amount form and its sheet, not the reaction pay sheet (no reaction text).
+    expect(document.querySelector('form[data-pay-amount]')).not.toBeNull();
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(screen.getByRole('dialog', { name: 'Send to Ada' })).toBeTruthy();
     expect(screen.getByLabelText('Your reaction')).toBeTruthy();
   });
 });
@@ -8911,7 +8994,6 @@ describe('ForumBoard in-app wallet pay', () => {
         {...idleProps}
         payMessageId="m1"
         payInvoice={{ messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21, sparkInvoice }}
-        payWaiting
         {...modeProps('all')}
       />
     );
@@ -8928,13 +9010,15 @@ describe('ForumBoard in-app wallet pay', () => {
     const send = vi.fn(async () => ({ kind: 'paid' as const }));
     vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
     renderWithLocale(cardBoard(SPARK_INVOICE));
-    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+    const button = await within(sheet).findByRole('button', { name: 'Send ₿21' });
+    expect(button.className).toContain('w-full');
     expect(screen.queryByText(/Fee ₿/)).toBeNull();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
     expectWalletOnly();
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.click(button);
     expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
-    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
     expect(send).toHaveBeenCalledTimes(1);
   });
 
@@ -8962,25 +9046,27 @@ describe('ForumBoard in-app wallet pay', () => {
           sparkInvoice: SPARK_INVOICE,
           postsOnPay: true,
         }}
-        payWaiting
         {...modeProps('all')}
       />,
     );
     const button = await screen.findByRole('button', { name: /^Pay ₿21 and post/ });
     expect(button.textContent).toBe('Pay ₿21 and post');
-    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+    const sheet = screen.getByRole('dialog', { name: 'Pay to post' });
+    // The posting fee has no amount form.
+    expect(document.querySelector('[data-pay-amount]')).toBeNull();
+    expect(within(sheet).queryByRole('button', { name: /^Send/ })).toBeNull();
     fireEvent.click(button);
     expect(send).toHaveBeenCalledTimes(1);
     cleanup();
     renderWithLocale(cardBoard(SPARK_INVOICE));
-    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send ₿21' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /and post/ })).toBeNull();
   });
 
   it('pays the payment request from the wallet without a sparkInvoice', async () => {
     setWalletUsable('ready');
     renderWithLocale(cardBoard(null));
-    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send ₿21' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc21n1example' });
     expectWalletOnly();
   });
@@ -8989,7 +9075,7 @@ describe('ForumBoard in-app wallet pay', () => {
     setWalletUsable('disabled');
     renderWithLocale(cardBoard(SPARK_INVOICE));
     expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Send ₿/ })).toBeNull();
     expectWalletOnly();
     expect(payFromWallet).not.toHaveBeenCalled();
   });
@@ -9017,11 +9103,13 @@ describe('ForumBoard in-app wallet pay', () => {
           amountSats: 1,
           sparkInvoice: SPARK_INVOICE,
         }}
-        payWaiting
         replies={[{ ...SAMPLE, id: 'r1' }]}
       />,
     );
-    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    // The composer sheet has no one to name: it reads Send.
+    const sheet = screen.getByRole('dialog', { name: 'Send' });
+    expect(within(sheet).getByRole('heading', { level: 2 }).textContent).toBe('Send');
+    expect(await within(sheet).findByRole('button', { name: 'Send ₿1' })).toBeTruthy();
     expectWalletOnly();
   });
 
@@ -9052,12 +9140,11 @@ describe('ForumBoard in-app wallet pay', () => {
           amountSats: 21,
           sparkInvoice: SPARK_INVOICE,
         }}
-        payWaiting
         {...modeProps('all')}
       />,
     );
-    expect(document.querySelector('[data-reply-pay-page]')).toBeTruthy();
-    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+    expect(await within(sheet).findByRole('button', { name: 'Send ₿21' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 
@@ -9747,29 +9834,52 @@ describe('ForumBoard writer', () => {
     expect(within(layer).queryByRole('textbox', { name: 'Your message' })).toBeNull();
   });
 
-  it('keeps the posting-fee pay slot in the writer and a loose pay sheet on the page', () => {
+  /** The amount form of the open pay slot: it sits where the slot is placed (writer or page). */
+  function payAmountForm(): HTMLElement {
+    const forms = document.querySelectorAll<HTMLElement>(
+      'form[data-pay-amount]:not([data-collapse][inert] *)',
+    );
+    expect(forms).toHaveLength(1);
+    return forms[0] as HTMLElement;
+  }
+
+  it('hosts the posting-fee sheet on the page, not in the writer, and a loose amount box on the page', () => {
     const composer = renderHome(
       {
         payMessageId: 'fee-note',
         payHost: 'composer',
-        payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
-        payWaiting: true,
+        payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1, postsOnPay: true },
       },
       true,
     );
-    expect(within(writerLayer(composer.container)!).getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    // The posting fee has no amount box; its sheet draws over the frame, outside the writer.
+    const sheet = screen.getByRole('dialog', { name: 'Pay to post' });
+    expect(within(sheet).getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    expect(writerLayer(composer.container)!.contains(sheet)).toBe(false);
+    expect(document.querySelector('form[data-pay-amount]')).toBeNull();
+    // Its host is on the page, so a paid post that closes the writer keeps it for the success step.
+    const host = document.querySelector('[data-scroll-page] [data-collapse]:not([inert])');
+    expect(host).not.toBeNull();
+    expect(writerLayer(composer.container)!.contains(host)).toBe(false);
+    composer.setOpen(false);
+    expect(screen.getByRole('dialog', { name: 'Pay to post' })).toBe(sheet);
     composer.unmount();
     const loose = renderHome(
       {
         payMessageId: 'elsewhere',
         payInvoice: { messageId: 'elsewhere', pr: 'lnbc1', amountSats: 1 },
-        payWaiting: true,
       },
       true,
     );
-    const sentence = screen.getByText(WALLET_UNAVAILABLE);
-    expect(writerLayer(loose.container)!.contains(sentence)).toBe(false);
-    expect(document.querySelector('[data-scroll-page]')!.contains(sentence)).toBe(true);
+    const form = payAmountForm();
+    expect(writerLayer(loose.container)!.contains(form)).toBe(false);
+    expect(document.querySelector('[data-scroll-page]')!.contains(form)).toBe(true);
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    // A tap in the loose amount box stays in it.
+    const stop = vi.spyOn(Event.prototype, 'stopPropagation');
+    fireEvent.click(form);
+    expect(stop).toHaveBeenCalled();
+    stop.mockRestore();
   });
 
   it('keeps a composer pay slot opened with the writer closed on the page, also once the writer opens', () => {
@@ -9777,54 +9887,14 @@ describe('ForumBoard writer', () => {
       payMessageId: 'fee-note',
       payHost: 'composer',
       payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
-      payWaiting: true,
     });
     const page = document.querySelector('[data-scroll-page]')!;
-    const sheet = screen.getByText(WALLET_UNAVAILABLE);
-    expect(page.contains(sheet)).toBe(true);
+    const form = payAmountForm();
+    expect(page.contains(form)).toBe(true);
     view.setOpen(true);
-    expect(screen.getAllByText(WALLET_UNAVAILABLE)).toHaveLength(1);
-    expect(screen.getByText(WALLET_UNAVAILABLE)).toBe(sheet);
-    expect(page.contains(sheet)).toBe(true);
-  });
-
-  it('keeps a composer pay slot opened in the writer there, waiting while the writer is closed', () => {
-    const view = renderHome({}, true);
-    view.rerenderHome({
-      payMessageId: 'fee-note',
-      payHost: 'composer',
-      payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
-      payWaiting: true,
-    });
-    expect(writerLayer(view.container)!.contains(screen.getByText(WALLET_UNAVAILABLE))).toBe(true);
-    view.setOpen(false);
-    expect(screen.queryByText(WALLET_UNAVAILABLE)).toBeNull();
-    view.setOpen(true);
-    expect(writerLayer(view.container)!.contains(screen.getByText(WALLET_UNAVAILABLE))).toBe(true);
-    // A second fee (a reaction's) while the first waits in the closed writer is placed anew.
-    view.setOpen(false);
-    view.rerenderHome({
-      payMessageId: 'fee-note',
-      payHost: 'composer',
-      payInvoice: { messageId: 'fee-note', pr: 'lnbc2', amountSats: 1 },
-      payWaiting: true,
-    });
-    expect(
-      document.querySelector('[data-scroll-page]')!.contains(screen.getByText(WALLET_UNAVAILABLE)),
-    ).toBe(true);
-    view.setOpen(true);
-    // Once the slot is gone, the next one opens where the writer is at that moment.
-    view.rerenderHome({ payHost: null, payInvoice: null, payMessageId: null });
-    view.setOpen(false);
-    view.rerenderHome({
-      payMessageId: 'fee-note',
-      payHost: 'composer',
-      payInvoice: { messageId: 'fee-note', pr: 'lnbc1', amountSats: 1 },
-      payWaiting: true,
-    });
-    expect(
-      document.querySelector('[data-scroll-page]')!.contains(screen.getByText(WALLET_UNAVAILABLE)),
-    ).toBe(true);
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(payAmountForm()).toBe(form);
+    expect(page.contains(form)).toBe(true);
   });
 
   it('takes a compose request on an open writer without a text field (Ask for money)', () => {
@@ -10111,12 +10181,55 @@ describe('ForumBoard loan block', () => {
         payInvoice: { messageId: 'loan1', pr: 'lnbc1', amountSats: 210 },
       }),
     );
-    expect(screen.getByText(/^You lend ₿210/)).toBeTruthy();
-    expect(
-      screen.getByText(
-        'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
-      ),
-    ).toBeTruthy();
+    const sheet = screen.getByRole('dialog', { name: 'Lend to Maria' });
+    expect(within(sheet).getByText('₿210')).toBeTruthy();
+    // The notice stays in the reaction form behind the sheet; the sheet shows none.
+    const notice = screen.getByText(
+      'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
+    );
+    expect(sheet.contains(notice)).toBe(false);
+    expect(notice.closest('form')?.contains(screen.getByLabelText('Your reaction'))).toBe(true);
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(true);
+  });
+
+  it('labels the reaction pay button of a loan Lend, with the amount in bitcoin only', async () => {
+    setWalletUsable('ready');
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult(undefined, 210));
+    try {
+      renderWithLocale(
+        board({
+          expandedId: 'loan1',
+          replies: [],
+          replyPayPreview: 'Count me in!',
+          payMessageId: 'loan1',
+          payHost: 'card',
+          payInvoice: { messageId: 'loan1', pr: 'lnbc1', amountSats: 210 },
+          rateDay: {
+            sats: 100_000_000,
+            usd: '100000.00',
+            chf: '80000.00',
+            eur: '90000.00',
+            php: '5600000.00',
+          },
+        }),
+      );
+      const sheet = screen.getByRole('dialog', { name: 'Lend to Maria' });
+      const button = await within(sheet).findByRole('button', { name: 'Lend ₿210' });
+      expect(button.textContent).toBe('Lend ₿210');
+    } finally {
+      resetWallet();
+    }
+  });
+
+  it('shows the loan notice in the reaction form without a pay sheet, but not on the own loan', () => {
+    const notice =
+      'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.';
+    const view = renderWithLocale(board({ expandedId: 'loan1', replies: [] }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByText(notice).closest('form')).not.toBeNull();
+    view.unmount();
+    renderWithLocale(board({ expandedId: 'loan1', replies: [], viewerAccountId: 'acc-maria' }));
+    expect(screen.queryByText(notice)).toBeNull();
   });
 
   it('words the note page pay sheet of a full loan as a gift', () => {
@@ -10130,10 +10243,16 @@ describe('ForumBoard loan block', () => {
         payInvoice: { messageId: 'loan1', pr: 'lnbc1', amountSats: 210 },
       }),
     );
-    expect(screen.getByText(/^Pay ₿210/)).toBeTruthy();
-    expect(
-      screen.getByText('This loan is already fully funded. What you send now is a gift to Maria.'),
-    ).toBeTruthy();
+    const sheet = screen.getByRole('dialog', { name: 'Send to Maria' });
+    expect(within(sheet).getByText('₿210')).toBeTruthy();
+    const notices = screen.getAllByText(
+      'This loan is already fully funded. What you send now is a gift to Maria.',
+    );
+    expect(notices.length).toBeGreaterThan(0);
+    for (const notice of notices) {
+      expect(sheet.contains(notice)).toBe(false);
+    }
+    expect(notices.some((notice) => notice.closest('form[data-pay-amount]') !== null)).toBe(true);
   });
 
   it('writes no loan sentence on a donation', () => {

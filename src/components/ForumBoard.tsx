@@ -46,9 +46,10 @@ import {
 } from '@/components/ForumAskWizard';
 import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
-import type { LoanPayTarget } from '@/components/LoanPayNotice';
+import { LoanPayNotice, type LoanPayTarget } from '@/components/LoanPayNotice';
+import { AutoHeight } from '@/components/AutoHeight';
 import { Collapse } from '@/components/Collapse';
-import { Swap } from '@/components/Swap';
+import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
 import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
@@ -323,8 +324,6 @@ export interface ForumBoardProps {
    * when the reply composer stays mounted. Default `null`.
    */
   replyPayPreview?: string | null;
-  /** True while polling for an updated sats total after pay. */
-  payWaiting: boolean;
   /** Opens the pay sheet for a payable message. */
   onPayOpen: (messageId: string) => void;
   /**
@@ -675,10 +674,10 @@ export function revealPaySheet(scroller: HTMLElement | null, sheet: HTMLElement 
 
 /**
  * Whether `target` is still moving into its place: a fold around it is opening or about to open
- * (`Collapse`), or a box around it is gliding to a new height (`AutoHeight`, for example after a
- * `Swap`, or the replies block when its list arrives).
+ * (`Collapse`), or a box around it is gliding to a new height (`AutoHeight`, for example the
+ * replies block when its list arrives).
  *
- * @param target - The open pay sheet or the reaction form.
+ * @param target - The open gift amount form or the reaction form.
  * @param ended - A box whose move has just ended (it still carries its moving mark), or null.
  * @param outerGlides - False counts only the height box right around `target`: a glide of a box
  * further out then comes from other content in it (a reply above opening its own controls), which
@@ -707,14 +706,17 @@ function movingIntoPlace(
 }
 
 /**
- * The open pay sheet inside the board, if one is mounted. A sheet that is folding away (inside an
- * `inert` `Collapse`) is already closed; a sheet whose view is swapping (`Swap`) is still open.
+ * The open gift amount form inside the board, if one is mounted. A form that is folding away
+ * (inside an `inert` `Collapse`) is already closed. The pay sheet itself is drawn over the frame
+ * body (`PaySheet`), not in the board, so it is never scrolled to.
  *
  * @param root - Board root, or null before mount.
- * @returns The sheet element, or null.
+ * @returns The form element, or null.
  */
 function paySheetElement(root: HTMLElement | null): HTMLElement | null {
-  return root?.querySelector<HTMLElement>('[data-pay-sheet]:not([data-collapse][inert] *)') ?? null;
+  return (
+    root?.querySelector<HTMLElement>('[data-pay-amount]:not([data-collapse][inert] *)') ?? null
+  );
 }
 
 /**
@@ -849,7 +851,6 @@ export function ForumBoard({
   payError,
   payInvoice,
   replyPayPreview = null,
-  payWaiting,
   onPayOpen,
   viewerAccountId = null,
   repayLink = false,
@@ -980,8 +981,8 @@ export function ForumBoard({
     };
   }, [scroller]);
   useLayoutEffect(() => {
-    // Read the sheet and the form each time: the pay page and the reply form swap in steps
-    // (`Swap`), so either one can mount after this effect ran.
+    // Read the amount form and the reaction form each time: either one can mount after this effect
+    // ran (a fold opens it in steps).
     const reveal = (): void => {
       const liveSheet = paySheetElement(rootRef.current);
       if (liveSheet !== null) {
@@ -1005,7 +1006,7 @@ export function ForumBoard({
       }
       reveal();
     };
-    /** The open pay sheet, else the reaction form, as they are now. */
+    /** The open gift amount form, else the reaction form, as they are now. */
     const liveTarget = (): HTMLElement | null =>
       paySheetElement(rootRef.current) ?? replyFormElement(replyComposerRef.current);
     // While the sheet or the form is still moving into place, the reveal follows the move frame by
@@ -1458,7 +1459,6 @@ export function ForumBoard({
             payHost === 'card' &&
             payInvoice.messageId === message.id
               ? {
-                  preview: replyPayPreview,
                   amountSats: payInvoice.amountSats,
                   pr: payInvoice.pr,
                   sparkInvoice: payInvoice.sparkInvoice,
@@ -1909,16 +1909,17 @@ export function ForumBoard({
                   payMessageId === message.id &&
                   payHost !== 'composer'
                 }
+                holdMs={PAY_SHEET_HOLD_MS}
               >
                 <SundayWritingGate notice="zap">
                   <ForumPaySheet
                     {...(loanOfCard === null ? {} : { loan: loanOfCard })}
+                    recipient={message.name}
                     messageId={message.id}
                     payDraft={payDraft}
                     payBusy={payBusy}
                     payError={payError}
                     payInvoice={payInvoice}
-                    payWaiting={payWaiting}
                     onPayDraftChange={onPayDraftChange}
                     {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
                     onPaySubmit={onPaySubmit}
@@ -2197,15 +2198,16 @@ export function ForumBoard({
                                   payMessageId === reply.id &&
                                   payHost !== 'composer'
                                 }
+                                holdMs={PAY_SHEET_HOLD_MS}
                               >
                                 <SundayWritingGate notice="zap">
                                   <ForumPaySheet
+                                    recipient={reply.name}
                                     messageId={reply.id}
                                     payDraft={payDraft}
                                     payBusy={payBusy}
                                     payError={payError}
                                     payInvoice={payInvoice}
-                                    payWaiting={payWaiting}
                                     onPayDraftChange={onPayDraftChange}
                                     {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
                                     onPaySubmit={onPaySubmit}
@@ -2221,133 +2223,145 @@ export function ForumBoard({
                       </ul>
                     ) : null}
                     {!readOnly && message.deletedAt === undefined ? (
-                      <Swap viewKey={reactionPay !== null ? 'pay' : 'form'}>
-                        {reactionPay !== null ? (
-                          <SundayWritingGate notice="zap">
-                            <ForumReplyPayPage
-                              {...(loanOfCard === null ? {} : { loan: loanOfCard })}
-                              preview={reactionPay.preview}
-                              amountSats={reactionPay.amountSats}
-                              pr={reactionPay.pr}
-                              sparkInvoice={reactionPay.sparkInvoice}
-                              payWaiting={payWaiting}
-                              rateDay={rateDay}
-                              onCancel={onPayCancel}
-                            />
-                          </SundayWritingGate>
-                        ) : (
-                          <SundayWritingGate>
-                            <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
-                              {/* On your own note the reply is free: no amount to gift yourself. */}
-                              {isOwnNote(viewerAccountId, message.accountId) ? null : (
-                                <AmountEntry
-                                  id="forum-reply-amount"
-                                  layout="inline"
-                                  label={t(
-                                    loanOfCard !== null && !loanOfCard.full
-                                      ? 'forum.loan.amountLabel'
-                                      : 'forum.replyAmountLabel',
-                                  )}
-                                  placeholder={t('forum.payAmountPlaceholder')}
-                                  value={replyAmountDraft}
-                                  disabled={
-                                    cannotReceive ||
-                                    replyPayLocked ||
-                                    replyPosting ||
-                                    repliesLoading ||
-                                    repliesError ||
-                                    replies === null
-                                  }
-                                  rateDay={rateDay}
-                                  onValueChange={(next) => onReplyAmountDraftChange?.(next)}
-                                  {...(onReplyUnitChange === undefined
-                                    ? {}
-                                    : { onUnitChange: onReplyUnitChange })}
-                                />
-                              )}
-                              <div className="flex items-center gap-2">
-                                <MentionTextarea
-                                  textareaRef={replyComposerRef}
-                                  ariaLabel={t('forum.replyComposerLabel')}
-                                  placeholder={t('forum.replyPlaceholder')}
-                                  value={replyDraft}
-                                  onChange={onReplyDraftChange}
-                                  maxLength={FORUM_MESSAGE_MAX_LENGTH}
-                                  rows={1}
-                                  disabled={
-                                    replyPayLocked ||
-                                    replyPosting ||
-                                    repliesLoading ||
-                                    repliesError ||
-                                    replies === null
-                                  }
-                                  wrapperClassName="relative min-w-0 flex-1"
-                                  className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
-                                />
-                                <IconButton
-                                  type="submit"
-                                  size="lg"
-                                  variant="primary"
-                                  disabled={
-                                    replyPayLocked ||
-                                    replyPosting ||
-                                    repliesLoading ||
-                                    repliesError ||
-                                    replies === null
-                                  }
-                                  aria-label={t('forum.post')}
-                                >
-                                  {replyPosting ? (
-                                    <Loader2
-                                      aria-hidden="true"
-                                      className="block h-5 w-5 shrink-0 animate-spin"
-                                    />
-                                  ) : (
-                                    <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
-                                  )}
-                                </IconButton>
-                              </div>
-                              <Collapse show={replyFormError !== null}>
-                                {replyFormError === 'empty' ? (
-                                  <p role="alert" className="text-center text-sm text-app-danger">
-                                    {t('forum.errorEmpty')}
-                                  </p>
-                                ) : null}
-                                {replyFormError === 'amount' ? (
-                                  <p role="alert" className="text-center text-sm text-app-danger">
-                                    {t('forum.errorReplyPayment')}
-                                  </p>
-                                ) : null}
-                                {replyFormError === 'tooLong' ? (
-                                  <p role="alert" className="text-center text-sm text-app-danger">
-                                    {t('forum.errorTooLong')}
-                                  </p>
-                                ) : null}
-                                {replyFormError === 'request' ? (
-                                  <p role="alert" className="text-center text-sm text-app-danger">
-                                    {t('forum.errorRequest')}
-                                  </p>
-                                ) : null}
-                                {replyFormError === 'rateLimit' ? (
-                                  <p role="alert" className="text-center text-sm text-app-danger">
-                                    {t('forum.errorRateLimit')}
-                                  </p>
-                                ) : null}
-                                {replyFormError === 'deleted' ? (
-                                  <p role="alert" className="text-center text-sm text-app-danger">
-                                    {t('forum.errorNoteDeleted')}
-                                  </p>
-                                ) : null}
-                                {replyFormError === 'authorWallet' ? (
-                                  <p role="alert" className="text-center text-sm text-app-danger">
-                                    {t('forum.payErrorAuthorWallet')}
-                                  </p>
-                                ) : null}
-                              </Collapse>
-                            </form>
-                          </SundayWritingGate>
-                        )}
-                      </Swap>
+                      // The form's own height box: a glide of the replies block around it (a reply above
+                      // opening its own controls) does not move the form into place.
+                      <AutoHeight>
+                        {/* The sheet draws itself over the page, with the form behind it,
+                            disabled; the fold only keeps it for its success step. */}
+                        <Collapse
+                          show={reactionPay !== null && !cannotReceive}
+                          holdMs={PAY_SHEET_HOLD_MS}
+                        >
+                          {reactionPay === null ? null : (
+                            <SundayWritingGate notice="zap">
+                              <ForumReplyPayPage
+                                {...(loanOfCard === null ? {} : { loan: loanOfCard })}
+                                recipient={message.name}
+                                amountSats={reactionPay.amountSats}
+                                pr={reactionPay.pr}
+                                sparkInvoice={reactionPay.sparkInvoice}
+                                rateDay={rateDay}
+                                onCancel={onPayCancel}
+                              />
+                            </SundayWritingGate>
+                          )}
+                        </Collapse>
+                        <SundayWritingGate>
+                          <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
+                            {/* How a loan comes back stays on the page; the sheet shows no notice. */}
+                            {loanOfCard !== null &&
+                            !isOwnNote(viewerAccountId, message.accountId) ? (
+                              <LoanPayNotice {...loanOfCard} />
+                            ) : null}
+                            {/* On your own note the reply is free: no amount to gift yourself. */}
+                            {isOwnNote(viewerAccountId, message.accountId) ? null : (
+                              <AmountEntry
+                                id="forum-reply-amount"
+                                layout="inline"
+                                label={t(
+                                  loanOfCard !== null && !loanOfCard.full
+                                    ? 'forum.loan.amountLabel'
+                                    : 'forum.replyAmountLabel',
+                                )}
+                                placeholder={t('forum.payAmountPlaceholder')}
+                                value={replyAmountDraft}
+                                disabled={
+                                  cannotReceive ||
+                                  replyPayLocked ||
+                                  replyPosting ||
+                                  repliesLoading ||
+                                  repliesError ||
+                                  replies === null
+                                }
+                                rateDay={rateDay}
+                                onValueChange={(next) => onReplyAmountDraftChange?.(next)}
+                                {...(onReplyUnitChange === undefined
+                                  ? {}
+                                  : { onUnitChange: onReplyUnitChange })}
+                              />
+                            )}
+                            <div className="flex items-center gap-2">
+                              <MentionTextarea
+                                textareaRef={replyComposerRef}
+                                ariaLabel={t('forum.replyComposerLabel')}
+                                placeholder={t('forum.replyPlaceholder')}
+                                value={replyDraft}
+                                onChange={onReplyDraftChange}
+                                maxLength={FORUM_MESSAGE_MAX_LENGTH}
+                                rows={1}
+                                disabled={
+                                  replyPayLocked ||
+                                  replyPosting ||
+                                  repliesLoading ||
+                                  repliesError ||
+                                  replies === null
+                                }
+                                wrapperClassName="relative min-w-0 flex-1"
+                                className="h-12 min-w-0 flex-1 resize-none rounded-2xl border border-app-border-strong px-4 text-base leading-6 text-app-fg transition disabled:opacity-50"
+                              />
+                              <IconButton
+                                type="submit"
+                                size="lg"
+                                variant="primary"
+                                disabled={
+                                  replyPayLocked ||
+                                  replyPosting ||
+                                  repliesLoading ||
+                                  repliesError ||
+                                  replies === null
+                                }
+                                aria-label={t('forum.post')}
+                              >
+                                {replyPosting ? (
+                                  <Loader2
+                                    aria-hidden="true"
+                                    className="block h-5 w-5 shrink-0 animate-spin"
+                                  />
+                                ) : (
+                                  <Send aria-hidden="true" className="block h-5 w-5 shrink-0" />
+                                )}
+                              </IconButton>
+                            </div>
+                            <Collapse show={replyFormError !== null}>
+                              {replyFormError === 'empty' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.errorEmpty')}
+                                </p>
+                              ) : null}
+                              {replyFormError === 'amount' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.errorReplyPayment')}
+                                </p>
+                              ) : null}
+                              {replyFormError === 'tooLong' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.errorTooLong')}
+                                </p>
+                              ) : null}
+                              {replyFormError === 'request' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.errorRequest')}
+                                </p>
+                              ) : null}
+                              {replyFormError === 'rateLimit' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.errorRateLimit')}
+                                </p>
+                              ) : null}
+                              {replyFormError === 'deleted' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.errorNoteDeleted')}
+                                </p>
+                              ) : null}
+                              {replyFormError === 'authorWallet' ? (
+                                <p role="alert" className="text-center text-sm text-app-danger">
+                                  {t('forum.payErrorAuthorWallet')}
+                                </p>
+                              ) : null}
+                            </Collapse>
+                          </form>
+                        </SundayWritingGate>
+                      </AutoHeight>
                     ) : null}
                   </div>
                 ) : null}
@@ -2363,19 +2377,9 @@ export function ForumBoard({
 
   const showRefreshStatus = refreshing === true || pullArmed;
   const composerPay = payInvoice !== null && payHost === 'composer';
-  // The forum home keeps an open composer pay slot where it opened (in the writer for a posting
-  // fee, on the page for a text reaction's fee), so closing the writer never moves or remounts it.
-  // Keyed to the invoice itself: a second fee (a reaction's while a posting fee waits) is placed anew.
-  const composerInvoice = composerPay ? payInvoice.pr : null;
-  const [payPlace, setPayPlace] = useState<{ invoice: string; inWriter: boolean } | null>(null);
-  if (composerInvoice === null ? payPlace !== null : payPlace?.invoice !== composerInvoice) {
-    setPayPlace(
-      composerInvoice === null ? null : { invoice: composerInvoice, inWriter: writerOpen },
-    );
-  }
-  const payInWriter =
-    composerInvoice !== null &&
-    (payPlace !== null && payPlace.invoice === composerInvoice ? payPlace.inWriter : writerOpen);
+  // The posting fee has no amount box: its pay sheet draws over the frame. On the forum home its
+  // host sits on the page, not in the writer, so a paid post that closes the writer keeps the sheet
+  // for its success step.
   const loosePay =
     payInvoice !== null &&
     payHost !== 'composer' &&
@@ -2392,7 +2396,6 @@ export function ForumBoard({
           payBusy={payBusy}
           payError={payError}
           payInvoice={payInvoice}
-          payWaiting={payWaiting}
           onPayDraftChange={onPayDraftChange}
           {...(onPayUnitChange === undefined ? {} : { onPayUnitChange })}
           onPaySubmit={onPaySubmit}
@@ -2620,7 +2623,7 @@ export function ForumBoard({
         </SundayWritingGate>
       ) : null}
 
-      <Collapse show={writer === undefined ? composerPay || loosePay : payInWriter}>
+      <Collapse show={writer === undefined && (composerPay || loosePay)} holdMs={PAY_SHEET_HOLD_MS}>
         {paySheet}
       </Collapse>
 
@@ -2784,7 +2787,7 @@ export function ForumBoard({
 
       {composeSection}
 
-      <Collapse show={writer !== undefined && (loosePay || (composerPay && !payInWriter))}>
+      <Collapse show={writer !== undefined && (loosePay || composerPay)} holdMs={PAY_SHEET_HOLD_MS}>
         {paySheet}
       </Collapse>
 

@@ -18,6 +18,8 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
+import { Collapse } from '@/components/Collapse';
+import { PAY_SHEET_HOLD_MS, PaySheet } from '@/components/PaySheet';
 import { WalletPay } from '@/components/WalletPay';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -1275,39 +1277,36 @@ export function InboxScreen({
             {t('inbox.errorTooMany')}
           </p>
         ) : null}
-        {invoice !== null && !counterpartCannotReceive ? (
-          <div className="relative mt-3 flex flex-col items-center gap-3 rounded-xl border border-app-border bg-app-card p-4">
-            <div className="absolute left-3 top-3">
-              <IconButton
-                type="button"
-                size="sm"
-                variant="ghost"
-                aria-label={t('forum.payClose')}
-                onClick={onPayCancel}
-              >
-                <X aria-hidden="true" className="h-4 w-4" />
-              </IconButton>
-            </div>
-            <p className="px-10 text-center text-sm text-app-muted">
-              {t('forum.payConfirm', {
-                amount: formatBitcoin(invoice.amountSats, numberFormat),
-              })}
-              {preferredFiatSuffix(invoice.amountSats, rateDay, fiat, numberFormat)}
-            </p>
-            <WalletPay
-              sparkInvoice={invoice.sparkInvoice}
-              pr={invoice.pr}
+        {/* The sheet draws itself over the page; the fold only keeps it for its success step. A
+            counterpart who cannot receive never gets one. */}
+        <Collapse show={invoice !== null && !counterpartCannotReceive} holdMs={PAY_SHEET_HOLD_MS}>
+          {invoice === null ? null : (
+            <PaySheet
+              title={
+                open === null
+                  ? t('paySheet.titleSend')
+                  : t('paySheet.titleSendTo', { name: open.name })
+              }
               amountSats={invoice.amountSats}
               rateDay={rateDay}
-              flow="inbox"
-            />
-            {/* v8 ignore start -- payWaiting is true only after invoice mint while polling */}
-            {payWaiting ? (
-              <p className="text-center text-xs text-app-muted">{t('forum.payWaiting')}</p>
-            ) : null}
-            {/* v8 ignore stop */}
-          </div>
-        ) : null}
+              successTitle={
+                open === null ? t('paySheet.sent') : t('paySheet.sentTo', { name: open.name })
+              }
+              onClose={onPayCancel}
+            >
+              <WalletPay
+                sparkInvoice={invoice.sparkInvoice}
+                pr={invoice.pr}
+                amountSats={invoice.amountSats}
+                rateDay={rateDay}
+                flow="inbox"
+                confirmLabel={t('paySheet.sendAmount', {
+                  amount: formatBitcoin(invoice.amountSats, numberFormat),
+                })}
+              />
+            </PaySheet>
+          )}
+        </Collapse>
       </div>
     );
   } else if (loading && conversations === null) {

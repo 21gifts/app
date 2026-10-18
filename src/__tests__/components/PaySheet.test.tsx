@@ -1,12 +1,14 @@
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Collapse } from '@/components/Collapse';
 import {
   PAY_SHEET_HOLD_MS,
   PAY_SHEET_SUCCESS_MS,
   PaySheet,
   usePaySheetClose,
 } from '@/components/PaySheet';
+import { MOTION_FOLD_MS, MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -18,6 +20,7 @@ const RATE_DAY: FiatRateDay = {
   php: '5600000.00',
 };
 
+/** The sheet as a host renders it: inside a `Collapse` that holds it for the success step. */
 function sheet(
   open: boolean,
   onClose: () => void,
@@ -25,17 +28,27 @@ function sheet(
   slot: ReactElement = <p>Pay slot</p>,
 ): ReactElement {
   return (
-    <PaySheet
-      title="Send to Ana"
-      amountSats={500}
-      rateDay={rateDay}
-      successTitle="Sent to Ana"
-      open={open}
-      onClose={onClose}
-    >
-      {slot}
-    </PaySheet>
+    <Collapse show={open} holdMs={PAY_SHEET_HOLD_MS}>
+      {open ? (
+        <PaySheet
+          title="Send to Ana"
+          amountSats={500}
+          rateDay={rateDay}
+          successTitle="Sent to Ana"
+          onClose={onClose}
+        >
+          {slot}
+        </PaySheet>
+      ) : null}
+    </Collapse>
   );
+}
+
+/** Lets the pay step fade out, so the success step is on screen. */
+function fadeToSuccess(): void {
+  act(() => {
+    vi.advanceTimersByTime(MOTION_SWAP_FADE_MS);
+  });
 }
 
 function layer(): string | null {
@@ -79,7 +92,7 @@ afterEach(() => {
 
 describe('PaySheet', () => {
   it('holds the closed sheet for the success step and the slide away', () => {
-    expect(PAY_SHEET_HOLD_MS).toBe(PAY_SHEET_SUCCESS_MS + 320);
+    expect(PAY_SHEET_HOLD_MS).toBe(PAY_SHEET_SUCCESS_MS + MOTION_FOLD_MS);
   });
 
   it('shows the title, the amount with its fiat, the close, and the pay slot, and slides in', () => {
@@ -117,8 +130,13 @@ describe('PaySheet', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(layer()).toBe('closed');
     view.rerender(sheet(false, onClose));
+    fadeToSuccess();
     expect(screen.queryByRole('status')).toBeNull();
     expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+    act(() => {
+      vi.advanceTimersByTime(PAY_SHEET_HOLD_MS);
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('closes on a tap on the dimmed page', () => {
@@ -146,6 +164,8 @@ describe('PaySheet', () => {
       vi.advanceTimersToNextFrame();
     });
     view.rerender(sheet(false, onClose));
+    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
+    fadeToSuccess();
     const status = screen.getByRole('status');
     expect(status.textContent).toContain('Sent to Ana');
     expect(status.textContent).toContain('₿500');
@@ -155,7 +175,7 @@ describe('PaySheet', () => {
     expect(screen.queryByRole('heading')).toBeNull();
     expect(layer()).toBe('open');
     act(() => {
-      vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS - 1);
+      vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS - MOTION_SWAP_FADE_MS - 1);
     });
     expect(layer()).toBe('open');
     act(() => {
@@ -163,6 +183,10 @@ describe('PaySheet', () => {
     });
     expect(layer()).toBe('closed');
     expect(onClose).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(MOTION_FOLD_MS);
+    });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('lets the success step go at once on Escape', () => {
@@ -171,6 +195,7 @@ describe('PaySheet', () => {
       vi.advanceTimersToNextFrame();
     });
     view.rerender(sheet(false, vi.fn()));
+    fadeToSuccess();
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(layer()).toBe('closed');
   });
@@ -182,6 +207,7 @@ describe('PaySheet', () => {
       vi.advanceTimersToNextFrame();
     });
     view.rerender(sheet(false, onClose));
+    fadeToSuccess();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(layer()).toBe('closed');
     expect(onClose).not.toHaveBeenCalled();
@@ -193,7 +219,17 @@ describe('PaySheet', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
     expect(onClose).toHaveBeenCalledTimes(1);
     view.rerender(sheet(false, onClose, RATE_DAY, <Leave />));
+    fadeToSuccess();
     expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('never shows the success step outside a fold that holds it', () => {
+    renderWithLocale(
+      <PaySheet title="Send" amountSats={500} rateDay={null} successTitle="Sent" onClose={vi.fn()}>
+        <p>Pay slot</p>
+      </PaySheet>,
+    );
+    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
   });
 
   it('has no close outside a pay sheet', () => {

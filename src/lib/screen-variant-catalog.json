@@ -2796,6 +2796,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:pay-sheet-success",
+    "label": "/welcome pay-sheet-success",
+    "visual": "state-welcome-pay-sheet-success",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:error-too-large-with-text",
     "label": "/welcome error-too-large-with-text",
     "visual": "state-welcome-error-too-large-with-text",

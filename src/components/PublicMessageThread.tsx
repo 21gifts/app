@@ -93,7 +93,6 @@ const IDLE_BOARD = {
   payBusy: false,
   payError: null as ForumPayError,
   payInvoice: null as ForumPayInvoice | null,
-  payWaiting: false,
   onPayOpen: (): void => undefined,
   onPayDraftChange: (): void => undefined,
   onPaySubmit: (): void => undefined,
@@ -185,7 +184,6 @@ export function PublicMessageThread(props: {
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
-  const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payPollGeneration = useRef(0);
@@ -386,7 +384,6 @@ export function PublicMessageThread(props: {
       return;
     }
     const signal = controller.signal;
-    setPayWaiting(true);
     void (async () => {
       const composePay = replyParentId !== null;
       const countOwn = async (): Promise<number> => {
@@ -462,7 +459,6 @@ export function PublicMessageThread(props: {
                   return { ...row, ...next };
                 });
               });
-              setPayWaiting(false);
               setPayInvoice(null);
               setPayMessageId(null);
               setPayHost(null);
@@ -806,7 +802,6 @@ export function PublicMessageThread(props: {
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
-    setPayWaiting(false);
     setPayBusy(false);
   };
 
@@ -915,7 +910,6 @@ export function PublicMessageThread(props: {
     setPayError(null);
     setPayInvoice(null);
     setPayBusy(false);
-    setPayWaiting(false);
     setPayHost(null);
     setReplyPosting(false);
   };
@@ -1151,7 +1145,6 @@ export function PublicMessageThread(props: {
         payBusy={payBusy}
         payError={payError}
         payInvoice={payInvoice}
-        payWaiting={payWaiting}
         onPayOpen={handlePayOpen}
         viewerAccountId={account?.id ?? null}
         heartViewerId={account?.id ?? null}

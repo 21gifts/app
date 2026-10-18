@@ -8,8 +8,10 @@ import {
   type ForumPayInvoice,
 } from '@/components/ForumPaySheet';
 import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
+import { Collapse } from '@/components/Collapse';
 import { InlineConfirm } from '@/components/InlineConfirm';
 import { useTranslations } from '@/components/LocaleProvider';
+import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { Field, IconButton } from '@/components/ui';
 import type { Account, AmountUnit } from '@/lib/api-types';
@@ -170,15 +172,19 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
                     ) : null}
                   </div>
                 ) : null}
-                {showGift && !giftBlocked && payCommentId === comment.id ? (
+                {/* Kept for the pay sheet's success step after the payment closed it. */}
+                <Collapse
+                  show={showGift && !giftBlocked && payCommentId === comment.id}
+                  holdMs={PAY_SHEET_HOLD_MS}
+                >
                   <SundayWritingGate notice="zap">
                     <ForumPaySheet
+                      recipient={comment.name}
                       messageId={comment.id}
                       payDraft={payDraft}
                       payBusy={payBusy}
                       payError={payError}
                       payInvoice={payInvoice}
-                      payWaiting={false}
                       onPayDraftChange={onPayDraftChange}
                       onPayUnitChange={onPayUnitChange}
                       onPaySubmit={onPaySubmit}
@@ -188,7 +194,7 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
                       onInteract={() => undefined}
                     />
                   </SundayWritingGate>
-                ) : null}
+                </Collapse>
               </li>
             );
           })}

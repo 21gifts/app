@@ -8,6 +8,9 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/hooks/useWalletPay', () => ({ useWalletPay: vi.fn() }));
 
+const push = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
+
 vi.mock('@/components/WalletSetupNote', () => ({
   WalletSetupNote: () => <p role="alert">setup failed</p>,
 }));
@@ -44,6 +47,7 @@ function renderPay(sparkInvoice: string | null = 'spark1x'): void {
 
 beforeEach(() => {
   vi.mocked(useWalletPay).mockReset();
+  push.mockReset();
   useAuthStore.setState({
     session: 'token',
     account: { username: 'ada' } as never,
@@ -183,25 +187,29 @@ describe('WalletPay', () => {
     expect(screen.getByRole('button').textContent).toBe('Send');
   });
 
-  it('says the balance is too low and shows the own address and QR to add funds', () => {
+  it('says the balance is too low and offers Add Bitcoin, with no address and no QR', () => {
     hookWith('insufficient');
     renderPay();
     expect(screen.getByRole('alert').textContent).toBe(
       'Your wallet does not have enough Bitcoin for this payment.',
     );
-    expect(screen.getByText('To add Bitcoin, send it to your address:')).toBeTruthy();
-    expect(screen.getByText(/^ada@/)).toBeTruthy();
-    expect(screen.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
+    const add = screen.getByRole('button', { name: 'Add Bitcoin' });
+    expect(add.className).toContain('w-full');
+    expect(screen.queryByText('To add Bitcoin, send it to your address:')).toBeNull();
+    expect(screen.queryByText(/^ada@/)).toBeNull();
+    expect(screen.queryByRole('img')).toBeNull();
     expect(screen.queryByText(/Still missing/)).toBeNull();
+    fireEvent.click(add);
+    expect(push).toHaveBeenCalledWith('/wallet?receive=1');
   });
 
-  it('says how much is still missing, in ₿ and fiat, above the own address', () => {
+  it('says how much is still missing, in ₿ and fiat, above Add Bitcoin', () => {
     hookWith('insufficient', 3, 1_234);
     renderPay();
     expect(screen.getByText(/^Still missing: ₿1'234/, { selector: 'p' }).textContent).toBe(
       "Still missing: ₿1'234 · $1.23",
     );
-    expect(screen.getByText(/^ada@/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add Bitcoin' })).toBeTruthy();
     cleanup();
     hookWith('insufficient', 3, 1_234);
     renderWithLocale(
@@ -214,34 +222,6 @@ describe('WalletPay', () => {
       />,
     );
     expect(screen.getByText(/^Still missing/).textContent).toBe("Still missing: ₿1'234");
-  });
-
-  it('keeps the missing amount when the member has no address', () => {
-    useAuthStore.setState({ account: { username: null } as never });
-    hookWith('insufficient', 0, 21);
-    renderPay();
-    expect(screen.getByText(/^Still missing: ₿21/).textContent).toBe('Still missing: ₿21 · $0.02');
-    expect(screen.queryByText('To add Bitcoin, send it to your address:')).toBeNull();
-    expect(screen.queryByRole('img')).toBeNull();
-  });
-
-  it('shows the alert alone when the member has no username', () => {
-    useAuthStore.setState({ account: { username: null } as never });
-    hookWith('insufficient');
-    renderPay();
-    expect(screen.getByRole('alert')).toBeTruthy();
-    expect(screen.queryByText('To add Bitcoin, send it to your address:')).toBeNull();
-    expect(screen.queryByRole('img')).toBeNull();
-    expect(screen.queryByRole('button')).toBeNull();
-  });
-
-  it('shows the alert alone when a blank username gives no address', () => {
-    useAuthStore.setState({ account: { username: '  ' } as never });
-    hookWith('insufficient');
-    renderPay();
-    expect(screen.getByRole('alert')).toBeTruthy();
-    expect(screen.queryByText('To add Bitcoin, send it to your address:')).toBeNull();
-    expect(screen.queryByRole('img')).toBeNull();
   });
 
   it('shows the neutral not-confirmed sentence', () => {

@@ -157,13 +157,16 @@ test('Function: LoanPayNotice — the pay step says Lend and how the loan comes 
   await page.getByLabel('Your reaction').fill('Count me in!');
   const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
   await form.getByRole('button', { name: 'Post' }).click();
-  const payPage = page.locator('[data-reply-pay-page]');
-  await expect(payPage.getByText(/^You lend ₿210 · \$/)).toBeVisible();
-  await expect(payPage.locator('[data-loan-notice="lend"]')).toHaveText(
+  // The notice stays on the page in the reaction form; the sheet only holds the last tap.
+  await expect(form.locator('[data-loan-notice="lend"]')).toHaveText(
     'You are lending to Mira. Once the loan is fully funded, you get it back in 30 daily payments.',
   );
-  await expect(payPage.getByRole('button', { name: /^Lend ₿210 · \$/ })).toBeVisible();
-  await expect(payPage.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
+  const sheet = page.getByRole('dialog', { name: 'Lend to Mira' });
+  await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
+  await expect(sheet.getByText(/^\$\d/)).toBeVisible();
+  await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
+  await expect(sheet.getByRole('button', { name: 'Lend ₿210', exact: true })).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
 });
 
 test('the open note shows Paid back once every share is paid', async ({ page }) => {

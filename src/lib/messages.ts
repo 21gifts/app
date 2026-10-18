@@ -427,7 +427,6 @@ const en = {
   'forum.loan.paidBarAria': '{percent}% paid back',
   'forum.loan.lend': 'Lend',
   'forum.loan.amountLabel': 'Amount to lend',
-  'forum.loan.payAmount': 'You lend {amount}',
   'forum.loan.payLend': 'Lend {amount}',
   'forum.loan.payNotice':
     'You are lending to {name}. Once the loan is fully funded, you get it back in {days} daily payments.',
@@ -515,8 +514,6 @@ const en = {
   'forum.payErrorRequest': 'Could not start the Bitcoin payment',
   'forum.payErrorRateLimit': 'Too many payments. Please wait a moment and try again.',
   'forum.payErrorAuthorWallet': "The author's wallet cannot receive this Bitcoin payment",
-  'forum.payConfirm': 'Pay {amount}',
-  'forum.payWaiting': 'Waiting for payment…',
   'pay.amount': 'Amount',
   'pay.amountPlaceholder': '21',
   'pay.createInvoice': 'Create invoice',
@@ -1826,7 +1823,6 @@ const de = {
   'forum.loan.paidBarAria': '{percent}% zurückgezahlt',
   'forum.loan.lend': 'Leihen',
   'forum.loan.amountLabel': 'Betrag zum Leihen',
-  'forum.loan.payAmount': 'Sie leihen {amount}',
   'forum.loan.payLend': '{amount} leihen',
   'forum.loan.payNotice':
     'Sie leihen {name} Geld. Sobald der Kredit vollständig finanziert ist, erhalten Sie es in {days} täglichen Zahlungen zurück.',
@@ -1916,8 +1912,6 @@ const de = {
   'forum.payErrorRateLimit':
     'Zu viele Zahlungen. Bitte warten Sie einen Moment und versuchen Sie es erneut.',
   'forum.payErrorAuthorWallet': 'Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen',
-  'forum.payConfirm': '{amount} zahlen',
-  'forum.payWaiting': 'Zahlung wird erwartet…',
   'pay.amount': 'Betrag',
   'pay.amountPlaceholder': '21',
   'pay.createInvoice': 'Rechnung erstellen',
@@ -3258,7 +3252,6 @@ const es = {
   'forum.loan.paidBarAria': '{percent}% devuelto',
   'forum.loan.lend': 'Prestar',
   'forum.loan.amountLabel': 'Importe a prestar',
-  'forum.loan.payAmount': 'Prestas {amount}',
   'forum.loan.payLend': 'Prestar {amount}',
   'forum.loan.payNotice':
     'Le prestas a {name}. Cuando el préstamo esté totalmente financiado, lo recibes de vuelta en {days} pagos diarios.',
@@ -3347,8 +3340,6 @@ const es = {
   'forum.payErrorRequest': 'No se pudo iniciar el pago de Bitcoin',
   'forum.payErrorRateLimit': 'Demasiados pagos. Espera un momento e inténtalo de nuevo.',
   'forum.payErrorAuthorWallet': 'La wallet del autor no puede recibir este pago en Bitcoin',
-  'forum.payConfirm': 'Pagar {amount}',
-  'forum.payWaiting': 'Esperando el pago…',
   'pay.amount': 'Importe',
   'pay.amountPlaceholder': '21',
   'pay.createInvoice': 'Crear factura',
@@ -4664,7 +4655,6 @@ const fil = {
   'forum.loan.paidBarAria': '{percent}% bayad na',
   'forum.loan.lend': 'Magpahiram',
   'forum.loan.amountLabel': 'Halagang ipapahiram',
-  'forum.loan.payAmount': 'Magpapahiram ka ng {amount}',
   'forum.loan.payLend': 'Ipahiram ang {amount}',
   'forum.loan.payNotice':
     'Nagpapahiram ka kay {name}. Kapag buo na ang pondo ng utang, maibabalik ito sa iyo sa {days} araw-araw na bayad.',
@@ -4755,8 +4745,6 @@ const fil = {
   'forum.payErrorRequest': 'Hindi masimulan ang Bitcoin payment',
   'forum.payErrorRateLimit': 'Sobrang daming bayad. Maghintay sandali at subukan ulit.',
   'forum.payErrorAuthorWallet': 'Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito',
-  'forum.payConfirm': 'Magbayad ng {amount}',
-  'forum.payWaiting': 'Naghihintay ng bayad…',
   'pay.amount': 'Halaga',
   'pay.amountPlaceholder': '21',
   'pay.createInvoice': 'Gumawa ng invoice',
