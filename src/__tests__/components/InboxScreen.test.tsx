@@ -10,6 +10,8 @@ import {
   type InboxScreenProps,
   type ThreadGiftGroup,
 } from '@/components/InboxScreen';
+import { PAY_SHEET_HOLD_MS, PAY_SHEET_SUCCESS_MS } from '@/components/PaySheet';
+import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import { useWalletPay } from '@/hooks/useWalletPay';
 import { fetchPublicMessage } from '@/lib/api';
 import type { Conversation, ConversationMessage, ForumMessage } from '@/lib/api-types';
@@ -23,14 +25,16 @@ import {
   SPARK_INVOICE,
   confirmResult,
   resetWallet,
+  sentWalletPay,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
 
 /** The pay card's labeled **Send** (the composer's icon Send carries an aria-label instead). */
 function paySend(): HTMLElement | null {
   return (
-    screen.queryAllByRole('button', { name: 'Send' }).find((b) => !b.hasAttribute('aria-label')) ??
-    null
+    screen
+      .queryAllByRole('button', { name: `Send ${formatBitcoin(21)}` })
+      .find((b) => !b.hasAttribute('aria-label')) ?? null
   );
 }
 vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
@@ -107,6 +111,7 @@ afterEach(() => {
   vi.mocked(searchMentionAccounts).mockReset();
   vi.mocked(searchMentionAccounts).mockResolvedValue([]);
   restoreHtmlElementScroll();
+  vi.mocked(useWalletPay).mockRestore();
 });
 
 const THREAD: Conversation = {
@@ -241,7 +246,7 @@ describe('InboxScreen counterpart who cannot receive', () => {
     const { rerender } = renderWithLocale(
       <InboxScreen {...inboxScreenProps({ invoice, payWaiting: true })} />,
     );
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    expect(document.querySelector('[role="dialog"][data-pay-sheet]')).not.toBeNull();
     rerender(
       <LocaleProvider locale="en" messages={getCatalog('en')}>
         <InboxScreen
@@ -253,7 +258,9 @@ describe('InboxScreen counterpart who cannot receive', () => {
         />
       </LocaleProvider>,
     );
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    // The sheet leaves like a cancel: nothing went out, so no success step.
+    expect(document.querySelector('[data-pay-sheet-layer="open"]')).toBeNull();
+    expect(document.querySelector('[data-pay-sheet="success"]')).toBeNull();
   });
 });
 
@@ -1569,11 +1576,17 @@ describe('InboxScreen', () => {
     expect(row.querySelector('.tabular-nums')).toBeNull();
   });
 
-  it('shows the wallet slot in the pay sheet, with no invoice QR and no wallet-app button', () => {
-    const onPayCancel = vi.fn();
-    renderWithLocale(
+  function payInbox(
+    props: {
+      conversations?: Conversation[];
+      invoice?: { pr: string; amountSats: number } | null;
+      onPayCancel?: () => void;
+      rateDay?: FiatRateDay | null;
+    } = {},
+  ): ReactElement {
+    return (
       <InboxScreen
-        conversations={[DIRECT]}
+        conversations={props.conversations ?? [DIRECT]}
         error={false}
         loading={false}
         onRetry={() => undefined}
@@ -1589,60 +1602,115 @@ describe('InboxScreen', () => {
         posting={false}
         formError={null}
         showFilter={false}
-        invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
-        onPayCancel={onPayCancel}
-        payWaiting={true}
-      />,
+        invoice={
+          props.invoice === undefined ? { pr: 'lnbc21n1test', amountSats: 21 } : props.invoice
+        }
+        {...(props.onPayCancel === undefined ? {} : { onPayCancel: props.onPayCancel })}
+        {...(props.rateDay === undefined ? {} : { rateDay: props.rateDay })}
+      />
     );
-    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+  }
+
+  it('shows the wallet slot in the pay sheet, with no invoice QR and no wallet-app button', () => {
+    const onPayCancel = vi.fn();
+    renderWithLocale(payInbox({ onPayCancel }));
+    const sheet = screen.getByRole('dialog', { name: 'Send to Bob' });
+    expect(sheet.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(within(sheet).getByRole('heading', { level: 2 }).textContent).toBe('Send to Bob');
+    expect(within(sheet).getByText(formatBitcoin(21))).not.toBeNull();
+    expect(within(sheet).getByText(WALLET_UNAVAILABLE)).not.toBeNull();
     expectWalletOnly();
-    expect(document.querySelector('[data-pay-sheet] img')).toBeNull();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
-    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    expect(sheet.querySelector('img')).toBeNull();
+    // The amount stays on the page, disabled behind the sheet.
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
     expect(vi.mocked(useWalletPay).mock.calls.at(-1)?.[3]).toBe('inbox');
     expect(locationStub.href).toBe('http://localhost/');
-    const close = screen.getByRole('button', { name: 'Close' });
-    expect(close.className.split(' ')).not.toContain('absolute');
-    expect(close.parentElement?.className).toBe('absolute left-3 top-3');
-    fireEvent.click(close);
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
     expect(onPayCancel).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the fiat value next to the amount in the pay sheet', () => {
-    renderWithLocale(
-      <InboxScreen
-        conversations={[DIRECT]}
-        error={false}
-        loading={false}
-        onRetry={() => undefined}
-        openId="conv-2"
-        onOpen={() => undefined}
-        messages={[MESSAGE]}
-        messagesLoading={false}
-        messagesError={false}
-        onRetryMessages={() => undefined}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        posting={false}
-        formError={null}
-        showFilter={false}
-        invoice={{ pr: 'lnbc21n1test', amountSats: 21 }}
-        rateDay={RATE_DAY}
-      />,
-    );
-    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
-    const confirm = screen.getByText(
-      (_, node) =>
-        node?.tagName === 'P' &&
-        /\$0\.02/.test(node.textContent ?? '') &&
-        new RegExp(formatBitcoin(21).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(
-          node.textContent ?? '',
-        ),
-    );
-    expect(confirm).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+  it('lets the pay sheet close without a cancel handler', () => {
+    renderWithLocale(payInbox());
+    const sheet = screen.getByRole('dialog', { name: 'Send to Bob' });
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
+    expect(
+      document.querySelector('[data-pay-sheet-layer]')?.getAttribute('data-pay-sheet-layer'),
+    ).toBe('closed');
+  });
+
+  it('closes the pay sheet from the dimmed page too', () => {
+    const onPayCancel = vi.fn();
+    renderWithLocale(payInbox({ onPayCancel }));
+    const [scrim] = screen.getAllByRole('button', { name: 'Close' });
+    expect(scrim?.closest('[role="dialog"]')).toBeNull();
+    fireEvent.click(scrim as HTMLElement);
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('titles the pay sheet Send when the open conversation is not in the list', () => {
+    renderWithLocale(payInbox({ conversations: [] }));
+    const sheet = screen.getByRole('dialog', { name: 'Send' });
+    expect(within(sheet).getByRole('heading', { level: 2 }).textContent).toBe('Send');
+  });
+
+  it('shows the success step when the invoice closes without the member closing it', () => {
+    vi.useFakeTimers();
+    try {
+      vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
+      const onPayCancel = vi.fn();
+      const { rerender } = renderWithLocale(payInbox({ onPayCancel }));
+      rerender(payInbox({ onPayCancel, invoice: null }));
+      const sheet = screen.getByRole('dialog', { name: 'Send to Bob' });
+      expect(sheet.getAttribute('data-pay-sheet')).toBe('success');
+      act(() => {
+        vi.advanceTimersByTime(MOTION_SWAP_FADE_MS);
+      });
+      expect(within(sheet).getByRole('status').textContent).toContain('Sent to Bob');
+      expect(onPayCancel).not.toHaveBeenCalled();
+      // The amount row stays disabled behind the success step, then frees up.
+      const amount = screen.getByLabelText('Amount') as HTMLInputElement;
+      expect(amount.disabled).toBe(true);
+      act(() => {
+        vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS - MOTION_SWAP_FADE_MS);
+      });
+      expect(amount.disabled).toBe(false);
+      act(() => {
+        vi.advanceTimersByTime(PAY_SHEET_HOLD_MS);
+      });
+      expect(screen.queryByRole('dialog')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('frees the amount row at once when the member closes the sheet', () => {
+    const onPayCancel = vi.fn();
+    const { rerender } = renderWithLocale(payInbox({ onPayCancel }));
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' }));
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+    rerender(payInbox({ onPayCancel, invoice: null }));
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(false);
+  });
+
+  it('says Sent on the success step without a conversation name', async () => {
+    vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
+    const { rerender } = renderWithLocale(payInbox({ conversations: [] }));
+    rerender(payInbox({ conversations: [], invoice: null }));
+    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
+    const status = await screen.findByText('Sent');
+    expect(status.closest('[role="status"]')).not.toBeNull();
+  });
+
+  it('shows the fiat value under the amount in the pay sheet', () => {
+    renderWithLocale(payInbox({ rateDay: RATE_DAY }));
+    const sheet = screen.getByRole('dialog', { name: 'Send to Bob' });
+    expect(within(sheet).getByText(WALLET_UNAVAILABLE)).not.toBeNull();
+    const amount = within(sheet).getByText(formatBitcoin(21));
+    const fiat = amount.nextElementSibling;
+    expect(fiat?.tagName).toBe('P');
+    expect(fiat?.textContent).toBe('$0.02');
   });
 
   it('nests a gift under the parent listitem and not as its own listitem', () => {
@@ -3803,7 +3871,6 @@ describe('InboxScreen in-app wallet pay', () => {
         showFilter={false}
         invoice={{ pr: 'lnbc21n1test', amountSats: 21, sparkInvoice }}
         onPayCancel={() => undefined}
-        payWaiting
       />
     );
   }

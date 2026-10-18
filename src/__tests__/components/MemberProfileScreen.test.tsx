@@ -2,7 +2,8 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
-import { MOTION_FOLD_MS, MOTION_SWAP_FADE_MS } from '@/lib/motion';
+import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
+import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
 import {
   agreeToRules,
   CannotReceiveError,
@@ -40,12 +41,19 @@ import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
+import { useWalletPay } from '@/hooks/useWalletPay';
 import {
   SPARK_INVOICE,
   confirmResult,
   resetWallet,
+  sentWalletPay,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
+  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
+});
 
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
@@ -414,6 +422,7 @@ beforeEach(() => {
 afterEach(async () => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
+  vi.mocked(useWalletPay).mockRestore();
   await act(async () => {
     await Promise.resolve();
   });
@@ -1087,6 +1096,7 @@ describe('MemberProfileScreen', () => {
   });
 
   it('keeps a replies-feed Gift sheet until receivedSats rises', async () => {
+    vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
     const payableActivity = { ...activityReply, payable: true, sats: 0 };
     vi.mocked(fetchMemberReplies).mockResolvedValue([payableActivity]);
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });
@@ -1117,15 +1127,20 @@ describe('MemberProfileScreen', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
     });
-    expect(within(replyCard).getByText('Pay ₿21')).toBeTruthy();
+    const sheet = within(replyCard).getByRole('dialog');
+    expect(sheet.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(sheet.getAttribute('aria-label')).toBe('Send to Carol');
+    expect(within(sheet).getByText('₿21')).toBeTruthy();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    // The closed sheet folds away before it unmounts.
+    // The paid sheet shows its success step, then leaves after the host's hold.
+    expect(sheet.getAttribute('data-pay-sheet')).toBe('success');
+    expect(within(sheet).getByRole('status').textContent).toContain('Sent to Carol');
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
+      await vi.advanceTimersByTimeAsync(PAY_SHEET_HOLD_MS);
     });
-    expect(within(replyCard).queryByText('Pay ₿21')).toBeNull();
+    expect(within(replyCard).queryByRole('dialog')).toBeNull();
   });
 
   it('does not refetch replies when reopening an in-flight feed', async () => {
@@ -1985,6 +2000,27 @@ describe('MemberProfileScreen', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('keeps the card and the feed as they are while a paid reaction sheet is open', async () => {
+    vi.mocked(fetchPublicMessage).mockReturnValue(new Promise(() => undefined));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '21');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(document.querySelector('[role="dialog"][data-pay-sheet="pay"]')).not.toBeNull();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: '0 reactions', pressed: false }));
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('reply');
+    expect(document.querySelector('[role="dialog"][data-pay-sheet="pay"]')).not.toBeNull();
+  });
+
   it('unlocks the composer and marks hasPosted after a paid reply poll', async () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42, replyCount: 1 });
     renderWithLocale(
@@ -2003,7 +2039,7 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(useAuthStore.getState().account?.hasPosted).toBe(true);
     });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(document.querySelector('[role="dialog"][data-pay-sheet="pay"]')).toBeNull();
     await waitFor(() => {
       expect(fetchReplies).toHaveBeenCalledTimes(2);
     });
@@ -2111,7 +2147,7 @@ describe('MemberProfileScreen', () => {
       );
     });
     await waitFor(() => {
-      expect(screen.queryByText('Pay ₿21')).toBeNull();
+      expect(document.querySelector('[role="dialog"][data-pay-sheet="pay"]')).toBeNull();
     });
   });
 
@@ -2135,7 +2171,7 @@ describe('MemberProfileScreen', () => {
       );
     });
     await waitFor(() => {
-      expect(screen.queryByText('Pay ₿21')).toBeNull();
+      expect(document.querySelector('[role="dialog"][data-pay-sheet="pay"]')).toBeNull();
     });
   });
 
@@ -2160,11 +2196,14 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(fetchPublicMessage).toHaveBeenCalled();
     });
-    fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
+    const sheet = within(replyCard).getByRole('dialog');
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
     await act(async () => {
       rejectPoll(new Error('poll failed'));
     });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    // Closed by the member: the sheet slides away without a success step.
+    expect(sheet.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(sheet.parentElement?.getAttribute('data-pay-sheet-layer')).toBe('closed');
     expect(fetchPublicMessage).toHaveBeenCalledTimes(1);
   });
 
@@ -3015,7 +3054,7 @@ describe('MemberProfileScreen', () => {
       expect(screen.getByText('reply')).toBeTruthy();
       expect(screen.getAllByText('1 reaction').length).toBeGreaterThan(0);
     });
-    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    expect(document.querySelector('[role="dialog"][data-pay-sheet]')).toBeNull();
   });
 
   it('tries an unpaid reply when someone else’s note omits accountId', async () => {
@@ -4923,7 +4962,7 @@ describe('MemberProfileScreen in-app wallet pay', () => {
     const replyCard = await expandAndClickReplyGift();
     fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send ₿21' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 
@@ -4939,7 +4978,7 @@ describe('MemberProfileScreen in-app wallet pay', () => {
     await expandNote();
     fillPaidReply('reply', '21');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send ₿21' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 
@@ -4983,7 +5022,7 @@ describe('MemberProfileScreen in-app wallet pay', () => {
     );
     const replyCard = await expandAndClickReplyGift();
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
-    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send ₿21' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 
@@ -5004,7 +5043,7 @@ describe('MemberProfileScreen in-app wallet pay', () => {
     await expandNote();
     fillPaidReply('reply', '1');
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
-    expect(await screen.findByRole('button', { name: 'Send' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send ₿1' })).toBeTruthy();
     expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, 'reply', NO_RATE_SHOWN);
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });

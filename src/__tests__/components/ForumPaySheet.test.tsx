@@ -1,6 +1,9 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { Collapse } from '@/components/Collapse';
 import { ForumPaySheet, type ForumPayError } from '@/components/ForumPaySheet';
+import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
 import { useWalletPay } from '@/hooks/useWalletPay';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
@@ -44,7 +47,6 @@ function sheet(
       payBusy={extra?.payBusy ?? false}
       payError={error}
       payInvoice={invoice ? { messageId: 'c-1', pr: 'lnbc1', amountSats: 21 } : null}
-      payWaiting={false}
       onPayDraftChange={onPayDraftChange}
       onPayUnitChange={vi.fn()}
       onPaySubmit={onPaySubmit}
@@ -52,6 +54,7 @@ function sheet(
       rateDay={DAY}
       {...(extra?.ratePending === undefined ? {} : { ratePending: extra.ratePending })}
       onInteract={vi.fn()}
+      recipient="Ana"
     />,
   );
   return { onPaySubmit, onPayCancel, onPayDraftChange };
@@ -60,6 +63,7 @@ function sheet(
 describe('ForumPaySheet', () => {
   afterEach(() => {
     cleanup();
+    resetWallet();
   });
 
   it.each([
@@ -73,7 +77,6 @@ describe('ForumPaySheet', () => {
         payBusy={false}
         payError={null}
         payInvoice={{ messageId: 'c-1', pr: 'lnbc1', amountSats: 21, ...extra }}
-        payWaiting={false}
         onPayDraftChange={vi.fn()}
         onPayUnitChange={vi.fn()}
         onPaySubmit={vi.fn()}
@@ -93,7 +96,7 @@ describe('ForumPaySheet', () => {
     expect(onPaySubmit).toHaveBeenCalledTimes(1);
     const close = screen.getByRole('button', { name: 'Close' });
     expect(close.parentElement?.className).toBe('absolute left-3 top-3');
-    const form = close.closest('[data-pay-sheet]');
+    const form = close.closest('[data-pay-amount]');
     expect(form?.className).toContain('pl-12');
     expect(form?.className).toContain('pt-12');
     fireEvent.click(close);
@@ -124,67 +127,199 @@ describe('ForumPaySheet', () => {
   });
 
   it.each([
-    ['a loan that still collects', false, null, 'You lend ₿210', 'Lend ₿210 · $0.21', 'lend'],
-    ['a full loan', true, null, 'Pay ₿210', 'Send', 'full'],
-    ['a loan without a rate', false, 'none', 'You lend ₿210', 'Lend ₿210', 'lend'],
-  ] as const)('words the invoice card of %s', async (_label, full, rate, line, button, notice) => {
-    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult(undefined, 210));
+    [
+      'a loan that still collects',
+      false,
+      'Maria',
+      'Lend to Maria',
+      'Lend ₿210',
+      'lend',
+      'Lent to Maria',
+    ],
+    ['a full loan', true, 'Maria', 'Send to Maria', 'Send ₿210', 'full', 'Sent to Maria'],
+    ['a loan without a name', false, undefined, 'Send', 'Lend ₿210', 'lend', 'Sent'],
+  ] as const)(
+    'words the pay sheet of %s and keeps the notice in the amount form',
+    async (_label, full, recipient, title, button, notice, success) => {
+      vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult(undefined, 210));
+      setWalletUsable('ready');
+      const ui = (show: boolean): ReactElement => (
+        <Collapse show={show} holdMs={PAY_SHEET_HOLD_MS}>
+          <ForumPaySheet
+            messageId="c-1"
+            payDraft="210"
+            payBusy={false}
+            payError={null}
+            payInvoice={{ messageId: 'c-1', pr: 'lnbc1', amountSats: 210, sparkInvoice: 'spark1x' }}
+            onPayDraftChange={vi.fn()}
+            onPaySubmit={vi.fn()}
+            onPayCancel={vi.fn()}
+            rateDay={null}
+            onInteract={vi.fn()}
+            loan={{ name: 'Maria', days: 30, full }}
+            {...(recipient === undefined ? {} : { recipient })}
+          />
+        </Collapse>
+      );
+      const { rerender } = renderWithLocale(ui(true));
+      const dialog = screen.getByRole('dialog');
+      expect(dialog.getAttribute('aria-label')).toBe(title);
+      expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe(title);
+      expect(within(dialog).getByText('₿210')).toBeTruthy();
+      expect(dialog.querySelector('[data-loan-notice]')).toBeNull();
+      const form = document.querySelector('form[data-pay-amount=""]');
+      expect(form?.querySelector('[data-loan-notice]')?.getAttribute('data-loan-notice')).toBe(
+        notice,
+      );
+      fireEvent.click(await within(dialog).findByRole('button', { name: button }));
+      rerender(ui(false));
+      expect((await screen.findByText(success)).closest('[role="status"]')).not.toBeNull();
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
+      resetWallet();
+    },
+  );
+
+  it('keeps the amount form behind the sheet, disabled, while the invoice is open', () => {
+    const { onPaySubmit, onPayCancel } = sheet(null, true);
+    const form = document.querySelector('form[data-pay-amount=""]') as HTMLFormElement;
+    expect(form).not.toBeNull();
+    expect(form.hasAttribute('data-pay-sheet')).toBe(false);
+    expect(document.querySelectorAll('[data-pay-sheet]')).toHaveLength(1);
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    const dialog = screen.getByRole('dialog');
+    expect(dialog.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Send to Ana');
+    expect(within(dialog).getByText('₿21')).toBeTruthy();
+    expect(within(dialog).getByText('$0.02')).toBeTruthy();
+    expect(
+      within(dialog).getByText(
+        'Your 21.gifts wallet is not available here, so this cannot be paid.',
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
+    expect(screen.queryByText(/Waiting for payment/)).toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+    expect(onPaySubmit).not.toHaveBeenCalled();
+  });
+
+  it('closes the sheet from the dimmed page', () => {
+    const { onPayCancel } = sheet(null, true);
+    const closes = screen.getAllByRole('button', { name: 'Close' });
+    // amount form X, scrim, sheet X
+    expect(closes).toHaveLength(3);
+    const scrim = closes[1] as HTMLElement;
+    expect(scrim.getAttribute('tabindex')).toBe('-1');
+    fireEvent.click(scrim);
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the success step once the host closes the payment without the member', async () => {
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult());
     setWalletUsable('ready');
-    renderWithLocale(
-      <ForumPaySheet
-        messageId="c-1"
-        payDraft=""
-        payBusy={false}
-        payError={null}
-        payInvoice={{ messageId: 'c-1', pr: 'lnbc1', amountSats: 210, sparkInvoice: 'spark1x' }}
-        payWaiting={false}
-        onPayDraftChange={vi.fn()}
-        onPaySubmit={vi.fn()}
-        onPayCancel={vi.fn()}
-        rateDay={rate === 'none' ? null : DAY}
-        onInteract={vi.fn()}
-        loan={{ name: 'Maria', days: 30, full }}
-      />,
+    const ui = (show: boolean): ReactElement => (
+      <Collapse show={show} holdMs={PAY_SHEET_HOLD_MS}>
+        <ForumPaySheet
+          messageId="c-1"
+          payDraft="21"
+          payBusy={false}
+          payError={null}
+          payInvoice={{ messageId: 'c-1', pr: 'lnbc1', amountSats: 21, sparkInvoice: 'spark1x' }}
+          onPayDraftChange={vi.fn()}
+          onPaySubmit={vi.fn()}
+          onPayCancel={vi.fn()}
+          rateDay={DAY}
+          onInteract={vi.fn()}
+          recipient="Ana"
+        />
+      </Collapse>
     );
-    expect(screen.getByText(new RegExp(`^${line}`))).toBeTruthy();
-    expect(document.querySelector('[data-loan-notice]')?.getAttribute('data-loan-notice')).toBe(
-      notice,
-    );
-    expect(await screen.findByRole('button', { name: button })).toBeTruthy();
+    const { rerender } = renderWithLocale(ui(true));
+    fireEvent.click(await screen.findByRole('button', { name: 'Send ₿21 · $0.02' }));
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'spark1x' });
+    rerender(ui(false));
+    const status = (await screen.findByText('Sent to Ana')).closest('[role="status"]');
+    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
+    expect(status).not.toBeNull();
+    expect(status?.textContent).toContain('₿21');
+    expect(status?.textContent).toContain('$0.02');
     resetWallet();
   });
 
-  it('keeps the posting fee wording and no loan notice on a posting fee', () => {
+  it('pays a posting fee without an amount form and without a loan notice', async () => {
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult());
+    setWalletUsable('ready');
+    const ui = (show: boolean): ReactElement => (
+      <Collapse show={show} holdMs={PAY_SHEET_HOLD_MS}>
+        <ForumPaySheet
+          messageId="c-1"
+          payDraft=""
+          payBusy={false}
+          payError={null}
+          payInvoice={{
+            messageId: 'c-1',
+            pr: 'lnbc1',
+            amountSats: 21,
+            postsOnPay: true,
+            sparkInvoice: 'spark1x',
+          }}
+          onPayDraftChange={vi.fn()}
+          onPaySubmit={vi.fn()}
+          onPayCancel={vi.fn()}
+          rateDay={DAY}
+          onInteract={vi.fn()}
+          loan={{ name: 'Maria', days: 30, full: false }}
+          recipient="Maria"
+        />
+      </Collapse>
+    );
+    const { rerender } = renderWithLocale(ui(true));
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+    expect(document.querySelector('form[data-pay-amount]')).toBeNull();
+    expect(document.querySelector('[data-loan-notice]')).toBeNull();
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Pay to post');
+    fireEvent.click(await within(dialog).findByRole('button', { name: 'Pay ₿21 and post' }));
+    rerender(ui(false));
+    expect((await screen.findByText('Paid and posted')).closest('[role="status"]')).not.toBeNull();
+    resetWallet();
+  });
+
+  it('reads Send without a recipient and shows no sheet for another card', () => {
     renderWithLocale(
       <ForumPaySheet
         messageId="c-1"
-        payDraft=""
+        payDraft="21"
         payBusy={false}
         payError={null}
-        payInvoice={{ messageId: 'c-1', pr: 'lnbc1', amountSats: 21, postsOnPay: true }}
-        payWaiting={false}
+        payInvoice={{ messageId: 'c-1', pr: 'lnbc1', amountSats: 21 }}
         onPayDraftChange={vi.fn()}
         onPaySubmit={vi.fn()}
         onPayCancel={vi.fn()}
         rateDay={DAY}
         onInteract={vi.fn()}
-        loan={{ name: 'Maria', days: 30, full: false }}
       />,
     );
-    expect(screen.getByText(/^Pay ₿21/)).toBeTruthy();
-    expect(document.querySelector('[data-loan-notice]')).toBeNull();
-  });
-
-  it('shows the invoice card with the fiat line', () => {
-    const { onPayCancel } = sheet(null, true);
-    expect(screen.getByText(/Pay ₿21/)).toBeTruthy();
-    expect(screen.getByText('$0.02')).toBeTruthy();
-    expect(
-      screen.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
-    ).toBeTruthy();
-    expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(onPayCancel).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('Send');
+    cleanup();
+    renderWithLocale(
+      <ForumPaySheet
+        messageId="c-2"
+        payDraft="21"
+        payBusy={false}
+        payError={null}
+        payInvoice={{ messageId: 'c-1', pr: 'lnbc1', amountSats: 21 }}
+        onPayDraftChange={vi.fn()}
+        onPaySubmit={vi.fn()}
+        onPayCancel={vi.fn()}
+        rateDay={DAY}
+        onInteract={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(false);
   });
 });

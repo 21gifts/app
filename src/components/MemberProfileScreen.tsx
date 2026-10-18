@@ -142,7 +142,6 @@ const IDLE_BOARD = {
   payBusy: false,
   payError: null as ForumPayError,
   payInvoice: null as ForumPayInvoice | null,
-  payWaiting: false,
   onPayOpen: (): void => undefined,
   onPayDraftChange: (): void => undefined,
   onPaySubmit: (): void => undefined,
@@ -256,7 +255,6 @@ export function MemberProfileScreen({
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
-  const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payPollGeneration = useRef(0);
@@ -271,6 +269,8 @@ export function MemberProfileScreen({
   const [repliesError, setRepliesError] = useState(false);
   const [replyDraft, setReplyDraft] = useState('');
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
+  // A paid reaction's text while its pay sheet is open: the form keeps it, disabled, behind the sheet.
+  const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
@@ -441,12 +441,16 @@ export function MemberProfileScreen({
     setPayError(null);
     setPayInvoice(null);
     setPayBusy(false);
-    setPayWaiting(false);
     setPayHost(null);
+    setReplyPayPreview(null);
     setReplyPosting(false);
   };
 
   const openActivity = (next: 'posts' | 'replies' | 'shops' | 'credits'): void => {
+    // A paid reaction's sheet is open over a card: the feeds stay as they are until the sheet closes.
+    if (replyPayPreview !== null) {
+      return;
+    }
     if (
       payMessageId !== null &&
       ((replies !== null && replies.some((row) => row.id === payMessageId)) ||
@@ -493,6 +497,7 @@ export function MemberProfileScreen({
     baselineSats: number,
     replyParentId: string | null = null,
     baselineReceivedSats?: number,
+    clearReplyDraft = false,
   ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
@@ -501,7 +506,6 @@ export function MemberProfileScreen({
       return;
     }
     const signal = controller.signal;
-    setPayWaiting(true);
     void (async () => {
       const composePay = replyParentId !== null;
       const countOwn = async (): Promise<number> => {
@@ -610,13 +614,18 @@ export function MemberProfileScreen({
                 }
                 return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
               });
-              setPayWaiting(false);
               setPayInvoice(null);
               setPayMessageId(null);
               setPayHost(null);
               setPayDraft('');
               setPayError(null);
               setReplyPosting(false);
+              // The paid reaction went out: its text and amount leave the form with the sheet.
+              if (clearReplyDraft) {
+                setReplyDraft('');
+                setReplyAmountDraft('');
+              }
+              setReplyPayPreview(null);
               const current = useAuthStore.getState();
               if (current.session !== session) {
                 return;
@@ -960,11 +969,10 @@ export function MemberProfileScreen({
         sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('card');
-      setReplyDraft('');
-      setReplyAmountDraft('');
+      setReplyPayPreview(trimmed);
       pendingPostRef.current = null;
       setReplyPosting(false);
-      startPayPoll(parentId, baselineSats);
+      startPayPoll(parentId, baselineSats, null, undefined, true);
     } catch (err) {
       if (generation !== payPollGeneration.current) {
         return;
@@ -1071,7 +1079,7 @@ export function MemberProfileScreen({
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
-    setPayWaiting(false);
+    setReplyPayPreview(null);
     setPayBusy(false);
   };
 
@@ -1171,6 +1179,10 @@ export function MemberProfileScreen({
 
   const handleToggleExpand = (messageId: string): void => {
     if (replyPosting) {
+      return;
+    }
+    // A paid reaction's sheet is open over this card: its form stays as it is until the sheet closes.
+    if (replyPayPreview !== null) {
       return;
     }
     if (
@@ -1331,7 +1343,7 @@ export function MemberProfileScreen({
     payBusy,
     payError,
     payInvoice,
-    payWaiting,
+    replyPayPreview,
     onPayOpen: handlePayOpen,
     onPayDraftChange: (value: string): void => {
       setPayDraft(value);

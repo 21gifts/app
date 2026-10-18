@@ -60,10 +60,19 @@ export type WalletPayView =
   | 'setupFailed'
   | 'unconfirmed';
 
+/**
+ * Where the last send stands: `pending` from the tap until the wallet answers (and, for a send the
+ * app stopped waiting for, until the SDK says whether it still went out), `paid` once it went out,
+ * `null` before a send and after one that did not go out.
+ */
+export type WalletPaySent = 'pending' | 'paid' | null;
+
 /** State and actions of the pay slot. */
 export interface UseWalletPayResult {
   /** What the slot shows. */
   view: WalletPayView;
+  /** Where the last send stands; only `paid` means the payment went out. */
+  sent: WalletPaySent;
   /** Fee in whole sats from the prepare response, or `null` before it is known. */
   feeSats: number | null;
   /**
@@ -152,7 +161,10 @@ function visualView(): WalletPayView | null {
  * balance. A new request or a new
  * `amountSats` starts over, and a send prepared for an earlier one is never
  * shown or paid. Visual pins (`?visual=wallet-pay-…`) apply only in a
- * Playwright build and leave the actions inert. Every prepare or send that
+ * Playwright build and leave the actions inert; a pinned `paying` or `unconfirmed` view reports
+ * `sent` `paid`. `sent` is `pending` from **Send** until the wallet answers, `paid` only once the
+ * payment went out (a send the app stopped waiting for stays `pending` until the SDK says whether
+ * it still went out), and `null` again after a send that did not. Every prepare or send that
  * did not pay (also `insufficient`, and a prepared amount that differs, as
  * `amount_mismatch`) is reported with {@link reportPaymentFailure} under
  * `flow` and the sheet amount; a prepare whose sheet moved on meanwhile is not.
@@ -161,7 +173,7 @@ function visualView(): WalletPayView | null {
  * @param pr - Payment request of the same invoice, paid when there is no `sparkInvoice`.
  * @param amountSats - Amount the sheet shows; a prepared payment of another amount is not offered.
  * @param flow - Feature whose sheet this is, for the failure report.
- * @returns View, fee, missing amount, and the pay and retry actions.
+ * @returns View, send state, fee, missing amount, and the pay and retry actions.
  */
 export function useWalletPay(
   sparkInvoice: string | null | undefined,
@@ -174,6 +186,7 @@ export function useWalletPay(
   const account = useAuthStore((state) => state.account);
   const [phase, setPhase] = useState<Phase>('idle');
   const [feeSats, setFeeSats] = useState<number | null>(null);
+  const [sent, setSent] = useState<WalletPaySent>(null);
   const sendRef = useRef<PreparedSend | null>(null);
   const [preparedFor, setPreparedFor] = useState<PreparedKey | null>(null);
   const generation = useRef(0);
@@ -191,6 +204,7 @@ export function useWalletPay(
     sendRef.current = null;
     setPhase('idle');
     setFeeSats(null);
+    setSent(null);
     return () => {
       generation.current += 1;
       if (timer.current !== null) {
@@ -205,28 +219,38 @@ export function useWalletPay(
       const balanceBefore = useWalletStore.getState().balanceSats;
       const session = useAuthStore.getState().session;
       setPhase('paying');
+      setSent('pending');
       void send().then((result) => {
+        let sentLate: Promise<boolean> | undefined;
         if (result.kind === 'paid') {
           // Recorded even when the sheet closed meanwhile: the gift went out.
           logInteraction('gift_sent', { amountSats: sats }, session);
         } else {
           // Reported even when the sheet closed meanwhile: the send did not go out.
-          const sentLate = result.kind === 'failed' ? result.sentLate : undefined;
+          sentLate = result.kind === 'failed' ? result.sentLate : undefined;
           reportPaymentFailure({ ...result.failure, amountSats: sats }, payFlow, {
             session,
             sentLate,
           });
           if (sentLate !== undefined) {
             // A send the app stopped waiting for that the SDK still sent.
-            void sentLate.then((sent) => {
-              if (sent) {
+            void sentLate.then((wentOut) => {
+              if (wentOut) {
                 logInteraction('gift_sent', { amountSats: sats }, session);
+              }
+              if (run === generation.current) {
+                setSent(wentOut ? 'paid' : null);
               }
             });
           }
         }
         if (run !== generation.current) {
           return;
+        }
+        if (result.kind === 'paid') {
+          setSent('paid');
+        } else if (sentLate === undefined) {
+          setSent(null);
         }
         if (result.kind === 'insufficient') {
           insufficientBalance.current = balanceBefore;
@@ -367,7 +391,9 @@ export function useWalletPay(
   }, [pinned]);
 
   if (pinned !== null) {
-    return { view: pinned, feeSats: 0, missingSats: amountSats, pay, retry };
+    // A pinned paying or unconfirmed view stands for a payment that went out.
+    const pinnedSent = pinned === 'paying' || pinned === 'unconfirmed' ? 'paid' : null;
+    return { view: pinned, sent: pinnedSent, feeSats: 0, missingSats: amountSats, pay, retry };
   }
   let view: WalletPayView;
   if (!usable) {
@@ -388,5 +414,5 @@ export function useWalletPay(
   const missing = amountSats + (feeSats ?? 0) - (balanceSats ?? 0);
   const missingSats =
     phase === 'insufficient' && balanceSats !== null && missing > 0 ? missing : null;
-  return { view, feeSats, missingSats, pay, retry };
+  return { view, sent, feeSats, missingSats, pay, retry };
 }

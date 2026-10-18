@@ -14,6 +14,7 @@ import { WalletPanelView } from '@/components/WalletPanelView';
 import { Button, Card } from '@/components/ui';
 import type { UseWalletResult } from '@/hooks/useWallet';
 import { useWalletPanel } from '@/hooks/useWalletPanel';
+import { useReceiveLink } from '@/components/OpenReceive';
 import type { UseWalletPhraseResult } from '@/hooks/useWalletPhrase';
 import type { UseWalletSendResult } from '@/hooks/useWalletSend';
 import { useAuthStore } from '@/stores/auth-store';
@@ -76,6 +77,7 @@ export function WalletScreenView({
   const walletReady = wallet?.status === 'ready';
   const panel = useWalletPanel({ send });
   const shown = panel.shown;
+  useReceiveLink(panel.openReceive);
   const stepBack = (): boolean => {
     if (surface === 'phrase') {
       if (showGrid) {

@@ -640,10 +640,12 @@ describe('useWalletPay sending', () => {
     const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(result.current.view).toBe('confirm');
+    expect(result.current.sent).toBeNull();
     await act(async () => {
       result.current.pay();
     });
     expect(result.current.view).toBe('paying');
+    expect(result.current.sent).toBe('paid');
     await act(async () => {
       result.current.pay();
       await vi.advanceTimersByTimeAsync(WALLET_PAY_CONFIRM_WAIT_MS - 1);
@@ -679,9 +681,33 @@ describe('useWalletPay sending', () => {
       await vi.advanceTimersByTimeAsync(1);
     });
     expect(result.current.view).toBe('unconfirmed');
+    expect(result.current.sent).toBeNull();
     expect(send).toHaveBeenCalledTimes(1);
     expect(payFromWallet).toHaveBeenCalledTimes(1);
     expect(logInteraction).not.toHaveBeenCalled();
+  });
+
+  it('says the send is pending until the wallet answers, then paid, or nothing after a failure', async () => {
+    let answer: (result: WalletSendResult) => void = () => undefined;
+    const send = vi.fn(
+      () =>
+        new Promise<WalletSendResult>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(send));
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
+    await act(async () => undefined);
+    await act(async () => {
+      result.current.pay();
+    });
+    expect(result.current.view).toBe('paying');
+    expect(result.current.sent).toBe('pending');
+    await act(async () => {
+      answer({ kind: 'failed', failure: FAILED });
+    });
+    expect(result.current.view).toBe('paying');
+    expect(result.current.sent).toBeNull();
   });
 
   it('shows insufficient balance when the send says so', async () => {
@@ -694,6 +720,7 @@ describe('useWalletPay sending', () => {
       result.current.pay();
     });
     expect(result.current.view).toBe('insufficient');
+    expect(result.current.sent).toBeNull();
     expect(logInteraction).not.toHaveBeenCalled();
   });
 
@@ -777,7 +804,12 @@ describe('useWalletPay visual pins', () => {
     setWallet('error');
     window.history.replaceState({}, '', `/welcome?visual=${visual}`);
     const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
-    expect(result.current).toMatchObject({ view, feeSats: 0, missingSats: 21 });
+    expect(result.current).toMatchObject({
+      view,
+      sent: view === 'paying' || view === 'unconfirmed' ? 'paid' : null,
+      feeSats: 0,
+      missingSats: 21,
+    });
     act(() => {
       result.current.pay();
       result.current.retry();
@@ -962,10 +994,37 @@ describe('useWalletPay gift record', () => {
       result.current.pay();
     });
     expect(logInteraction).not.toHaveBeenCalled();
+    // The app stopped waiting, but the SDK may still send it: not out yet, not failed either.
+    expect(result.current.sent).toBe('pending');
     await act(async () => {
       late(true);
     });
     expect(logInteraction).toHaveBeenCalledWith('gift_sent', { amountSats: 21 }, 'token');
+    expect(result.current.sent).toBe('paid');
+  });
+
+  it('keeps a late answer of a send for an older invoice out of the send state', async () => {
+    let late: (sent: boolean) => void = () => undefined;
+    const sentLate = new Promise<boolean>((resolve) => {
+      late = resolve;
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(
+      confirmWith(async () => ({ kind: 'failed', failure: TIMEOUT, sentLate })),
+    );
+    const { result, rerender } = renderHook(({ spark }) => useWalletPay(spark, PR, 21, 'gift'), {
+      initialProps: { spark: SPARK },
+    });
+    await act(async () => undefined);
+    await act(async () => {
+      result.current.pay();
+    });
+    expect(result.current.sent).toBe('pending');
+    rerender({ spark: 'spark1other' });
+    expect(result.current.sent).toBeNull();
+    await act(async () => {
+      late(true);
+    });
+    expect(result.current.sent).toBeNull();
   });
 
   it('records nothing when a send the app stopped waiting for fails later', async () => {
@@ -983,6 +1042,7 @@ describe('useWalletPay gift record', () => {
     });
     await act(async () => undefined);
     expect(logInteraction).not.toHaveBeenCalled();
+    expect(result.current.sent).toBeNull();
   });
 });
 

@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberHabits } from '@/app/habit-tracker/MemberHabits';
+import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -119,6 +120,16 @@ function json(body: unknown, status = 200): Response {
 
 function freshJson(body: unknown): () => Response {
   return () => json(body);
+}
+
+/**
+ * The one element of `all` outside a closed `Collapse`: a closed pay host stays mounted, inert,
+ * for `PAY_SHEET_HOLD_MS` after the sheet closed.
+ */
+function live<T extends HTMLElement>(all: T[]): T {
+  const shown = all.filter((el) => el.closest('[inert]') === null);
+  expect(shown).toHaveLength(1);
+  return shown[0] as T;
 }
 
 function periodControl(day: string, name: string): HTMLElement {
@@ -2283,47 +2294,68 @@ describe('MemberHabits', () => {
 
     fireEvent.change(amount, { target: { value: '23' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(await screen.findByText('Pay ₿23')).toBeTruthy();
+    const sheet = await screen.findByRole('dialog', { name: 'Send to Ada' });
+    expect(sheet.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(within(sheet).getByText('₿23')).toBeTruthy();
+    // The amount form stays behind the sheet, disabled, while the invoice is open.
+    expect((amount as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
     expect(
-      screen.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
+      within(sheet).getByText(
+        'Your 21.gifts wallet is not available here, so this cannot be paid.',
+      ),
     ).toBeTruthy();
     expect(screen.queryByRole('img', { name: 'Bitcoin payment QR code' })).toBeNull();
     expect(screen.queryByText('lnbc23')).toBeNull();
     expect(screen.queryByDisplayValue('lnbc23')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(screen.queryByLabelText('Amount')).toBeNull();
-    expect(screen.queryByText('Pay ₿23')).toBeNull();
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
+    // Closed by the member: the sheet slides away at once, with no success step.
+    expect(sheet.parentElement?.getAttribute('data-pay-sheet-layer')).toBe('closed');
+    expect(sheet.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(amount.closest('[inert]')).not.toBeNull();
+    await waitFor(
+      () => {
+        expect(screen.queryByLabelText('Amount')).toBeNull();
+        expect(screen.queryByRole('dialog')).toBeNull();
+      },
+      { timeout: 3000 },
+    );
 
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Send Bitcoin' })[0] as HTMLButtonElement,
     );
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '50' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(live(screen.getAllByLabelText('Amount')), { target: { value: '50' } });
+    fireEvent.click(live(screen.getAllByRole('button', { name: 'Continue' })));
     await waitFor(() => {
       expect(posts.some((row) => row.amountSats === 50)).toBe(true);
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(live(screen.getAllByRole('button', { name: 'Close' })));
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Send Bitcoin' })[1] as HTMLButtonElement,
     );
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '51' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(live(screen.getAllByLabelText('Amount')), { target: { value: '51' } });
+    fireEvent.click(live(screen.getAllByRole('button', { name: 'Continue' })));
     await waitFor(() => {
       expect(posts.some((row) => row.amountSats === 51)).toBe(true);
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(live(screen.getAllByRole('button', { name: 'Close' })));
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Send Bitcoin' })[0] as HTMLButtonElement,
     );
-    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '23' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(await screen.findByText('Pay ₿23')).toBeTruthy();
+    fireEvent.change(live(screen.getAllByLabelText('Amount')), { target: { value: '23' } });
+    fireEvent.click(live(screen.getAllByRole('button', { name: 'Continue' })));
+    const reopened = await screen.findByRole('dialog', { name: 'Send to Ada' });
+    expect(within(reopened).getByText('₿23')).toBeTruthy();
     await act(async () => {
       releaseStale(json({ pr: 'lnbc-stale', amountSats: 50 }));
       rejectStale(new Error('late'));
     });
-    expect(screen.queryByText('Pay ₿50')).toBeNull();
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(within(reopened).getByText('₿23')).toBeTruthy();
+    expect(screen.queryByText('₿50')).toBeNull();
     expect(screen.queryByText('Could not start the Bitcoin payment')).toBeNull();
     expect(screen.queryByText('lnbc-stale')).toBeNull();
   });
@@ -2375,7 +2407,7 @@ describe('MemberHabits', () => {
     await act(async () => {
       releasePay(json({ pr: 'lnbc-stale', amountSats: 21 }));
     });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.queryByLabelText('Amount')).toBeNull();
 
     fireEvent.click(
@@ -2574,16 +2606,18 @@ describe('MemberHabits', () => {
 
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '22' } });
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(await screen.findByText('Pay ₿22')).toBeTruthy();
+    const sheet = await screen.findByRole('dialog', { name: 'Send to Ada' });
+    expect(within(sheet).getByText('₿22')).toBeTruthy();
     expect(posts).toBe(2);
 
     await act(async () => {
       releasePay(json({ pr: 'lnbc-stale', amountSats: 21 }));
     });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
-    expect(screen.getByText('Pay ₿22')).toBeTruthy();
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(within(sheet).queryByText('₿21')).toBeNull();
+    expect(within(sheet).getByText('₿22')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
     fireEvent.click(
       (await screen.findAllByRole('button', { name: 'Send Bitcoin' }))[0] as HTMLButtonElement,
     );
@@ -2666,8 +2700,16 @@ describe('MemberHabits', () => {
     await waitFor(() => {
       expect(screen.queryByText("Can't receive yet")).toBeNull();
     });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
+    // The late invoice opened no pay sheet, and the closed gift's amount box is gone once its
+    // fold's hold ends.
+    expect(document.querySelector('[data-pay-sheet]')).toBeNull();
+    await waitFor(
+      () => {
+        expect(screen.queryByLabelText('Amount')).toBeNull();
+      },
+      { timeout: PAY_SHEET_HOLD_MS + 1000 },
+    );
+    expect(document.querySelector('[data-pay-sheet]')).toBeNull();
   });
 
   it('does not invoice until the spot rate read has settled', async () => {
