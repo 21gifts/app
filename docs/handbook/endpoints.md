@@ -52,14 +52,14 @@
 ## Endpoint: POST /auth/passkey/authenticate/begin
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/authenticate/begin`.
-- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Errors:** Upstream status, or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build.
 - **Used by:** `startPasskeyAuthentication`.
 - **Auth:** Public.
 
 ## Endpoint: POST /auth/passkey/authenticate/finish
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/authenticate/finish`.
-- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Errors:** Upstream status, or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build; 503 `{ error, code: 'logins_closed' }` while operators closed logins.
 - **Used by:** `finishPasskeyAuthentication`.
 - **Auth:** Public.
 
@@ -77,17 +77,25 @@
 - **Used by:** The browser SDK (`sentryOptions('browser')`).
 - **Auth:** Public. No session; the visitor's IP address, cookies, and headers are not forwarded.
 
+## Endpoint: POST /monitoring/csp
+
+- **Purpose:** Same-origin endpoint for Content-Security-Policy violation reports (`forwardCspReport`), named by `report-uri` and by the `csp` group of `Reporting-Endpoints`. Forwards each violation to the security endpoint of the `NEXT_PUBLIC_SENTRY_DSN` project, reduced to the directive, the blocked origin or keyword (`inline`, `eval`, `data`, …), the page's origin and first path segment when it is a route of `src/app`, the script's origin, the disposition (`report` or `enforce`), and line, column, and status numbers, then passed through the privacy scrubber.
+- **Inputs:** The legacy `{ "csp-report": {…} }` body (`application/csp-report`) or a Reporting API array (`application/reports+json`) whose `csp-violation` entries count. At most ten violations per request.
+- **Errors:** 404 while error reporting is off (no DSN), 413 above 64 KiB, 400 when the body is not JSON or holds no violation with a directive and an http(s) page, 502 when the Sentry server cannot be reached; otherwise 204.
+- **Used by:** Browsers, for the policy the middleware sends (`buildCsp`).
+- **Auth:** Public. No session; the visitor's IP address, cookies, headers, query strings, fragments, member paths, script samples, and referrers are not forwarded.
+
 ## Endpoint: POST /auth/passkey/register/begin
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/register/begin`. A new account posts JSON `{ name }`. `{ viewKey }` (64 hex) claims an existing public profile and sends no `name`. The empty body remains the old unnamed path; the new-account path of this app does not use it.
-- **Errors:** Upstream status (including 404 / 409 with `{ error }`), or 502 if the api is unreachable.
+- **Errors:** Upstream status (including 404 / 409 with `{ error }`), or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build; 503 `{ error, code: 'logins_closed' }` while operators closed logins.
 - **Used by:** `startPasskeyRegistration`.
 - **Auth:** Public.
 
 ## Endpoint: POST /auth/passkey/register/finish
 
 - **Purpose:** Same-origin proxy of api `POST /auth/passkey/register/finish`.
-- **Errors:** Upstream status, or 502 if the api is unreachable.
+- **Errors:** Upstream status, or 502 if the api is unreachable. The browser's `X-App-Build` is passed through unchanged. 403 `{ error, code: 'app_outdated' }` when the api requires another build; 503 `{ error, code: 'logins_closed' }` while operators closed logins.
 - **Used by:** `finishPasskeyRegistration`.
 - **Auth:** Public.
 

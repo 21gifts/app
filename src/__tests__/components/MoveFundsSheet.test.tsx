@@ -52,6 +52,7 @@ function wallet(status: UseWalletResult['status'], balanceSats: number | null): 
     balanceSats,
     retry: vi.fn(),
     setupFailed: false,
+    downloading: false,
     retrying: false,
   });
 }

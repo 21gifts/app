@@ -1,4 +1,5 @@
 import { captureRouterTransitionStart, init, webVitalsIntegration } from '@sentry/nextjs';
+import { capturePageLoad, markAppNavigation } from '@/lib/page-load';
 import { sentryOptions } from '@/lib/sentry';
 
 /**
@@ -9,7 +10,11 @@ import { sentryOptions } from '@/lib/sentry';
  * Web vitals keep LCP and CLS on the page-load transaction. INP is left out:
  * the SDK sends it as a standalone span, which neither the transaction
  * scrubber nor the tunnel lets through.
+ *
+ * Why this document was loaded is read first (`capturePageLoad`), before a
+ * client-side navigation can leave a new marker.
  */
+capturePageLoad();
 const options = sentryOptions('browser');
 if (options !== null) {
   // The server samples no traces, so its trace meta tags say "not sampled".
@@ -27,11 +32,19 @@ if (options !== null) {
 }
 
 /**
- * Next.js hook called when an App Router navigation starts. Starts the
- * navigation transaction while tracing is on, and does nothing otherwise.
+ * Next.js hook called when an App Router navigation starts. Leaves the `app`
+ * marker (`markAppNavigation`) until the navigation commits, so a full page
+ * load that App Router falls back to is counted as the app's. Starts the
+ * navigation transaction while tracing is on.
  *
  * @param href - Target of the navigation.
  * @param navigationType - `push`, `replace`, or `traverse`.
  * @returns Nothing.
  */
-export const onRouterTransitionStart = captureRouterTransitionStart;
+export function onRouterTransitionStart(
+  href: string,
+  navigationType: 'push' | 'replace' | 'traverse',
+): void {
+  markAppNavigation();
+  captureRouterTransitionStart(href, navigationType);
+}

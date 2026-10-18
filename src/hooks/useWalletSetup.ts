@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from 'react';
 import { visualPin } from '@/lib/visual-pin';
-import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { needsWalletSetup, retryWalletSetup } from '@/lib/wallet/wallet-setup';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
@@ -23,7 +22,7 @@ export interface UseWalletSetupResult {
   due: boolean;
   /** True when the background setup gave up for this session and is still due. */
   failed: boolean;
-  /** Starts the setup again; reloads when the wallet must reload. */
+  /** Starts the setup again, in this page. */
   retry: () => void;
 }
 
@@ -57,10 +56,6 @@ export function useWalletSetup(): UseWalletSetupResult {
 
   const retry = useCallback((): void => {
     if (pinned) {
-      return;
-    }
-    if (walletNeedsReload()) {
-      window.location.reload();
       return;
     }
     void retryWalletSetup();

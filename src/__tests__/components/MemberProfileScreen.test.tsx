@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberProfileScreen } from '@/components/MemberProfileScreen';
+import { MOTION_FOLD_MS, MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import {
   agreeToRules,
   CannotReceiveError,
@@ -156,7 +157,7 @@ const profile: MemberProfile = {
   username: 'carol',
   location: null,
   role: 'verified',
-  lightningAddress: null,
+  lightningAddress: 'carol@21.gifts',
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
   aboutMeHasPhoto: false,
@@ -1112,9 +1113,17 @@ describe('MemberProfileScreen', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
+    // The view swaps in after the old one has faded out.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
+    });
     expect(within(replyCard).getByText('Pay ₿21')).toBeTruthy();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
+    });
+    // The closed sheet folds away before it unmounts.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
     });
     expect(within(replyCard).queryByText('Pay ₿21')).toBeNull();
   });
@@ -1679,7 +1688,9 @@ describe('MemberProfileScreen', () => {
     );
     await expandNote();
     fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
-    expect(screen.queryByLabelText('Your reaction')).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Your reaction')).toBeNull();
+    });
   });
 
   it('cancels an open pay sheet', async () => {
@@ -1693,8 +1704,10 @@ describe('MemberProfileScreen', () => {
     const replyCard = await expandAndClickReplyGift();
     expect(within(replyCard).getByLabelText('Amount')).toBeTruthy();
     fireEvent.click(within(replyCard).getByRole('button', { name: 'Close' }));
-    expect(within(replyCard).queryByRole('button', { name: 'Continue' })).toBeNull();
-    expect(within(replyCard).queryByRole('button', { name: 'Close' })).toBeNull();
+    await waitFor(() => {
+      expect(within(replyCard).queryByRole('button', { name: 'Continue' })).toBeNull();
+      expect(within(replyCard).queryByRole('button', { name: 'Close' })).toBeNull();
+    });
   });
 
   it('uses expanded-thread sats for nested Gift, not a stale reactions copy', async () => {
@@ -1887,7 +1900,9 @@ describe('MemberProfileScreen', () => {
     expect(
       within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
     ).toBe('/wallet');
-    expect(screen.queryByRole('alert')).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
     expect(postMessageInvoice).toHaveBeenCalledTimes(2);
   });
 
@@ -1919,6 +1934,55 @@ describe('MemberProfileScreen', () => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21, 'reply', NO_RATE_SHOWN);
     });
     expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('asks for text instead of gifting when the author cannot receive and the reply is empty', async () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote({ ...note, authorCanReceive: false });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    });
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('charges only the posting fee, never a gift, when the author cannot receive', async () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote({ ...note, authorCanReceive: false });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${note.id}\nreply`,
+        NO_RATE_SHOWN,
+      );
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('posts a verified reply unpaid when the author cannot receive', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote({ ...note, authorCanReceive: false });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
   it('unlocks the composer and marks hasPosted after a paid reply poll', async () => {
@@ -2205,7 +2269,9 @@ describe('MemberProfileScreen', () => {
     });
     expect(within(secondReplyCard).getByLabelText('Amount')).toBeTruthy();
     expect((within(secondReplyCard).getByLabelText('Amount') as HTMLInputElement).value).toBe('7');
-    expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
+    });
   });
 
   it('drops a late paid-reply invoice after Gift is opened', async () => {
@@ -4352,6 +4418,20 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByTestId('staff-functions')).toBeNull();
   });
 
+  it('shows the cannot-receive label instead of the address, QR, and sticker', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, lightningAddress: null }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    expect(screen.queryByText(/carol@/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Shop sticker' })).toBeNull();
+    expect(screen.queryByText('No 21.gifts address')).toBeNull();
+  });
+
   it('shows unnamed and no-address copy when fields are null', () => {
     renderWithLocale(
       <MemberProfileScreen
@@ -4359,7 +4439,6 @@ describe('MemberProfileScreen', () => {
           ...profile,
           name: null,
           username: null,
-          lightningAddress: null,
           role: 'basis',
         }}
         received={[]}

@@ -7,6 +7,8 @@
  * build placeholder substituted by `entrypoint.sh` at container start.
  * `NEXT_PUBLIC_APP_VERSION` is baked at `next build` via Docker ARG
  * `APP_VERSION` / `next.config.ts` env, not an `entrypoint.sh` placeholder.
+ * `NEXT_PUBLIC_BUILD_ID` is baked the same way from Docker ARG
+ * `NEXT_PUBLIC_BUILD_ID`.
  * `NEXT_PUBLIC_BREEZ_API_KEY` is read through `getBreezApiKey`.
  * `NEXT_PUBLIC_PLATFORM_USERNAME`, `NEXT_PUBLIC_SENTRY_DSN`,
  * `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, and `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE`
@@ -31,6 +33,13 @@ declare global {
        * `entrypoint.sh` placeholder. Tests assign `NEXT_PUBLIC_APP_VERSION`.
        */
       NEXT_PUBLIC_APP_VERSION?: string;
+      /**
+       * Build id of this bundle (deployed commit, or `dev`), inlined at `next build`.
+       * Read exclusively through `getBuildId()` in `src/lib/config.ts`.
+       * Baked via Docker ARG `NEXT_PUBLIC_BUILD_ID` / `next.config.ts` env —
+       * not an `entrypoint.sh` placeholder. Tests assign it.
+       */
+      NEXT_PUBLIC_BUILD_ID?: string;
       /**
        * Optional Playwright instant (`YYYY-MM-DDTHH:mm:ss.sssZ`).
        * Read exclusively through `getE2eNow()` in `src/lib/config.ts`.
@@ -74,6 +83,14 @@ declare global {
        * when baking `NEXT_PUBLIC_APP_VERSION`. Not an `entrypoint.sh` placeholder.
        */
       APP_VERSION?: string;
+      /**
+       * Content-Security-Policy mode, read by the middleware on every request
+       * through `getCspMode()` in `src/lib/csp.ts`. `enforce` sends
+       * `Content-Security-Policy`; unset or any other value sends
+       * `Content-Security-Policy-Report-Only`. A runtime variable, not a
+       * build placeholder. Tests assign it.
+       */
+      CSP_MODE?: string;
       /** Set by CI systems (GitHub Actions sets `"true"`); read by `playwright.config.ts`. */
       readonly CI?: string;
     }

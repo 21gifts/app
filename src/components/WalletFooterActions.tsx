@@ -5,6 +5,8 @@ import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { AppShellContext, AppShellFooter } from '@/components/AppShell';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui';
+import { MOTION_EASE_MS } from '@/lib/motion';
+import { SCROLL_FOLLOW_ATTR } from '@/lib/reveal-in-scrollport';
 
 /** Scroll distance that takes the buttons from full to slim (or back), in px. */
 const COLLAPSE_RANGE = 80;
@@ -14,9 +16,6 @@ const FULL_NEAR_TOP = 24;
 
 /** Quiet time after the last scroll before an in-between size settles, in ms. */
 const SETTLE_MS = 140;
-
-/** Length of the fold away and back, in ms (`duration-280` below and in the shell footer). */
-const FOLD_MS = 280;
 
 /** Props for {@link WalletFooterActions}. */
 export interface WalletFooterActionsProps {
@@ -47,7 +46,9 @@ export interface WalletFooterActionsProps {
  * to 1 (slim: 36 px, a slightly smaller text, 16 px icons, `0.25rem` and
  * `0.75rem`) moves with the scroll distance itself: about 80 px down reach
  * slim, about 80 px up reach full again, with no transition while the page
- * moves. Within 24 px of the top they are always full. When the scroll stops
+ * moves. Within 24 px of the top they are always full. Scrolls while the port carries
+ * `SCROLL_FOLLOW_ATTR` (a reveal following a moving form) do not count; the one that ends the move
+ * does, as one move. When the scroll stops
  * for 140 ms at an in-between value they glide (320 ms) to the nearer end;
  * with reduced motion they go there at once. The scroll position is clamped
  * to the page, so an iOS overscroll does not count, and at the end of the
@@ -105,6 +106,15 @@ export function WalletFooterActions({
       body.style.setProperty('--footer-collapse', String(value));
     };
     const onScroll = (): void => {
+      // A reveal following a moving form: only the scroll that ends it counts, as one move. The
+      // footer does not settle in the middle of it either; that scroll starts the wait again.
+      if (scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
+        if (settle !== null) {
+          window.clearTimeout(settle);
+          settle = null;
+        }
+        return;
+      }
       const max = range();
       const top = scrolled(max);
       const delta = top - last;
@@ -123,7 +133,8 @@ export function WalletFooterActions({
       }
       settle = window.setTimeout(() => {
         settle = null;
-        if (progress === 0 || progress === 1) {
+        // A reveal started following without a scroll of its own: the scroll that ends it waits again.
+        if (progress === 0 || progress === 1 || scroller.hasAttribute(SCROLL_FOLLOW_ATTR)) {
           return;
         }
         if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -161,7 +172,7 @@ export function WalletFooterActions({
       body.dataset['footerFolding'] = '';
       done = window.setTimeout(() => {
         delete body.dataset['footerFolding'];
-      }, FOLD_MS);
+      }, MOTION_EASE_MS);
     }
     return () => {
       if (done !== null) {

@@ -22,8 +22,8 @@ const named: ViewProfile = {
   name: 'Ada',
   username: 'alice',
   location: null,
-  lightningAddress: null,
-  lightningAddressVerified: false,
+  lightningAddress: 'alice@21.gifts',
+  lightningAddressVerified: true,
   createdAt: 1,
   hasPasskey: false,
   aboutMe: null,
@@ -85,6 +85,21 @@ describe('ViewProfileScreen', () => {
       />,
     );
     expect(screen.getByText('Unnamed')).toBeTruthy();
+  });
+
+  it('shows the cannot-receive label instead of the address and QR', () => {
+    renderWithLocale(
+      <ViewProfileScreen
+        profile={{ ...named, lightningAddress: null, lightningAddressVerified: false }}
+        viewKey={VIEW_KEY}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    expect(screen.queryByText('alice@21.gifts')).toBeNull();
+    expect(screen.queryByText('No 21.gifts address')).toBeNull();
+    expect(screen.queryAllByRole('img', { name: 'Open CryptoPay QR code' })).toHaveLength(0);
   });
 
   it('shows the 21.gifts address from the username', () => {

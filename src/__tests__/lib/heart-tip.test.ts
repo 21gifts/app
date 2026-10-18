@@ -8,6 +8,7 @@ import {
   HEART_TIP_PLUS_ONE_MS,
   HEART_TIP_UNSETTLED_MS,
   endHeartPlusOne,
+  heartFailureView,
   sendHeartTip,
   useHeartTip,
 } from '@/lib/heart-tip';
@@ -478,6 +479,33 @@ describe('sendHeartTip', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('returns author_cannot_receive for visual=heart-cannot-receive in a Playwright build without invoicing', async () => {
+    vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
+    window.history.replaceState({}, '', '/welcome?visual=heart-cannot-receive');
+    await expect(sendHeartTip(BASE)).resolves.toEqual({
+      kind: 'failed',
+      reason: 'author_cannot_receive',
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('ignores visual=heart-cannot-receive in a production build and still pays', async () => {
+    window.history.replaceState({}, '', '/welcome?visual=heart-cannot-receive');
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      method: 'spark',
+      send,
+    });
+    await expect(sendHeartTip({ ...BASE, messageId: 'pin-prod-cr' })).resolves.toEqual({
+      kind: 'paid',
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+  });
+
   it('stays silent when signed out or read-only even with visual=heart-paid in Playwright', async () => {
     vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
     window.history.replaceState({}, '', '/welcome?visual=heart-paid');
@@ -908,6 +936,42 @@ async function clickHeart(
   });
 }
 
+describe('heartFailureView', () => {
+  it('sets cannotReceive on a refusal because the author cannot receive', () => {
+    expect(
+      heartFailureView({ pressed: true, plusOne: true, needsBalance: false, extra: 1 }, 0, {
+        kind: 'failed',
+        reason: 'author_cannot_receive',
+      }),
+    ).toEqual({ pressed: true, plusOne: true, needsBalance: false, extra: 0, cannotReceive: true });
+  });
+
+  it('keeps cannotReceive when a concurrent heart fails for another reason', () => {
+    const shown = heartFailureView(undefined, 0, {
+      kind: 'failed',
+      reason: 'author_cannot_receive',
+    });
+    expect(shown).toEqual({
+      pressed: false,
+      plusOne: false,
+      needsBalance: false,
+      extra: 0,
+      cannotReceive: true,
+    });
+    expect(heartFailureView(shown, 0, { kind: 'failed', reason: 'in_flight' })).toEqual(shown);
+    expect(heartFailureView(shown, 0, { kind: 'noop' }).cannotReceive).toBe(true);
+  });
+
+  it('adds no cannotReceive for another failure and keeps needsBalance and extra', () => {
+    expect(
+      heartFailureView({ pressed: true, plusOne: false, needsBalance: true, extra: 2 }, 1, {
+        kind: 'failed',
+        reason: 'request_failed',
+      }),
+    ).toEqual({ pressed: true, plusOne: false, needsBalance: true, extra: 1 });
+  });
+});
+
 describe('endHeartPlusOne', () => {
   it('returns the same object when the id has no row', () => {
     const prev = { m2: { pressed: true, plusOne: true, needsBalance: false } };
@@ -1049,6 +1113,49 @@ describe('useHeartTip', () => {
       needsBalance: false,
       extra: 0,
     });
+  });
+
+  it('shows the author-wallet line when the api says the author cannot receive', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CannotReceiveError());
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    await clickHeart(result, 'h-cannot');
+    expect(result.current.heartTipViews['h-cannot']).toEqual({
+      pressed: true,
+      plusOne: true,
+      needsBalance: false,
+      extra: 0,
+      cannotReceive: true,
+    });
+    expect(captureMessage).toHaveBeenCalledWith(
+      'Heart not sent',
+      expect.objectContaining({ tags: { heart_reason: 'author_cannot_receive' } }),
+    );
+    act(() => {
+      vi.advanceTimersByTime(HEART_TIP_PLUS_ONE_MS);
+    });
+    expect(result.current.heartTipViews['h-cannot']).toEqual({
+      pressed: false,
+      plusOne: false,
+      needsBalance: false,
+      extra: 0,
+      cannotReceive: true,
+    });
+  });
+
+  it('keeps the author-wallet line when heartCounts catch up with an earlier heart', async () => {
+    sessionStorage.setItem('21gifts.heart.sent', JSON.stringify({ m1: { base: 3, extra: 2 } }));
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CannotReceiveError());
+    const { result, rerender } = renderHook(
+      ({ heartCounts }: { heartCounts: Readonly<Record<string, number>> }) =>
+        useHeartTip({ readOnly: false, heartCounts }),
+      { initialProps: { heartCounts: { m1: 3 } } },
+    );
+    await clickHeart(result, 'm1');
+    expect(result.current.heartTipViews['m1']?.cannotReceive).toBe(true);
+    rerender({ heartCounts: { m1: 4 } });
+    expect(result.current.heartTipViews['m1']?.extra).toBe(1);
+    expect(result.current.heartTipViews['m1']?.cannotReceive).toBe(true);
   });
 
   it('shows the press and +1 on a Sunday tap and reports it without invoicing', async () => {

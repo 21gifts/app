@@ -3,6 +3,7 @@ import path from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { formatForumTimeFromMs } from '../src/lib/forum-time';
 import { stubCamera, type CameraStub } from './camera';
+import { installFakeWebAuthn } from './fake-webauthn';
 import {
   installNoPrfWebAuthn,
   NO_PRF_REGISTER_BEGIN,
@@ -11,6 +12,7 @@ import {
 } from './no-prf';
 import { pageFrameProblems } from '../src/lib/page-frame';
 import { fulfillSpot, spotRatesFromStats } from './fx-spot';
+import { motionSettled } from './motion';
 import {
   fulfillLedger,
   fulfillMyLoans,
@@ -676,7 +678,7 @@ async function stubOwnMember(page: Page): Promise<void> {
         username: 'alice',
         location: null,
         role: 'basis',
-        lightningAddress: null,
+        lightningAddress: 'member@21.gifts',
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: null,
         profileMessage: null,
@@ -803,6 +805,8 @@ async function shotScreen(
   fullPage = true,
   options: { grantPlacesLoading?: boolean } = {},
 ): Promise<void> {
+  // Folds, swaps and height glides finish on timers; never capture one of them halfway.
+  await motionSettled(page);
   // Receive / Send settle at full or slim 140 ms after a scroll; never capture in between.
   await expect
     .poll(() =>
@@ -944,7 +948,7 @@ async function seedShopStickerMember(page: Page): Promise<void> {
         location: null,
         role: 'verified',
         username: 'carol',
-        lightningAddress: null,
+        lightningAddress: 'member@21.gifts',
         createdAt: '2026-01-15T12:00:00.000Z',
         aboutMe: 'Hello from Carol.',
         profileMessage: null,
@@ -1304,6 +1308,8 @@ test.describe('screen baselines', () => {
     await expect(page.getByText('Enter a whole number.')).toBeVisible();
     await shotScreen(page, 'state-pl-amount-invalid');
     await page.getByLabel('Amount').fill('21');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByLabel('Amount')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
@@ -1349,6 +1355,8 @@ test.describe('screen baselines', () => {
     await page.goto(`/pl?lightning=${lnurl}&fail=1`);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
     await page.getByLabel('Amount').fill('21');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('Could not create the invoice.')).toBeVisible();
     await expect(page.getByText('$0.02')).toBeVisible();
@@ -1844,6 +1852,110 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-balance-locked-error');
   });
 
+  /** Fulfils authenticate finish with 503 `logins_closed`, as the api does while logins are closed. */
+  async function refuseLoginClosed(page: Page): Promise<void> {
+    await page.route(/\/auth\/passkey\/authenticate\/finish$/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Logins are paused for an update. Try again later.',
+          code: 'logins_closed',
+        }),
+      });
+    });
+  }
+
+  /** Fulfils authenticate begin with 403 `app_outdated`, as the api does for an older build. */
+  async function refuseLoginOutdated(page: Page): Promise<void> {
+    await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 403,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'A new app version is ready. Reload the page.',
+          code: 'app_outdated',
+        }),
+      });
+    });
+  }
+
+  /** Opens `/wallet?visual=balance-locked` with Ada's stored session and no phrase in the tab. */
+  async function openBalanceLocked(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/wallet?visual=balance-locked');
+    await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  }
+
+  test('wallet balance-locked-closed', async ({ page }) => {
+    await installFakeWebAuthn(page, true);
+    await refuseLoginClosed(page);
+    await openBalanceLocked(page);
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
+    await expect(
+      page.getByText('21.gifts is updating. Please try again a little later.'),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-balance-locked-closed');
+  });
+
+  test('wallet balance-locked-outdated', async ({ page }) => {
+    await refuseLoginOutdated(page);
+    await openBalanceLocked(page);
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
+    await expect(page.getByText('A new version is ready')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Wallet', exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-balance-locked-outdated');
+  });
+
+  test('welcome held-session-closed', async ({ page }) => {
+    await installFakeWebAuthn(page, true);
+    await refuseLoginClosed(page);
+    await openHeldSession(page, '/welcome');
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
+    await expect(
+      page.getByText('21.gifts is updating. Please try again a little later.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-held-session-closed');
+  });
+
+  test('welcome held-session-outdated', async ({ page }) => {
+    await refuseLoginOutdated(page);
+    await openHeldSession(page, '/welcome');
+    await page.getByRole('button', { name: 'Log in', exact: true }).click();
+    await expect(page.getByText('A new version is ready')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-held-session-outdated');
+  });
+
   test('wallet balance-connecting', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -1876,6 +1988,40 @@ test.describe('screen baselines', () => {
     await page.goto('/wallet?visual=balance-connecting');
     await expect(page.getByText('Opening your wallet…')).toBeVisible();
     await shotScreen(page, 'state-wallet-balance-connecting');
+  });
+
+  test('wallet balance-downloading', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
+      });
+    });
+    await page.goto('/wallet?visual=balance-downloading');
+    await expect(page.getByText('Downloading wallet…')).toBeVisible();
+    await shotScreen(page, 'state-wallet-balance-downloading');
   });
 
   test('wallet balance-ready', async ({ page }) => {
@@ -2381,6 +2527,16 @@ test.describe('screen baselines', () => {
     );
     await expect(page.getByText('Opening your wallet…').first()).toBeVisible();
     await shotScreen(page, 'state-wallet-payment-connecting');
+  });
+
+  test('state-wallet-payment-downloading', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=balance-downloading',
+    );
+    await expect(page.getByText('Downloading wallet…').first()).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-downloading');
   });
 
   test('state-wallet-payment-error', async ({ page }) => {
@@ -3230,6 +3386,8 @@ test.describe('screen baselines', () => {
     await openWalletSend(page, '$0.00');
     const send = page.getByRole('region', { name: 'Send Bitcoin' });
     await send.getByLabel('Amount').fill('2100');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await send.getByRole('button', { name: 'Continue' }).click();
     await expect(send.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await expect(send.getByLabel('Amount')).toBeDisabled();
@@ -3690,6 +3848,8 @@ test.describe('screen baselines', () => {
     await openWelcomeSend(page, '$0.00');
     const send = page.getByRole('region', { name: 'Send Bitcoin' });
     await send.getByLabel('Amount').fill('2100');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await send.getByRole('button', { name: 'Continue' }).click();
     await expect(send.getByRole('button', { name: 'Continue' })).toBeDisabled();
     await expect(send.getByLabel('Amount')).toBeDisabled();
@@ -4656,6 +4816,28 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-failed-who-open');
   });
 
+  test('state /loans/repay failed-cannot-receive', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-failed-cannot-receive',
+      text: "A lender's wallet can't receive yet.",
+    });
+    await shotScreen(page, 'state-loans-repay-failed-cannot-receive');
+  });
+
+  test('state /loans/repay failed-cannot-receive-who-open', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-failed-cannot-receive',
+      text: "A lender's wallet can't receive yet.",
+      pressWho: true,
+    });
+    await expect(page.getByText('Diego')).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-failed-cannot-receive-who-open');
+  });
+
   test('state /loans/repay collecting', async ({ page }) => {
     await loanShot(page, { loans: [collectingLoan], text: 'Not fully funded yet.' });
     await shotScreen(page, 'state-loans-repay-collecting');
@@ -4705,6 +4887,44 @@ test.describe('login variant baselines', () => {
     await page.getByRole('button', { name: 'Log in' }).click();
     await expect(page.getByText('Something went wrong. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-login-error');
+  });
+
+  test('login closed', async ({ page }) => {
+    await installFakeWebAuthn(page, true);
+    await page.route(/\/auth\/passkey\/authenticate\/finish$/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Logins are paused for an update. Try again later.',
+          code: 'logins_closed',
+        }),
+      });
+    });
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(
+      page.getByText('21.gifts is updating. Please try again a little later.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-login-closed');
+  });
+
+  test('login outdated', async ({ page }) => {
+    await page.route(/\/auth\/passkey\/authenticate\/begin$/, async (route) => {
+      await route.fulfill({
+        status: 403,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'A new app version is ready. Reload the page.',
+          code: 'app_outdated',
+        }),
+      });
+    });
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    await expect(page.getByText('A new version is ready')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
+    await shotScreen(page, 'state-login-outdated');
   });
 
   test('login prf-unsupported', async ({ page }, testInfo) => {
@@ -5593,6 +5813,7 @@ test.describe('onboarding screens', () => {
       .click();
     await expect(page.getByPlaceholder('Write a reaction')).toBeEnabled();
     await expect(page.getByLabel('Amount')).toBeVisible();
+    await motionSettled(page);
   }
 
   test('welcome reaction-form', async ({ page }) => {
@@ -6195,7 +6416,9 @@ test.describe('onboarding screens', () => {
     await page.goto('/welcome');
     await page.getByText(REACTION_NOTE_TEXT).click();
     const field = page.getByLabel('Your reaction');
-    await expect(field).toBeVisible();
+    await expect(field).toBeEnabled();
+    // The reply block eases open first: type once the field has come to rest.
+    await motionSettled(page);
     await field.fill('@');
     const list = page.getByRole('listbox', { name: 'People' });
     await expect(list).toBeVisible();
@@ -6221,7 +6444,9 @@ test.describe('onboarding screens', () => {
     await page.goto('/welcome');
     await page.getByText(REACTION_NOTE_TEXT).click();
     const field = page.getByLabel('Your reaction');
-    await expect(field).toBeVisible();
+    await expect(field).toBeEnabled();
+    // The reply block eases open first: type once the field has come to rest.
+    await motionSettled(page);
     await chooseMentionAda(page, field);
     await shotScreen(page, 'state-welcome-mention-inserted-reply');
   });
@@ -7155,6 +7380,8 @@ test.describe('onboarding screens', () => {
     await page.goto('/welcome');
     await page.getByText('Thank you both — that helps.').click();
     await expect(page.getByText('External', { exact: true }).first()).toBeVisible();
+    // The replies block eases open first: press the pill where it comes to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'External', exact: true }).first().click();
     await expect(
       page.getByText(
@@ -7204,6 +7431,7 @@ test.describe('onboarding screens', () => {
 
   /** True when `locator` lies fully inside the app scrollport. */
   async function insideShell(locator: Locator): Promise<boolean> {
+    await motionSettled(locator.page());
     return locator.evaluate((node) => {
       const scroller = node.closest('[data-scrollport]');
       if (!(scroller instanceof HTMLElement)) {
@@ -7263,10 +7491,14 @@ test.describe('onboarding screens', () => {
     await page.goto(path);
     await page.getByText(REACTION_NOTE_TEXT).click();
     const field = page.getByLabel('Your reaction');
-    await expect(field).toBeVisible();
+    await expect(field).toBeEnabled();
+    // The reply block eases open first: type once the form has come to rest.
+    await motionSettled(page);
     await page.getByLabel('Amount').fill('21');
     await field.fill(REACTION_ANSWER);
     await expect(page.getByText('$0.02')).toBeVisible();
+    // The line under the amount eases in: act once it has come to rest.
+    await motionSettled(page);
   }
 
   test('state /welcome reaction-draft', async ({ page }) => {
@@ -7319,6 +7551,8 @@ test.describe('onboarding screens', () => {
     await form.getByRole('button', { name: 'Post' }).click();
     const payPage = page.locator('[data-reply-pay-page]');
     await expect(payPage).toBeVisible();
+    // The pay page glides in after the form has faded out: scroll by where it comes to rest.
+    await motionSettled(page);
     await expect(payPage.getByText(REACTION_ANSWER)).toBeVisible();
     await expect(page.getByLabel('Your reaction')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Close' })).toBeVisible();
@@ -7348,6 +7582,8 @@ test.describe('onboarding screens', () => {
     await form.getByRole('button', { name: 'Post' }).click();
     const sheet = page.locator('[data-reply-pay-page]');
     await expect(sheet).toBeVisible();
+    // The pay page glides in after the form has faded out: scroll by where it comes to rest.
+    await motionSettled(page);
     await expect(sheet.getByText(REACTION_ANSWER)).toBeVisible();
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
@@ -7396,6 +7632,8 @@ test.describe('onboarding screens', () => {
     await form.getByRole('button', { name: 'Post' }).click();
     const sheet = page.locator('[data-reply-pay-page]');
     await expect(sheet).toBeVisible();
+    // The pay page glides in after the form has faded out: scroll by where it comes to rest.
+    await motionSettled(page);
     return sheet;
   }
 
@@ -7471,6 +7709,7 @@ test.describe('onboarding screens', () => {
     const payPage = page.locator('[data-reply-pay-page]');
     const preview = payPage.getByText(REACTION_ANSWER);
     await expect(preview).toBeVisible();
+    await motionSettled(page);
     expect(
       await preview.evaluate((node) => {
         return (
@@ -7658,6 +7897,7 @@ test.describe('onboarding screens', () => {
     const posted = page.getByText(REACTION_ANSWER);
     await expect(posted).toBeVisible();
     await expect(page.getByLabel('Your reaction')).toHaveValue('');
+    await motionSettled(page);
     await posted.evaluate((node) => {
       node.scrollIntoView({ block: 'center', inline: 'nearest' });
     });
@@ -7749,6 +7989,7 @@ test.describe('onboarding screens', () => {
       )
       .toBe(true);
     const parentName = page.getByText('Riana Rosello').first();
+    await motionSettled(page);
     await parentName.evaluate((el: HTMLElement) => {
       el.scrollIntoView({ block: 'start' });
     });
@@ -8072,6 +8313,192 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('A Bitcoin balance is required for this.')).toBeVisible();
     await page.getByText('A Bitcoin balance is required for this.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-heart-needs-balance');
+  });
+
+  test('state /welcome heart-cannot-receive', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-erin',
+              accountId: 'acc-erin',
+              name: 'Erin',
+              text: 'Fresh pandesal every morning near the chapel.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              authorCanReceive: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome?visual=heart-cannot-receive');
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    const line = page.getByText("The author's wallet cannot receive this Bitcoin payment");
+    await expect(line).toBeVisible();
+    await line.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-heart-cannot-receive');
+  });
+
+  test('state /welcome heart-cannot-receive-refreshed', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    let blocked = false;
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-erin',
+              accountId: 'acc-erin',
+              name: 'Erin',
+              text: 'Fresh pandesal every morning near the chapel.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: !blocked,
+              authorCanReceive: !blocked,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome?visual=heart-cannot-receive');
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    const line = page.getByText("The author's wallet cannot receive this Bitcoin payment");
+    await expect(line).toBeVisible();
+    blocked = true;
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'hidden',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'visible',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
+    await expect(line).toBeVisible();
+    await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+    await line.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-heart-cannot-receive-refreshed');
+  });
+
+  test('state /welcome heart-cannot-receive-older-api', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    let blocked = false;
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-erin',
+              accountId: 'acc-erin',
+              name: 'Erin',
+              text: 'Fresh pandesal every morning near the chapel.',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: !blocked,
+              ...(blocked ? {} : { authorCanReceive: true }),
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome?visual=heart-cannot-receive');
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    const line = page.getByText("The author's wallet cannot receive this Bitcoin payment");
+    await expect(line).toBeVisible();
+    blocked = true;
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'hidden',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'visible',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+    await expect(page.getByText("Can't receive yet")).toHaveCount(0);
+    await expect(line).toBeVisible();
+    await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+    await line.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-heart-cannot-receive-older-api');
   });
 
   test('state /welcome heart-paid', async ({ page }) => {
@@ -8679,6 +9106,36 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-profile-sunday');
   });
 
+  test('state /profile cannot-receive', async ({ page }) => {
+    await seedProfilePage(page);
+    await page.route(/\/forum\/members\/acc_e2e$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          username: 'alice',
+          location: null,
+          role: 'basis',
+          lightningAddress: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 14,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.goto('/profile');
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByText('alice@21.gifts')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+    await page.getByText("Can't receive yet").scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-cannot-receive');
+  });
+
   test('state /profile sticker-open', async ({ page }) => {
     await seedProfilePage(page);
     await openProfile(page);
@@ -8733,7 +9190,7 @@ test.describe('onboarding screens', () => {
           username: 'alice',
           location: null,
           role: 'verified',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -8832,6 +9289,8 @@ test.describe('onboarding screens', () => {
     await page.getByText('Second post from Ada.').click();
     const field = page.getByLabel('Your reaction');
     await expect(field).toBeEnabled();
+    // The reply block eases open first: scroll by where the field comes to rest.
+    await motionSettled(page);
     await field.scrollIntoViewIfNeeded();
     return field;
   }
@@ -8864,7 +9323,7 @@ test.describe('onboarding screens', () => {
           username: 'alice',
           location: null,
           role: 'basis',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -10114,7 +10573,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: 'Hello from Carol.',
           profileMessage: {
@@ -10148,6 +10607,61 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Message' })).toBeVisible();
     await shotScreen(page, 'screen-members-accountId');
+  });
+
+  test('state /members/[accountId] cannot-receive', async ({ page }) => {
+    const memberId = '12121212-1212-4212-8212-121212121212';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Erin',
+          location: 'Tondo',
+          role: 'basis',
+          username: 'erin',
+          lightningAddress: null,
+          createdAt: '2026-03-01T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByText(/erin@/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+    await shotScreen(page, 'state-members-cannot-receive');
   });
 
   test('state /members software-developer', async ({ page }) => {
@@ -10250,7 +10764,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -10341,7 +10855,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -10421,7 +10935,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -10529,7 +11043,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -10666,7 +11180,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -10730,6 +11244,8 @@ test.describe('onboarding screens', () => {
     await page.getByText('Second post from Carol.').click();
     const field = page.getByLabel('Your reaction');
     await expect(field).toBeEnabled();
+    // The reply block eases open first: scroll by where the field comes to rest.
+    await motionSettled(page);
     await field.scrollIntoViewIfNeeded();
     return field;
   }
@@ -10781,7 +11297,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -10882,7 +11398,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -10976,7 +11492,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -11064,7 +11580,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -11131,7 +11647,7 @@ test.describe('onboarding screens', () => {
   });
 
   /** Signed-in Ada on Carol's profile, whose one post is a loan that still collects. */
-  async function seedCarolLoan(page: Page, sats = 10500): Promise<string> {
+  async function seedCarolLoan(page: Page, sats = 10500, cannotReceive = false): Promise<string> {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const loanId = '44444444-4444-4444-8444-444444444444';
     await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
@@ -11165,7 +11681,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: cannotReceive ? null : 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -11190,7 +11706,7 @@ test.describe('onboarding screens', () => {
               goalSats: 21000,
               goalRepayable: true,
               goalTermDays: 30,
-              payable: true,
+              ...(cannotReceive ? { payable: false, authorCanReceive: false } : { payable: true }),
               hasPhoto: false,
               hasVideo: false,
               videoContentType: null,
@@ -11236,14 +11752,30 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-posts-open-loan-lend');
   });
 
+  test('state /members posts-open-loan-lend-cannot-receive', async ({ page }) => {
+    const memberId = await seedCarolLoan(page, 10500, true);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByRole('button', { name: 'Lend' })).toBeDisabled();
+    await expect(page.getByText("Can't receive yet").first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Shop sticker' })).toHaveCount(0);
+    await expect(page.getByText(/carol@/)).toHaveCount(0);
+    await shotScreen(page, 'state-members-posts-open-loan-lend-cannot-receive');
+  });
+
   test('state /members posts-open-loan-pay', async ({ page }) => {
     const memberId = await seedCarolLoan(page);
     await page.goto(`/members/${memberId}?visual=wallet-pay-confirm`);
     await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Lend' }).click();
+    // The reply block eases open first: type where the fields come to rest.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     await page.getByLabel('Amount to lend').fill('210');
     await page.getByLabel('Your reaction').fill('Count me in!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
     const sheet = page.locator('[data-pay-sheet]');
     await expect(sheet.getByText('You lend ₿210 · $0.21')).toBeVisible();
@@ -11251,6 +11783,7 @@ test.describe('onboarding screens', () => {
       'You are lending to Carol. Once the loan is fully funded, you get it back in 30 daily payments.',
     );
     await expect(sheet.getByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeVisible();
+    await motionSettled(page);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
@@ -11264,9 +11797,14 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Fully funded', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
     await page.getByRole('button', { name: 'React', exact: true }).click();
+    // The reply block eases open first: type once the form has come to rest.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     await page.getByLabel('Amount', { exact: true }).fill('210');
     await page.getByLabel('Your reaction').fill('Thank you, Carol!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
     const sheet = page.locator('[data-pay-sheet]');
     await expect(sheet.getByText('Pay ₿210 · $0.21')).toBeVisible();
@@ -11274,6 +11812,7 @@ test.describe('onboarding screens', () => {
       'This loan is already fully funded. What you send now is a gift to Carol.',
     );
     await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    await motionSettled(page);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
@@ -11313,7 +11852,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -11385,7 +11924,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -11546,7 +12085,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -11657,7 +12196,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -11929,7 +12468,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -12005,7 +12544,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -12237,7 +12776,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -12307,7 +12846,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -12521,7 +13060,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -12611,7 +13150,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -12899,7 +13438,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -13015,7 +13554,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'basis',
           username: 'alice',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: null,
@@ -13068,7 +13607,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -13131,9 +13670,16 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Hello from my profile note.')).toBeVisible();
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     await expect(page.getByLabel('Your reaction')).toBeVisible();
+    // Typing scrolls the field into view: wait until the reply block has eased open.
+    await motionSettled(page);
     await page.getByLabel('Your reaction').fill('Hello');
     await page.getByLabel('Amount').fill('1');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Your wallet is not set up' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
@@ -13172,7 +13718,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -13235,9 +13781,16 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 post' }).click();
     await expect(page.getByText('Hello from my profile note.')).toBeVisible();
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     await expect(page.getByLabel('Your reaction')).toBeVisible();
+    // Typing scrolls the field into view: wait until the reply block has eased open.
+    await motionSettled(page);
     await page.getByLabel('Your reaction').fill('Hello');
     await page.getByLabel('Amount').fill('1');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     await expect(page.getByRole('dialog', { name: 'Add your 21.gifts name' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
@@ -13276,7 +13829,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'basis',
           username: 'alice',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           profileMessage: null,
           postCount: 0,
@@ -13337,7 +13890,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'basis',
           username: 'alice',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           profileMessage: null,
           postCount: 0,
@@ -13848,7 +14401,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'basis',
           username: 'alice',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           profileMessage: null,
           postCount: 0,
@@ -13905,7 +14458,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: 'Hello from Carol.',
           profileMessage: null,
@@ -13957,7 +14510,7 @@ test.describe('onboarding screens', () => {
           name: 'Carol',
           location: null,
           role: 'verified',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: 'Hello from Carol.',
           profileMessage: null,
@@ -14086,7 +14639,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14176,7 +14729,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14270,7 +14823,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14361,7 +14914,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14454,7 +15007,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14547,7 +15100,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14608,7 +15161,8 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-heart-needs-balance');
   });
 
-  test('state /members heart-paid', async ({ page }) => {
+  /** Signed-in Ada on Carol's profile; Carol cannot receive yet and has one ordinary post. */
+  async function seedCarolCannotReceivePost(page: Page): Promise<string> {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const noteId = '33333333-3333-4333-8333-333333333333';
     await page.addInitScript(() => {
@@ -14640,6 +15194,219 @@ test.describe('onboarding screens', () => {
           role: 'verified',
           username: 'carol',
           lightningAddress: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: false,
+            authorCanReceive: false,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Fresh pandesal every morning near the chapel.',
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: false,
+              authorCanReceive: false,
+              heartCount: 2,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${noteId}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    return memberId;
+  }
+
+  test('state /members posts-open-cannot-receive', async ({ page }) => {
+    const memberId = await seedCarolCannotReceivePost(page);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    const card = page.locator('li', { hasText: 'Fresh pandesal every morning near the chapel.' });
+    await expect(card.getByText("Can't receive yet")).toBeVisible();
+    await expect(card.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
+    await card.getByText("Can't receive yet").scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-posts-open-cannot-receive');
+  });
+
+  test('state /members posts-open-cannot-receive-reactions', async ({ page }) => {
+    const memberId = await seedCarolCannotReceivePost(page);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.locator('#forum-reply-amount')).toBeDisabled();
+    await expect(page.getByLabel('Your reaction')).toBeVisible();
+    await page.getByLabel('Your reaction').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-posts-open-cannot-receive-reactions');
+  });
+
+  test('state /members heart-cannot-receive', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'member@21.gifts',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: GERMAN_NOTE_TEXT,
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto(`/members/${memberId}?visual=heart-cannot-receive`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(
+      page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+    ).toBeVisible();
+    await page
+      .getByText("The author's wallet cannot receive this Bitcoin payment")
+      .evaluate((node) => {
+        node.scrollIntoView({ block: 'center', inline: 'nearest' });
+      });
+    await shotScreen(page, 'state-members-heart-cannot-receive');
+  });
+
+  test('state /members heart-paid', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: null,
           profileMessage: {
@@ -14741,7 +15508,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: GERMAN_NOTE_TEXT,
           profileMessage: {
@@ -14806,7 +15573,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: GERMAN_NOTE_TEXT,
           profileMessage: {
@@ -14875,7 +15642,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: GERMAN_NOTE_TEXT,
           profileMessage: {
@@ -14943,7 +15710,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: GERMAN_NOTE_TEXT,
           profileMessage: {
@@ -15012,7 +15779,7 @@ test.describe('onboarding screens', () => {
           location: null,
           role: 'verified',
           username: 'carol',
-          lightningAddress: null,
+          lightningAddress: 'member@21.gifts',
           createdAt: '2026-01-15T12:00:00.000Z',
           aboutMe: GERMAN_NOTE_TEXT,
           profileMessage: {
@@ -15993,7 +16760,11 @@ test.describe('onboarding screens', () => {
   });
 
   /** Signed-in Ada on the open note of Maria's loan, with an empty thread and a 210-sat invoice. */
-  async function seedMariaLoanNote(page: Page, sats = 10500): Promise<string> {
+  async function seedMariaLoanNote(
+    page: Page,
+    sats = 10500,
+    cannotReceive = false,
+  ): Promise<string> {
     const id = '55555555-5555-4555-8555-555555555555';
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -16044,7 +16815,7 @@ test.describe('onboarding screens', () => {
       goalSats: 21000,
       goalRepayable: true,
       goalTermDays: 30,
-      payable: true,
+      ...(cannotReceive ? { payable: false, authorCanReceive: false } : { payable: true }),
       hasPhoto: false,
       role: 'basis',
       replyCount: 0,
@@ -16077,14 +16848,26 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-loan-lend');
   });
 
+  test('state /messages/[id] loan-lend-cannot-receive', async ({ page }) => {
+    const id = await seedMariaLoanNote(page, 10500, true);
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByRole('button', { name: 'Lend' })).toBeDisabled();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await shotScreen(page, 'state-messages-id-loan-lend-cannot-receive');
+  });
+
   test('state /messages/[id] loan-pay', async ({ page }) => {
     const id = await seedMariaLoanNote(page);
     await page.goto(`/messages/${id}?visual=wallet-pay-confirm`);
     await page.getByRole('button', { name: 'Lend' }).click();
     await expect(page.getByLabel('Amount to lend')).toBeFocused();
+    // The reply block eases open first: type once the form has come to rest.
+    await motionSettled(page);
     await page.getByLabel('Amount to lend').fill('210');
     await page.getByLabel('Your reaction').fill('Count me in!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
     const sheet = page.locator('[data-pay-sheet]');
     await expect(sheet.getByText('You lend ₿210 · $0.21')).toBeVisible();
@@ -16092,6 +16875,7 @@ test.describe('onboarding screens', () => {
       'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
     );
     await expect(sheet.getByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeVisible();
+    await motionSettled(page);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
@@ -16106,6 +16890,8 @@ test.describe('onboarding screens', () => {
     await page.getByLabel('Amount', { exact: true }).fill('210');
     await page.getByLabel('Your reaction').fill('Thank you, Maria!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
     const sheet = page.locator('[data-pay-sheet]');
     await expect(sheet.getByText('Pay ₿210 · $0.21')).toBeVisible();
@@ -16113,6 +16899,7 @@ test.describe('onboarding screens', () => {
       'This loan is already fully funded. What you send now is a gift to Maria.',
     );
     await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    await motionSettled(page);
     await sheet.evaluate((node) => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
@@ -16349,6 +17136,10 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Edit shop note' }).click();
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
     await expect(page.getByText('No edits yet')).toBeVisible();
+    // The line under the reaction amount eases in once the rate has answered; a scroll to the
+    // end of the page must not run before it has come to rest.
+    await expect(page.getByText('No exchange rate yet')).toBeVisible();
+    await motionSettled(page);
   }
 
   test('state /messages/[id] shop-edit-photo-busy', async ({ page }) => {
@@ -16758,6 +17549,143 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('A Bitcoin balance is required for this.')).toBeVisible();
     await page.getByText('A Bitcoin balance is required for this.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-heart-needs-balance');
+  });
+
+  test('state /messages/[id] heart-cannot-receive', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    const note = {
+      id,
+      accountId: 'acc-ada',
+      name: 'Ada',
+      text: GERMAN_NOTE_TEXT,
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: true,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+    };
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(note),
+      });
+    });
+    await page.route(`**/forum/messages/${id}`, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(note),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto(`/messages/${id}?visual=heart-cannot-receive`);
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(
+      page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+    ).toBeVisible();
+    await page
+      .getByText("The author's wallet cannot receive this Bitcoin payment")
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-heart-cannot-receive');
+  });
+
+  test('state /messages/[id] author-cannot-receive', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    const note = {
+      id,
+      accountId: 'acc-erin',
+      name: 'Erin',
+      text: 'Fresh pandesal every morning near the chapel.',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      authorCanReceive: false,
+      heartCount: 2,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+    };
+    await fulfillPublicThreadReplies(page, id);
+    await page.route(`**/public-messages/${id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(note),
+      });
+    });
+    await page.route(`**/forum/messages/${id}`, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(note),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
+    await shotScreen(page, 'state-messages-id-author-cannot-receive');
   });
 
   test('state /messages/[id] heart-paid', async ({ page }) => {
@@ -18052,8 +18980,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: null,
@@ -18075,7 +19003,7 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-view-viewKey');
   });
 
-  test('state /view about-filled', async ({ page }) => {
+  test('state /view/[viewKey] cannot-receive', async ({ page }) => {
     await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
       await route.fulfill({
         status: 200,
@@ -18086,6 +19014,37 @@ test.describe('onboarding screens', () => {
           username: 'alice',
           lightningAddress: null,
           lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: true,
+          aboutMe: null,
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByText('alice@', { exact: false })).toHaveCount(0);
+    await shotScreen(page, 'state-view-cannot-receive');
+  });
+
+  test('state /view about-filled', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: 'I build on Bitcoin',
@@ -18115,8 +19074,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: 'I build on Bitcoin',
@@ -18153,8 +19112,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: GERMAN_NOTE_TEXT,
@@ -18185,8 +19144,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: GERMAN_NOTE_TEXT,
@@ -18221,8 +19180,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: GERMAN_NOTE_TEXT,
@@ -18256,8 +19215,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: GERMAN_NOTE_TEXT,
@@ -18292,8 +19251,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: GERMAN_NOTE_TEXT,
@@ -18364,8 +19323,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: true,
           aboutMe: null,
@@ -18400,8 +19359,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: null,
@@ -18431,6 +19390,66 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-view-claim-prf-unsupported');
   });
 
+  /** Opens the unclaimed profile and presses Activate against one api refusal. */
+  async function openClaimRefused(
+    page: Page,
+    status: number,
+    body: { error: string; code: string },
+    text: string,
+  ): Promise<void> {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          lightningAddressVerified: false,
+          createdAt: 1,
+          hasPasskey: false,
+          aboutMe: null,
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await page.route(/\/auth\/passkey\/register\/begin$/, async (route) => {
+      await route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await page.getByRole('button', { name: 'Activate' }).click();
+    await expect(page.getByText(text)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Activate' })).toHaveCount(0);
+  }
+
+  test('screen /view/[viewKey] claim-closed', async ({ page }) => {
+    await openClaimRefused(
+      page,
+      503,
+      { error: 'Logins are paused for an update. Try again later.', code: 'logins_closed' },
+      '21.gifts is updating. Please try again a little later.',
+    );
+    await shotScreen(page, 'state-view-claim-closed');
+  });
+
+  test('screen /view/[viewKey] claim-outdated', async ({ page }) => {
+    await openClaimRefused(
+      page,
+      403,
+      { error: 'A new app version is ready. Reload the page.', code: 'app_outdated' },
+      'A new version is ready',
+    );
+    await expect(page.getByRole('button', { name: 'Reload' })).toBeVisible();
+    await shotScreen(page, 'state-view-claim-outdated');
+  });
+
   test('screen /view/[viewKey] in-app', async ({ page }) => {
     await page.addInitScript(() => {
       Object.assign(window, { TelegramWebviewProxy: { postEvent() {} } });
@@ -18443,8 +19462,8 @@ test.describe('onboarding screens', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          lightningAddress: null,
-          lightningAddressVerified: false,
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
           createdAt: 1,
           hasPasskey: false,
           aboutMe: null,
@@ -20186,6 +21205,7 @@ test.describe('welcome forum variants', () => {
   }
 
   async function submitPayAmount(page: Page): Promise<void> {
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
   }
 
@@ -20198,8 +21218,14 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(page.getByText('$0.02').first()).toBeVisible();
@@ -20214,8 +21240,14 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(page.getByText(PAY_UNAVAILABLE)).toBeVisible();
@@ -20367,6 +21399,9 @@ test.describe('welcome forum variants', () => {
       await expect(
         page.getByRole('button', { name: 'Delete reaction', exact: true }),
       ).toBeVisible();
+      // The replies block eases open first: act once it has come to rest.
+      await expect(page.getByLabel('Your reaction')).toBeEnabled();
+      await motionSettled(page);
       if (state !== 'reply-moderation') {
         await page.getByRole('button', { name: 'Delete reaction', exact: true }).click();
         await expect(
@@ -20825,7 +21860,7 @@ test.describe('welcome forum variants', () => {
   });
 
   /** Signed-in Ada and Maria's loan that still collects (or is full), with an empty thread. */
-  async function seedLoanCard(page: Page, sats = 10500): Promise<void> {
+  async function seedLoanCard(page: Page, sats = 10500, cannotReceive = false): Promise<void> {
     await seedAda(page);
     await fulfillRateDay(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -20844,7 +21879,7 @@ test.describe('welcome forum variants', () => {
               goalSats: 21000,
               goalRepayable: true,
               goalTermDays: 30,
-              payable: true,
+              ...(cannotReceive ? { payable: false, authorCanReceive: false } : { payable: true }),
               hasPhoto: false,
               role: 'basis',
               replyCount: 0,
@@ -20879,14 +21914,28 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-loan-lend');
   });
 
+  test('state /welcome loan-lend-cannot-receive', async ({ page }) => {
+    await seedLoanCard(page, 10500, true);
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('button', { name: 'Lend' })).toBeDisabled();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await shotScreen(page, 'state-welcome-loan-lend-cannot-receive');
+  });
+
   test('state /welcome loan-pay', async ({ page }) => {
     await seedLoanCard(page);
     await page.goto('/welcome?visual=wallet-pay-confirm');
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Lend' }).click();
+    // The reply block eases open first: type where the fields come to rest.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     await page.getByLabel('Amount to lend').fill('210');
     await page.getByLabel('Your reaction').fill('Count me in!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
     const payPage = page.locator('[data-reply-pay-page]');
     await expect(payPage.getByText('You lend ₿210 · $0.21')).toBeVisible();
@@ -20894,6 +21943,7 @@ test.describe('welcome forum variants', () => {
       'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
     );
     await expect(payPage.getByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeVisible();
+    await motionSettled(page);
     await payPage.evaluate((node) => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
@@ -20906,9 +21956,14 @@ test.describe('welcome forum variants', () => {
     await chooseForumView(page, 'All');
     await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
     await page.getByRole('button', { name: 'React', exact: true }).click();
+    // The reply block eases open first: type once the form has come to rest.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     await page.getByLabel('Amount', { exact: true }).fill('210');
     await page.getByLabel('Your reaction').fill('Thank you, Maria!');
     const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await form.getByRole('button', { name: 'Post' }).click();
     const payPage = page.locator('[data-reply-pay-page]');
     await expect(payPage.getByText('Pay ₿210 · $0.21')).toBeVisible();
@@ -20916,6 +21971,7 @@ test.describe('welcome forum variants', () => {
       'This loan is already fully funded. What you send now is a gift to Maria.',
     );
     await expect(payPage.getByRole('button', { name: 'Send', exact: true })).toBeVisible();
+    await motionSettled(page);
     await payPage.evaluate((node) => {
       node.scrollIntoView({ block: 'end', inline: 'nearest' });
     });
@@ -23806,8 +24862,14 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Pay', exact: true })).toHaveCount(0);
@@ -23954,8 +25016,14 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(
@@ -23966,6 +25034,110 @@ test.describe('welcome forum variants', () => {
       0,
     );
     await shotScreen(page, 'state-welcome-pay-author-wallet');
+  });
+
+  test('welcome author-cannot-receive', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-erin',
+              accountId: 'acc-erin',
+              name: 'Erin',
+              text: 'Fresh pandesal every morning near the chapel.',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: false,
+              authorCanReceive: false,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 1,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await chooseForumView(page, 'All');
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-author-cannot-receive');
+  });
+
+  test('welcome author-cannot-receive-open', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      const url = route.request().url();
+      if (url.includes('/replies') || route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-erin',
+              accountId: 'acc-erin',
+              name: 'Erin',
+              text: 'Fresh pandesal every morning near the chapel.',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: false,
+              authorCanReceive: false,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 1,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/m-erin/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-ben',
+              accountId: 'acc-ben',
+              parentId: 'm-erin',
+              name: 'Ben',
+              text: 'I will come by tomorrow.',
+              createdAt: '2026-08-28T10:05:00.000Z',
+              sats: 0,
+              payable: false,
+              authorCanReceive: false,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await chooseForumView(page, 'All');
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    const replyCard = page.locator('[data-reply-id="r-ben"]');
+    await expect(replyCard.getByText("Can't receive yet")).toBeVisible();
+    await expect(replyCard.getByRole('button', { name: 'Send Bitcoin' })).toBeDisabled();
+    await expect(page.locator('#forum-reply-amount')).toBeDisabled();
+    await shotScreen(page, 'state-welcome-author-cannot-receive-open');
   });
 
   test('welcome pay-deleted', async ({ page }) => {
@@ -24032,8 +25204,14 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await chooseForumView(page, 'All');
     await page.getByRole('button', { name: 'Show reactions' }).click();
+    // The replies load first (the field is disabled until then), then the block eases open.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
     const replyCard = page.locator('[data-reply-id="r-pay"]');
     await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await replyCard.getByLabel('Amount').fill('21');
     await submitPayAmount(page);
     await expect(page.getByText('This note was deleted.')).toBeVisible();
@@ -24332,6 +25510,240 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-heart-needs-balance');
   });
 
+  test('state /shops heart-cannot-receive', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              accountId: 'acc-ada',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops?visual=heart-cannot-receive');
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    await expect(
+      page.getByText("The author's wallet cannot receive this Bitcoin payment"),
+    ).toBeVisible();
+    await page
+      .getByText("The author's wallet cannot receive this Bitcoin payment")
+      .scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-heart-cannot-receive');
+  });
+
+  test('state /shops heart-cannot-receive-refreshed', async ({ page }) => {
+    await seedAda(page);
+    let blocked = false;
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              accountId: 'acc-ada',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: !blocked,
+              authorCanReceive: !blocked,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops?visual=heart-cannot-receive');
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    const line = page.getByText("The author's wallet cannot receive this Bitcoin payment");
+    await expect(line).toBeVisible();
+    blocked = true;
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'hidden',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'visible',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
+    await expect(line).toBeVisible();
+    await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+    await line.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-heart-cannot-receive-refreshed');
+  });
+
+  test('state /shops heart-cannot-receive-older-api', async ({ page }) => {
+    await seedAda(page);
+    let blocked = false;
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              accountId: 'acc-ada',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: !blocked,
+              ...(blocked ? {} : { authorCanReceive: true }),
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops?visual=heart-cannot-receive');
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    const line = page.getByText("The author's wallet cannot receive this Bitcoin payment");
+    await expect(line).toBeVisible();
+    blocked = true;
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'hidden',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        get: () => 'visible',
+      });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+    await expect(page.getByText("Can't receive yet")).toHaveCount(0);
+    await expect(line).toBeVisible();
+    await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
+    await line.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-shops-heart-cannot-receive-older-api');
+  });
+
+  test('state /shops author-cannot-receive', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              accountId: 'acc-erin',
+              name: 'Erin',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 5,
+              payable: false,
+              authorCanReceive: false,
+              heartCount: 2,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-author-cannot-receive');
+  });
+
+  test('state /shops author-cannot-receive-open', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      const url = route.request().url();
+      if (url.includes('/replies') || route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-erin',
+              accountId: 'acc-erin',
+              name: 'Erin',
+              text: 'Fresh pandesal every morning near the chapel.\n\n#21GiftsShop',
+              createdAt: '2026-08-28T10:00:00.000Z',
+              sats: 0,
+              payable: false,
+              authorCanReceive: false,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 1,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route('**/messages/m-erin/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'r-ben',
+              accountId: 'acc-ben',
+              parentId: 'm-erin',
+              name: 'Ben',
+              text: 'I will come by tomorrow.',
+              createdAt: '2026-08-28T10:05:00.000Z',
+              sats: 0,
+              payable: false,
+              authorCanReceive: false,
+              hasPhoto: false,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops');
+    await expect(page.getByText('Fresh pandesal every morning near the chapel.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    const replyCard = page.locator('[data-reply-id="r-ben"]');
+    await expect(replyCard.getByText("Can't receive yet")).toBeVisible();
+    await expect(replyCard.getByRole('button', { name: 'Send Bitcoin' })).toBeDisabled();
+    await expect(page.locator('#forum-reply-amount')).toBeDisabled();
+    await shotScreen(page, 'state-shops-author-cannot-receive-open');
+  });
+
   test('state /shops heart-paid', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -24465,6 +25877,8 @@ test.describe('shops screens', () => {
     await page.getByText('Cafe Luna').click();
     const field = page.getByLabel('Your reaction');
     await expect(field).toBeEnabled();
+    // The reply block eases open first: scroll by where the field comes to rest.
+    await motionSettled(page);
     await field.scrollIntoViewIfNeeded();
     return field;
   }
@@ -27065,6 +28479,54 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-thread');
   });
 
+  test('messages thread-cannot-receive', async ({ page }) => {
+    await seedAda(page);
+    await page.route(/\/conversations$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          conversations: [
+            {
+              id: 'conv-erin',
+              kind: 'member_member',
+              name: 'Erin',
+              lastText: 'See you at the market',
+              lastAt: '2026-08-28T12:00:00.000Z',
+              lastFromMe: false,
+              lastSats: 0,
+              accountId: 'acc-erin',
+              canReceive: false,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(/\/conversations\/conv-erin(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm1',
+              name: 'Erin',
+              text: 'See you at the market',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              fromMe: false,
+              sats: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/messages?c=conv-erin');
+    await expect(page.getByText('See you at the market')).toBeVisible();
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByLabel('Amount')).toBeDisabled();
+    await shotScreen(page, 'state-messages-thread-cannot-receive');
+  });
+
   test('state /messages thread-mention-suggest', async ({ page }) => {
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
@@ -27642,6 +29104,8 @@ test.describe('inbox screens', () => {
     await page.goto('/messages?c=conv-21');
     await expect(page.getByText('Hello team')).toBeVisible();
     await page.getByLabel('Amount').fill('21');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(page.getByText(PAY_UNAVAILABLE)).toBeVisible();
     await expect(page.getByRole('img', { name: ANY_QR })).toHaveCount(0);
@@ -27712,6 +29176,8 @@ test.describe('inbox screens', () => {
     await page.goto(`/messages?c=conv-21&visual=${visual}`);
     await expect(page.getByText('Hello team')).toBeVisible();
     await page.getByLabel('Amount').fill('21');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(page.getByRole('paragraph').filter({ hasText: /^Pay ₿21\b/ })).toBeVisible();
   }
@@ -27814,6 +29280,8 @@ test.describe('inbox screens', () => {
     await page.goto('/messages?c=conv-21');
     await expect(page.getByText('Hello team')).toBeVisible();
     await page.getByLabel('Amount').fill('21');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Send' }).click();
     await expect(page.getByRole('link', { name: 'Set up your wallet first.' })).toHaveAttribute(
       'href',
@@ -31135,6 +32603,9 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await expect(page.getByLabel('Amount')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await shotScreen(page, 'state-habit-tracker-donate');
@@ -31146,6 +32617,9 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     const cont = page.getByRole('button', { name: 'Continue' });
     await expect(cont).toBeDisabled();
     await cont.scrollIntoViewIfNeeded();
@@ -31178,6 +32652,9 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await page.getByLabel('Amount').fill('1000');
     await expect(page.getByText('$1.00')).toBeVisible();
     const saved = page.waitForResponse(
@@ -31213,6 +32690,9 @@ test.describe('habit tracker baselines', () => {
     await fulfillRateDay(page);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(
       page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
@@ -31226,8 +32706,13 @@ test.describe('habit tracker baselines', () => {
     await stubHabitList(page, HABIT_PUBLIC);
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('0');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(
       page.getByRole('alert').filter({
@@ -31257,8 +32742,12 @@ test.describe('habit tracker baselines', () => {
     });
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     const requestAlert = page
       .getByRole('alert')
@@ -31286,9 +32775,13 @@ test.describe('habit tracker baselines', () => {
     });
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
     const cont = page.getByRole('button', { name: 'Continue' });
+    await motionSettled(page);
     await cont.click();
     await expect(cont).toBeDisabled();
     await expect(cont.locator('.animate-spin')).toBeVisible();
@@ -31320,8 +32813,12 @@ test.describe('habit tracker baselines', () => {
     });
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     const rateAlert = page.getByRole('alert').filter({
       hasText: 'Too many payments. Please wait a moment and try again.',
@@ -31343,6 +32840,7 @@ test.describe('habit tracker baselines', () => {
           contentType: 'application/json',
           body: JSON.stringify({
             error: "The author's wallet cannot receive this Bitcoin payment",
+            code: 'cannot_receive',
           }),
         });
         return;
@@ -31355,8 +32853,12 @@ test.describe('habit tracker baselines', () => {
     });
     await page.goto('/habit-tracker');
     await page.getByRole('button', { name: 'Send Bitcoin' }).click();
+    // The sheet mounts a moment after the click; then wait until it has eased open.
+    await expect(page.locator('[data-pay-sheet]').first()).toBeVisible();
+    await motionSettled(page);
     await expect(page.getByRole('button', { name: 'Continue' })).toBeEnabled();
     await page.getByLabel('Amount').fill('21');
+    await motionSettled(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     const walletAlert = page.getByRole('alert').filter({
       hasText: "The author's wallet cannot receive this Bitcoin payment",
@@ -31366,6 +32868,46 @@ test.describe('habit tracker baselines', () => {
     await expect(page.getByText('$0.02')).toBeInViewport();
     await expect(walletAlert).toBeInViewport();
     await shotScreen(page, 'state-habit-tracker-donate-author-wallet');
+  });
+
+  test('screen /habit-tracker comment-cannot-receive', async ({ page }) => {
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [
+        {
+          ...HABIT_ROW,
+          comments: [{ ...HABIT_ROW.comments[0], canReceive: false }],
+        },
+      ],
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText("Can't receive yet")).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toBeDisabled();
+    await shotScreen(page, 'state-habit-tracker-comment-cannot-receive');
+  });
+
+  test('screen /habit-tracker comment-cannot-receive-sunday', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem('e2e-now', '2026-09-27T12:00:00.000Z');
+    });
+    await seedHabitAda(page);
+    await fulfillRateDay(page);
+    await stubHabitList(page, {
+      reviewWeek: HABIT_PUBLIC.reviewWeek,
+      habits: [
+        {
+          ...HABIT_ROW,
+          comments: [{ ...HABIT_ROW.comments[0], canReceive: false }],
+        },
+      ],
+    });
+    await page.goto('/habit-tracker');
+    await expect(page.getByText('Zapping is paused on Sunday.').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send Bitcoin' })).toHaveCount(0);
+    await expect(page.getByText("Can't receive yet")).toBeHidden();
+    await shotScreen(page, 'state-habit-tracker-comment-cannot-receive-sunday');
   });
 
   test('screen /habit-tracker sunday', async ({ page }) => {

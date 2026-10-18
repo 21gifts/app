@@ -601,6 +601,28 @@ export function InboxLoader(): ReactElement | null {
     };
   }, [session, openId, threadAllowed, threadLoaded]);
 
+  // The api says the open thread's counterpart cannot receive yet (`canReceive: false`):
+  // a reply sends no amount, and a typed amount or an open invoice from before is dropped.
+  const openCannotReceive =
+    openId !== null &&
+    conversations !== null &&
+    conversations.some((row) => row.id === openId && row.canReceive === false);
+  // A reply invoice still being created when the flip arrives is dropped on its return.
+  const mintGeneration = useRef(0);
+  const openCannotReceiveRef = useRef(openCannotReceive);
+  openCannotReceiveRef.current = openCannotReceive;
+  useEffect(() => {
+    if (!openCannotReceive) {
+      return;
+    }
+    mintGeneration.current += 1;
+    payPollRef.current?.abort();
+    payPollRef.current = null;
+    setAmountDraft('');
+    setInvoice(null);
+    setPayWaiting(false);
+  }, [openCannotReceive]);
+
   if (session === null) {
     return null;
   }
@@ -671,7 +693,9 @@ export function InboxLoader(): ReactElement | null {
       return;
     }
     const trimmed = draft.trim();
-    const sats = replySatsFromDraft(amountDraft, amountUnit, rateDay, fiat);
+    const sats = openCannotReceive
+      ? 'empty'
+      : replySatsFromDraft(amountDraft, amountUnit, rateDay, fiat);
     if (trimmed === '' && sats === 'empty' && photoDrafts.length === 0) {
       setFormError('empty');
       return;
@@ -691,6 +715,7 @@ export function InboxLoader(): ReactElement | null {
       pickGeneration.current += 1;
       setPhotoDrafts([]);
       setPreparing(false);
+      const mint = mintGeneration.current;
       void (async () => {
         let minted;
         try {
@@ -718,7 +743,11 @@ export function InboxLoader(): ReactElement | null {
         }
 
         setPosting(false);
-        if (openIdRef.current !== conversationId) {
+        if (
+          openIdRef.current !== conversationId ||
+          mint !== mintGeneration.current ||
+          openCannotReceiveRef.current
+        ) {
           return;
         }
         setInvoice({

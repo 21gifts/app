@@ -70,6 +70,7 @@ function wallet(status: UseWalletResult['status']): void {
     balanceSats: null,
     retry: vi.fn(),
     setupFailed: false,
+    downloading: false,
     retrying: false,
   });
 }

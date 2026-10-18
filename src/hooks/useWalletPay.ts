@@ -5,7 +5,6 @@ import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { visualPin } from '@/lib/visual-pin';
 import { reportPaymentFailure, type PayFlow } from '@/lib/wallet/payment-failure';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
-import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import {
   connectWallet,
@@ -362,10 +361,6 @@ export function useWalletPay(
     setFeeSats(null);
     setPhase('idle');
     if (useWalletStore.getState().status !== 'error') {
-      return;
-    }
-    if (walletNeedsReload()) {
-      window.location.reload();
       return;
     }
     void connectWallet();

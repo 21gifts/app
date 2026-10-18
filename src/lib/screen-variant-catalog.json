@@ -108,6 +108,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/login:closed",
+    "label": "/login closed",
+    "visual": "state-login-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/login:outdated",
+    "label": "/login outdated",
+    "visual": "state-login-outdated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/login:in-app",
     "label": "/login in-app",
     "visual": "state-login-in-app",
@@ -198,9 +210,27 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:balance-locked-closed",
+    "label": "/wallet balance-locked-closed",
+    "visual": "state-wallet-balance-locked-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-locked-outdated",
+    "label": "/wallet balance-locked-outdated",
+    "visual": "state-wallet-balance-locked-outdated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:balance-connecting",
     "label": "/wallet balance-connecting",
     "visual": "state-wallet-balance-connecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-downloading",
+    "label": "/wallet balance-downloading",
+    "visual": "state-wallet-balance-downloading",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -828,6 +858,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:downloading",
+    "label": "/wallet/payment downloading",
+    "visual": "state-wallet-payment-downloading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/payment:error",
     "label": "/wallet/payment error",
     "visual": "state-wallet-payment-error",
@@ -1152,6 +1188,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:failed-cannot-receive",
+    "label": "/loans/repay failed-cannot-receive",
+    "visual": "state-loans-repay-failed-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:failed-cannot-receive-who-open",
+    "label": "/loans/repay failed-cannot-receive-who-open",
+    "visual": "state-loans-repay-failed-cannot-receive-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:collecting",
     "label": "/loans/repay collecting",
     "visual": "state-loans-repay-collecting",
@@ -1365,6 +1413,18 @@
     "id": "/welcome:held-session",
     "label": "/welcome held-session",
     "visual": "state-welcome-held-session",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:held-session-closed",
+    "label": "/welcome held-session-closed",
+    "visual": "state-welcome-held-session-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:held-session-outdated",
+    "label": "/welcome held-session-outdated",
+    "visual": "state-welcome-held-session-outdated",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1923,6 +1983,12 @@
     "id": "/welcome:loan-lend",
     "label": "/welcome loan-lend",
     "visual": "state-welcome-loan-lend",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loan-lend-cannot-receive",
+    "label": "/welcome loan-lend-cannot-receive",
+    "visual": "state-welcome-loan-lend-cannot-receive",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2874,6 +2940,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:author-cannot-receive",
+    "label": "/welcome author-cannot-receive",
+    "visual": "state-welcome-author-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:author-cannot-receive-open",
+    "label": "/welcome author-cannot-receive-open",
+    "visual": "state-welcome-author-cannot-receive-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:pay-deleted",
     "label": "/welcome pay-deleted",
     "visual": "state-welcome-pay-deleted",
@@ -3036,6 +3114,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/habit-tracker:comment-cannot-receive",
+    "label": "/habit-tracker comment-cannot-receive",
+    "visual": "state-habit-tracker-comment-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:comment-cannot-receive-sunday",
+    "label": "/habit-tracker comment-cannot-receive-sunday",
+    "visual": "state-habit-tracker-comment-cannot-receive-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/habit-tracker:sunday",
     "label": "/habit-tracker sunday",
     "visual": "state-habit-tracker-sunday",
@@ -3159,6 +3249,12 @@
     "id": "/profile:sunday",
     "label": "/profile sunday",
     "visual": "state-profile-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:cannot-receive",
+    "label": "/profile cannot-receive",
+    "visual": "state-profile-cannot-receive",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3426,6 +3522,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:posts-open-loan-lend-cannot-receive",
+    "label": "/members/[accountId] posts-open-loan-lend-cannot-receive",
+    "visual": "state-members-posts-open-loan-lend-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-open-loan-pay",
     "label": "/members/[accountId] posts-open-loan-pay",
     "visual": "state-members-posts-open-loan-pay",
@@ -3621,6 +3723,30 @@
     "id": "/members/[accountId]:heart-needs-balance",
     "label": "/members/[accountId] heart-needs-balance",
     "visual": "state-members-heart-needs-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:heart-cannot-receive",
+    "label": "/members/[accountId] heart-cannot-receive",
+    "visual": "state-members-heart-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-cannot-receive",
+    "label": "/members/[accountId] posts-open-cannot-receive",
+    "visual": "state-members-posts-open-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-cannot-receive-reactions",
+    "label": "/members/[accountId] posts-open-cannot-receive-reactions",
+    "visual": "state-members-posts-open-cannot-receive-reactions",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:cannot-receive",
+    "label": "/members/[accountId] cannot-receive",
+    "visual": "state-members-cannot-receive",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4440,6 +4566,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/view/[viewKey]:cannot-receive",
+    "label": "/view/[viewKey] cannot-receive",
+    "visual": "state-view-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/view/[viewKey]:about-filled",
     "label": "/view/[viewKey] about-filled",
     "visual": "state-view-about-filled",
@@ -4509,6 +4641,18 @@
     "id": "/view/[viewKey]:claim-prf-unsupported",
     "label": "/view/[viewKey] claim-prf-unsupported",
     "visual": "state-view-claim-prf-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:claim-closed",
+    "label": "/view/[viewKey] claim-closed",
+    "visual": "state-view-claim-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:claim-outdated",
+    "label": "/view/[viewKey] claim-outdated",
+    "visual": "state-view-claim-outdated",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4665,6 +4809,12 @@
     "id": "/messages:thread",
     "label": "/messages thread",
     "visual": "state-messages-thread",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-cannot-receive",
+    "label": "/messages thread-cannot-receive",
+    "visual": "state-messages-thread-cannot-receive",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5466,6 +5616,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]:loan-lend-cannot-receive",
+    "label": "/messages/[id] loan-lend-cannot-receive",
+    "visual": "state-messages-id-loan-lend-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]:loan-pay",
     "label": "/messages/[id] loan-pay",
     "visual": "state-messages-id-loan-pay",
@@ -5778,6 +5934,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:heart-cannot-receive",
+    "label": "/welcome heart-cannot-receive",
+    "visual": "state-welcome-heart-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:heart-cannot-receive-refreshed",
+    "label": "/welcome heart-cannot-receive-refreshed",
+    "visual": "state-welcome-heart-cannot-receive-refreshed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:heart-cannot-receive-older-api",
+    "label": "/welcome heart-cannot-receive-older-api",
+    "visual": "state-welcome-heart-cannot-receive-older-api",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:heart-paid",
     "label": "/welcome heart-paid",
     "visual": "state-welcome-heart-paid",
@@ -5943,6 +6117,36 @@
     "id": "/shops:heart-needs-balance",
     "label": "/shops heart-needs-balance",
     "visual": "state-shops-heart-needs-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:heart-cannot-receive",
+    "label": "/shops heart-cannot-receive",
+    "visual": "state-shops-heart-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:heart-cannot-receive-refreshed",
+    "label": "/shops heart-cannot-receive-refreshed",
+    "visual": "state-shops-heart-cannot-receive-refreshed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:heart-cannot-receive-older-api",
+    "label": "/shops heart-cannot-receive-older-api",
+    "visual": "state-shops-heart-cannot-receive-older-api",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:author-cannot-receive",
+    "label": "/shops author-cannot-receive",
+    "visual": "state-shops-author-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:author-cannot-receive-open",
+    "label": "/shops author-cannot-receive-open",
+    "visual": "state-shops-author-cannot-receive-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -6555,6 +6759,18 @@
     "id": "/messages/[id]:heart-needs-balance",
     "label": "/messages/[id] heart-needs-balance",
     "visual": "state-messages-id-heart-needs-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:heart-cannot-receive",
+    "label": "/messages/[id] heart-cannot-receive",
+    "visual": "state-messages-id-heart-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:author-cannot-receive",
+    "label": "/messages/[id] author-cannot-receive",
+    "visual": "state-messages-id-author-cannot-receive",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

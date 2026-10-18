@@ -1,6 +1,10 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import {
+  APP_OUTDATED_CODE,
+  AppOutdatedError,
+  LOGINS_CLOSED_CODE,
+  LoginsClosedError,
   deleteMessage,
   OPEN_CREDIT_DELETE_ERROR,
   setMessagePlace,
@@ -181,6 +185,13 @@ function installNavigator(value: unknown): () => void {
     Object.defineProperty(globalThis, 'navigator', descriptor);
   };
 }
+
+/** Build id the passkey requests send as `X-App-Build` under test. */
+const BUILD = 'build-under-test';
+
+beforeEach(() => {
+  process.env.NEXT_PUBLIC_BUILD_ID = BUILD;
+});
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -5265,7 +5276,10 @@ describe('startPasskeyRegistration', () => {
   it('returns the validated begin payload', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
     await expect(startPasskeyRegistration()).resolves.toEqual(passkeyBegin);
-    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', { method: 'POST' });
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'X-App-Build': BUILD },
+    });
   });
 
   it('posts JSON viewKey when provided', async () => {
@@ -5274,7 +5288,7 @@ describe('startPasskeyRegistration', () => {
     await expect(startPasskeyRegistration(viewKey)).resolves.toEqual(passkeyBegin);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ viewKey }),
     });
   });
@@ -5284,7 +5298,7 @@ describe('startPasskeyRegistration', () => {
     await expect(startPasskeyRegistration(undefined, 'ada')).resolves.toEqual(passkeyBegin);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ name: 'ada' }),
     });
   });
@@ -5295,7 +5309,7 @@ describe('startPasskeyRegistration', () => {
     await expect(startPasskeyRegistration(viewKey, 'ada')).resolves.toEqual(passkeyBegin);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ viewKey }),
     });
   });
@@ -5305,7 +5319,7 @@ describe('startPasskeyRegistration', () => {
     await expect(startPasskeyRegistration('', 'ada')).resolves.toEqual(passkeyBegin);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ name: 'ada' }),
     });
   });
@@ -5313,7 +5327,10 @@ describe('startPasskeyRegistration', () => {
   it('posts with no body when name is empty', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
     await expect(startPasskeyRegistration(undefined, '')).resolves.toEqual(passkeyBegin);
-    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', { method: 'POST' });
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/begin', {
+      method: 'POST',
+      headers: { 'X-App-Build': BUILD },
+    });
   });
 
   it('throws the exact invalid-username string on 400', async () => {
@@ -5365,7 +5382,7 @@ describe('finishPasskeyRegistration', () => {
     await expect(finishPasskeyRegistration('ch', { id: 'cred' })).resolves.toEqual(passkeySession);
     expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/register/finish', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
       body: JSON.stringify({ challengeId: 'ch', credential: { id: 'cred' } }),
     });
   });
@@ -5413,7 +5430,10 @@ describe('startPasskeyAuthentication', () => {
   it('returns the validated begin payload', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: passkeyBegin });
     await expect(startPasskeyAuthentication()).resolves.toEqual(passkeyBegin);
-    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/authenticate/begin', { method: 'POST' });
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/authenticate/begin', {
+      method: 'POST',
+      headers: { 'X-App-Build': BUILD },
+    });
   });
 
   it('throws on a non-ok response', async () => {
@@ -5463,6 +5483,154 @@ describe('finishPasskeyAuthentication', () => {
     const error = await finishPasskeyAuthentication('ch', {}).catch((err: unknown) => err);
     expect(error).toEqual(new Error('Failed to finish passkey authentication: 400'));
     expect(isUnknownCredentialError(error)).toBe(false);
+  });
+});
+
+describe('passkey login refusals', () => {
+  const steps: Array<[string, () => Promise<unknown>]> = [
+    ['startPasskeyRegistration', () => startPasskeyRegistration()],
+    ['finishPasskeyRegistration', () => finishPasskeyRegistration('ch', {})],
+    ['startPasskeyAuthentication', () => startPasskeyAuthentication()],
+    ['finishPasskeyAuthentication', () => finishPasskeyAuthentication('ch', {})],
+  ];
+
+  /** The api answers `logins_closed` on these steps only, never on authenticate begin. */
+  const closedSteps = steps.filter(([name]) => name !== 'startPasskeyAuthentication');
+
+  it.each(closedSteps)('%s throws LoginsClosedError on 503 logins_closed', async (_name, run) => {
+    stubFetch({
+      ok: false,
+      status: 503,
+      body: {
+        error: 'Logins are paused for an update. Try again later.',
+        code: LOGINS_CLOSED_CODE,
+      },
+    });
+    const error = await run().catch((err: unknown) => err);
+    expect(error).toBeInstanceOf(LoginsClosedError);
+    expect((error as Error).message).toBe('logins_closed');
+  });
+
+  it.each(steps)('%s throws AppOutdatedError on 403 app_outdated', async (_name, run) => {
+    stubFetch({
+      ok: false,
+      status: 403,
+      body: { error: 'A new app version is ready. Reload the page.', code: APP_OUTDATED_CODE },
+    });
+    const error = await run().catch((err: unknown) => err);
+    expect(error).toBeInstanceOf(AppOutdatedError);
+    expect((error as Error).message).toBe('app_outdated');
+  });
+
+  /**
+   * Installs a real `Response` per call, so a body read by the refusal check
+   * on the original instead of a clone leaves the caller an already-read body.
+   */
+  function stubRealResponse(status: number, body: unknown): void {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify(body), {
+            status,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        ),
+      ),
+    );
+  }
+
+  it('startPasskeyRegistration still reads the api error of a plain 403 after the check', async () => {
+    stubRealResponse(403, { error: 'Registration is not allowed here' });
+    await expect(startPasskeyRegistration()).rejects.toThrow('Registration is not allowed here');
+  });
+
+  it('startPasskeyRegistration still reads the api error of a plain 503 after the check', async () => {
+    stubRealResponse(503, { error: 'Try again shortly' });
+    await expect(startPasskeyRegistration()).rejects.toThrow('Try again shortly');
+  });
+
+  it('finishPasskeyRegistration still reads the wrong-account 403 after the check', async () => {
+    stubRealResponse(403, { error: WRONG_ACCOUNT_ERROR });
+    await expect(finishPasskeyRegistration('ch', {})).rejects.toBeInstanceOf(WrongAccountError);
+  });
+
+  it('finishPasskeyAuthentication still reads the wrong-account 403 after the check', async () => {
+    stubRealResponse(403, { error: WRONG_ACCOUNT_ERROR });
+    await expect(finishPasskeyAuthentication('ch', {})).rejects.toBeInstanceOf(WrongAccountError);
+  });
+
+  it.each(closedSteps)(
+    '%s keeps the generic failure for logins_closed on 403',
+    async (_name, run) => {
+      stubFetch({ ok: false, status: 403, body: { code: LOGINS_CLOSED_CODE } });
+      const closedOn403 = await run().then(
+        () => null,
+        (err: unknown) => err,
+      );
+      expect(closedOn403).toBeInstanceOf(Error);
+      expect(closedOn403).not.toBeInstanceOf(LoginsClosedError);
+      expect(closedOn403).not.toBeInstanceOf(AppOutdatedError);
+    },
+  );
+
+  it('startPasskeyAuthentication keeps the generic failure for another 403 code', async () => {
+    stubFetch({ ok: false, status: 403, body: { code: 'other_forbidden' } });
+    const error = await startPasskeyAuthentication().then(
+      () => null,
+      (err: unknown) => err,
+    );
+    expect(error).toEqual(new Error('Failed to start passkey authentication: 403'));
+  });
+
+  it.each(steps)('%s keeps the generic failure for app_outdated on 503', async (_name, run) => {
+    stubFetch({ ok: false, status: 503, body: { code: APP_OUTDATED_CODE } });
+    const outdatedOn503 = await run().then(
+      () => null,
+      (err: unknown) => err,
+    );
+    expect(outdatedOn503).toBeInstanceOf(Error);
+    expect(outdatedOn503).not.toBeInstanceOf(AppOutdatedError);
+    expect(outdatedOn503).not.toBeInstanceOf(LoginsClosedError);
+  });
+
+  it.each(steps)(
+    '%s keeps the generic failure for a 503 without a JSON body',
+    async (_name, run) => {
+      const fake = {
+        ok: false,
+        status: 503,
+        json: () => Promise.reject(new Error('not json')),
+        clone: () => fake,
+      };
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(fake as unknown as Response));
+      const error = await run().then(
+        () => null,
+        (err: unknown) => err,
+      );
+      expect(error).toBeInstanceOf(Error);
+      expect(error).not.toBeInstanceOf(LoginsClosedError);
+    },
+  );
+
+  it.each(steps)('%s keeps the generic failure for a null body', async (_name, run) => {
+    stubFetch({ ok: false, status: 503, body: null });
+    const error = await run().then(
+      () => null,
+      (err: unknown) => err,
+    );
+    expect(error).toBeInstanceOf(Error);
+    expect(error).not.toBeInstanceOf(LoginsClosedError);
+  });
+
+  it('sends X-App-Build on authenticate finish', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: passkeySession });
+    await finishPasskeyAuthentication('ch', { id: 'cred' });
+    expect(fetchMock).toHaveBeenCalledWith('/auth/passkey/authenticate/finish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-App-Build': BUILD },
+      body: JSON.stringify({ challengeId: 'ch', credential: { id: 'cred' } }),
+    });
   });
 });
 

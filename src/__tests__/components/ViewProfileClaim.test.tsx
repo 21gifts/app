@@ -161,6 +161,49 @@ describe('ViewProfileClaim', () => {
     expect(registerSpy).toHaveBeenCalledWith(VIEW_KEY);
   });
 
+  it('replaces the Activate banner with the logins-closed line', () => {
+    mockPasskey('closed');
+    renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+    expect(screen.getByRole('status').textContent).toBe(
+      '21.gifts is updating. Please try again a little later.',
+    );
+    expect(screen.queryByRole('button', { name: 'Activate' })).toBeNull();
+    expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('replaces the Activate banner with the new-version line and Reload', () => {
+    const reload = vi.fn();
+    vi.stubGlobal('location', { ...window.location, reload });
+    try {
+      mockPasskey('outdated');
+      renderWithLocale(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+      expect(screen.getByRole('status').textContent).toBe('A new version is ready');
+      fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+      expect(reload).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it.each(['closed', 'outdated'] as const)(
+    'shows the %s refusal when login-instead is refused',
+    (status) => {
+      mockPasskey('error', 'This profile already has a passkey');
+      const { rerender } = renderWithLocale(
+        <ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Set up a passkey for this profile' }));
+      mockPasskey(status);
+      rerender(<ViewProfileClaim viewKey={VIEW_KEY} hasPasskey={false} />);
+      expect(screen.getByRole('status').textContent).toBe(
+        status === 'closed'
+          ? '21.gifts is updating. Please try again a little later.'
+          : 'A new version is ready',
+      );
+      expect(screen.queryByText('This profile already has a passkey. Log in instead.')).toBeNull();
+    },
+  );
+
   it('shows already-claimed copy on 409', async () => {
     authenticateSpy.mockImplementation(() => {
       useAuthStore.setState({ session: 'tok', account });

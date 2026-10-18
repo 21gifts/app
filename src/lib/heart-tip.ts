@@ -32,11 +32,13 @@ export const HEART_TIP_UNSETTLED_MS = 10 * 60_000;
 const HEART_TIP_LOOKUP_LIMIT = 50;
 
 /**
- * Why a heart was not sent. Only `no_balance`, known from the wallet snapshot
+ * Why a heart was not sent. `no_balance`, known from the wallet snapshot
  * before the tap, is shown to the member (the balance-required line) and is
- * not reported; every other reason is reported to error reporting, together
- * with the message id, and shows nothing. `insufficient_balance` is a balance
- * the wallet found too low only after the tap already showed the +1.
+ * not reported. `author_cannot_receive` (the api answered `cannot_receive`) is
+ * reported and also shown, as the author-wallet line under the heart. Every
+ * other reason is reported to error reporting, together with the message id,
+ * and shows nothing. `insufficient_balance` is a balance the wallet found too
+ * low only after the tap already showed the +1.
  */
 export type HeartTipFailure =
   | 'sunday'
@@ -59,6 +61,12 @@ export type HeartTipView = {
   plusOne: boolean;
   /** True after a tap the wallet balance cannot cover: shows the balance-required line. */
   needsBalance: boolean;
+  /**
+   * True after a heart the api refused because the author cannot receive
+   * (`cannot_receive`): shows the author-wallet line. Missing reads as false;
+   * the next tap clears it.
+   */
+  cannotReceive?: boolean;
   /**
    * Hearts this session that the server `heartCount` does not yet include.
    * Missing reads as 0 (`view?.extra ?? 0`). The hook always sets a number.
@@ -511,8 +519,9 @@ async function payHeartInvoice(
  * A heart that is not sent is reported to error reporting with its reason
  * code and the message id only, except `no_balance`, which is expected.
  * In a Playwright build, `?visual=heart-paid` (via {@link visualPin}) returns
- * paid without invoicing and `?visual=heart-needs-balance` returns
- * `no_balance`; those pins are ignored in production and do not override
+ * paid without invoicing, `?visual=heart-needs-balance` returns
+ * `no_balance`, and `?visual=heart-cannot-receive` returns
+ * `author_cannot_receive` without invoicing; those pins are ignored in production and do not override
  * signed-out or read-only. They are read before the Sunday check so a Sunday
  * clock cannot hide the shot.
  *
@@ -539,6 +548,10 @@ async function runHeartTip(input: HeartTipInput): Promise<HeartTipOutcome> {
   }
   if (visualPin() === 'heart-paid') {
     return { kind: 'paid' };
+  }
+  // Playwright build only: the api refused the heart because the author cannot receive.
+  if (visualPin() === 'heart-cannot-receive') {
+    return { kind: 'failed', reason: 'author_cannot_receive' };
   }
   if (lacksHeartBalance(input)) {
     return { kind: 'failed', reason: 'no_balance' };
@@ -699,6 +712,7 @@ function reconcileHeartCounts(
         plusOne,
         needsBalance: current !== undefined && current.needsBalance,
         extra,
+        ...(current?.cannotReceive === true ? { cannotReceive: true } : {}),
       });
     }
     return next ?? prev;
@@ -729,13 +743,47 @@ export function endHeartPlusOne(
 }
 
 /**
+ * The view of one heart after a send that did not pay. `extra` is this
+ * session's remaining extra after the rollback; `pressed` stays while it is
+ * above 0 or the +1 still shows. A refusal because the author cannot receive
+ * sets `cannotReceive`; any other outcome keeps a `cannotReceive` already on
+ * the view, so a concurrent failure never clears the author-wallet line. Only
+ * the next tap clears it.
+ *
+ * @param current - The heart's view before this result, if any.
+ * @param extra - This session's extra for the note after the rollback.
+ * @param outcome - The send's result.
+ * @returns The heart's next view.
+ */
+export function heartFailureView(
+  current: HeartTipView | undefined,
+  extra: number,
+  outcome: HeartTipOutcome,
+): HeartTipView {
+  const plusOne = current !== undefined && current.plusOne;
+  const cannotReceive =
+    current?.cannotReceive === true ||
+    (outcome.kind === 'failed' && outcome.reason === 'author_cannot_receive');
+  return {
+    pressed: extra > 0 || plusOne,
+    plusOne,
+    needsBalance: current !== undefined && current.needsBalance,
+    extra,
+    ...(cannotReceive ? { cannotReceive: true } : {}),
+  };
+}
+
+/**
  * Heart-click machine for a forum board: on every tap of a signed-in,
  * writable board, vibrate and show the filled heart with its +1 at once for
  * {@link HEART_TIP_PLUS_ONE_MS}, while {@link sendHeartTip} pays in the
  * background. After 700 ms only the +1 leaves; the fill and `extra` remain.
  * Session hearts not yet in the server `heartCount` are `extra`. A second tap
  * sends another heart and counts up; there is no undo. A heart that is not
- * sent rolls back that tap's `extra`; it is also reported. The one exception
+ * sent rolls back that tap's `extra`; it is also reported, and a refusal
+ * because the author cannot receive also shows the author-wallet line
+ * (`cannotReceive` on the view, see {@link heartFailureView}) until the next
+ * tap. The one exception
  * is a wallet snapshot whose balance cannot cover the heart: then there is no
  * vibrate, no new fill, and no +1, only the balance-required line, and
  * nothing is sent. A signed-out or read-only tap does nothing.
@@ -881,21 +929,14 @@ export function useHeartTip(options: {
           }
           writeHeartSentMap(sent);
         }
-        setHeartTipViews((prev) => {
-          const current = prev[messageId];
-          const nextExtra = mapExtra(sentRef.current, messageId);
-          const plusOne = current !== undefined && current.plusOne;
-          const needsBalance = current !== undefined && current.needsBalance;
-          return {
-            ...prev,
-            [messageId]: {
-              pressed: nextExtra > 0 || plusOne,
-              plusOne,
-              needsBalance,
-              extra: nextExtra,
-            },
-          };
-        });
+        setHeartTipViews((prev) => ({
+          ...prev,
+          [messageId]: heartFailureView(
+            prev[messageId],
+            mapExtra(sentRef.current, messageId),
+            outcome,
+          ),
+        }));
       });
     },
     [readOnly],

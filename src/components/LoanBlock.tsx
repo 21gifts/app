@@ -53,7 +53,8 @@ function paidBackPercent(ledger: RepaymentLedger): number {
  *   uncapped); `funded` (collected sats reached the asked sats);
  *   `ledger` (public ledger, or `null` when it is not loaded here);
  *   `ledgerLink` (show the **Repayment list** link on feed and profile cards);
- *   `onLend` (opens the money reaction; omitted when the viewer cannot lend).
+ *   `onLend` (opens the money reaction; omitted when the viewer cannot lend);
+ *   `lendBlocked` (the borrower cannot receive yet: **Lend** shows disabled).
  * @returns The block.
  */
 export function LoanBlock({
@@ -66,6 +67,7 @@ export function LoanBlock({
   ledger,
   ledgerLink,
   onLend,
+  lendBlocked = false,
 }: {
   messageId: string;
   ask: ReactNode;
@@ -76,6 +78,7 @@ export function LoanBlock({
   ledger: RepaymentLedger | null;
   ledgerLink: boolean;
   onLend?: (() => void) | undefined;
+  lendBlocked?: boolean | undefined;
 }): ReactElement {
   const { t } = useTranslations();
   const state = loanBlockState(funded, ledger);
@@ -87,6 +90,7 @@ export function LoanBlock({
   const shownPercent = state === 'collecting' ? Math.min(99, percent) : Math.max(100, percent);
   const barPercent = paidShown ? paid : Math.min(100, Math.max(0, shownPercent));
   const canLend = state === 'collecting' && onLend !== undefined;
+  const showLend = canLend || (state === 'collecting' && lendBlocked);
   return (
     <section
       data-loan-block={state}
@@ -153,7 +157,7 @@ export function LoanBlock({
           )}
         </p>
       )}
-      {canLend || ledgerLink ? (
+      {showLend || ledgerLink ? (
         <div className="mt-1 flex items-center justify-between gap-3">
           {ledgerLink ? (
             <Link
@@ -178,6 +182,16 @@ export function LoanBlock({
                 event.stopPropagation();
                 onLend();
               }}
+            >
+              {t('forum.loan.lend')}
+            </Button>
+          ) : showLend ? (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled
+              icon={<HandCoins aria-hidden="true" className="h-4 w-4" />}
             >
               {t('forum.loan.lend')}
             </Button>

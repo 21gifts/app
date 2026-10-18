@@ -704,6 +704,8 @@ export type ForumPlaceRow = ForumPlacePin & {
  *
  * `sats` is the validated payment total for the note (always present, including 0).
  * `payable` is true when a signed-in member can request an invoice for that note.
+ * `authorCanReceive` is false when the author cannot receive yet (no verified
+ * wallet); optional so an older payload still parses, and absent shows no label.
  * `photoCount` defaults from `hasPhoto` when an older api omits it.
  * `hasVideo` / `videoContentType` default when an older api omits them.
  * `role` is optional with default `basis` so a rolling api deploy without the
@@ -765,6 +767,11 @@ export const forumMessageSchema = z
     goalAmountEur: fiatAmountSchema.optional(),
     goalAmountPhp: fiatAmountSchema.optional(),
     payable: z.boolean(),
+    /**
+     * False when the author is a member who cannot receive yet. Absent on an
+     * older api body; absent means unknown and shows no label.
+     */
+    authorCanReceive: z.boolean().optional(),
     hasPhoto: z.boolean(),
     photoCount: z.number().int().min(0).max(10).optional(),
     photoTakenAts: z.array(z.string().nullable()).max(10).optional(),
@@ -1036,7 +1043,7 @@ export type ContactMessage = z.infer<typeof contactSchema>;
  * `unread` is true when the viewer has inbound mail newer than last-read.
  * `unreadMessageCount` is inbound unread messages (defaults 0 so an older
  * api that omits it still parses). List envelope `unreadCount` stays unread
- * thread count.
+ * thread count. `canReceive` is false when the counterpart cannot receive yet.
  */
 export const conversationSchema = z.object({
   id: z.string().min(1),
@@ -1055,6 +1062,11 @@ export const conversationSchema = z.object({
   accountId: z.string().min(1).optional(),
   unread: z.boolean().default(false),
   unreadMessageCount: z.number().int().nonnegative().default(0),
+  /**
+   * False when the counterpart cannot receive yet. Optional so an older api
+   * body still parses; absent means unknown and shows no label.
+   */
+  canReceive: z.boolean().optional(),
 });
 
 /**

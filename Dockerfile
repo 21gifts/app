@@ -23,6 +23,11 @@
 # signed-in Menu. It is the deploy run number, not an entrypoint.sh
 # placeholder, and is not substituted at container start.
 #
+# NEXT_PUBLIC_BUILD_ID is a build-arg (default `dev`), passed by every deploy
+# as the commit SHA and baked at `next build`. The app sends it as
+# `X-App-Build` on passkey begin and finish so the api can refuse an outdated
+# tab. Not an entrypoint.sh placeholder.
+#
 # NEXT_PUBLIC_BREEZ_API_KEY is a second build-arg (no default), passed by every
 # deploy from that environment's repository secret and baked at `next build`.
 # It is not an entrypoint.sh placeholder; an unset or empty value still builds
@@ -32,6 +37,7 @@
 #   NEXT_PUBLIC_API_URL — upstream 21.gifts api (browser talks same-origin)
 #                         DEV: https://dev-api.21.gifts / PRD: https://api.21.gifts
 #   NEXT_PUBLIC_APP_VERSION — decimal deploy run number of this image (from ARG APP_VERSION), or `dev`
+#   NEXT_PUBLIC_BUILD_ID — deployed commit of this image (from ARG NEXT_PUBLIC_BUILD_ID), or `dev`
 #   NEXT_PUBLIC_BREEZ_API_KEY — Breez SDK key, a build-arg baked at `next build`
 #                               (each deploy's own secret); empty when unset
 #   NEXT_PUBLIC_PLATFORM_USERNAME — username of the 21.gifts platform account; the landing
@@ -62,6 +68,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_API_URL=__NEXT_PUBLIC_API_URL__
 ARG APP_VERSION=dev
 ENV NEXT_PUBLIC_APP_VERSION=$APP_VERSION
+ARG NEXT_PUBLIC_BUILD_ID=dev
+ENV NEXT_PUBLIC_BUILD_ID=$NEXT_PUBLIC_BUILD_ID
 ARG NEXT_PUBLIC_BREEZ_API_KEY
 ENV NEXT_PUBLIC_BREEZ_API_KEY=$NEXT_PUBLIC_BREEZ_API_KEY
 ENV NEXT_PUBLIC_PLATFORM_USERNAME=__NEXT_PUBLIC_PLATFORM_USERNAME__

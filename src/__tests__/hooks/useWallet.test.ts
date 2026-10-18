@@ -2,13 +2,11 @@ import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WALLET_VISUAL_FIXTURE_SATS, WALLET_VISUAL_REOPEN_MS, useWallet } from '@/hooks/useWallet';
 import type { Account } from '@/lib/api-types';
-import { walletNeedsReload } from '@/lib/wallet/wallet-sdk';
 import { connectWallet } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
 
 vi.mock('@/lib/wallet/wallet-service', () => ({ connectWallet: vi.fn() }));
-vi.mock('@/lib/wallet/wallet-sdk', () => ({ walletNeedsReload: vi.fn(() => false) }));
 
 const account: Account = {
   id: 'acc_1',
@@ -50,10 +48,9 @@ beforeEach(() => {
   delete process.env.NEXT_PUBLIC_E2E_NOW;
   process.env.NEXT_PUBLIC_BREEZ_API_KEY = 'test-key';
   useAuthStore.setState({ session: 'token', account, lockedSession: null });
-  useWalletStore.setState({ setupFailedSession: null, retrying: false });
+  useWalletStore.setState({ setupFailedSession: null, retrying: false, downloading: false });
   setWallet('locked');
   vi.mocked(connectWallet).mockReset().mockResolvedValue(undefined);
-  vi.mocked(walletNeedsReload).mockReset().mockReturnValue(false);
 });
 
 afterEach(() => {
@@ -67,6 +64,7 @@ afterEach(() => {
 
 const PINS = [
   ['balance-connecting', 'connecting', null],
+  ['balance-downloading', 'connecting', null],
   ['balance-ready', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['history-empty', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['history-rows', 'ready', WALLET_VISUAL_FIXTURE_SATS],
@@ -94,6 +92,7 @@ describe('useWallet visual pins', () => {
     expect(result.current.balanceSats).toBe(balanceSats);
     expect(result.current.setupFailed).toBe(visual === 'balance-setup-failed');
     expect(result.current.retrying).toBe(visual === 'balance-reopening');
+    expect(result.current.downloading).toBe(visual === 'balance-downloading');
   });
 
   it('turns the balance-reopening pin ready by itself after its time', () => {
@@ -172,7 +171,6 @@ describe('useWallet visual pins', () => {
     window.history.replaceState({}, '', '/wallet?visual=balance-error');
     const { result } = renderHook(() => useWallet());
     act(() => result.current.retry());
-    expect(walletNeedsReload).not.toHaveBeenCalled();
     expect(connectWallet).not.toHaveBeenCalled();
   });
 });
@@ -214,6 +212,17 @@ describe('useWallet live state', () => {
     });
   });
 
+  it('reports downloading while setup is due and the wallet code downloads', () => {
+    useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
+    useWalletStore.setState({ status: 'connecting', downloading: true });
+    const { result } = renderHook(() => useWallet());
+    expect(result.current).toMatchObject({ status: 'connecting', downloading: true });
+    act(() => {
+      useWalletStore.setState({ status: 'ready', downloading: false });
+    });
+    expect(result.current).toMatchObject({ status: 'connecting', downloading: false });
+  });
+
   it('shows the setup error after setup failed', () => {
     useAuthStore.setState({ account: { ...account, sparkWalletVerified: false } });
     useWalletStore.setState({ status: 'error', setupFailedSession: 'token' });
@@ -242,15 +251,7 @@ describe('useWallet live state', () => {
     expect(result.current).toMatchObject({ status: 'error', setupFailed: true, retrying: false });
   });
 
-  it('retries by connecting when no reload is required', () => {
-    const { result } = renderHook(() => useWallet());
-    act(() => result.current.retry());
-    expect(walletNeedsReload).toHaveBeenCalledTimes(1);
-    expect(connectWallet).toHaveBeenCalledTimes(1);
-  });
-
-  it('reloads instead of connecting when the wallet SDK requires it', () => {
-    vi.mocked(walletNeedsReload).mockReturnValue(true);
+  it('retries by connecting in this page, never by reloading it', () => {
     const previous = window.location;
     const reload = vi.fn();
     Object.defineProperty(window, 'location', {
@@ -258,12 +259,24 @@ describe('useWallet live state', () => {
       value: { href: previous.href, search: previous.search, reload },
     });
     try {
+      useWalletStore.setState({ status: 'error' });
       const { result } = renderHook(() => useWallet());
       act(() => result.current.retry());
-      expect(reload).toHaveBeenCalledTimes(1);
-      expect(connectWallet).not.toHaveBeenCalled();
+      expect(connectWallet).toHaveBeenCalledTimes(1);
+      expect(reload).not.toHaveBeenCalled();
     } finally {
       Object.defineProperty(window, 'location', { configurable: true, value: previous });
     }
+  });
+
+  it('reports downloading only while the wallet is connecting', () => {
+    useWalletStore.setState({ status: 'connecting', downloading: true });
+    const { result, rerender } = renderHook(() => useWallet());
+    expect(result.current).toMatchObject({ status: 'connecting', downloading: true });
+    act(() => {
+      useWalletStore.setState({ status: 'error', downloading: true });
+    });
+    rerender();
+    expect(result.current).toMatchObject({ status: 'error', downloading: false });
   });
 });

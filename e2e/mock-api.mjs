@@ -241,7 +241,7 @@ const E2E_MEMBER_PROFILE = {
   username: 'carol',
   location: 'Zug',
   role: 'verified',
-  lightningAddress: null,
+  lightningAddress: 'carol@21.gifts',
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
   aboutMeHasPhoto: false,
@@ -366,7 +366,7 @@ const E2E_EMPTY_ABOUT_PROFILE = {
   username: 'dana',
   location: null,
   role: 'basis',
-  lightningAddress: null,
+  lightningAddress: 'dana@21.gifts',
   createdAt: '2026-02-01T12:00:00.000Z',
   aboutMe: '',
   aboutMeHasPhoto: false,
@@ -1858,7 +1858,8 @@ const server = http.createServer(async (req, res) => {
         username: account.username ?? null,
         location: account.location,
         role: account.role,
-        lightningAddress: account.lightningAddress,
+        // The stub's own account can receive, so the profile shows its address.
+        lightningAddress: account.lightningAddress ?? 'stub@21.gifts',
         createdAt: new Date(account.createdAt).toISOString(),
         aboutMe: account.aboutMe ?? null,
         aboutMeHasPhoto: account.aboutMeHasPhoto === true,
@@ -1928,8 +1929,9 @@ const server = http.createServer(async (req, res) => {
       name: found.name,
       username: found.username ?? null,
       location: found.location,
-      lightningAddress: found.lightningAddress,
-      lightningAddressVerified: found.lightningAddressVerified,
+      // The stub's accounts can receive, so the view shows the address.
+      lightningAddress: found.lightningAddress ?? 'stub@21.gifts',
+      lightningAddressVerified: true,
       createdAt: found.createdAt,
       hasPasskey,
       aboutMe: found.aboutMe ?? null,
@@ -2450,6 +2452,25 @@ const server = http.createServer(async (req, res) => {
     const token = hex(randomBytes(32));
     byToken.set(token, account);
     json(res, 200, { viewKey: account.viewKey, id: account.id, name: 'Ada' });
+    return;
+  }
+
+  // As the api with APP_BUILD_REQUIRED set: every passkey step that leads to
+  // a session needs the Playwright build's id (`dev`) in X-App-Build, checked
+  // before anything else. A missing header or another id (e2e uses
+  // `e2e-old-build` for an outdated tab) is 403 app_outdated.
+  if (
+    method === 'POST' &&
+    (pathName === '/auth/passkey/register/begin' ||
+      pathName === '/auth/passkey/register/finish' ||
+      pathName === '/auth/passkey/authenticate/begin' ||
+      pathName === '/auth/passkey/authenticate/finish') &&
+    req.headers['x-app-build'] !== 'dev'
+  ) {
+    json(res, 403, {
+      error: 'A new app version is ready. Reload the page.',
+      code: 'app_outdated',
+    });
     return;
   }
 

@@ -91,6 +91,7 @@ function walletResult(status: UseWalletResult['status'], setupFailed = false): U
     balanceSats: status === 'ready' ? 21_000 : null,
     retry: vi.fn(),
     setupFailed,
+    downloading: false,
     retrying: false,
   };
 }

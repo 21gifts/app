@@ -17,6 +17,7 @@ const { walletState, useWalletMock } = vi.hoisted(() => {
     balanceSats: null,
     retry: vi.fn(),
     setupFailed: false,
+    downloading: false,
     retrying: false,
   };
   return { walletState: state, useWalletMock: vi.fn((): UseWalletResult => state) };

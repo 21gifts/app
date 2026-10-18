@@ -51,7 +51,7 @@ npm run dev    # → http://localhost:3000
 ```
 app/
 ├── src/
-│   ├── middleware.ts            # /map redirects to /shops#map and keeps the query string
+│   ├── middleware.ts            # /map redirects to /shops#map and keeps the query string; Content-Security-Policy with a per-request nonce on every other page
 │   ├── instrumentation.ts       # Server/edge error reporting start (off without a DSN) + onRequestError
 │   ├── instrumentation-client.ts # Browser error reporting + sampled tracing start (off without a DSN), onRouterTransitionStart
 │   ├── app/
@@ -206,7 +206,8 @@ app/
 │   │   ├── globals.css          # Tailwind entry — the only CSS file
 │   │   ├── global-error.tsx     # Last-resort error boundary: reports the error, shows the Next.js error page
 │   │   ├── monitoring/
-│   │   │   └── route.ts         # POST /monitoring — same-origin error and transaction tunnel (404 without a DSN)
+│   │   │   ├── route.ts         # POST /monitoring — same-origin error and transaction tunnel (404 without a DSN)
+│   │   │   └── csp/route.ts     # POST /monitoring/csp — Content-Security-Policy reports → Sentry security endpoint (404 without a DSN)
 │   │   └── healthz/
 │   │       └── route.ts         # GET /healthz — container liveness probe
 │   ├── components/
@@ -229,6 +230,7 @@ app/
 │   │   ├── AboutMeSection.tsx   # About me heading + text or empty prompt; owner edit + copy-link
 │   │   ├── ProfileScreen.tsx    # Signed-in profile card (identity only: pictures + totals + About me + name/location + public facts)
 │   │   ├── WalletLoginCard.tsx  # LoginCard shown in place while a signed-in screen's wallet is not open in this tab
+│   │   ├── LoginBlockedNotice.tsx # Login card / profile claim body when the api refuses a session (logins closed, new version + Reload)
 │   │   ├── WalletScreen.tsx     # Wires useWallet + useWalletPhrase + useWalletSend into WalletScreenView (balance, payments list while ready, Receive/Send)
 │   │   ├── SettingsScreen.tsx   # Signed-in /settings (Wallet: recovery phrase, address, default amount; Display; Notifications; Account; About & legal)
 │   │   ├── MenuAccountHeader.tsx # Menu top card: photo, name, @username (profile link), balance link, payable loan row
@@ -276,6 +278,9 @@ app/
 │   │   ├── StatsDashboard.tsx   # Gift KPI cards and SVG diagrams
 │   │   ├── GiftDayTable.tsx     # Per-day gift rows
 │   │   ├── ForumBoard.tsx       # Public forum list + dismissible laws hint + Active/All/Most popular + Send-a-post/Ask-for-money pill + Post messenger + payable-reply pay sheet + expand/replies + copy-link + author profile links
+│   │   ├── Collapse.tsx         # Folds content in and out (height + opacity), inert while folding
+│   │   ├── AutoHeight.tsx       # Glides its height when the content's height changes
+│   │   ├── Swap.tsx             # Fades one view out, then the next in, while the height glides
 │   │   ├── MentionTextarea.tsx  # Forum composer @ suggestions (post, reply, ask text)
 │   │   ├── ForumAskWizard.tsx   # Ask-for-money steps amount → photos → text → preview Post
 │   │   ├── ForumGoalBar.tsx     # Top-level ask progress (Ask ₿ + fiat, orange/green overflow)
@@ -331,7 +336,8 @@ app/
 │   │   └── useCopied.ts         # Clipboard copy with a two-second Copied state
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)
-│   │   ├── sentry.ts            # Error reporting + browser tracing: init options, privacy scrubber, traceWallet, tunnel forwarder
+│   │   ├── csp.ts               # Content-Security-Policy: sources, nonce, mode, header name
+│   │   ├── sentry.ts            # Error reporting + browser tracing: init options, privacy scrubber, traceWallet, tunnel forwarder, CSP report forwarder
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
 │   │   ├── amount-unit.ts       # saveAmountUnit: the one ordered save of account.amountUnit
@@ -385,6 +391,7 @@ app/
 │   │   ├── trust-chain.ts       # mergeTrustChain + layoutTrustChain (stack, no invented edges)
 │   │   ├── app-height.ts        # --app-height bootstrap IIFE (server-safe; no hooks)
 │   │   ├── scroll-surface.ts    # Which scrollport is active, and clipping of the rest
+│   │   ├── motion.ts            # Shared motion time windows, settle event, and transition-end wait
 │   │   └── push.ts              # Web Push subscribe helpers (VAPID bytes, SW register, enable/disable)
 │   ├── types/
 
@@ -397,6 +404,7 @@ app/
 │       └── lib/config.test.ts
 ├── docs/
 │   ├── ui.md                    # Visual design system (tokens, type, chrome, control grammar)
+│   ├── csp.md                   # Content-Security-Policy: mode, reports, every source and why it is needed
 │   └── handbook/                # Mandatory: every screen + exported function + endpoint
 │       ├── README.md
 │       ├── screens.md
@@ -417,9 +425,11 @@ app/
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
 │   ├── contact.spec.ts          # /contact composer, validation, success
 │   ├── login.spec.ts            # /login Log in + Open a new account + signed-in forms
+│   ├── login-gate.spec.ts       # logins_closed / app_outdated notices, X-App-Build, wiped session falls back to signed out
 │   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, Send (camera), Receive, and Function titles
 │   ├── data-collection.spec.ts  # POST /me/wallet/report, /me/wallet/hearts, and /me/events proxies, interaction log in the browser
 │   ├── camera.ts                # Stubbed getUserMedia (black stream, QR stream, blocked, none) for wallet specs
+│   ├── fake-webauthn.ts         # Stubbed passkey that always succeeds with PRF output (login, login gate)
 │   ├── no-prf.ts                # Stubbed passkeys without PRF output + the one no-wallet sentence
 │   ├── wallet-pay.spec.ts       # In-app wallet pay slot on the gift pay sheet (pins, unavailable and failed states)
 │   ├── wallet-setup.spec.ts     # Background setup, inline notes, payments list, username freeze, address proxies
@@ -505,6 +515,11 @@ update stuff
   exception is a `style` attribute that sets viewport-measured `top`,
   `bottom`, `left`, and `width` on a `fixed` overlay. Those four numbers
   are the clamped box; `top-full` and `bottom-full` do not compute them.
+  Script that measures an element may also write that measured `height` on
+  it (`element.style`, never a JSX `style` attribute): `fitTextarea`
+  (`src/lib/scroll-surface.ts`) fits a textarea to its text, and
+  `AutoHeight` writes the height its content needs so that it can glide.
+  No class can hold a height that is only known after layout.
 - Utility classes live directly on the JSX elements.
 - Visual language (shells, tokens, type, chrome, control grammar) lives in
   `docs/ui.md`. New or migrated surfaces compose those parts. Raw
@@ -595,9 +610,9 @@ every locale shows the catalog label.
 The labeled vs icon-only table in `docs/ui.md` (control grammar) is the
 **binding** rule. New work follows that table, not “everything new is an icon”.
 
-| Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name), Ask-preview labeled **Post**, **Log in**, **Log in with existing account**, **Open a new account**, **Log out**, **Try again**, pay-sheet **Send** (on the posting fee **Pay {amount} and post**), wallet send **Continue**, **Send**, **Done**, the confirm step's **Cancel** (a small text button under **Send**), and the base-chain confirm step's speed rows **Fast** / **Medium** / **Slow** (each with its fee), wallet **Receive** and **Send** on `/wallet` and the forum home (Receive on the left), the wallet Send camera's floating **Paste** and **Enter manually** and its **Try again** under an alert (`Button variant="overlay"`), the Menu account header's balance link, the header balance link (`HeaderBalance`, ₿ and fiat to `/wallet`), the received-money banner's text link to `/wallet`, the wallet tour's **Next** / **Got it** and **Skip** (a small underlined text button), the Receive view's **Move Bitcoin from another wallet** (a small underlined text button), the move-funds flow's **Start**, **Copy my address** / **Copied**, **I sent it**, and **Done**, the Menu account header's profile link (photo or initial with the name and @username, to `/profile`), settings **Recovery phrase** and **Add recovery phrase**, wallet Receive **Copy** / **Copied** (the main action of that view, not an action inside a card), the wallet setup note's **Try again** (a secondary `Button`), **Activate**, pay-link **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with a Bitcoin wallet app”; a `Button` that sets `location.href` to a generic `lightning:` link, not a `ButtonLink`), pay-slot **Try again** (`wallet.payRetry`), requirements **Open your wallet** (`requirements.walletOpen`, a `ButtonLink` to `/wallet`), sentence-length empty-state CTA (**Write your About me**), wide-image confirm (**Use this crop**), **Message** (member profile DM CTA), member profile **Shop sticker** and the sticker overlay's **Download**, sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, **take a photo** (Camera icon, `camera.takePhoto` “Take a photo”, before every photo attach; `CameraPhotoButton`), send/post (forum Post-path + contact + inbox composers), copy, dismiss, **translate** (Languages icon in the footer icon row, `forum.translate`), **heart** (Heart icon, `forum.heart` “Send ₿1”) on those cards, **react** (Reply icon, `forum.react` “React”) on posts, **pay** (Gift icon, `forum.pay` “Send Bitcoin”) on payable replies, Menu **row** icons, and the signed-in Menu _trigger_ (lucide `Menu`, `aria.menu` “Menu”). The forum home **+** that opens the writer is icon-only (`IconButton size="xl"`, `forum.writerOpen` “Write a post”, lucide `Plus`). The one top-left back arrow (profile, rules-setup, and an ask-wizard step) stays icon-only. Pay-sheet dismiss is `X` with `forum.payClose` (“Close”), not a back arrow. The received-money banner's dismiss is the same ghost `X` with `wallet.receivedClose`, and the move-funds sheet's Close the same `X` with `moveFunds.close`. The wallet send amount step Close is the same `X` with `wallet.sendCancel` (“Cancel”); the wallet send confirm step has no `X` and shows **Cancel** as a labeled text button instead. The wallet Send manual-entry sheet's Close is the same `X` with `wallet.sendCancel`. Copy on a payment screen value is icon-only (`wallet.payment.copyValue`). |
+| Labeled (`Button` / `ButtonLink` / inline `Link`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Icon-only (`IconButton`, required `aria-label`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Consent (**I agree to these rules**), **Continue**, **Skip** (onboarding name), Ask-preview labeled **Post**, **Log in**, **Log in with existing account**, **Open a new account**, **Log out**, **Try again**, pay-sheet **Send** (on the posting fee **Pay {amount} and post**), wallet send **Continue**, **Send**, **Done**, the confirm step's **Cancel** (a small text button under **Send**), and the base-chain confirm step's speed rows **Fast** / **Medium** / **Slow** (each with its fee), wallet **Receive** and **Send** on `/wallet` and the forum home (Receive on the left), the wallet Send camera's floating **Paste** and **Enter manually** and its **Try again** under an alert (`Button variant="overlay"`), the Menu account header's balance link, the header balance link (`HeaderBalance`, ₿ and fiat to `/wallet`), the received-money banner's text link to `/wallet`, the wallet tour's **Next** / **Got it** and **Skip** (a small underlined text button), the Receive view's **Move Bitcoin from another wallet** (a small underlined text button), the move-funds flow's **Start**, **Copy my address** / **Copied**, **I sent it**, and **Done**, the Menu account header's profile link (photo or initial with the name and @username, to `/profile`), settings **Recovery phrase** and **Add recovery phrase**, wallet Receive **Copy** / **Copied** (the main action of that view, not an action inside a card), the wallet setup note's **Try again** (a secondary `Button`), **Activate**, **Reload** on the new-version notice (`login.reload`, `LoginBlockedNotice`), pay-link **Pay** (`forum.payOpenWallet` / aria `forum.payOpenWalletAria` “Pay with a Bitcoin wallet app”; a `Button` that sets `location.href` to a generic `lightning:` link, not a `ButtonLink`), pay-slot **Try again** (`wallet.payRetry`), requirements **Open your wallet** (`requirements.walletOpen`, a `ButtonLink` to `/wallet`), sentence-length empty-state CTA (**Write your About me**), wide-image confirm (**Use this crop**), **Message** (member profile DM CTA), member profile **Shop sticker** and the sticker overlay's **Download**, sentence-length links (**Open the forum**, **Open the app** (inline `text-accent` `Link` on `/legal`, not `ButtonLink`), **Ask for help**, **Send help**), marketing-shell primary, donate **Open the forum** | Actions **inside** a card: edit, delete, attach, **take a photo** (Camera icon, `camera.takePhoto` “Take a photo”, before every photo attach; `CameraPhotoButton`), send/post (forum Post-path + contact + inbox composers), copy, dismiss, **translate** (Languages icon in the footer icon row, `forum.translate`), **heart** (Heart icon, `forum.heart` “Send ₿1”) on those cards, **react** (Reply icon, `forum.react` “React”) on posts, **pay** (Gift icon, `forum.pay` “Send Bitcoin”) on payable replies, Menu **row** icons, and the signed-in Menu _trigger_ (lucide `Menu`, `aria.menu` “Menu”). The forum home **+** that opens the writer is icon-only (`IconButton size="xl"`, `forum.writerOpen` “Write a post”, lucide `Plus`). The one top-left back arrow (profile, rules-setup, and an ask-wizard step) stays icon-only. Pay-sheet dismiss is `X` with `forum.payClose` (“Close”), not a back arrow. The received-money banner's dismiss is the same ghost `X` with `wallet.receivedClose`, and the move-funds sheet's Close the same `X` with `moveFunds.close`. The wallet send amount step Close is the same `X` with `wallet.sendCancel` (“Cancel”); the wallet send confirm step has no `X` and shows **Cancel** as a labeled text button instead. The wallet Send manual-entry sheet's Close is the same `X` with `wallet.sendCancel`. Copy on a payment screen value is icon-only (`wallet.payment.copyValue`). |
 
 Content translation **Translate** is icon-only (`IconButton` + Languages, `aria-label` = `forum.translate`). Signed forum cards (`ForumBoard`) place it in the footer icon row with the heart after Translate and before react / pay / copy. Surfaces without that row — unsigned public cards, About me, inbox, funding, and hidden notes — stack the control under the body. **Show original** / **Show translation** stay the same Languages icon. The accessible name is the only label; no visible text.
 
@@ -626,7 +641,7 @@ Every screen in the app except the root info page `/` has exactly one back contr
 
 ### No document load inside the app (hard requirement)
 
-The open wallet keeps its recovery phrase in the tab's memory only. A document load clears it, so the stored session is held back and the login card's passkey prompt must open the wallet before any signed-in screen appears. Only a real reload, a new tab, or closing the tab may require that login again. Moving between in-app views must therefore stay client-side: internal links use `next/link` (also inside an SVG chart), code navigates with `useRouter().push` or `replace`, or with `useRouter().back()` only for the same-document step back that `takeStepBack` claims, and an internal link never points at a path that only redirects (link to `/shops?pin=…#map`, not `/map?pin=…`). A raw `<a href="/…">`, `window.location.assign`, `location.href =`, or `location.replace` to an in-app path is an undeclared deviation. `window.location.reload()` is only allowed where nothing else can recover: **Try again** on the wallet balance, the pay slot, or the wallet setup note after the wallet’s initialisation failed (`walletNeedsReload`). The login card uses the PRF bytes returned by its passkey prompt, waits for `settlePhraseDerivations`, and asks for the seed passkey only when another passkey signed in. Never persist the recovery phrase or PRF bytes in `localStorage`, `sessionStorage`, IndexedDB, cookies, or a URL.
+The open wallet keeps its recovery phrase in the tab's memory only. A document load clears it, so the stored session is held back and the login card's passkey prompt must open the wallet before any signed-in screen appears. Only a real reload, a new tab, or closing the tab may require that login again. Moving between in-app views must therefore stay client-side: internal links use `next/link` (also inside an SVG chart), code navigates with `useRouter().push` or `replace`, or with `useRouter().back()` only for the same-document step back that `takeStepBack` claims, and an internal link never points at a path that only redirects (link to `/shops?pin=…#map`, not `/map?pin=…`). A raw `<a href="/…">`, `window.location.assign`, `location.href =`, or `location.replace` to an in-app path is an undeclared deviation. The app calls `window.location.reload()` only for **Reload** on the new-version notice (`LoginBlockedNotice`, api `app_outdated`) in the login card and the profile claim, where nobody is signed in and only a document load brings the new build. A failed or still running download or initialisation of the wallet code is started again in the same page (`loadWalletSdk`), so **Try again** on the wallet balance, the pay slot, or the wallet setup note connects again without a document load. The login card uses the PRF bytes returned by its passkey prompt, waits for `settlePhraseDerivations`, and asks for the seed passkey only when another passkey signed in. Never persist the recovery phrase or PRF bytes in `localStorage`, `sessionStorage`, IndexedDB, cookies, or a URL.
 
 ### Staff actions (hard requirement)
 
@@ -861,11 +876,11 @@ CI will fail on the same conditions; catching them locally is faster.
 ### A38
 
 This repository requires A38 according to the canonical A38 standard in
-[DFXswiss/agent](https://github.com/DFXswiss/agent/blob/59e31ebd11ab587897dc8e5b2a6f21e489f35f3d/docs/a38.md)
-at commit `59e31ebd11ab587897dc8e5b2a6f21e489f35f3d`. Repo job selection:
+[DFXswiss/agent](https://github.com/DFXswiss/agent/blob/1b153cdf7a1ac3687ba98cad7d323743050fb54b/docs/a38.md)
+at commit `1b153cdf7a1ac3687ba98cad7d323743050fb54b`. Repo job selection:
 `.github/a38.json`. Target-branch applicability and fork workflow approval:
 `.github/pr-guard.json`. `dfx pr guard` is
-[wired in](https://github.com/DFXswiss/agent/blob/59e31ebd11ab587897dc8e5b2a6f21e489f35f3d/docs/a38-guard.md#how-fork-github-actions-are-meant-to-work).
+[wired in](https://github.com/DFXswiss/agent/blob/1b153cdf7a1ac3687ba98cad7d323743050fb54b/docs/a38-guard.md#how-fork-github-actions-are-meant-to-work).
 
 This is a **public** repository. GitHub-hosted runners execute the heavy suite
 (typecheck, handbook completeness, e2e completeness, screenshot baselines,
@@ -879,7 +894,11 @@ Draft pull requests run the GitHub CI jobs. GitHub holds fork runs from
 external contributors as `action_required`. Ready does not start CI. After a
 fresh A38 enforce pass on the current head, `dfx pr guard` approves those
 waiting initial runs, then sets Ready when the required GitHub jobs are green
-and the PR is mergeable. The merger does not click Approve and run workflows.
+and the PR is mergeable. The newest well-formed second review comment that
+covers the current head returns a Ready pull request to draft when its
+`blocks_merge` is true and it counts at least one defect; a newer well-formed
+second review with `blocks_merge` false clears that. The merger does not click
+Approve and run workflows.
 Do not ask a maintainer to approve workflow runs. Post the light A38 report
 on the current head. Every new head needs a new report. Authors with write
 access to `21gifts/app` do not need a report.
@@ -929,6 +948,15 @@ workflows as `github.run_number`. It is inlined at `next build` as
 It is not substituted at container start and is not an `entrypoint.sh`
 placeholder. Local and Playwright builds without the arg show `dev`.
 
+`NEXT_PUBLIC_BUILD_ID` is a Docker **build-arg** (default `dev`), passed by
+every deploy as the commit SHA (see CI / CD). `next.config.ts` inlines it at
+`next build` (unset or empty → `dev`), and `getBuildId()` reads it. Passkey
+begin and finish send it as `X-App-Build`; the same-origin proxy passes the
+browser's value through and never sets it. When the api has
+`APP_BUILD_REQUIRED` set to another value, it answers `app_outdated` and the
+login card shows **A new version is ready** with **Reload**. It is not an
+`entrypoint.sh` placeholder.
+
 `NEXT_PUBLIC_BREEZ_API_KEY` is a second Docker **build-arg** (no default),
 passed by every deploy from that environment's secret (see
 [Breez SDK Spark](#breez-sdk-spark)). It is inlined at `next build` and is not
@@ -974,7 +1002,12 @@ What a trace holds:
   `wallet.sdk.load`, `wallet.connect`, `wallet.sync.first`, `wallet.balance`,
   `wallet.prepare`, `wallet.send`, `wallet.address.register`, and
   `wallet.passkey`. The only attributes are `route` (`spark`, `lightning`, or
-  `onchain`) and `prompt` (`login` or `unlock`). The browser never creates a
+  `onchain`), `prompt` (`login` or `unlock`), and on every wallet span why the
+  page was loaded: `load` (`navigate`, `reload`, `back_forward`, `prerender`,
+  or `unknown`) and `load_trigger` (`app` when App Router fell back to a full
+  page load during a client-side navigation, otherwise `other`;
+  `src/lib/page-load.ts`). That lets passkey prompts be counted per page load
+  and cause; there is no member id on any span. The browser never creates a
   receive invoice; the api issues it, and that request is a fetch span.
 - Wallet steps start their own transaction in the page's trace, so a slow
   connect does not stretch the page load, and all steps of a page share its
@@ -1039,6 +1072,34 @@ Privacy rules (this app holds wallets):
 Any new code that sends data to the error reporter, or adds a span, must go
 through this scrubber and through `traceWallet` or the SDK's automatic spans.
 
+### Content-Security-Policy
+
+`src/middleware.ts` sends a Content-Security-Policy on every page and route
+it matches (not on the `/map` redirect) with a per-request nonce; the sources are in `src/lib/csp.ts` and
+[`docs/csp.md`](docs/csp.md) gives the reason for each one.
+
+| Variable   | Meaning                                                                                                        |
+| ---------- | -------------------------------------------------------------------------------------------------------------- |
+| `CSP_MODE` | `enforce` sends `Content-Security-Policy`. Unset or anything else sends `Content-Security-Policy-Report-Only`. |
+
+`CSP_MODE` is a runtime variable, read on every request (not an
+`entrypoint.sh` placeholder), so the same image switches by recreating the
+container with it set. Violation reports go to `POST /monitoring/csp`, which
+forwards them to the Sentry project's security endpoint reduced to the
+directive, origins, and route name (no query, member path, sample, or referrer)
+and passed through the same privacy scrubber, and answers 404 without a DSN.
+
+Rules:
+
+- No inline executable `<script>` without the nonce. A new inline script in a
+  server component reads it from the `x-nonce` request header, as
+  `RootLayout` does. JSON-LD data blocks (`type="application/ld+json"`) are
+  not run and need none.
+- No `eval`, `new Function`, or string timers.
+- A new external origin (script, image, font, frame, socket) needs a source in
+  `CSP_SOURCES` and a row in `docs/csp.md` in the same PR; the unit test fails
+  otherwise.
+
 ## Wallet data and interaction log
 
 Using the platform is consent to the collection described in the Terms of Use
@@ -1066,9 +1127,9 @@ only for a signed-in member and both through same-origin proxies:
 A payment that did not go out, and a wallet that did not open, are also sent
 to error reporting (`Payment failed`, one issue per stage and reason, and
 `Wallet did not open`, one per reason), errors-only like every other report.
-A wallet that did not open is opened again automatically, except while the
-wallet code needs a page reload (`walletNeedsReload`): then no automatic
-attempt runs and **Try again** reloads the page. Only the first
+A wallet that did not open is opened again automatically, in the same page:
+a failed download of the wallet code is downloaded again, and the download
+itself is not cut off by the connect deadline. Only the first
 failure sends `wallet_open_failed` and `Wallet did not open`, and nothing more
 goes out until the wallet has been ready again or was disconnected.
 Member state (too little balance, an amount below the minimum, no wallet

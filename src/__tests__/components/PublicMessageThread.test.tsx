@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMessageThread } from '@/components/PublicMessageThread';
+import { MOTION_FOLD_MS, MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import {
   agreeToRules,
   CannotReceiveError,
@@ -464,7 +465,9 @@ describe('PublicMessageThread', () => {
     expect(
       within(dialog).getByRole('link', { name: 'Open your wallet' }).getAttribute('href'),
     ).toBe('/wallet');
-    expect(screen.queryByRole('alert')).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
     expect(postMessageInvoice).toHaveBeenCalledTimes(2);
   });
 
@@ -565,9 +568,17 @@ describe('PublicMessageThread', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
+    // The view swaps in after the old one has faded out.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
+    });
     expect(screen.getByText(PAY_UNAVAILABLE)).toBeTruthy();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
+    });
+    // The closed sheet folds away before it unmounts.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
     });
     expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
   });
@@ -593,8 +604,10 @@ describe('PublicMessageThread', () => {
     await openNestedPaySheet();
     expect(payAmountInput()).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(screen.getAllByLabelText('Amount')).toHaveLength(1);
-    expect(replyAmountInput().id).toBe('forum-reply-amount');
+    await waitFor(() => {
+      expect(screen.getAllByLabelText('Amount')).toHaveLength(1);
+      expect(replyAmountInput().id).toBe('forum-reply-amount');
+    });
   });
 
   it('opens the overlay when pay is missing a wallet', async () => {
@@ -677,6 +690,10 @@ describe('PublicMessageThread', () => {
     expect(screen.getByText(PAY_UNAVAILABLE)).toBeTruthy();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
+    });
+    // The closed sheet folds away before it unmounts.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
     });
     expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
   });
@@ -783,6 +800,50 @@ describe('PublicMessageThread', () => {
       expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
     });
     expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('asks for text instead of gifting when the author cannot receive and the reply is empty', async () => {
+    signIn({ role: 'basis', id: 'acc_dave' });
+    renderThread({ root: { ...root, authorCanReceive: false } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    });
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('charges only the 1 sat posting fee when the author cannot receive', async () => {
+    signIn({ role: 'basis', id: 'acc_dave' });
+    renderThread({ root: { ...root, authorCanReceive: false } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${MESSAGE_ID}\nthanks`,
+        NO_RATE_SHOWN,
+      );
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+  });
+
+  it('posts a verified reply without a gift when the author cannot receive', async () => {
+    signIn({ role: 'verified' });
+    renderThread({ root: { ...root, authorCanReceive: false } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: MESSAGE_ID });
+    });
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 

@@ -81,6 +81,12 @@ afterEach(() => {
 });
 
 describe('LoginCard', () => {
+  it('shows no wallet confirm line on the ordinary login', () => {
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('button', { name: 'Log in' })).toBeTruthy();
+    expect(screen.queryByText('Confirm to open your wallet')).toBeNull();
+  });
+
   describe('held-back session', () => {
     beforeEach(() => {
       useAuthStore.setState({ lockedSession: 'held', lockedName: 'Ada' });
@@ -99,6 +105,12 @@ describe('LoginCard', () => {
       expect(screen.getByRole('button', { name: 'Open a new account' })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
       expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('asks to confirm the wallet open directly above Log in', () => {
+      renderWithLocale(<LoginCard />);
+      const line = screen.getByText('Confirm to open your wallet');
+      expect(line.nextElementSibling).toBe(screen.getByRole('button', { name: 'Log in' }));
     });
 
     it('greets nobody when the held account has no name', () => {
@@ -396,6 +408,43 @@ describe('LoginCard', () => {
     expect(loginSpy).toHaveBeenCalledTimes(1);
     expect(retrySpy).not.toHaveBeenCalled();
     expect(useAuthStore.getState().wrongAccount).toBe(false);
+  });
+
+  it('shows the calm logins-closed line with nothing to press', () => {
+    mockPasskey('closed');
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('status').textContent).toBe(
+      '21.gifts is updating. Please try again a little later.',
+    );
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(loginSpy).not.toHaveBeenCalled();
+  });
+
+  it('shows the new-version line and reloads the page on Reload', () => {
+    const reload = vi.fn();
+    vi.stubGlobal('location', { ...window.location, reload });
+    mockPasskey('outdated');
+    renderWithLocale(<LoginCard />);
+    expect(screen.getByRole('status').textContent).toBe('A new version is ready');
+    fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(retrySpy).not.toHaveBeenCalled();
+  });
+
+  it('shows the refusal over a held-back session instead of its start view', () => {
+    useAuthStore.setState({ lockedSession: 'held', lockedName: 'Ada' });
+    try {
+      mockPasskey('closed');
+      renderWithLocale(<LoginCard />);
+      expect(
+        screen.getByText('21.gifts is updating. Please try again a little later.'),
+      ).toBeTruthy();
+      expect(screen.queryByText('Welcome back, Ada')).toBeNull();
+      expect(useAuthStore.getState().lockedSession).toBe('held');
+    } finally {
+      useAuthStore.setState({ lockedSession: null, lockedName: null });
+    }
   });
 
   it('shows the in-app escape card when isInAppBrowser is true', async () => {

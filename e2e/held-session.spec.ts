@@ -203,6 +203,7 @@ test('held-back session: /login is the ordinary login with a greeting and no Log
   await expect(page.getByText('Welcome back, Ada')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Log in with your device' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await expect(page.getByText('Confirm to open your wallet')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Log out' })).toHaveCount(0);
   await expect(page).toHaveURL(/\/login\?visual=held-session$/);

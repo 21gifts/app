@@ -2,6 +2,7 @@ import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ChromeBackProvider, useChromeBack, ViewHistoryRoot } from '@/components/ViewHistoryRoot';
+import { APP_NAVIGATION_KEY, markAppNavigation } from '@/lib/page-load';
 import { previousViewPath, resetViewHistory } from '@/lib/view-history';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -20,6 +21,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 afterEach(() => {
+  sessionStorage.clear();
   resetViewHistory();
   navigation.pathname = null;
   navigation.query = '';
@@ -27,6 +29,44 @@ afterEach(() => {
 });
 
 describe('ViewHistoryRoot', () => {
+  it('removes the marker of a client-side navigation once the view has committed', () => {
+    navigation.pathname = '/welcome';
+    window.history.pushState(null, '', '/welcome');
+    const view = renderWithLocale(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    markAppNavigation();
+    expect(sessionStorage.getItem(APP_NAVIGATION_KEY)).toBe('app');
+    navigation.pathname = '/wallet';
+    window.history.pushState(null, '', '/wallet');
+    view.rerender(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    expect(sessionStorage.getItem(APP_NAVIGATION_KEY)).toBeNull();
+  });
+
+  it('keeps the marker while the location has not reached the router pathname', () => {
+    navigation.pathname = '/welcome';
+    window.history.pushState(null, '', '/welcome');
+    const view = renderWithLocale(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    markAppNavigation();
+    navigation.pathname = '/wallet';
+    view.rerender(
+      <ViewHistoryRoot>
+        <p>child</p>
+      </ViewHistoryRoot>,
+    );
+    expect(sessionStorage.getItem(APP_NAVIGATION_KEY)).toBe('app');
+  });
+
   it('records a pathname, then a query path, and skips a missing pathname', () => {
     navigation.pathname = null;
     navigation.query = '';

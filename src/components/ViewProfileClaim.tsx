@@ -4,6 +4,7 @@ import { Fingerprint, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { InAppBrowserView } from '@/components/InAppBrowserView';
+import { LoginBlockedNotice } from '@/components/LoginBlockedNotice';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, IconButton } from '@/components/ui';
 import { WalletLoginCard } from '@/components/WalletLoginCard';
@@ -34,7 +35,9 @@ function isAlreadyClaimedError(message: string | null): boolean {
  * real browser even when another session is signed in. In Telegram or another
  * in-app browser, shows the shared escape card on mount instead. When the new
  * passkey returns no PRF output, the alert says that this phone or browser
- * cannot hold a 21.gifts wallet instead of the generic claim error.
+ * cannot hold a 21.gifts wallet instead of the generic claim error. When the
+ * api refuses the claim or **Log in instead** because logins are closed or
+ * this tab runs an older build, {@link LoginBlockedNotice} replaces the banner.
  *
  * @param props - Dynamic route `viewKey` and whether the profile already has a passkey.
  * @returns Yellow activate banner, in-app escape card, spinner, error copy
@@ -102,6 +105,14 @@ export function ViewProfileClaim({
     );
   }
 
+  function blockedView(kind: 'closed' | 'outdated'): ReactElement {
+    return (
+      <div className="flex max-w-sm flex-col items-center gap-3">
+        <LoginBlockedNotice kind={kind} />
+      </div>
+    );
+  }
+
   function claimFailedView(onRetry: () => void): ReactElement {
     return (
       <div className="flex max-w-sm flex-col items-center gap-3">
@@ -126,6 +137,9 @@ export function ViewProfileClaim({
           <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />
         </div>
       );
+    }
+    if (account === null && (passkey.status === 'closed' || passkey.status === 'outdated')) {
+      return blockedView(passkey.status);
     }
     // A failed attempt of this login keeps its own alert and retry, also
     // over a held-back session.
@@ -161,6 +175,10 @@ export function ViewProfileClaim({
         <Loader2 aria-hidden="true" className="h-8 w-8 animate-spin text-app-subtle" />
       </div>
     );
+  }
+
+  if (passkey.status === 'closed' || passkey.status === 'outdated') {
+    return blockedView(passkey.status);
   }
 
   if (passkey.status === 'error' && isAlreadyClaimedError(passkey.error)) {

@@ -26,7 +26,7 @@ The pull request lists what it reused and what it added, each with the file and 
 
 ## What the review reports
 
-Each pass lane is read-only. Its prompt contains this reminder: `Read CONTRIBUTING.md and REVIEW.md at the base revision. Review this pull request against those files. Do not change any files.`
+Each pass lane is read-only. Its prompt contains this reminder: `Read CONTRIBUTING.md and REVIEW.md at the base revision. Review this pull request against those files and against the linked issue. Do not change any files.`
 
 Quality judges the diff against these files, read at the base revision, and against the pull request. Logic judges whether the diff is sound and complete for that pull request, and whether it adds a second mechanism for a job these files say to reuse.
 
@@ -113,4 +113,4 @@ Reject the PR when a passkey without PRF output ends in a generic error instead 
 
 Reject the PR when the **Introduce yourself** dialog can open anywhere but `/welcome`.
 
-Reject the PR when moving between in-app views loads a new document (a raw `<a href="/…">`, `window.location.assign`, `location.href =`, or `location.replace` to an in-app path, or a link to a path that only redirects), when it adds a `window.location.reload()` other than the wallet retry after a failed initialisation, or when it asks for the passkey while the recovery phrase is already in tab memory. Reject it when it writes the phrase or the PRF bytes anywhere but tab memory. See CONTRIBUTING.md “No document load inside the app”.
+Reject the PR when moving between in-app views loads a new document (a raw `<a href="/…">`, `window.location.assign`, `location.href =`, or `location.replace` to an in-app path, or a link to a path that only redirects), when it adds a `window.location.reload()` other than the **Reload** on the new-version notice (`LoginBlockedNotice`, api `app_outdated`) in the login card and the profile claim (a failed or pending wallet download or start is retried in the same page), or when it asks for the passkey while the recovery phrase is already in tab memory. Reject it when it writes the phrase or the PRF bytes anywhere but tab memory. See CONTRIBUTING.md “No document load inside the app”.

@@ -170,7 +170,8 @@ function PanelChromeBack({ onBack, over }: { onBack: () => void; over: boolean }
  * them as they slim down with the scroll), or near the frame's bottom edge
  * without them. Tapping it opens the writer under the header row (see
  * `ForumBoard`) and focuses its text field in the same tap. While the writer
- * is open the **+**, the feed and the footer are covered; the top-left arrow
+ * is open the feed and the footer are covered and the **+** fades out (the
+ * same fade as for a focused field, below); the top-left arrow
  * (a chrome back override, after any Ask step inside) closes it, and so do a
  * successful post, the wordmark and the Menu's Home. Closing takes the focus
  * out of the writer first, so the keyboard closes as a focus change. The
@@ -179,14 +180,16 @@ function PanelChromeBack({ onBack, over }: { onBack: () => void; over: boolean }
  * post whose fee completes after the writer closed changes neither the
  * scroll nor the focus), and Home leaves the scroll to the forum's own
  * scroll-to-top. Drafts stay for the next opening.
- * The **+** is hidden while a wallet view is open. An 80 px clearance
+ * A wallet view hides the **+** at once, without the fade: the footer it sits
+ * above leaves in that same step, so a fade would show it dropping to the
+ * bottom first. It fades back in when the view closes. An 80 px clearance
  * (`data-plus-clearance`) ends the signed-in page, so at the end of the feed
  * the last note's controls scroll clear of the **+** and of the space above
  * Receive / Send.
  *
- * Only while a text field in the page has the focus (a reaction or reply
- * text, an amount, a mention box) does the **+** fade out (250 ms; at once
- * with reduced motion) and become unpressable, and Receive / Send fold away
+ * While a text field in the page has the focus (a reaction or reply text, an
+ * amount, a mention box) the **+** fades out (250 ms; at once with reduced
+ * motion) and becomes unpressable, and Receive / Send fold away
  * (`WalletFooterActions` `folded`), so the field has the whole height above
  * the keyboard and the **+** never lies over the form being filled. An open
  * form whose field does not have the focus (an expanded post's reaction form,
@@ -380,7 +383,10 @@ export function WelcomeScreen(): ReactElement {
           folded={fieldFocused}
         />
       ) : null}
-      {signedIn && shown === 'none' && !writerOpen ? (
+      {/* Stays mounted: the writer or a focused field fades it out. A wallet view hides it at once:
+          the footer it sits above leaves in that same step, so a fade would drop it to the bottom
+          first. It fades back in when the view closes. */}
+      {signedIn ? (
         <AppShellOverlay>
           <IconButton
             variant="primary"
@@ -390,7 +396,7 @@ export function WelcomeScreen(): ReactElement {
               // Synchronously, so the writer's field takes the focus inside this tap.
               flushSync(openWriter);
             }}
-            className={`absolute right-[11px] bottom-6 z-30 shadow-lg transition-[opacity,visibility] duration-250 ease-glide motion-reduce:transition-none group-has-[[data-footer-actions]]/body:bottom-[calc(4.75rem+23px-1.75rem*var(--footer-collapse,0))] group-data-[footer-snap]/body:transition-[bottom,opacity,visibility] group-data-[footer-snap]/body:duration-320${fieldFocused ? ' pointer-events-none invisible opacity-0' : ''}`}
+            className={`absolute right-[11px] bottom-6 z-30 shadow-lg ${shown === 'none' ? 'transition-[opacity,visibility] duration-250 ease-glide' : ''} motion-reduce:transition-none group-has-[[data-footer-actions]]/body:bottom-[calc(4.75rem+23px-1.75rem*var(--footer-collapse,0))]${shown === 'none' ? ' group-data-[footer-snap]/body:transition-[bottom,opacity,visibility] group-data-[footer-snap]/body:duration-320' : ''}${fieldFocused || shown !== 'none' || writerOpen ? ' pointer-events-none invisible opacity-0' : ''}`}
           >
             <Plus aria-hidden="true" className="h-6 w-6" />
           </IconButton>

@@ -1,5 +1,5 @@
 /**
- * Narrow adapter over `@breeztech/breez-sdk-spark/ssr`.
+ * Narrow adapter over `@breeztech/breez-sdk-spark/web`.
  *
  * The SDK keeps wallet state in IndexedDB; the recovery phrase is passed in
  * memory and never stored by this app. The adapter exposes no availability
@@ -13,29 +13,48 @@
  */
 const WALLET_STORAGE_DIR = '21gifts-wallet';
 
-/**
- * Set when `sdk.default()` (SDK init) rejects inside {@link loadWalletSdk}.
- * Never cleared; only a page reload recovers because the SDK caches a failed
- * initialisation. A rejecting `import()` does not set it.
- */
-let sdkInitFailed = false;
+/** The SDK module once imported and initialised. */
+type SdkModule = typeof import('@breeztech/breez-sdk-spark/web');
 
 /**
- * True while `sdk.default()` (SDK init) inside {@link loadWalletSdk} has not
- * settled. The SDK caches a pending initialisation as well, so a new attempt
- * would wait on the same promise.
+ * The SDK download and initialisation in progress or done, or `null` before
+ * the first attempt and after a failed one. The package's `ssr` entry keeps a
+ * rejected initialisation for the life of the page, so this adapter imports
+ * the `web` entry and keeps its own promise: a failed download or
+ * initialisation is dropped and the next attempt starts it again, in the same
+ * page, while the recovery phrase stays in tab memory.
  */
-let sdkInitPending = false;
+let sdkStart: Promise<SdkModule> | null = null;
 
 /**
- * True after the SDK's initialisation failed in this page, or while it is still
- * pending (for example after the connect deadline expired during it). The SDK
- * caches its initialisation promise, so only a reload recovers.
+ * Imports the SDK's `web` entry (its script chunk and the wasm it fetches)
+ * and initialises it. A rejected `import()` of a chunk is retried by the
+ * bundler on the next call; the wasm code keeps no state until its module has
+ * been instantiated, so a failed fetch or instantiation is retried as well.
  *
- * @returns Whether the page must be reloaded before another connect attempt.
+ * @returns The initialised SDK module.
  */
-export function walletNeedsReload(): boolean {
-  return sdkInitFailed || sdkInitPending;
+async function startSdk(): Promise<SdkModule> {
+  const sdk = await import('@breeztech/breez-sdk-spark/web');
+  await sdk.default();
+  return sdk;
+}
+
+/**
+ * The shared SDK start: every caller waits on the same download while it
+ * runs, and a failed one is dropped so the next call starts again.
+ *
+ * @returns The initialised SDK module.
+ */
+function sharedSdkStart(): Promise<SdkModule> {
+  if (sdkStart === null) {
+    const start = startSdk();
+    sdkStart = start;
+    start.catch(() => {
+      sdkStart = null;
+    });
+  }
+  return sdkStart;
 }
 
 /**
@@ -859,25 +878,18 @@ export interface WalletSdk {
 }
 
 /**
- * Dynamically imports the Breez Spark SSR package, initializes it, and returns
- * a narrow {@link WalletSdk} wrapper. The only module that names the package.
- * A rejected or still pending initialisation is reported by {@link walletNeedsReload}.
+ * Downloads and initialises the Breez Spark SDK once per page, and returns a
+ * narrow {@link WalletSdk} wrapper. The only module that names the package.
+ * Calls while the download runs share it; after a failed download or
+ * initialisation the next call starts it again in the same page, so no page
+ * reload is needed.
  *
  * @returns A {@link WalletSdk} whose `connect` opens a mainnet wallet and whose
  * `getInfo` can wait for synchronized state.
  * @throws When the SDK module cannot be imported or its initialisation fails.
  */
 export async function loadWalletSdk(): Promise<WalletSdk> {
-  const sdk = await import('@breeztech/breez-sdk-spark/ssr');
-  sdkInitPending = true;
-  try {
-    await sdk.default();
-  } catch (error: unknown) {
-    sdkInitFailed = true;
-    throw error;
-  } finally {
-    sdkInitPending = false;
-  }
+  const sdk = await sharedSdkStart();
   return {
     async connect(
       mnemonic: string,

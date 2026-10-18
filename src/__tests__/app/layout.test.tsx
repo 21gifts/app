@@ -38,8 +38,16 @@ vi.mock('@/lib/request-fiat', () => ({
   getRequestFiat: vi.fn(async () => 'USD' as const),
 }));
 
+/** Nonce the middleware set on the request, or `null` when none. */
+let requestNonce: string | null = 'n0nce';
+
+vi.mock('next/headers', () => ({
+  headers: vi.fn(async () => new Headers(requestNonce === null ? {} : { 'x-nonce': requestNonce })),
+}));
+
 beforeEach(() => {
   vi.clearAllMocks();
+  requestNonce = 'n0nce';
 });
 
 describe('metadata', () => {
@@ -170,6 +178,35 @@ describe('RootLayout', () => {
     expect(scriptNodes[3]?.props.type).toBe('application/ld+json');
     expect(scriptNodes[3]?.props.dangerouslySetInnerHTML.__html).toContain('21gifts');
     expect(scriptNodes[3]?.props.dangerouslySetInnerHTML.__html).toContain('@graph');
+  });
+
+  /**
+   * Head `<script>` props of one render.
+   *
+   * @returns Props of each head script, in order.
+   */
+  async function headScriptProps(): Promise<Array<{ nonce?: string; type?: string }>> {
+    const tree = await RootLayout({ children: 'content' });
+    const children = (tree.props as { children: ReactElement[] }).children;
+    const head = children.find((child) => child.type === 'head') as ReactElement<{
+      children: Array<ReactElement<{ nonce?: string; type?: string }> | null>;
+    }>;
+    return head.props.children
+      .filter((child) => child !== null && child.type === 'script')
+      .map((child) => (child as ReactElement<{ nonce?: string; type?: string }>).props);
+  }
+
+  it('puts the request nonce on the three bootstrap scripts', async () => {
+    const props = await headScriptProps();
+    expect(props.slice(0, 3).map((p) => p.nonce)).toEqual(['n0nce', 'n0nce', 'n0nce']);
+    expect(props[3]?.type).toBe('application/ld+json');
+    expect(props[3]?.nonce).toBeUndefined();
+  });
+
+  it('leaves the nonce off when the request has none', async () => {
+    requestNonce = null;
+    const props = await headScriptProps();
+    expect(props.map((p) => p.nonce)).toEqual([undefined, undefined, undefined, undefined]);
   });
 
   it('emits the e2e clock meta when NEXT_PUBLIC_E2E_NOW is set', async () => {
