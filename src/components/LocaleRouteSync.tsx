@@ -90,13 +90,13 @@ export function LocaleRouteSync(): null {
   useEffect(() => {
     syncRouteLocale(
       pathname,
-      localeRef.current,
+      locale,
       () => {
         refreshRef.current();
       },
       refreshedKey,
     );
-  }, [pathname]);
+  }, [pathname, locale]);
 
   useEffect(() => {
     const onPageShow = (event: Event): void => {

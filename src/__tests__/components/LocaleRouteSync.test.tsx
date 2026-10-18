@@ -264,6 +264,25 @@ describe('LocaleRouteSync', () => {
     }
   });
 
+  it('refreshes the same language URL again after the provider matches and then differs', () => {
+    window.history.replaceState({}, '', '/de');
+    const jar = installCookieJar(`${LOCALE_COOKIE}=de`);
+    try {
+      const view = renderWithLocale(<RouteSyncHarness locale="en" />);
+      expect(localeWrites(jar.set)).toEqual([]);
+      expect(refresh).toHaveBeenCalledTimes(1);
+
+      view.rerender(<RouteSyncHarness locale="de" />);
+      expect(refresh).toHaveBeenCalledTimes(1);
+
+      view.rerender(<RouteSyncHarness locale="en" />);
+      expect(localeWrites(jar.set)).toEqual([]);
+      expect(refresh).toHaveBeenCalledTimes(2);
+    } finally {
+      jar.restore();
+    }
+  });
+
   it('refreshes a language URL again after a matching route clears the guard', () => {
     window.history.replaceState({}, '', '/de');
     const jar = installCookieJar(`${LOCALE_COOKIE}=de`);

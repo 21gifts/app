@@ -251,13 +251,13 @@
 - **Purpose:** Read the supported language stored in the `locale` cookie.
 - **Inputs:** None. Reads `document.cookie`.
 - **Returns / side effects:** That locale when the value is exactly `en`, `de`, `es`, or `fil`; otherwise `null` (missing or unsupported). Does not write.
-- **Used by:** `LocaleRouteSync`.
+- **Used by:** `LocaleRouteSync` and `AccountPreferenceSync`.
 
 ## Function: LocaleRouteSync
 
 - **Purpose:** Keep the root layout on the language of the path that is showing. Mounted once under the root provider. Renders nothing. A client navigation does not re-render the root layout, so a mismatch refreshes it. The language switcher does not do this.
 - **Inputs:** None. Reads the pathname, the provider locale, the auth account's saved language, and the locale cookie via `readLocaleCookie`.
-- **Returns / side effects:** Returns `null`. On a pathname change, and on `pageshow` when `persisted` is true, a language URL whose cookie differs is stored with `writeLocaleCookie` when the account has no saved language. The language the server should render is the URL language, otherwise the saved account language, otherwise the cookie. When that differs from the provider locale, `router.refresh()` runs once for that path and language; the guard is cleared as soon as the provider shows the expected language, so a later return to the same language URL refreshes again. A `pageshow` that is not persisted, a plain event, a cookie that already matches, an account with a saved language, and unmounting do not write.
+- **Returns / side effects:** Returns `null`. On a pathname change, when the provider locale changes, and on `pageshow` when `persisted` is true, a language URL whose cookie differs is stored with `writeLocaleCookie` when the account has no saved language. The language the server should render is the URL language, otherwise the saved account language, otherwise the cookie. When that differs from the provider locale, `router.refresh()` runs once for that path and language; the guard is cleared as soon as the provider shows the expected language, including on the same path, so a later mismatch there refreshes again, as does a later return to the same language URL. A provider change onto the expected language does not refresh. A `pageshow` that is not persisted, a plain event, a cookie that already matches, an account with a saved language, and unmounting do not write.
 - **Used by:** `RootLayout`.
 
 ## Function: LanguageSwitcher
@@ -341,7 +341,7 @@
 
 - **Purpose:** Reconciles nullable signed-in account locale and fiat preferences with the screen and supported preference cookies once per account id.
 - **Inputs:** Hydrated auth `session` and `account`, screen locale, fiat context, preference generations, and the router.
-- **Returns / side effects:** Returns `null`; fills explicit `null` values with `onlyIfUnset=true` only when the generation captured before hydration still matches, writes a differing locale through `writeLocaleCookie` and refreshes, mirrors a stored fiat into its cookie even when the visible code already matches, merges only that one field onto the current account, stops when the session is gone, ignores missing keys, and discards a stale response without replacing the other preference.
+- **Returns / side effects:** Returns `null`; fills explicit `null` values with `onlyIfUnset=true` only when the generation captured before hydration still matches, writes a differing locale through `writeLocaleCookie` and refreshes when `readLocaleCookie()` is not that language, mirrors a stored fiat into its cookie even when the visible code already matches, merges only that one field onto the current account, stops when the session is gone, ignores missing keys, and discards a stale response without replacing the other preference.
 - **Used by:** `RootLayout` inside `FiatPreferenceProvider`.
 
 ## Function: bumpLocaleGeneration
