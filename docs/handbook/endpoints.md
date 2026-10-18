@@ -9,9 +9,9 @@
 
 ## Endpoint: GET /.well-known/lnurlp/[username]
 
-- **Purpose:** Proxies LUD-16 payRequest from the api onto the site apex so wallets can pay `username@21.gifts`. CORS `*`. Once the member's in-app wallet is verified the api answers with the callback `GET /lnurlp/[username]/invoice`, so payments to that address settle in the member's own in-app wallet.
+- **Purpose:** Proxies LUD-16 payRequest from the api onto the site apex so wallets can pay `username@21.gifts`. CORS `*`. Once the member's in-app wallet is verified the api answers with the callback `GET /lnurlp/[username]/invoice`, so payments to that address settle in the member's own in-app wallet. While the account has an open shop payment the api answers an OpenCryptoPay pay request instead (`quote.payment`, `transferAmounts`); the query string is forwarded.
 - **Errors:** Upstream 404/502.
-- **Used by:** Lightning wallets.
+- **Used by:** Lightning wallets; `fetchShopPayLink` for `PayLinkScreen` (an open till, the check after **Continue**, the re-read while the opened payment waits, and the quote refetch).
 - **Auth:** none.
 
 ## Endpoint: GET /pay/[username]

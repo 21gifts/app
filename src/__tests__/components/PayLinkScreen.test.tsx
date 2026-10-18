@@ -1404,14 +1404,46 @@ describe('PayLinkScreen shop payment', () => {
     expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
   });
 
-  it('keeps an opened payment whose pay link turns plain and shows the status the wait poll reads', async () => {
+  it('asks again when the pay link is already plain right after opening', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let links = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        return Response.json({
+          payment: 'p1',
+          expiresAt: new Date(FIXED + 300_000).toISOString(),
+        });
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        links += 1;
+        return Response.json({ tag: 'payRequest' });
+      }
+      if (url.endsWith('/invoice') || url.startsWith(CALLBACK) || url.startsWith('/lnurlp/')) {
+        throw new Error(`unexpected ${url}`);
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Another payer entered an amount first. Enter yours again.',
+    );
+    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    expect(screen.queryByText('Expired')).toBeNull();
+    expect(links).toBe(1);
+    expect(postedInvoice()).toBe(false);
+  });
+
+  it('keeps an opened payment whose unreadable pay link turns plain and shows the status the wait poll reads', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     const cases = [
-      { firstRead: 'busy', paymentStatus: 'accepted', line: 'On its way' },
-      { firstRead: 'busy', paymentStatus: 'ended', line: 'Expired' },
-      { firstRead: 'plain', paymentStatus: 'accepted', line: 'On its way' },
+      { paymentStatus: 'accepted', line: 'On its way' },
+      { paymentStatus: 'ended', line: 'Expired' },
     ];
-    for (const { firstRead, paymentStatus, line } of cases) {
+    for (const { paymentStatus, line } of cases) {
       let links = 0;
       let release: (response: Response) => void = () => undefined;
       mockShopFetch(async (input) => {
@@ -1424,7 +1456,7 @@ describe('PayLinkScreen shop payment', () => {
         }
         if (url === '/.well-known/lnurlp/ada') {
           links += 1;
-          return links === 1 && firstRead === 'busy'
+          return links === 1
             ? new Response('busy', { status: 503 })
             : Response.json({ tag: 'payRequest' });
         }

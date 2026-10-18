@@ -676,12 +676,17 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         if (generationRef.current !== generation) {
           return;
         }
-        if (link.kind === 'payment' && link.request.payment !== start.payment) {
+        // Read right after opening, a plain request cannot be this payment accepted or its window
+        // passed: something else ended it, so it counts as replaced like another payment's quote.
+        if (
+          link.kind === 'plain' ||
+          (link.kind === 'payment' && link.request.payment !== start.payment)
+        ) {
           setFormError('replaced');
           return;
         }
-        // An unreadable or plain pay link keeps the opened payment: it is read again, the status
-        // poll tells whether it moved on, and Continue would replace the live payment.
+        // An unreadable pay link keeps the opened payment: it is read again, the status poll
+        // tells whether it moved on, and Continue would replace the live payment.
         showShopPayment(
           start.payment,
           amountSats,
