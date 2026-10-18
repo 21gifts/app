@@ -3911,6 +3911,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pos',
+    id: 'paid-closed',
+    image: 'pos-paid-closed.png',
+    visual: 'state-pos-paid-closed',
+    needle: "shotScreen(page, 'state-pos-paid-closed')",
+  },
+  {
+    route: '/pos',
     id: 'history',
     image: 'pos-history.png',
     visual: 'state-pos-history',

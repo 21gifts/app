@@ -38,6 +38,9 @@
   /* A new reply easing into its thread. `backwards`, not `both`: once it has arrived nothing of
      the animation stays on the reply (a kept transform would put its text on its own layer). */
   --animate-fade-in: fade-in 280ms var(--ease-glide) backwards;
+  /* The till's full-screen paid confirmation growing in, and its check drawing itself. */
+  --animate-paid-in: paid-in 360ms var(--ease-glide) both;
+  --animate-paid-check: paid-check 520ms 220ms ease-out both;
 
   @keyframes fade-in {
     from {
@@ -47,6 +50,26 @@
     to {
       opacity: 1;
       transform: none;
+    }
+  }
+
+  @keyframes paid-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes paid-check {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
     }
   }
 
@@ -189,6 +212,34 @@ html:not([data-local-sunday='1']) .sunday-write-notice {
 .forum-heart-plus-one {
   pointer-events: none;
   animation: forum-heart-plus-one 700ms ease-out forwards;
+}
+
+/* Rings pulsing out of the paid check. The ring itself is transparent, so a
+   stopped or reduced-motion ring shows nothing instead of a stray circle. */
+@keyframes pos-paid-ring {
+  from {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+.pos-paid-ring {
+  opacity: 0;
+  animation: pos-paid-ring 1600ms ease-out 400ms infinite;
+}
+
+.pos-paid-ring-late {
+  animation-delay: 1200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pos-paid-ring {
+    animation: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

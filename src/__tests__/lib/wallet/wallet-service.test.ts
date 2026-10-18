@@ -9,6 +9,7 @@ import {
   listWalletPayments,
   listWalletReportPayments,
   onIncomingPayment,
+  onPaymentReceived,
   parseWalletInput,
   payFromWallet,
   refreshWallet,
@@ -2737,6 +2738,39 @@ describe('onIncomingPayment', () => {
     await settle();
     expect(seen).toEqual([['new', 21_500]]);
     unsubscribe();
+  });
+
+  it('tells an onPaymentReceived listener at once, before the balance read, once per payment', async () => {
+    const { emit, connection } = await connected([payment('old')]);
+    const now: string[] = [];
+    const later: string[] = [];
+    const unsubscribeNow = onPaymentReceived((p) => {
+      now.push(p.id);
+    });
+    const unsubscribeLater = onIncomingPayment((p) => {
+      later.push(p.id);
+    });
+    let answer!: () => void;
+    connection.getInfo.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          answer = () => {
+            resolve({ balanceSats: 21_500, identityPubkey: IDENTITY });
+          };
+        }),
+    );
+    emit({ type: 'paymentSucceeded', payment: payment('old') });
+    emit({ type: 'paymentSucceeded', payment: payment('new') });
+    emit({ type: 'paymentSucceeded', payment: payment('new') });
+    expect(now).toEqual(['new']);
+    expect(later).toEqual([]);
+    answer();
+    await vi.waitFor(() => expect(later).toEqual(['new']));
+    unsubscribeNow();
+    unsubscribeLater();
+    emit({ type: 'paymentSucceeded', payment: payment('after') });
+    await settle();
+    expect(now).toEqual(['new']);
   });
 
   it('tells the listeners of two payments close together only once the newest balance is in', async () => {

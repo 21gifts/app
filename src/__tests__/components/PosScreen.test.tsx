@@ -35,6 +35,34 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+// The till hears this tab's wallet through onPaymentReceived; the tests play the wallet.
+const received = vi.hoisted(() => ({
+  listeners: new Set<(payment: { amountSats: number; feesSats: number }) => void>(),
+}));
+vi.mock('@/lib/wallet/wallet-service', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/wallet/wallet-service')>(
+    '@/lib/wallet/wallet-service',
+  );
+  return {
+    ...actual,
+    onPaymentReceived: (listener: (payment: { amountSats: number; feesSats: number }) => void) => {
+      received.listeners.add(listener);
+      return () => {
+        received.listeners.delete(listener);
+      };
+    },
+  };
+});
+
+/** This tab's wallet receives a completed payment of `amountSats` (after `feesSats`). */
+function receive(amountSats: number, feesSats = 0): void {
+  act(() => {
+    for (const listener of [...received.listeners]) {
+      listener({ amountSats, feesSats });
+    }
+  });
+}
+
 vi.mock('@/lib/api', async () => {
   const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api');
   return {
@@ -1159,29 +1187,40 @@ describe('PosScreen', () => {
       paidAt: null,
     };
     const PAID = { ...OPEN, status: 'paid', paidAt: new Date().toISOString() };
+    const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
 
     afterEach(() => {
       vi.useRealTimers();
+      received.listeners.clear();
+      window.history.replaceState({}, '', '/');
+      if (ORIGINAL_E2E_NOW === undefined) delete process.env.NEXT_PUBLIC_E2E_NOW;
+      else process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
     });
 
-    /** Lets pending effects start the poll, then moves the clock one poll ahead. */
-    async function poll(): Promise<void> {
-      await act(async () => undefined);
-      await act(async () => {
-        vi.advanceTimersByTime(3_000);
+    /** The tab becomes visible again. */
+    function showTab(): void {
+      const state = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
+      act(() => {
+        document.dispatchEvent(new Event('visibilitychange'));
       });
+      state.mockRestore();
     }
 
-    it('shows Paid, bitcoin, the spot, and New payment for a paid charge with no stored fiat', async () => {
-      vi.mocked(fetchFxSpot).mockResolvedValue(SPOT);
+    /** The full-screen confirmation, once it is on screen. */
+    async function confirmation(): Promise<HTMLElement> {
+      return screen.findByRole('alertdialog', { name: 'Paid' });
+    }
+
+    it('fills the screen with Paid, bitcoin, fiat, and New payment for a paid charge', async () => {
+      vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
       vi.stubGlobal(
         'fetch',
         vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] })),
       );
       vi.mocked(logInteraction).mockClear();
       renderWithLocale(<PosScreen />);
-      expect((await screen.findByRole('status')).textContent).toBe('Paid ✓');
-      // Recorded by an effect, which may run after the status is in the DOM.
+      const dialog = await confirmation();
+      // Recorded by an effect, which may run after the confirmation is in the DOM.
       await waitFor(() => {
         expect(logInteraction).toHaveBeenCalledTimes(1);
       });
@@ -1190,15 +1229,13 @@ describe('PosScreen', () => {
         { chargeId: 'c1', amountSats: 21 },
         'tok',
       );
-      expect(screen.getAllByText('₿21')).toHaveLength(2);
-      await waitFor(() => {
-        expect(vi.mocked(fetchFxSpot)).toHaveBeenCalled();
-      });
-      expect(screen.getAllByText('$0.02').length).toBeGreaterThan(0);
+      expect(within(dialog).getByText('₿21')).toBeTruthy();
+      expect(await within(dialog).findByText('$0.02')).toBeTruthy();
+      expect(within(dialog).getByText('The amount has arrived in your wallet.')).toBeTruthy();
       const history = screen.getByRole('region', { name: 'History' });
       expect(within(history).getByText(/^Paid ✓ /)).toBeTruthy();
       expect(within(history).getByText('$0.02')).toBeTruthy();
-      expect(screen.getByRole('link', { name: 'New payment' }).getAttribute('href')).toBe(
+      expect(within(dialog).getByRole('link', { name: 'New payment' }).getAttribute('href')).toBe(
         '/pos/amount',
       );
       expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
@@ -1279,10 +1316,10 @@ describe('PosScreen', () => {
       expect(logInteraction).not.toHaveBeenCalled();
       amountPage.unmount();
       const first = renderWithLocale(<PosScreen />);
-      expect((await screen.findByRole('status')).textContent).toBe('Paid ✓');
+      await confirmation();
       first.unmount();
       renderWithLocale(<PosScreen />);
-      expect((await screen.findByRole('status')).textContent).toBe('Paid ✓');
+      await confirmation();
       expect(logInteraction).toHaveBeenCalledTimes(1);
     });
 
@@ -1297,137 +1334,107 @@ describe('PosScreen', () => {
         vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [] })),
       );
       renderWithLocale(<PosScreen />);
-      expect(await screen.findByRole('link', { name: 'New payment' })).toBeTruthy();
+      expect(within(await confirmation()).getByRole('link', { name: 'New payment' })).toBeTruthy();
       expect(screen.queryByText(/\$/)).toBeNull();
     });
 
-    it('asks every three seconds while a charge is open and stops once it is paid', async () => {
-      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
-        .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
-        .mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] }));
+    it('turns Paid the moment the wallet receives the open amount, without asking the api', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] }));
       vi.stubGlobal('fetch', fetchMock);
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-      await poll();
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
       expect(screen.getByText('No payments yet.')).toBeTruthy();
-      await poll();
-      expect(fetchMock).toHaveBeenCalledTimes(3);
-      expect(screen.getByRole('status').textContent).toBe('Paid ✓');
+      receive(21);
+      const dialog = screen.getByRole('alertdialog', { name: 'Paid' });
+      expect(within(dialog).getByText('₿21')).toBeTruthy();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
       const history = screen.getByRole('region', { name: 'History' });
       expect(within(history).getByText(/^Paid ✓ /)).toBeTruthy();
       expect(screen.queryByText('No payments yet.')).toBeNull();
-      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
-      await poll();
-      expect(fetchMock).toHaveBeenCalledTimes(3);
     });
 
-    it('keeps the open charge when a poll fails', async () => {
-      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
-        .mockResolvedValueOnce(jsonResponse({ error: 'down' }, 502));
-      vi.stubGlobal('fetch', fetchMock);
+    it('also counts the open amount the wallet receives after its fee', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] })),
+      );
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
-      await poll();
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
-      expect(screen.queryByRole('alert')).toBeNull();
+      receive(20, 1);
+      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
     });
 
-    it('drops a poll answer that arrives after the till unmounts', async () => {
-      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
-      let answer: (response: Response) => void = () => undefined;
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
-        .mockReturnValueOnce(
-          new Promise<Response>((resolve) => {
-            answer = resolve;
-          }),
-        );
-      vi.stubGlobal('fetch', fetchMock);
+    it('ignores another amount, and any payment while no charge was open', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })),
+      );
+      const empty = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      receive(21);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      empty.unmount();
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] })),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(22);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    });
+
+    it('does not listen to the wallet without a session or after the till unmounts', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] })),
+      );
       const { unmount } = renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
-      await poll();
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(received.listeners.size).toBe(1);
       unmount();
-      await act(async () => {
-        answer(jsonResponse({ charge: PAID, history: [PAID] }));
-      });
-      expect(screen.queryByRole('status')).toBeNull();
+      expect(received.listeners.size).toBe(0);
+      useAuthStore.setState({ session: null });
+      renderWithLocale(<PosScreen />);
+      await act(async () => undefined);
+      expect(received.listeners.size).toBe(0);
     });
 
-    it('still shows Paid when the payment is confirmed after the charge ran out', async () => {
-      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    it('counts a payment that lands within a minute after the charge ran out', async () => {
       const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce(jsonResponse({ charge: ended, history: [ended] }))
-        .mockResolvedValueOnce(jsonResponse({ charge: null, history: [ended] }))
-        .mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] }));
+        .mockResolvedValue(jsonResponse({ charge: null, history: [ended] }));
       vi.stubGlobal('fetch', fetchMock);
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
       expect(fetchMock).toHaveBeenCalledTimes(2);
-      await poll();
-      expect(fetchMock).toHaveBeenCalledTimes(3);
-      expect(screen.getByRole('status').textContent).toBe('Paid ✓');
-      await poll();
-      expect(fetchMock).toHaveBeenCalledTimes(3);
+      receive(21);
+      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(within(history).getByText(/^Paid ✓ /)).toBeTruthy();
+      expect(within(history).queryByText('Expired')).toBeNull();
     });
 
-    it('keeps Paid when an older till read answers after it', async () => {
-      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
-      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
-      let answerRefresh: (response: Response) => void = () => undefined;
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValueOnce(jsonResponse({ charge: ended, history: [ended] }))
-        .mockReturnValueOnce(
-          new Promise<Response>((resolve) => {
-            answerRefresh = resolve;
-          }),
-        )
-        .mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] }));
-      vi.stubGlobal('fetch', fetchMock);
-      renderWithLocale(<PosScreen />);
-      expect(await screen.findByText('0:00 left')).toBeTruthy();
-      await poll();
-      expect(fetchMock).toHaveBeenCalledTimes(3);
-      expect(screen.getByRole('status').textContent).toBe('Paid ✓');
-      await act(async () => {
-        answerRefresh(jsonResponse({ charge: null, history: [ended] }));
-      });
-      expect(screen.getByRole('status').textContent).toBe('Paid ✓');
-      expect(screen.queryByRole('link', { name: 'Set an amount' })).toBeNull();
-    });
-
-    it('stops asking a minute after the charge ran out', async () => {
-      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    it('does not count a payment more than a minute after the charge ran out', async () => {
       const old = { ...OPEN, expiresAt: new Date(Date.now() - 61_000).toISOString() };
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValueOnce(jsonResponse({ charge: old, history: [old] }))
-        .mockResolvedValue(jsonResponse({ charge: null, history: [old] }));
-      vi.stubGlobal('fetch', fetchMock);
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockResolvedValueOnce(jsonResponse({ charge: old, history: [old] }))
+          .mockResolvedValue(jsonResponse({ charge: null, history: [old] })),
+      );
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
-      expect(fetchMock).toHaveBeenCalledTimes(2);
-      await poll();
-      await poll();
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      receive(21);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
-    it('stops asking once the charge is cancelled', async () => {
-      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
+    it('does not count a payment once the charge is cancelled', async () => {
       const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
         if (init?.method === 'DELETE') {
           return jsonResponse({ charge: null });
@@ -1440,9 +1447,145 @@ describe('PosScreen', () => {
       renderWithLocale(<PosScreen />);
       fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
-      const calls = fetchMock.mock.calls.length;
-      await poll();
-      expect(fetchMock).toHaveBeenCalledTimes(calls);
+      receive(21);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
+    it('never asks the api on a timer while a charge is open', async () => {
+      vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] }));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(30_000);
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('Done closes the confirmation, reads the till once, and offers a new amount', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
+        // The api has not seen the payment yet: the charge stays paid on this till.
+        .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
+        .mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] }));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      fireEvent.click(
+        within(screen.getByRole('alertdialog', { name: 'Paid' })).getByRole('button', {
+          name: 'Done',
+        }),
+      );
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      });
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+      expect(screen.queryByText(/left$/)).toBeNull();
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(within(history).getByText(/^Paid ✓ /)).toBeTruthy();
+      showTab();
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+      });
+      // The api's own paid answer for the closed charge does not open it again.
+      await act(async () => undefined);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
+    it('opens a newer charge the api returns paid after an older one was closed', async () => {
+      const newer = {
+        ...PAID,
+        id: 'c2',
+        amountSats: 42,
+        createdAt: new Date(Date.now() + 60_000).toISOString(),
+      };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
+        .mockResolvedValueOnce(jsonResponse({ charge: null, history: [OPEN] }))
+        .mockResolvedValue(jsonResponse({ charge: newer, history: [newer, OPEN] }));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      showTab();
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('₿42')).toBeTruthy();
+    });
+
+    it('keeps the confirmation of the newer wallet payment over an older paid charge of the api', async () => {
+      const older = {
+        ...PAID,
+        id: 'c0',
+        amountSats: 42,
+        createdAt: new Date(Date.now() - 60_000).toISOString(),
+      };
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
+        .mockResolvedValue(jsonResponse({ charge: older, history: [older] }));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      showTab();
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      });
+      await act(async () => undefined);
+      const dialog = screen.getByRole('alertdialog', { name: 'Paid' });
+      expect(within(dialog).getByText('₿21')).toBeTruthy();
+    });
+
+    it('reads the till again only when the tab becomes visible, not when it is hidden', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] }));
+      vi.stubGlobal('fetch', fetchMock);
+      const state = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      act(() => {
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      await act(async () => undefined);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      state.mockRestore();
+      showTab();
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it('pays the open charge on sight under the pos-received pin in a Playwright build', async () => {
+      process.env.NEXT_PUBLIC_E2E_NOW = '2026-09-20T12:00:00.000Z';
+      window.history.replaceState({}, '', '/pos?visual=pos-received');
+      const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] }));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(within(await confirmation()).getByText('₿21')).toBeTruthy();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('ignores the pos-received pin in a production build', async () => {
+      delete process.env.NEXT_PUBLIC_E2E_NOW;
+      window.history.replaceState({}, '', '/pos?visual=pos-received');
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] })),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await act(async () => undefined);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
     it('lets the amount page open a new payment after a paid charge', async () => {

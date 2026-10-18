@@ -140,6 +140,9 @@ let knownPaymentIds: Set<string> | null = null;
 /** Listeners told about each newly received payment. */
 const incomingListeners = new Set<(payment: WalletPayment) => void>();
 
+/** Listeners told about each newly received payment at once, before the balance is read again. */
+const receivedListeners = new Set<(payment: WalletPayment) => void>();
+
 /**
  * Received payments that completed while the known payments of the current
  * connection were still being read; announced once that list is in, unless
@@ -478,7 +481,7 @@ async function rememberKnownPayments(run: number, conn: WalletConnection): Promi
 
 /**
  * Announces a newly received payment once per id: adds it to the known ids,
- * reads the balance again, and once that read and any newer one are done
+ * tells every {@link onPaymentReceived} listener at once, reads the balance again, and once that read and any newer one are done
  * (a newer read makes this one stale, and only the newest writes) tells every
  * {@link onIncomingPayment} listener, so a listener that shows the balance
  * never shows the one from before the payment. Nothing is told when the
@@ -493,6 +496,9 @@ async function announcePayment(known: Set<string>, payment: WalletPayment): Prom
     return;
   }
   known.add(payment.id);
+  for (const listener of receivedListeners) {
+    listener(payment);
+  }
   await refreshWallet();
   while (readsInFlight.size > 0) {
     await Promise.allSettled(readsInFlight);
@@ -547,6 +553,22 @@ export function onIncomingPayment(listener: (payment: WalletPayment) => void): (
   incomingListeners.add(listener);
   return () => {
     incomingListeners.delete(listener);
+  };
+}
+
+/**
+ * Subscribes to the same received payments as {@link onIncomingPayment}, but
+ * tells the listener the moment the SDK reports the payment complete, before
+ * the balance is read again. For a screen that must react to the money
+ * arriving without waiting for that read.
+ *
+ * @param listener - Called with each newly received payment.
+ * @returns Unsubscribe function.
+ */
+export function onPaymentReceived(listener: (payment: WalletPayment) => void): () => void {
+  receivedListeners.add(listener);
+  return () => {
+    receivedListeners.delete(listener);
   };
 }
 
