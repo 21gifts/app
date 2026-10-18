@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+import type { UseWalletPayResult } from '@/hooks/useWalletPay';
 import type { Account } from '@/lib/api-types';
 import type { WalletPayResult, WalletSendResult } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
@@ -43,4 +44,14 @@ export function confirmResult(
   amountSats = 21,
 ): WalletPayResult {
   return { kind: 'confirm', amountSats, feeSats: 0, method: 'spark', send };
+}
+
+/**
+ * A wallet-pay state whose payment is out (sent, not yet confirmed), so a close by the host shows
+ * the pay sheet's success step. For tests that mock `useWalletPay`.
+ *
+ * @returns The sent state.
+ */
+export function sentWalletPay(): UseWalletPayResult {
+  return { view: 'paying', feeSats: 0, missingSats: null, pay: vi.fn(), retry: vi.fn() };
 }

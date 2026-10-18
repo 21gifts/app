@@ -776,6 +776,24 @@ test('Function: AddBitcoinButton — on the forum home Add Bitcoin closes the sh
   await expect(page.locator('[data-pay-amount]')).toHaveCount(0);
 });
 
+test('Function: usePaySheetSent — a host close with no payment out from the wallet slides the sheet away without a success step', async ({
+  page,
+}) => {
+  await signInAda(page);
+  const text = 'Closed without a wallet payment';
+  const fee = await stubPostingFee(page, text);
+  // The slot waits at Send: nothing went out from the wallet when the host closes the payment.
+  await page.goto('/welcome?visual=wallet-pay-confirm');
+  await postFromWriter(page, text);
+  const steps = await recordSheetSteps(page);
+  await expect(page.getByRole('dialog', { name: 'Pay to post' })).toBeVisible();
+  fee.paid();
+  await expect(page.locator('[data-pay-sheet-layer="closed"][inert]')).toBeAttached();
+  await expect(page.getByRole('status').filter({ hasText: 'Paid and posted' })).toHaveCount(0);
+  await expect(page.locator('[data-pay-sheet]')).toHaveCount(0);
+  expect(await steps()).not.toContain('sheet:success');
+});
+
 test('Function: usePaySheetClose — Add Bitcoin leaves the payment as the member, so no success step shows', async ({
   page,
 }) => {

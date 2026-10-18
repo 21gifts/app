@@ -1,7 +1,11 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ReactElement } from 'react';
+import { Collapse } from '@/components/Collapse';
+import { PAY_SHEET_HOLD_MS, PaySheet } from '@/components/PaySheet';
 import { WalletPay } from '@/components/WalletPay';
 import { useWalletPay, type UseWalletPayResult, type WalletPayView } from '@/hooks/useWalletPay';
+import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -231,5 +235,61 @@ describe('WalletPay', () => {
       'This payment is not confirmed yet. Check your balance again later.',
     );
     expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  describe('in a pay sheet', () => {
+    function inSheet(open: boolean): ReactElement {
+      return (
+        <Collapse show={open} holdMs={PAY_SHEET_HOLD_MS}>
+          <PaySheet
+            title="Send to Ana"
+            amountSats={21}
+            rateDay={RATE_DAY}
+            successTitle="Sent to Ana"
+            onClose={vi.fn()}
+          >
+            <WalletPay
+              sparkInvoice="spark1x"
+              pr="lnbc210n1x"
+              amountSats={21}
+              rateDay={RATE_DAY}
+              flow="gift"
+            />
+          </PaySheet>
+        </Collapse>
+      );
+    }
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it.each(['paying', 'unconfirmed'] as const)(
+      'lets the sheet show its success step when the host closes a payment that is %s',
+      (view) => {
+        hookWith(view);
+        const rendered = renderWithLocale(inSheet(true));
+        rendered.rerender(inSheet(false));
+        act(() => {
+          vi.advanceTimersByTime(MOTION_SWAP_FADE_MS);
+        });
+        expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
+      },
+    );
+
+    it('lets the sheet leave without a success step when no payment is out', () => {
+      hookWith('confirm');
+      const rendered = renderWithLocale(inSheet(true));
+      rendered.rerender(inSheet(false));
+      act(() => {
+        vi.advanceTimersByTime(MOTION_SWAP_FADE_MS);
+      });
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+      expect(screen.queryByText('Sent to Ana')).toBeNull();
+    });
   });
 });

@@ -25,6 +25,7 @@ import {
   SPARK_INVOICE,
   confirmResult,
   resetWallet,
+  sentWalletPay,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
 
@@ -110,6 +111,7 @@ afterEach(() => {
   vi.mocked(searchMentionAccounts).mockReset();
   vi.mocked(searchMentionAccounts).mockResolvedValue([]);
   restoreHtmlElementScroll();
+  vi.mocked(useWalletPay).mockRestore();
 });
 
 const THREAD: Conversation = {
@@ -1653,6 +1655,7 @@ describe('InboxScreen', () => {
   it('shows the success step when the invoice closes without the member closing it', () => {
     vi.useFakeTimers();
     try {
+      vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
       const onPayCancel = vi.fn();
       const { rerender } = renderWithLocale(payInbox({ onPayCancel }));
       rerender(payInbox({ onPayCancel, invoice: null }));
@@ -1673,6 +1676,7 @@ describe('InboxScreen', () => {
   });
 
   it('says Sent on the success step without a conversation name', async () => {
+    vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
     const { rerender } = renderWithLocale(payInbox({ conversations: [] }));
     rerender(payInbox({ conversations: [], invoice: null }));
     expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');

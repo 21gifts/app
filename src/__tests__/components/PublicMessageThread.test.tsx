@@ -1,7 +1,8 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMessageThread } from '@/components/PublicMessageThread';
-import { MOTION_FOLD_MS, MOTION_SWAP_FADE_MS } from '@/lib/motion';
+import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
+import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import {
   agreeToRules,
   CannotReceiveError,
@@ -25,12 +26,19 @@ import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
+import { useWalletPay } from '@/hooks/useWalletPay';
 import {
   SPARK_INVOICE,
   confirmResult,
   resetWallet,
+  sentWalletPay,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
+  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
+});
 
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
@@ -272,6 +280,11 @@ function stubShopPhotoFetch(): void {
 
 /** Status line of an open pay sheet while the in-app wallet is unavailable in tests. */
 const PAY_UNAVAILABLE = 'Your 21.gifts wallet is not available here, so this cannot be paid.';
+
+/** The open pay sheet, or `null` when none is mounted. */
+function paySheet(): HTMLElement | null {
+  return document.querySelector<HTMLElement>('[role="dialog"][data-pay-sheet]');
+}
 
 /** Title of the requirements overlay's wallet step. */
 const WALLET_OVERLAY = 'Your wallet is not set up';
@@ -551,6 +564,7 @@ describe('PublicMessageThread', () => {
   });
 
   it('keeps the nested Gift sheet until receivedSats rises', async () => {
+    vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
     vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
     vi.mocked(fetchPublicMessage).mockResolvedValueOnce({ ...payableNested, sats: 0 });
     vi.mocked(fetchPublicMessage).mockResolvedValueOnce({
@@ -572,15 +586,16 @@ describe('PublicMessageThread', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(MOTION_SWAP_FADE_MS);
     });
-    expect(screen.getByText(PAY_UNAVAILABLE)).toBeTruthy();
+    expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('pay');
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    // The closed sheet folds away before it unmounts.
+    // The paid sheet shows its success step, then leaves after the host's hold.
+    expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('success');
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
+      await vi.advanceTimersByTimeAsync(PAY_SHEET_HOLD_MS);
     });
-    expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
+    expect(paySheet()).toBeNull();
   });
 
   it('maps a pay missing-requirements miss onto the pay error', async () => {
@@ -675,6 +690,7 @@ describe('PublicMessageThread', () => {
 
   it('retries the pay poll after a failed fetch then closes when sats increase', async () => {
     vi.useFakeTimers();
+    vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
     vi.mocked(fetchPublicMessage).mockRejectedValueOnce(new Error('poll failed'));
     vi.mocked(fetchPublicMessage).mockResolvedValueOnce({ ...root, sats: 42 });
     signIn();
@@ -687,15 +703,16 @@ describe('PublicMessageThread', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(screen.getByText(PAY_UNAVAILABLE)).toBeTruthy();
+    expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('pay');
     await act(async () => {
       await vi.advanceTimersByTimeAsync(2000);
     });
-    // The closed sheet folds away before it unmounts.
+    // The paid sheet shows its success step, then leaves after the host's hold.
+    expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('success');
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(MOTION_FOLD_MS);
+      await vi.advanceTimersByTimeAsync(PAY_SHEET_HOLD_MS);
     });
-    expect(screen.queryByText(PAY_UNAVAILABLE)).toBeNull();
+    expect(paySheet()).toBeNull();
   });
 
   it('keeps the current note when a pay poll returns a different id', async () => {

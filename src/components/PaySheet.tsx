@@ -51,6 +51,20 @@ export function usePaySheetClose(): (() => void) | null {
   return useContext(PaySheetCloseContext);
 }
 
+const PaySheetSentContext = createContext<((sent: boolean) => void) | null>(null);
+
+/**
+ * Lets the pay slot tell the pay sheet around it whether a payment from the wallet is out (sent, or
+ * sent and still unconfirmed). Only then does a close by the host count as the payment going out and
+ * show the success step; a host that closes the payment otherwise (a failed check, another thread)
+ * slides the sheet away like a cancel.
+ *
+ * @returns The sheet's report, or `null` outside a pay sheet.
+ */
+export function usePaySheetSent(): ((sent: boolean) => void) | null {
+  return useContext(PaySheetSentContext);
+}
+
 /** Props for {@link PaySheet}. */
 export interface PaySheetProps {
   /** What is paid to whom, e.g. **Send to Ana**, **Lend to Ana**, **Pay to post**, or **Send**. */
@@ -72,10 +86,11 @@ export interface PaySheetProps {
  * inbox. It slides up from the bottom of the frame body over a dimmed page (centred on a wide frame)
  * with the title, the amount with its fiat, a Close, and the pay slot. Close, a tap on the dimmed
  * page, and Escape close it at once. The host renders it inside a `Collapse` with `holdMs`
- * {@link PAY_SHEET_HOLD_MS}: when that closes without the member closing the sheet (the payment went
- * out, {@link usePresent} turns false), the pay step fades into a short success step with the amount
- * ({@link Swap}), then the sheet slides away. With reduced motion it appears and leaves without a
- * slide or a fade.
+ * {@link PAY_SHEET_HOLD_MS}: when that closes without the member closing the sheet ({@link usePresent}
+ * turns false) while the pay slot reports a payment out ({@link usePaySheetSent}), the pay step fades
+ * into a short success step with the amount ({@link Swap}), then the sheet slides away; without a
+ * payment out it slides away at once. With reduced motion it appears and leaves without a slide or a
+ * fade.
  *
  * @param props - Title, amount, rate, success heading, close handler, and the pay slot.
  * @returns The sheet in the frame's overlay layer.
@@ -95,8 +110,10 @@ export function PaySheet({
   const [entered, setEntered] = useState(false);
   const [succeeded, setSucceeded] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [sent, setSent] = useState(false);
   const [wasPresent, setWasPresent] = useState(present);
   const panel = useRef<HTMLDivElement>(null);
+  const opener = useRef<HTMLElement | null>(null);
 
   // A new payment while the host still held the last one (`holdMs`) reuses this sheet: start over
   // as a fresh sheet that slides up again, instead of staying gone.
@@ -106,6 +123,7 @@ export function PaySheet({
       setEntered(false);
       setSucceeded(false);
       setLeaving(false);
+      setSent(false);
     }
   }
 
@@ -117,10 +135,15 @@ export function PaySheet({
     onClose();
   }, [leaving, onClose]);
 
-  // The host closed the payment while the member did not: it went out. Adjusted during render, so
-  // no frame shows the pay slot of a closed payment as if it were still open.
+  // The host closed the payment while the member did not: with a payment out it went out, otherwise
+  // (a failed check, another thread) the sheet leaves like a cancel. Adjusted during render, so no
+  // frame shows the pay slot of a closed payment as if it were still open.
   if (!present && !leaving && !succeeded) {
-    setSucceeded(true);
+    if (sent) {
+      setSucceeded(true);
+    } else {
+      setLeaving(true);
+    }
   }
 
   useEffect(() => {
@@ -136,9 +159,21 @@ export function PaySheet({
       return;
     }
     const frame = requestAnimationFrame(() => setEntered(true));
+    // Remember what had focus, to give it back when the sheet leaves.
+    if (document.activeElement instanceof HTMLElement && document.activeElement !== panel.current) {
+      opener.current = document.activeElement;
+    }
     panel.current?.focus({ preventScroll: true });
     return () => cancelAnimationFrame(frame);
   }, [entered]);
+
+  // A leaving sheet is out of reach (`inert` below) while its host still holds it: focus goes back
+  // to what had it before the sheet opened, when that is still on the page.
+  useEffect(() => {
+    if (leaving && opener.current?.isConnected === true) {
+      opener.current.focus({ preventScroll: true });
+    }
+  }, [leaving]);
 
   // Escape closes the open payment, or lets the success step go at once.
   useEffect(() => {
@@ -177,72 +212,75 @@ export function PaySheet({
   return (
     <AppShellOverlay>
       <PaySheetCloseContext.Provider value={close}>
-        <div
-          data-pay-sheet-layer={shown ? 'open' : 'closed'}
-          className={`absolute inset-0 z-[95] flex items-end justify-center sm:items-center sm:p-4${
-            shown ? '' : ' pointer-events-none'
-          }`}
-        >
-          <button
-            type="button"
-            tabIndex={-1}
-            aria-label={t('forum.payClose')}
-            onClick={succeeded ? () => setLeaving(true) : close}
-            className={`absolute inset-0 cursor-default bg-app-overlay transition-opacity duration-280 ease-glide motion-reduce:transition-none ${
-              shown ? 'opacity-100' : 'opacity-0'
-            }`}
-          />
+        <PaySheetSentContext.Provider value={setSent}>
           <div
-            ref={panel}
-            role="dialog"
-            aria-modal="true"
-            aria-label={title}
-            tabIndex={-1}
-            data-pay-sheet={succeeded ? 'success' : 'pay'}
-            className={`relative flex w-full max-w-md flex-col gap-4 rounded-t-3xl border-t border-app-border bg-app-card px-5 pt-2 pb-6 shadow-xl outline-none transition-[translate,opacity] duration-280 ease-glide motion-reduce:transition-none sm:rounded-3xl sm:border ${
-              shown ? 'translate-y-0' : 'translate-y-full sm:translate-y-8 sm:opacity-0'
+            data-pay-sheet-layer={shown ? 'open' : 'closed'}
+            inert={leaving}
+            className={`absolute inset-0 z-[95] flex items-end justify-center sm:items-center sm:p-4${
+              shown ? '' : ' pointer-events-none'
             }`}
           >
-            <div
-              aria-hidden="true"
-              className="mx-auto h-1 w-10 shrink-0 rounded-full bg-app-border"
+            <button
+              type="button"
+              tabIndex={-1}
+              aria-label={t('forum.payClose')}
+              onClick={succeeded ? () => setLeaving(true) : close}
+              className={`absolute inset-0 cursor-default bg-app-overlay transition-opacity duration-280 ease-glide motion-reduce:transition-none ${
+                shown ? 'opacity-100' : 'opacity-0'
+              }`}
             />
-            <Swap viewKey={succeeded ? 'success' : 'pay'} className="flex flex-col gap-4">
-              {succeeded ? (
-                <div role="status" className="flex flex-col items-center gap-3 py-6">
-                  <CircleCheck
-                    aria-hidden="true"
-                    className="h-14 w-14 text-app-success"
-                    strokeWidth={1.75}
-                  />
-                  <p className="text-lg font-semibold text-app-fg">{successTitle}</p>
-                  {amount}
-                </div>
-              ) : (
-                <>
-                  <div className="relative flex min-h-9 items-center justify-center">
-                    <h2 className="px-10 text-center text-base font-semibold text-app-fg">
-                      {title}
-                    </h2>
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2">
-                      <IconButton
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        aria-label={t('forum.payClose')}
-                        onClick={close}
-                      >
-                        <X aria-hidden="true" className="h-4 w-4" />
-                      </IconButton>
-                    </div>
+            <div
+              ref={panel}
+              role="dialog"
+              aria-modal="true"
+              aria-label={title}
+              tabIndex={-1}
+              data-pay-sheet={succeeded ? 'success' : 'pay'}
+              className={`relative flex w-full max-w-md flex-col gap-4 rounded-t-3xl border-t border-app-border bg-app-card px-5 pt-2 pb-6 shadow-xl outline-none transition-[translate,opacity] duration-280 ease-glide motion-reduce:transition-none sm:rounded-3xl sm:border ${
+                shown ? 'translate-y-0' : 'translate-y-full sm:translate-y-8 sm:opacity-0'
+              }`}
+            >
+              <div
+                aria-hidden="true"
+                className="mx-auto h-1 w-10 shrink-0 rounded-full bg-app-border"
+              />
+              <Swap viewKey={succeeded ? 'success' : 'pay'} className="flex flex-col gap-4">
+                {succeeded ? (
+                  <div role="status" className="flex flex-col items-center gap-3 py-6">
+                    <CircleCheck
+                      aria-hidden="true"
+                      className="h-14 w-14 text-app-success"
+                      strokeWidth={1.75}
+                    />
+                    <p className="text-lg font-semibold text-app-fg">{successTitle}</p>
+                    {amount}
                   </div>
-                  {amount}
-                  <div className="flex flex-col items-stretch gap-3">{children}</div>
-                </>
-              )}
-            </Swap>
+                ) : (
+                  <>
+                    <div className="relative flex min-h-9 items-center justify-center">
+                      <h2 className="px-10 text-center text-base font-semibold text-app-fg">
+                        {title}
+                      </h2>
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                        <IconButton
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          aria-label={t('forum.payClose')}
+                          onClick={close}
+                        >
+                          <X aria-hidden="true" className="h-4 w-4" />
+                        </IconButton>
+                      </div>
+                    </div>
+                    {amount}
+                    <div className="flex flex-col items-stretch gap-3">{children}</div>
+                  </>
+                )}
+              </Swap>
+            </div>
           </div>
-        </div>
+        </PaySheetSentContext.Provider>
       </PaySheetCloseContext.Provider>
     </AppShellOverlay>
   );

@@ -171,7 +171,7 @@ describe('ForumPaySheet', () => {
       expect(form?.querySelector('[data-loan-notice]')?.getAttribute('data-loan-notice')).toBe(
         notice,
       );
-      expect(await within(dialog).findByRole('button', { name: button })).toBeTruthy();
+      fireEvent.click(await within(dialog).findByRole('button', { name: button }));
       rerender(ui(false));
       expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
       expect((await screen.findByText(success)).closest('[role="status"]')).not.toBeNull();
@@ -282,7 +282,7 @@ describe('ForumPaySheet', () => {
     expect(document.querySelector('[data-loan-notice]')).toBeNull();
     const dialog = screen.getByRole('dialog');
     expect(within(dialog).getByRole('heading', { level: 2 }).textContent).toBe('Pay to post');
-    expect(await within(dialog).findByRole('button', { name: 'Pay ₿21 and post' })).toBeTruthy();
+    fireEvent.click(await within(dialog).findByRole('button', { name: 'Pay ₿21 and post' }));
     rerender(ui(false));
     expect((await screen.findByText('Paid and posted')).closest('[role="status"]')).not.toBeNull();
     resetWallet();

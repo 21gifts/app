@@ -41,12 +41,19 @@ import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
+import { useWalletPay } from '@/hooks/useWalletPay';
 import {
   SPARK_INVOICE,
   confirmResult,
   resetWallet,
+  sentWalletPay,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
+  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
+});
 
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
@@ -415,6 +422,7 @@ beforeEach(() => {
 afterEach(async () => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
+  vi.mocked(useWalletPay).mockRestore();
   await act(async () => {
     await Promise.resolve();
   });
@@ -1088,6 +1096,7 @@ describe('MemberProfileScreen', () => {
   });
 
   it('keeps a replies-feed Gift sheet until receivedSats rises', async () => {
+    vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
     const payableActivity = { ...activityReply, payable: true, sats: 0 };
     vi.mocked(fetchMemberReplies).mockResolvedValue([payableActivity]);
     vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 21 });

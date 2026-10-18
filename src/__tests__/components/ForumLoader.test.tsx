@@ -22,12 +22,19 @@ import { getCatalog } from '@/lib/messages';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
+import { useWalletPay } from '@/hooks/useWalletPay';
 import {
   SPARK_INVOICE,
   confirmResult,
   resetWallet,
+  sentWalletPay,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
+  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
+});
 
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
@@ -474,6 +481,7 @@ afterEach(() => {
   cleanup();
   vi.clearAllTimers();
   vi.useRealTimers();
+  vi.mocked(useWalletPay).mockRestore();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
   Element.prototype.getBoundingClientRect = originalGetBoundingClientRect;
   vi.unstubAllGlobals();
@@ -5242,6 +5250,7 @@ describe('ForumLoader', () => {
 
   it('keeps the QR and retries after a failed public fetch, then closes when sats increase', async () => {
     vi.useFakeTimers();
+    vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
     fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
@@ -5428,6 +5437,7 @@ describe('ForumLoader', () => {
 
   it('closes the QR when a later public fetch reports sats 21 after unpaid waits', async () => {
     vi.useFakeTimers();
+    vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
     fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
     invoiceMock.mockResolvedValue({ pr: 'lnbc21n1example', amountSats: 21 });
@@ -10438,6 +10448,7 @@ it('pays a payable reply and polls that reply id', async () => {
 });
 
 it('keeps a reply pay sheet until receivedSats rises', async () => {
+  vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
   const payableReply: ForumMessage = {
     ...NESTED_REPLY,
     payable: true,

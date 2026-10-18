@@ -1,12 +1,13 @@
 'use client';
 
 import { Loader2 } from 'lucide-react';
-import type { ReactElement, ReactNode } from 'react';
+import { useEffect, type ReactElement, type ReactNode } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { AddBitcoinButton } from '@/components/OpenReceive';
+import { usePaySheetSent } from '@/components/PaySheet';
 import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button } from '@/components/ui';
 import { useWalletPay } from '@/hooks/useWalletPay';
@@ -75,6 +76,13 @@ export function WalletPay({
     amountSats,
     flow,
   );
+  const reportSent = usePaySheetSent();
+  // A payment that is out (sent, or sent and unconfirmed) lets the sheet show its success step when
+  // the host closes the payment.
+  const sent = view === 'paying' || view === 'unconfirmed';
+  useEffect(() => {
+    reportSent?.(sent);
+  }, [reportSent, sent]);
 
   const body = ((): ReactNode => {
     switch (view) {

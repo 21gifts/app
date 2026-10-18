@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import { useEffect, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Collapse } from '@/components/Collapse';
 import {
@@ -7,6 +7,7 @@ import {
   PAY_SHEET_SUCCESS_MS,
   PaySheet,
   usePaySheetClose,
+  usePaySheetSent,
 } from '@/components/PaySheet';
 import { MOTION_FOLD_MS, MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import type { FiatRateDay } from '@/lib/stats-money';
@@ -25,7 +26,7 @@ function sheet(
   open: boolean,
   onClose: () => void,
   rateDay: FiatRateDay | null = RATE_DAY,
-  slot: ReactElement = <p>Pay slot</p>,
+  slot: ReactElement = <Sent />,
 ): ReactElement {
   return (
     <Collapse show={open} holdMs={PAY_SHEET_HOLD_MS}>
@@ -42,6 +43,15 @@ function sheet(
       ) : null}
     </Collapse>
   );
+}
+
+/** A pay slot whose payment is out, as the wallet's pay slot reports it while it is paying. */
+function Sent({ sent = true }: { sent?: boolean }): ReactElement {
+  const report = usePaySheetSent();
+  useEffect(() => {
+    report?.(sent);
+  }, [report, sent]);
+  return <p>Pay slot</p>;
 }
 
 /** Lets the pay step fade out, so the success step is on screen. */
@@ -76,7 +86,9 @@ function Leave(): ReactElement {
 }
 
 function Outside(): ReactElement {
-  return <p>{usePaySheetClose() === null ? 'no sheet' : 'sheet'}</p>;
+  const close = usePaySheetClose();
+  const report = usePaySheetSent();
+  return <p>{close === null && report === null ? 'no sheet' : 'sheet'}</p>;
 }
 
 beforeEach(() => {
@@ -228,6 +240,50 @@ describe('PaySheet', () => {
       vi.advanceTimersByTime(MOTION_FOLD_MS);
     });
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('takes the leaving sheet out of reach and gives focus back to what opened it', () => {
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+    const view = renderWithLocale(sheet(true, vi.fn()));
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    expect(document.activeElement).toBe(screen.getByRole('dialog'));
+    expect(document.querySelector('[data-pay-sheet-layer]')?.hasAttribute('inert')).toBe(false);
+    fireEvent.click(closeButton());
+    expect(document.querySelector('[data-pay-sheet-layer]')?.hasAttribute('inert')).toBe(true);
+    expect(document.activeElement).toBe(opener);
+    view.unmount();
+    opener.remove();
+  });
+
+  it('keeps focus where it is when what opened the sheet is gone', () => {
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+    renderWithLocale(sheet(true, vi.fn()));
+    opener.remove();
+    fireEvent.click(closeButton());
+    expect(document.activeElement).not.toBe(opener);
+  });
+
+  it('slides away without a success step when the host closes a payment that is not out', () => {
+    const onClose = vi.fn();
+    const slot = <Sent sent={false} />;
+    const view = renderWithLocale(sheet(true, onClose, RATE_DAY, slot));
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    expect(layer()).toBe('open');
+    // A failed check or another thread closes the payment: no payment went out.
+    view.rerender(sheet(false, onClose, RATE_DAY, slot));
+    expect(layer()).toBe('closed');
+    fadeToSuccess();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('lets the success step go at once on Escape', () => {

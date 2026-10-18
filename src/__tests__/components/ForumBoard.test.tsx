@@ -28,12 +28,19 @@ import type { ForumVideoPayload } from '@/lib/forum-video';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { payFromWallet } from '@/lib/wallet/wallet-service';
+import { useWalletPay } from '@/hooks/useWalletPay';
 import {
   SPARK_INVOICE,
   confirmResult,
   resetWallet,
+  sentWalletPay,
   setWalletUsable,
 } from '@/__tests__/wallet-pay-fixture';
+
+vi.mock('@/hooks/useWalletPay', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useWalletPay')>();
+  return { ...actual, useWalletPay: vi.fn(actual.useWalletPay) };
+});
 
 vi.mock('@/lib/wallet/wallet-service', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/wallet/wallet-service')>();
@@ -99,6 +106,7 @@ afterEach(() => {
   cleanup();
   useAuthStore.getState().clearAuth();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+  vi.mocked(useWalletPay).mockRestore();
 });
 
 const SAMPLE: ForumMessage = {
@@ -3145,6 +3153,7 @@ describe('ForumBoard', () => {
   it('shows the success step when the payment closes the card sheet, then unmounts after the hold', () => {
     vi.useFakeTimers();
     try {
+      vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
       const board = (open: boolean): ReactElement => (
         <ForumBoard
           messages={[{ ...SAMPLE, parentId: 'p1' }]}
