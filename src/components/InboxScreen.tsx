@@ -19,7 +19,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { Collapse } from '@/components/Collapse';
-import { PAY_SHEET_HOLD_MS, PaySheet } from '@/components/PaySheet';
+import { PAY_SHEET_HOLD_MS, PAY_SHEET_SUCCESS_MS, PaySheet } from '@/components/PaySheet';
 import { WalletPay } from '@/components/WalletPay';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -614,6 +614,23 @@ export function InboxScreen({
   const prevOpenIdRef = useRef(openId);
   const [armedForOpenId, setArmedForOpenId] = useState<string | null>(null);
   const [filter, setFilter] = useState<InboxFilter>('direct');
+  // After a payment the sheet still shows its success step: the amount row stays disabled behind it
+  // for that long. A close by the member frees it at once.
+  const [amountHeld, setAmountHeld] = useState(false);
+  const [memberClosedPay, setMemberClosedPay] = useState(false);
+  const [shownInvoice, setShownInvoice] = useState(invoice);
+  if (invoice !== shownInvoice) {
+    setShownInvoice(invoice);
+    setAmountHeld(invoice === null && !memberClosedPay);
+    setMemberClosedPay(false);
+  }
+  useEffect(() => {
+    if (!amountHeld) {
+      return;
+    }
+    const timer = window.setTimeout(() => setAmountHeld(false), PAY_SHEET_SUCCESS_MS);
+    return () => window.clearTimeout(timer);
+  }, [amountHeld]);
   const historyArmed = openId !== null && openId !== '' && armedForOpenId === openId;
 
   const messagesReady = messages !== null;
@@ -1165,7 +1182,13 @@ export function InboxScreen({
               label={t('inbox.amountLabel')}
               placeholder={t('forum.payAmountPlaceholder')}
               value={amountDraft}
-              disabled={posting || messagesLoading || counterpartCannotReceive || invoice !== null}
+              disabled={
+                posting ||
+                messagesLoading ||
+                counterpartCannotReceive ||
+                invoice !== null ||
+                amountHeld
+              }
               rateDay={rateDay}
               onValueChange={onAmountDraftChange}
               onUnitChange={amountUnitChange}
@@ -1289,7 +1312,10 @@ export function InboxScreen({
               successTitle={
                 open === null ? t('paySheet.sent') : t('paySheet.sentTo', { name: open.name })
               }
-              onClose={onPayCancel}
+              onClose={() => {
+                setMemberClosedPay(true);
+                onPayCancel();
+              }}
             >
               <WalletPay
                 sparkInvoice={invoice.sparkInvoice}

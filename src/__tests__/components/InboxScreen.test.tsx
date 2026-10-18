@@ -10,7 +10,7 @@ import {
   type InboxScreenProps,
   type ThreadGiftGroup,
 } from '@/components/InboxScreen';
-import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
+import { PAY_SHEET_HOLD_MS, PAY_SHEET_SUCCESS_MS } from '@/components/PaySheet';
 import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import { useWalletPay } from '@/hooks/useWalletPay';
 import { fetchPublicMessage } from '@/lib/api';
@@ -1666,6 +1666,13 @@ describe('InboxScreen', () => {
       });
       expect(within(sheet).getByRole('status').textContent).toContain('Sent to Bob');
       expect(onPayCancel).not.toHaveBeenCalled();
+      // The amount row stays disabled behind the success step, then frees up.
+      const amount = screen.getByLabelText('Amount') as HTMLInputElement;
+      expect(amount.disabled).toBe(true);
+      act(() => {
+        vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS - MOTION_SWAP_FADE_MS);
+      });
+      expect(amount.disabled).toBe(false);
       act(() => {
         vi.advanceTimersByTime(PAY_SHEET_HOLD_MS);
       });
@@ -1673,6 +1680,16 @@ describe('InboxScreen', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('frees the amount row at once when the member closes the sheet', () => {
+    const onPayCancel = vi.fn();
+    const { rerender } = renderWithLocale(payInbox({ onPayCancel }));
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Close' }));
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+    rerender(payInbox({ onPayCancel, invoice: null }));
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(false);
   });
 
   it('says Sent on the success step without a conversation name', async () => {
