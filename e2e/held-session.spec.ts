@@ -216,6 +216,7 @@ test('a signed-out visitor keeps the guest /welcome and the ordinary login', asy
   await page.getByRole('link', { name: 'Log in', exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole('heading', { name: 'Log in with your device' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Open a new account' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open a new account' })).toHaveCount(0);
   await expect(page.getByText(/Welcome back/)).toHaveCount(0);
 });
