@@ -1453,7 +1453,7 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
-    it('keeps a wallet-paid charge paid on the amount page and back on the till', async () => {
+    it('sends the amount page back to the till while a wallet-paid charge is not closed', async () => {
       // The api has not seen the payment yet and keeps returning the charge open.
       vi.stubGlobal(
         'fetch',
@@ -1465,9 +1465,9 @@ describe('PosScreen', () => {
       expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
       till.unmount();
       const amountPage = renderWithLocale(<PosAmount />);
-      expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
-      expect(replace).not.toHaveBeenCalled();
-      expect(back).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/pos');
+      });
       amountPage.unmount();
       renderWithLocale(<PosScreen />);
       expect(await confirmation()).toBeTruthy();
@@ -1607,6 +1607,42 @@ describe('PosScreen', () => {
           'tok',
         );
       });
+    });
+
+    it('confirms on the till a late payment that lands while the amount page is up', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockImplementationOnce(async () => jsonResponse({ charge: ended, history: [ended] }))
+          .mockImplementation(async () => jsonResponse({ charge: null, history: [ended] })),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      renderWithLocale(<PosAmount />);
+      expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+      expect(replace).not.toHaveBeenCalled();
+      receive(21);
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/pos');
+      });
+    });
+
+    it('does not count a payment for a charge a read no longer has before its end', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockImplementationOnce(async () => jsonResponse({ charge: OPEN, history: [OPEN] }))
+        // Cancelled on another device.
+        .mockImplementation(async () => jsonResponse({ charge: null, history: [] }));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      showTab();
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      receive(21);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
     it('never asks the api on a timer while a charge is open', async () => {

@@ -221,6 +221,8 @@ type PosTillState = {
   charge: PosState['charge'];
   /** The paid charge the full-screen confirmation shows, until it is closed. */
   paid: PosState['charge'];
+  /** Whether `paid` is one this tab's wallet saw paid (not only the api). */
+  paidByWallet: boolean;
   /** Past charges, with a charge the wallet saw paid already shown as paid. */
   history: PosState['history'];
   remaining: number;
@@ -369,9 +371,17 @@ function usePosTillState(): PosTillState {
 
   const tillSession = till.session;
   useEffect(() => {
-    // Only a charge this session read is its open charge, not one left from the session before.
-    if (charge !== null && tillSession === session) {
-      settledFor(session).open = charge;
+    // Only a till this session read says which charge is open, not one left from the session before.
+    if (tillSession !== session) {
+      return;
+    }
+    const memory = settledFor(session);
+    if (charge !== null) {
+      memory.open = charge;
+    } else if (memory.open !== null && Date.now() < Date.parse(memory.open.expiresAt)) {
+      // Gone before its end (cancelled elsewhere): no payment belongs to it any more. One that ran
+      // out stays, so a payment just after its end still counts.
+      memory.open = null;
     }
   }, [charge, session, tillSession]);
 
@@ -554,6 +564,7 @@ function usePosTillState(): PosTillState {
     error,
     charge,
     paid,
+    paidByWallet: paid !== null && walletPaid.has(paid.id),
     history,
     remaining,
     chargeFiat,
@@ -740,12 +751,13 @@ export function PosAmount(): ReactElement {
     if (left.current) {
       return;
     }
-    if (till.charge !== null || (account !== null && !till.canCharge)) {
+    // A payment this tab's wallet received while the amount page is up is confirmed on the till.
+    if (till.charge !== null || till.paidByWallet || (account !== null && !till.canCharge)) {
       left.current = true;
       returnToView('/pos', router);
     }
     /* next/navigation's identity is not stable */
-  }, [account, till.canCharge, till.charge]);
+  }, [account, till.canCharge, till.charge, till.paidByWallet]);
 
   return (
     <Card surface={false}>
