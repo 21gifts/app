@@ -9,6 +9,7 @@ import { InlineConfirm } from '@/components/InlineConfirm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, Card, Field, IconButton, SegmentedControl } from '@/components/ui';
 import { useSpotRateState } from '@/hooks/useSpotRate';
+import { CannotReceiveError } from '@/lib/api';
 import { messageInvoiceSchema, type AmountUnit } from '@/lib/api-types';
 import { FORUM_GOAL_SATS_MAX } from '@/lib/forum-goal';
 import { fetchMemberHabits, postMemberHabit, type MemberHabitList } from '@/lib/member-habits';
@@ -151,6 +152,26 @@ export function MemberHabits(): ReactElement {
       }
     };
   }, [session, attempt]);
+
+  // A reload that says the open gift's author cannot receive yet closes the gift, so a late
+  // invoice is discarded (payGeneration) and does not come back on a later flip.
+  const payTargetBlocked =
+    payCommentId !== null &&
+    data !== null &&
+    data.habits.some((habit) =>
+      habit.comments.some((comment) => comment.id === payCommentId && comment.canReceive === false),
+    );
+  useEffect(() => {
+    if (!payTargetBlocked) {
+      return;
+    }
+    payGeneration.current += 1;
+    setPayCommentId(null);
+    setPayDraft('');
+    setPayBusy(false);
+    setPayError(null);
+    setPayInvoice(null);
+  }, [payTargetBlocked]);
 
   // Cleared in this render, so the previous account is not painted.
   if (draftSession !== session) {
@@ -375,7 +396,7 @@ export function MemberHabits(): ReactElement {
           setPayError('rateLimit');
           return;
         }
-        if (/author's wallet cannot receive this Bitcoin payment/i.test(caught.message)) {
+        if (caught instanceof CannotReceiveError) {
           setPayError('authorWallet');
           return;
         }

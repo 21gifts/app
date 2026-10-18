@@ -803,6 +803,50 @@ describe('PublicMessageThread', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('asks for text instead of gifting when the author cannot receive and the reply is empty', async () => {
+    signIn({ role: 'basis', id: 'acc_dave' });
+    renderThread({ root: { ...root, authorCanReceive: false } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    });
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('charges only the 1 sat posting fee when the author cannot receive', async () => {
+    signIn({ role: 'basis', id: 'acc_dave' });
+    renderThread({ root: { ...root, authorCanReceive: false } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${MESSAGE_ID}\nthanks`,
+        NO_RATE_SHOWN,
+      );
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+  });
+
+  it('posts a verified reply without a gift when the author cannot receive', async () => {
+    signIn({ role: 'verified' });
+    renderThread({ root: { ...root, authorCanReceive: false } });
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: MESSAGE_ID });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
   it('lets a verified member reply without paying', async () => {
     signIn({ role: 'verified' });
     renderThread();

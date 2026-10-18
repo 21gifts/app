@@ -6001,6 +6001,48 @@ describe('ForumLoader', () => {
     expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(3);
   });
 
+  it('updates authorCanReceive from the payable poll in both directions', async () => {
+    vi.useFakeTimers();
+    const blocked: ForumMessage = {
+      ...FRESH,
+      id: 'm-blocked',
+      accountId: 'acc_bob',
+      name: 'Bob',
+      text: 'Bob cannot receive yet',
+      payable: false,
+      authorCanReceive: false,
+    };
+    const open: ForumMessage = {
+      ...FRESH,
+      id: 'm-open',
+      accountId: 'acc_dan',
+      name: 'Dan',
+      text: 'Dan waits for a signature',
+      payable: false,
+      authorCanReceive: true,
+    };
+    fetchMock.mockResolvedValueOnce(forumPage([blocked, open])).mockResolvedValue(
+      forumPage([
+        { ...blocked, payable: true, authorCanReceive: true },
+        { ...open, authorCanReceive: false },
+      ]),
+    );
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const card = (id: string): HTMLElement =>
+      document.querySelector(`[data-message-id="${id}"]`) as HTMLElement;
+    expect(within(card('m-blocked')).getByText("Can't receive yet")).toBeTruthy();
+    expect(within(card('m-open')).queryByText("Can't receive yet")).toBeNull();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+    expect(within(card('m-blocked')).queryByText("Can't receive yet")).toBeNull();
+    expect(within(card('m-open')).getByText("Can't receive yet")).toBeTruthy();
+  });
+
   it('stops the payable poll once every listed row is payable', async () => {
     vi.useFakeTimers();
     const unsigned: ForumMessage = { ...SAMPLE, payable: false, replyCount: 1 };
@@ -7705,6 +7747,74 @@ describe('ForumLoader', () => {
     expect(invoiceMock).not.toHaveBeenCalled();
   });
 
+  it('asks for text instead of gifting when the author cannot receive and the reply is empty', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, authorCanReceive: false }]));
+    repliesMock.mockResolvedValue([]);
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    });
+    expect(postMock).not.toHaveBeenCalled();
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('charges only the 1 sat posting fee when the author cannot receive', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'basis' } });
+    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, authorCanReceive: false }]));
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledTimes(1);
+    });
+    expect(invoiceMock.mock.calls[0]?.[1]).toBe('fee-note');
+    expect(invoiceMock.mock.calls[0]?.[2]).toBe(1);
+  });
+
+  it('posts a verified reply without a gift when the author cannot receive', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
+    fetchMock.mockResolvedValue(forumPage([{ ...FOREIGN, authorCanReceive: false }]));
+    repliesMock.mockResolvedValue([]);
+    postMock.mockResolvedValue({ ...FOREIGN, id: 'r-v', text: 'Hi', accountId: 'acc_1' });
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Bob')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Your reaction')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hi', inReplyTo: 'm-bob' });
+    });
+    expect(invoiceMock).not.toHaveBeenCalled();
+  });
+
   it('maps a deleted unpaid reply onto the deleted-note error', async () => {
     useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
     fetchMock.mockResolvedValue(forumPage([FOREIGN]));
@@ -8349,6 +8459,42 @@ describe('ForumLoader', () => {
     });
     expect(screen.queryByText('Fresh from refresh')).toBeNull();
     expect(screen.getByText('Hello from Ada')).toBeTruthy();
+  });
+
+  it('updates authorCanReceive on shown notes while New posts holds unseen ones', async () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 });
+    const shown: ForumMessage = { ...SAMPLE, accountId: 'acc_bob', name: 'Bob' };
+    fetchMock
+      .mockResolvedValueOnce(forumPage([shown]))
+      .mockResolvedValueOnce(forumPage([shown]))
+      .mockResolvedValue(forumPage([FRESH, { ...shown, payable: false, authorCanReceive: false }]));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    await waitFor(() => {
+      expect(screen.getByText('Hello from Ada')).toBeTruthy();
+    });
+    expect(screen.queryByText("Can't receive yet")).toBeNull();
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'New posts' })).toBeTruthy();
+    });
+    expect(screen.queryByText('Fresh from refresh')).toBeNull();
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
   });
 
   it('holds an unseen unpaid note behind New posts without counting it on the unpaid chip', async () => {

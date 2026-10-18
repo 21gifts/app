@@ -157,7 +157,7 @@ const profile: MemberProfile = {
   username: 'carol',
   location: null,
   role: 'verified',
-  lightningAddress: null,
+  lightningAddress: 'carol@21.gifts',
   createdAt: '2026-01-15T12:00:00.000Z',
   aboutMe: null,
   aboutMeHasPhoto: false,
@@ -1934,6 +1934,55 @@ describe('MemberProfileScreen', () => {
       expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 21, 'reply', NO_RATE_SHOWN);
     });
     expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('asks for text instead of gifting when the author cannot receive and the reply is empty', async () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote({ ...note, authorCanReceive: false });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Enter a message or add a photo or video');
+    });
+    expect(postMessage).not.toHaveBeenCalled();
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('charges only the posting fee, never a gift, when the author cannot receive', async () => {
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote({ ...note, authorCanReceive: false });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessageInvoice).toHaveBeenCalledWith(
+        'sess',
+        'fee-note',
+        1,
+        `inReplyTo:${note.id}\nreply`,
+        NO_RATE_SHOWN,
+      );
+    });
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    expect(postMessage).not.toHaveBeenCalled();
+  });
+
+  it('posts a verified reply unpaid when the author cannot receive', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, profileMessage: note }} received={[]} />,
+    );
+    await expandNote({ ...note, authorCanReceive: false });
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
   it('unlocks the composer and marks hasPosted after a paid reply poll', async () => {
@@ -4369,6 +4418,20 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByTestId('staff-functions')).toBeNull();
   });
 
+  it('shows the cannot-receive label instead of the address, QR, and sticker', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, lightningAddress: null }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    expect(screen.queryByText(/carol@/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Shop sticker' })).toBeNull();
+    expect(screen.queryByText('No 21.gifts address')).toBeNull();
+  });
+
   it('shows unnamed and no-address copy when fields are null', () => {
     renderWithLocale(
       <MemberProfileScreen
@@ -4376,7 +4439,6 @@ describe('MemberProfileScreen', () => {
           ...profile,
           name: null,
           username: null,
-          lightningAddress: null,
           role: 'basis',
         }}
         received={[]}

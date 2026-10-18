@@ -953,6 +953,8 @@ const en = {
 
   'view.unnamed': 'Unnamed',
   'view.noGiftsAddress': 'No 21.gifts address',
+  'member.cannotReceive': "Can't receive yet",
+  'loans.errorCannotReceive': "A lender's wallet can't receive yet.",
   'view.missing': 'This profile could not be found.',
   'view.error': 'Could not load this profile. Please try again.',
   'view.retry': 'Try again',
@@ -2359,6 +2361,8 @@ const de = {
 
   'view.unnamed': 'Unbenannt',
   'view.noGiftsAddress': 'Keine 21.gifts-Adresse',
+  'member.cannotReceive': 'Kann noch nicht empfangen',
+  'loans.errorCannotReceive': 'Die Wallet einer kreditgebenden Person kann noch nicht empfangen.',
   'view.missing': 'Dieses Profil konnte nicht gefunden werden.',
   'view.error': 'Profil konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'view.retry': 'Erneut versuchen',
@@ -3768,6 +3772,8 @@ const es = {
 
   'view.unnamed': 'Sin nombre',
   'view.noGiftsAddress': 'Sin dirección 21.gifts',
+  'member.cannotReceive': 'Aún no puede recibir',
+  'loans.errorCannotReceive': 'La wallet de un prestamista aún no puede recibir.',
   'view.missing': 'No se pudo encontrar este perfil.',
   'view.error': 'No se pudo cargar este perfil. Inténtalo de nuevo.',
   'view.retry': 'Intentar de nuevo',
@@ -5166,6 +5172,8 @@ const fil = {
 
   'view.unnamed': 'Walang pangalan',
   'view.noGiftsAddress': 'Walang 21.gifts address',
+  'member.cannotReceive': 'Hindi pa makatanggap',
+  'loans.errorCannotReceive': 'Hindi pa makatanggap ang wallet ng isang nagpautang.',
   'view.missing': 'Hindi mahanap ang profile na ito.',
   'view.error': 'Hindi ma-load ang profile. Subukan ulit.',
   'view.retry': 'Subukan ulit',

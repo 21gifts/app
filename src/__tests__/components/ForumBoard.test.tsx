@@ -10151,3 +10151,322 @@ describe('ForumBoard loan block', () => {
     expect(screen.queryByRole('region', { name: 'Loan request' })).toBeNull();
   });
 });
+
+describe('ForumBoard author who cannot receive', () => {
+  const NOTE: ForumMessage = {
+    ...SAMPLE,
+    accountId: 'acc-bob',
+    payable: false,
+    authorCanReceive: false,
+    heartCount: 3,
+  };
+
+  function board(props: Partial<ForumBoardProps> = {}): ReactElement {
+    return (
+      <ForumBoard
+        messages={[NOTE]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        viewerAccountId="acc-ada"
+        {...modeProps('all')}
+        {...props}
+      />
+    );
+  }
+
+  it('shows the label and a disabled heart with its count, and a tap sends nothing', () => {
+    const onHeartTip = vi.fn();
+    renderWithLocale(board({ onHeartTip }));
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    const heart = screen.getByRole('button', { name: 'Send ₿1' }) as HTMLButtonElement;
+    expect(heart.disabled).toBe(true);
+    expect(screen.getByText('3')).toBeTruthy();
+    fireEvent.click(heart);
+    expect(onHeartTip).not.toHaveBeenCalled();
+  });
+
+  it('disables the amount of a reaction on that note', () => {
+    renderWithLocale(board({ expandedId: 'm1', replies: [] }));
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+  });
+
+  it('shows the label and a disabled gift on a reply in the thread', () => {
+    const onPayOpen = vi.fn();
+    renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-carol' }],
+        expandedId: 'm1',
+        onPayOpen,
+        replies: [
+          {
+            ...SAMPLE,
+            id: 'r1',
+            parentId: 'm1',
+            accountId: 'acc-bob',
+            payable: false,
+            authorCanReceive: false,
+            text: 'A reply from Bob',
+          },
+        ],
+      }),
+    );
+    expect(screen.getAllByText("Can't receive yet")).toHaveLength(1);
+    const gift = screen.getByRole('button', { name: 'Send Bitcoin' }) as HTMLButtonElement;
+    expect(gift.disabled).toBe(true);
+    fireEvent.click(gift);
+    expect(onPayOpen).not.toHaveBeenCalled();
+  });
+
+  it('shows a disabled gift on a listed reply unless the board is read-only', () => {
+    const reply: ForumMessage = { ...NOTE, id: 'r2', parentId: 'm1' };
+    const { rerender } = renderWithLocale(board({ messages: [reply] }));
+    expect(
+      (screen.getByRole('button', { name: 'Send Bitcoin' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>{board({ messages: [reply], readOnly: true })}</ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+  });
+
+  it('gates the disabled gift like a live one on the local Sunday', () => {
+    document.documentElement.dataset['localSunday'] = '1';
+    try {
+      renderWithLocale(board({ messages: [{ ...NOTE, id: 'r2', parentId: 'm1' }] }));
+      expect(screen.getByText('Zapping is paused on Sunday.')).toBeTruthy();
+      expect(
+        screen
+          .getByRole('button', { name: 'Send Bitcoin', hidden: true })
+          .closest('.sunday-write-field'),
+      ).toBeTruthy();
+    } finally {
+      delete document.documentElement.dataset['localSunday'];
+    }
+  });
+
+  it('shows no label on the own note, a deleted note, an external note, or an older api body', () => {
+    const { rerender } = renderWithLocale(board({ viewerAccountId: 'acc-bob' }));
+    expect(screen.queryByText("Can't receive yet")).toBeNull();
+    for (const message of [
+      { ...NOTE, deletedAt: '2026-08-29T15:00:00.000Z' },
+      { ...NOTE, accountId: undefined },
+      { ...NOTE, authorCanReceive: undefined },
+    ]) {
+      rerender(
+        <LocaleProvider locale="en" messages={getCatalog('en')}>
+          <ThemeProvider>{board({ messages: [message] })}</ThemeProvider>
+        </LocaleProvider>,
+      );
+      expect(screen.queryByText("Can't receive yet")).toBeNull();
+    }
+  });
+
+  it('shows Lend disabled on a loan whose borrower cannot receive', () => {
+    renderWithLocale(
+      board({
+        messages: [
+          { ...NOTE, sats: 10_500, goalSats: 21_000, goalRepayable: true, goalTermDays: 30 },
+        ],
+      }),
+    );
+    expect((screen.getByRole('button', { name: 'Lend' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('shows the author-wallet line after a heart the api refused', () => {
+    renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-bob' }],
+        onHeartTip: () => undefined,
+        heartTipViews: {
+          m1: { pressed: false, plusOne: false, needsBalance: false, cannotReceive: true },
+        },
+      }),
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+  });
+
+  it('cancels an open gift sheet when a refresh says the reply author cannot receive', () => {
+    const onPayCancel = vi.fn();
+    const reply: ForumMessage = {
+      ...SAMPLE,
+      id: 'r1',
+      parentId: 'm1',
+      accountId: 'acc-bob',
+      payable: true,
+      text: 'A reply from Bob',
+    };
+    const props: Partial<ForumBoardProps> = {
+      messages: [{ ...SAMPLE, accountId: 'acc-carol' }],
+      expandedId: 'm1',
+      payMessageId: 'r1',
+      payHost: 'card',
+      payDraft: '21',
+      onPayCancel,
+    };
+    const { rerender } = renderWithLocale(board({ ...props, replies: [reply] }));
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(onPayCancel).not.toHaveBeenCalled();
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            ...props,
+            replies: [{ ...reply, payable: false, authorCanReceive: false }],
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+  });
+
+  it('cancels a reaction gift invoice when a refresh says the note author cannot receive', () => {
+    const onPayCancel = vi.fn();
+    const note: ForumMessage = { ...SAMPLE, accountId: 'acc-carol' };
+    const props: Partial<ForumBoardProps> = {
+      expandedId: 'm1',
+      replies: [],
+      payMessageId: 'm1',
+      payHost: 'card',
+      payInvoice: { messageId: 'm1', pr: 'lnbc1', amountSats: 21 },
+      replyPayPreview: 'Thanks for the bread',
+      onPayCancel,
+    };
+    const { rerender } = renderWithLocale(board({ ...props, messages: [note] }));
+    expect(screen.getByText('Thanks for the bread')).toBeTruthy();
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            ...props,
+            messages: [{ ...note, payable: false, authorCanReceive: false }],
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Thanks for the bread')).toBeNull();
+  });
+
+  it('keeps the posting-fee sheet on a note whose author cannot receive', () => {
+    const onPayCancel = vi.fn();
+    renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-carol', payable: false, authorCanReceive: false }],
+        payMessageId: 'm1',
+        payHost: 'composer',
+        payInvoice: { messageId: 'm1', pr: 'lnbc1', amountSats: 1 },
+        payWaiting: true,
+        onPayCancel,
+      }),
+    );
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
+    expect(onPayCancel).not.toHaveBeenCalled();
+  });
+
+  it('keeps a tap in its +1 window when a refresh then disables the heart', () => {
+    const views = {
+      m1: { pressed: true, plusOne: true, needsBalance: false, extra: 1 },
+    };
+    const live: ForumMessage = { ...SAMPLE, accountId: 'acc-bob', heartCount: 3 };
+    const { rerender } = renderWithLocale(
+      board({ messages: [live], onHeartTip: () => undefined, heartTipViews: views }),
+    );
+    const card = (): HTMLElement => document.querySelector('[data-message-id="m1"]') as HTMLElement;
+    expect(within(card()).getByText('+1')).toBeTruthy();
+    expect(within(card()).getByText('4')).toBeTruthy();
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            messages: [{ ...live, payable: false, authorCanReceive: false }],
+            onHeartTip: () => undefined,
+            heartTipViews: views,
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    const heart = within(card()).getByRole('button', { name: 'Send ₿1' }) as HTMLButtonElement;
+    expect(heart.disabled).toBe(true);
+    expect(heart.querySelector('svg')?.getAttribute('fill')).toBe('currentColor');
+    expect(within(card()).getByText('+1')).toBeTruthy();
+    expect(within(card()).getByText('4')).toBeTruthy();
+  });
+
+  it('keeps the author-wallet line when an older api answer makes the note not payable', () => {
+    const views = {
+      m1: { pressed: false, plusOne: false, needsBalance: false, cannotReceive: true },
+    };
+    const { rerender } = renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-bob' }],
+        onHeartTip: () => undefined,
+        heartTipViews: views,
+      }),
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+    const legacy: ForumMessage = { ...SAMPLE, accountId: 'acc-bob', payable: false };
+    delete legacy.authorCanReceive;
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({ messages: [legacy], onHeartTip: () => undefined, heartTipViews: views })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+  });
+
+  it('keeps the author-wallet line when a refresh then disables the heart', () => {
+    const views = {
+      m1: { pressed: false, plusOne: false, needsBalance: false, cannotReceive: true },
+    };
+    const { rerender } = renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-bob' }],
+        onHeartTip: () => undefined,
+        heartTipViews: views,
+      }),
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            messages: [
+              { ...SAMPLE, accountId: 'acc-bob', payable: false, authorCanReceive: false },
+            ],
+            onHeartTip: () => undefined,
+            heartTipViews: views,
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect((screen.getByRole('button', { name: 'Send ₿1' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(
+      "The author's wallet cannot receive this Bitcoin payment",
+    );
+  });
+});
