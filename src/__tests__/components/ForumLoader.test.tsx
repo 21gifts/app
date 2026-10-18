@@ -4256,6 +4256,57 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('lets the posting fee sheet slide away without Paid and posted when the paid photo POST fails', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+    });
+    setWalletUsable('ready');
+    let settle: () => void = () => undefined;
+    const settled = new Promise<void>((resolve) => {
+      settle = resolve;
+    });
+    const send = vi.fn(async () => {
+      settle();
+      return { kind: 'paid' as const };
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send, 1));
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1, sparkInvoice: SPARK_INVOICE });
+    fetchMock.mockResolvedValue(forumPage([]));
+    publicFetchMock.mockImplementation(async () => {
+      await settled;
+      return { ...SAMPLE, id: 'fee-note', accountId: 'acc_platform', text: 'Fees', sats: 1 };
+    });
+    postMock.mockRejectedValue(new Error('offline'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    prepareMock.mockResolvedValue({
+      ok: true,
+      photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'blob:photo' },
+    });
+    const input = document.querySelector('input[type="file"]:not([capture])') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: {
+        files: [new File([new Uint8Array([0xff, 0xd8, 0xff])], 'a.jpg', { type: 'image/jpeg' })],
+      },
+    });
+    await waitFor(() => {
+      expect(screen.getByAltText('Selected photo')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'with photo' } });
+    fireEvent.submit(screen.getByLabelText('Your message').closest('form')!);
+    fireEvent.click(await screen.findByRole('button', { name: /^Pay ₿1 and post/ }));
+    expect(send).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
+    });
+    expect(paySheet()?.getAttribute('data-pay-sheet')).toBe('pay');
+    expect(screen.queryByText('Paid and posted')).toBeNull();
+    expect((screen.getByLabelText('Your message') as HTMLTextAreaElement).value).toBe('with photo');
+  });
+
   it('shows a request error when the paid basis photo POST fails', async () => {
     useAuthStore.setState({
       session: 'sess',

@@ -723,6 +723,40 @@ test('Function: usePresent — when the payment closes the posting fee sheet, it
   expect(await steps()).toEqual(expect.arrayContaining(['sheet:pay', 'sheet:success']));
 });
 
+test('Function: PaySheetFailed — when the post behind a paid posting fee fails, the sheet slides away without Paid and posted', async ({
+  page,
+}) => {
+  await signInAda(page);
+  const text = 'Paid, but the photo failed';
+  const fee = await stubPostingFee(page, text);
+  // The post with the photo is sent after the fee lands; here it fails.
+  await page.route(/\/messages\/?$/, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: 'boom' }),
+    });
+  });
+  await page.goto('/welcome?visual=wallet-pay-paying');
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+  await openHomeWriter(page);
+  await page.locator('input[type="file"]:not([capture])').setInputFiles('e2e/fixtures/tiny.jpg');
+  await expect(page.getByAltText('Selected photo')).toBeVisible({ timeout: 10_000 });
+  await page.getByLabel('Your message').fill(text);
+  await page.getByRole('button', { name: 'Post', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Pay to post' })).toBeVisible();
+  const steps = await recordSheetSteps(page);
+  fee.paid();
+  await expect(page.getByText('Could not post your message')).toBeVisible();
+  await expect(page.locator('[data-pay-sheet]')).toHaveCount(0);
+  await expect(page.getByLabel('Your message')).toHaveValue(text);
+  expect(await steps()).not.toContain('sheet:success');
+});
+
 test('Function: Swap — the pay sheet fades its pay step out before the success step fades in', async ({
   page,
 }) => {

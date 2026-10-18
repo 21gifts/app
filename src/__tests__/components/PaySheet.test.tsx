@@ -6,6 +6,7 @@ import {
   PAY_SHEET_HOLD_MS,
   PAY_SHEET_SUCCESS_MS,
   PaySheet,
+  PaySheetFailed,
   usePaySheetClose,
   usePaySheetHold,
   usePaySheetSent,
@@ -326,6 +327,25 @@ describe('PaySheet', () => {
     expect(layer()).toBe('open');
     // A failed check or another thread closes the payment: no payment went out.
     view.rerender(sheet(false, onClose, RATE_DAY, slot));
+    expect(layer()).toBe('closed');
+    fadeToSuccess();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('slides away without a success step when the host closes a paid payment whose purpose failed', () => {
+    const onClose = vi.fn();
+    const ui = (open: boolean, failed: boolean): ReactElement => (
+      <PaySheetFailed failed={failed}>{sheet(open, onClose)}</PaySheetFailed>
+    );
+    const view = renderWithLocale(ui(true, false));
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    expect(layer()).toBe('open');
+    // The payment is out, but the post it paid for failed: the host closes it with the flag set.
+    view.rerender(ui(false, true));
     expect(layer()).toBe('closed');
     fadeToSuccess();
     expect(screen.queryByRole('status')).toBeNull();

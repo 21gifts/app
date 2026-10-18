@@ -65,6 +65,28 @@ export function usePaySheetSent(): ((sent: boolean) => void) | null {
   return useContext(PaySheetSentContext);
 }
 
+const PaySheetFailedContext = createContext(false);
+
+/**
+ * Tells the pay sheets inside that the host closed the payment because what it paid for failed after
+ * the payment went out (the post behind a paid posting fee could not be sent). Such a close shows no
+ * success step: the sheet slides away like a cancel and the page shows the error. It sits outside the
+ * host's `Collapse`, so it still reaches a sheet the fold holds.
+ *
+ * @param props - `failed`, and the content with the hosts.
+ * @returns The content with the flag in context.
+ */
+export function PaySheetFailed({
+  failed,
+  children,
+}: {
+  /** True from the failed close until the host opens the next payment. */
+  failed: boolean;
+  children: ReactNode;
+}): ReactElement {
+  return <PaySheetFailedContext.Provider value={failed}>{children}</PaySheetFailedContext.Provider>;
+}
+
 /** What {@link usePaySheetHold} gives a host. */
 export interface PaySheetHold {
   /** Key of the payment whose success step still shows, or `null`. */
@@ -152,6 +174,7 @@ export function PaySheet({
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const present = usePresent();
+  const failed = useContext(PaySheetFailedContext);
   const [entered, setEntered] = useState(false);
   const [succeeded, setSucceeded] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -181,10 +204,11 @@ export function PaySheet({
   }, [leaving, onClose]);
 
   // The host closed the payment while the member did not: with a payment out it went out, otherwise
-  // (a failed check, another thread) the sheet leaves like a cancel. Adjusted during render, so no
-  // frame shows the pay slot of a closed payment as if it were still open.
+  // (a failed check, another thread, or a paid post that failed) the sheet leaves like a cancel.
+  // Adjusted during render, so no frame shows the pay slot of a closed payment as if it were still
+  // open.
   if (!present && !leaving && !succeeded) {
-    if (sent) {
+    if (sent && !failed) {
       setSucceeded(true);
     } else {
       setLeaving(true);
