@@ -149,6 +149,13 @@ export const SCREEN_VARIANTS = [
     needle: 'means one sat',
   },
   {
+    route: '/',
+    id: 'install-open',
+    image: 'root-install-open.png',
+    visual: 'state-root-install-open',
+    needle: 'Add 21.gifts to your Home Screen',
+  },
+  {
     route: '/legal',
     id: 'default',
     image: 'legal.png',
@@ -400,6 +407,13 @@ export const SCREEN_VARIANTS = [
     image: 'setup-username.png',
     visual: 'screen-setup-username',
     needle: "getByRole('heading', { name: 'Your 21.gifts name' })",
+  },
+  {
+    route: '/setup/username',
+    id: 'invalid',
+    image: 'setup-username-invalid.png',
+    visual: 'state-setup-username-invalid',
+    needle: 'Allowed: a–z, 0–9, hyphen, underscore and dot',
   },
   {
     route: '/setup/address',
@@ -2906,6 +2920,13 @@ export const SCREEN_VARIANTS = [
     image: 'profile-push-enable-error.png',
     visual: 'state-profile-push-enable-error',
     needle: 'Notifications are not available in this browser.',
+  },
+  {
+    route: '/profile',
+    id: 'location-edit',
+    image: 'profile-location-edit.png',
+    visual: 'state-profile-location-edit',
+    needle: 'City or country',
   },
   {
     route: '/grants',

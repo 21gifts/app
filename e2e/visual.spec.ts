@@ -1507,6 +1507,29 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-faq-sat-open');
   });
 
+  test('state / install-open', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'userAgent', {
+        configurable: true,
+        get: () =>
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+      });
+      Object.defineProperty(navigator, 'standalone', {
+        configurable: true,
+        get: () => false,
+      });
+    });
+    await page.goto('/');
+    const install = page.locator('main').getByRole('button', { name: 'Install app' });
+    await expect(install).toBeVisible();
+    await install.click();
+    await expect(
+      page.getByRole('heading', { name: 'Add 21.gifts to your Home Screen' }),
+    ).toBeVisible();
+    // The sheet is position:fixed. A full-page stitch would paint it into every chunk.
+    await shotScreen(page, 'state-root-install-open', false);
+  });
+
   test('screen /legal', async ({ page }) => {
     await page.goto('/legal');
     await expect(page.getByRole('heading', { name: 'Legal Notice' })).toBeVisible();
@@ -2775,6 +2798,42 @@ test.describe('onboarding screens', () => {
     await page.goto('/setup/username');
     await expect(page.getByRole('heading', { name: 'Your 21.gifts name' })).toBeVisible();
     await shotScreen(page, 'screen-setup-username');
+  });
+
+  test('state /setup/username invalid', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: null,
+          setup: 'username',
+          missing: ['username', 'lightning-address', 'rules'],
+        }),
+      });
+    });
+    await page.route(/\/me\/username$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'invalid' }),
+      });
+    });
+    await page.goto('/setup/username');
+    await expect(page.getByRole('heading', { name: 'Your 21.gifts name' })).toBeVisible();
+    await page.getByRole('textbox', { name: 'Your 21.gifts name' }).fill('Bad Name!');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      page.getByRole('alert').filter({
+        hasText: 'Allowed: a–z, 0–9, hyphen, underscore and dot',
+      }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-setup-username-invalid');
   });
 
   test('screen /setup/address', async ({ page }) => {
@@ -14480,6 +14539,19 @@ test.describe('profile activity chart variants', () => {
       .click();
     await expect(page.getByText('Notifications are not available in this browser.')).toBeVisible();
     await shotScreen(page, 'state-profile-push-enable-error');
+  });
+
+  test('profile location-edit', async ({ page }) => {
+    await seedAdaProfile(page);
+    await stubProfileStats(page, EMPTY_ACTIVITY);
+    await openProfile(page);
+    await page.getByRole('button', { name: 'Edit location' }).click();
+    const field = page.getByRole('textbox', { name: 'Location' });
+    await expect(field).toBeVisible();
+    await expect(field).toHaveAttribute('placeholder', 'City or country');
+    await field.scrollIntoViewIfNeeded();
+    await expect(field).toBeInViewport();
+    await shotScreen(page, 'state-profile-location-edit');
   });
 });
 

@@ -2109,6 +2109,11 @@
     "es": "Sesión iniciada con un nombre para mostrar (o un nombre omitido) y sin nombre de usuario. Tu nombre en 21.gifts, el campo username y Continuar. Un Menú arriba a la derecha.",
     "fil": "Naka-sign in na may pangalang ipinapakita (o isang nilaktawang pangalan) at walang username. Ang 21.gifts name mo, ang patlang na username, at Magpatuloy. Isang Menu sa kanan sa itaas."
   },
+  "/setup/username:invalid": {
+    "de": "Nach einem ungültigen Benutzernamen und Weiter siehst du den Hinweis Erlaubt sind a–z, 0–9, Bindestrich, Unterstrich und Punkt.",
+    "es": "Tras un nombre de usuario no válido y Continuar, se ve Se permiten a–z, 0–9, guion, guion bajo y punto.",
+    "fil": "Pagkatapos ng hindi wastong username at Magpatuloy, nakikita ang Pinapayagan: a–z, 0–9, hyphen, underscore at tuldok."
+  },
   "/welcome:daily-payout-stopped-apply": {
     "de": "Benutzername joey-rosima, beliebige Rolle, sieht den Link Bewerben unter Tägliche Auszahlung gestoppt, nicht den Pausensatz. Dieser Link ist nicht der Bewerbungsablauf.",
     "es": "El nombre de usuario joey-rosima, de cualquier rol, ve el enlace Solicitar bajo Pago diario detenido, no la frase de pausa. Ese enlace no es el recorrido de solicitud.",
@@ -2288,6 +2293,11 @@
     "de": "Die achte Frage ist geöffnet: Was bedeutet ₿1 hier? Die Antwort sagt, dass ₿1 auf 21.gifts für einen Sat steht, die kleinste Bitcoin-Einheit. 100 Millionen Sats ergeben einen Bitcoin.",
     "es": "La octava pregunta está abierta: ¿Qué significa ₿1 aquí? La respuesta dice que en 21.gifts ₿1 representa un sat, la unidad más pequeña de Bitcoin. Un Bitcoin equivale a 100 millones de sats.",
     "fil": "Bukas ang ikawalong tanong: Ano ang ibig sabihin ng ₿1 dito? Sinasabi ng sagot na sa 21.gifts ang ₿1 ay isang sat, ang pinakamaliit na yunit ng Bitcoin. May 100 milyong sat sa isang Bitcoin."
+  },
+  "/:install-open": {
+    "de": "Auf dem iPhone öffnest du über App installieren in der Hero-Platzierung den Dialog 21.gifts auf den Home-Bildschirm.",
+    "es": "En el iPhone, el botón Instalar app del héroe abre el diálogo Añadir 21.gifts a la pantalla de inicio.",
+    "fil": "Sa iPhone, binubuksan ng pindutang I-install ang app sa hero ang diyalogong Idagdag ang 21.gifts sa Home Screen."
   },
   "/welcome:ask-credit-error-request": {
     "de": "Kredit, Schritt 9 von 9, nachdem das Senden fehlschlägt. Die Vorschau bleibt, mit Nachricht konnte nicht gesendet werden darunter. Kredit bleibt gedrückt. Der Zähler zeigt 9 von 9.",
@@ -2663,6 +2673,11 @@
     "de": "Benachrichtigungsabschnitt mit role=\"alert\" nach Klick auf An auf der Dieses Gerät-Kapsel, wenn Web Push vorhanden ist, das Aktivieren aber fehlschlägt. Text Benachrichtigungen sind in diesem Browser nicht verfügbar.",
     "es": "Apartado de notificaciones con role=\"alert\" tras pulsar Activado en la pastilla Este dispositivo cuando Web Push está presente pero la activación falla. Texto Las notificaciones no están disponibles en este navegador.",
     "fil": "Seksiyon ng mga notification na may role=\"alert\" pagkatapos i-click ang Naka-on sa pilduras na Device na ito kapag nariyan ang Web Push pero nabigo ang pag-enable. Sipi Hindi available ang mga notification sa browser na ito."
+  },
+  "/profile:location-edit": {
+    "de": "Über Ort bearbeiten öffnest du das Feld mit dem Platzhalter Stadt oder Land.",
+    "es": "Editar ubicación abre el campo con el marcador Ciudad o país.",
+    "fil": "Binubuksan ng I-edit ang lugar ang patlang na may placeholder na Lungsod o bansa."
   },
   "/messages/[id]:quoted-note": {
     "de": "Öffentlicher Permalink der Notiz von Riana Rosello. Cyrills Antwort zeigt just for information: plus denselben verschachtelten technischen-Notiz-Beitrag (Foto, Bildunterschrift, Gründerin, ₿43). Die rohe URL ist nicht sichtbar.",

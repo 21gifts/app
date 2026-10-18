@@ -77,6 +77,12 @@ The eighth question is open: **What does ₿1 mean here?** The answer says that 
 
 ![21.gifts home FAQ sat open](images/root-faq-sat-open.png)
 
+### Variant: install-open
+
+The hero **Install app** button on iPhone opens the dialog **Add 21.gifts to your Home Screen**.
+
+![21.gifts home install](images/root-install-open.png)
+
 ## Screen: /legal
 
 - **URL:** `/legal` — imprint and privacy. `/legal.html` permanently redirects here.
@@ -467,6 +473,12 @@ Signed in, no name yet. **Your name** and the name field at the top, **Continue*
 
 Signed in with a display name (or a skipped name) and no username. **Your 21.gifts name**, the username field, and **Continue**. One **Menu** top-right.
 ![21.gifts username setup](images/setup-username.png)
+
+### Variant: invalid
+
+**Continue** after an invalid username shows **Allowed: a–z, 0–9, hyphen, underscore and dot**.
+
+![21.gifts username invalid](images/setup-username-invalid.png)
 
 ## Screen: /setup/address
 
@@ -4200,6 +4212,12 @@ Notifications section with `role="alert"` save error after stubbing POST /me/not
 Notifications section with `role="alert"` after clicking On on the This device pill when Web Push is present but enable fails. Copy **Notifications are not available in this browser.**
 
 ![21.gifts profile push enable error](images/profile-push-enable-error.png)
+
+### Variant: location-edit
+
+**Edit location** opens the field with the placeholder **City or country**.
+
+![21.gifts profile location edit](images/profile-location-edit.png)
 
 ## Screen: /grants
 
