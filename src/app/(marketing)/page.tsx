@@ -63,7 +63,7 @@ export default async function Home(): Promise<ReactElement> {
       body: 'home.discoverStoryBody' as const,
       graphic: (
         <div className="flex h-48 flex-col justify-end overflow-hidden bg-home-story p-8 text-paper">
-          <span className="text-xs font-semibold tracking-home-kicker text-accent uppercase">
+          <span className="text-xs font-semibold tracking-home-label text-accent uppercase">
             {messages['happyland.kicker']}
           </span>
           <span className="mt-3 text-4xl font-semibold tracking-tight">{t('nav.happyland')}</span>
@@ -291,7 +291,7 @@ export default async function Home(): Promise<ReactElement> {
             </p>
             <Link
               href="/login"
-              className="inline-flex min-h-11 shrink-0 items-center gap-2 text-sm font-semibold text-paper underline decoration-accent underline-offset-4 hover:text-accent"
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 text-sm font-semibold text-accent underline underline-offset-2"
             >
               {t('home.ctaAsk')} <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
             </Link>
@@ -310,7 +310,7 @@ export default async function Home(): Promise<ReactElement> {
               <Link
                 key={href}
                 href={href}
-                className="group overflow-hidden rounded-2xl border border-ink/10 bg-home-card transition hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                className="overflow-hidden rounded-2xl border border-ink/10 bg-home-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
               >
                 {graphic}
                 <div className="p-6">
