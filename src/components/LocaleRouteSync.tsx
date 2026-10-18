@@ -8,7 +8,10 @@ import { readLocaleCookie, writeLocaleCookie } from '@/lib/locale-cookie';
 import { parseLocalizedPublicPath } from '@/lib/public-locale-path';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** Last path and expected language that already called refresh. */
+/**
+ * Last path and expected language that already called refresh.
+ * `null` before the first refresh and again once that language matches the provider.
+ */
 type RefreshKey = { current: string | null };
 
 /**
@@ -18,11 +21,15 @@ type RefreshKey = { current: string | null };
  * no saved language. The language the server should render is the URL language,
  * otherwise the saved account language, otherwise the cookie. When that differs
  * from the surrounding provider, refresh runs once for that path and language.
+ * The guard stays only while they still differ, so the refresh does not loop.
+ * When the expected language matches the provider, the guard is cleared. When
+ * no language is known, the guard is left unchanged.
  *
  * @param path - Path of the page that is actually showing.
  * @param rendered - Locale from the surrounding provider.
  * @param refresh - App Router refresh callback.
- * @param refreshedKey - Guard against a second refresh for the same case.
+ * @param refreshedKey - Guard against a second refresh while the same path and
+ * language still differ. Cleared when they match.
  */
 function syncRouteLocale(
   path: string,
@@ -46,7 +53,11 @@ function syncRouteLocale(
   } else {
     expected = readLocaleCookie();
   }
-  if (expected === null || expected === rendered) {
+  if (expected === null) {
+    return;
+  }
+  if (expected === rendered) {
+    refreshedKey.current = null;
     return;
   }
   const key = `${path}\0${expected}`;
@@ -71,6 +82,7 @@ export function LocaleRouteSync(): null {
   const { locale } = useTranslations();
   const localeRef = useRef(locale);
   const refreshRef = useRef(router.refresh);
+  /** Path and language of the last refresh. Cleared once the provider shows that language. */
   const refreshedKey = useRef<string | null>(null);
   localeRef.current = locale;
   refreshRef.current = router.refresh;

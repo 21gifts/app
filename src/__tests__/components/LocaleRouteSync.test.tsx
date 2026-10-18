@@ -1,8 +1,11 @@
 import { cleanup } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { LocaleProvider } from '@/components/LocaleProvider';
 import { LocaleRouteSync } from '@/components/LocaleRouteSync';
 import type { Account } from '@/lib/api-types';
-import { LOCALE_COOKIE } from '@/lib/locale';
+import { LOCALE_COOKIE, type Locale } from '@/lib/locale';
+import { getCatalog } from '@/lib/messages';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -60,6 +63,14 @@ function installCookieJar(initial: string): {
       }
     },
   };
+}
+
+function RouteSyncHarness({ locale }: { locale: Locale }): ReactElement {
+  return (
+    <LocaleProvider locale={locale} messages={getCatalog(locale)}>
+      <LocaleRouteSync />
+    </LocaleProvider>
+  );
 }
 
 function account(id: string, locale: 'en' | 'de' | 'es' | 'fil' | null): Account {
@@ -247,6 +258,30 @@ describe('LocaleRouteSync', () => {
         expectedLocaleCookie('de'),
         expectedLocaleCookie('es'),
       ]);
+      expect(refresh).toHaveBeenCalledTimes(2);
+    } finally {
+      jar.restore();
+    }
+  });
+
+  it('refreshes a language URL again after a matching route clears the guard', () => {
+    window.history.replaceState({}, '', '/de');
+    const jar = installCookieJar(`${LOCALE_COOKIE}=de`);
+    try {
+      const view = renderWithLocale(<RouteSyncHarness locale="en" />);
+      expect(refresh).toHaveBeenCalledTimes(1);
+
+      window.history.replaceState({}, '', '/login');
+      document.cookie = expectedLocaleCookie('de');
+      view.rerender(<RouteSyncHarness locale="de" />);
+      expect(refresh).toHaveBeenCalledTimes(1);
+
+      document.cookie = expectedLocaleCookie('en');
+      view.rerender(<RouteSyncHarness locale="en" />);
+      expect(refresh).toHaveBeenCalledTimes(1);
+
+      window.history.replaceState({}, '', '/de');
+      view.rerender(<RouteSyncHarness locale="en" />);
       expect(refresh).toHaveBeenCalledTimes(2);
     } finally {
       jar.restore();
