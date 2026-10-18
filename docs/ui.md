@@ -59,7 +59,7 @@ Closed set. Each principle is one sentence plus one implication in this codebase
 - `public/favicon.svg` — 64×64, fill `#0A090C`, text `21` at 32px/700, fill `#f7931a`. This is the only drawn brand mark in the app; the other drawn exceptions are under **Set.** in Iconography. The shop sticker's outlined sign is print artwork (see **Wordmark**).
 - `public/favicon.ico` — 48×48, same composition.
 - `public/apple-touch-icon.png` / `icon-192.png` / `icon-512.png` — ink field, orange `21`, no rounded-squircle decoration beyond what iOS applies.
-- `public/og.png` — 1200×630 social preview in the landing-page palette. It shows the real Bitcoin symbol and the wallet-to-wallet path; its copy does not claim that wallet or network fees are absent.
+- `public/og.png` — ink, orange kicker `PEER-TO-PEER · BITCOIN · WALLET OF SATOSHI`, white `21.gifts`, subtitle, orange-outline pill. Keep.
 
 ## Color
 

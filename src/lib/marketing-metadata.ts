@@ -5,7 +5,8 @@ import { localizedPublicPath, type LocalizedPublicPath } from '@/lib/public-loca
 /**
  * English alt text for the shared 1200×630 social preview on every URL.
  */
-export const OG_IMAGE_ALT = '21.gifts: Help people. With Bitcoin. Your wallet to their wallet.';
+export const OG_IMAGE_ALT =
+  '21.gifts: Peer-to-peer, Bitcoin, Wallet of Satoshi. Direct human-to-human gifts. No middleman. No custody.';
 
 /**
  * `hreflang` code for each UI locale.
