@@ -99,6 +99,7 @@ describe('ViewProfileScreen', () => {
     expect(screen.getByText("Can't receive yet")).toBeTruthy();
     expect(screen.queryByText('alice@21.gifts')).toBeNull();
     expect(screen.queryByText('No 21.gifts address')).toBeNull();
+    expect(screen.queryAllByRole('img', { name: 'Open CryptoPay QR code' })).toHaveLength(0);
   });
 
   it('shows the 21.gifts address from the username', () => {

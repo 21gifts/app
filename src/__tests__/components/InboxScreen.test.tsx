@@ -235,6 +235,26 @@ describe('InboxScreen counterpart who cannot receive', () => {
     );
     expect(screen.queryByText("Can't receive yet")).toBeNull();
   });
+
+  it('hides an invoice the loader still holds while the counterpart cannot receive', () => {
+    const invoice = { pr: 'lnbc21n1test', amountSats: 21 };
+    const { rerender } = renderWithLocale(
+      <InboxScreen {...inboxScreenProps({ invoice, payWaiting: true })} />,
+    );
+    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <InboxScreen
+          {...inboxScreenProps({
+            conversations: [{ ...THREAD, canReceive: false }],
+            invoice,
+            payWaiting: true,
+          })}
+        />
+      </LocaleProvider>,
+    );
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+  });
 });
 
 describe('groupThreadGifts', () => {

@@ -1955,6 +1955,7 @@ describe('MemberProfileScreen', () => {
     );
     await expandNote({ ...note, authorCanReceive: false });
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(postMessageInvoice).toHaveBeenCalledWith(
@@ -1976,6 +1977,7 @@ describe('MemberProfileScreen', () => {
     );
     await expandNote({ ...note, authorCanReceive: false });
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'reply' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Post' }));
     await waitFor(() => {
       expect(postMessage).toHaveBeenCalledWith('sess', { text: 'reply', inReplyTo: note.id });

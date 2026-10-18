@@ -10362,7 +10362,17 @@ describe('ForumBoard author who cannot receive', () => {
 
   it('keeps the posting-fee sheet on a note whose author cannot receive', () => {
     const onPayCancel = vi.fn();
-    renderWithLocale(board({ payMessageId: 'm1', payHost: 'composer', onPayCancel }));
+    renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-carol', payable: false, authorCanReceive: false }],
+        payMessageId: 'm1',
+        payHost: 'composer',
+        payInvoice: { messageId: 'm1', pr: 'lnbc1', amountSats: 1 },
+        payWaiting: true,
+        onPayCancel,
+      }),
+    );
+    expect(screen.getByText(WALLET_UNAVAILABLE)).toBeTruthy();
     expect(onPayCancel).not.toHaveBeenCalled();
   });
 

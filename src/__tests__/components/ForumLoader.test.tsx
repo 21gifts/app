@@ -7783,6 +7783,7 @@ describe('ForumLoader', () => {
       expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(invoiceMock).toHaveBeenCalledTimes(1);
@@ -7806,6 +7807,7 @@ describe('ForumLoader', () => {
       expect(screen.getByLabelText('Your reaction')).toBeTruthy();
     });
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'Hi' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.submit(screen.getByLabelText('Your reaction').closest('form')!);
     await waitFor(() => {
       expect(postMock).toHaveBeenCalledWith('sess', { text: 'Hi', inReplyTo: 'm-bob' });
