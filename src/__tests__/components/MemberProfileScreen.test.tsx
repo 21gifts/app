@@ -2000,6 +2000,27 @@ describe('MemberProfileScreen', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('keeps the card and the feed as they are while a paid reaction sheet is open', async () => {
+    vi.mocked(fetchPublicMessage).mockReturnValue(new Promise(() => undefined));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '21');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    await waitFor(() => {
+      expect(document.querySelector('[role="dialog"][data-pay-sheet="pay"]')).not.toBeNull();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    fireEvent.click(screen.getByRole('button', { name: '0 reactions', pressed: false }));
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('reply');
+    expect(document.querySelector('[role="dialog"][data-pay-sheet="pay"]')).not.toBeNull();
+  });
+
   it('unlocks the composer and marks hasPosted after a paid reply poll', async () => {
     vi.mocked(fetchPublicMessage).mockResolvedValue({ ...note, sats: 42, replyCount: 1 });
     renderWithLocale(

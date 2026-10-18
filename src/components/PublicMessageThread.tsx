@@ -928,6 +928,10 @@ export function PublicMessageThread(props: {
     if (replyPosting) {
       return;
     }
+    // A paid reaction's sheet is open over this card: its form stays as it is until the sheet closes.
+    if (replyPayPreview !== null) {
+      return;
+    }
     if (
       payMessageId !== null &&
       replies !== null &&

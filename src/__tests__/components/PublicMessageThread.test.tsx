@@ -320,6 +320,21 @@ describe('PublicMessageThread', () => {
     expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
+  it('keeps the reaction form as it is while its pay sheet is open', async () => {
+    vi.mocked(fetchPublicMessage).mockReturnValue(new Promise(() => undefined));
+    signIn();
+    renderThread();
+    const textarea = await waitForEnabledReplyComposer();
+    fireEvent.change(textarea, { target: { value: 'thanks' } });
+    submitComposer('21');
+    await waitFor(() => {
+      expect(document.querySelector('[role="dialog"][data-pay-sheet="pay"]')).not.toBeNull();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('thanks');
+    expect(document.querySelector('[role="dialog"][data-pay-sheet="pay"]')).not.toBeNull();
+  });
+
   it('invoices 21 sats when the pay amount is left empty', async () => {
     signIn();
     renderThread();
