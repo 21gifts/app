@@ -3408,7 +3408,7 @@ Pinned fixture (`?visual=wallet-pay-confirm`, Playwright builds only). The same 
 
 ### Variant: wallet-pay-paying
 
-Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only). The same sheet with a spinner and **Paying from your wallet…**; there is no waiting line, the sheet closes itself when the existing long-poll sees the payment.
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only). The same sheet with a spinner and **Paying from your wallet…**; there is no waiting line. When the existing long-poll sees the payment, the sheet shows its success step (green check, **Sent to Carol**, the amount) for about 1.4 s, then slides away (see `pay-sheet-success`).
 
 ![21.gifts welcome wallet pay paying](images/welcome-wallet-pay-paying.png)
 
