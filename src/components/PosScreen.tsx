@@ -141,7 +141,7 @@ type WalletSettled = {
   open: PosCharge | null;
   paid: Map<string, PosCharge>;
   closed: Set<string>;
-  /** Payments heard while no open charge was known yet (a till still loading), newest last. */
+  /** Payments heard that no known open charge took (a till still loading its charge), newest last. */
   early: Array<{ amountSats: number; feesSats: number; at: number }>;
 };
 
@@ -172,9 +172,9 @@ function settledChanged(): void {
  * The open charge of `session` is paid the moment this tab's wallet receives
  * its amount (or the amount after its fee): while it is open the receiving
  * address takes no other amount. Up to {@link POS_LATE_PAID_MS} after its end
- * still counts. No reading of the api in between. A payment heard before the
- * open charge is known (the till is still reading it) is kept and tried again
- * once it is.
+ * still counts. No reading of the api in between. A payment no known open
+ * charge takes (the till is still reading the next one) is kept and tried
+ * again once the next open charge is known.
  */
 function settleOpen(
   session: string | null,
@@ -182,15 +182,14 @@ function settleOpen(
 ): void {
   const memory = settledFor(session);
   const open = memory.open;
-  if (open === null) {
-    memory.early = [...memory.early, { ...payment, at: Date.now() }].slice(-POS_EARLY_PAYMENTS);
-    return;
-  }
   if (
+    open === null ||
     (payment.amountSats !== open.amountSats &&
       payment.amountSats + payment.feesSats !== open.amountSats) ||
     Date.now() > Date.parse(open.expiresAt) + POS_LATE_PAID_MS
   ) {
+    // Not this charge's: it may be the next one's, which the till has not read yet.
+    memory.early = [...memory.early, { ...payment, at: Date.now() }].slice(-POS_EARLY_PAYMENTS);
     return;
   }
   memory.open = null;

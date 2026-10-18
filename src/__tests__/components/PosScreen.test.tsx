@@ -1694,6 +1694,29 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
+    it('counts a payment for the next charge heard while the last one is still known', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let next: typeof OPEN | null = null;
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockImplementationOnce(async () => jsonResponse({ charge: ended, history: [ended] }))
+          .mockImplementation(async () =>
+            jsonResponse({ charge: next, history: next === null ? [ended] : [next, ended] }),
+          ),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      // A new charge of ₿42 was created elsewhere and paid before this till read it.
+      next = { ...OPEN, id: 'c2', amountSats: 42, createdAt: new Date().toISOString() };
+      receive(42);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      showTab();
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('₿42')).toBeTruthy();
+    });
+
     it('never asks the api on a timer while a charge is open', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
       const fetchMock = vi
