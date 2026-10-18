@@ -178,8 +178,8 @@ type PosTillState = {
   onCreate: (event: FormEvent) => Promise<void>;
   onCancel: () => Promise<void>;
   retryLoad: () => void;
-  /** Closes the paid confirmation and reads the till again. */
-  closePaid: () => void;
+  /** Closes the paid confirmation of charge `id` and reads the till again. */
+  closePaid: (id: string) => void;
 };
 
 /** Shared till state for the QR page and the amount page. */
@@ -514,10 +514,8 @@ function usePosTillState(): PosTillState {
       setError(null);
       setReload((n) => n + 1);
     },
-    closePaid: () => {
-      if (paid !== null) {
-        setClosed((before) => new Set(before).add(paid.id));
-      }
+    closePaid: (id) => {
+      setClosed((before) => new Set(before).add(id));
       setReload((n) => n + 1);
     },
   };
@@ -547,6 +545,7 @@ export function PosTill(): ReactElement {
   const { fiat } = useFiatPreference();
   const till = usePosTillState();
   const setup = useWalletSetup();
+  const shownPaid = till.paid;
   const paidId = till.paid?.id ?? null;
   const paidSats = till.paid?.amountSats ?? 0;
   const paidFor = till.stateSession;
@@ -631,13 +630,15 @@ export function PosTill(): ReactElement {
           </Button>
         </div>
       ) : null}
-      {till.paid !== null ? (
+      {shownPaid !== null ? (
         <PosPaidOverlay
-          amount={formatBitcoin(till.paid.amountSats, numberFormat)}
+          amount={formatBitcoin(shownPaid.amountSats, numberFormat)}
           fiat={
             till.paidFiat === null ? null : formatFiatDisplay(till.paidFiat, fiat, numberFormat)
           }
-          onClose={till.closePaid}
+          onClose={() => {
+            till.closePaid(shownPaid.id);
+          }}
         />
       ) : null}
       {till.state !== null && till.charge === null && till.paid === null && till.canCharge ? (
