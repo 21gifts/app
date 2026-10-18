@@ -11795,6 +11795,9 @@ test.describe('onboarding screens', () => {
       'You are lending to Carol. Once the loan is fully funded, you get it back in 30 daily payments.',
     );
     await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    // The paid reaction keeps its text in the form; no gift amount box opens.
+    await expect(page.getByLabel('Your reaction')).toHaveValue('Count me in!');
+    await expect(page.locator('[data-pay-amount]')).toHaveCount(0);
     await form.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -11828,6 +11831,9 @@ test.describe('onboarding screens', () => {
       'This loan is already fully funded. What you send now is a gift to Carol.',
     );
     await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    // The paid reaction keeps its text in the form; no gift amount box opens.
+    await expect(page.getByLabel('Your reaction')).toHaveValue('Thank you, Carol!');
+    await expect(page.locator('[data-pay-amount]')).toHaveCount(0);
     await form.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -16896,6 +16902,9 @@ test.describe('onboarding screens', () => {
       'You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.',
     );
     await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    // The paid reaction keeps its text in the form; no gift amount box opens.
+    await expect(page.getByLabel('Your reaction')).toHaveValue('Count me in!');
+    await expect(page.locator('[data-pay-amount]')).toHaveCount(0);
     await form.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
@@ -16924,6 +16933,9 @@ test.describe('onboarding screens', () => {
       'This loan is already fully funded. What you send now is a gift to Maria.',
     );
     await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    // The paid reaction keeps its text in the form; no gift amount box opens.
+    await expect(page.getByLabel('Your reaction')).toHaveValue('Thank you, Maria!');
+    await expect(page.locator('[data-pay-amount]')).toHaveCount(0);
     await form.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });

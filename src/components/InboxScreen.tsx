@@ -1131,11 +1131,7 @@ export function InboxScreen({
               />
             </div>
           ) : null}
-          <div
-            className={
-              showAmount && invoice === null ? 'flex items-end gap-2' : 'flex items-center gap-2'
-            }
-          >
+          <div className={showAmount ? 'flex items-end gap-2' : 'flex items-center gap-2'}>
             <MentionTextarea
               ariaLabel={t('inbox.composerLabel')}
               placeholder={t('inbox.placeholder')}
@@ -1161,14 +1157,15 @@ export function InboxScreen({
               )}
             </IconButton>
           </div>
-          {showAmount && invoice === null ? (
+          {/* The amount stays on the page, disabled behind the pay sheet. */}
+          {showAmount ? (
             <AmountEntry
               layout="composer"
               className="max-w-sm"
               label={t('inbox.amountLabel')}
               placeholder={t('forum.payAmountPlaceholder')}
               value={amountDraft}
-              disabled={posting || messagesLoading || counterpartCannotReceive}
+              disabled={posting || messagesLoading || counterpartCannotReceive || invoice !== null}
               rateDay={rateDay}
               onValueChange={onAmountDraftChange}
               onUnitChange={amountUnitChange}

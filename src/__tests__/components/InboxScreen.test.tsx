@@ -1617,7 +1617,8 @@ describe('InboxScreen', () => {
     expect(within(sheet).getByText(WALLET_UNAVAILABLE)).not.toBeNull();
     expectWalletOnly();
     expect(sheet.querySelector('img')).toBeNull();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
+    // The amount stays on the page, disabled behind the sheet.
+    expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
     expect(screen.queryByText('Waiting for payment…')).toBeNull();
     expect(vi.mocked(useWalletPay).mock.calls.at(-1)?.[3]).toBe('inbox');
     expect(locationStub.href).toBe('http://localhost/');

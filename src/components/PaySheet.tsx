@@ -95,7 +95,19 @@ export function PaySheet({
   const [entered, setEntered] = useState(false);
   const [succeeded, setSucceeded] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [wasPresent, setWasPresent] = useState(present);
   const panel = useRef<HTMLDivElement>(null);
+
+  // A new payment while the host still held the last one (`holdMs`) reuses this sheet: start over
+  // as a fresh sheet that slides up again, instead of staying gone.
+  if (present !== wasPresent) {
+    setWasPresent(present);
+    if (present) {
+      setEntered(false);
+      setSucceeded(false);
+      setLeaving(false);
+    }
+  }
 
   const close = useCallback((): void => {
     if (leaving) {
@@ -120,10 +132,13 @@ export function PaySheet({
   }, [succeeded, leaving]);
 
   useEffect(() => {
+    if (entered) {
+      return;
+    }
     const frame = requestAnimationFrame(() => setEntered(true));
     panel.current?.focus({ preventScroll: true });
     return () => cancelAnimationFrame(frame);
-  }, []);
+  }, [entered]);
 
   // Escape closes the open payment, or lets the success step go at once.
   useEffect(() => {

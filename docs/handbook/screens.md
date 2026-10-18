@@ -6000,7 +6000,7 @@ Open thread. Inbound **Hi** with amount **₿21** under the body. Composer visib
 
 ### Variant: thread-pay-sheet
 
-Open thread, Amount **21** submitted. The pay sheet slides up over the dimmed thread: **Send to 21.gifts** with Close (`X`) at its right, **₿21** large with **$0.02** under it (the default fiat from the current spot rate), then the in-app wallet pay slot; this build has no wallet configured, so it says **Your 21.gifts wallet is not available here, so this cannot be paid.** Close dismisses the sheet and stays on this thread. It is not the top-left back arrow. The composer amount row is hidden. Composer behind the sheet includes the camera and ImagePlus attach. Captured at desktop and mobile (same variant, four combos): no invoice QR on any device and no waiting line.
+Open thread, Amount **21** submitted. The pay sheet slides up over the dimmed thread: **Send to 21.gifts** with Close (`X`) at its right, **₿21** large with **$0.02** under it (the default fiat from the current spot rate), then the in-app wallet pay slot; this build has no wallet configured, so it says **Your 21.gifts wallet is not available here, so this cannot be paid.** Close dismisses the sheet and stays on this thread. It is not the top-left back arrow. The composer amount row stays on the page with **21**, disabled behind the sheet. Composer behind the sheet includes the camera and ImagePlus attach. Captured at desktop and mobile (same variant, four combos): no invoice QR on any device and no waiting line.
 
 ![21.gifts inbox thread pay sheet](images/messages-thread-pay-sheet.png)
 

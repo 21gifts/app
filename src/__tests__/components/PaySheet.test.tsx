@@ -139,6 +139,47 @@ describe('PaySheet', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('slides up again for a new payment while the host still holds the closed one', () => {
+    const onClose = vi.fn();
+    const view = renderWithLocale(sheet(true, onClose));
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    fireEvent.click(closeButton());
+    view.rerender(sheet(false, onClose));
+    expect(layer()).toBe('closed');
+    // Within the hold: the same sheet is still mounted when the next payment opens.
+    view.rerender(sheet(true, onClose));
+    expect(layer()).toBe('closed');
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    expect(layer()).toBe('open');
+    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+    expect(document.activeElement).toBe(screen.getByRole('dialog'));
+    fireEvent.click(closeButton());
+    expect(onClose).toHaveBeenCalledTimes(2);
+    expect(layer()).toBe('closed');
+  });
+
+  it('starts a new payment over after a success step the host still holds', () => {
+    const view = renderWithLocale(sheet(true, vi.fn()));
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    view.rerender(sheet(false, vi.fn()));
+    fadeToSuccess();
+    expect(screen.getByRole('status')).not.toBeNull();
+    view.rerender(sheet(true, vi.fn()));
+    fadeToSuccess();
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByText('Pay slot')).not.toBeNull();
+    expect(layer()).toBe('open');
+  });
+
   it('closes on a tap on the dimmed page', () => {
     const onClose = vi.fn();
     renderWithLocale(sheet(true, onClose));

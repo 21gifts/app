@@ -269,6 +269,8 @@ export function MemberProfileScreen({
   const [repliesError, setRepliesError] = useState(false);
   const [replyDraft, setReplyDraft] = useState('');
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
+  // A paid reaction's text while its pay sheet is open: the form keeps it, disabled, behind the sheet.
+  const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
@@ -440,6 +442,7 @@ export function MemberProfileScreen({
     setPayInvoice(null);
     setPayBusy(false);
     setPayHost(null);
+    setReplyPayPreview(null);
     setReplyPosting(false);
   };
 
@@ -490,6 +493,7 @@ export function MemberProfileScreen({
     baselineSats: number,
     replyParentId: string | null = null,
     baselineReceivedSats?: number,
+    clearReplyDraft = false,
   ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
@@ -612,6 +616,12 @@ export function MemberProfileScreen({
               setPayDraft('');
               setPayError(null);
               setReplyPosting(false);
+              // The paid reaction went out: its text and amount leave the form with the sheet.
+              if (clearReplyDraft) {
+                setReplyDraft('');
+                setReplyAmountDraft('');
+              }
+              setReplyPayPreview(null);
               const current = useAuthStore.getState();
               if (current.session !== session) {
                 return;
@@ -955,11 +965,10 @@ export function MemberProfileScreen({
         sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('card');
-      setReplyDraft('');
-      setReplyAmountDraft('');
+      setReplyPayPreview(trimmed);
       pendingPostRef.current = null;
       setReplyPosting(false);
-      startPayPoll(parentId, baselineSats);
+      startPayPoll(parentId, baselineSats, null, undefined, true);
     } catch (err) {
       if (generation !== payPollGeneration.current) {
         return;
@@ -1066,6 +1075,7 @@ export function MemberProfileScreen({
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
+    setReplyPayPreview(null);
     setPayBusy(false);
   };
 
@@ -1325,6 +1335,7 @@ export function MemberProfileScreen({
     payBusy,
     payError,
     payInvoice,
+    replyPayPreview,
     onPayOpen: handlePayOpen,
     onPayDraftChange: (value: string): void => {
       setPayDraft(value);

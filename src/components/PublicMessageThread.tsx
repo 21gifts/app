@@ -212,6 +212,8 @@ export function PublicMessageThread(props: {
   const [repliesError, setRepliesError] = useState(false);
   const [replyDraft, setReplyDraft] = useState('');
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
+  // A paid reaction's text while its pay sheet is open: the form keeps it, disabled, behind the sheet.
+  const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
@@ -376,6 +378,7 @@ export function PublicMessageThread(props: {
     baselineSats: number,
     replyParentId: string | null = null,
     baselineReceivedSats?: number,
+    clearReplyDraft = false,
   ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
@@ -465,6 +468,12 @@ export function PublicMessageThread(props: {
               setPayDraft('');
               setPayError(null);
               setReplyPosting(false);
+              // The paid reaction went out: its text and amount leave the form with the sheet.
+              if (clearReplyDraft) {
+                setReplyDraft('');
+                setReplyAmountDraft('');
+              }
+              setReplyPayPreview(null);
               const current = useAuthStore.getState();
               /* v8 ignore next 3 -- session cleared while the pay poll was in flight */
               if (current.session !== session) {
@@ -732,11 +741,10 @@ export function PublicMessageThread(props: {
         sparkInvoice: invoice.sparkInvoice,
       });
       setPayHost('card');
-      setReplyDraft('');
-      setReplyAmountDraft('');
+      setReplyPayPreview(trimmed);
       pendingPostRef.current = null;
       setReplyPosting(false);
-      startPayPoll(parentId, baselineSats);
+      startPayPoll(parentId, baselineSats, null, undefined, true);
     } catch (err) {
       /* v8 ignore start -- pay sheet closed while the reply invoice failed */
       if (generation !== payPollGeneration.current) {
@@ -802,6 +810,7 @@ export function PublicMessageThread(props: {
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
+    setReplyPayPreview(null);
     setPayBusy(false);
   };
 
@@ -911,6 +920,7 @@ export function PublicMessageThread(props: {
     setPayInvoice(null);
     setPayBusy(false);
     setPayHost(null);
+    setReplyPayPreview(null);
     setReplyPosting(false);
   };
 
@@ -1145,6 +1155,7 @@ export function PublicMessageThread(props: {
         payBusy={payBusy}
         payError={payError}
         payInvoice={payInvoice}
+        replyPayPreview={replyPayPreview}
         onPayOpen={handlePayOpen}
         viewerAccountId={account?.id ?? null}
         heartViewerId={account?.id ?? null}
