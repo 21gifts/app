@@ -1377,12 +1377,15 @@ describe('PosScreen', () => {
       receive(21);
       expect(screen.queryByRole('alertdialog')).toBeNull();
       empty.unmount();
+      // The next charge is created after that payment, so the payment is not its.
+      const next = { ...OPEN, createdAt: new Date(Date.now() + 1_000).toISOString() };
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] })),
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: next, history: [next] })),
       );
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
       receive(22);
       expect(screen.queryByRole('alertdialog')).toBeNull();
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -1642,6 +1645,52 @@ describe('PosScreen', () => {
       showTab();
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
       receive(21);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
+    it('counts a payment that lands while the till is still reading the open charge', async () => {
+      let answer: (response: Response) => void = () => undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(
+          () =>
+            new Promise<Response>((resolve) => {
+              answer = resolve;
+            }),
+        ),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(received.listeners.size).toBe(1);
+      });
+      receive(21);
+      await act(async () => {
+        answer(jsonResponse({ charge: OPEN, history: [OPEN] }));
+      });
+      expect(await confirmation()).toBeTruthy();
+    });
+
+    it('does not count a payment heard before the charge was created', async () => {
+      const later = { ...OPEN, createdAt: new Date(Date.now() + 60_000).toISOString() };
+      let answer: (response: Response) => void = () => undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(
+          () =>
+            new Promise<Response>((resolve) => {
+              answer = resolve;
+            }),
+        ),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(received.listeners.size).toBe(1);
+      });
+      receive(21);
+      await act(async () => {
+        answer(jsonResponse({ charge: later, history: [later] }));
+      });
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 

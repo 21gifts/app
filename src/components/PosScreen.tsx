@@ -141,7 +141,12 @@ type WalletSettled = {
   open: PosCharge | null;
   paid: Map<string, PosCharge>;
   closed: Set<string>;
+  /** Payments heard while no open charge was known yet (a till still loading), newest last. */
+  early: Array<{ amountSats: number; feesSats: number; at: number }>;
 };
+
+/** How many payments heard before an open charge was known are kept for it. */
+const POS_EARLY_PAYMENTS = 20;
 
 let walletSettled: WalletSettled | null = null;
 
@@ -151,7 +156,7 @@ const walletSettledListeners = new Set<() => void>();
 /** The settled memory of `session`; another session starts it over. */
 function settledFor(session: string | null): WalletSettled {
   if (walletSettled === null || walletSettled.session !== session) {
-    walletSettled = { session, open: null, paid: new Map(), closed: new Set() };
+    walletSettled = { session, open: null, paid: new Map(), closed: new Set(), early: [] };
   }
   return walletSettled;
 }
@@ -167,7 +172,9 @@ function settledChanged(): void {
  * The open charge of `session` is paid the moment this tab's wallet receives
  * its amount (or the amount after its fee): while it is open the receiving
  * address takes no other amount. Up to {@link POS_LATE_PAID_MS} after its end
- * still counts. No reading of the api in between.
+ * still counts. No reading of the api in between. A payment heard before the
+ * open charge is known (the till is still reading it) is kept and tried again
+ * once it is.
  */
 function settleOpen(
   session: string | null,
@@ -175,8 +182,11 @@ function settleOpen(
 ): void {
   const memory = settledFor(session);
   const open = memory.open;
+  if (open === null) {
+    memory.early = [...memory.early, { ...payment, at: Date.now() }].slice(-POS_EARLY_PAYMENTS);
+    return;
+  }
   if (
-    open === null ||
     (payment.amountSats !== open.amountSats &&
       payment.amountSats + payment.feesSats !== open.amountSats) ||
     Date.now() > Date.parse(open.expiresAt) + POS_LATE_PAID_MS
@@ -378,6 +388,12 @@ function usePosTillState(): PosTillState {
     const memory = settledFor(session);
     if (charge !== null) {
       memory.open = charge;
+      // A payment the wallet reported while this charge was still being read, never an older one.
+      const early = memory.early.filter((heard) => heard.at >= Date.parse(charge.createdAt));
+      memory.early = [];
+      for (const heard of early) {
+        settleOpen(session, heard);
+      }
     } else if (memory.open !== null && Date.now() < Date.parse(memory.open.expiresAt)) {
       // Gone before its end (cancelled elsewhere): no payment belongs to it any more. One that ran
       // out stays, so a payment just after its end still counts.
