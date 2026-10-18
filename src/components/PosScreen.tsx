@@ -734,7 +734,9 @@ export function PosTill(): ReactElement {
 /**
  * Amount-only page. No QR and no other till actions. Confirming returns to
  * `/pos`, which then shows Cancel, the countdown, and the amount. A charge
- * that is already paid does not block a new one. It leaves with
+ * this tab's wallet saw paid whose confirmation is not closed returns to
+ * `/pos`, which shows it full screen; a closed one, or one only the api
+ * reports paid, does not block a new one. It leaves with
  * {@link returnToView}, once: opened from `/pos`, that is a step back, so
  * `/pos` keeps its own back (the view before it, or `/welcome`).
  *
