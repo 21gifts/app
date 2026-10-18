@@ -49,9 +49,13 @@ export function Swap({ viewKey, children, className }: SwapProps): ReactElement 
     if (!leaving || instant || visible) {
       return;
     }
-    // Wait only once the old view is drawn at opacity 0. Waiting from the moment the fade is asked
-    // for would also catch the end of a fade-in still running, and swap with no fade-out.
-    return afterTransition(fading.current as HTMLDivElement, 'opacity', MOTION_SWAP_FADE_MS, () => {
+    // Wait only once the old view is at opacity 0. Waiting from the moment the fade is asked for
+    // would also catch the end of a fade-in still running, and swap with no fade-out. Reading the
+    // style applies opacity 0 now, so a fade-in still running is cancelled (`transitioncancel`)
+    // instead of ending into this wait in the next frame.
+    const box = fading.current as HTMLDivElement;
+    void getComputedStyle(box).opacity;
+    return afterTransition(box, 'opacity', MOTION_SWAP_FADE_MS, () => {
       setCurrentKey(viewKey);
       setVisible(true);
     });

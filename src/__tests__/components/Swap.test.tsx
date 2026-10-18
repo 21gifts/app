@@ -6,6 +6,8 @@ import { advance, endTransition, motionEnv, installMotionHooks } from '@/__tests
 
 /** How the box looked each time {@link Swap} started waiting for its fade-out to end. */
 const waitsStarted = vi.hoisted((): string[] => []);
+/** Elements whose computed style was read, in order. */
+const styleReads = vi.hoisted((): Element[] => []);
 
 vi.mock('@/lib/motion', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/motion')>();
@@ -13,7 +15,9 @@ vi.mock('@/lib/motion', async (importOriginal) => {
     ...actual,
     afterTransition: (...args: Parameters<typeof actual.afterTransition>): (() => void) => {
       const [el] = args;
-      waitsStarted.push(`${el.className}${el.hasAttribute('inert') ? ' inert' : ''}`);
+      waitsStarted.push(
+        `${el.className}${el.hasAttribute('inert') ? ' inert' : ''}${styleReads.includes(el) ? ' style-read' : ''}`,
+      );
       return actual.afterTransition(...args);
     },
   };
@@ -23,6 +27,7 @@ installMotionHooks();
 
 beforeEach(() => {
   waitsStarted.length = 0;
+  styleReads.length = 0;
 });
 
 describe('Swap', () => {
@@ -77,6 +82,11 @@ describe('Swap', () => {
   });
 
   it('starts waiting for the fade-out only once the old view is drawn faded and inert', () => {
+    const readStyle = window.getComputedStyle.bind(window);
+    vi.spyOn(window, 'getComputedStyle').mockImplementation((el, pseudo) => {
+      styleReads.push(el);
+      return readStyle(el, pseudo);
+    });
     const swap = render(
       <Swap viewKey="form">
         <p>Form</p>
@@ -92,6 +102,8 @@ describe('Swap', () => {
     expect(waitsStarted[0]).toContain('opacity-0');
     expect(waitsStarted[0]).toContain('inert');
     expect(waitsStarted[0]).not.toContain('opacity-100');
+    // The style was applied before the wait began, so a running fade-in is cancelled, not ended.
+    expect(waitsStarted[0]).toContain('style-read');
   });
 
   it('swaps as soon as the fade out ends', () => {
