@@ -9351,6 +9351,7 @@ test.describe('onboarding screens', () => {
   test('state /members overlay-username-invalid', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const noteId = '33333333-3333-4333-8333-333333333333';
+    await fulfillRateDay(page);
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -9464,6 +9465,8 @@ test.describe('onboarding screens', () => {
           'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
       }),
     ).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(page.getByText('$0.00')).toBeVisible();
     await shotScreen(page, 'state-members-overlay-username-invalid');
   });
 
