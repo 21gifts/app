@@ -1897,7 +1897,8 @@ const de = {
   'rules.wanted1': 'Ein Dankeschön: kurz, konkret und ohne die nächste Bitte im Schlepptau.',
   'rules.wanted2': 'Eine ruhige, ehrliche Nachricht, die das Geben leicht macht statt schwer.',
   'rules.wanted3': 'Ein gelassener Ton — ohne Steigerung, ohne Countdown, ohne Publikum.',
-  'rules.wanted4': 'Fragen, wie Spenden hier funktioniert, und geduldige Antworten darauf.',
+  'rules.wanted4':
+    'Fragen dazu, wie das Spenden hier funktioniert, und geduldige Antworten darauf.',
   'rules.wanted5': 'Humor und Wärme, die niemanden unter Druck setzen.',
   'rules.wanted6':
     'Eine Nachricht würdigen, die Ihnen etwas bedeutet hat — freiwillig und ohne dass der Autor darum gebeten hätte.',
