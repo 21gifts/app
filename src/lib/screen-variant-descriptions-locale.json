@@ -2949,6 +2949,16 @@
     "es": "Miembro con nombre, con las reglas del salón aceptadas y sin nombre de usuario. Cuadro de redacción relleno, se pulsó Publicar. Diálogo RequirementsOverlay Añade tu nombre en 21.gifts con UsernameForm variant=overlay. Sin Omitir. Cerrar (X) está presente.",
     "fil": "Pinangalanang miyembro na umayon sa mga patakaran ng sala at walang username. Napunan ang kahon ng pagsulat, na-click ang I-post. Diyalogo RequirementsOverlay Idagdag ang 21.gifts name mo na may UsernameForm variant=overlay. Walang Laktawan. Nandiyan ang Isara (X)."
   },
+  "/welcome:overlay-username-invalid": {
+    "de": "Nach .alice und Weiter im Dialog 21.gifts-Namen hinzufügen siehst du den Hinweis 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer.",
+    "es": "Tras .alice y Continuar en el diálogo Añade tu nombre en 21.gifts se ve De 1 a 32 caracteres: a–z, 0–9, guion, guion bajo o punto, empezando por una letra o un número.",
+    "fil": "Pagkatapos ng .alice at Magpatuloy sa diyalogong Idagdag ang 21.gifts name mo, nakikita ang 1–32 character: a–z, 0–9, hyphen, underscore, o tuldok, nagsisimula sa letra o numero."
+  },
+  "/welcome:install-open": {
+    "de": "Auf dem iPhone öffnest du über Menü und App installieren den Dialog 21.gifts auf den Home-Bildschirm.",
+    "es": "En el iPhone, Menú y luego Instalar app abre el diálogo Añadir 21.gifts a la pantalla de inicio.",
+    "fil": "Sa iPhone, binubuksan ng Menu at saka I-install ang app ang diyalogong Idagdag ang 21.gifts sa Home Screen."
+  },
   "/welcome:empty-unpaid": {
     "de": "In der geladenen Liste sind keine Notizen mit null sats mehr. Alle geladenen Beiträge haben bereits Bitcoin erhalten. erscheint; die Filter und der Composer bleiben verfügbar. Ein völlig leeres Forum verwendet weiterhin den allgemeinen Leerzustand.",
     "es": "No quedan notas de cero sats en la lista cargada. Todos los mensajes cargados ya han recibido Bitcoin. aparece; los filtros y el cuadro de redacción siguen disponibles. Un foro completamente vacío sigue usando el estado vacío general.",
@@ -3328,6 +3338,11 @@
     "de": "Benannte Besucherin mit zugestimmten Wohnzimmerregeln und ohne Benutzernamen. Beiträge-Feed offen, gelistete Notiz ausgeklappt, Antwort ausgefüllt mit sichtbarem Betrag-Feld, Senden angeklickt. RequirementsOverlay-Dialog 21.gifts-Namen hinzufügen mit UsernameForm variant=overlay. Kein Überspringen. Schliessen (X) ist vorhanden.",
     "es": "Visitante con nombre, normas del salón aceptadas y sin nombre de usuario. Feed de publicaciones abierto, nota listada expandida, respuesta rellenada con el campo Importe visible, Publicar pulsado. Diálogo RequirementsOverlay Añade tu nombre en 21.gifts con UsernameForm variant=overlay. Sin Omitir. Cerrar (X) está presente.",
     "fil": "Pinangalanang bisita na may sang-ayon sa mga panuntunan ng living room at walang username. Bukas ang feed ng mga post, naka-expand ang nakalistang tala, napunan ang sagot na may nakikitang field na Halaga, na-click ang I-post. Dialog ng RequirementsOverlay Idagdag ang 21.gifts name mo na may UsernameForm variant=overlay. Walang Laktawan. Naroon ang Isara (X)."
+  },
+  "/members/[accountId]:overlay-username-invalid": {
+    "de": "Nach .alice und Weiter im Dialog 21.gifts-Namen hinzufügen auf einer offenen Mitgliedsnotiz siehst du den Hinweis 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer.",
+    "es": "Tras .alice y Continuar en el diálogo Añade tu nombre en 21.gifts, en una nota abierta del miembro, se ve De 1 a 32 caracteres: a–z, 0–9, guion, guion bajo o punto, empezando por una letra o un número.",
+    "fil": "Pagkatapos ng .alice at Magpatuloy sa diyalogong Idagdag ang 21.gifts name mo sa isang bukas na tala ng miyembro, nakikita ang 1–32 character: a–z, 0–9, hyphen, underscore, o tuldok, nagsisimula sa letra o numero."
   },
   "/profile:about-filled": {
     "de": "Besitzerkarte mit einer echten Biografie, die nicht dem Anzeigenamen entspricht. Seed GET /me mit name: 'Ada', aboutMe: 'I build on Bitcoin', Einrichtung abgeschlossen. Zeigt ausgefüllten Über-mich-Text plus den nur aus einem Symbol bestehenden Bleistift (Über mich bearbeiten), nicht den leeren Aufruf (Erzähl anderen, wer du bist. / Schreib dein Über mich).",

@@ -1950,6 +1950,18 @@ username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts welcome shop edit save rejected](images/welcome-shop-edit-save-rejected.png)
 
+### Variant: overlay-username-invalid
+
+**Continue** after **.alice** in the dialog **Add your 21.gifts name** shows **Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit**.
+
+![21.gifts welcome overlay username invalid](images/welcome-overlay-username-invalid.png)
+
+### Variant: install-open
+
+On iPhone, **Menu** then **Install app** opens the dialog **Add 21.gifts to your Home Screen**.
+
+![21.gifts welcome install](images/welcome-install-open.png)
+
 ## Screen: /[npub]
 
 - **URL:** `/{npub}` — public shop identity. The one root segment must be a Nostr npub matching `^npub1[02-9ac-hj-np-z]{58}$` or 64 lowercase hex. Static routes such as `/shops`, `/messages`, and `/about` keep their App Router precedence. Invalid or unknown values render the existing `/404` screen. A known hex key follows api `GET /shops/:hex` and the app answers 308 to the canonical `/{npub}`.
@@ -3770,6 +3782,12 @@ update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No acc
 username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts member shop edit save rejected](images/members-shop-edit-save-rejected.png)
+
+### Variant: overlay-username-invalid
+
+**Continue** after **.alice** in the **Add your 21.gifts name** dialog on an open member note shows **Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit**.
+
+![21.gifts member overlay username invalid](images/members-overlay-username-invalid.png)
 
 ## Screen: /members/[accountId]/verify
 

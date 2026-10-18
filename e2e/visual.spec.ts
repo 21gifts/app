@@ -9348,6 +9348,125 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-overlay-username');
   });
 
+  test('state /members overlay-username-invalid', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    const noteId = '33333333-3333-4333-8333-333333333333';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: null,
+          location: null,
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: ['username'],
+        }),
+      });
+    });
+    await page.route(/\/me\/username$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'invalid' }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'carol@walletofsatoshi.com',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: {
+            id: noteId,
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+          },
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: noteId,
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Hello from my profile note.',
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${noteId}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.getByLabel('Your reaction')).toBeVisible();
+    await page.getByLabel('Your reaction').fill('Hello');
+    await page.getByLabel('Amount').fill('1');
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Add your 21.gifts name' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('textbox', { name: 'Your 21.gifts name' }).fill('.alice');
+    await dialog.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      dialog.getByRole('alert').filter({
+        hasText:
+          'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
+      }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-members-overlay-username-invalid');
+  });
+
   test('state /members staff-verify', async ({ page }) => {
     const staffId = '11111111-1111-4111-8111-111111111111';
     const memberId = '22222222-2222-4222-8222-222222222222';
@@ -18372,6 +18491,31 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-menu');
   });
 
+  test('welcome install-open', async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'userAgent', {
+        configurable: true,
+        get: () =>
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+      });
+      Object.defineProperty(navigator, 'standalone', {
+        configurable: true,
+        get: () => false,
+      });
+    });
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const install = page.getByRole('button', { name: 'Install app' });
+    await expect(install).toBeVisible();
+    await install.click();
+    await expect(
+      page.getByRole('heading', { name: 'Add 21.gifts to your Home Screen' }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-install-open', false);
+  });
+
   async function menuLayout(page: Page): Promise<'lifted' | 'sheet' | 'dropdown'> {
     const sheet = await page.locator('html').getAttribute('data-menu-sheet');
     const cls = (await page.locator('#signed-in-menu').getAttribute('class')) ?? '';
@@ -18943,6 +19087,53 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('dialog', { name: 'Add your 21.gifts name' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-overlay-username');
+  });
+
+  test('welcome overlay-username-invalid', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: null,
+          location: null,
+          lightningAddress: 'ada@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: ['username'],
+        }),
+      });
+    });
+    await page.route(/\/me\/username$/, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'invalid' }),
+      });
+    });
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+    await page.getByLabel('Your message').fill('Hello');
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Add your 21.gifts name' });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('textbox', { name: 'Your 21.gifts name' }).fill('.alice');
+    await dialog.getByRole('button', { name: 'Continue' }).click();
+    await expect(
+      dialog.getByRole('alert').filter({
+        hasText:
+          'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
+      }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-overlay-username-invalid');
   });
 
   test('welcome overlay-introduce', async ({ page }) => {

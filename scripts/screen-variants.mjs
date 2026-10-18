@@ -2636,6 +2636,13 @@ export const SCREEN_VARIANTS = [
     needle: "shotScreen(page, 'state-members-shop-edit-save-rejected')",
   },
   {
+    route: '/members/[accountId]',
+    id: 'overlay-username-invalid',
+    image: 'members-overlay-username-invalid.png',
+    visual: 'state-members-overlay-username-invalid',
+    needle: "shotScreen(page, 'state-members-overlay-username-invalid')",
+  },
+  {
     route: '/members/[accountId]/verify',
     id: 'default',
     image: 'members-verify.png',
@@ -5100,6 +5107,20 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-shop-edit-save-rejected.png',
     visual: 'state-welcome-shop-edit-save-rejected',
     needle: "shotScreen(page, 'state-welcome-shop-edit-save-rejected')",
+  },
+  {
+    route: '/welcome',
+    id: 'overlay-username-invalid',
+    image: 'welcome-overlay-username-invalid.png',
+    visual: 'state-welcome-overlay-username-invalid',
+    needle: "shotScreen(page, 'state-welcome-overlay-username-invalid')",
+  },
+  {
+    route: '/welcome',
+    id: 'install-open',
+    image: 'welcome-install-open.png',
+    visual: 'state-welcome-install-open',
+    needle: "shotScreen(page, 'state-welcome-install-open', false)",
   },
   {
     route: '/[npub]',
