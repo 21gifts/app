@@ -413,7 +413,8 @@ export const SCREEN_VARIANTS = [
     id: 'invalid',
     image: 'setup-username-invalid.png',
     visual: 'state-setup-username-invalid',
-    needle: 'Allowed: a–z, 0–9, hyphen, underscore and dot',
+    needle:
+      'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
   },
   {
     route: '/setup/address',

@@ -2110,9 +2110,9 @@
     "fil": "Naka-sign in na may pangalang ipinapakita (o isang nilaktawang pangalan) at walang username. Ang 21.gifts name mo, ang patlang na username, at Magpatuloy. Isang Menu sa kanan sa itaas."
   },
   "/setup/username:invalid": {
-    "de": "Nach einem ungültigen Benutzernamen und Weiter siehst du den Hinweis Erlaubt sind a–z, 0–9, Bindestrich, Unterstrich und Punkt.",
-    "es": "Tras un nombre de usuario no válido y Continuar, se ve Se permiten a–z, 0–9, guion, guion bajo y punto.",
-    "fil": "Pagkatapos ng hindi wastong username at Magpatuloy, nakikita ang Pinapayagan: a–z, 0–9, hyphen, underscore at tuldok."
+    "de": "Nach einem ungültigen Benutzernamen und Weiter siehst du den Hinweis 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer.",
+    "es": "Tras un nombre de usuario no válido y Continuar, se ve De 1 a 32 caracteres: a–z, 0–9, guion, guion bajo o punto, empezando por una letra o un número.",
+    "fil": "Pagkatapos ng hindi wastong username at Magpatuloy, nakikita ang 1–32 character: a–z, 0–9, hyphen, underscore, o tuldok, nagsisimula sa letra o numero."
   },
   "/welcome:daily-payout-stopped-apply": {
     "de": "Benutzername joey-rosima, beliebige Rolle, sieht den Link Bewerben unter Tägliche Auszahlung gestoppt, nicht den Pausensatz. Dieser Link ist nicht der Bewerbungsablauf.",

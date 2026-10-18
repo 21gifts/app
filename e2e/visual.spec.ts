@@ -2830,7 +2830,8 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(
       page.getByRole('alert').filter({
-        hasText: 'Allowed: a–z, 0–9, hyphen, underscore and dot',
+        hasText:
+          'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
       }),
     ).toBeVisible();
     await shotScreen(page, 'state-setup-username-invalid');

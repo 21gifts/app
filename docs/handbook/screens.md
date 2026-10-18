@@ -476,7 +476,7 @@ Signed in with a display name (or a skipped name) and no username. **Your 21.gif
 
 ### Variant: invalid
 
-**Continue** after an invalid username shows **Allowed: a–z, 0–9, hyphen, underscore and dot**.
+**Continue** after an invalid username shows **Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit**.
 
 ![21.gifts username invalid](images/setup-username-invalid.png)
 

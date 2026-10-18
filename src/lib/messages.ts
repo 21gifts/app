@@ -256,7 +256,8 @@ const en = {
   'setup.usernameHint':
     'Your address will then look like this: you@21.gifts. Bitcoin still arrives in your Wallet of Satoshi.',
   'setup.usernameEmpty': 'Enter a username',
-  'setup.usernameInvalid': 'Allowed: a–z, 0–9, hyphen, underscore and dot',
+  'setup.usernameInvalid':
+    'Use 1–32 characters: a–z, 0–9, hyphen, underscore, or dot, starting with a letter or digit',
   'setup.usernameTaken': 'That username is already taken',
   'setup.usernameRequest': 'Could not save your username',
   'setup.addressTitle': 'Your Wallet of Satoshi address',
@@ -1441,7 +1442,8 @@ const de = {
   'setup.usernameHint':
     'Deine Adresse sieht dann so aus: du@21.gifts. Bitcoin kommt weiterhin in deiner Wallet of Satoshi an.',
   'setup.usernameEmpty': 'Gib einen Benutzernamen ein',
-  'setup.usernameInvalid': 'Erlaubt sind a–z, 0–9, Bindestrich, Unterstrich und Punkt',
+  'setup.usernameInvalid':
+    '1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, am Anfang ein Buchstabe oder eine Ziffer',
   'setup.usernameTaken': 'Dieser Name ist schon vergeben',
   'setup.usernameRequest': 'Dein Benutzername konnte nicht gespeichert werden',
   'setup.addressTitle': 'Deine Wallet of Satoshi-Adresse',
@@ -2658,7 +2660,8 @@ const es = {
   'setup.usernameHint':
     'Tu dirección se verá así: tu@21.gifts. El Bitcoin sigue llegando a tu Wallet of Satoshi.',
   'setup.usernameEmpty': 'Escribe un nombre de usuario',
-  'setup.usernameInvalid': 'Se permiten a–z, 0–9, guion, guion bajo y punto',
+  'setup.usernameInvalid':
+    'De 1 a 32 caracteres: a–z, 0–9, guion, guion bajo o punto, empezando por una letra o un número',
   'setup.usernameTaken': 'Ese nombre de usuario ya está en uso',
   'setup.usernameRequest': 'No se pudo guardar el nombre de usuario',
   'setup.addressTitle': 'Tu Wallet of Satoshi address',
@@ -3850,7 +3853,8 @@ const fil = {
   'setup.usernameHint':
     'Ganito ang magiging hitsura ng address mo: ikaw@21.gifts. Sa Wallet of Satoshi mo pa rin dumarating ang Bitcoin.',
   'setup.usernameEmpty': 'Maglagay ng username',
-  'setup.usernameInvalid': 'Pinapayagan: a–z, 0–9, hyphen, underscore at tuldok',
+  'setup.usernameInvalid':
+    '1–32 character: a–z, 0–9, hyphen, underscore, o tuldok, nagsisimula sa letra o numero',
   'setup.usernameTaken': 'Nakuha na ang username na iyan',
   'setup.usernameRequest': 'Hindi ma-save ang username',
   'setup.addressTitle': 'Ang Wallet of Satoshi address mo',
