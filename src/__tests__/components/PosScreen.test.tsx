@@ -1215,7 +1215,7 @@ describe('PosScreen', () => {
       vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] })),
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: PAID, history: [PAID] })),
       );
       vi.mocked(logInteraction).mockClear();
       renderWithLocale(<PosScreen />);
@@ -1331,7 +1331,7 @@ describe('PosScreen', () => {
       });
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [] })),
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: PAID, history: [] })),
       );
       renderWithLocale(<PosScreen />);
       expect(within(await confirmation()).getByRole('link', { name: 'New payment' })).toBeTruthy();
@@ -1339,7 +1339,9 @@ describe('PosScreen', () => {
     });
 
     it('turns Paid the moment the wallet receives the open amount, without asking the api', async () => {
-      const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] }));
+      const fetchMock = vi
+        .fn()
+        .mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] }));
       vi.stubGlobal('fetch', fetchMock);
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -1357,7 +1359,7 @@ describe('PosScreen', () => {
     it('also counts the open amount the wallet receives after its fee', async () => {
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] })),
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] })),
       );
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -1368,7 +1370,7 @@ describe('PosScreen', () => {
     it('ignores another amount, and any payment while no charge was open', async () => {
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue(jsonResponse({ charge: null, history: [] })),
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: null, history: [] })),
       );
       const empty = renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
@@ -1377,7 +1379,7 @@ describe('PosScreen', () => {
       empty.unmount();
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] })),
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] })),
       );
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -1389,7 +1391,7 @@ describe('PosScreen', () => {
     it('does not listen to the wallet without a session or after the till unmounts', async () => {
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] })),
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] })),
       );
       const { unmount } = renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -1407,7 +1409,7 @@ describe('PosScreen', () => {
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce(jsonResponse({ charge: ended, history: [ended] }))
-        .mockResolvedValue(jsonResponse({ charge: null, history: [ended] }));
+        .mockImplementation(async () => jsonResponse({ charge: null, history: [ended] }));
       vi.stubGlobal('fetch', fetchMock);
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
@@ -1426,7 +1428,7 @@ describe('PosScreen', () => {
         vi
           .fn()
           .mockResolvedValueOnce(jsonResponse({ charge: old, history: [old] }))
-          .mockResolvedValue(jsonResponse({ charge: null, history: [old] })),
+          .mockImplementation(async () => jsonResponse({ charge: null, history: [old] })),
       );
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
@@ -1455,7 +1457,7 @@ describe('PosScreen', () => {
       // The api has not seen the payment yet and keeps returning the charge open.
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] })),
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] })),
       );
       const till = renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -1475,7 +1477,7 @@ describe('PosScreen', () => {
     it('keeps a closed confirmation closed on the next till', async () => {
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] })),
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: PAID, history: [PAID] })),
       );
       const first = renderWithLocale(<PosScreen />);
       fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
@@ -1489,7 +1491,7 @@ describe('PosScreen', () => {
     it('starts over for another session', async () => {
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] })),
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] })),
       );
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -1519,7 +1521,9 @@ describe('PosScreen', () => {
 
     it('never asks the api on a timer while a charge is open', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
-      const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] }));
+      const fetchMock = vi
+        .fn()
+        .mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] }));
       vi.stubGlobal('fetch', fetchMock);
       renderWithLocale(<PosScreen />);
       await act(async () => {
@@ -1538,7 +1542,7 @@ describe('PosScreen', () => {
         .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
         // The api has not seen the payment yet: the charge stays paid on this till.
         .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
-        .mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] }));
+        .mockImplementation(async () => jsonResponse({ charge: PAID, history: [PAID] }));
       vi.stubGlobal('fetch', fetchMock);
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -1577,7 +1581,7 @@ describe('PosScreen', () => {
         .fn()
         .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
         .mockResolvedValueOnce(jsonResponse({ charge: null, history: [OPEN] }))
-        .mockResolvedValue(jsonResponse({ charge: newer, history: [newer, OPEN] }));
+        .mockImplementation(async () => jsonResponse({ charge: newer, history: [newer, OPEN] }));
       vi.stubGlobal('fetch', fetchMock);
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -1599,7 +1603,7 @@ describe('PosScreen', () => {
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce(jsonResponse({ charge: OPEN, history: [OPEN] }))
-        .mockResolvedValue(jsonResponse({ charge: older, history: [older] }));
+        .mockImplementation(async () => jsonResponse({ charge: older, history: [older] }));
       vi.stubGlobal('fetch', fetchMock);
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -1614,7 +1618,9 @@ describe('PosScreen', () => {
     });
 
     it('reads the till again only when the tab becomes visible, not when it is hidden', async () => {
-      const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] }));
+      const fetchMock = vi
+        .fn()
+        .mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] }));
       vi.stubGlobal('fetch', fetchMock);
       const state = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
       renderWithLocale(<PosScreen />);
@@ -1634,7 +1640,9 @@ describe('PosScreen', () => {
     it('pays the open charge on sight under the pos-received pin in a Playwright build', async () => {
       process.env.NEXT_PUBLIC_E2E_NOW = '2026-09-20T12:00:00.000Z';
       window.history.replaceState({}, '', '/pos?visual=pos-received');
-      const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] }));
+      const fetchMock = vi
+        .fn()
+        .mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] }));
       vi.stubGlobal('fetch', fetchMock);
       renderWithLocale(<PosScreen />);
       expect(within(await confirmation()).getByText('₿21')).toBeTruthy();
@@ -1646,7 +1654,7 @@ describe('PosScreen', () => {
       window.history.replaceState({}, '', '/pos?visual=pos-received');
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue(jsonResponse({ charge: OPEN, history: [OPEN] })),
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] })),
       );
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
@@ -1657,7 +1665,7 @@ describe('PosScreen', () => {
     it('lets the amount page open a new payment after a paid charge', async () => {
       vi.stubGlobal(
         'fetch',
-        vi.fn().mockResolvedValue(jsonResponse({ charge: PAID, history: [PAID] })),
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: PAID, history: [PAID] })),
       );
       renderWithLocale(<PosAmount />);
       expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
