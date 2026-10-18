@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemberHabits } from '@/app/habit-tracker/MemberHabits';
+import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -2699,8 +2700,16 @@ describe('MemberHabits', () => {
     await waitFor(() => {
       expect(screen.queryByText("Can't receive yet")).toBeNull();
     });
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
-    expect(screen.queryByLabelText('Amount')).toBeNull();
+    // The late invoice opened no pay sheet, and the closed gift's amount box is gone once its
+    // fold's hold ends.
+    expect(document.querySelector('[data-pay-sheet]')).toBeNull();
+    await waitFor(
+      () => {
+        expect(screen.queryByLabelText('Amount')).toBeNull();
+      },
+      { timeout: PAY_SHEET_HOLD_MS + 1000 },
+    );
+    expect(document.querySelector('[data-pay-sheet]')).toBeNull();
   });
 
   it('does not invoice until the spot rate read has settled', async () => {

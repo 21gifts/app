@@ -246,7 +246,7 @@ describe('InboxScreen counterpart who cannot receive', () => {
     const { rerender } = renderWithLocale(
       <InboxScreen {...inboxScreenProps({ invoice, payWaiting: true })} />,
     );
-    expect(screen.getByText('Pay ₿21')).toBeTruthy();
+    expect(document.querySelector('[role="dialog"][data-pay-sheet]')).not.toBeNull();
     rerender(
       <LocaleProvider locale="en" messages={getCatalog('en')}>
         <InboxScreen
@@ -258,7 +258,9 @@ describe('InboxScreen counterpart who cannot receive', () => {
         />
       </LocaleProvider>,
     );
-    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    // The sheet leaves like a cancel: nothing went out, so no success step.
+    expect(document.querySelector('[data-pay-sheet-layer="open"]')).toBeNull();
+    expect(document.querySelector('[data-pay-sheet="success"]')).toBeNull();
   });
 });
 

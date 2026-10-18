@@ -10598,7 +10598,9 @@ describe('ForumBoard author who cannot receive', () => {
       onPayCancel,
     };
     const { rerender } = renderWithLocale(board({ ...props, messages: [note] }));
-    expect(screen.getByText('Thanks for the bread')).toBeTruthy();
+    // The reaction's sheet is open over the card, the form behind it disabled.
+    expect(screen.getByRole('dialog', { name: `Send to ${note.name}` })).toBeTruthy();
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(true);
     rerender(
       <LocaleProvider locale="en" messages={getCatalog('en')}>
         <ThemeProvider>
@@ -10610,7 +10612,9 @@ describe('ForumBoard author who cannot receive', () => {
       </LocaleProvider>,
     );
     expect(onPayCancel).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText('Thanks for the bread')).toBeNull();
+    // The sheet leaves like a cancel: nothing went out, so no success step.
+    expect(document.querySelector('[data-pay-sheet-layer="open"]')).toBeNull();
+    expect(document.querySelector('[data-pay-sheet="success"]')).toBeNull();
   });
 
   it('keeps the posting-fee sheet on a note whose author cannot receive', () => {
@@ -10621,7 +10625,6 @@ describe('ForumBoard author who cannot receive', () => {
         payMessageId: 'm1',
         payHost: 'composer',
         payInvoice: { messageId: 'm1', pr: 'lnbc1', amountSats: 1 },
-        payWaiting: true,
         onPayCancel,
       }),
     );

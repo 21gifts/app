@@ -450,7 +450,7 @@ describe('InboxLoader', () => {
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => {
-      expect(screen.getByText('Pay ₿21')).toBeTruthy();
+      expect(document.querySelector('[data-pay-sheet-layer="open"]')).not.toBeNull();
     });
     act(() => {
       useAuthStore.setState({ session: 'sess-2' });
@@ -458,9 +458,11 @@ describe('InboxLoader', () => {
     await act(async () => {
       resolveReload?.([{ ...THREAD, canReceive: false }]);
     });
+    // The sheet leaves like a cancel: nothing went out, so no success step.
     await waitFor(() => {
-      expect(screen.queryByText('Pay ₿21')).toBeNull();
+      expect(document.querySelector('[data-pay-sheet-layer="open"]')).toBeNull();
     });
+    expect(document.querySelector('[data-pay-sheet="success"]')).toBeNull();
     expect(screen.getByText("Can't receive yet")).toBeTruthy();
   });
 
