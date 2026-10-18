@@ -112,7 +112,7 @@ The only state: three convictions, verse, and forum CTA, marketing chrome.
 
 ## Screen: /stats/[day]
 
-- **URL:** `/stats/YYYY-MM-DD` — public list of outbound gifts that UTC day. Invalid dates 404.
+- **URL:** `/stats/YYYY-MM-DD` — public list of outbound donations that UTC day. Invalid dates 404.
 - **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow), an **All stats** link to `/stats` (not a second back control), heading **Donations on {day}**, a **UTC day** date input, then either the donation table (Time, Recipient, ₿, selected fiat code) with a FiatPicker **only when unsigned**, empty copy **No donations recorded on this day.**, **Loading…**, or **Try again**. Signed-in visitors still see preferred-fiat amounts and cannot change the code here. Summary `{n} donation(s) · ₿ · formatFiatDisplay(total, preferred fiat, numberFormat)`. Stats body copy stays English.
 - **Actions:** Pick another UTC day in the date input (navigates to `/stats/{next}`). When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Open **All stats**. Change language. Number format is a signed-in `/profile` settings row next to theme, not Menu chrome, and not on this public header. Header **Log in** goes to `/login`.
 - **Calls:** `GiftDayPage`, `DayLoader`, `GiftDayTable`, `FiatPicker`, `fetchGiftDay` (`GET /gifts?day=`).
@@ -122,7 +122,7 @@ The only state: three convictions, verse, and forum CTA, marketing chrome.
 
 Loaded day with at least one donation row (recipient **alice**).
 
-![21.gifts gifts on a day](images/stats-day.png)
+![21.gifts donations on a day](images/stats-day.png)
 
 ### Variant: empty
 
@@ -144,9 +144,9 @@ Fetch failed. Button **Try again**.
 
 ## Screen: /stats
 
-- **URL:** `/stats` — public gift totals and a posts total (no auth gate).
+- **URL:** `/stats` — public donation totals and a posts total (no auth gate).
 - **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, heading **Donations**. When post stats load, a **Posts** total sits above the donation cards: living notes and replies counted together, hidden notes excluded, with a bar on each UTC day that has posts and a gap where a day has none. A failed post fetch omits that block and still shows the donation diagrams. Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, donations, people, period), a FiatPicker (CHF | EUR | USD | PHP) above the cards **only when unsigned**, then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list), **By person** and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, person and month rescale bar size while labels stay both units. Signed-in visitors still display and scale with the preferred code and cannot change it here. Empty database copy: **No donations recorded yet.** Stats body copy stays English.
-- **Actions:** Change language. Read the posts total and the gift charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** / **By person** / **By month** between ₿ and the selected fiat. Header **Stats** stays on this page; **Log in** goes to `/login`.
+- **Actions:** Change language. Read the posts total and the donation charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** / **By person** / **By month** between ₿ and the selected fiat. Header **Stats** stays on this page; **Log in** goes to `/login`.
 - **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `FiatPicker`, `fetchGiftStats` (same-origin `GET /gifts/stats`), `fetchPostStats` (same-origin `GET /messages/stats`), `LanguageSwitcher`.
 
 ### Variant: default
