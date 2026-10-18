@@ -233,7 +233,7 @@ function shopStatusKey(status: ShopPaymentStatus): MessageKey {
     return 'pos.paid';
   }
   if (status === 'open') {
-    return 'forum.payWaiting';
+    return 'pay.waiting';
   }
   return 'pos.expired';
 }
@@ -358,6 +358,8 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     if (charge === null && mintedExpiresAt === null && shopId === null) {
       return;
     }
+    // The clock last moved at mount: a payment opened minutes later counts from now.
+    setNow(Date.now());
     const timer = setInterval(() => {
       setNow(Date.now());
     }, 1000);

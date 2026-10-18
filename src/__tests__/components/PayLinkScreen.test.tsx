@@ -1943,6 +1943,39 @@ describe('PayLinkScreen shop payment', () => {
     expect(fetchedUrls().filter((url) => url === '/pay/ada/payment')).toHaveLength(1);
   });
 
+  it('counts the time left from the opening, not from when the page loaded', async () => {
+    let clock = FIXED - 120_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => clock);
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        return Response.json({
+          payment: 'p1',
+          expiresAt: new Date(FIXED + 300_000).toISOString(),
+        });
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(shopPayLink());
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        return pending();
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    clock = FIXED;
+    await enterAmount();
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    expect(screen.getAllByText(/left/).map((node) => node.textContent)).toEqual([
+      '5:00 left',
+      '1:30 left',
+    ]);
+  });
+
   it('reads the pay link again for the same or a past quote expiry', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     let links = 0;
