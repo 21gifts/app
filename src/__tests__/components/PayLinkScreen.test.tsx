@@ -1703,6 +1703,55 @@ describe('PayLinkScreen shop payment', () => {
     expect(screen.queryByText('Waiting for payment…')).toBeNull();
   });
 
+  it('counts a reloaded till charge from now, not from when the page loaded', async () => {
+    let clock = FIXED - 120_000;
+    vi.spyOn(Date, 'now').mockImplementation(() => clock);
+    let profiles = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        return Response.json(
+          { error: 'A payment is already open', code: 'payment_open' },
+          { status: 409 },
+        );
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json({ tag: 'payRequest' });
+      }
+      if (url.endsWith('/invoice')) {
+        return Response.json({ pr: 'lnbc210n1paylink', amountSats: 21 });
+      }
+      if (url === '/pay/ada') {
+        profiles += 1;
+      }
+      return Response.json(profiles === 1 ? profile : chargeProfile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    // Every text the page ever paints, including values replaced before an effect ran.
+    const painted: string[] = [];
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        if (record.type === 'characterData') {
+          painted.push(record.oldValue ?? '', record.target.textContent ?? '');
+        }
+        record.addedNodes.forEach((node) => painted.push(node.textContent ?? ''));
+      }
+    });
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      characterDataOldValue: true,
+    });
+    clock = FIXED;
+    await enterAmount();
+    expect(await screen.findByText('5:00 left')).toBeTruthy();
+    observer.disconnect();
+    expect(profiles).toBe(2);
+    expect(painted.filter((text) => /7:00 left/.test(text))).toEqual([]);
+  });
+
   it('mints on a 4xx answer of the payment route', async () => {
     mockShopFetch(async (input) => {
       const url = String(input);

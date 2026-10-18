@@ -321,6 +321,8 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         if (!active) {
           return;
         }
+        // Same render as a reloaded charge: its first paint already counts from now.
+        setNow(Date.now());
         setProfile({
           name: body.name,
           username: body.username,
