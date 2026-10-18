@@ -9167,7 +9167,11 @@ describe('ForumBoard in-app wallet pay', () => {
   });
 
   describe('reaction form behind the reaction pay sheet', () => {
-    function reactionBoard(open: boolean, onPayCancel: () => void = () => undefined): ReactElement {
+    function reactionBoard(
+      open: boolean,
+      onPayCancel: () => void = () => undefined,
+      onToggleExpand: (messageId: string) => void = () => undefined,
+    ): ReactElement {
       return (
         <ForumBoard
           messages={[SAMPLE]}
@@ -9181,6 +9185,7 @@ describe('ForumBoard in-app wallet pay', () => {
           formError={null}
           {...idleProps}
           onPayCancel={onPayCancel}
+          onToggleExpand={onToggleExpand}
           expandedId="m1"
           replies={[]}
           replyDraft="Hi Bob"
@@ -9207,6 +9212,25 @@ describe('ForumBoard in-app wallet pay', () => {
           vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS);
         });
         expect(field.disabled).toBe(false);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('keeps the card as it is through the success step', () => {
+      vi.useFakeTimers();
+      try {
+        vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
+        const onToggleExpand = vi.fn();
+        const view = renderWithLocale(reactionBoard(true, () => undefined, onToggleExpand));
+        view.rerender(reactionBoard(false, () => undefined, onToggleExpand));
+        fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+        expect(onToggleExpand).not.toHaveBeenCalled();
+        act(() => {
+          vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS);
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Hide reactions' }));
+        expect(onToggleExpand).toHaveBeenCalledWith('m1');
       } finally {
         vi.useRealTimers();
       }

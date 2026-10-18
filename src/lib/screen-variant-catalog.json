@@ -3552,6 +3552,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:posts-open-loan-lent",
+    "label": "/members/[accountId] posts-open-loan-lent",
+    "visual": "state-members-posts-open-loan-lent",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-open-repay-today",
     "label": "/members/[accountId] posts-open-repay-today",
     "visual": "state-members-posts-open-repay-today",
@@ -4890,6 +4896,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:thread-pay-sheet-success",
+    "label": "/messages thread-pay-sheet-success",
+    "visual": "state-messages-thread-pay-sheet-success",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages:thread-wallet-required",
     "label": "/messages thread-wallet-required",
     "visual": "state-messages-thread-wallet-required",
@@ -5613,6 +5625,12 @@
     "id": "/messages/[id]:loan-pay-full",
     "label": "/messages/[id] loan-pay-full",
     "visual": "state-messages-id-loan-pay-full",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-lent",
+    "label": "/messages/[id] loan-lent",
+    "visual": "state-messages-id-loan-lent",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

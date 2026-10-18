@@ -255,6 +255,49 @@ describe('PaySheet', () => {
     expect(document.querySelector('[data-pay-sheet-layer]')?.hasAttribute('inert')).toBe(false);
     fireEvent.click(closeButton());
     expect(document.querySelector('[data-pay-sheet-layer]')?.hasAttribute('inert')).toBe(true);
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    expect(document.activeElement).toBe(opener);
+    view.unmount();
+    opener.remove();
+  });
+
+  it('gives focus back after the success step once the host has freed its controls', () => {
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+    function Host({ open }: { open: boolean }): ReactElement {
+      const hold = usePaySheetHold(open ? 'pay-1' : null);
+      opener.disabled = hold.held !== null;
+      return (
+        <Collapse show={open} holdMs={PAY_SHEET_HOLD_MS}>
+          <PaySheet
+            title="Send to Ana"
+            amountSats={500}
+            rateDay={RATE_DAY}
+            successTitle="Sent to Ana"
+            onClose={vi.fn()}
+            onSentChange={hold.sentChange}
+          >
+            <Sent />
+          </PaySheet>
+        </Collapse>
+      );
+    }
+    const view = renderWithLocale(<Host open />);
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    view.rerender(<Host open={false} />);
+    expect(opener.disabled).toBe(true);
+    act(() => {
+      vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS);
+    });
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    expect(opener.disabled).toBe(false);
     expect(document.activeElement).toBe(opener);
     view.unmount();
     opener.remove();
@@ -267,6 +310,9 @@ describe('PaySheet', () => {
     renderWithLocale(sheet(true, vi.fn()));
     opener.remove();
     fireEvent.click(closeButton());
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
     expect(document.activeElement).not.toBe(opener);
   });
 

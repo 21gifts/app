@@ -4219,6 +4219,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'posts-open-loan-lent',
+    image: 'members-posts-open-loan-lent.png',
+    visual: 'state-members-posts-open-loan-lent',
+    needle: "shotScreen(page, 'state-members-posts-open-loan-lent')",
+  },
+  {
+    route: '/members/[accountId]',
     id: 'posts-open-repay-today',
     image: 'members-posts-open-repay-today.png',
     visual: 'state-members-posts-open-repay-today',
@@ -5782,6 +5789,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages',
+    id: 'thread-pay-sheet-success',
+    image: 'messages-thread-pay-sheet-success.png',
+    visual: 'state-messages-thread-pay-sheet-success',
+    needle: "shotScreen(page, 'state-messages-thread-pay-sheet-success')",
+  },
+  {
+    route: '/messages',
     id: 'thread-wallet-required',
     image: 'messages-thread-wallet-required.png',
     visual: 'state-messages-thread-wallet-required',
@@ -6626,6 +6640,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-loan-pay-full.png',
     visual: 'state-messages-id-loan-pay-full',
     needle: 'state /messages/[id] loan-pay-full',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'loan-lent',
+    image: 'messages-id-loan-lent.png',
+    visual: 'state-messages-id-loan-lent',
+    needle: "shotScreen(page, 'state-messages-id-loan-lent')",
   },
   {
     route: '/messages/[id]',

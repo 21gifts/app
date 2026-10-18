@@ -3408,7 +3408,7 @@ Pinned fixture (`?visual=wallet-pay-confirm`, Playwright builds only). The same 
 
 ### Variant: wallet-pay-paying
 
-Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only). The same sheet with a spinner and **Paying from your wallet…**; there is no waiting line. When the existing long-poll sees the payment, the sheet shows its success step (green check, **Sent to Carol**, the amount) for about 1.4 s, then slides away (see `pay-sheet-success`).
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only). The same sheet with a spinner and **Paying from your wallet…**; there is no waiting line. When the existing long-poll sees the payment, the sheet shows its success step (green check, **Sent to Carol**, the amount) for about 1.4 s, then slides away (the same success step as `pay-sheet-success`, here **Sent to Carol**).
 
 ![21.gifts welcome wallet pay paying](images/welcome-wallet-pay-paying.png)
 
@@ -4585,6 +4585,12 @@ The same loan after **₿210** and `Count me in!` were posted. The pay sheet sli
 Carol's loan once it is full (`sats` equals `goalSats`): the loan block reads **Fully funded** and offers no **Lend**, so the money reaction is opened with **React** and keeps the label **Amount**. After **₿210** is posted, the pay sheet reads **Send to Carol**, **₿210** large with **$0.21** under it, and the full-width wallet button **Send ₿210**. Behind it, at the top of the disabled reaction form, the note says **This loan is already fully funded. What you send now is a gift to Carol.**
 
 ![21.gifts member posts loan pay full](images/members-posts-open-loan-pay-full.png)
+
+### Variant: posts-open-loan-lent
+
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only), with the page clock held. Carol's loan (`sats: 10500` of `goalSats: 21000`) after **Lend**, **₿210** and `Count me in!` were posted; the payment poll then sees the loan's sats rise, so the payment flow closed the sheet, not the member. In place of the pay step the sheet over the dimmed profile shows its success step, a green check, **Lent to Carol** and **₿210** large with **$0.21** under it, with no button. Behind it the loan block counts **₿10'710 · $10.71 of ₿21'000 · $21.00 lent**, and the reaction form, now empty, stays disabled while the success step shows. After 1.4 s the sheet slides away; a tap on the dimmed page or Escape lets it go at once.
+
+![21.gifts member posts loan lent](images/members-posts-open-loan-lent.png)
 
 ### Variant: posts-open-loan-tag-open
 
@@ -6034,6 +6040,12 @@ Pinned fixture (`?visual=wallet-pay-unconfirmed`, Playwright builds only, invoic
 
 ![21.gifts inbox thread wallet pay unconfirmed](images/messages-thread-wallet-pay-unconfirmed.png)
 
+### Variant: thread-pay-sheet-success
+
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only, invoice with a `sparkInvoice`), with the page clock held. Open thread, Amount **21** submitted, and the payment poll sees the new gift, so the inbox closed the payment, not the member: in place of the pay step the inbox pay sheet shows its success step, a green check, **Sent to 21.gifts** and **₿21** large with **$0.02** under it, with no button. Behind the dimmed thread the gift (**send ₿21**) has joined the thread, and the composer's **Amount** is empty and stays disabled while the success step shows. After 1.4 s the sheet slides away; a tap on the dimmed page or Escape lets it go at once.
+
+![21.gifts inbox thread pay sheet success](images/messages-thread-pay-sheet-success.png)
+
 ### Variant: thread-wallet-required
 
 Open thread, Amount **21** submitted, and the api answers the invoice with 400 and `code` `wallet_required` because the member's own wallet is not set up. No pay sheet opens; under the composer the wallet-required alert link leads to `/wallet`.
@@ -6859,6 +6871,12 @@ Signed-in permalink of Maria's loan that still collects (`sats: 10500` of `goalS
 Signed-in permalink of Maria's loan once it is full (`sats` equals `goalSats`): the loan block reads **Fully funded** and offers no **Lend**, and the open card's amount field keeps the label **Amount**. After **₿210** is posted, the pay sheet reads **Send to Maria**, **₿210** large with **$0.21** under it, and the full-width wallet button **Send ₿210**. Behind it, at the top of the disabled reaction form, the note says **This loan is already fully funded. What you send now is a gift to Maria.**
 
 ![21.gifts public message loan pay full](images/messages-id-loan-pay-full.png)
+
+### Variant: loan-lent
+
+Pinned fixture (`?visual=wallet-pay-paying`, Playwright builds only), with the page clock held. Signed-in permalink of Maria's loan (`sats: 10500` of `goalSats: 21000`) after **Lend**, **₿210** and `Count me in!` were posted; the payment poll then sees the loan's sats rise, so the payment flow closed the sheet, not the member. In place of the pay step the sheet over the dimmed permalink shows its success step, a green check, **Lent to Maria** and **₿210** large with **$0.21** under it, with no button. Behind it the loan block counts **₿10'710 · $10.71 of ₿21'000 · $21.00 lent**, and the reaction form, now empty, stays disabled while the success step shows. After 1.4 s the sheet slides away; a tap on the dimmed page or Escape lets it go at once.
+
+![21.gifts public message loan lent](images/messages-id-loan-lent.png)
 
 ### Variant: photos
 

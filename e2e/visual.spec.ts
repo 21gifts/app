@@ -11840,6 +11840,79 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-posts-open-loan-pay-full');
   });
 
+  test('state /members posts-open-loan-lent', async ({ page }) => {
+    const memberId = await seedCarolLoan(page);
+    const loanId = '44444444-4444-4444-8444-444444444444';
+    let paid = false;
+    // The payment poll: the loan's sats rise once the wallet's payment arrived.
+    await page.route(new RegExp(`/public-messages/${loanId}\\?`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: loanId,
+          accountId: '22222222-2222-4222-8222-222222222222',
+          name: 'Carol',
+          text: 'A loan for a sewing machine, paid back every day from the orders.',
+          createdAt: '2026-08-02T10:00:00.000Z',
+          sats: paid ? 10710 : 10500,
+          goalSats: 21000,
+          goalRepayable: true,
+          goalTermDays: 30,
+          payable: true,
+          hasPhoto: false,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'verified',
+          replyCount: 0,
+        }),
+      });
+    });
+    // The page clock holds the success step: its 1.4 s and the sheet's hold run on page timers.
+    await page.clock.install({ time: new Date('2026-10-07T10:00:00.000Z') });
+    await page.goto(`/members/${memberId}?visual=wallet-pay-paying`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByRole('button', { name: 'Lend' }).click();
+    // The reply block eases open first: type where the fields come to rest.
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
+    await page.getByLabel('Amount to lend').fill('210');
+    await page.getByLabel('Your reaction').fill('Count me in!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Lend to Carol' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByRole('status')).toHaveText('Paying from your wallet…');
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    paid = true;
+    // Move the clock only to the payment poll's next look; once the payment closed the sheet, its
+    // success step stays until the clock moves on.
+    const success = page.locator('[data-pay-sheet="success"]');
+    await expect(async () => {
+      await page.clock.runFor(500);
+      await expect(success.getByRole('status')).toContainText('Lent to Carol', {
+        timeout: 1_000,
+      });
+    }).toPass();
+    const status = success.getByRole('status');
+    await expect(status).toContainText('₿210');
+    await expect(success.locator('[data-swap="success"]')).toBeVisible();
+    await expect(page.locator('[data-pay-sheet-layer="open"]')).toBeAttached();
+    await expect(success.getByRole('button')).toHaveCount(0);
+    // Behind the dimmed page the loan counts the new sats; the emptied reaction form stays disabled.
+    await expect(page.getByText(/^₿10'710 · \$10\.71 of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
+    await expect(page.getByLabel('Amount to lend')).toHaveValue('');
+    await expect(page.getByLabel('Your reaction')).toHaveValue('');
+    await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    await paySheetAtRest(page);
+    expect(await insideFrameBody(success)).toBe(true);
+    await shotScreen(page, 'state-members-posts-open-loan-lent');
+  });
+
   test('state /members posts-open-loan-tag-open', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
@@ -16940,6 +17013,75 @@ test.describe('onboarding screens', () => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
     await shotScreen(page, 'state-messages-id-loan-pay-full');
+  });
+
+  test('state /messages/[id] loan-lent', async ({ page }) => {
+    const id = await seedMariaLoanNote(page);
+    let paid = false;
+    // The payment poll: the loan's sats rise once the wallet's payment arrived.
+    await page.route(new RegExp(`/public-messages/${id}\\?`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id,
+          accountId: 'acc_maria',
+          name: 'Maria',
+          text: 'The burner at our food stall broke. A loan for a new one, paid back every day from what we sell.',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: paid ? 10710 : 10500,
+          goalSats: 21000,
+          goalRepayable: true,
+          goalTermDays: 30,
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+        }),
+      });
+    });
+    // The page clock holds the success step: its 1.4 s and the sheet's hold run on page timers.
+    await page.clock.install({ time: new Date('2026-10-07T10:00:00.000Z') });
+    await page.goto(`/messages/${id}?visual=wallet-pay-paying`);
+    await page.getByRole('button', { name: 'Lend' }).click();
+    await expect(page.getByLabel('Amount to lend')).toBeFocused();
+    // The reply block eases open first: type once the form has come to rest.
+    await motionSettled(page);
+    await page.getByLabel('Amount to lend').fill('210');
+    await page.getByLabel('Your reaction').fill('Count me in!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    // The line under the amount eases in: click once it has come to rest.
+    await motionSettled(page);
+    await form.getByRole('button', { name: 'Post' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Lend to Maria' });
+    await expect(sheet).toBeVisible();
+    await paySheetAtRest(page);
+    await expect(sheet.getByRole('status')).toHaveText('Paying from your wallet…');
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    paid = true;
+    // Move the clock only to the payment poll's next look; once the payment closed the sheet, its
+    // success step stays until the clock moves on.
+    const success = page.locator('[data-pay-sheet="success"]');
+    await expect(async () => {
+      await page.clock.runFor(500);
+      await expect(success.getByRole('status')).toContainText('Lent to Maria', {
+        timeout: 1_000,
+      });
+    }).toPass();
+    const status = success.getByRole('status');
+    await expect(status).toContainText('₿210');
+    await expect(success.locator('[data-swap="success"]')).toBeVisible();
+    await expect(page.locator('[data-pay-sheet-layer="open"]')).toBeAttached();
+    await expect(success.getByRole('button')).toHaveCount(0);
+    // Behind the dimmed page the loan counts the new sats; the emptied reaction form stays disabled.
+    await expect(page.getByText(/^₿10'710 · \$10\.71 of ₿21'000 · \$21\.00 lent$/)).toBeVisible();
+    await expect(page.getByLabel('Amount to lend')).toHaveValue('');
+    await expect(page.getByLabel('Your reaction')).toHaveValue('');
+    await expect(page.getByLabel('Your reaction')).toBeDisabled();
+    await paySheetAtRest(page);
+    expect(await insideFrameBody(success)).toBe(true);
+    await shotScreen(page, 'state-messages-id-loan-lent');
   });
 
   test('state /messages/[id] shop-edit', async ({ page }) => {
@@ -29307,8 +29449,16 @@ test.describe('inbox screens', () => {
     await shotScreen(page, 'state-messages-thread-pay-sheet');
   });
 
-  /** Inbox thread whose gift invoice carries a `sparkInvoice`, opened with a wallet pin. */
-  async function openInboxWalletPay(page: Page, visual: string): Promise<Locator> {
+  /**
+   * Inbox thread whose gift invoice carries a `sparkInvoice`, opened with a wallet pin. The
+   * payment poll (`sinceMessageId`) hangs, or, given `paymentSeen`, answers with the messages it
+   * resolves to.
+   */
+  async function openInboxWalletPay(
+    page: Page,
+    visual: string,
+    paymentSeen?: Promise<unknown[]>,
+  ): Promise<Locator> {
     await fulfillRateDay(page);
     await seedAda(page);
     await page.route(/\/conversations$/, async (route) => {
@@ -29364,8 +29514,17 @@ test.describe('inbox screens', () => {
         }),
       });
     });
-    await page.route(/sinceMessageId=/, async () => {
-      /* hang — keep payWaiting while the sheet is open */
+    await page.route(/sinceMessageId=/, async (route) => {
+      if (paymentSeen === undefined) {
+        /* hang — keep payWaiting while the sheet is open */
+        return;
+      }
+      const messages = await paymentSeen;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages }),
+      });
     });
     await page.goto(`/messages?c=conv-21&visual=${visual}`);
     await expect(page.getByText('Hello team')).toBeVisible();
@@ -29413,6 +29572,52 @@ test.describe('inbox screens', () => {
       'This payment is not confirmed yet. Check your balance again later.',
     );
     await shotScreen(page, 'state-messages-thread-wallet-pay-unconfirmed');
+  });
+
+  test('messages thread-pay-sheet-success', async ({ page }) => {
+    let seen: (messages: unknown[]) => void = () => undefined;
+    const paymentSeen = new Promise<unknown[]>((resolve) => {
+      seen = resolve;
+    });
+    // The page clock holds the success step: its 1.4 s and the sheet's hold run on page timers.
+    await page.clock.install({ time: new Date('2026-10-07T10:00:00.000Z') });
+    const sheet = await openInboxWalletPay(page, 'wallet-pay-paying', paymentSeen);
+    await expect(sheet.getByRole('status')).toHaveText('Paying from your wallet…');
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    // The long poll sees the gift: the inbox closes the payment while the wallet reports it out.
+    seen([
+      {
+        id: 'm1',
+        name: '21.gifts',
+        text: 'Hello team',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        fromMe: false,
+        sats: 0,
+      },
+      {
+        id: 'gift-1',
+        name: 'Ada',
+        text: '',
+        createdAt: '2026-10-07T09:59:00.000Z',
+        fromMe: true,
+        sats: 21,
+      },
+    ]);
+    const success = page.locator('[data-pay-sheet="success"]');
+    const status = success.getByRole('status');
+    await expect(status).toContainText('Sent to 21.gifts');
+    await expect(status).toContainText('₿21');
+    await expect(success.locator('[data-swap="success"]')).toBeVisible();
+    await expect(page.locator('[data-pay-sheet-layer="open"]')).toBeAttached();
+    await expect(success.getByRole('button')).toHaveCount(0);
+    await expect(page.getByText('send ₿21')).toBeVisible();
+    // The amount stays disabled beside the held sheet, now empty.
+    await expect(page.getByLabel('Amount')).toBeDisabled();
+    await expect(page.getByLabel('Amount')).toHaveValue('');
+    await paySheetAtRest(page);
+    expect(await insideFrameBody(success)).toBe(true);
+    await shotScreen(page, 'state-messages-thread-pay-sheet-success');
   });
 
   test('messages thread-wallet-required', async ({ page }) => {

@@ -218,10 +218,18 @@ export function PaySheet({
 
   // A leaving sheet is out of reach (`inert` below) while its host still holds it: focus goes back
   // to what had it before the sheet opened, when that is still on the page.
+  // On the next frame, so a host that frees its controls when the sheet leaves (`usePaySheetHold`)
+  // has done so and the focus can land.
   useEffect(() => {
-    if (leaving && opener.current?.isConnected === true) {
-      opener.current.focus({ preventScroll: true });
+    if (!leaving) {
+      return;
     }
+    const frame = requestAnimationFrame(() => {
+      if (opener.current?.isConnected === true) {
+        opener.current.focus({ preventScroll: true });
+      }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [leaving]);
 
   // Escape closes the open payment, or lets the success step go at once.

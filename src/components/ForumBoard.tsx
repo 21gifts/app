@@ -875,7 +875,7 @@ export function ForumBoard({
   photoVersions = {},
   videoUrls = {},
   expandedId,
-  onToggleExpand,
+  onToggleExpand: onToggleExpandProp,
   replies,
   repliesLoading,
   repliesError,
@@ -926,6 +926,13 @@ export function ForumBoard({
       ? payInvoice.messageId
       : null,
   );
+  // Through the success step the card stays as it is: folding it would cut the held sheet short.
+  const onToggleExpand = (messageId: string): void => {
+    if (reactionHold.held !== null) {
+      return;
+    }
+    onToggleExpandProp(messageId);
+  };
   const postComposerShown =
     !hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer;
   const writerOpen = writer !== undefined && writer.open;
