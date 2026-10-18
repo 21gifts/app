@@ -881,8 +881,133 @@ test('Function: shopAddressProblem — Use this place stays off without an addre
   await page.getByRole('button', { name: 'Add a place' }).click();
   await page.locator('.h-64').click();
   await shopNameField(page).fill("Kiki's Bakery");
-  await expect(page.getByText('Enter the full address:')).toBeVisible();
+  await expect(
+    page.getByText(/Fill in: street, house number, postal code, city, country/),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+});
+
+test('Function: shopAddressProblems — address errors appear before confirm', async ({ page }) => {
+  await stubPlaceMap(page);
+  await seedSignedIn(page);
+  await fulfillForumMessages(page, []);
+  await page.goto('/shops');
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText("Add the shop's place and address.")).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  const name = page.getByLabel('Shop name', { exact: true });
+  await name.focus();
+  await name.blur();
+  await expect(page.getByText('Enter the shop name.')).toBeVisible();
+  await name.fill('x'.repeat(81));
+  await expect(page.getByText('The shop name must be at most 80 characters.')).toBeVisible();
+  await name.fill("Kiki's Bakery");
+  const street = page.getByLabel('Street', { exact: true });
+  await street.fill('x'.repeat(121));
+  await expect(page.getByText('The street must be 1–120 characters.')).toBeVisible();
+  const house = page.getByLabel('House number', { exact: true });
+  await house.fill('abc');
+  await expect(page.getByText('Starts with a digit, for example 12 or 12a.')).toBeVisible();
+  await expect(house).toHaveAttribute('aria-invalid', 'true');
+  const country = page.getByLabel('Country', { exact: true });
+  await country.focus();
+  await country.blur();
+  await expect(page.getByText('Choose a country.')).toBeVisible();
+  await country.selectOption('CH');
+  await page.getByLabel('Postal code', { exact: true }).fill('80');
+  await expect(page.getByText('Use 4 digits for Switzerland and Liechtenstein.')).toBeVisible();
+  await page.getByLabel('City', { exact: true }).fill('1234');
+  await expect(page.getByText('The city must contain a letter.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
+});
+
+test('shop summary keeps Post disabled with an off-screen reason', async ({ page }) => {
+  await seedSignedIn(page);
+  await fulfillForumMessages(page, []);
+  await page.goto('/shops');
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText("Add the shop's place and address.")).toBeVisible();
+  await page.getByRole('button', { name: 'Next' }).evaluate((node) => {
+    const button = node as HTMLButtonElement;
+    button.removeAttribute('disabled');
+    button.click();
+  });
+  await expect(page.getByText(/Describe the shop in at least 20 more characters/)).toBeVisible();
+  await page.getByRole('button', { name: 'Next' }).evaluate((node) => {
+    const button = node as HTMLButtonElement;
+    button.removeAttribute('disabled');
+    button.click();
+  });
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
+  await expect(page.getByText("Add the shop's place and address.")).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Post' })).toBeDisabled();
+});
+
+test('shop description and username rules appear while typing before submit', async ({ page }) => {
+  await stubPlaceMap(page);
+  await seedSignedIn(page);
+  await fulfillForumMessages(page, []);
+  await page.goto('/shops');
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  await fillShopAddress(page);
+  await page.getByRole('button', { name: 'Use this place' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  const text = page.getByLabel('Shop text');
+  await text.evaluate((node) => {
+    const field = node as HTMLTextAreaElement;
+    field.value = 'Fresh bread\u0001 every morning.';
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(
+    page.getByText(
+      'The description must not contain control characters other than line breaks.',
+    ),
+  ).toBeVisible();
+  await expect(text).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+  await text.fill('Fresh bread every morning.');
+  await page.getByRole('button', { name: 'Next' }).click();
+  const username = page.getByLabel('21.gifts username');
+  await username.fill('_');
+  await expect(
+    page.getByText(/Use 1–32 lowercase letters, digits, dots, hyphens, or underscores/),
+  ).toBeVisible();
+  await expect(username).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+});
+
+test('Function: shopUsernameProblem — an unknown valid username blocks Next', async ({ page }) => {
+  await stubPlaceMap(page);
+  await seedSignedIn(page);
+  await fulfillForumMessages(page, []);
+  await page.route(/\/forum\/mentions(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ accounts: [] }),
+    });
+  });
+  await page.goto('/shops');
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  await fillShopAddress(page);
+  await page.getByRole('button', { name: 'Use this place' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('21.gifts username').fill('missing');
+  await expect(page.getByText('No account with that username.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
 });
 
 test('Function: shopNameProblem — a street in the name is rejected', async ({ page }) => {
@@ -1009,9 +1134,9 @@ test('Function: shopApiProblem — a shop 400 is shown as localized copy', async
   await page.locator('.h-64').click();
   await fillShopAddress(page, 'Happyland');
   await page.getByRole('button', { name: 'Use this place' }).click();
-  await expect(page.getByRole('alert').filter({ hasText: 'Enter the shop name.' })).toHaveText(
-    'Enter the shop name.',
-  );
+  const name = page.getByLabel('Shop name', { exact: true });
+  await expect(name).toHaveAttribute('aria-invalid', 'true');
+  await expect(page.getByText('Enter the shop name.')).toBeVisible();
 });
 
 test('Function: ShopAddressFields — street, house number, postal code, city, country', async ({

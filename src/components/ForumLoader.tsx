@@ -71,8 +71,12 @@ import {
   ensureShopHashtag,
   isShopNote,
   shopApiProblem,
+  shopDescriptionProblem,
+  shopPlaceComplete,
+  shopUsernameProblem,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
+import { searchMentionAccounts } from '@/lib/mention-search';
 import { loadUnpaidSeenAt, saveUnpaidSeenAt } from '@/lib/forum-unpaid-seen';
 import { isForumVideoFile, prepareForumVideo, type ForumVideoPayload } from '@/lib/forum-video';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
@@ -328,7 +332,7 @@ function composeShopUsername(feed: 'living-room' | 'shops', username: string): s
   if (feed !== 'shops') {
     return null;
   }
-  const handle = username.trim().replace(/^@/, '');
+  const handle = username.trim().replace(/^@/, '').toLowerCase();
   return handle === '' ? null : handle;
 }
 
@@ -1889,6 +1893,41 @@ export function ForumLoader({
   ): Promise<void> => {
     /* v8 ignore next -- the composer is hidden without a session */
     if (session === null) return;
+    if (feed === 'shops') {
+      if (!shopPlaceComplete(pendingPlace)) {
+        setFormError('shopAddress');
+        notePostInFlightRef.current = false;
+        return;
+      }
+      const descriptionProblem = shopDescriptionProblem(trimmed, pendingPlace.label);
+      if (descriptionProblem !== null) {
+        setFormError(
+          descriptionProblem === 'controls' ? 'shopDescriptionControls' : 'shopDescription',
+        );
+        notePostInFlightRef.current = false;
+        return;
+      }
+      if (shopUsernameProblem(shopUsername) !== null) {
+        setFormError('usernameInvalid');
+        notePostInFlightRef.current = false;
+        return;
+      }
+      const handle = composeShopUsername(feed, shopUsername);
+      if (handle !== null) {
+        try {
+          const matches = await searchMentionAccounts(session, handle.toLowerCase());
+          if (!matches.some((row) => row.username.toLowerCase() === handle.toLowerCase())) {
+            setFormError('usernameMissing');
+            notePostInFlightRef.current = false;
+            return;
+          }
+        } catch {
+          setFormError('request');
+          notePostInFlightRef.current = false;
+          return;
+        }
+      }
+    }
     setPosting(true);
     setFormError(null);
     let awaitingPay = false;

@@ -25,6 +25,7 @@ import {
   shopDescriptionProblem,
   shopPlaceComplete,
   stripShopHashtag,
+  type ShopApiProblem,
 } from '@/lib/forum-shop';
 import type { MessageKey } from '@/lib/messages';
 import { formatForumTime } from '@/lib/forum-time';
@@ -139,7 +140,7 @@ function placesEqual(left: ForumPlacePin | null, right: ForumPlacePin | null): b
 }
 
 function usernameOf(value: string): string {
-  return value.trim().replace(/^@/, '');
+  return value.trim().replace(/^@/, '').toLowerCase();
 }
 
 const KEPT_STILL_TYPES = new Set(['image/png', 'image/webp']);
@@ -243,6 +244,8 @@ export function ShopNoteEditControl({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const [saveErrorKey, setSaveErrorKey] = useState<MessageKey | null>(null);
+  const [saveProblem, setSaveProblem] = useState<ShopApiProblem | null>(null);
+  const [photoError, setPhotoError] = useState<'unsupported' | 'tooLarge' | 'tooMany' | null>(null);
   const [history, setHistory] = useState<ShopNoteEdit[] | null>(null);
   const [historyError, setHistoryError] = useState(false);
   const [photoBaseline, setPhotoBaseline] = useState<readonly string[]>([]);
@@ -299,6 +302,8 @@ export function ShopNoteEditControl({
       setPhotoDrafts([]);
       setSaveError(false);
       setSaveErrorKey(null);
+      setSaveProblem(null);
+      setPhotoError(null);
       setHistory(null);
       setHistoryError(false);
       let photos = existingPhotos.length >= message.photoCount ? [...existingPhotos] : [];
@@ -370,28 +375,36 @@ export function ShopNoteEditControl({
 
   async function onPickFiles(files: File[]): Promise<void> {
     const prepared: ForumPhotoPayload[] = [];
+    let nextError: 'unsupported' | 'tooLarge' | 'tooMany' | null = null;
     for (const file of files) {
-      const result = await prepareForumPhoto(file);
-      if (result.ok) {
-        prepared.push(result.photo);
+      try {
+        const result = await prepareForumPhoto(file);
+        if (result.ok) {
+          prepared.push(result.photo);
+        } else if (nextError === null) {
+          nextError = result.error;
+        }
+      } catch {
+        if (nextError === null) nextError = 'unsupported';
       }
     }
     if (prepared.length > 0) {
-      setPhotoDrafts((current) => {
-        const keptCount = kept.filter((item) => item.kind === 'photo').length;
-        const room = 10 - keptCount - current.length;
-        if (room <= 0) {
-          return current;
-        }
-        return current.concat(prepared.slice(0, room));
-      });
+      const keptCount = kept.filter((item) => item.kind === 'photo').length;
+      const room = 10 - keptCount - photoDrafts.length;
+      if (room <= 0) nextError = 'tooMany';
+      else {
+        if (prepared.length > room) nextError = 'tooMany';
+        setPhotoDrafts((current) => current.concat(prepared.slice(0, room)));
+      }
     }
+    setPhotoError(nextError);
   }
 
   async function save(): Promise<void> {
     setSaving(true);
     setSaveError(false);
     setSaveErrorKey(null);
+    setSaveProblem(null);
     try {
       const keptPhotos = kept.filter((item) => item.kind === 'photo');
       const textChanged = draft !== stripShopHashtag(message.text);
@@ -457,6 +470,7 @@ export function ShopNoteEditControl({
     } catch (error) {
       setSaveError(true);
       const problem = error instanceof Error ? shopApiProblem(error.message) : null;
+      setSaveProblem(problem);
       setSaveErrorKey(problem === null ? null : SHOP_API_MESSAGE[problem]);
     } finally {
       setSaving(false);
@@ -501,6 +515,7 @@ export function ShopNoteEditControl({
                 setDraft(value);
                 setSaveError(false);
                 setSaveErrorKey(null);
+                setSaveProblem(null);
               }}
               photoDrafts={photoDrafts}
               videoDraft={null}
@@ -511,6 +526,7 @@ export function ShopNoteEditControl({
                 setPhotoDrafts((current) =>
                   current.filter((_, photoIndex) => photoIndex !== index),
                 );
+                setPhotoError(null);
               }}
               onClearPhoto={clearPendingPhotos}
               place={place}
@@ -518,12 +534,14 @@ export function ShopNoteEditControl({
                 setPlace(next);
                 setSaveError(false);
                 setSaveErrorKey(null);
+                setSaveProblem(null);
               }}
               username={username}
               onUsernameChange={(value) => {
                 setUsername(value);
                 setSaveError(false);
                 setSaveErrorKey(null);
+                setSaveProblem(null);
               }}
               onSubmit={() => {
                 void save();
@@ -531,6 +549,7 @@ export function ShopNoteEditControl({
               onCancel={() => {
                 setSaveError(false);
                 setSaveErrorKey(null);
+                setSaveProblem(null);
                 setOpen(false);
               }}
               resetToken={0}
@@ -541,9 +560,11 @@ export function ShopNoteEditControl({
                 setKept((current) => current.filter((_, keptIndex) => keptIndex !== index));
               }}
               imagesOnly
+              photoError={photoError}
+              serverProblem={saveProblem}
             />
           </SundayWritingGate>
-          {saveError ? (
+          {saveError && saveProblem === null ? (
             <p role="alert" className="text-xs text-app-danger">
               {saveErrorKey !== null ? t(saveErrorKey) : t('forum.editShopNoteFailed')}
             </p>

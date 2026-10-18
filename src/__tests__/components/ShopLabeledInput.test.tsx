@@ -43,4 +43,20 @@ describe('ShopLabeledInput', () => {
     );
     expect(screen.getByLabelText('City', { exact: true }).hasAttribute('disabled')).toBe(true);
   });
+
+  it('links its hint and error to the invalid input', () => {
+    renderWithLocale(
+      <ShopLabeledInput
+        label="House number"
+        id="house"
+        hint="For example 12a."
+        error="Starts with a digit."
+      />,
+    );
+    const input = screen.getByLabelText('House number');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')).toBe('house-hint house-error');
+    expect(screen.getByText('For example 12a.').id).toBe('house-hint');
+    expect(screen.getByText('Starts with a digit.').id).toBe('house-error');
+  });
 });

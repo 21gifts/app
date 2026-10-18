@@ -1,12 +1,13 @@
 'use client';
 
 import { ImagePlus, X } from 'lucide-react';
-import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { PlaceField } from '@/components/PlaceField';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useChromeBack } from '@/components/ViewHistoryRoot';
 import { Button, IconButton } from '@/components/ui';
+import { ShopLabeledInput } from '@/components/ShopLabeledInput';
 import type { ForumPlacePin } from '@/lib/api-types';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
 import type { ForumVideoPayload } from '@/lib/forum-video';
@@ -15,7 +16,13 @@ import {
   shopDescriptionProblem,
   shopDescriptionRemaining,
   shopPlaceComplete,
+  shopUsernameProblem,
+  SHOP_DESCRIPTION_MAX,
+  SHOP_API_MESSAGE,
+  type ShopApiProblem,
 } from '@/lib/forum-shop';
+import { searchMentionAccounts } from '@/lib/mention-search';
+import { useAuthStore } from '@/stores/auth-store';
 
 /** One step of the shop submission, after the closed button. */
 type ShopAddStep = 1 | 2 | 3 | 4 | 5;
@@ -78,7 +85,7 @@ export interface ShopAddWizardProps {
   onCancel?: () => void;
   /** Increments after a successful send so the wizard closes. */
   resetToken: number;
-  /** Maximum length of the text step. */
+  /** Outer text limit; shop descriptions are additionally capped at 1000. */
   maxLength: number;
   /** `edit` opens on step 1 for an existing shop. Default `create`. */
   mode?: 'create' | 'edit';
@@ -90,6 +97,10 @@ export interface ShopAddWizardProps {
   onRemoveKept?: (index: number) => void;
   /** When true, the file picker accepts stills only. */
   imagesOnly?: boolean;
+  /** Photo-picker rule currently broken. */
+  photoError?: 'unsupported' | 'tooLarge' | 'tooMany' | null;
+  /** Known API fallback to place back at its owning step and field. */
+  serverProblem?: ShopApiProblem | null;
 }
 
 const STEP_KEY = {
@@ -132,16 +143,25 @@ export function ShopAddWizard({
   keptMedia = [],
   onRemoveKept,
   imagesOnly = false,
+  photoError = null,
+  serverProblem = null,
 }: ShopAddWizardProps): ReactElement {
   const { t, locale } = useTranslations();
+  const session = useAuthStore((state) => state.session);
   const { setOverride } = useChromeBack();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoFeedbackId = `${useId()}-photo-feedback`;
   const [step, setStep] = useState<ShopAddStep | 'closed'>(mode === 'edit' ? 1 : 'closed');
   // The summary control replaces Next in the same spot. Ignore that same click.
   const [summaryArmed, setSummaryArmed] = useState(false);
   // Skip the mount run. useState already opened on the right step, and
   // repeating it undoes a Next click from the same turn the editor opened.
   const appliedReset = useRef(`${mode}:${String(resetToken)}`);
+  const initialUsername = useRef(username);
+  const [mapsUnavailable, setMapsUnavailable] = useState(false);
+  const [usernameLookup, setUsernameLookup] = useState<
+    'idle' | 'checking' | 'exists' | 'missing' | 'failed'
+  >('idle');
 
   useEffect(() => {
     const key = `${mode}:${String(resetToken)}`;
@@ -155,6 +175,63 @@ export function ShopAddWizard({
   useEffect(() => {
     setSummaryArmed(step === 5);
   }, [step]);
+
+  useEffect(() => {
+    if (serverProblem === null) return;
+    if (
+      serverProblem === 'shopName' ||
+      serverProblem === 'shopNameAddress' ||
+      serverProblem === 'shopNameLong' ||
+      serverProblem === 'shopAddress' ||
+      serverProblem === 'placeAddress'
+    ) {
+      setStep(2);
+      return;
+    }
+    if (serverProblem === 'shopDescription' || serverProblem === 'shopDescriptionControls') {
+      setStep(3);
+      return;
+    }
+    setStep(4);
+  }, [serverProblem]);
+
+  const normalizedUsername = username.trim().replace(/^@/, '').toLowerCase();
+  const usernameFormatProblem = shopUsernameProblem(username);
+  useEffect(() => {
+    if (normalizedUsername === '') {
+      setUsernameLookup('idle');
+      return;
+    }
+    if (usernameFormatProblem !== null) {
+      setUsernameLookup('idle');
+      return;
+    }
+    if (session === null || (mode === 'edit' && username === initialUsername.current)) {
+      setUsernameLookup('exists');
+      return;
+    }
+    let cancelled = false;
+    setUsernameLookup('checking');
+    const timer = window.setTimeout(() => {
+      void searchMentionAccounts(session, normalizedUsername)
+        .then((rows) => {
+          if (!cancelled) {
+            setUsernameLookup(
+              rows.some((row) => row.username.toLowerCase() === normalizedUsername)
+                ? 'exists'
+                : 'missing',
+            );
+          }
+        })
+        .catch(() => {
+          if (!cancelled) setUsernameLookup('failed');
+        });
+    }, 150);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [mode, normalizedUsername, session, username, usernameFormatProblem]);
 
   useLayoutEffect(() => {
     if (step === 'closed' || step === 1) {
@@ -195,17 +272,84 @@ export function ShopAddWizard({
   const cancelEdit = mode === 'edit' ? onCancel : undefined;
   const placeComplete = shopPlaceComplete(place);
   const descriptionProblem = shopDescriptionProblem(draft, place?.label ?? null);
-  const nextDisabled =
-    posting || (step === 2 && !placeComplete) || (step === 3 && descriptionProblem !== null);
-  const submitDisabled = posting || !summaryArmed || !placeComplete || descriptionProblem !== null;
-  const descriptionHint =
-    descriptionProblem === 'short'
-      ? t('shops.problemDescriptionShort', { n: shopDescriptionRemaining(draft) })
-      : descriptionProblem === 'long'
-        ? t('shops.problemDescriptionLong')
-        : descriptionProblem === 'notLonger'
-          ? t('shops.problemDescriptionNotLonger')
+  const usernameProblem =
+    usernameFormatProblem !== null
+      ? 'format'
+      : normalizedUsername !== '' && usernameLookup === 'missing'
+        ? 'missing'
+        : normalizedUsername !== '' && usernameLookup === 'failed'
+          ? 'failed'
           : null;
+  const usernamePending = normalizedUsername !== '' && usernameLookup === 'checking';
+  const placeServerProblem =
+    serverProblem === 'shopName' ||
+    serverProblem === 'shopNameAddress' ||
+    serverProblem === 'shopNameLong' ||
+    serverProblem === 'shopAddress' ||
+    serverProblem === 'placeAddress';
+  const descriptionServerProblem =
+    serverProblem === 'shopDescription' || serverProblem === 'shopDescriptionControls';
+  const usernameServerProblem =
+    serverProblem === 'usernameInvalid' || serverProblem === 'usernameMissing';
+  const placeServerMessage =
+    placeServerProblem && serverProblem !== null ? t(SHOP_API_MESSAGE[serverProblem]) : null;
+  const nextDisabled =
+    posting ||
+    (step === 2 && (!placeComplete || placeServerProblem)) ||
+    (step === 3 && (descriptionProblem !== null || descriptionServerProblem)) ||
+    (step === 4 && (usernameProblem !== null || usernamePending || usernameServerProblem));
+  const submitDisabled =
+    posting ||
+    !summaryArmed ||
+    !placeComplete ||
+    placeServerProblem ||
+    descriptionProblem !== null ||
+    descriptionServerProblem ||
+    usernameProblem !== null ||
+    usernamePending ||
+    usernameServerProblem;
+  const descriptionHint =
+    serverProblem === 'shopDescription' || serverProblem === 'shopDescriptionControls'
+      ? t(SHOP_API_MESSAGE[serverProblem])
+      : descriptionProblem === 'short'
+        ? t('shops.problemDescriptionShort', { n: shopDescriptionRemaining(draft) })
+        : descriptionProblem === 'long'
+          ? t('shops.problemDescriptionLong')
+          : descriptionProblem === 'notLonger'
+            ? t('shops.problemDescriptionNotLonger')
+            : descriptionProblem === 'controls'
+              ? t('shops.problemDescriptionControls')
+              : null;
+  const descriptionHintId = 'shop-description-feedback';
+  const usernameError =
+    serverProblem === 'usernameInvalid' || serverProblem === 'usernameMissing'
+      ? t(SHOP_API_MESSAGE[serverProblem])
+      : usernameProblem === 'format'
+        ? t('shops.problemUsernameFormat')
+        : usernameProblem === 'missing'
+          ? t('shops.problemUsernameMissing')
+          : usernameProblem === 'failed'
+            ? t('shops.problemUsernameLookup')
+            : undefined;
+  const usernameHint = usernamePending
+    ? t('shops.usernameChecking')
+    : t('shops.accountOptional');
+  const summaryProblem =
+    step !== 5
+      ? null
+      : !placeComplete
+        ? mapsUnavailable
+          ? t('shops.placeUnavailableReason')
+          : t('shops.placeRequired')
+        : placeServerMessage !== null
+          ? placeServerMessage
+          : descriptionHint !== null
+            ? descriptionHint
+            : usernameError !== undefined
+              ? usernameError
+              : usernamePending
+                ? t('shops.usernameChecking')
+                : null;
 
   return (
     <form
@@ -233,6 +377,8 @@ export function ShopAddWizard({
             }
             className="hidden"
             disabled={posting}
+            aria-invalid={photoError === null ? undefined : true}
+            aria-describedby={photoFeedbackId}
             onChange={(event) => {
               const list = event.target.files;
               if (list !== null && list.length > 0) {
@@ -246,6 +392,8 @@ export function ShopAddWizard({
             size="lg"
             variant="secondary"
             aria-label={t('forum.attach')}
+            aria-describedby={photoFeedbackId}
+            aria-invalid={photoError === null ? undefined : true}
             disabled={posting}
             onClick={() => {
               fileInputRef.current?.click();
@@ -253,6 +401,26 @@ export function ShopAddWizard({
           >
             <ImagePlus aria-hidden="true" className="block h-5 w-5 shrink-0" />
           </IconButton>
+          <div id={photoFeedbackId} className="flex flex-col gap-1">
+            <p className="text-sm text-app-muted">
+              {t('shops.photoCount', {
+                n: keptMedia.filter((item) => item.kind === 'photo').length + photoDrafts.length,
+              })}
+            </p>
+            {photoError !== null ? (
+              <p className="text-sm text-app-danger">
+                {t(
+                  photoError === 'tooMany'
+                    ? 'forum.errorTooMany'
+                    : photoError === 'tooLarge'
+                      ? 'forum.errorTooLarge'
+                      : imagesOnly
+                        ? 'shops.photoUnsupported'
+                        : 'forum.errorUnsupported',
+                )}
+              </p>
+            ) : null}
+          </div>
           {keptMedia.map((item, index) =>
             item.kind === 'video' ? (
               <div key={`${item.url}:${index}`} className="flex items-start gap-3">
@@ -339,13 +507,23 @@ export function ShopAddWizard({
         </div>
       ) : null}
       {step === 2 ? (
-        <PlaceField
-          place={place}
-          disabled={posting}
-          onChange={onPlaceChange}
-          showPreview={false}
-          shopDetails
-        />
+        <div className="flex flex-col gap-2">
+          <PlaceField
+            place={place}
+            disabled={posting}
+            onChange={onPlaceChange}
+            showPreview={false}
+            shopDetails
+            problem={serverProblem}
+            onAvailabilityChange={setMapsUnavailable}
+          />
+          {!placeComplete || placeServerProblem ? (
+            <p className="text-sm text-app-danger">
+              {placeServerMessage ??
+                (mapsUnavailable ? t('shops.placeUnavailableReason') : t('shops.placeRequired'))}
+            </p>
+          ) : null}
+        </div>
       ) : null}
       {step === 3 ? (
         <div className="flex flex-col gap-2">
@@ -353,30 +531,38 @@ export function ShopAddWizard({
             ariaLabel={t('shops.textLabel')}
             value={draft}
             onChange={onDraftChange}
-            maxLength={maxLength}
+            maxLength={Math.min(maxLength, SHOP_DESCRIPTION_MAX)}
+            ariaDescribedBy={descriptionHintId}
+            ariaInvalid={
+              descriptionProblem !== null ||
+              serverProblem === 'shopDescription' ||
+              serverProblem === 'shopDescriptionControls'
+            }
             rows={4}
             disabled={posting}
             wrapperClassName="relative w-full"
             className="min-h-24 w-full resize-none rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg disabled:opacity-50"
           />
-          {descriptionHint !== null ? (
-            <p className="text-sm text-app-muted">{descriptionHint}</p>
-          ) : null}
+          <div id={descriptionHintId} className="flex flex-col gap-1">
+            {descriptionHint !== null ? (
+              <p className="text-sm text-app-danger">{descriptionHint}</p>
+            ) : null}
+            <p className="text-sm text-app-muted">
+              {t('shops.descriptionCount', { n: draft.length, max: SHOP_DESCRIPTION_MAX })}
+            </p>
+          </div>
         </div>
       ) : null}
       {step === 4 ? (
-        <label className="flex min-w-0 max-w-full flex-col gap-1">
-          <span className="text-sm text-app-fg">{t('shops.accountOptional')}</span>
-          <input
-            aria-label={t('shops.accountLabel')}
-            value={username}
-            onChange={(event) => {
-              onUsernameChange(event.target.value);
-            }}
-            disabled={posting}
-            className="min-h-11 w-full min-w-0 max-w-full rounded-2xl border border-app-border-strong px-4 text-base text-app-fg disabled:opacity-50"
-          />
-        </label>
+        <ShopLabeledInput
+          id="shop-account-username"
+          label={t('shops.accountLabel')}
+          value={username}
+          disabled={posting}
+          hint={usernameHint}
+          {...(usernameError === undefined ? {} : { error: usernameError })}
+          onChange={(event) => onUsernameChange(event.target.value)}
+        />
       ) : null}
       {step === 5 ? (
         <dl className="flex flex-col gap-2 text-sm text-app-fg">
@@ -423,6 +609,9 @@ export function ShopAddWizard({
           </div>
         </dl>
       ) : null}
+      {summaryProblem === null ? null : (
+        <p className="text-sm text-app-danger">{summaryProblem}</p>
+      )}
       <div className="flex flex-wrap gap-2">
         {step === 1 && cancelEdit !== undefined ? (
           <IconButton

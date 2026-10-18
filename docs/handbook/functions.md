@@ -873,9 +873,9 @@
 
 ## Function: Field
 
-- **Purpose:** Labeled text input or textarea using shared app field tokens; id is generated from the label when omitted.
-- **Inputs:** `label`, optional `id` / `className`, `multiline` (textarea when true), plus native input or textarea attributes.
-- **Returns / side effects:** A `<label>` wrapping an `<input>` or `<textarea>`. No network.
+- **Purpose:** Labeled text input or textarea using shared app field tokens; id is generated from the label when omitted. Optional hint and error copy is rendered directly under the control.
+- **Inputs:** `label`, optional `id` / `className` / `hint` / `error`, `multiline` (textarea when true), plus native input or textarea attributes.
+- **Returns / side effects:** A `<label>` wrapping an `<input>` or `<textarea>`. An error sets `aria-invalid` and extends `aria-describedby` with the message id. No network.
 - **Used by:** Labeled text primitive. Amount fields use `AmountEntry` instead.
 
 ## Function: APP_HEIGHT_BOOTSTRAP_SCRIPT
@@ -1201,11 +1201,11 @@
 
 ## Function: ShopAddWizard
 
-Guided shop submission on `/shops`. Closed state is only **Add a shop**. The open steps are photos, a map place with shop name and structured address, text, an optional 21.gifts username, then a summary. **Post** on the summary is the only submit. The add photo step shows **Next** only. Edit mode shows an icon-only Close (X) on that step only. Its accessible name is Cancel, and there is no visible Cancel word. It closes the editor. From the place step on, the top-left arrow returns to the previous step. The card has no **Back** button. Photos and the username can be left empty. Place step **Next** stays off until `shopPlaceComplete`. Text step **Next** stays off until `shopDescriptionProblem` is null. Summary **Post** stays off until both are complete.
+Guided shop submission on `/shops`. Closed state is only **Add a shop**. The open steps are photos, a map place with shop name and structured address, text, an optional 21.gifts username, then a summary. Every disabled Next/Post has a visible field error or step reason. Photo errors stay under the picker with the `n / 10` count. Place uses a dialog/sheet, text has the live 1000-character counter and control-character rule, and a non-empty username must match the API format and an account lookup before Next enables.
 
 - **Purpose:** Replace the living-room composer on the shops feed. The shop tag is added when the note is sent, not typed in the text step. That text step lists people as soon as `@` is typed, the same way a post does. The summary shows the photo count (stills plus a video), the shop name, the formatted address line, the text, and `@username`, or **None** when photos or the user were skipped.
-- **Inputs:** `posting`, `draft` / `onDraftChange`, `photoDrafts`, `videoDraft`, `onPickFiles`, `onRemovePhoto`, `onClearPhoto`, `place` / `onPlaceChange`, `username` / `onUsernameChange`, `onSubmit`, optional `onCancel` (edit mode only), `resetToken` (closes the wizard after a successful send), `maxLength`. Optional `mode` (`create` default, or `edit`), `submitLabel`, `keptMedia`, `onRemoveKept`, and `imagesOnly`. `PlaceField` is opened with `shopDetails`.
-- **Returns / side effects:** React tree. No network. File selection calls `onPickFiles`. The summary button calls `onSubmit` (**Post**, or `submitLabel` such as **Save changes**). In edit mode, the icon-only Close (X) on the photo step calls `onCancel`. Its accessible name is Cancel, and there is no visible Cancel word. From the place step on, the top-left arrow returns to the previous step and is disabled while `posting` is true. The card does not draw **Back**.
+- **Inputs:** Existing wizard props plus optional `photoError` and `serverProblem`; known server fallbacks move back to the owning step and field.
+- **Returns / side effects:** React tree. A non-empty username is checked with `searchMentionAccounts`; file selection calls `onPickFiles`. The summary button calls `onSubmit` (**Post**, or `submitLabel` such as **Save changes**). In edit mode, the icon-only Close (X) on the photo step calls `onCancel`. Its accessible name is Cancel, and there is no visible Cancel word. From the place step on, the top-left arrow returns to the previous step and is disabled while `posting` is true. The card does not draw **Back**.
 - **Used by:** `ForumBoard` when `shopComposer` is set, and `ShopNoteEditControl` in edit mode.
 
 ## Function: ForumAskWizard
@@ -1395,9 +1395,9 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlaceField
 
-- **Purpose:** Optional place control on the top-level forum composer, and the compact editor a moderator uses on a shop note. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }` on the living-room composer. With `shopDetails`, the panel shows **Shop name**, `ShopAddressFields`, and **Use this place** stays off until name and address pass the shop rules; confirm stores `{ lat, lng, label, address }` with a trimmed uppercase country. No key shows the unavailable sentence and does not confirm a pin; shop fields are hidden on that panel. On the device's local Sunday neither the preview nor the map panel is rendered; the pin stays inside the Sunday writing gate. Otherwise, once the frame box is measured, the preview and the map panel are fixed to the window and kept inside the app frame, and are not sized from the viewport (`vw`). Until that box is measured they sit under the pin as an absolute anchor. The map shrinks so the confirm control stays inside the window, and the page still has one scroller. A shop API 400 maps through `shopApiProblem` to a localized `shops.problem*` alert.
-- **Inputs:** `place`, `disabled`, `onChange`. Optional `buttonSize` (`lg` default, or `sm`), `buttonVariant` (`secondary` default, or `ghost`), `showPreview` (default true), `ariaLabel` (default **Add a place**), `onCommit`, and `shopDetails` (shop name plus structured address). Without `onCommit`, Done and Remove call `onChange` and close. With `onCommit`, those buttons wait; a rejection keeps the panel open and shows the save error; a success closes without calling `onChange`. When preview is hidden and a pin is already set, Remove stays inside the open panel, including when the map is unavailable.
-- **Returns / side effects:** Attach button, optional preview, and panel. Fetches `/maps/key` when opened.
+- **Purpose:** Optional place control and staff editor. It opens a centered desktop dialog or full-screen mobile sheet. The body is the only active scroll surface and the confirm row stays visible. Shop mode orders map, shop name, street/house, postal/city, and country; touched fields show concrete live errors while the footer always explains why confirm is disabled.
+- **Inputs:** Existing place/control/commit props, optional `problem` for a known API fallback, and `onAvailabilityChange` for the closed wizard step.
+- **Returns / side effects:** Attach button, optional preview, and accessible modal dialog. Fetches `/maps/key`; a known server problem reopens the dialog at its field.
 - **Used by:** `ForumBoard` (top-level composer, no `shopDetails`), `ShopAddWizard` (`shopDetails`), and `ShopPlaceControl` (`shopDetails`).
 
 ## Function: fitBoxInFrame
@@ -1405,7 +1405,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** Places one popover inside the app frame. The width is the preferred width when it fits, otherwise the room between the insets. The left edge stays on the anchor unless that would cross an inset. Vertically it opens downward when that side has at least 280px and at least as much room as above, otherwise upward, otherwise from the top inset across the whole frame height. It returns null when the frame has no positive room or the preferred width is not positive.
 - **Inputs:** Frame left, right, top, and bottom, anchor left, top, and bottom, gap, preferred width, inset, and viewport height, all in pixels.
 - **Returns / side effects:** `{ left, width, maxHeight, top, bottom }` with exactly one of top or bottom set, or null. No DOM writes and no network.
-- **Used by:** `PlaceField` for the place preview and the map panel.
+- **Used by:** Unit tests that pin the standalone frame-placement helper. `PlaceField` now uses a modal dialog/sheet instead of an anchored panel.
 
 ## Function: pageFrameProblems
 
@@ -1425,14 +1425,14 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Moderator-only pencil on a listed shop note. Opens the same five steps as adding a shop, already filled in, plus the edit history. Hidden on replies, hidden notes, non-shop text, unsigned sessions, and ranks below moderator.
 - **Inputs:** `message` (top-level shop note), `onUpdated` (the saved note), optional `existingPhotos`, optional `existingVideoUrl`, and optional `startOpen`.
-- **Returns / side effects:** Small ghost pencil (**Edit shop note**). The summary button is **Save changes**. It writes only the text, place, account, or stills that changed. A video stays. Already-shown stills are copied onto addresses this editor owns before the steps open, so a partial save can revoke the feed addresses without blanking the open editor. A failed copy opens the steps with `forum.editShopNoteFailed` and no stills, and does not revoke the feed addresses. Stills are not replaced unless every current still loaded. A failed save keeps the panel open and shows `forum.editShopNoteFailed`. History rows show who, when, and the field (text, place, or account). A failed history load shows `forum.editHistoryFailed`.
+- **Returns / side effects:** Small ghost pencil (**Edit shop note**). The summary button is **Save changes**. It writes only the text, place, account, or stills that changed. A video stays. Rejected stills show the concrete reason under the picker. Already-shown stills are copied onto addresses this editor owns before the steps open, so a partial save can revoke the feed addresses without blanking the open editor. A failed copy opens the steps with `forum.editShopNoteFailed` and no stills, and does not revoke the feed addresses. Stills are not replaced unless every current still loaded. A known API 400 returns to its owning wizard field; only unknown failures use `forum.editShopNoteFailed`. History rows show who, when, and the field (text, place, or account). A failed history load shows `forum.editHistoryFailed`.
 - **Used by:** `ForumBoard` when `shopNoteEdit` and `onShopNoteUpdated` are set (`ForumLoader` for a moderator on every feed), `ShopTable`, and `PlacesMapScreen` for a pin with `shop: true`.
 
 ## Function: ShopAccountControl
 
 - **Purpose:** Moderator-only shop-account editor on a listed shop note. Hidden on replies, hidden notes, non-shop text, unsigned sessions, and ranks below moderator.
 - **Inputs:** `message` (top-level shop note) and `onUpdated` (message id plus the saved `{ id, username, name }`, or `null` when cleared).
-- **Returns / side effects:** Small ghost **Add an account** / **Edit account** (User icon). The open field starts at `@`, or `@username` when an account is already attached, and the same People list as a forum post is visible immediately. Choosing a row fills `@username`. A space or any other non-username hides the list. The panel is fixed to the window so the page does not scroll sideways. A typed prefix immediately drops usernames that do not start with it. It shows at most eight people and does not scroll on its own. Rows drop until the box fits under the app chrome, and the list hides rather than covering that chrome. **Save account** strips one leading `@`. Optional **Remove account**. Empty or unknown username shows `forum.shopAccountMissing` and keeps the panel open; other failures show `forum.shopAccountSaveFailed`. Success calls `setMessageShopAccount` then `onUpdated` and closes.
+- **Returns / side effects:** Small ghost account editor with the People suggestions. Invalid format is reported and linked under the field while typing and disables Save; unknown accounts and request failures stay adjacent. Success calls `setMessageShopAccount` then `onUpdated` and closes.
 - **Used by:** `ForumBoard` when `shopAccountEdit` and `onShopAccountUpdated` are set (`ForumLoader` `feed="shops"`).
 
 ## Function: ShopsPage
@@ -1526,18 +1526,25 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** `'missing'`, `'street'`, `'houseNumber'`, `'postalCode'`, `'city'`, `'country'`, or `null`. No network.
 - **Used by:** `PlaceField`, `shopPlaceComplete`.
 
+## Function: shopAddressProblems
+
+- **Purpose:** Reports every broken API address rule at its own field instead of reducing the address to one generic error.
+- **Inputs:** Structured `ForumPlaceAddress`, or `null` when every field is empty.
+- **Returns / side effects:** Sparse field-to-rule map for street, house number, postal code, city, and country. No network.
+- **Used by:** `PlaceField` for live adjacent errors and its visible disabled-button reason.
+
 ## Function: shopNameProblem
 
-- **Purpose:** Name problem of a shop pin. Blank label is `'name'`. A standalone street or postal-code token in the name is `'nameAddress'`.
+- **Purpose:** Name problem of a shop pin. Blank label is `'name'`; over 80 characters is `'nameLong'`; control characters are `'nameControls'`; a standalone street or postal-code token in the name is `'nameAddress'`.
 - **Inputs:** Pin label (shop name) and the structured address, or `null` when unset.
-- **Returns / side effects:** `'name'`, `'nameAddress'`, or `null`. No network.
+- **Returns / side effects:** `'name'`, `'nameAddress'`, `'nameLong'`, `'nameControls'`, or `null`. No network.
 - **Used by:** `PlaceField`, `shopPlaceComplete`.
 
 ## Function: shopDescriptionProblem
 
-- **Purpose:** Description problem of a shop note. After CRLF is folded to LF and the shop tag is stripped, the text must be 20–1000 characters and strictly longer than the pin label.
+- **Purpose:** Description problem of a shop note. Apart from LF/CR, control characters are rejected. After CRLF is folded to LF and the shop tag is stripped, the text must be 20–1000 characters and strictly longer than the pin label.
 - **Inputs:** Composer or stored note `text`, and the pin `label` (or `null`).
-- **Returns / side effects:** `'short'`, `'long'`, `'notLonger'`, or `null`. No network.
+- **Returns / side effects:** `'short'`, `'long'`, `'notLonger'`, `'controls'`, or `null`. No network.
 - **Used by:** `ShopAddWizard`.
 
 ## Function: shopDescriptionRemaining
@@ -1546,6 +1553,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Inputs:** Composer or stored note `text`.
 - **Returns / side effects:** Non-negative count. No network.
 - **Used by:** `ShopAddWizard` for the text-step hint.
+
+## Function: shopUsernameProblem
+
+- **Purpose:** Mirrors the optional shop-account username rule while the visitor types, including the optional leading `@`.
+- **Inputs:** Raw username draft.
+- **Returns / side effects:** Trims, removes one leading `@`, lowercases, then returns `'format'` outside `^[a-z0-9][a-z0-9._-]{0,31}$`; empty input returns `null`. No network.
+- **Used by:** `ShopAddWizard`, `ShopAccountControl`, and the pre-payment validation in `ForumLoader`.
 
 ## Function: formatShopAddressLine
 
@@ -1572,22 +1586,22 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Map an exact API 400 body to a shop form error. Unknown text returns null so the generic save copy stays.
 - **Inputs:** `Error.message` from `postMessage`, `setMessagePlace`, or `setMessageShopText`.
-- **Returns / side effects:** `'shopName'`, `'shopNameAddress'`, `'shopAddress'`, `'shopDescription'`, `'placeAddress'`, or `null`. No network.
+- **Returns / side effects:** A field/step-specific shop problem for name, address, description, or username, or `null`. No network.
 - **Used by:** `ForumLoader`, `PlaceField`, `ShopNoteEditControl`.
 
 ## Function: ShopAddressFields
 
-- **Purpose:** Five native fields for a shop pin address: street, house number, postal code, city, and a country `<select>` whose first option is **Choose a country**. Labels have no asterisk. The country list comes from `countryOptions(locale)`.
-- **Inputs:** `value` (`null` = every field empty), `disabled`, and `onChange` that always receives the five draft strings.
-- **Returns / side effects:** Labeled inputs. Autocomplete `off` / `off` / `postal-code` / `address-level2` / `country`. No network.
+- **Purpose:** Five native fields for a shop pin address in the professional street/house and postal/city row order, plus a country `<select>`. Each field can show its own adjacent error.
+- **Inputs:** `value`, `disabled`, `onChange`, optional per-field `errors`, and optional `onBlur(field)`.
+- **Returns / side effects:** Labeled inputs with linked `aria-invalid` / `aria-describedby` errors. Autocomplete `off` / `off` / `postal-code` / `address-level2` / `country`. No network.
 - **Used by:** `PlaceField` when `shopDetails` is set.
 
 ## Function: ShopLabeledInput
 
-- **Purpose:** One shop address text field: a sibling `<label htmlFor>` and an `<input>` with the shared rounded control style, so the accessible name is exactly the label text and never includes the typed value.
-- **Inputs:** `label`, `id` (must be unique per instance; `ShopAddressFields` derives it from `useId()`), and the native input attributes except `id` and `className`.
-- **Returns / side effects:** Labeled input. No state, no network.
-- **Used by:** `ShopAddressFields` for street, house number, postal code and city.
+- **Purpose:** One shop text field with a sibling label and optional linked hint/error copy.
+- **Inputs:** `label`, unique `id`, optional `hint` / `error`, and native input attributes except `id` and `className`.
+- **Returns / side effects:** Labeled input; an error sets `aria-invalid` and `aria-describedby`. No state, no network.
+- **Used by:** `ShopAddressFields` for street, house number, postal code and city, and `ShopAddWizard` for the username step.
 
 ## Function: RulesDocument
 
@@ -4698,21 +4712,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Set or clear the place pin on a forum message for a moderator session.
 - **Inputs:** sessionToken, messageId, and `place` (`ForumPlacePin`, or `null` to clear).
-- **Returns / side effects:** PATCH `/forum/messages/:id/place` with JSON `{ place }`. Resolves to the public message JSON (`place` omitted when cleared). Throws `Could not save place` on a non-2xx status.
+- **Returns / side effects:** PATCH `/forum/messages/:id/place` with JSON `{ place }`. Resolves to the public message JSON (`place` omitted when cleared). A 400 preserves its API reason for adjacent form feedback; other failures throw `Could not save place`.
 - **Used by:** `ShopPlaceControl`.
 
 ## Function: setMessageShopPhotos
 
 - **Purpose:** Replace the stills on a shop note for a moderator session. An empty list clears stills. A video on the note stays.
 - **Inputs:** sessionToken, messageId, and `photos` (`{ contentType, data, takenAt? }[]`, at most 10).
-- **Returns / side effects:** PATCH `/forum/messages/:id/photos` with JSON `{ photos }`. A blank `takenAt` is omitted. Resolves to the public message JSON. Throws `Could not save shop note` on a non-2xx status.
+- **Returns / side effects:** PATCH `/forum/messages/:id/photos` with JSON `{ photos }`. A blank `takenAt` is omitted. Resolves to the public message JSON. A 400 preserves its API reason for adjacent form feedback; other failures throw `Could not save shop note`.
 - **Used by:** `ShopNoteEditControl`.
 
 ## Function: setMessageShopText
 
 - **Purpose:** Replace the text of a shop note for a moderator session. The API keeps the shop tag.
 - **Inputs:** sessionToken, messageId, and `text` (the visible draft; the shop tag may be omitted).
-- **Returns / side effects:** PATCH `/forum/messages/:id/text` with JSON `{ text }`. Resolves to the public message JSON. Throws `Could not save shop note` on a non-2xx status.
+- **Returns / side effects:** PATCH `/forum/messages/:id/text` with JSON `{ text }`. Resolves to the public message JSON. A 400 preserves its API reason for adjacent form feedback; other failures throw `Could not save shop note`.
 - **Used by:** `ShopNoteEditControl`.
 
 ## Function: fetchShopNoteEdits
@@ -4726,7 +4740,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Set or clear the shop account on a forum message for a moderator session.
 - **Inputs:** sessionToken, messageId, and `username` (string, or `null` to clear).
-- **Returns / side effects:** PATCH `/forum/messages/:id/shop-account` with JSON `{ username }`. Resolves to the public message JSON (`shopAccount` omitted when cleared). Throws `No account with that username` on 404, otherwise `Could not save account`.
+- **Returns / side effects:** PATCH `/forum/messages/:id/shop-account` with JSON `{ username }`. Resolves to the public message JSON (`shopAccount` omitted when cleared). A 400 preserves its API reason, 404 throws `No account with that username`, and other failures throw `Could not save account`.
 - **Used by:** `ShopAccountControl`.
 
 ## Function: proxyForumMessageGet

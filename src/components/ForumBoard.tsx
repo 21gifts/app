@@ -1888,6 +1888,12 @@ export function ForumBoard({
             onSubmit={onPost}
             resetToken={shopResetToken}
             maxLength={composerMaxLength}
+            photoError={
+              formError === 'unsupported' || formError === 'tooLarge' || formError === 'tooMany'
+                ? formError
+                : null
+            }
+            serverProblem={isShopApiProblem(formError) ? formError : null}
           />
         </SundayWritingGate>
       ) : null}
@@ -2065,17 +2071,17 @@ export function ForumBoard({
             {t('forum.errorRateLimit')}
           </p>
         ) : null}
-        {!hideCompose && formError === 'unsupported' ? (
+        {!hideCompose && !shopComposer && formError === 'unsupported' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorUnsupported')}
           </p>
         ) : null}
-        {!hideCompose && formError === 'tooLarge' ? (
+        {!hideCompose && !shopComposer && formError === 'tooLarge' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorTooLarge')}
           </p>
         ) : null}
-        {!hideCompose && formError === 'tooMany' ? (
+        {!hideCompose && !shopComposer && formError === 'tooMany' ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.errorTooMany')}
           </p>
@@ -2085,7 +2091,7 @@ export function ForumBoard({
             {t('forum.errorAskAmount')}
           </p>
         ) : null}
-        {!hideCompose && isShopApiProblem(formError) ? (
+        {!hideCompose && !shopComposer && isShopApiProblem(formError) ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t(SHOP_API_MESSAGE[formError])}
           </p>

@@ -84,6 +84,10 @@ vi.mock('@/lib/forum-photo', () => ({
   prepareForumPhoto: vi.fn(),
 }));
 
+vi.mock('@/lib/mention-search', () => ({
+  searchMentionAccounts: vi.fn(),
+}));
+
 vi.mock('@/lib/forum-video', () => ({
   isForumVideoFile: vi.fn(() => false),
   prepareForumVideo: vi.fn(),
@@ -128,6 +132,7 @@ import {
 } from '@/lib/api';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { prepareForumPhoto } from '@/lib/forum-photo';
+import { searchMentionAccounts } from '@/lib/mention-search';
 import { isForumVideoFile, prepareForumVideo } from '@/lib/forum-video';
 import { closeLocalPushNotifications } from '@/lib/push';
 
@@ -450,6 +455,9 @@ async function submitShopWizard(text: string, username?: string): Promise<void> 
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   if (username !== undefined) {
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: username } });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+    });
   }
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
@@ -466,6 +474,9 @@ async function revealAll(): Promise<void> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(searchMentionAccounts).mockImplementation(async (_session, query) => [
+    { id: `acc-${query}`, username: query, name: query },
+  ]);
   fetchMock.mockResolvedValue(forumPage([]));
   publicListMock.mockResolvedValue({ messages: [], nextCursor: null });
   publicPhotoMock.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
@@ -1355,7 +1366,7 @@ describe('ForumLoader', () => {
       expect(postMock).toHaveBeenCalledWith('sess', {
         text: SHOP_NOTE_BODY,
         place: COMPLETE_SHOP_PLACE,
-        shopUsername: 'Luna',
+        shopUsername: 'luna',
       });
     });
   });
@@ -4755,6 +4766,16 @@ describe('ForumLoader', () => {
       'The description must be 20 to 1000 characters and longer than the shop name.',
     ],
     ['Place address is invalid', 'The address is invalid.'],
+    ['Place label must be at most 80 characters', 'The shop name must be at most 80 characters.'],
+    [
+      'Username is not valid',
+      'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+    ],
+    ['No account with that username', 'No account with that username.'],
+    [
+      'Text contains invalid control characters',
+      'The description must not contain control characters other than line breaks.',
+    ],
   ])('shows shop 400 %s when posting fails', async (apiMessage, localized) => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockRejectedValue(new Error(apiMessage));

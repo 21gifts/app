@@ -4961,10 +4961,10 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/shops',
-    id: 'add-text-long',
-    image: 'shops-add-text-long.png',
-    visual: 'state-shops-add-text-long',
-    needle: "shotScreen(page, 'state-shops-add-text-long')",
+    id: 'add-description-error',
+    image: 'shops-add-description-error.png',
+    visual: 'state-shops-add-description-error',
+    needle: "shotScreen(page, 'state-shops-add-description-error')",
   },
   {
     route: '/shops',
@@ -4979,6 +4979,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-add-user.png',
     visual: 'state-shops-add-user',
     needle: "shotScreen(page, 'state-shops-add-user')",
+  },
+  {
+    route: '/shops',
+    id: 'add-user-invalid',
+    image: 'shops-add-user-invalid.png',
+    visual: 'state-shops-add-user-invalid',
+    needle: "shotScreen(page, 'state-shops-add-user-invalid')",
   },
   {
     route: '/shops',

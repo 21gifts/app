@@ -154,13 +154,27 @@ describe('catalogs', () => {
         'shops.addressCity',
         'shops.addressCountry',
         'shops.addressCountryChoose',
+        'shops.photoUnsupported',
         'shops.problemName',
         'shops.problemNameAddress',
+        'shops.problemNameLong',
+        'shops.problemNameControls',
         'shops.problemAddress',
-        'shops.problemAddressField',
+        'shops.problemStreetRequired',
+        'shops.problemStreetLength',
+        'shops.problemHouseNumberFormat',
+        'shops.problemHouseNumberLength',
+        'shops.problemHouseNumberCharacters',
+        'shops.problemPostalCodeChLi',
+        'shops.problemPostalCodeOther',
+        'shops.problemCityLetter',
+        'shops.problemCountryRequired',
         'shops.problemDescriptionShort',
         'shops.problemDescriptionLong',
         'shops.problemDescriptionNotLonger',
+        'shops.problemDescriptionControls',
+        'shops.problemUsernameFormat',
+        'shops.problemUsernameMissing',
         'shops.problemDescription',
         'shops.problemAddressInvalid',
       ]),
@@ -178,8 +192,8 @@ describe('catalogs', () => {
       'Introduce el nombre de la tienda.',
     );
     expect(translate(getCatalog('fil'), 'shops.problemName')).toBe('Ilagay ang pangalan ng shop.');
-    expect(translate(getCatalog('en'), 'shops.problemAddressField', { field: 'Street' })).toBe(
-      'Check the Street.',
+    expect(translate(getCatalog('en'), 'shops.problemPostalCodeChLi')).toBe(
+      'Use 4 digits for Switzerland and Liechtenstein.',
     );
   });
 

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { useState, type ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -45,6 +45,7 @@ function renderWizard(ui: ReactElement) {
 afterEach(() => {
   cleanup();
   searchPeople.mockReset();
+  vi.unstubAllGlobals();
   useAuthStore.setState({ session: null, account: null });
 });
 
@@ -260,6 +261,23 @@ describe('ShopAddWizard', () => {
     expect(screen.getByRole('button', { name: 'Post' })).toHaveProperty('disabled', false);
   });
 
+  it('shows the map-unavailable reason on the closed place step', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ json: () => Promise.resolve({ key: null }) } as Response),
+    );
+    renderWizard(<ShopAddWizard {...props()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(
+      await screen.findByText('The map is unavailable, so a shop place cannot be added.'),
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.getByText('The map is unavailable, so a shop place cannot be added.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+  });
+
   it('keeps Next disabled when the description is not longer than the shop name', () => {
     const longNamePlace: ForumPlacePin = {
       ...COMPLETE_PLACE,
@@ -309,6 +327,7 @@ describe('ShopAddWizard', () => {
     expect(screen.getByText('47.3769, 8.5417')).toBeTruthy();
     expect(screen.queryByText("Kiki's Bakery")).toBeNull();
     expect(screen.queryByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeNull();
+    expect(screen.getByText("Add the shop's place and address.")).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Post' })).toHaveProperty('disabled', true);
   });
 
@@ -414,5 +433,169 @@ describe('ShopAddWizard', () => {
     fireEvent.mouseDown(screen.getByRole('option', { name: '@ada' }));
     expect(box.value).toBe('@ada ');
     expect(screen.queryByRole('listbox', { name: 'People' })).toBeNull();
+  });
+
+  it.each([
+    ['tooMany' as const, 'You can add up to 10 photos'],
+    ['tooLarge' as const, 'Keep photos under 1 MB and videos under 32 MB'],
+    [
+      'unsupported' as const,
+      'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
+    ],
+  ])('shows %s photo feedback and its 10-photo count at the picker', (photoError, message) => {
+    renderWizard(
+      <ShopAddWizard
+        {...props({ photoDrafts: [photo], photoError })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    const picker = screen.getByRole('button', { name: 'Add a photo or video' });
+    expect(screen.getByText('1 / 10')).toBeTruthy();
+    expect(screen.getByText(message)).toBeTruthy();
+    expect(picker.getAttribute('aria-describedby')).toBeTruthy();
+    expect(picker.getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('shows the 1000-character description error for a prefilled edit', () => {
+    renderWizard(
+      <ShopAddWizard {...props({ draft: 'x'.repeat(1001), place: COMPLETE_PLACE })} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('The description is too long (max. 1000 characters).')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+  });
+
+  it('shows description controls and username format errors before Next', () => {
+    function ValidationHost(): ReactElement {
+      const [draft, setDraft] = useState('Fresh bread\u0001 every morning.');
+      const [username, setUsername] = useState('_');
+      return (
+        <ShopAddWizard
+          {...props({
+            draft,
+            onDraftChange: setDraft,
+            place: COMPLETE_PLACE,
+            username,
+            onUsernameChange: setUsername,
+          })}
+        />
+      );
+    }
+    renderWizard(<ValidationHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const description = screen.getByLabelText('Shop text');
+    expect(description.getAttribute('maxlength')).toBe('1000');
+    expect(description.getAttribute('aria-invalid')).toBe('true');
+    expect(
+      screen.getByText(
+        'The description must not contain control characters other than line breaks.',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByText('27 / 1000')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    fireEvent.change(description, { target: { value: SHOP_DESCRIPTION } });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const account = screen.getByLabelText('21.gifts username');
+    expect(account.getAttribute('aria-invalid')).toBe('true');
+    expect(
+      screen.getByText(
+        'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+  });
+
+  it('checks a valid username exists before enabling Next', async () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    searchPeople.mockResolvedValue([{ id: 'acc-ada', username: 'ada', name: 'Ada' }]);
+    function UsernameHost(): ReactElement {
+      const [username, setUsername] = useState('missing');
+      return (
+        <ShopAddWizard
+          {...props({
+            draft: SHOP_DESCRIPTION,
+            place: COMPLETE_PLACE,
+            username,
+            onUsernameChange: setUsername,
+          })}
+        />
+      );
+    }
+    renderWizard(<UsernameHost />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('Checking that account…')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByText('No account with that username.')).toBeTruthy();
+    });
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    expect(searchPeople).toHaveBeenCalledWith('sess', 'missing');
+    fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'ada' } });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+    });
+    expect(searchPeople).toHaveBeenCalledWith('sess', 'ada');
+  });
+
+  it('keeps Next disabled when the username lookup fails', async () => {
+    useAuthStore.setState({ session: 'sess', account: null });
+    searchPeople.mockRejectedValue(new Error('offline'));
+    renderWizard(
+      <ShopAddWizard
+        {...props({ draft: SHOP_DESCRIPTION, place: COMPLETE_PLACE, username: 'ada' })}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(
+      await screen.findByText('The account could not be checked. Please try again.'),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+  });
+
+  it.each([
+    ['shopName' as const, '2 / 5 · Place', 'Enter the shop name.'],
+    [
+      'shopDescription' as const,
+      '3 / 5 · Text',
+      'The description must be 20 to 1000 characters and longer than the shop name.',
+    ],
+    [
+      'shopDescriptionControls' as const,
+      '3 / 5 · Text',
+      'The description must not contain control characters other than line breaks.',
+    ],
+    [
+      'usernameInvalid' as const,
+      '4 / 5 · 21.gifts user',
+      'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+    ],
+    [
+      'usernameMissing' as const,
+      '4 / 5 · 21.gifts user',
+      'No account with that username.',
+    ],
+  ])('returns known %s server errors to their field', async (serverProblem, step, message) => {
+    renderWizard(
+      <ShopAddWizard
+        {...props({
+          draft: SHOP_DESCRIPTION,
+          place: COMPLETE_PLACE,
+          username: 'luna',
+          serverProblem,
+        })}
+      />,
+    );
+    expect(await screen.findByText(step)).toBeTruthy();
+    expect(screen.getAllByText(message).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 });

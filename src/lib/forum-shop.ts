@@ -17,20 +17,50 @@ export const SHOP_DESCRIPTION_MIN = 20;
 /** Maximum shop description length after the shop tag is stripped. */
 export const SHOP_DESCRIPTION_MAX = 1000;
 
+/** Address field on a shop pin. */
+export type ShopAddressField = 'street' | 'houseNumber' | 'postalCode' | 'city' | 'country';
+
 /** First invalid address field on a shop pin. */
-export type ShopAddressProblem = 'street' | 'houseNumber' | 'postalCode' | 'city' | 'country';
+export type ShopAddressProblem = ShopAddressField;
+
+/** Concrete API-mirrored rule broken by one address field. */
+export type ShopAddressFieldProblem =
+  | 'required'
+  | 'length'
+  | 'controls'
+  | 'format'
+  | 'formatChLi'
+  | 'formatOther'
+  | 'letter'
+  | 'characters'
+  | 'invalid';
+
+/** All invalid address fields, so the form can report each one in place. */
+export type ShopAddressProblems = Partial<Record<ShopAddressField, ShopAddressFieldProblem>>;
 
 /** Exact API 400 bodies mapped to a shop form error. */
 export type ShopApiProblem =
-  'shopName' | 'shopNameAddress' | 'shopAddress' | 'shopDescription' | 'placeAddress';
+  | 'shopName'
+  | 'shopNameAddress'
+  | 'shopNameLong'
+  | 'shopAddress'
+  | 'shopDescription'
+  | 'shopDescriptionControls'
+  | 'placeAddress'
+  | 'usernameInvalid'
+  | 'usernameMissing';
 
 /** Visitor-facing catalog key for each {@link ShopApiProblem} API 400 body. */
 export const SHOP_API_MESSAGE: Record<ShopApiProblem, MessageKey> = {
   shopName: 'shops.problemName',
   shopNameAddress: 'shops.problemNameAddress',
+  shopNameLong: 'shops.problemNameLong',
   shopAddress: 'shops.problemAddress',
   shopDescription: 'shops.problemDescription',
+  shopDescriptionControls: 'shops.problemDescriptionControls',
   placeAddress: 'shops.problemAddressInvalid',
+  usernameInvalid: 'shops.problemUsernameFormat',
+  usernameMissing: 'shops.problemUsernameMissing',
 };
 
 const HOUSE_NUMBER = /^[0-9][0-9A-Za-z/ .&–-]{0,31}$/;
@@ -44,6 +74,17 @@ const SHOP_ADDRESS_REQUIRED = 'Shop address is required';
 const SHOP_DESCRIPTION_RANGE =
   'Shop description must be 20 to 1000 characters and longer than the shop name';
 const PLACE_ADDRESS_INVALID = 'Place address is invalid';
+const PLACE_LABEL_LONG = 'Place label must be at most 80 characters';
+const USERNAME_INVALID = 'Username is not valid';
+const USERNAME_MISSING = 'No account with that username';
+const TEXT_RANGE = new Set([
+  'Text must be 1–8000 characters',
+  'Text must be 1–8000 characters or include a photo',
+]);
+const TEXT_CONTROLS = new Set([
+  'Text contains invalid control characters',
+  'Text must not contain control characters',
+]);
 
 /**
  * True when `text` contains a `#21GiftsShop` token (case-insensitive; next char not `[A-Za-z0-9_]`).
@@ -100,6 +141,16 @@ function hasNoControls(value: string): boolean {
   return true;
 }
 
+function hasNoForumControls(value: string): boolean {
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i);
+    if ((code < 32 && code !== 10 && code !== 13) || code === 127) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function normalizeCountry(raw: string): string | null {
   const country = raw.trim().toUpperCase();
   if (!ISO_COUNTRIES.has(country)) {
@@ -110,7 +161,7 @@ function normalizeCountry(raw: string): string | null {
 
 function normalizeStreet(raw: string): string | null {
   const street = raw.trim();
-  if (street.length < 1 || street.length > 120 || !hasNoControls(street)) {
+  if (street.length < 1 || street.length > 120 || !hasNoControls(raw)) {
     return null;
   }
   return street;
@@ -182,6 +233,49 @@ export function shopAddressProblem(
 }
 
 /**
+ * Every invalid address field and the concrete API-mirrored rule it breaks.
+ *
+ * @param address - Structured address, or `null` when every field is empty.
+ * @returns A sparse result keyed by each invalid field.
+ */
+export function shopAddressProblems(address: ForumPlaceAddress | null): ShopAddressProblems {
+  const problems: ShopAddressProblems = {};
+  const value =
+    address ?? { street: '', houseNumber: '', postalCode: '', city: '', country: '' };
+  const street = value.street.trim();
+  if (street === '') problems.street = 'required';
+  else if (street.length > 120) problems.street = 'length';
+  else if (!hasNoControls(value.street)) problems.street = 'controls';
+
+  const houseNumber = value.houseNumber.trim();
+  if (houseNumber === '') problems.houseNumber = 'required';
+  else if (!hasNoControls(value.houseNumber)) problems.houseNumber = 'controls';
+  else if (!/^[0-9]/.test(houseNumber)) problems.houseNumber = 'format';
+  else if (houseNumber.length > 32) problems.houseNumber = 'length';
+  else if (!HOUSE_NUMBER.test(houseNumber)) problems.houseNumber = 'characters';
+
+  const country = normalizeCountry(value.country);
+  const postalCode = value.postalCode.trim();
+  if (postalCode === '') problems.postalCode = 'required';
+  else if (!hasNoControls(value.postalCode)) problems.postalCode = 'controls';
+  else if ((country === 'CH' || country === 'LI') && !POSTAL_CH_LI.test(postalCode)) {
+    problems.postalCode = 'formatChLi';
+  } else if (country !== 'CH' && country !== 'LI' && !POSTAL_OTHER.test(postalCode)) {
+    problems.postalCode = 'formatOther';
+  }
+
+  const city = value.city.trim();
+  if (city === '') problems.city = 'required';
+  else if (city.length > 80) problems.city = 'length';
+  else if (!hasNoControls(value.city)) problems.city = 'controls';
+  else if (!CITY_LETTER.test(city)) problems.city = 'letter';
+
+  if (value.country.trim() === '') problems.country = 'required';
+  else if (country === null) problems.country = 'invalid';
+  return problems;
+}
+
+/**
  * Escape a string so it is safe inside a `RegExp` constructor.
  *
  * @param value - Literal token.
@@ -213,15 +307,21 @@ function containsStandaloneToken(name: string, token: string): boolean {
  *
  * @param label - Pin label (shop name).
  * @param address - Structured address, or `null` when unset.
- * @returns `'name'` when blank, `'nameAddress'` when it embeds the street or
- * postal code as a whole word, or `null`.
+ * @returns A required, length, control-character, or embedded-address problem;
+ * otherwise `null`.
  */
 export function shopNameProblem(
   label: string | null,
   address: ForumPlaceAddress | null,
-): 'name' | 'nameAddress' | null {
+): 'name' | 'nameAddress' | 'nameLong' | 'nameControls' | null {
   if (label === null || label.trim() === '') {
     return 'name';
+  }
+  if (label.trim().length > 80) {
+    return 'nameLong';
+  }
+  if (!hasNoControls(label)) {
+    return 'nameControls';
   }
   if (address === null) {
     return null;
@@ -243,15 +343,18 @@ export function shopNameProblem(
  *
  * @param text - Composer or stored note text.
  * @param label - Pin label, or `null` / `undefined` when the note has none.
- * @returns `'short'` | `'long'` | `'notLonger'` | `null`.
+ * @returns A length, relative-length, or control-character problem; otherwise `null`.
  */
 export function shopDescriptionProblem(
   text: string,
   label: string | null | undefined,
-): 'short' | 'long' | 'notLonger' | null {
+): 'short' | 'long' | 'notLonger' | 'controls' | null {
   const lf = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const description = stripShopHashtag(lf);
   const name = label ?? '';
+  if (!hasNoForumControls(lf)) {
+    return 'controls';
+  }
   if (description.length < SHOP_DESCRIPTION_MIN) {
     return 'short';
   }
@@ -262,6 +365,21 @@ export function shopDescriptionProblem(
     return 'notLonger';
   }
   return null;
+}
+
+/**
+ * Optional shop-account username format problem, mirroring the API regex.
+ *
+ * @param raw - Optional username with or without one leading `@`.
+ * @returns `'format'` when non-empty input is invalid, otherwise `null`.
+ */
+export function shopUsernameProblem(raw: string): 'format' | null {
+  const trimmed = raw.trim();
+  if (trimmed === '') {
+    return null;
+  }
+  const username = trimmed.replace(/^@/, '').toLowerCase();
+  return /^[a-z0-9][a-z0-9._-]{0,31}$/.test(username) ? null : 'format';
 }
 
 /**
@@ -335,14 +453,29 @@ export function shopApiProblem(message: string): ShopApiProblem | null {
   if (message === SHOP_NAME_CONTAINS_ADDRESS) {
     return 'shopNameAddress';
   }
+  if (message === PLACE_LABEL_LONG) {
+    return 'shopNameLong';
+  }
   if (message === SHOP_ADDRESS_REQUIRED) {
     return 'shopAddress';
   }
   if (message === SHOP_DESCRIPTION_RANGE) {
     return 'shopDescription';
   }
+  if (TEXT_RANGE.has(message)) {
+    return 'shopDescription';
+  }
+  if (TEXT_CONTROLS.has(message)) {
+    return 'shopDescriptionControls';
+  }
   if (message === PLACE_ADDRESS_INVALID) {
     return 'placeAddress';
+  }
+  if (message === USERNAME_INVALID) {
+    return 'usernameInvalid';
+  }
+  if (message === USERNAME_MISSING) {
+    return 'usernameMissing';
   }
   return null;
 }

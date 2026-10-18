@@ -6,7 +6,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import { setMessageShopAccount } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
-import { isShopNote } from '@/lib/forum-shop';
+import { isShopNote, shopUsernameProblem } from '@/lib/forum-shop';
 import { searchMentionAccounts } from '@/lib/mention-search';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
@@ -164,7 +164,7 @@ export function ShopAccountControl({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState(draftFor(message.shopAccount?.username));
-  const [errorKey, setErrorKey] = useState<'missing' | 'failed' | null>(null);
+  const [errorKey, setErrorKey] = useState<'format' | 'missing' | 'failed' | null>(null);
   const [seed, setSeed] = useState<readonly ShopSuggestion[]>([]);
   const [remote, setRemote] = useState<{
     query: string;
@@ -176,6 +176,9 @@ export function ShopAccountControl({
   const panelRef = useRef<HTMLDivElement>(null);
   const listId = useId();
   const query = open && session !== null ? mentionQuery(draft) : null;
+  // A newly opened picker starts with `@` so the people list is useful before
+  // typing. Once the visitor edits the field, a bare `@` is a live format error.
+  const formatProblem = draft === '@' && errorKey === null ? null : shopUsernameProblem(draft);
 
   useEffect(() => {
     if (session === null || !open || query === null) {
@@ -284,8 +287,13 @@ export function ShopAccountControl({
     if (trimmed.startsWith('@')) {
       trimmed = trimmed.slice(1);
     }
+    trimmed = trimmed.toLowerCase();
     if (trimmed === '') {
       setErrorKey('missing');
+      return;
+    }
+    if (formatProblem !== null) {
+      setErrorKey('format');
       return;
     }
     setSaving(true);
@@ -298,6 +306,8 @@ export function ShopAccountControl({
     } catch (err) {
       if (err instanceof Error && err.message === 'No account with that username') {
         setErrorKey('missing');
+      } else if (err instanceof Error && err.message === 'Username is not valid') {
+        setErrorKey('format');
       } else {
         setErrorKey('failed');
       }
@@ -364,12 +374,16 @@ export function ShopAccountControl({
             type="text"
             aria-label={t('forum.shopAccountLabel')}
             aria-controls={shown.length > 0 ? listId : undefined}
+            aria-invalid={errorKey !== null || formatProblem !== null || undefined}
+            aria-describedby={
+              errorKey === null && formatProblem === null ? undefined : `${listId}-error`
+            }
             value={draft}
             disabled={saving}
             onChange={(event) => {
               setDraft(event.target.value);
               setRemote(null);
-              setErrorKey(null);
+              setErrorKey(shopUsernameProblem(event.target.value) === null ? null : 'format');
             }}
             className="mt-0 w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
           />
@@ -411,17 +425,19 @@ export function ShopAccountControl({
             </ul>
           ) : null}
           {errorKey !== null ? (
-            <p role="alert" className="mt-3 text-sm text-app-danger">
-              {errorKey === 'missing'
-                ? t('forum.shopAccountMissing')
-                : t('forum.shopAccountSaveFailed')}
+            <p id={`${listId}-error`} className="mt-3 text-sm text-app-danger">
+              {errorKey === 'format'
+                ? t('shops.problemUsernameFormat')
+                : errorKey === 'missing'
+                  ? t('forum.shopAccountMissing')
+                  : t('forum.shopAccountSaveFailed')}
             </p>
           ) : null}
           <Button
             type="button"
             variant="secondary"
             className="mt-3"
-            disabled={saving}
+            disabled={saving || formatProblem !== null}
             onClick={() => {
               void saveUsername();
             }}

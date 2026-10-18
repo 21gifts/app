@@ -1,31 +1,26 @@
 'use client';
 
 import { MapPin, X } from 'lucide-react';
-import {
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactElement,
-} from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
-import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ShopAddressFields, type ForumPlaceAddressDraft } from '@/components/ShopAddressFields';
+import { ShopLabeledInput } from '@/components/ShopLabeledInput';
+import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGate';
 import { Button, IconButton } from '@/components/ui';
 import { Scrollport } from '@/components/ui/Scrollport';
 import type { ForumPlaceAddress, ForumPlacePin } from '@/lib/api-types';
 import {
   SHOP_API_MESSAGE,
   formatPlacePinText,
-  shopAddressProblem,
+  shopAddressProblems,
   shopApiProblem,
   shopNameProblem,
+  type ShopAddressField,
+  type ShopAddressFieldProblem,
+  type ShopApiProblem,
 } from '@/lib/forum-shop';
 import type { MessageKey } from '@/lib/messages';
-import { fitBoxInFrame, type PlacedFrameBox } from '@/lib/page-frame';
 
 const EMPTY_ADDRESS: ForumPlaceAddressDraft = {
   street: '',
@@ -35,76 +30,17 @@ const EMPTY_ADDRESS: ForumPlaceAddressDraft = {
   country: '',
 };
 
-const SHOP_NAME_CONTROL_CLASS = [
-  'w-full min-h-11 rounded-2xl border border-app-border-strong bg-app-card',
-  'px-4 py-2 text-base text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50',
-].join(' ');
-
-const SHOP_NAME_WRAP_CLASS = 'flex flex-col gap-1 text-left text-sm text-app-fg';
-
-const ADDRESS_FIELD_KEY: Record<
-  'street' | 'houseNumber' | 'postalCode' | 'city' | 'country',
-  MessageKey
-> = {
-  street: 'shops.addressStreet',
-  houseNumber: 'shops.addressHouseNumber',
-  postalCode: 'shops.addressPostalCode',
-  city: 'shops.addressCity',
-  country: 'shops.addressCountry',
-};
-
-function addressFromDraft(draft: ForumPlaceAddressDraft): ForumPlaceAddress | null {
-  if (
-    draft.street === '' &&
-    draft.houseNumber === '' &&
-    draft.postalCode === '' &&
-    draft.city === '' &&
-    draft.country === ''
-  ) {
-    return null;
-  }
-  return {
-    street: draft.street,
-    houseNumber: draft.houseNumber,
-    postalCode: draft.postalCode,
-    city: draft.city,
-    country: draft.country,
-  };
-}
-
-function draftFromAddress(address: ForumPlaceAddress | null | undefined): ForumPlaceAddressDraft {
-  if (address === null || address === undefined) {
-    return { ...EMPTY_ADDRESS };
-  }
-  return {
-    street: address.street,
-    houseNumber: address.houseNumber,
-    postalCode: address.postalCode,
-    city: address.city,
-    country: address.country,
-  };
-}
-
-type GoogleLatLng = {
-  lat: () => number;
-  lng: () => number;
-};
-
-type GoogleMapMouseEvent = {
-  latLng: GoogleLatLng | null;
-};
-
+type GoogleLatLng = { lat: () => number; lng: () => number };
+type GoogleMapMouseEvent = { latLng: GoogleLatLng | null };
 type GoogleMap = {
   setCenter: (center: { lat: number; lng: number }) => void;
   addListener: (event: string, handler: (event: GoogleMapMouseEvent) => void) => void;
 };
-
 type GoogleMarker = {
   setPosition: (pos: { lat: number; lng: number }) => void;
   getPosition: () => GoogleLatLng | null;
   addListener: (event: string, handler: () => void) => void;
 };
-
 type GoogleMapsNamespace = {
   Map: new (
     el: HTMLElement,
@@ -117,7 +53,6 @@ type GoogleMapsNamespace = {
   }) => GoogleMarker;
   event?: { trigger: (map: GoogleMap, name: string) => void };
 };
-
 type GoogleWindow = Window & {
   google?: { maps?: GoogleMapsNamespace };
   gm_authFailure?: () => void;
@@ -125,48 +60,78 @@ type GoogleWindow = Window & {
 
 const START_CENTER = { lat: 20, lng: 0 };
 
-const PLACED_BOX_FIELDS = ['left', 'width', 'maxHeight', 'top', 'bottom'] as const;
-
-function samePlacedBox(a: PlacedFrameBox | null, b: PlacedFrameBox | null): boolean {
-  if (a === null || b === null) {
-    return a === b;
-  }
-  for (const field of PLACED_BOX_FIELDS) {
-    if (a[field] !== b[field]) {
-      return false;
-    }
-  }
-  return true;
+function addressFromDraft(draft: ForumPlaceAddressDraft): ForumPlaceAddress | null {
+  if (Object.values(draft).every((value) => value === '')) return null;
+  return { ...draft };
 }
 
-function placedBoxStyle(box: PlacedFrameBox, fill: boolean): CSSProperties {
-  const style: CSSProperties = {
-    left: box.left,
-    width: box.width,
-  };
-  if (box.top !== null) {
-    style.top = box.top;
-  } else {
-    style.bottom = box.bottom!;
-  }
-  if (fill) {
-    const viewportHeight = window.innerHeight;
-    if (box.top !== null) {
-      style.bottom = viewportHeight - box.top - box.maxHeight;
-    } else {
-      style.top = viewportHeight - box.bottom! - box.maxHeight;
-    }
-  }
-  return style;
+function draftFromAddress(address: ForumPlaceAddress | null | undefined): ForumPlaceAddressDraft {
+  return address === null || address === undefined ? { ...EMPTY_ADDRESS } : { ...address };
 }
+
+const ADDRESS_ERROR_KEY: Record<ShopAddressField, Record<ShopAddressFieldProblem, MessageKey>> = {
+  street: {
+    required: 'shops.problemStreetRequired',
+    length: 'shops.problemStreetLength',
+    controls: 'shops.problemStreetControls',
+    format: 'shops.problemStreetLength',
+    formatChLi: 'shops.problemStreetLength',
+    formatOther: 'shops.problemStreetLength',
+    letter: 'shops.problemStreetLength',
+    characters: 'shops.problemStreetLength',
+    invalid: 'shops.problemStreetLength',
+  },
+  houseNumber: {
+    required: 'shops.problemHouseNumberRequired',
+    length: 'shops.problemHouseNumberLength',
+    controls: 'shops.problemHouseNumberControls',
+    format: 'shops.problemHouseNumberFormat',
+    formatChLi: 'shops.problemHouseNumberFormat',
+    formatOther: 'shops.problemHouseNumberFormat',
+    letter: 'shops.problemHouseNumberFormat',
+    characters: 'shops.problemHouseNumberCharacters',
+    invalid: 'shops.problemHouseNumberFormat',
+  },
+  postalCode: {
+    required: 'shops.problemPostalCodeRequired',
+    length: 'shops.problemPostalCodeOther',
+    controls: 'shops.problemPostalCodeControls',
+    format: 'shops.problemPostalCodeOther',
+    formatChLi: 'shops.problemPostalCodeChLi',
+    formatOther: 'shops.problemPostalCodeOther',
+    letter: 'shops.problemPostalCodeOther',
+    characters: 'shops.problemPostalCodeOther',
+    invalid: 'shops.problemPostalCodeOther',
+  },
+  city: {
+    required: 'shops.problemCityRequired',
+    length: 'shops.problemCityLength',
+    controls: 'shops.problemCityControls',
+    format: 'shops.problemCityLetter',
+    formatChLi: 'shops.problemCityLetter',
+    formatOther: 'shops.problemCityLetter',
+    letter: 'shops.problemCityLetter',
+    characters: 'shops.problemCityLetter',
+    invalid: 'shops.problemCityLetter',
+  },
+  country: {
+    required: 'shops.problemCountryRequired',
+    length: 'shops.problemCountryInvalid',
+    controls: 'shops.problemCountryInvalid',
+    format: 'shops.problemCountryInvalid',
+    formatChLi: 'shops.problemCountryInvalid',
+    formatOther: 'shops.problemCountryInvalid',
+    letter: 'shops.problemCountryInvalid',
+    characters: 'shops.problemCountryInvalid',
+    invalid: 'shops.problemCountryInvalid',
+  },
+};
 
 /**
- * Optional place pin control for a top-level forum composer or staff editor.
+ * Optional place pin control for a forum composer or staff editor.
  *
- * @param props - Current pin, disabled flag, change handler, and optional
- * staff-commit overrides (size, variant, preview, label, `onCommit`).
- * `shopDetails` collects a required shop name and structured address.
- * @returns Attach button, optional preview, and map panel.
+ * @param props - Current pin, change handler, optional staff commit, and shop validation state.
+ * @returns Attach button, optional preview, and the place dialog.
  */
 export function PlaceField(props: {
   place: ForumPlacePin | null;
@@ -178,9 +143,12 @@ export function PlaceField(props: {
   ariaLabel?: string;
   onCommit?: (place: ForumPlacePin | null) => Promise<void>;
   shopDetails?: boolean;
+  problem?: ShopApiProblem | null;
+  onAvailabilityChange?: (unavailable: boolean) => void;
 }): ReactElement {
   const { t, locale } = useTranslations();
   const sunday = useLocalSunday();
+  const titleId = `${useId()}-title`;
   const shopNameId = `${useId()}-shop-name`;
   const shopDetails = props.shopDetails === true;
   const buttonSize = props.buttonSize ?? 'lg';
@@ -189,30 +157,35 @@ export function PlaceField(props: {
   const ariaLabel = props.ariaLabel ?? t('forum.addPlace');
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(false);
-  const [saveErrorKey, setSaveErrorKey] = useState<MessageKey | null>(null);
+  const [saveError, setSaveError] = useState<MessageKey | null>(null);
+  const [unknownSaveError, setUnknownSaveError] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
   const [scriptReady, setScriptReady] = useState(false);
   const [mapsKey, setMapsKey] = useState<string | null>(null);
   const [labelDraft, setLabelDraft] = useState('');
   const [addressDraft, setAddressDraft] = useState<ForumPlaceAddressDraft>({ ...EMPTY_ADDRESS });
   const [markerPos, setMarkerPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [nameTouched, setNameTouched] = useState(false);
+  const [addressTouched, setAddressTouched] = useState<ReadonlySet<ShopAddressField>>(
+    () => new Set(),
+  );
   const mapElRef = useRef<HTMLDivElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
   const authFailedRef = useRef(false);
-  // Map click and drag listeners are registered once; they read this ref.
   const savingRef = useRef(false);
-  const anchorRef = useRef<HTMLDivElement | null>(null);
-  const [placedBox, setPlacedBox] = useState<PlacedFrameBox | null>(null);
-  const placedBoxRef = useRef<PlacedFrameBox | null>(null);
-  const mapPlaced = placedBox !== null;
   savingRef.current = saving;
   const fieldsDisabled = props.disabled || saving;
 
-  function clearSaveError(): void {
-    setSaveError(false);
-    setSaveErrorKey(null);
-  }
+  const resetDraft = useCallback((): void => {
+    setLabelDraft(props.place?.label ?? '');
+    setAddressDraft(draftFromAddress(props.place?.address));
+    setMarkerPos(props.place === null ? null : { lat: props.place.lat, lng: props.place.lng });
+    setNameTouched(false);
+    setAddressTouched(new Set());
+    setSaveError(null);
+    setUnknownSaveError(false);
+  }, [props.place]);
 
   useEffect(() => {
     if (props.disabled) {
@@ -221,9 +194,34 @@ export function PlaceField(props: {
   }, [props.disabled]);
 
   useEffect(() => {
+    const problem = props.problem;
+    if (
+      !shopDetails ||
+      problem === undefined ||
+      problem === null ||
+      !['shopName', 'shopNameAddress', 'shopNameLong', 'shopAddress', 'placeAddress'].includes(
+        problem,
+      )
+    ) {
+      return;
+    }
+    resetDraft();
+    setOpen(true);
+    if (problem === 'shopName' || problem === 'shopNameAddress' || problem === 'shopNameLong') {
+      setNameTouched(true);
+    }
+    setSaveError(SHOP_API_MESSAGE[problem]);
+  }, [props.problem, resetDraft, shopDetails]);
+
+  useEffect(() => {
+    props.onAvailabilityChange?.(unavailable);
+  }, [props.onAvailabilityChange, unavailable]);
+
+  useEffect(() => {
     if (!open) {
       return;
     }
+    authFailedRef.current = false;
     let cancelled = false;
     const load = async (): Promise<void> => {
       try {
@@ -232,16 +230,8 @@ export function PlaceField(props: {
         if (cancelled) {
           return;
         }
-        let nextKey: string | null = null;
-        if (typeof body === 'object' && body !== null && 'key' in body) {
-          const raw = body.key;
-          if (typeof raw === 'string') {
-            const trimmed = raw.trim();
-            if (trimmed !== '') {
-              nextKey = trimmed;
-            }
-          }
-        }
+        const raw = typeof body === 'object' && body !== null && 'key' in body ? body.key : null;
+        const nextKey = typeof raw === 'string' && raw.trim() !== '' ? raw.trim() : null;
         if (nextKey === null) {
           setMapsKey(null);
           setUnavailable(true);
@@ -250,25 +240,18 @@ export function PlaceField(props: {
         }
         setMapsKey(nextKey);
         const googleWindow = window as GoogleWindow;
-        // A rejected key stays rejected. Google still defines `google.maps`.
         const rejectKey = (): void => {
           authFailedRef.current = true;
-          if (cancelled) {
-            return;
+          if (!cancelled) {
+            setUnavailable(true);
+            setScriptReady(false);
           }
-          setUnavailable(true);
-          setScriptReady(false);
         };
         const acceptKey = (): void => {
-          if (cancelled || authFailedRef.current) {
-            if (!cancelled && authFailedRef.current) {
-              setUnavailable(true);
-              setScriptReady(false);
-            }
-            return;
+          if (!cancelled && !authFailedRef.current) {
+            setUnavailable(false);
+            setScriptReady(true);
           }
-          setUnavailable(false);
-          setScriptReady(true);
         };
         googleWindow.gm_authFailure = rejectKey;
         if (googleWindow.google?.maps !== undefined) {
@@ -281,9 +264,6 @@ export function PlaceField(props: {
             return;
           }
           if (googleWindow.google?.maps === undefined || authFailedRef.current) {
-            if (existing instanceof HTMLScriptElement) {
-              existing.dataset['gmapsState'] = 'error';
-            }
             setUnavailable(true);
             setScriptReady(false);
             return;
@@ -291,14 +271,10 @@ export function PlaceField(props: {
           acceptKey();
         };
         const onError = (): void => {
-          if (cancelled) {
-            return;
+          if (!cancelled) {
+            setUnavailable(true);
+            setScriptReady(false);
           }
-          if (existing instanceof HTMLScriptElement) {
-            existing.dataset['gmapsState'] = 'error';
-          }
-          setUnavailable(true);
-          setScriptReady(false);
         };
         if (existing instanceof HTMLScriptElement) {
           if (existing.dataset['gmapsState'] === 'error' || authFailedRef.current) {
@@ -306,26 +282,14 @@ export function PlaceField(props: {
             setScriptReady(false);
             return;
           }
-          setUnavailable(false);
-          existing.addEventListener('load', onLoad);
-          existing.addEventListener('error', onError);
+          existing.addEventListener('load', onLoad, { once: true });
+          existing.addEventListener('error', onError, { once: true });
           return;
         }
-        if (authFailedRef.current) {
-          setUnavailable(true);
-          setScriptReady(false);
-          return;
-        }
-        setUnavailable(false);
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(nextKey)}&v=weekly`;
         script.dataset['gmaps'] = 'weekly';
-        script.addEventListener('load', () => {
-          if (googleWindow.google?.maps === undefined) {
-            script.dataset['gmapsState'] = 'error';
-          }
-          onLoad();
-        });
+        script.addEventListener('load', onLoad, { once: true });
         script.addEventListener('error', () => {
           script.dataset['gmapsState'] = 'error';
           onError();
@@ -342,7 +306,6 @@ export function PlaceField(props: {
     void load();
     return () => {
       cancelled = true;
-      // Keep the rejection if Google calls back after the panel closes.
       (window as GoogleWindow).gm_authFailure = () => {
         authFailedRef.current = true;
       };
@@ -350,54 +313,51 @@ export function PlaceField(props: {
   }, [open]);
 
   useEffect(() => {
-    if (authFailedRef.current) {
+    if (!open) {
       return;
     }
+    const opener = document.activeElement as HTMLElement | null;
+    const closeOnEscape = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape' && !savingRef.current) {
+        setOpen(false);
+      }
+    };
+    dialogRef.current?.focus();
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape);
+      opener?.focus();
+    };
+  }, [open]);
+
+  useEffect(() => {
     if (!open || unavailable || mapsKey === null || !scriptReady) {
       return;
     }
     const el = mapElRef.current;
-    /* v8 ignore next 3 -- the map node is committed before this effect */
-    if (el === null) {
-      return;
-    }
     const maps = (window as GoogleWindow).google?.maps;
-    if (maps === undefined) {
+    if (el === null || maps === undefined) {
       return;
     }
     const saved = props.place;
     const map = new maps.Map(el, { center: saved ?? START_CENTER, zoom: 2 });
-    if (authFailedRef.current) {
-      el.replaceChildren();
-      return;
-    }
     markerRef.current = null;
-    setMarkerPos(saved === null ? null : { lat: saved.lat, lng: saved.lng });
-    setLabelDraft(saved?.label ?? '');
-    setAddressDraft(draftFromAddress(saved?.address ?? null));
-    if (saved !== null) {
-      const savedMarker = new maps.Marker({
-        position: { lat: saved.lat, lng: saved.lng },
-        map,
-        draggable: true,
-      });
-      savedMarker.addListener('dragend', () => {
-        if (savingRef.current) {
-          return;
-        }
-        const next = savedMarker.getPosition();
-        if (next === null) {
-          return;
-        }
-        setMarkerPos({ lat: next.lat(), lng: next.lng() });
-      });
-      markerRef.current = savedMarker;
-    }
-    map.addListener('click', (event: GoogleMapMouseEvent) => {
+    const updateFromMarker = (marker: GoogleMarker): void => {
       if (savingRef.current) {
         return;
       }
-      if (event.latLng === null) {
+      const next = marker.getPosition();
+      if (next !== null) {
+        setMarkerPos({ lat: next.lat(), lng: next.lng() });
+      }
+    };
+    if (saved !== null) {
+      const marker = new maps.Marker({ position: saved, map, draggable: true });
+      marker.addListener('dragend', () => updateFromMarker(marker));
+      markerRef.current = marker;
+    }
+    map.addListener('click', (event) => {
+      if (savingRef.current || event.latLng === null) {
         return;
       }
       const pos = { lat: event.latLng.lat(), lng: event.latLng.lng() };
@@ -405,134 +365,90 @@ export function PlaceField(props: {
         markerRef.current.setPosition(pos);
       } else {
         const marker = new maps.Marker({ position: pos, map, draggable: true });
-        marker.addListener('dragend', () => {
-          if (savingRef.current) {
-            return;
-          }
-          const next = marker.getPosition();
-          if (next === null) {
-            return;
-          }
-          setMarkerPos({ lat: next.lat(), lng: next.lng() });
-        });
+        marker.addListener('dragend', () => updateFromMarker(marker));
         markerRef.current = marker;
       }
       setMarkerPos(pos);
     });
     if (saved === null && navigator.geolocation !== undefined) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          map.setCenter({ lat: position.coords.latitude, lng: position.coords.longitude });
-        },
-        () => {
-          map.setCenter(START_CENTER);
-        },
+        (position) =>
+          map.setCenter({ lat: position.coords.latitude, lng: position.coords.longitude }),
+        () => map.setCenter(START_CENTER),
       );
     }
-    let observer: ResizeObserver | undefined;
-    if (typeof ResizeObserver !== 'undefined') {
-      observer = new ResizeObserver(() => {
-        maps.event?.trigger(map, 'resize');
-      });
-      observer.observe(el);
-    }
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(() => maps.event?.trigger(map, 'resize'));
+    observer?.observe(el);
     return () => {
       observer?.disconnect();
       el.replaceChildren();
     };
-  }, [
-    open,
-    unavailable,
-    mapsKey,
-    scriptReady,
-    props.place?.lat,
-    props.place?.lng,
-    props.place?.label,
-    props.place?.address?.street,
-    props.place?.address?.houseNumber,
-    props.place?.address?.postalCode,
-    props.place?.address?.city,
-    props.place?.address?.country,
-    mapPlaced,
-    sunday,
-  ]);
-
-  useLayoutEffect(() => {
-    const showPreviewBox = !sunday && showPreview && props.place !== null && !open;
-    const showPanelBox = !sunday && open && !props.disabled && (unavailable || mapsKey !== null);
-    const commitPlacedBox = (next: PlacedFrameBox | null): void => {
-      if (samePlacedBox(placedBoxRef.current, next)) {
-        return;
-      }
-      placedBoxRef.current = next;
-      setPlacedBox(next);
-    };
-    if (!showPreviewBox && !showPanelBox) {
-      commitPlacedBox(null);
-      return;
-    }
-    const preferredWidth = showPanelBox ? 384 : 256;
-    const measure = (): void => {
-      const anchor = anchorRef.current;
-      /* v8 ignore next 4 -- the anchor div stays mounted for the whole effect */
-      if (anchor === null) {
-        setPlacedBox(null);
-        return;
-      }
-      const anchorRect = anchor.getBoundingClientRect();
-      const frameEl = anchor.closest('[data-app-frame]');
-      const raw =
-        frameEl !== null
-          ? frameEl.getBoundingClientRect()
-          : { left: 0, right: window.innerWidth, top: 0, bottom: window.innerHeight };
-      const band = window.visualViewport;
-      const viewTop = band?.offsetTop ?? 0;
-      const viewBottom = viewTop + (band?.height ?? window.innerHeight);
-      commitPlacedBox(
-        fitBoxInFrame({
-          frameLeft: Math.max(raw.left, 0),
-          frameRight: Math.min(raw.right, window.innerWidth),
-          frameTop: Math.max(raw.top, viewTop),
-          frameBottom: Math.min(raw.bottom, viewBottom),
-          anchorLeft: anchorRect.left,
-          anchorTop: anchorRect.top,
-          anchorBottom: anchorRect.bottom,
-          gap: 8,
-          preferredWidth,
-          inset: 16,
-          viewportHeight: window.innerHeight,
-        }),
-      );
-    };
-    measure();
-    const viewport = window.visualViewport;
-    window.addEventListener('resize', measure);
-    document.addEventListener('scroll', measure, true);
-    viewport?.addEventListener('resize', measure);
-    viewport?.addEventListener('scroll', measure);
-    return () => {
-      window.removeEventListener('resize', measure);
-      document.removeEventListener('scroll', measure, true);
-      viewport?.removeEventListener('resize', measure);
-      viewport?.removeEventListener('scroll', measure);
-    };
-  }, [open, showPreview, props.place, props.disabled, unavailable, mapsKey, sunday]);
-
-  const previewText = props.place === null ? '' : formatPlacePinText(props.place, locale);
+  }, [open, unavailable, mapsKey, scriptReady, props.place, sunday]);
 
   const addressValue = addressFromDraft(addressDraft);
+  const addressProblems = shopDetails ? shopAddressProblems(addressValue) : {};
   const nameProblem = shopDetails ? shopNameProblem(labelDraft, addressValue) : null;
-  const addressProblem = shopDetails ? shopAddressProblem(addressValue) : null;
-  const shopCommitBlocked = shopDetails && (nameProblem !== null || addressProblem !== null);
-  const shopHint =
-    nameProblem === 'name'
-      ? t('shops.problemName')
-      : nameProblem === 'nameAddress'
-        ? t('shops.problemNameAddress')
-        : addressProblem === 'missing'
-          ? t('shops.problemAddress')
-          : addressProblem !== null
-            ? t('shops.problemAddressField', { field: t(ADDRESS_FIELD_KEY[addressProblem]) })
+  const nameError = !shopDetails
+    ? undefined
+    : !nameTouched && labelDraft.trim() === '' && saveError === null
+      ? undefined
+      : nameProblem === 'name'
+        ? t('shops.problemName')
+        : nameProblem === 'nameAddress'
+          ? t('shops.problemNameAddress')
+          : nameProblem === 'nameLong'
+            ? t('shops.problemNameLong')
+            : nameProblem === 'nameControls'
+              ? t('shops.problemNameControls')
+              : saveError !== null &&
+                  [
+                    'shops.problemName',
+                    'shops.problemNameAddress',
+                    'shops.problemNameLong',
+                  ].includes(saveError)
+                ? t(saveError)
+                : undefined;
+  const shownAddressErrors: Partial<Record<ShopAddressField, string>> = {};
+  for (const field of Object.keys(addressProblems) as ShopAddressField[]) {
+    if (addressTouched.has(field) || addressDraft[field].trim() !== '') {
+      const problem = addressProblems[field];
+      if (problem !== undefined) {
+        shownAddressErrors[field] = t(ADDRESS_ERROR_KEY[field][problem]);
+      }
+    }
+  }
+  const invalidFields = Object.keys(addressProblems) as ShopAddressField[];
+  const blocked =
+    markerPos === null ||
+    unavailable ||
+    saveError !== null ||
+    (shopDetails && (nameProblem !== null || invalidFields.length > 0));
+  const fieldLabel: Record<ShopAddressField, string> = {
+    street: t('shops.addressStreet').toLowerCase(),
+    houseNumber: t('shops.addressHouseNumber').toLowerCase(),
+    postalCode: t('shops.addressPostalCode').toLowerCase(),
+    city: t('shops.addressCity').toLowerCase(),
+    country: t('shops.addressCountry').toLowerCase(),
+  };
+  const missing = [
+    ...(markerPos === null ? [t('shops.mapPin').toLowerCase()] : []),
+    ...(shopDetails && labelDraft.trim() === '' ? [t('shops.placeName').toLowerCase()] : []),
+    ...invalidFields
+      .filter((field) => addressDraft[field].trim() === '')
+      .map((field) => fieldLabel[field]),
+  ];
+  const footerReason =
+    saveError !== null && nameError === undefined
+      ? t(saveError)
+      : unavailable
+        ? t('forum.placeUnavailable')
+        : missing.length > 0
+          ? t('shops.fillIn', { fields: missing.join(', ') })
+          : blocked
+            ? t('shops.fixFields')
             : null;
 
   async function commit(next: ForumPlacePin | null): Promise<void> {
@@ -542,174 +458,180 @@ export function PlaceField(props: {
       return;
     }
     setSaving(true);
-    setSaveError(false);
-    setSaveErrorKey(null);
+    setSaveError(null);
+    setUnknownSaveError(false);
     try {
       await props.onCommit(next);
       setOpen(false);
     } catch (error) {
-      setSaveError(true);
       const problem = error instanceof Error ? shopApiProblem(error.message) : null;
-      setSaveErrorKey(problem === null ? null : SHOP_API_MESSAGE[problem]);
+      if (problem === null) {
+        setUnknownSaveError(true);
+      } else {
+        setSaveError(SHOP_API_MESSAGE[problem]);
+      }
     } finally {
       setSaving(false);
     }
   }
 
-  const previewBody = (
-    <>
-      <MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-      <span className="min-w-0 flex-1 text-sm text-app-fg">{previewText}</span>
-      <IconButton
-        type="button"
-        size="sm"
-        variant="secondary"
-        aria-label={t('forum.placeRemove')}
-        disabled={fieldsDisabled}
-        onClick={() => {
-          void commit(null);
-        }}
-      >
-        <X aria-hidden="true" className="h-4 w-4" />
-      </IconButton>
-    </>
-  );
-
-  const panelBody = unavailable ? (
-    <>
-      <p className="text-sm text-app-muted">{t('forum.placeUnavailable')}</p>
-      {saveError ? (
-        <p role="alert" className="mt-3 text-sm text-app-danger">
-          {saveErrorKey !== null ? t(saveErrorKey) : t('forum.placeSaveFailed')}
-        </p>
-      ) : null}
-      {!showPreview && props.place !== null ? (
-        <IconButton
-          type="button"
-          size="sm"
-          variant="secondary"
-          className="mt-3 shrink-0"
-          aria-label={t('forum.placeRemove')}
-          disabled={fieldsDisabled}
-          onClick={() => {
-            void commit(null);
-          }}
-        >
-          <X aria-hidden="true" className="h-4 w-4" />
-        </IconButton>
-      ) : null}
-    </>
-  ) : (
-    <>
-      <div
-        ref={mapElRef}
-        className={
-          shopDetails
-            ? 'h-64 min-h-32 w-full shrink rounded-xl'
-            : 'h-64 min-h-0 w-full shrink rounded-xl'
-        }
-      />
-      {shopDetails ? (
-        <Scrollport className="mt-3 flex min-h-24 flex-1 flex-col gap-3">
-          <div className={SHOP_NAME_WRAP_CLASS}>
-            <label htmlFor={shopNameId}>{t('shops.placeName')}</label>
-            <input
-              id={shopNameId}
-              className={SHOP_NAME_CONTROL_CLASS}
-              required
-              maxLength={80}
-              autoComplete="off"
-              value={labelDraft}
-              disabled={fieldsDisabled}
-              onChange={(event) => {
-                clearSaveError();
-                setLabelDraft(event.target.value);
-              }}
-            />
-          </div>
-          <p className="text-sm text-app-muted">{t('shops.placeNameHint')}</p>
-          <ShopAddressFields
-            value={addressValue}
-            disabled={fieldsDisabled}
-            onChange={(next) => {
-              clearSaveError();
-              setAddressDraft(next);
-            }}
-          />
-          {shopHint !== null ? <p className="text-sm text-app-muted">{shopHint}</p> : null}
-        </Scrollport>
-      ) : (
-        <input
-          type="text"
-          maxLength={80}
-          aria-label={t('forum.placeLabel')}
-          value={labelDraft}
-          disabled={fieldsDisabled}
-          onChange={(event) => {
-            clearSaveError();
-            setLabelDraft(event.target.value);
-          }}
-          className="mt-3 w-full shrink-0 rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
-        />
-      )}
-      {saveError ? (
-        <p role="alert" className="mt-3 text-sm text-app-danger">
-          {saveErrorKey !== null ? t(saveErrorKey) : t('forum.placeSaveFailed')}
-        </p>
-      ) : null}
-      {markerPos !== null ? (
-        <Button
-          type="button"
-          variant="secondary"
-          className="mt-3 shrink-0"
-          disabled={fieldsDisabled || shopCommitBlocked}
-          onClick={() => {
-            const trimmed = labelDraft.trim();
-            if (shopDetails) {
-              const street = addressDraft.street.trim();
-              const houseNumber = addressDraft.houseNumber.trim();
-              const postalCode = addressDraft.postalCode.trim();
-              const city = addressDraft.city.trim();
-              const country = addressDraft.country.trim().toUpperCase();
-              void commit({
-                lat: markerPos.lat,
-                lng: markerPos.lng,
-                label: trimmed,
-                address: { street, houseNumber, postalCode, city, country },
-              });
-              return;
-            }
-            void commit({
-              lat: markerPos.lat,
-              lng: markerPos.lng,
-              label: trimmed === '' ? null : trimmed,
-            });
-          }}
-        >
-          {t('forum.placeDone')}
-        </Button>
-      ) : null}
-      {!showPreview && props.place !== null ? (
-        <IconButton
-          type="button"
-          size="sm"
-          variant="secondary"
-          className="mt-3 shrink-0"
-          aria-label={t('forum.placeRemove')}
-          disabled={fieldsDisabled}
-          onClick={() => {
-            void commit(null);
-          }}
-        >
-          <X aria-hidden="true" className="h-4 w-4" />
-        </IconButton>
-      ) : null}
-    </>
-  );
+  const previewText = props.place === null ? '' : formatPlacePinText(props.place, locale);
+  const dialog =
+    !sunday && open && !props.disabled
+      ? createPortal(
+          <div
+            ref={dialogRef}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-app-overlay outline-none sm:items-center sm:p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            tabIndex={-1}
+          >
+            <div className="flex h-full w-full max-w-[560px] flex-col bg-app-card sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:rounded-2xl sm:border sm:border-app-border">
+              <div className="flex shrink-0 items-center justify-between border-b border-app-border px-4 py-3">
+                <h2 id={titleId} className="text-base font-medium text-app-fg">
+                  {shopDetails ? t('shops.placeDialogTitle') : t('forum.addPlace')}
+                </h2>
+                <IconButton
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  aria-label={t('forum.payClose')}
+                  disabled={saving}
+                  onClick={() => setOpen(false)}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              </div>
+              <Scrollport className="min-h-0 flex-1">
+                <div className="flex flex-col gap-3 p-4">
+                  {unavailable ? (
+                    <p className="text-sm text-app-danger">{t('forum.placeUnavailable')}</p>
+                  ) : (
+                    <>
+                      <div ref={mapElRef} className="h-64 min-h-64 w-full rounded-xl" />
+                      {markerPos === null ? (
+                        <p className="text-sm text-app-muted">{t('shops.placeMapHint')}</p>
+                      ) : null}
+                    </>
+                  )}
+                  {shopDetails ? (
+                    <>
+                      <ShopLabeledInput
+                        id={shopNameId}
+                        label={t('shops.placeName')}
+                        required
+                        autoComplete="off"
+                        value={labelDraft}
+                        disabled={fieldsDisabled}
+                        hint={t('shops.placeNameHint')}
+                        {...(nameError === undefined ? {} : { error: nameError })}
+                        onBlur={() => setNameTouched(true)}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setLabelDraft(value);
+                          if (value !== '') {
+                            setNameTouched(true);
+                          }
+                          setSaveError(null);
+                          setUnknownSaveError(false);
+                        }}
+                      />
+                      <ShopAddressFields
+                        value={addressValue}
+                        disabled={fieldsDisabled}
+                        errors={shownAddressErrors}
+                        onBlur={(field) =>
+                          setAddressTouched((current) => new Set(current).add(field))
+                        }
+                        onChange={(next) => {
+                          setAddressDraft(next);
+                          const changed = (Object.keys(next) as ShopAddressField[]).find(
+                            (field) => next[field] !== addressDraft[field],
+                          );
+                          if (changed !== undefined && next[changed] !== '') {
+                            setAddressTouched((current) => new Set(current).add(changed));
+                          }
+                          setSaveError(null);
+                          setUnknownSaveError(false);
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <input
+                      type="text"
+                      maxLength={80}
+                      aria-label={t('forum.placeLabel')}
+                      value={labelDraft}
+                      disabled={fieldsDisabled}
+                      onChange={(event) => setLabelDraft(event.target.value)}
+                      className="w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
+                    />
+                  )}
+                  {unknownSaveError ? (
+                    <p role="alert" className="text-sm text-app-danger">
+                      {t('forum.placeSaveFailed')}
+                    </p>
+                  ) : null}
+                </div>
+              </Scrollport>
+              <div className="shrink-0 border-t border-app-border bg-app-card px-4 py-3">
+                {footerReason === null ? null : (
+                  <p className="mb-2 text-sm text-app-danger">{footerReason}</p>
+                )}
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={fieldsDisabled || blocked}
+                    onClick={() => {
+                      if (markerPos === null) {
+                        return;
+                      }
+                      const label = labelDraft.trim();
+                      void commit({
+                        ...markerPos,
+                        label: label === '' ? null : label,
+                        ...(shopDetails
+                          ? {
+                              label,
+                              address: {
+                                street: addressDraft.street.trim(),
+                                houseNumber: addressDraft.houseNumber.trim(),
+                                postalCode: addressDraft.postalCode.trim(),
+                                city: addressDraft.city.trim(),
+                                country: addressDraft.country.trim().toUpperCase(),
+                              },
+                            }
+                          : {}),
+                      });
+                    }}
+                  >
+                    {t('forum.placeDone')}
+                  </Button>
+                  {!showPreview && props.place !== null ? (
+                    <IconButton
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      aria-label={t('forum.placeRemove')}
+                      disabled={fieldsDisabled}
+                      onClick={() => void commit(null)}
+                    >
+                      <X aria-hidden="true" className="h-4 w-4" />
+                    </IconButton>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )
+      : null;
 
   return (
     <SundayWritingGate>
-      <div ref={anchorRef} className="relative shrink-0">
+      <div className="relative shrink-0">
         <IconButton
           type="button"
           size={buttonSize}
@@ -720,56 +642,30 @@ export function PlaceField(props: {
           disabled={fieldsDisabled}
           onClick={() => {
             if (!open) {
-              clearSaveError();
+              resetDraft();
             }
             setOpen((current) => !current);
           }}
         >
-          <MapPin
-            aria-hidden="true"
-            className={buttonSize === 'sm' ? 'h-4 w-4 shrink-0' : 'block h-5 w-5 shrink-0'}
-          />
+          <MapPin aria-hidden="true" className={buttonSize === 'sm' ? 'h-4 w-4' : 'h-5 w-5'} />
         </IconButton>
         {!sunday && showPreview && props.place !== null && !open ? (
-          placedBox !== null ? (
-            createPortal(
-              <div
-                className="fixed z-20 flex items-start gap-3 overflow-clip rounded-2xl border border-app-border bg-app-card-muted p-3"
-                style={placedBoxStyle(placedBox, false)}
-              >
-                {previewBody}
-              </div>,
-              document.body,
-            )
-          ) : (
-            <div className="absolute left-0 top-full z-20 mt-2 flex w-64 items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
-              {previewBody}
-            </div>
-          )
+          <div className="absolute left-0 top-full z-20 mt-2 flex w-64 items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
+            <MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="min-w-0 flex-1 text-sm text-app-fg">{previewText}</span>
+            <IconButton
+              type="button"
+              size="sm"
+              variant="secondary"
+              aria-label={t('forum.placeRemove')}
+              disabled={fieldsDisabled}
+              onClick={() => void commit(null)}
+            >
+              <X aria-hidden="true" className="h-4 w-4" />
+            </IconButton>
+          </div>
         ) : null}
-        {!sunday && open && !props.disabled && (unavailable || mapsKey !== null) ? (
-          placedBox !== null ? (
-            createPortal(
-              <div
-                className={
-                  placedBox.top !== null
-                    ? 'pointer-events-none fixed z-30 flex flex-col justify-start overflow-clip'
-                    : 'pointer-events-none fixed z-30 flex flex-col justify-end overflow-clip'
-                }
-                style={placedBoxStyle(placedBox, true)}
-              >
-                <div className="pointer-events-auto flex max-h-full min-h-0 w-full flex-col overflow-clip rounded-2xl border border-app-border bg-app-card-muted p-3">
-                  {panelBody}
-                </div>
-              </div>,
-              document.body,
-            )
-          ) : (
-            <div className="absolute left-0 top-full z-30 mt-2 w-full max-w-sm rounded-2xl border border-app-border bg-app-card-muted p-3">
-              {panelBody}
-            </div>
-          )
-        ) : null}
+        {dialog}
       </div>
     </SundayWritingGate>
   );

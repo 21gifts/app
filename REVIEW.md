@@ -57,6 +57,14 @@ present in **all** locale catalogs (`en`, `de`, `es`, `fil`) in
 - Do not approve a PR that adds a key to English (or any one locale) without
   the matching keys in the other three.
 
+## Input feedback
+
+Reject a pull request when an API-enforced input rule appears only after submit
+or Next, when a known API reason is replaced with generic copy, or when a step
+or submit button is disabled without a visible reason. Check that field-level
+messages are live, adjacent, and linked through `aria-invalid` and
+`aria-describedby`.
+
 ## Shown amounts
 
 Reject the PR when a shown bitcoin amount has no equivalent in the visitor's default fiat. Signed in, the code is the currency stored for that person (`useFiatPreference`: a stored profile choice wins). Signed out, it is `defaultFiatForLocale` of the UI language. A payment that stored a fiat string shows that string; otherwise the page uses the latest gift-day rate. A baseline of a payment amount that omits the fiat line is rejected. See CONTRIBUTING.md “Shown amounts”.

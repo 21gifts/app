@@ -2386,6 +2386,7 @@ describe('postMessage', () => {
     'Shop name must not contain the address',
     'Shop address is required',
     'Shop description must be 20 to 1000 characters and longer than the shop name',
+    'Text must be 1–8000 characters or include a photo',
     'Place address is invalid',
   ])('throws the shop 400 body %s unchanged', async (error) => {
     stubFetch({ ok: false, status: 400, body: { error } });
@@ -5771,6 +5772,7 @@ describe('setMessagePlace', () => {
     'Shop name is required',
     'Shop name must not contain the address',
     'Shop address is required',
+    'Place label must be at most 80 characters',
     'Place address is invalid',
   ])('throws the shop 400 body %s unchanged', async (error) => {
     stubFetch({ ok: false, status: 400, body: { error } });
@@ -5822,6 +5824,20 @@ describe('setMessageShopAccount', () => {
     );
   });
 
+  it('throws the username reason from a 400 unchanged', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Username is not valid' } });
+    await expect(setMessageShopAccount('token', 'm1', '_')).rejects.toThrow(
+      'Username is not valid',
+    );
+  });
+
+  it('falls back when a 400 body is not an error envelope', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(setMessageShopAccount('token', 'm1', '_')).rejects.toThrow(
+      'Could not save account',
+    );
+  });
+
   it('throws when the response is not ok', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(setMessageShopAccount('token', 'm1', null)).rejects.toThrow(
@@ -5863,6 +5879,10 @@ describe('setMessageShopText', () => {
     'Shop name must not contain the address',
     'Shop address is required',
     'Shop description must be 20 to 1000 characters and longer than the shop name',
+    'Text must be 1–8000 characters',
+    'Text must be 1–8000 characters or include a photo',
+    'Text contains invalid control characters',
+    'Text must not contain control characters',
     'Place address is invalid',
   ])('throws the shop 400 body %s unchanged', async (error) => {
     stubFetch({ ok: false, status: 400, body: { error } });
@@ -5911,6 +5931,13 @@ describe('setMessageShopPhotos', () => {
     stubFetch({ ok: false, status: 400, body: {} });
     await expect(setMessageShopPhotos('token', 'm1', [])).rejects.toThrow(
       'Could not save shop note',
+    );
+  });
+
+  it('preserves a known shop reason from a 400', async () => {
+    stubFetch({ ok: false, status: 400, body: { error: 'Shop address is required' } });
+    await expect(setMessageShopPhotos('token', 'm1', [])).rejects.toThrow(
+      'Shop address is required',
     );
   });
 });

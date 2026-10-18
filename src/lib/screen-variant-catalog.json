@@ -4188,9 +4188,9 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/shops:add-text-long",
-    "label": "/shops add-text-long",
-    "visual": "state-shops-add-text-long",
+    "id": "/shops:add-description-error",
+    "label": "/shops add-description-error",
+    "visual": "state-shops-add-description-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4203,6 +4203,12 @@
     "id": "/shops:add-user",
     "label": "/shops add-user",
     "visual": "state-shops-add-user",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:add-user-invalid",
+    "label": "/shops add-user-invalid",
+    "visual": "state-shops-add-user-invalid",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

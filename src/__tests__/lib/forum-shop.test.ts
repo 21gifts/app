@@ -9,11 +9,13 @@ import {
   SHOP_DESCRIPTION_MAX,
   SHOP_DESCRIPTION_MIN,
   shopAddressProblem,
+  shopAddressProblems,
   shopApiProblem,
   shopDescriptionProblem,
   shopDescriptionRemaining,
   shopNameProblem,
   shopPlaceComplete,
+  shopUsernameProblem,
   stripShopHashtag,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
@@ -86,6 +88,7 @@ describe('forum-shop', () => {
       expect(shopAddressProblem({ ...ADDRESS, street: '' })).toBe('street');
       expect(shopAddressProblem({ ...ADDRESS, street: 'x'.repeat(121) })).toBe('street');
       expect(shopAddressProblem({ ...ADDRESS, street: 'Main\u0001St' })).toBe('street');
+      expect(shopAddressProblem({ ...ADDRESS, street: '\tMain Street' })).toBe('street');
       expect(shopAddressProblem({ ...ADDRESS, houseNumber: '12\n' })).toBe('houseNumber');
       expect(shopAddressProblem({ ...ADDRESS, houseNumber: 'A12' })).toBe('houseNumber');
       expect(shopAddressProblem({ ...ADDRESS, postalCode: '800' })).toBe('postalCode');
@@ -127,6 +130,63 @@ describe('forum-shop', () => {
     });
   });
 
+  describe('shopAddressProblems', () => {
+    it('returns every field problem with the concrete rule', () => {
+      expect(shopAddressProblems(null)).toEqual({
+        street: 'required',
+        houseNumber: 'required',
+        postalCode: 'required',
+        city: 'required',
+        country: 'required',
+      });
+      expect(
+        shopAddressProblems({
+          street: 'x'.repeat(121),
+          houseNumber: 'A12',
+          postalCode: '800',
+          city: '1234',
+          country: 'CH',
+        }),
+      ).toEqual({
+        street: 'length',
+        houseNumber: 'format',
+        postalCode: 'formatChLi',
+        city: 'letter',
+      });
+      expect(shopAddressProblems(ADDRESS)).toEqual({});
+    });
+
+    it('distinguishes controls, lengths, foreign postal format, and invalid country', () => {
+      expect(
+        shopAddressProblems({
+          street: 'Main\u0001',
+          houseNumber: '12\u007f',
+          postalCode: 'A',
+          city: 'x'.repeat(81),
+          country: 'XX',
+        }),
+      ).toEqual({
+        street: 'controls',
+        houseNumber: 'controls',
+        postalCode: 'formatOther',
+        city: 'length',
+        country: 'invalid',
+      });
+      expect(shopAddressProblems({ ...ADDRESS, postalCode: '80\u0001' })).toEqual({
+        postalCode: 'controls',
+      });
+      expect(shopAddressProblems({ ...ADDRESS, city: 'Bern\u0001' })).toEqual({
+        city: 'controls',
+      });
+      expect(shopAddressProblems({ ...ADDRESS, houseNumber: `1${'a'.repeat(32)}` })).toEqual({
+        houseNumber: 'length',
+      });
+      expect(shopAddressProblems({ ...ADDRESS, houseNumber: '12#' })).toEqual({
+        houseNumber: 'characters',
+      });
+    });
+  });
+
   describe('shopNameProblem', () => {
     it('returns name when the label is blank', () => {
       expect(shopNameProblem(null, ADDRESS)).toBe('name');
@@ -146,6 +206,11 @@ describe('forum-shop', () => {
 
     it('treats an empty street token as no match', () => {
       expect(shopNameProblem("Kiki's Bakery", { ...ADDRESS, street: '' })).toBe(null);
+    });
+
+    it('rejects names over 80 characters and control characters', () => {
+      expect(shopNameProblem('x'.repeat(81), ADDRESS)).toBe('nameLong');
+      expect(shopNameProblem('Cafe\u0001', ADDRESS)).toBe('nameControls');
     });
 
     it('trims street and postal-code tokens before matching', () => {
@@ -175,7 +240,22 @@ describe('forum-shop', () => {
         shopDescriptionProblem('Fresh bread every morning.\r\n\r\n#21GiftsShop', "Kiki's Bakery"),
       ).toBe(null);
       expect(shopDescriptionProblem('Fresh bread every morning.', null)).toBe(null);
+      expect(shopDescriptionProblem('Fresh bread\u0001 every morning.', null)).toBe('controls');
+      expect(shopDescriptionProblem('\tFresh bread every morning.', null)).toBe('controls');
+      expect(shopDescriptionProblem('Fresh bread\n every morning.', null)).toBe(null);
       expect(SHOP_DESCRIPTION_MIN).toBe(20);
+    });
+  });
+
+  describe('shopUsernameProblem', () => {
+    it('accepts optional API usernames and rejects invalid starts or lengths', () => {
+      expect(shopUsernameProblem('')).toBe(null);
+      expect(shopUsernameProblem('@alice_21')).toBe(null);
+      expect(shopUsernameProblem('@Ada')).toBe(null);
+      expect(shopUsernameProblem('@')).toBe('format');
+      expect(shopUsernameProblem('_')).toBe('format');
+      expect(shopUsernameProblem('A User')).toBe('format');
+      expect(shopUsernameProblem(`a${'x'.repeat(32)}`)).toBe('format');
     });
   });
 
@@ -249,6 +329,19 @@ describe('forum-shop', () => {
         ),
       ).toBe('shopDescription');
       expect(shopApiProblem('Place address is invalid')).toBe('placeAddress');
+      expect(shopApiProblem('Place label must be at most 80 characters')).toBe('shopNameLong');
+      expect(shopApiProblem('Username is not valid')).toBe('usernameInvalid');
+      expect(shopApiProblem('No account with that username')).toBe('usernameMissing');
+      expect(shopApiProblem('Text must be 1–8000 characters')).toBe('shopDescription');
+      expect(shopApiProblem('Text must be 1–8000 characters or include a photo')).toBe(
+        'shopDescription',
+      );
+      expect(shopApiProblem('Text contains invalid control characters')).toBe(
+        'shopDescriptionControls',
+      );
+      expect(shopApiProblem('Text must not contain control characters')).toBe(
+        'shopDescriptionControls',
+      );
       expect(shopApiProblem('Could not post your message')).toBe(null);
     });
   });
@@ -259,9 +352,13 @@ describe('forum-shop', () => {
       const problems: ShopApiProblem[] = [
         'shopName',
         'shopNameAddress',
+        'shopNameLong',
         'shopAddress',
         'shopDescription',
+        'shopDescriptionControls',
         'placeAddress',
+        'usernameInvalid',
+        'usernameMissing',
       ];
       expect(Object.keys(SHOP_API_MESSAGE).sort()).toEqual([...problems].sort());
       for (const problem of problems) {

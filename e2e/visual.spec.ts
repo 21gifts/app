@@ -16822,7 +16822,7 @@ test.describe('welcome forum variants', () => {
     await expect(frame).toBeVisible();
     await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
     await expect(page.locator('[data-e2e-map="pin"]')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await frame.scrollIntoViewIfNeeded();
     await expect(frame).toHaveCSS('background-color', 'rgb(231, 239, 228)');
     await shotScreen(page, 'state-welcome-composer-place-map', false);
@@ -16869,7 +16869,7 @@ test.describe('welcome forum variants', () => {
     await expect(name).toBeVisible();
     await expect(page.getByText('The map is not available.')).toHaveCount(0);
     await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await name.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-composer-place-pending', false);
     release();
@@ -17933,7 +17933,7 @@ test.describe('shops screens', () => {
     await address.getByLabel('City', { exact: true }).fill('Zürich');
     const country = address.getByLabel('Country', { exact: true });
     await country.selectOption('CH');
-    // Filling scrolls the detail scrollport to a timing-dependent offset.
+    // Filling scrolls the dialog body to a timing-dependent offset.
     await country.evaluate((node) => {
       (node as HTMLSelectElement).blur();
       const port = node.closest('[data-scrollport]') as HTMLElement;
@@ -18951,7 +18951,7 @@ test.describe('shops screens', () => {
     await expect(frame).toBeVisible();
     await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
     await expect(page.locator('[data-e2e-map="pin"]')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await frame.scrollIntoViewIfNeeded();
     await expect(frame).toHaveCSS('background-color', 'rgb(231, 239, 228)');
     await shotScreen(page, 'state-shops-composer-place-map', false);
@@ -19008,7 +19008,7 @@ test.describe('shops screens', () => {
     await expect(name).toBeVisible();
     await expect(page.getByText('The map is not available.')).toHaveCount(0);
     await expect(page.locator('[data-e2e-map="surface"]')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await name.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-composer-place-pending', false);
     release();
@@ -19027,7 +19027,7 @@ test.describe('shops screens', () => {
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(page.locator('[data-e2e-map="pin"]')).toBeVisible();
     await expect(page.getByLabel('Shop name', { exact: true })).toHaveValue('');
-    await expect(page.getByText('Enter the shop name.')).toBeVisible();
+    await expect(page.getByText(/Fill in: shop name/)).toBeVisible();
     await expect(confirm).toBeVisible();
     await expect(confirm).toBeDisabled();
     await confirm.scrollIntoViewIfNeeded();
@@ -19047,11 +19047,13 @@ test.describe('shops screens', () => {
     const name = page.getByLabel('Shop name', { exact: true });
     await name.fill('Happyland');
     const confirm = page.getByRole('button', { name: 'Use this place' });
-    await expect(page.getByText('Enter the full address:')).toBeVisible();
+    await expect(
+      page.getByText(/Fill in: street, house number, postal code, city, country/),
+    ).toBeVisible();
     await expect(confirm).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await confirm.scrollIntoViewIfNeeded();
-    // Focusing the name leaves the detail scrollport at a timing-dependent offset.
+    // Focusing the name leaves the dialog body at a timing-dependent offset.
     await name.evaluate((node) => {
       (node as HTMLInputElement).blur();
       const port = node.closest('[data-scrollport]') as HTMLElement;
@@ -19501,12 +19503,12 @@ test.describe('shops screens', () => {
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(confirm).toBeEnabled();
     await confirm.click();
-    const alert = page.getByRole('alert').filter({
-      hasText: 'The description must be 20 to 1000 characters and longer than the shop name.',
-    });
-    await expect(alert).toBeVisible();
+    const reason = page.getByText(
+      'The description must be 20 to 1000 characters and longer than the shop name.',
+    );
+    await expect(reason).toBeVisible();
     await expect(confirm).toBeVisible();
-    await alert.scrollIntoViewIfNeeded();
+    await reason.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit-rejected');
   });
 
@@ -19540,7 +19542,7 @@ test.describe('shops screens', () => {
     const remove = page.getByRole('button', { name: 'Remove place' });
     await expect(unavailable).toBeVisible();
     await expect(remove).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await remove.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-edit-unavailable');
   });
@@ -19625,7 +19627,7 @@ test.describe('shops screens', () => {
     const frame = page.locator('.h-64');
     await expect(frame).toBeVisible();
     await expect(page.locator('[data-e2e-map="surface"]')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use this place' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await frame.scrollIntoViewIfNeeded();
     await expect(frame).toHaveCSS('background-color', 'rgb(231, 239, 228)');
     await shotScreen(page, 'state-shops-staff-place-map', false);
@@ -19696,7 +19698,7 @@ test.describe('shops screens', () => {
     await page.locator('.h-64').click();
     const confirm = page.getByRole('button', { name: 'Use this place' });
     await expect(page.getByLabel('Shop name', { exact: true })).toHaveValue('');
-    await expect(page.getByText('Enter the shop name.')).toBeVisible();
+    await expect(page.getByText(/Fill in: shop name/)).toBeVisible();
     await expect(confirm).toBeVisible();
     await expect(confirm).toBeDisabled();
     await confirm.scrollIntoViewIfNeeded();
@@ -19732,7 +19734,9 @@ test.describe('shops screens', () => {
     await page.locator('.h-64').click();
     await page.getByLabel('Shop name', { exact: true }).fill('Happyland');
     const confirm = page.getByRole('button', { name: 'Use this place' });
-    await expect(page.getByText('Enter the full address:')).toBeVisible();
+    await expect(
+      page.getByText(/Fill in: street, house number, postal code, city, country/),
+    ).toBeVisible();
     await expect(confirm).toBeVisible();
     await expect(confirm).toBeDisabled();
     await page.getByLabel('Shop name', { exact: true }).evaluate((node) => {
@@ -19999,16 +20003,20 @@ test.describe('shops screens', () => {
     await expect(page.getByText('2 / 5 · Place')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add a place' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await expect(page.getByText("Add the shop's place and address.")).toBeVisible();
     await expect(page.getByText('The map is not available.')).toHaveCount(0);
     await shotScreen(page, 'state-shops-add-place');
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     await expect(page.getByLabel('Shop name', { exact: true })).toHaveValue('');
-    await expect(page.getByText('Enter the shop name.')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
+    await expect(page.getByText(/Fill in: shop name/)).toBeVisible();
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
     await shotScreen(page, 'state-shops-add-place-empty');
     await page.getByLabel('Shop name', { exact: true }).fill("Kiki's Bakery");
-    await expect(page.getByText('Enter the full address:')).toBeVisible();
+    await expect(
+      page.getByText(/Fill in: street, house number, postal code, city, country/),
+    ).toBeVisible();
     await shotScreen(page, 'state-shops-add-place-hint');
     await fillShopAddress(page);
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeEnabled();
@@ -20022,6 +20030,13 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
     await shotScreen(page, 'state-shops-add-user');
+    await page.getByLabel('21.gifts username').fill('_');
+    await expect(
+      page.getByText(/Use 1–32 lowercase letters, digits, dots, hyphens, or underscores/),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await shotScreen(page, 'state-shops-add-user-invalid');
+    await page.getByLabel('21.gifts username').fill('');
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await expect(page.getByText("Kiki's Bakery")).toBeVisible();
@@ -20049,7 +20064,7 @@ test.describe('shops screens', () => {
       page.getByText('The shop name must not contain the street or the postal code.'),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
-    // Show the hint at the bottom of the detail scrollport.
+    // Show the field error in the dialog body.
     await page
       .getByText('The shop name must not contain the street or the postal code.')
       .scrollIntoViewIfNeeded();
@@ -20067,23 +20082,19 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Add a place' }).click();
     await page.locator('.h-64').click();
     await fillShopAddress(page);
-    const houseNumber = page
-      .getByTestId('shop-address-fields')
-      .getByLabel('House number', { exact: true });
+    const address = page.getByTestId('shop-address-fields');
+    const houseNumber = address.getByLabel('House number', { exact: true });
     await houseNumber.fill('abc');
-    await houseNumber.evaluate((node) => {
-      (node as HTMLInputElement).blur();
-      const port = node.closest('[data-scrollport]') as HTMLElement;
-      port.scrollTop = 0;
-    });
-    await expect(page.getByText('Check the House number.')).toBeVisible();
+    await address.getByLabel('Postal code', { exact: true }).fill('80');
+    await address.getByLabel('City', { exact: true }).fill('1234');
+    await expect(page.getByText('Starts with a digit, for example 12 or 12a.')).toBeVisible();
+    await expect(page.getByText('Use 4 digits for Switzerland and Liechtenstein.')).toBeVisible();
+    await expect(page.getByText('The city must contain a letter.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Use this place' })).toBeDisabled();
-    // Show the hint at the bottom of the detail scrollport.
-    await page.getByText('Check the House number.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-add-place-field-invalid');
   });
 
-  test('shops add-text-long', async ({ page }) => {
+  test('shops add-description-error', async ({ page }) => {
     await stubPlaceMap(page);
     await seedAda(page);
     await fulfillMixedSatsMessages(page);
@@ -20098,16 +20109,18 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('3 / 5 · Text')).toBeVisible();
     const box = page.getByLabel('Shop text');
-    await box.fill('x'.repeat(1001));
     await box.evaluate((node) => {
-      const port = node.closest('[data-scrollport]') as HTMLElement;
-      port.scrollTop = 0;
+      const field = node as HTMLTextAreaElement;
+      field.value = 'Fresh bread\u0001 every morning.';
+      field.dispatchEvent(new Event('input', { bubbles: true }));
     });
     await expect(
-      page.getByText('The description is too long (max. 1000 characters).'),
+      page.getByText(
+        'The description must not contain control characters other than line breaks.',
+      ),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
-    await shotScreen(page, 'state-shops-add-text-long');
+    await shotScreen(page, 'state-shops-add-description-error');
   });
 
   test('shops add-text-not-longer', async ({ page }) => {
@@ -20152,7 +20165,7 @@ test.describe('shops screens', () => {
           status: 400,
           contentType: 'application/json',
           body: JSON.stringify({
-            error: 'Shop description must be 20 to 1000 characters and longer than the shop name',
+            error: 'Unexpected shop service failure',
           }),
         });
       },
@@ -20179,9 +20192,7 @@ test.describe('shops screens', () => {
     await post.evaluate((element) => {
       (element as unknown as { click: () => void }).click();
     });
-    const alert = page.getByText(
-      'The description must be 20 to 1000 characters and longer than the shop name.',
-    );
+    const alert = page.getByText('Could not post your message');
     await expect(alert).toBeVisible();
     await alert.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-add-post-rejected');

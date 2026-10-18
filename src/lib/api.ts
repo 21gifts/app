@@ -3748,8 +3748,8 @@ export async function deleteMessage(sessionToken: string, messageId: string): Pr
  * @param messageId - Forum message UUID.
  * @param place - Pin to store, or `null` to clear.
  * @returns The updated {@link ForumMessage}. Cleared pins are omitted.
- * @throws Error on a non-2xx status (`Could not save place`) or a body that
- * fails {@link forumMessageSchema}.
+ * @throws The API reason on HTTP 400, or `Could not save place` on any other
+ * non-2xx status or a body that fails {@link forumMessageSchema}.
  */
 export async function setMessagePlace(
   sessionToken: string,
@@ -3783,8 +3783,8 @@ export async function setMessagePlace(
  * @param username - 21.gifts username to attach, or `null` to clear.
  * @returns The updated {@link ForumMessage}. Cleared accounts are omitted.
  * @throws Error `No account with that username` on HTTP 404.
- * @throws Error `Could not save account` on any other non-2xx status or a body
- * that fails {@link forumMessageSchema}.
+ * @throws The API reason on HTTP 400, or `Could not save account` on any other
+ * non-2xx status or a body that fails {@link forumMessageSchema}.
  */
 export async function setMessageShopAccount(
   sessionToken: string,
@@ -3804,6 +3804,10 @@ export async function setMessageShopAccount(
     throw new Error('No account with that username');
   }
   if (!response.ok) {
+    if (response.status === 400) {
+      const raw = await readApiError(response);
+      throw new Error(raw === null ? 'Could not save account' : toUserFacingError(raw));
+    }
     throw new Error('Could not save account');
   }
   return forumMessageSchema.parse(await response.json());
@@ -3818,8 +3822,8 @@ export async function setMessageShopAccount(
  * @param messageId - Forum message UUID.
  * @param photos - JPEG, PNG, or WebP stills, at most 10.
  * @returns The updated {@link ForumMessage}.
- * @throws Error `Could not save shop note` on a non-2xx status or a body that
- * fails {@link forumMessageSchema}.
+ * @throws The API reason on HTTP 400, or `Could not save shop note` on any
+ * other non-2xx status or a body that fails {@link forumMessageSchema}.
  */
 export async function setMessageShopPhotos(
   sessionToken: string,
@@ -3844,6 +3848,10 @@ export async function setMessageShopPhotos(
     }),
   });
   if (!response.ok) {
+    if (response.status === 400) {
+      const raw = await readApiError(response);
+      throw new Error(raw === null ? 'Could not save shop note' : toUserFacingError(raw));
+    }
     throw new Error('Could not save shop note');
   }
   return forumMessageSchema.parse(await response.json());
@@ -3877,8 +3885,8 @@ const shopNoteEditsSchema = z.object({ edits: z.array(shopNoteEditSchema) });
  * @param messageId - Forum message UUID.
  * @param text - New visible body. The shop tag may be omitted.
  * @returns The updated {@link ForumMessage}.
- * @throws Error `Could not save shop note` on a non-2xx status or a body that
- * fails {@link forumMessageSchema}.
+ * @throws The API reason on HTTP 400, or `Could not save shop note` on any
+ * other non-2xx status or a body that fails {@link forumMessageSchema}.
  */
 export async function setMessageShopText(
   sessionToken: string,

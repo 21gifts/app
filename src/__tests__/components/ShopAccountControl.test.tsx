@@ -131,8 +131,7 @@ describe('ShopAccountControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain('No account with that username.');
+    expect(await screen.findByText('No account with that username.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save account' })).toBeTruthy();
     expect(onUpdated).not.toHaveBeenCalled();
   });
@@ -145,12 +144,27 @@ describe('ShopAccountControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain(
-      'The account could not be saved. Please try again.',
-    );
+    expect(
+      await screen.findByText('The account could not be saved. Please try again.'),
+    ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save account' })).toBeTruthy();
     expect(onUpdated).not.toHaveBeenCalled();
+  });
+
+  it('maps a server username-format fallback back to the field', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(setMessageShopAccount).mockRejectedValue(new Error('Username is not valid'));
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    const input = screen.getByLabelText('Username');
+    fireEvent.change(input, { target: { value: 'luna' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
+    expect(
+      await screen.findByText(
+        'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+      ),
+    ).toBeTruthy();
+    expect(input.getAttribute('aria-invalid')).toBe('true');
   });
 
   it('removes the account with a null username', async () => {
@@ -187,15 +201,33 @@ describe('ShopAccountControl', () => {
     });
   });
 
-  it('shows the missing alert for an empty username without calling the API', async () => {
+  it('shows the live format error for a bare @ without calling the API', () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: '   @' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain('No account with that username.');
+    expect(
+      screen.getByText(
+        'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByLabelText('Username').getAttribute('aria-invalid')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
     expect(setMessageShopAccount).not.toHaveBeenCalled();
+  });
+
+  it('shows an invalid underscore directly under the username field', () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    const input = screen.getByLabelText('Username');
+    fireEvent.change(input, { target: { value: '_' } });
+    const message = screen.getByText(
+      'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+    );
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')).toBe(message.id);
+    expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
   });
 
   it('shows the save-failed alert when remove throws', async () => {
@@ -210,10 +242,9 @@ describe('ShopAccountControl', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Edit account' }));
     fireEvent.click(screen.getByRole('button', { name: 'Remove account' }));
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain(
-      'The account could not be saved. Please try again.',
-    );
+    expect(
+      await screen.findByText('The account could not be saved. Please try again.'),
+    ).toBeTruthy();
     expect(onUpdated).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Remove account' })).toBeTruthy();
   });
@@ -238,10 +269,9 @@ describe('ShopAccountControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain(
-      'The account could not be saved. Please try again.',
-    );
+    expect(
+      await screen.findByText('The account could not be saved. Please try again.'),
+    ).toBeTruthy();
   });
 
   it('opens with @ and fills the chosen person', async () => {

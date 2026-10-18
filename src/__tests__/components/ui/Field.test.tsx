@@ -33,6 +33,33 @@ describe('Field', () => {
     expect(onChange).toHaveBeenCalled();
   });
 
+  it('links hint and error copy and marks an invalid input', () => {
+    renderWithLocale(
+      <Field
+        label="Postal code"
+        id="postal"
+        hint="Use the local format."
+        error="Use 4 digits."
+        aria-describedby="outside-help"
+      />,
+    );
+    const input = screen.getByLabelText('Postal code');
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')).toBe(
+      'outside-help postal-hint postal-error',
+    );
+    expect(screen.getByText('Use the local format.').id).toBe('postal-hint');
+    expect(screen.getByText('Use 4 digits.').id).toBe('postal-error');
+    expect(screen.getByText('Use 4 digits.').className).toContain('text-app-danger');
+  });
+
+  it('links validation copy on a multiline field', () => {
+    renderWithLocale(<Field label="Message" multiline error="Too long." />);
+    expect(screen.getByLabelText('Message').getAttribute('aria-describedby')).toBe(
+      'field-message-error',
+    );
+  });
+
   it('applies className on the label wrapper and ignores empty className', () => {
     const { rerender } = renderWithLocale(<Field label="Tagged" className="wrap" />);
     expect(screen.getByText('Tagged').className).toContain('wrap');

@@ -16,6 +16,10 @@ export type ShopLabeledInputProps = Omit<
   label: string;
   /** Control id; must match the label's `htmlFor`. */
   id: string;
+  /** Supporting copy shown under the input. */
+  hint?: string;
+  /** Validation copy shown under the input. */
+  error?: string;
 };
 
 /**
@@ -25,11 +29,31 @@ export type ShopLabeledInputProps = Omit<
  * @returns The labeled input.
  */
 export function ShopLabeledInput(props: ShopLabeledInputProps): ReactElement {
-  const { label, id, ...rest } = props;
+  const { label, id, hint, error, ...rest } = props;
+  const hintId = hint === undefined ? null : `${id}-hint`;
+  const errorId = error === undefined ? null : `${id}-error`;
+  const describedBy =
+    [rest['aria-describedby'], hintId, errorId].filter(Boolean).join(' ') || undefined;
   return (
     <div className={LABEL_WRAP_CLASS}>
       <label htmlFor={id}>{label}</label>
-      <input id={id} className={CONTROL_CLASS} {...rest} />
+      <input
+        id={id}
+        className={CONTROL_CLASS}
+        {...rest}
+        {...(describedBy === undefined ? {} : { 'aria-describedby': describedBy })}
+        {...(error === undefined ? {} : { 'aria-invalid': true })}
+      />
+      {hint === undefined ? null : (
+        <p id={hintId!} className="text-sm text-app-muted">
+          {hint}
+        </p>
+      )}
+      {error === undefined ? null : (
+        <p id={errorId!} className="text-sm text-app-danger">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

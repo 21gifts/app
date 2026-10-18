@@ -79,6 +79,33 @@ describe('ShopAddressFields', () => {
     expect(screen.getByLabelText('Country', { exact: true }).hasAttribute('disabled')).toBe(true);
   });
 
+  it('shows linked field errors and reports blur', () => {
+    const onBlur = vi.fn();
+    renderWithLocale(
+      <ShopAddressFields
+        value={ADDRESS}
+        disabled={false}
+        errors={{ houseNumber: 'Starts with a digit.', country: 'Choose a country.' }}
+        onBlur={onBlur}
+        onChange={() => undefined}
+      />,
+    );
+    const house = screen.getByLabelText('House number');
+    const country = screen.getByLabelText('Country');
+    expect(house.getAttribute('aria-invalid')).toBe('true');
+    expect(country.getAttribute('aria-invalid')).toBe('true');
+    expect(document.getElementById(house.getAttribute('aria-describedby')!)).toHaveTextContent(
+      'Starts with a digit.',
+    );
+    expect(document.getElementById(country.getAttribute('aria-describedby')!)).toHaveTextContent(
+      'Choose a country.',
+    );
+    fireEvent.blur(house);
+    fireEvent.blur(country);
+    expect(onBlur).toHaveBeenCalledWith('houseNumber');
+    expect(onBlur).toHaveBeenCalledWith('country');
+  });
+
   it('gives each instance distinct ids that match their own labels', () => {
     renderWithLocale(
       <>

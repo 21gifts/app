@@ -47,6 +47,8 @@ export function ShopAddressFields(props: {
   value: ForumPlaceAddress | null;
   disabled: boolean;
   onChange: (next: ForumPlaceAddressDraft) => void;
+  errors?: Partial<Record<keyof ForumPlaceAddressDraft, string>>;
+  onBlur?: (field: keyof ForumPlaceAddressDraft) => void;
 }): ReactElement {
   const { t, locale } = useTranslations();
   const draft = draftFrom(props.value);
@@ -59,48 +61,67 @@ export function ShopAddressFields(props: {
     props.onChange({ ...draft, ...next });
   }
 
+  const errorFor = (field: keyof ForumPlaceAddressDraft): string | undefined =>
+    props.errors?.[field];
+
   return (
     <div data-testid="shop-address-fields" className="flex flex-col gap-3">
-      <ShopLabeledInput
-        id={fieldId('street')}
-        label={t('shops.addressStreet')}
-        autoComplete="off"
-        value={draft.street}
-        disabled={props.disabled}
-        onChange={(event) => {
-          patch({ street: event.target.value });
-        }}
-      />
-      <ShopLabeledInput
-        id={fieldId('houseNumber')}
-        label={t('shops.addressHouseNumber')}
-        autoComplete="off"
-        value={draft.houseNumber}
-        disabled={props.disabled}
-        onChange={(event) => {
-          patch({ houseNumber: event.target.value });
-        }}
-      />
-      <ShopLabeledInput
-        id={fieldId('postalCode')}
-        label={t('shops.addressPostalCode')}
-        autoComplete="postal-code"
-        value={draft.postalCode}
-        disabled={props.disabled}
-        onChange={(event) => {
-          patch({ postalCode: event.target.value });
-        }}
-      />
-      <ShopLabeledInput
-        id={fieldId('city')}
-        label={t('shops.addressCity')}
-        autoComplete="address-level2"
-        value={draft.city}
-        disabled={props.disabled}
-        onChange={(event) => {
-          patch({ city: event.target.value });
-        }}
-      />
+      <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
+        <ShopLabeledInput
+          id={fieldId('street')}
+          label={t('shops.addressStreet')}
+          autoComplete="off"
+          value={draft.street}
+          disabled={props.disabled}
+          {...(errorFor('street') === undefined ? {} : { error: errorFor('street')! })}
+          onBlur={() => props.onBlur?.('street')}
+          onChange={(event) => {
+            patch({ street: event.target.value });
+          }}
+        />
+        <ShopLabeledInput
+          id={fieldId('houseNumber')}
+          label={t('shops.addressHouseNumber')}
+          autoComplete="off"
+          value={draft.houseNumber}
+          disabled={props.disabled}
+          {...(errorFor('houseNumber') === undefined
+            ? {}
+            : { error: errorFor('houseNumber')! })}
+          onBlur={() => props.onBlur?.('houseNumber')}
+          onChange={(event) => {
+            patch({ houseNumber: event.target.value });
+          }}
+        />
+      </div>
+      <div className="grid grid-cols-[7rem_minmax(0,1fr)] gap-3">
+        <ShopLabeledInput
+          id={fieldId('postalCode')}
+          label={t('shops.addressPostalCode')}
+          autoComplete="postal-code"
+          value={draft.postalCode}
+          disabled={props.disabled}
+          {...(errorFor('postalCode') === undefined
+            ? {}
+            : { error: errorFor('postalCode')! })}
+          onBlur={() => props.onBlur?.('postalCode')}
+          onChange={(event) => {
+            patch({ postalCode: event.target.value });
+          }}
+        />
+        <ShopLabeledInput
+          id={fieldId('city')}
+          label={t('shops.addressCity')}
+          autoComplete="address-level2"
+          value={draft.city}
+          disabled={props.disabled}
+          {...(errorFor('city') === undefined ? {} : { error: errorFor('city')! })}
+          onBlur={() => props.onBlur?.('city')}
+          onChange={(event) => {
+            patch({ city: event.target.value });
+          }}
+        />
+      </div>
       <div className={LABEL_WRAP_CLASS}>
         <label htmlFor={countryId}>{t('shops.addressCountry')}</label>
         <select
@@ -109,6 +130,11 @@ export function ShopAddressFields(props: {
           className={SELECT_CLASS}
           value={draft.country}
           disabled={props.disabled}
+          aria-invalid={errorFor('country') === undefined ? undefined : true}
+          aria-describedby={
+            errorFor('country') === undefined ? undefined : `${countryId}-error`
+          }
+          onBlur={() => props.onBlur?.('country')}
           onChange={(event) => {
             patch({ country: event.target.value });
           }}
@@ -120,6 +146,11 @@ export function ShopAddressFields(props: {
             </option>
           ))}
         </select>
+        {errorFor('country') === undefined ? null : (
+          <p id={`${countryId}-error`} className="text-sm text-app-danger">
+            {errorFor('country')}
+          </p>
+        )}
       </div>
     </div>
   );

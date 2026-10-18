@@ -1,4 +1,3 @@
-import { Profiler } from 'react';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PlaceField } from '@/components/PlaceField';
@@ -21,6 +20,22 @@ function jsonResponse(body: unknown): Response {
 }
 
 describe('PlaceField', () => {
+  it('opens an accessible modal, closes on Escape, and restores trigger focus', async () => {
+    stubMaps();
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    const trigger = screen.getByRole('button', { name: 'Add a place' });
+    trigger.focus();
+    fireEvent.click(trigger);
+    const dialog = await screen.findByRole('dialog', { name: 'Add a place' });
+    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    expect(document.activeElement).toBe(dialog);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    expect(document.activeElement).toBe(trigger);
+  });
+
   it('shows a label preview and removes the pin', () => {
     const onChange = vi.fn();
     renderWithLocale(
@@ -50,10 +65,19 @@ describe('PlaceField', () => {
 
   it('says the map is unavailable when the key request fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('down')));
-    renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    const onAvailabilityChange = vi.fn();
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        onAvailabilityChange={onAvailabilityChange}
+      />,
+    );
     expect(screen.queryByText('Add a place')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    expect(onAvailabilityChange).toHaveBeenLastCalledWith(true);
   });
 
   it('says the map is unavailable when the key is blank or not a string', async () => {
@@ -171,7 +195,7 @@ describe('PlaceField', () => {
     markerListeners.get('dragend')?.();
   });
 
-  it('does not show an empty frame while the map key is loading', () => {
+  it('shows the dialog and field while the map key is loading', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(() => new Promise(() => undefined)),
@@ -179,7 +203,8 @@ describe('PlaceField', () => {
     renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     expect(screen.queryByText('The map is not available.')).toBeNull();
-    expect(screen.queryByLabelText('Place name')).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Add a place' })).toBeTruthy();
+    expect(screen.getByLabelText('Place name')).toBeTruthy();
   });
 
   it('removes a saved pin when the map is unavailable', async () => {
@@ -547,22 +572,6 @@ describe('PlaceField', () => {
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
   });
 
-  function clientRect(left: number, top: number, right: number, bottom: number): DOMRect {
-    return {
-      x: left,
-      y: top,
-      left,
-      top,
-      right,
-      bottom,
-      width: right - left,
-      height: bottom - top,
-      toJSON() {
-        return {};
-      },
-    } as DOMRect;
-  }
-
   function stubMaps(): Map<string, (event?: unknown) => void> {
     const listeners = new Map<string, (event?: unknown) => void>();
     const map = {
@@ -656,6 +665,8 @@ describe('PlaceField', () => {
     expect(screen.getByRole('button', { name: 'Remove place' }).hasAttribute('disabled')).toBe(
       true,
     );
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.getByRole('dialog')).toBeTruthy();
     await act(async () => {
       resolveCommit();
     });
@@ -875,7 +886,7 @@ describe('PlaceField', () => {
     }
   });
 
-  it('measures a shown preview inside the app frame', () => {
+  it('shows a saved place preview inside the app frame', () => {
     renderWithLocale(
       <div data-app-frame>
         <PlaceField
@@ -915,343 +926,6 @@ describe('PlaceField', () => {
     });
     fireEvent.click(toggle);
     expect(screen.queryByRole('textbox', { name: 'Place name' })).toBeNull();
-  });
-
-  it('portals a downward preview inside the app frame', async () => {
-    const originalRect = HTMLElement.prototype.getBoundingClientRect;
-    const originalWidth = window.innerWidth;
-    const originalHeight = window.innerHeight;
-    window.innerWidth = 400;
-    window.innerHeight = 500;
-    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
-      if (this.hasAttribute('data-app-frame')) {
-        return clientRect(-20, -10, 900, 900);
-      }
-      return clientRect(30, 40, 70, 80);
-    };
-    try {
-      renderWithLocale(
-        <div data-app-frame>
-          <PlaceField
-            place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
-            disabled={false}
-            onChange={() => undefined}
-          />
-        </div>,
-      );
-      await waitFor(() => {
-        expect(screen.getByText('Happyland').parentElement?.parentElement).toBe(document.body);
-      });
-      const preview = screen.getByText('Happyland').parentElement as HTMLElement;
-      expect(preview.style.left).toBe('30px');
-      expect(preview.style.width).toBe('256px');
-      expect(preview.style.maxHeight).toBe('');
-      expect(preview.style.top).toBe('88px');
-      expect(preview.style.bottom).toBe('');
-      expect(preview.style.overflow).toBe('');
-      expect(preview.className.split(/\s+/)).toContain('overflow-clip');
-      expect(preview.className.split(/\s+/)).not.toContain('flex-col');
-      expect(preview.parentElement).toBe(document.body);
-    } finally {
-      HTMLElement.prototype.getBoundingClientRect = originalRect;
-      window.innerWidth = originalWidth;
-      window.innerHeight = originalHeight;
-    }
-  });
-
-  it('clamps a downward preview to the visual viewport', async () => {
-    const originalRect = HTMLElement.prototype.getBoundingClientRect;
-    const originalWidth = window.innerWidth;
-    const originalHeight = window.innerHeight;
-    window.innerWidth = 400;
-    window.innerHeight = 500;
-    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
-      if (this.hasAttribute('data-app-frame')) {
-        return clientRect(-20, -10, 900, 900);
-      }
-      return clientRect(30, 40, 70, 80);
-    };
-    const previous = Object.getOwnPropertyDescriptor(window, 'visualViewport');
-    Object.defineProperty(window, 'visualViewport', {
-      configurable: true,
-      value: {
-        offsetTop: 120,
-        height: 250,
-        addEventListener(): void {},
-        removeEventListener(): void {},
-      },
-    });
-    try {
-      renderWithLocale(
-        <div data-app-frame>
-          <PlaceField
-            place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
-            disabled={false}
-            onChange={() => undefined}
-          />
-        </div>,
-      );
-      await waitFor(() => {
-        expect(screen.getByText('Happyland').parentElement?.parentElement).toBe(document.body);
-      });
-      const preview = screen.getByText('Happyland').parentElement as HTMLElement;
-      expect(preview.style.top).toBe('136px');
-      expect(preview.style.bottom).toBe('');
-      expect(preview.style.left).toBe('30px');
-      expect(preview.style.width).toBe('256px');
-    } finally {
-      HTMLElement.prototype.getBoundingClientRect = originalRect;
-      window.innerWidth = originalWidth;
-      window.innerHeight = originalHeight;
-      if (previous === undefined) {
-        delete (window as { visualViewport?: unknown }).visualViewport;
-      } else {
-        Object.defineProperty(window, 'visualViewport', previous);
-      }
-    }
-  });
-
-  it('opens the map panel upward with flex-col and shrink-0 controls', async () => {
-    const originalRect = HTMLElement.prototype.getBoundingClientRect;
-    const originalWidth = window.innerWidth;
-    const originalHeight = window.innerHeight;
-    window.innerWidth = 400;
-    window.innerHeight = 800;
-    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
-      return clientRect(56, 660, 96, 700);
-    };
-    const listeners = stubMaps();
-    try {
-      renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
-      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-      await waitFor(() => {
-        expect(listeners.has('click') || screen.queryByLabelText('Place name') !== null).toBe(true);
-      });
-      await waitFor(() => {
-        expect(listeners.has('click')).toBe(true);
-      });
-      const input = screen.getByLabelText('Place name');
-      expect(input.parentElement?.style.top).toBe('');
-      expect(input.parentElement?.style.bottom).toBe('');
-      const clamp = input.parentElement?.parentElement as HTMLElement;
-      expect(clamp.style.left).toBe('16px');
-      expect(clamp.style.width).toBe('368px');
-      expect(clamp.style.maxHeight).toBe('');
-      expect(clamp.style.top).toBe('16px');
-      expect(clamp.style.bottom).toBe('148px');
-      expect(clamp.style.overflow).toBe('');
-      const clampTokens = clamp.className.split(/\s+/);
-      expect(clampTokens).toContain('fixed');
-      expect(clampTokens).toContain('overflow-clip');
-      expect(clampTokens).toContain('pointer-events-none');
-      expect(clampTokens).toContain('flex-col');
-      expect(clampTokens).toContain('justify-end');
-      expect(clampTokens).not.toContain('justify-start');
-      const innerTokens = (input.parentElement as HTMLElement).className.split(/\s+/);
-      expect(innerTokens).toContain('pointer-events-auto');
-      expect(innerTokens).toContain('flex');
-      expect(innerTokens).toContain('flex-col');
-      expect(innerTokens).toContain('min-h-0');
-      expect(innerTokens).toContain('max-h-full');
-      expect(innerTokens).toContain('overflow-clip');
-      const map = clamp.querySelector('.h-64') as HTMLElement;
-      expect(map.style.height).toBe('');
-      listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
-      const confirm = await screen.findByRole('button', { name: 'Use this place' });
-      expect(input.className.split(/\s+/)).toContain('shrink-0');
-      expect(confirm.className.split(/\s+/)).toContain('shrink-0');
-    } finally {
-      HTMLElement.prototype.getBoundingClientRect = originalRect;
-      window.innerWidth = originalWidth;
-      window.innerHeight = originalHeight;
-    }
-  });
-
-  it('gives the short map no fixed height', async () => {
-    const originalRect = HTMLElement.prototype.getBoundingClientRect;
-    const originalWidth = window.innerWidth;
-    const originalHeight = window.innerHeight;
-    window.innerWidth = 400;
-    window.innerHeight = 400;
-    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
-      if (this.hasAttribute('data-app-frame')) {
-        return clientRect(0, 0, 400, 200);
-      }
-      return clientRect(56, 90, 96, 110);
-    };
-    stubMaps();
-    try {
-      renderWithLocale(
-        <div data-app-frame>
-          <PlaceField place={null} disabled={false} onChange={() => undefined} />
-        </div>,
-      );
-      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-      const input = await screen.findByLabelText('Place name');
-      await waitFor(() => {
-        expect(input.parentElement?.parentElement?.style.bottom).toBe('216px');
-      });
-      const clamp = input.parentElement?.parentElement as HTMLElement;
-      expect(clamp.style.left).toBe('16px');
-      expect(clamp.style.width).toBe('368px');
-      expect(clamp.style.maxHeight).toBe('');
-      expect(clamp.style.top).toBe('16px');
-      expect(clamp.style.bottom).toBe('216px');
-      expect(clamp.style.overflow).toBe('');
-      expect(clamp.className.split(/\s+/)).toContain('overflow-clip');
-      expect(clamp.className.split(/\s+/)).toContain('justify-start');
-      expect(clamp.className.split(/\s+/)).not.toContain('justify-end');
-      const map = clamp.querySelector('.h-64') as HTMLElement;
-      const mapTokens = map.className.split(/\s+/);
-      expect(mapTokens).toContain('min-h-0');
-      expect(map.style.height).toBe('');
-    } finally {
-      HTMLElement.prototype.getBoundingClientRect = originalRect;
-      window.innerWidth = originalWidth;
-      window.innerHeight = originalHeight;
-    }
-  });
-
-  it('does not re-render when a second measure yields the same box', async () => {
-    const originalRect = HTMLElement.prototype.getBoundingClientRect;
-    const originalWidth = window.innerWidth;
-    const originalHeight = window.innerHeight;
-    let anchorLeft = 30;
-    window.innerWidth = 400;
-    window.innerHeight = 500;
-    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
-      if (this.hasAttribute('data-app-frame')) {
-        return clientRect(-20, -10, 900, 900);
-      }
-      return clientRect(anchorLeft, 40, anchorLeft + 40, 80);
-    };
-    let renders = 0;
-    try {
-      renderWithLocale(
-        <Profiler
-          id="PlaceField"
-          onRender={() => {
-            renders += 1;
-          }}
-        >
-          <div data-app-frame>
-            <PlaceField
-              place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
-              disabled={false}
-              onChange={() => undefined}
-            />
-          </div>
-        </Profiler>,
-      );
-      await waitFor(() => {
-        expect(screen.getByText('Happyland').parentElement?.style.left).toBe('30px');
-      });
-      const preview = screen.getByText('Happyland').parentElement as HTMLElement;
-      expect(preview.style.width).toBe('256px');
-      expect(preview.style.maxHeight).toBe('');
-      expect(preview.style.top).toBe('88px');
-      expect(preview.style.bottom).toBe('');
-      expect(preview.style.overflow).toBe('');
-      expect(preview.className.split(/\s+/)).toContain('overflow-clip');
-      expect(preview.className.split(/\s+/)).not.toContain('flex-col');
-      const rendersAfterPreview = renders;
-      await act(async () => {
-        document.documentElement.dispatchEvent(new Event('scroll', { bubbles: false }));
-      });
-      expect(renders).toBe(rendersAfterPreview);
-      expect(preview.style.left).toBe('30px');
-      anchorLeft = 0;
-      await act(async () => {
-        document.documentElement.dispatchEvent(new Event('scroll', { bubbles: false }));
-      });
-      expect(preview.style.left).toBe('16px');
-      expect(renders).toBeGreaterThan(rendersAfterPreview);
-    } finally {
-      HTMLElement.prototype.getBoundingClientRect = originalRect;
-      window.innerWidth = originalWidth;
-      window.innerHeight = originalHeight;
-    }
-  });
-
-  it('keeps the panel in the anchor when the frame has no room', async () => {
-    const originalRect = HTMLElement.prototype.getBoundingClientRect;
-    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect() {
-      return clientRect(0, 0, 0, 0);
-    };
-    const listeners = stubMaps();
-    try {
-      renderWithLocale(
-        <div data-app-frame>
-          <PlaceField place={null} disabled={false} onChange={() => undefined} />
-        </div>,
-      );
-      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-      const input = await screen.findByLabelText('Place name');
-      expect(input.closest('.fixed')).toBeNull();
-      const wrapper = input.closest('.absolute');
-      expect(wrapper).not.toBeNull();
-      expect(wrapper?.closest('.relative')).not.toBeNull();
-      const map = wrapper?.querySelector('.h-64') as HTMLElement;
-      expect(map.style.height).toBe('');
-      await waitFor(() => {
-        expect(
-          (window as unknown as { google: { maps: { Map: ReturnType<typeof vi.fn> } } }).google.maps
-            .Map,
-        ).toHaveBeenCalled();
-      });
-      listeners.get('click')?.({ latLng: { lat: () => 1, lng: () => 2 } });
-      expect(await screen.findByRole('button', { name: 'Use this place' })).toBeTruthy();
-    } finally {
-      HTMLElement.prototype.getBoundingClientRect = originalRect;
-    }
-  });
-
-  it('registers visualViewport resize and scroll for a shown preview', () => {
-    const resizeListeners = new Set<EventListener>();
-    const scrollListeners = new Set<EventListener>();
-    const viewport = {
-      addEventListener(type: string, listener: EventListener): void {
-        if (type === 'resize') {
-          resizeListeners.add(listener);
-        }
-        if (type === 'scroll') {
-          scrollListeners.add(listener);
-        }
-      },
-      removeEventListener(type: string, listener: EventListener): void {
-        if (type === 'resize') {
-          resizeListeners.delete(listener);
-        }
-        if (type === 'scroll') {
-          scrollListeners.delete(listener);
-        }
-      },
-    };
-    const previous = Object.getOwnPropertyDescriptor(window, 'visualViewport');
-    Object.defineProperty(window, 'visualViewport', {
-      configurable: true,
-      value: viewport,
-    });
-    try {
-      const view = renderWithLocale(
-        <PlaceField
-          place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
-          disabled={false}
-          onChange={() => undefined}
-        />,
-      );
-      expect(resizeListeners.size).toBe(1);
-      expect(scrollListeners.size).toBe(1);
-      view.unmount();
-      expect(resizeListeners.size).toBe(0);
-      expect(scrollListeners.size).toBe(0);
-    } finally {
-      if (previous === undefined) {
-        delete (window as { visualViewport?: unknown }).visualViewport;
-      } else {
-        Object.defineProperty(window, 'visualViewport', previous);
-      }
-    }
   });
 
   it('triggers a map resize when the map box shrinks', async () => {
@@ -1321,31 +995,34 @@ describe('PlaceField', () => {
     expect(shopName.id.length).toBeGreaterThan(0);
     expect(shopName.parentElement?.tagName).toBe('DIV');
     expect(shopName.hasAttribute('required')).toBe(true);
-    expect(shopName.getAttribute('maxlength')).toBe('80');
+    expect(shopName.hasAttribute('maxlength')).toBe(false);
     const map = document.querySelector('.h-64') as HTMLElement;
     const mapTokens = map.className.split(/\s+/);
     expect(mapTokens).toContain('h-64');
-    // The map gives way down to min-h-32 so the address scrollport keeps min-h-24.
-    expect(mapTokens).toContain('shrink');
-    expect(mapTokens).toContain('min-h-32');
+    expect(mapTokens).toContain('min-h-64');
     expect(mapTokens).not.toContain('min-h-0');
     const port = shopName.closest('[data-scrollport]') as HTMLElement;
-    expect(port.className.split(/\s+/)).toContain('min-h-24');
+    expect(port.className.split(/\s+/)).toContain('min-h-0');
     expect(
       screen.getByText("A short name, for example “Kiki's Bakery”. Not the address."),
     ).toBeTruthy();
     const confirm = await screen.findByRole('button', { name: 'Use this place' });
     expect(confirm.hasAttribute('disabled')).toBe(true);
-    expect(screen.getByText('Enter the shop name.')).toBeTruthy();
+    expect(screen.queryByText('Enter the shop name.')).toBeNull();
+    expect(screen.getByText(/Fill in: shop name/)).toBeTruthy();
+    fireEvent.blur(shopName);
+    const requiredName = screen.getByText('Enter the shop name.');
+    expect(shopName.getAttribute('aria-invalid')).toBe('true');
+    expect(shopName.getAttribute('aria-describedby')).toContain(requiredName.id);
+    fireEvent.change(shopName, { target: { value: 'x'.repeat(81) } });
+    expect(screen.getByText('The shop name must be at most 80 characters.')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: "Kiki's Bakery" } });
     expect(
-      screen.getByText(
-        'Enter the full address: street, house number, postal code, city and country.',
-      ),
+      screen.getByText(/Fill in: street, house number, postal code, city, country/),
     ).toBeTruthy();
     expect(confirm.hasAttribute('disabled')).toBe(true);
     fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
-    expect(screen.getByText('Check the House number.')).toBeTruthy();
+    expect(screen.getByText(/Fill in: house number/)).toBeTruthy();
     fillShopAddress('Bahnhofstrasse Bakery');
     expect(
       screen.getByText('The shop name must not contain the street or the postal code.'),
@@ -1366,6 +1043,39 @@ describe('PlaceField', () => {
         country: 'CH',
       },
     });
+  });
+
+  it('shows each touched address rule at its field before confirmation', async () => {
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField place={null} disabled={false} onChange={() => undefined} shopDetails />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    expect(await screen.findByRole('dialog', { name: 'Shop place and address' })).toBeTruthy();
+    expect(screen.getByText('Tap the map to set the pin.')).toBeTruthy();
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
+    fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: "Kiki's Bakery" } });
+    fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Bahnhofstrasse' } });
+    fireEvent.change(screen.getByLabelText('House number'), { target: { value: 'abc' } });
+    fireEvent.change(screen.getByLabelText('Postal code'), { target: { value: '80' } });
+    fireEvent.change(screen.getByLabelText('City'), { target: { value: '1234' } });
+    fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'CH' } });
+    const house = screen.getByLabelText('House number');
+    const postal = screen.getByLabelText('Postal code');
+    const city = screen.getByLabelText('City');
+    expect(screen.getByText('Starts with a digit, for example 12 or 12a.')).toBeTruthy();
+    expect(screen.getByText('Use 4 digits for Switzerland and Liechtenstein.')).toBeTruthy();
+    expect(screen.getByText('The city must contain a letter.')).toBeTruthy();
+    expect(house.getAttribute('aria-invalid')).toBe('true');
+    expect(postal.getAttribute('aria-invalid')).toBe('true');
+    expect(city.getAttribute('aria-invalid')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty(
+      'disabled',
+      true,
+    );
   });
 
   it('prefills shop fields from an existing pin', async () => {
@@ -1398,6 +1108,39 @@ describe('PlaceField', () => {
     expect(screen.getByLabelText('Country')).toHaveProperty('value', 'CH');
     expect(screen.getByRole('button', { name: 'Use this place' }).hasAttribute('disabled')).toBe(
       false,
+    );
+  });
+
+  it('reopens a known server name problem at the field and blocks confirmation', async () => {
+    stubMaps();
+    const pin = {
+      lat: 47.3769,
+      lng: 8.5417,
+      label: "Kiki's Bakery",
+      address: {
+        street: 'Bahnhofstrasse',
+        houseNumber: '12',
+        postalCode: '8001',
+        city: 'Zürich',
+        country: 'CH',
+      },
+    };
+    renderWithLocale(
+      <PlaceField
+        place={pin}
+        disabled={false}
+        onChange={() => undefined}
+        shopDetails
+        problem="shopName"
+      />,
+    );
+    const name = await screen.findByLabelText('Shop name');
+    const message = screen.getByText('Enter the shop name.');
+    expect(name.getAttribute('aria-invalid')).toBe('true');
+    expect(name.getAttribute('aria-describedby')).toContain(message.id);
+    expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty(
+      'disabled',
+      true,
     );
   });
 
@@ -1436,8 +1179,7 @@ describe('PlaceField', () => {
     listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
     fillShopAddress();
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain(localized);
+    expect(await screen.findByText(localized)).toBeTruthy();
   });
 
   it('maps a non-Error shop commit rejection to the generic save copy', async () => {
@@ -1459,8 +1201,7 @@ describe('PlaceField', () => {
     listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
     fillShopAddress();
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain(
+    expect((await screen.findByRole('alert')).textContent).toContain(
       'The place could not be saved. Please try again.',
     );
   });
@@ -1484,9 +1225,9 @@ describe('PlaceField', () => {
     listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
     fillShopAddress();
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
-    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(await screen.findByText('Enter the shop name.')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Shop name'), { target: { value: "Kiki's Cafe" } });
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText('Enter the shop name.')).toBeNull();
   });
 
   it('clears a mapped save error when an address field changes', async () => {
@@ -1508,9 +1249,9 @@ describe('PlaceField', () => {
     listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
     fillShopAddress();
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
-    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(await screen.findByText('Enter the shop name.')).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Street'), { target: { value: 'Limmatquai' } });
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText('Enter the shop name.')).toBeNull();
   });
 
   it('clears a mapped save error when the panel is reopened', async () => {
@@ -1532,13 +1273,13 @@ describe('PlaceField', () => {
     listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
     fillShopAddress();
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
-    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(await screen.findByText('Enter the shop name.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     await waitFor(() => {
       expect(screen.getByLabelText('Shop name')).toBeTruthy();
     });
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText('Enter the shop name.')).toBeNull();
   });
 
   it('clears a save error when the place name changes', async () => {
@@ -1573,8 +1314,7 @@ describe('PlaceField', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Edit place' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain('Enter the shop name.');
+    expect(await screen.findByText('Enter the shop name.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Remove place' })).toBeTruthy();
     expect(screen.getByText('The map is not available.')).toBeTruthy();
   });

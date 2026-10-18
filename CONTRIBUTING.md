@@ -466,6 +466,28 @@ width is the phone, which is wider than the padded column, and that is what shif
 `pageFrameProblems` first, and the Visual job fails when a box sticks out or the page can scroll
 sideways.
 
+### Input feedback while entering (hard requirement)
+
+Every rule the API enforces on a user-entered field is checked in the app while
+the user enters data (on change, at the latest on blur). The message sits
+directly under that field, which has `aria-invalid="true"` and
+`aria-describedby` pointing to the message.
+
+The step or submit button is disabled while a rule is broken, and the reason is
+visible: the field message, or a summary line beside the button when that field
+is not on screen. Messages state what is wrong and how to fix it, including the
+concrete limit (for example, **4 digits for Switzerland**), never only **Check
+the X**.
+
+A server 400 is fallback only. Map a known API reason to its field or step and
+show that reason there; never replace a known reason with generic **Could not
+save** copy. Client rules live in shared API-mirroring helpers such as
+`src/lib/forum-shop.ts`, with unit tests that pin the same limits.
+
+Forms must not hide fields with errors inside a small inner scroll area. A form
+that needs more room uses a dialog or sheet and still follows **One scroll
+surface**.
+
 ### Components
 
 - **App Router, server components by default.** Add `'use client'` only when
