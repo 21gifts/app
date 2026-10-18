@@ -30,11 +30,13 @@ describe('PosPaidOverlay', () => {
     expect(within(dialog).queryByText(/₱/)).toBeNull();
   });
 
-  it('closes on Done', () => {
+  it('closes on Done and on New payment', () => {
     const onClose = vi.fn();
     renderWithLocale(<PosPaidOverlay amount="₿98" fiat={null} onClose={onClose} />);
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(onClose).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('link', { name: 'New payment' }));
+    expect(onClose).toHaveBeenCalledTimes(2);
   });
 
   it('vibrates a phone once on open', () => {

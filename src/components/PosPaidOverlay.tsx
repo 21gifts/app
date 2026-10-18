@@ -13,7 +13,7 @@ export interface PosPaidOverlayProps {
   amount: string;
   /** The paid amount in the viewer's currency, already formatted, or `null`. */
   fiat: string | null;
-  /** Closes the confirmation and returns to the till. */
+  /** Closes the confirmation: **Done**, and **New payment** before it opens `/pos/amount`. */
   onClose: () => void;
 }
 
@@ -21,8 +21,8 @@ export interface PosPaidOverlayProps {
  * Full-screen confirmation that a till charge was paid: the whole window
  * turns green, a check draws itself inside pulsing rings, and **Paid** with
  * the amount in bitcoin and fiat fills the middle, so nobody at the counter
- * can miss it. A phone vibrates once on open. **New payment** opens
- * `/pos/amount`; **Done** closes it. Focus moves to **New payment** on open.
+ * can miss it. A phone vibrates once on open. **New payment** closes it and
+ * opens `/pos/amount`; **Done** closes it. Focus moves to **New payment** on open.
  * With reduced motion the screen stays the same without the movement.
  *
  * @param props - See {@link PosPaidOverlayProps}.
@@ -88,7 +88,7 @@ export function PosPaidOverlay({ amount, fiat, onClose }: PosPaidOverlayProps): 
         <p className="mt-2 max-w-xs text-base font-medium">{t('pos.paidArrived')}</p>
       </div>
       <div ref={first} className="flex w-full max-w-xs flex-col gap-3">
-        <ButtonLink href="/pos/amount" size="lg">
+        <ButtonLink href="/pos/amount" size="lg" onClick={onClose}>
           {t('pos.newPayment')}
         </ButtonLink>
         <Button type="button" variant="secondary" size="lg" onClick={onClose}>

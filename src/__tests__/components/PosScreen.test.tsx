@@ -1519,6 +1519,60 @@ describe('PosScreen', () => {
       expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
     });
 
+    it('New payment closes the confirmation, so the next till does not show it again', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: PAID, history: [PAID] })),
+      );
+      const first = renderWithLocale(<PosScreen />);
+      fireEvent.click(within(await confirmation()).getByRole('link', { name: 'New payment' }));
+      first.unmount();
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
+    it('hides an older paid charge behind a newer open one', async () => {
+      const next = {
+        ...OPEN,
+        id: 'c2',
+        amountSats: 42,
+        createdAt: new Date(Date.now() + 60_000).toISOString(),
+      };
+      const fetchMock = vi
+        .fn()
+        .mockImplementationOnce(async () => jsonResponse({ charge: OPEN, history: [OPEN] }))
+        .mockImplementation(async () => jsonResponse({ charge: next, history: [next, OPEN] }));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      showTab();
+      await waitFor(() => {
+        expect(screen.queryByRole('alertdialog')).toBeNull();
+      });
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+      expect(screen.getByText('₿42')).toBeTruthy();
+    });
+
+    it('does not take the charge of the session before as the open charge of the next', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockImplementationOnce(async () => jsonResponse({ charge: OPEN, history: [OPEN] }))
+        // The next session's till has not answered yet.
+        .mockImplementation(() => new Promise<Response>(() => undefined));
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      act(() => {
+        useAuthStore.setState({ session: 'other' });
+      });
+      await act(async () => undefined);
+      receive(21);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
     it('never asks the api on a timer while a charge is open', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
       const fetchMock = vi

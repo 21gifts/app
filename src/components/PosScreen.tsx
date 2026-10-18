@@ -338,7 +338,11 @@ function usePosTillState(): PosTillState {
   const charge = pending !== null && !walletPaid.has(pending.id) ? pending : null;
   const serverPaid = shown !== null && shown.status === 'paid' ? shown : null;
   const latest = newerCharge(serverPaid, [...walletPaid.values()].at(-1) ?? null);
-  const paid = latest !== null && !closed.has(latest.id) ? latest : null;
+  // A newer open charge hides an older paid one: its confirmation is over.
+  const paid =
+    latest !== null && !closed.has(latest.id) && newerCharge(charge, latest) === latest
+      ? latest
+      : null;
   const history =
     state === null
       ? []
@@ -363,11 +367,13 @@ function usePosTillState(): PosTillState {
     };
   }, [charge]);
 
+  const tillSession = till.session;
   useEffect(() => {
-    if (charge !== null) {
+    // Only a charge this session read is its open charge, not one left from the session before.
+    if (charge !== null && tillSession === session) {
       settledFor(session).open = charge;
     }
-  }, [charge, session]);
+  }, [charge, session, tillSession]);
 
   useEffect(() => {
     if (session === null) {
@@ -509,12 +515,14 @@ function usePosTillState(): PosTillState {
     setBusy(true);
     const mine = ++generation.current;
     setError(null);
+    // The memory of the session that cancels, even if another session signs in meanwhile.
+    const cancelling = settledFor(session);
     const work = (async (): Promise<void> => {
       try {
         await cancelPosCharge(session);
         // A cancelled charge is no longer paid by a payment that lands now; one whose cancel
         // failed still is.
-        settledFor(session).open = null;
+        cancelling.open = null;
         const seq = startRead(reads);
         const next = await fetchPosState(session);
         whenCurrent(generation, mine, () => {
