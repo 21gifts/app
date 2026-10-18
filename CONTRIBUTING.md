@@ -249,7 +249,9 @@ app/
 │   │   ├── WalletSetupNote.tsx  # Inline wallet setup note on money screens (Try again)
 │   │   ├── WalletSync.tsx       # Root-mounted wallet phrase and background setup listeners + wallet data report triggers (renders nothing)
 │   │   ├── InteractionLog.tsx   # Root-mounted interaction log: screen views, flush timer (renders nothing)
-│   │   ├── WalletPay.tsx        # In-app wallet pay slot of the gift pay sheets (the only way to pay)
+│   │   ├── WalletPay.tsx        # In-app wallet pay slot of the pay sheet (the only way to pay)
+│   │   ├── PaySheet.tsx         # Bottom sheet for the last tap of every in-app wallet payment (title, amount, pay slot, success step)
+│   │   ├── OpenReceive.tsx      # Add Bitcoin of the pay slot: opens Receive (forum home panel or /wallet?receive=1)
 │   │   ├── WalletSend.tsx       # Wallet Send view (full-size camera, Paste, Enter manually, amount, confirm, sent)
 │   │   ├── QrScanner.tsx        # Live camera QR reader (BarcodeDetector, else jsqr) filling the Send camera area
 │   │   ├── TrustChainDiagram.tsx # SVG Trust Chain graph (click hop, drag, stacked neighbors)

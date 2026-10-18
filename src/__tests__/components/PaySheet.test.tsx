@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, renderHook, screen } from '@testing-library/react';
 import { useEffect, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Collapse } from '@/components/Collapse';
@@ -7,6 +7,7 @@ import {
   PAY_SHEET_SUCCESS_MS,
   PaySheet,
   usePaySheetClose,
+  usePaySheetHold,
   usePaySheetSent,
 } from '@/components/PaySheet';
 import { MOTION_FOLD_MS, MOTION_SWAP_FADE_MS } from '@/lib/motion';
@@ -342,5 +343,45 @@ describe('PaySheet', () => {
     view.unmount();
     expect(cancelFrame).toHaveBeenCalledTimes(1);
     expect(clearTimer).toHaveBeenCalled();
+  });
+});
+
+describe('usePaySheetHold', () => {
+  it('holds a payment that closed without the member for the success step, then frees it', () => {
+    const { result, rerender } = renderHook(({ key }) => usePaySheetHold(key), {
+      initialProps: { key: 'pay-1' as string | null },
+    });
+    expect(result.current.held).toBeNull();
+    rerender({ key: null });
+    expect(result.current.held).toBe('pay-1');
+    act(() => {
+      vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS - 1);
+    });
+    expect(result.current.held).toBe('pay-1');
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current.held).toBeNull();
+  });
+
+  it('holds nothing after a close by the member', () => {
+    const { result, rerender } = renderHook(({ key }) => usePaySheetHold(key), {
+      initialProps: { key: 'pay-1' as string | null },
+    });
+    act(() => {
+      result.current.closedByMember();
+    });
+    rerender({ key: null });
+    expect(result.current.held).toBeNull();
+  });
+
+  it('frees a held payment when the next one opens', () => {
+    const { result, rerender } = renderHook(({ key }) => usePaySheetHold(key), {
+      initialProps: { key: 'pay-1' as string | null },
+    });
+    rerender({ key: null });
+    expect(result.current.held).toBe('pay-1');
+    rerender({ key: 'pay-2' });
+    expect(result.current.held).toBeNull();
   });
 });

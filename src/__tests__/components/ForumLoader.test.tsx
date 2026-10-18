@@ -4,7 +4,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
 import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
-import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
+import { PAY_SHEET_HOLD_MS, PAY_SHEET_SUCCESS_MS } from '@/components/PaySheet';
 import { ForumLoader } from '@/components/ForumLoader';
 import { SPOT_REFRESH_MS } from '@/hooks/useSpotRate';
 import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
@@ -7327,7 +7327,16 @@ describe('ForumLoader', () => {
       expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).value).toBe('');
     });
     expect((screen.getByLabelText('Amount') as HTMLInputElement).value).toBe('');
-    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(false);
+    // Behind the success step the form stays disabled, then frees up.
+    expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(true);
+    await waitFor(
+      () => {
+        expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(
+          false,
+        );
+      },
+      { timeout: PAY_SHEET_SUCCESS_MS + 1000 },
+    );
   });
 
   it('keeps the reply text when payment is cancelled', async () => {

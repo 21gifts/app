@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { useState, type ReactElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
-import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
+import { PAY_SHEET_HOLD_MS, PAY_SHEET_SUCCESS_MS } from '@/components/PaySheet';
 import { MOTION_FOLD_MS, MOTION_SETTLE_EVENT, MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import { SCROLL_FOLLOW_ATTR } from '@/lib/reveal-in-scrollport';
 import { LocaleProvider } from '@/components/LocaleProvider';
@@ -9120,6 +9120,62 @@ describe('ForumBoard in-app wallet pay', () => {
     expect(within(sheet).getByRole('heading', { level: 2 }).textContent).toBe('Send');
     expect(await within(sheet).findByRole('button', { name: 'Send ₿1' })).toBeTruthy();
     expectWalletOnly();
+  });
+
+  describe('reaction form behind the reaction pay sheet', () => {
+    function reactionBoard(open: boolean, onPayCancel: () => void = () => undefined): ReactElement {
+      return (
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          onPayCancel={onPayCancel}
+          expandedId="m1"
+          replies={[]}
+          replyDraft="Hi Bob"
+          replyAmountDraft="21"
+          replyPayPreview={open ? 'Hi Bob' : null}
+          payMessageId={open ? 'm1' : null}
+          payHost={open ? 'card' : null}
+          payInvoice={open ? { messageId: 'm1', pr: 'lnbc21n1example', amountSats: 21 } : null}
+          {...modeProps('all')}
+        />
+      );
+    }
+
+    it('stays disabled through the success step after the payment, then frees up', () => {
+      vi.useFakeTimers();
+      try {
+        const view = renderWithLocale(reactionBoard(true));
+        const field = screen.getByLabelText('Your reaction') as HTMLTextAreaElement;
+        expect(field.disabled).toBe(true);
+        view.rerender(reactionBoard(false));
+        expect(field.disabled).toBe(true);
+        act(() => {
+          vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS);
+        });
+        expect(field.disabled).toBe(false);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('frees up at once when the member closes the sheet', () => {
+      const onPayCancel = vi.fn();
+      const view = renderWithLocale(reactionBoard(true, onPayCancel));
+      const sheet = screen.getByRole('dialog', { name: 'Send to Ada' });
+      fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
+      expect(onPayCancel).toHaveBeenCalledTimes(1);
+      view.rerender(reactionBoard(false, onPayCancel));
+      expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(false);
+    });
   });
 
   it('passes the sparkInvoice to the reaction pay page', async () => {

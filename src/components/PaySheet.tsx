@@ -65,6 +65,43 @@ export function usePaySheetSent(): ((sent: boolean) => void) | null {
   return useContext(PaySheetSentContext);
 }
 
+/** What {@link usePaySheetHold} gives a host. */
+export interface PaySheetHold {
+  /** Key of the payment whose success step still shows, or `null`. */
+  held: string | null;
+  /** Call before the host cancels a payment the member closed: no success step, nothing to hold. */
+  closedByMember: () => void;
+}
+
+/**
+ * Keeps the page controls behind a pay sheet disabled through its success step. A host whose form
+ * sits beside the held sheet (not inside its `Collapse`) passes the key of the open payment, or
+ * `null`; once that payment closes without the member closing it, `held` names it for
+ * {@link PAY_SHEET_SUCCESS_MS}, then turns `null`. A close by the member frees the controls at once.
+ *
+ * @param openKey - Key of the payment whose sheet is open, or `null`.
+ * @returns The held key and the member-close marker.
+ */
+export function usePaySheetHold(openKey: string | null): PaySheetHold {
+  const [shownKey, setShownKey] = useState(openKey);
+  const [held, setHeld] = useState<string | null>(null);
+  const [memberClosed, setMemberClosed] = useState(false);
+  if (openKey !== shownKey) {
+    setShownKey(openKey);
+    setHeld(openKey === null && !memberClosed ? shownKey : null);
+    setMemberClosed(false);
+  }
+  useEffect(() => {
+    if (held === null) {
+      return;
+    }
+    const timer = window.setTimeout(() => setHeld(null), PAY_SHEET_SUCCESS_MS);
+    return () => window.clearTimeout(timer);
+  }, [held]);
+  const closedByMember = useCallback((): void => setMemberClosed(true), []);
+  return { held, closedByMember };
+}
+
 /** Props for {@link PaySheet}. */
 export interface PaySheetProps {
   /** What is paid to whom, e.g. **Send to Ana**, **Lend to Ana**, **Pay to post**, or **Send**. */

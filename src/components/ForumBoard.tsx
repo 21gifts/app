@@ -49,7 +49,7 @@ import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { LoanPayNotice, type LoanPayTarget } from '@/components/LoanPayNotice';
 import { AutoHeight } from '@/components/AutoHeight';
 import { Collapse } from '@/components/Collapse';
-import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
+import { PAY_SHEET_HOLD_MS, usePaySheetHold } from '@/components/PaySheet';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
 import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
@@ -917,6 +917,15 @@ export function ForumBoard({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const [placeSlot, setPlaceSlot] = useState<HTMLDivElement | null>(null);
+  // The reaction form sits beside the held reaction sheet: it stays disabled through the success step.
+  const reactionHold = usePaySheetHold(
+    replyPayPreview !== null &&
+      payInvoice !== null &&
+      payHost === 'card' &&
+      payMessageId === payInvoice.messageId
+      ? payInvoice.messageId
+      : null,
+  );
   const postComposerShown =
     !hideCompose && (!allowAsk || composeIntent === 'post') && !shopComposer;
   const writerOpen = writer !== undefined && writer.open;
@@ -1450,7 +1459,8 @@ export function ForumBoard({
           const expanded = expandedId === message.id;
           const cannotReceive = authorCannotReceive(message, viewerAccountId);
           const replyPayLocked =
-            payInvoice !== null && payMessageId === message.id && payHost !== 'composer';
+            (payInvoice !== null && payMessageId === message.id && payHost !== 'composer') ||
+            reactionHold.held === message.id;
           const reactionPay =
             replyPayPreview !== null &&
             payInvoice !== null &&
@@ -2241,7 +2251,10 @@ export function ForumBoard({
                                 pr={reactionPay.pr}
                                 sparkInvoice={reactionPay.sparkInvoice}
                                 rateDay={rateDay}
-                                onCancel={onPayCancel}
+                                onCancel={() => {
+                                  reactionHold.closedByMember();
+                                  onPayCancel();
+                                }}
                               />
                             </SundayWritingGate>
                           )}

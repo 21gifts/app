@@ -5707,8 +5707,12 @@ const REACTION_PAY_ANSWER = 'This is my answer';
 const REACTION_PAY_NOTE = 'Thank you so much to all donors.';
 
 /** Signed-in welcome, one foreign note, a paid reaction invoice that stays waiting. */
-async function openReactionPayPage(page: Page, invoiceStatus: number = 200): Promise<void> {
-  await openReactionForm(page, invoiceStatus);
+async function openReactionPayPage(
+  page: Page,
+  invoiceStatus: number = 200,
+  path: string = '/welcome',
+): Promise<void> {
+  await openReactionForm(page, invoiceStatus, async () => undefined, path);
   await page.getByLabel('Amount').fill('21');
   await page.getByLabel('Your reaction').fill(REACTION_PAY_ANSWER);
   // The line under the amount eases in: click once it has come to rest.
@@ -5725,6 +5729,7 @@ async function openReactionForm(
   page: Page,
   invoiceStatus: number = 200,
   beforeOpen: () => Promise<void> = async () => undefined,
+  path: string = '/welcome',
 ): Promise<void> {
   await seedAdaSession(page);
   await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -5813,12 +5818,47 @@ async function openReactionForm(
       }),
     });
   });
-  await page.goto('/welcome');
+  await page.goto(path);
   await expect(page.getByText(REACTION_PAY_NOTE)).toBeVisible();
   await beforeOpen();
   await page.getByText(REACTION_PAY_NOTE).click();
   await expect(page.getByLabel('Your reaction')).toBeVisible();
 }
+
+test('Function: usePaySheetHold — the reaction form stays disabled behind the success step, then frees up', async ({
+  page,
+}) => {
+  // The slot is paying: the payment is out when the poll sees Bob's note rise.
+  await openReactionPayPage(page, 200, '/welcome?visual=wallet-pay-paying');
+  const sheet = page.getByRole('dialog', { name: 'Send to Bob' });
+  await expect(sheet).toBeVisible();
+  await page.route(/\/public-messages\/m-bob/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'm-bob',
+        accountId: 'acc_bob',
+        name: 'Bob',
+        text: REACTION_PAY_NOTE,
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 1021,
+        payable: true,
+        hasPhoto: false,
+        photoCount: 0,
+        hasVideo: false,
+        videoContentType: null,
+        role: 'basis',
+        replyCount: 2,
+      }),
+    });
+  });
+  await expect(sheet.getByRole('status')).toContainText('Sent to Bob', { timeout: 15_000 });
+  // The reaction went out: the form behind the success step stays disabled.
+  await expect(page.getByLabel('Your reaction')).toBeDisabled();
+  await expect(page.locator('[data-pay-sheet]')).toHaveCount(0);
+  await expect(page.getByLabel('Your reaction')).toBeEnabled();
+});
 
 test('Function: ForumReplyPayPage — a paid reaction opens the pay sheet over the thread, with the reaction form kept behind it', async ({
   page,
