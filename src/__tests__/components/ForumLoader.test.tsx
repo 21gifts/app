@@ -463,6 +463,63 @@ async function submitShopWizard(text: string, username?: string): Promise<void> 
   fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
 }
 
+async function openBasisShopWizardAtPlace(): Promise<ReturnType<typeof stubShopMaps>> {
+  useAuthStore.setState({
+    session: 'sess',
+    account: { ...account, role: 'basis', forumLawsDismissed: true, hasPosted: true },
+  });
+  fetchMock.mockResolvedValue(forumPage([]));
+  renderWithLocale(<ForumLoader feed="shops" />);
+  await waitFor(() => {
+    expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+  });
+  const listeners = stubShopMaps();
+  fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  return listeners;
+}
+
+function bypassDisabledShopNext(): void {
+  const next = screen.getByRole('button', { name: 'Next' });
+  expect(next).toHaveProperty('disabled', true);
+  next.removeAttribute('disabled');
+  fireEvent.click(next);
+}
+
+function submitDisabledShopSummary(): void {
+  const post = screen.getByRole('button', { name: /^Post$/ });
+  expect(post).toHaveProperty('disabled', true);
+  fireEvent.submit(post.closest('form')!);
+}
+
+async function submitValidShopWizardFromCurrentStep(): Promise<void> {
+  for (let remaining = 3; remaining > 0; remaining -= 1) {
+    const next = screen.queryByRole('button', { name: 'Next' });
+    if (next === null) break;
+    expect(next).toHaveProperty('disabled', false);
+    fireEvent.click(next);
+  }
+  const post = screen.getByRole('button', { name: /^Post$/ });
+  await waitFor(() => {
+    expect(post).toHaveProperty('disabled', false);
+  });
+  fireEvent.submit(post.closest('form')!);
+}
+
+function expectNoShopComposeOrPost(): void {
+  expect(composeTargetMock).not.toHaveBeenCalled();
+  expect(invoiceMock).not.toHaveBeenCalled();
+  expect(postMock).not.toHaveBeenCalled();
+}
+
+async function expectShopComposeAfterRetry(): Promise<void> {
+  await waitFor(() => {
+    expect(composeTargetMock).toHaveBeenCalledWith('sess');
+    expect(invoiceMock).toHaveBeenCalledTimes(1);
+  });
+  expect(postMock).not.toHaveBeenCalled();
+}
+
 function chooseForumMode(name: string | RegExp): void {
   fireEvent.click(screen.getByRole('combobox', { name: 'Forum view' }));
   fireEvent.click(screen.getByRole('option', { name }));
@@ -1574,6 +1631,118 @@ describe('ForumLoader', () => {
     expect(screen.getByText('3 / 5 · Text')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     expect(postMock).not.toHaveBeenCalled();
+  });
+
+  it('feed="shops" guards an incomplete place before the compose fee', async () => {
+    const listeners = await openBasisShopWizardAtPlace();
+    await fillCompleteShopPlace(listeners);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    });
+    bypassDisabledShopNext();
+    fireEvent.change(screen.getByLabelText('Shop text'), {
+      target: { value: SHOP_DESCRIPTION },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    submitDisabledShopSummary();
+
+    expect(await screen.findByText('2 / 5 · Place')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Enter the full address: street, house number, postal code, city and country.',
+      ),
+    ).toBeTruthy();
+    expectNoShopComposeOrPost();
+
+    listeners.clear();
+    await fillCompleteShopPlace(listeners);
+    await submitValidShopWizardFromCurrentStep();
+    await expectShopComposeAfterRetry();
+  });
+
+  it('feed="shops" guards an invalid description before the compose fee', async () => {
+    const listeners = await openBasisShopWizardAtPlace();
+    await fillCompleteShopPlace(listeners);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('Shop text'), {
+      target: { value: 'Too short' },
+    });
+    bypassDisabledShopNext();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    submitDisabledShopSummary();
+
+    const description = await screen.findByLabelText('Shop text');
+    expect(description.getAttribute('aria-invalid')).toBe('true');
+    expect(
+      screen.getByText(
+        'The description must be 20 to 1000 characters and longer than the shop name.',
+      ),
+    ).toBeTruthy();
+    expectNoShopComposeOrPost();
+
+    fireEvent.change(description, { target: { value: SHOP_DESCRIPTION } });
+    await submitValidShopWizardFromCurrentStep();
+    await expectShopComposeAfterRetry();
+  });
+
+  it('feed="shops" guards description controls before the compose fee', async () => {
+    const listeners = await openBasisShopWizardAtPlace();
+    await fillCompleteShopPlace(listeners);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('Shop text'), {
+      target: { value: 'Fresh bread\u0001 every morning.' },
+    });
+    bypassDisabledShopNext();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    submitDisabledShopSummary();
+
+    const description = await screen.findByLabelText('Shop text');
+    expect(description.getAttribute('aria-invalid')).toBe('true');
+    expect(
+      screen.getByText(
+        'The description must not contain control characters other than line breaks.',
+      ),
+    ).toBeTruthy();
+    expectNoShopComposeOrPost();
+
+    fireEvent.change(description, { target: { value: SHOP_DESCRIPTION } });
+    await submitValidShopWizardFromCurrentStep();
+    await expectShopComposeAfterRetry();
+  });
+
+  it('feed="shops" guards an invalid username before the compose fee', async () => {
+    const listeners = await openBasisShopWizardAtPlace();
+    await fillCompleteShopPlace(listeners);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('Shop text'), {
+      target: { value: SHOP_DESCRIPTION },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('21.gifts username'), {
+      target: { value: 'not valid' },
+    });
+    bypassDisabledShopNext();
+
+    submitDisabledShopSummary();
+
+    const username = await screen.findByLabelText('21.gifts username');
+    expect(username.getAttribute('aria-invalid')).toBe('true');
+    expect(
+      screen.getByText(
+        'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+      ),
+    ).toBeTruthy();
+    expectNoShopComposeOrPost();
+
+    fireEvent.change(username, { target: { value: '' } });
+    await submitValidShopWizardFromCurrentStep();
+    await expectShopComposeAfterRetry();
   });
 
   it('feed="shops" first fetch sends hashtag 21GiftsShop', async () => {
