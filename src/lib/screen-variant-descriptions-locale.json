@@ -1280,9 +1280,9 @@
     "fil": "Bukas ang Mga tala, nakabuka ang tala ni Ada, ang kahon ng reaksyon nito ay naglalaman ng @, at bukas ang listahan ng Mga tao."
   },
   "/grants:funding-trial": {
-    "de": "Verifizierter Inhaber mit funding.status trial. Sie sind heute auf Probe. Die Prüfung wiederholt sich morgen.",
-    "es": "Propietario verificado con funding.status trial. Estás en una prueba de un día. La revisión se repite mañana.",
-    "fil": "Beripikadong may-ari na may funding.status trial. Nasa one-day trial ka. Uulitin ang review bukas."
+    "de": "Verifizierter Inhaber mit funding.status trial. Sie sind heute auf Probe. Die Prüfung wiederholt sich morgen. Das Feld Förderplätze unter der Karte zeigt 10 von 10 Plätzen sind frei.",
+    "es": "Propietario verificado con funding.status trial. Estás en una prueba de un día. La revisión se repite mañana. El panel Plazas de beca bajo la tarjeta muestra 10 de 10 plazas están libres.",
+    "fil": "Beripikadong may-ari na may funding.status trial. Nasa one-day trial ka. Uulitin ang review bukas. Ipinapakita ng panel na Mga puwesto sa grant sa ilalim ng card ang 10 sa 10 puwesto ang bakante."
   },
   "/moderate/proposals:confirm-error": {
     "de": "Personal (Moderator) Als Moderator bestätigen fehlgeschlagen. Dieses Mitglied konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
@@ -1500,9 +1500,9 @@
     "fil": "Gumawa ng bayad na 21. Hindi sumasagot ang kaha. Alerto Hindi available ang point of sale. Nanatili ang numerong pad. Walang QR."
   },
   "/grants:funding-pending": {
-    "de": "Verifizierte Inhaberin oder verifizierter Inhaber mit funding.status pending. Text Ihre Bewerbung ist offen. Eine Moderatorin oder ein Moderator prüft Ihre Beiträge.",
-    "es": "Propietario verificado con funding.status pending. Texto Tu solicitud está abierta. Una persona moderadora revisará tus mensajes.",
-    "fil": "Beripikadong may-ari na may funding.status pending. Teksto Bukas ang iyong aplikasyon. Susuriin ng isang moderator ang iyong mga post."
+    "de": "Verifizierte Inhaberin oder verifizierter Inhaber mit funding.status pending. Text Ihre Bewerbung ist offen. Eine Moderatorin oder ein Moderator prüft Ihre Beiträge. Das Feld Förderplätze unter der Karte zeigt 10 von 10 Plätzen sind frei.",
+    "es": "Propietario verificado con funding.status pending. Texto Tu solicitud está abierta. Una persona moderadora revisará tus mensajes. El panel Plazas de beca bajo la tarjeta muestra 10 de 10 plazas están libres.",
+    "fil": "Beripikadong may-ari na may funding.status pending. Teksto Bukas ang iyong aplikasyon. Susuriin ng isang moderator ang iyong mga post. Ipinapakita ng panel na Mga puwesto sa grant sa ilalim ng card ang 10 sa 10 puwesto ang bakante."
   },
   "/messages:thread-composer-photos": {
     "de": "Direktnachricht-Thread geöffnet. Zwei JPEGs im Verfasser ausgewählt; zwei Miniaturansichten Ausgewähltes Foto. Das Betragsfeld ist weiterhin sichtbar.",
@@ -1904,11 +1904,6 @@
     "es": "Tabla está seleccionada y falló la primera página. No se pudieron cargar los mensajes. Inténtalo de nuevo. e Intentar de nuevo. El redactor desapareció.",
     "fil": "Napili ang Talahanayan at nabigo ang unang pahina. Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit. Wala na ang tagasulat."
   },
-  "/grants:funding-apply": {
-    "de": "Verifizierter Benutzername joey-rosima mit Status none oder rejected sieht Für 21 Förderprogramm bewerben statt des pausierten Satzes.",
-    "es": "El nombre de usuario verificado joey-rosima con estado none o rejected ve Solicitar la beca 21 gifts en lugar de la frase en pausa.",
-    "fil": "Ang nabe-verify na username na joey-rosima na may status na none o rejected ay nakakakita ng Mag-apply para sa 21 gifts grant sa halip ng naka-pause na pangungusap."
-  },
   "/messages/[id]:shop-edit-summary": {
     "de": "Weiter erneut. Schritt 5 von 5 · Zusammenfassung ist offen. Änderungen speichern ist die Schaltfläche auf der Karte. Verlauf sagt noch, dass es noch keine Bearbeitungen gibt.",
     "es": "Siguiente otra vez. Paso 5 de 5 · Resumen está abierto. Guardar cambios es el botón en la tarjeta. Historial sigue diciendo que aún no hay ediciones.",
@@ -1940,9 +1935,9 @@
     "fil": "Magdagdag ng shop ay bukas sa hakbang 2 sa 5 · Lugar. Magdagdag ng lugar ay sarado. Susunod ang tanging pindutan sa kard. Walang laman ang listahan ng tindahan."
   },
   "/grants:funding-not-verified": {
-    "de": "Basis-Inhaber. Förderabschnitt auf /grants. Sie sind noch nicht verifiziert. plus wie die persönliche Verifizierung funktioniert. Keine Bewerben-Schaltfläche.",
-    "es": "Propietario de Basis. Apartado de beca en /grants. Aún no estás verificada o verificado. más cómo funciona la verificación en persona. Sin botón de solicitar.",
-    "fil": "May-ari ng Basis. Bahagi ng grant sa /grants. Hindi ka pa nabe-verify. plus kung paano gumagana ang personal na beripikasyon. Walang pindutan ng mag-apply."
+    "de": "Basis-Inhaber. Förderabschnitt auf /grants. Sie sind noch nicht verifiziert. plus wie die persönliche Verifizierung funktioniert. Keine Bewerben-Schaltfläche. Das Feld Förderplätze unter der Karte zeigt 10 von 10 Plätzen sind frei.",
+    "es": "Propietario de Basis. Apartado de beca en /grants. Aún no estás verificada o verificado. más cómo funciona la verificación en persona. Sin botón de solicitar. El panel Plazas de beca bajo la tarjeta muestra 10 de 10 plazas están libres.",
+    "fil": "May-ari ng Basis. Bahagi ng grant sa /grants. Hindi ka pa nabe-verify. plus kung paano gumagana ang personal na beripikasyon. Walang pindutan ng mag-apply. Ipinapakita ng panel na Mga puwesto sa grant sa ilalim ng card ang 10 sa 10 puwesto ang bakante."
   },
   "/grants/payments/comment:empty": {
     "de": "Gründer mit leerem Kommentar. Der gedämpfte Satz ist Nicht festgelegt, und der Stift Kommentar bearbeiten bleibt in dieser Zeile. Nadel Nicht festgelegt.",
@@ -2229,11 +2224,6 @@
     "es": "Sesión iniciada con un nombre para mostrar (o un nombre omitido) y sin nombre de usuario. Tu nombre en 21.gifts, el campo username y Continuar. Un Menú arriba a la derecha.",
     "fil": "Naka-sign in na may pangalang ipinapakita (o isang nilaktawang pangalan) at walang username. Ang 21.gifts name mo, ang patlang na username, at Magpatuloy. Isang Menu sa kanan sa itaas."
   },
-  "/welcome:daily-payout-stopped-apply": {
-    "de": "Benutzername joey-rosima, beliebige Rolle, sieht den Link Bewerben unter Tägliche Auszahlung gestoppt, nicht den Pausensatz. Dieser Link ist nicht der Bewerbungsablauf.",
-    "es": "El nombre de usuario joey-rosima, de cualquier rol, ve el enlace Solicitar bajo Pago diario detenido, no la frase de pausa. Ese enlace no es el recorrido de solicitud.",
-    "fil": "Ang username na joey-rosima, anuman ang papel, ay nakikita ang kawing na Mag-apply sa ilalim ng Huminto ang araw-araw na payout, hindi ang pangungusap ng paghinto. Ang kawing na iyon ay hindi ang lakad ng pag-apply."
-  },
   "/messages:thread-text-sats": {
     "de": "Geöffneter Thread. Eingehend Hi mit Betrag ₿21 unter dem Textkörper. Eingabebereich sichtbar: die Foto-Symbolzeile (Foto aufnehmen und ImagePlus-Anhang) über der Nachrichtenzeile, Betrag in der Zeile unter der Nachricht.",
     "es": "Hilo abierto. Entrante Hi con importe ₿21 bajo el cuerpo. Área de redacción visible: la fila de iconos de foto (Tomar una foto y adjunto ImagePlus) sobre la fila del mensaje, Importe en la fila bajo el mensaje.",
@@ -2330,14 +2320,9 @@
     "fil": "Gumawa ng bayad sa 21. Sumagot ang kaha na labas sa wallet ang halaga. Alerto Labas sa range ng wallet ang halaga. Nanatili ang pindutan ng numero. Walang QR."
   },
   "/grants:applications-loading": {
-    "de": "Moderator auf /grants, während offene Bewerbungen noch geladen werden. Text Wird geladen… ist einfacher Text, kein Link. Nadel state-grants-applications-loading.",
-    "es": "Moderador en /grants mientras las solicitudes abiertas aún se están cargando. El texto Cargando… es texto simple, no un enlace. Aguja state-grants-applications-loading.",
-    "fil": "Moderator sa /grants habang naglo-load pa ang mga bukas na aplikasyon. Ang teksto Naglo-load… ay payak na teksto, hindi isang kawing. Karayom state-grants-applications-loading."
-  },
-  "/grants/apply:about": {
-    "de": "Verifizierter Benutzername joey-rosima mit Status none oder rejected sieht den ersten Bewerbungsschritt, Zuerst schreiben Sie ein kurzes Über mich, damit andere Sie kennenlernen können.",
-    "es": "El nombre de usuario verificado joey-rosima con estado none o rejected ve el primer paso de solicitud, Primero, escribe un breve Sobre mí para que la gente te conozca.",
-    "fil": "Ang beripikadong username na joey-rosima na may status na none o rejected ay nakikita ang unang hakbang ng pag-apply, Una, magsulat ng maikling About me para makilala ka ng iba."
+    "de": "Moderator auf /grants, während offene Bewerbungen noch geladen werden. Text Wird geladen… ist einfacher Text, kein Link. Nadel state-grants-applications-loading. Das Feld Förderplätze unter der Karte zeigt 10 von 10 Plätzen sind frei.",
+    "es": "Moderador en /grants mientras las solicitudes abiertas aún se están cargando. El texto Cargando… es texto simple, no un enlace. Aguja state-grants-applications-loading. El panel Plazas de beca bajo la tarjeta muestra 10 de 10 plazas están libres.",
+    "fil": "Moderator sa /grants habang naglo-load pa ang mga bukas na aplikasyon. Ang teksto Naglo-load… ay payak na teksto, hindi isang kawing. Karayom state-grants-applications-loading. Ipinapakita ng panel na Mga puwesto sa grant sa ilalim ng card ang 10 sa 10 puwesto ang bakante."
   },
   "/messages:thread-translate-loading": {
     "de": "Dieselbe eingehende deutsche Nachricht nach dem Klick auf Übersetzen, während das POST zum Übersetzen der Unterhaltung hängt. Das Steuerelement ist beschäftigt (aria-busy) mit einem Drehkreis.",
@@ -2590,14 +2575,14 @@
     "fil": "Nagpili ang isang moderator ng labing-isang litrato sa hakbang 1 sa 5 · Mga larawan sa editor ng shop ng mapa. Sampung naidagdag. Ang ika-labing-isa ay hindi. Ipinapakita ang Pwede kang magdagdag ng hanggang 10 litrato."
   },
   "/grants:no-applications": {
-    "de": "Moderator auf /grants, wenn keine Förderbewerbung offen ist. Der Satz Keine offenen Bewerbungen. ist reiner Text, keine Schaltfläche und kein Verweis. Needle state-grants-no-applications.",
-    "es": "Moderador en /grants cuando no hay ninguna solicitud de subvención abierta. La frase No hay solicitudes abiertas. es texto simple, no un botón ni un enlace. Needle state-grants-no-applications.",
-    "fil": "Tagapamagitan sa /grants kapag walang bukas na aplikasyon sa gawad. Ang pangungusap na Walang bukas na aplikasyon. ay payak na teksto, hindi pindutan o kawing. Needle state-grants-no-applications."
+    "de": "Moderator auf /grants, wenn keine Förderbewerbung offen ist. Der Satz Keine offenen Bewerbungen. ist reiner Text, keine Schaltfläche und kein Verweis. Needle state-grants-no-applications. Das Feld Förderplätze unter der Karte zeigt 10 von 10 Plätzen sind frei.",
+    "es": "Moderador en /grants cuando no hay ninguna solicitud de subvención abierta. La frase No hay solicitudes abiertas. es texto simple, no un botón ni un enlace. Needle state-grants-no-applications. El panel Plazas de beca bajo la tarjeta muestra 10 de 10 plazas están libres.",
+    "fil": "Tagapamagitan sa /grants kapag walang bukas na aplikasyon sa gawad. Ang pangungusap na Walang bukas na aplikasyon. ay payak na teksto, hindi pindutan o kawing. Needle state-grants-no-applications. Ipinapakita ng panel na Mga puwesto sa grant sa ilalim ng card ang 10 sa 10 puwesto ang bakante."
   },
   "/grants:daily-payments": {
-    "de": "Der Gründer auf /grants sieht einen sekundären Ziele-Verweis, sekundäre Verweise Text der täglichen Zahlungen und Beträge der täglichen Zahlungen sowie Offene Bewerbungen (2). Needle Text der täglichen Zahlungen.",
-    "es": "El fundador en /grants ve un enlace secundario Objetivos, enlaces secundarios Texto de los pagos diarios e Importes de los pagos diarios, además de Solicitudes abiertas (2). Needle Texto de los pagos diarios.",
-    "fil": "Nakikita ng tagapagtatag sa /grants ang pangalawang kawing na Mga layunin, pangalawang kawing na Teksto ng araw-araw na bayad at Mga halaga ng araw-araw na bayad, at Mga bukas na aplikasyon (2). Needle Teksto ng araw-araw na bayad."
+    "de": "Der Gründer auf /grants sieht einen sekundären Ziele-Verweis, sekundäre Verweise Text der täglichen Zahlungen und Beträge der täglichen Zahlungen sowie Offene Bewerbungen (2). Needle Text der täglichen Zahlungen. Das Feld Förderplätze unter der Karte zeigt 10 von 10 Plätzen sind frei.",
+    "es": "El fundador en /grants ve un enlace secundario Objetivos, enlaces secundarios Texto de los pagos diarios e Importes de los pagos diarios, además de Solicitudes abiertas (2). Needle Texto de los pagos diarios. El panel Plazas de beca bajo la tarjeta muestra 10 de 10 plazas están libres.",
+    "fil": "Nakikita ng tagapagtatag sa /grants ang pangalawang kawing na Mga layunin, pangalawang kawing na Teksto ng araw-araw na bayad at Mga halaga ng araw-araw na bayad, at Mga bukas na aplikasyon (2). Needle Teksto ng araw-araw na bayad. Ipinapakita ng panel na Mga puwesto sa grant sa ilalim ng card ang 10 sa 10 puwesto ang bakante."
   },
   "/shops:edit-save-error": {
     "de": "Ein Moderator hat Shop-Eintrag bearbeiten bei Cafe Luna geöffnet, den Text geändert, und Änderungen speichern ist fehlgeschlagen. Der Editor bleibt geöffnet. Die Meldung Dieser Shop-Eintrag konnte nicht gespeichert werden ist sichtbar.",
@@ -2715,9 +2700,9 @@
     "fil": "Parehong mahabang tala sa Aleman pagkatapos ng matagumpay na pagsasalin. Buong nakikita ang isinaling katawan, kasama ang dulo nito. Wala ang Magpakita pa. Ang icon na Mga wika ay may pangalang Ipakita ang orihinal."
   },
   "/profile/apply:redirect": {
-    "de": "Das Öffnen von /profile/apply führt zur pausierten Bewerbungsansicht. Öffentliche pausierte Bildschirmfotos bleiben unverändert, weil diese Fixtures nicht joey-rosima, vincent oder jewel-bacolbas sind.",
-    "es": "Abrir /profile/apply lleva a la pantalla de solicitudes en pausa. Las capturas públicas en pausa no cambian porque esos fixtures no son joey-rosima, vincent ni jewel-bacolbas.",
-    "fil": "Ang pagbukas ng /profile/apply ay dumidiretso sa naka-pause na screen ng mga aplikasyon. Hindi nagbabago ang pampublikong naka-pause na mga screenshot dahil ang mga fixture na iyon ay hindi joey-rosima, vincent, o jewel-bacolbas."
+    "de": "Das Öffnen von /profile/apply führt zum ersten Schritt der Bewerbung: Schreiben Sie zuerst ein kurzes Über mich, damit andere Sie kennenlernen können.",
+    "es": "Abrir /profile/apply lleva al primer paso de la solicitud: escribir primero un Acerca de mí breve para que la gente te conozca.",
+    "fil": "Ang pagbukas ng /profile/apply ay papunta sa unang hakbang ng aplikasyon: sumulat muna ng maikling About me para makilala ka ng mga tao."
   },
   "/shops:staff-place-unavailable": {
     "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Cafe-Luna-Notiz ist geöffnet und der Kartenschlüssel fehlt. Das Feld sagt Die Karte ist nicht verfügbar. Es gibt keinen Kartenrahmen und kein Diesen Ort verwenden.",
@@ -2890,9 +2875,9 @@
     "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng account sa tala ng Cafe Luna. Na-save ang username na missing. Ang pag-save ay nagbalik ng 404, kaya nakikita ang alerto Walang account na may ganitong username. Nanatili ang I-save ang account."
   },
   "/grants:funding-program-open": {
-    "de": "Zugelassene Inhaberin oder zugelassener Inhaber auf /grants. Der Teilnahmesatz Nimmt seit {date} am 21.gifts Förderprogramm teil ist auf der Förderkarte sichtbar. Aufnahme des Sichtfensters, nachdem diese Zeile ins Bild gescrollt wurde.",
-    "es": "Propietario admitido en /grants. La frase de participación Participa en el programa de apoyo de 21.gifts desde {date} es visible en la tarjeta de subvención. Captura de la ventana de visualización tras desplazar esa línea a la vista.",
-    "fil": "Tinanggap na may-ari sa /grants. Nakikita sa tarheta ng tulong ang pangungusap ng partisipasyon Kasali sa programa ng tulong ng 21.gifts mula noong {date}. Kuha ng tanawin pagkatapos i-scroll ang linyang iyon sa paningin."
+    "de": "Zugelassene Inhaberin oder zugelassener Inhaber auf /grants. Der Teilnahmesatz Nimmt seit {date} am 21.gifts Förderprogramm teil ist auf der Förderkarte sichtbar. Aufnahme des Sichtfensters, nachdem diese Zeile ins Bild gescrollt wurde. Das Feld Förderplätze unter der Karte zeigt 10 von 10 Plätzen sind frei.",
+    "es": "Propietario admitido en /grants. La frase de participación Participa en el programa de apoyo de 21.gifts desde {date} es visible en la tarjeta de subvención. Captura de la ventana de visualización tras desplazar esa línea a la vista. El panel Plazas de beca bajo la tarjeta muestra 10 de 10 plazas están libres.",
+    "fil": "Tinanggap na may-ari sa /grants. Nakikita sa tarheta ng tulong ang pangungusap ng partisipasyon Kasali sa programa ng tulong ng 21.gifts mula noong {date}. Kuha ng tanawin pagkatapos i-scroll ang linyang iyon sa paningin. Ipinapakita ng panel na Mga puwesto sa grant sa ilalim ng card ang 10 sa 10 puwesto ang bakante."
   },
   "/stats:usd-scale": {
     "de": "Invertierte Rangfolge-Vorlage (Juni hoch in ₿ / kurz in USD, Juli umgekehrt). Posts bleibt dieselbe Summe aus Notizen und Antworten. Skala auf USD umgestellt bei Total spend over time, By person und By month.",
@@ -2955,9 +2940,9 @@
     "fil": "Nag-click ang isang moderator sa Baguhin ang entry sa shop sa tabi ng Ada · Happyland. Hindi na-load ang tala. Nakikita ang alerto Hindi na-load ang entry na ito. Hindi bukas ang editor. Napili pa ang Mapa. Walang pangalawang pamagat na Mapa."
   },
   "/grants/goals:error": {
-    "de": "Angemeldete Seite, wenn GET /funding/goal fehlschlägt. Überschrift und die drei Sätze bleiben. Text Das Shop-Ziel konnte nicht geladen werden. Bitte erneut versuchen. und Schaltfläche Erneut versuchen. Kein Diagramm. Nadel state-grants-goals-error.",
-    "es": "Página con sesión iniciada cuando falla GET /funding/goal. El encabezado y las tres oraciones permanecen. Texto No se pudo cargar el objetivo de las tiendas. Inténtalo de nuevo. y botón Intentar de nuevo. Sin gráfico. Aguja state-grants-goals-error.",
-    "fil": "Pahinang naka-sign-in kapag nabigo ang GET /funding/goal. Nanatili ang pamagat at ang tatlong pangungusap. Teksto Hindi ma-load ang layunin ng tindahan. Pakisubukan muli. at pindutan Subukan ulit. Walang tsart. Karayom state-grants-goals-error."
+    "de": "Angemeldete Seite, wenn GET /funding/goal fehlschlägt. Überschrift, das Feld Förderplätze und die drei Sätze bleiben. Text Das Shop-Ziel konnte nicht geladen werden. Bitte erneut versuchen. und Schaltfläche Erneut versuchen. Kein Diagramm. Nadel state-grants-goals-error.",
+    "es": "Página con sesión iniciada cuando falla GET /funding/goal. Se quedan el encabezado, el panel Plazas de beca y las tres oraciones. Texto No se pudo cargar el objetivo de las tiendas. Inténtalo de nuevo. y botón Intentar de nuevo. Sin gráfico. Aguja state-grants-goals-error.",
+    "fil": "Pahinang naka-sign-in kapag nabigo ang GET /funding/goal. Nanatili ang pamagat, ang panel na Mga puwesto sa grant, at ang tatlong pangungusap. Teksto Hindi ma-load ang layunin ng tindahan. Pakisubukan muli. at pindutan Subukan ulit. Walang tsart. Karayom state-grants-goals-error."
   },
   "/moderate/proposals:reject-error-self": {
     "de": "Personal (Moderator): Ablehnen ist fehlgeschlagen bei einer Zeile, die sie selbst vorgeschlagen haben. Text Warten auf die Bestätigung durch eine andere Moderatorin oder einen anderen Moderator. und Dieses Mitglied konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut. Keine Schaltfläche Bestätigen. Ablehnen sichtbar.",
@@ -2980,9 +2965,9 @@
     "fil": "Isang sesyon ng moderator. Bukas ang I-edit ang lugar nang walang susi ng mapa, at pinindot ang Alisin ang lugar. Nabigo ang pag-save, kaya nakikita ang alerto Hindi ma-save ang lugar. Pakisubukan muli. at nananatili ang Alisin ang lugar."
   },
   "/grants:applications-error": {
-    "de": "Moderator auf /grants, wenn das Laden der offenen Bewerbungen fehlschlägt. Text Offene Bewerbungen konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Schaltfläche Erneut versuchen. Kein Link zur Warteschlange. Nadel state-grants-applications-error.",
-    "es": "Moderador en /grants cuando falla la carga de las solicitudes abiertas. Texto No se pudieron cargar las solicitudes abiertas. Inténtalo de nuevo. y botón Intentar de nuevo. No es un enlace a la cola. Aguja state-grants-applications-error.",
-    "fil": "Moderator sa /grants kapag nabigo ang pag-load ng mga bukas na aplikasyon. Teksto Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit. at pindutan Subukan ulit. Hindi ito link sa pila. Karayom state-grants-applications-error."
+    "de": "Moderator auf /grants, wenn das Laden der offenen Bewerbungen fehlschlägt. Text Offene Bewerbungen konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Schaltfläche Erneut versuchen. Kein Link zur Warteschlange. Nadel state-grants-applications-error. Das Feld Förderplätze unter der Karte zeigt 10 von 10 Plätzen sind frei.",
+    "es": "Moderador en /grants cuando falla la carga de las solicitudes abiertas. Texto No se pudieron cargar las solicitudes abiertas. Inténtalo de nuevo. y botón Intentar de nuevo. No es un enlace a la cola. Aguja state-grants-applications-error. El panel Plazas de beca bajo la tarjeta muestra 10 de 10 plazas están libres.",
+    "fil": "Moderator sa /grants kapag nabigo ang pag-load ng mga bukas na aplikasyon. Teksto Hindi ma-load ang mga bukas na aplikasyon. Subukan ulit. at pindutan Subukan ulit. Hindi ito link sa pila. Karayom state-grants-applications-error. Ipinapakita ng panel na Mga puwesto sa grant sa ilalim ng card ang 10 sa 10 puwesto ang bakante."
   },
   "/messages/[id]/author:signed-in": {
     "de": "Dieselbe geladene Karte mit dem Menü-Steuerelement. Überschrift Profil, Robin, Extern, robin@nostr.example, pay@ln.example, npub1example, nur Symbol Kopieren. Geschlossene Schaltflächen sind 1 Beitrag und 1 Reaktion; der Feed ist geschlossen.",
@@ -3145,9 +3130,9 @@
     "fil": "Sa Aktibo, palawakin ang tala ni Bob. Si Ada, isang basis na miyembro, ay nag-type ng 21 sa Halaga (ang linya sa ibaba ay nagpapakita ng $0.02) at This is my answer sa Iyong reaksyon. Ang tala ni Bob at ang umiiral na sagot ng 21.gifts ay nananatili sa screen. Naka-enable pa rin ang I-post."
   },
   "/grants/goals:loading": {
-    "de": "Angemeldete Seite, solange GET /funding/goal noch nicht zurückgekehrt ist. Überschrift, der Satz zu den 10 Shops, der Satz zu 5 der letzten 7 und der Satz zu den Transaktionen bleiben. Die Messung sagt Wird geladen…. Kein Diagramm. Nadel state-grants-goals-loading.",
-    "es": "Página con sesión iniciada mientras GET /funding/goal aún no ha respondido. El encabezado, la frase de las 10 tiendas, la frase de 5 de los últimos 7 y la frase de las transacciones se quedan. La medición dice Cargando…. Sin gráfico. Aguja state-grants-goals-loading.",
-    "fil": "Naka-sign-in na pahina habang hindi pa bumabalik ang GET /funding/goal. Nanatili ang pamagat, ang pangungusap tungkol sa 10 tindahan, ang pangungusap tungkol sa 5 sa huling 7, at ang pangungusap tungkol sa transaksyon. Sinasabi ng sukat na Naglo-load…. Walang tsart. Karayom state-grants-goals-loading."
+    "de": "Angemeldete Seite, solange GET /funding/goal noch nicht zurückgekehrt ist. Überschrift, der Satz Ziel erreicht, das Feld Förderplätze, der Satz zu 5 der letzten 7 und der Satz zu den Transaktionen bleiben. Die Messung sagt Wird geladen…. Kein Diagramm. Nadel state-grants-goals-loading.",
+    "es": "Página con sesión iniciada mientras GET /funding/goal aún no ha respondido. Se quedan el encabezado, la frase de objetivo alcanzado, el panel Plazas de beca, la frase de 5 de los últimos 7 y la frase de las transacciones. La medición dice Cargando…. Sin gráfico. Aguja state-grants-goals-loading.",
+    "fil": "Naka-sign-in na pahina habang hindi pa bumabalik ang GET /funding/goal. Nanatili ang pamagat, ang pangungusap na naabot ang layunin, ang panel na Mga puwesto sa grant, ang pangungusap tungkol sa 5 sa huling 7, at ang pangungusap tungkol sa transaksyon. Sinasabi ng sukat na Naglo-load…. Walang tsart. Karayom state-grants-goals-loading."
   },
   "/welcome:ask-credit-preview-daily": {
     "de": "Kredit, Schritt 9 von 9, mit Täglich und Kredit gedrückt, nach derselben Bitcoin-Anfrage und Nachricht. Die Vorschau zeigt eine Darlehen-Marke und den täglichen Bitcoin-Plan mit der Fiat des Besuchers. Senden ist die einzige Absendung. Einmalig / Täglich wird nicht gespeichert.",
@@ -3260,9 +3245,9 @@
     "fil": "Isang moderator ang nag-click ng Baguhin ang entry sa shop sa Cafe Luna. Bukas ang hakbang 1 sa 5 · Mga larawan. Ang hakbang ng larawan ay nagsasara sa icon-lamang na Isara (X). Ang accessible na pangalan ay Kanselahin. Walang nakikitang salitang Kanselahin. May label ang Susunod. Ang kasaysayan ay nasa ilalim ng kard."
   },
   "/grants/apply:default": {
-    "de": "Verifiziertes Mitglied, Finanzierung keine. Überschrift 21-Förderprogramm. Der pausierte Satz. Link https://21.gifts/statistics. Kein Steuerelement Bewerben. Öffentliche pausierte Screenshots sind unverändert, weil diese Fixtures nicht joey-rosima, vincent oder jewel-bacolbas sind.",
-    "es": "Miembro verificado, financiación ninguna. Encabezado Beca 21 gifts. La frase en pausa. Enlace https://21.gifts/statistics. No hay control Solicitar. Las capturas públicas en pausa no cambian porque esos fixtures no son joey-rosima, vincent ni jewel-bacolbas.",
-    "fil": "Na-verify na miyembro, walang pondo. Heading na 21 gifts grant. Ang pangungusap ng paghinto. Link https://21.gifts/statistics. Walang kontrol na Mag-apply. Hindi nagbabago ang pampublikong naka-pause na mga screenshot dahil ang mga fixture na iyon ay hindi joey-rosima, vincent, o jewel-bacolbas."
+    "de": "Verifiziertes Mitglied, Finanzierung keine, noch kein Über mich. Überschrift Für 21 Förderprogramm bewerben. Der erste Schritt: Schreiben Sie zuerst ein kurzes Über mich, damit andere Sie kennenlernen können.",
+    "es": "Miembro verificado, financiación ninguna, aún sin Acerca de mí. Encabezado Solicitar la beca 21 gifts. El primer paso pide escribir primero un Acerca de mí breve para que la gente te conozca.",
+    "fil": "Verified na miyembro, walang funding, wala pang About me. Pamagat na Mag-apply para sa 21 gifts grant. Ang unang hakbang ay sumulat muna ng maikling About me para makilala ka ng mga tao."
   },
   "/shops:staff-place-edit-error": {
     "de": "Eine Moderatorsitzung. Ort bearbeiten ist auf der Notiz Cafe Luna geöffnet, die Karte ist sichtbar, und Ort entfernen wurde gedrückt. Das Speichern ist fehlgeschlagen, daher ist der Hinweis Der Ort konnte nicht gespeichert werden. Bitte erneut versuchen. sichtbar. Ort entfernen und Diesen Ort verwenden bleiben.",
@@ -3320,9 +3305,9 @@
     "fil": "Pinindot ng founder ang lapis na I-edit ang komento. Ang naka-imbak na komento Araw-araw na regalo ay nasa bukas na field na Komento. Naka-enable ang tsek (I-save). Naka-enable ang Kanselahin. Walang alerto, walang umiikot na icon, at walang lapis na I-edit ang komento. Karayom getByRole('textbox', { name: 'Comment' })."
   },
   "/grants/apply:forbidden": {
-    "de": "Ein Basis-Konto namens joey-rosima, vincent oder jewel-bacolbas sieht Sie sind noch nicht verifiziert. Jedes andere Basis-Konto, dessen Status nicht pending, trial oder admitted ist, sieht die Pause-Karte. Ein Basis-Konto mit einem dieser Status sieht Sie sind noch nicht verifiziert.",
-    "es": "Una cuenta base llamada joey-rosima, vincent o jewel-bacolbas ve Aún no estás verificada o verificado. Cualquier otra cuenta base cuyo estado no sea pending, trial o admitted ve la tarjeta de pausa. Una cuenta base con uno de esos estados ve Aún no estás verificada o verificado.",
-    "fil": "Ang base account na joey-rosima, vincent, o jewel-bacolbas ay nakikita ang Hindi ka pa nabe-verify. Anumang ibang base account na ang status ay hindi pending, trial, o admitted ay nakikita ang kard ng paghinto. Ang base account na may isa sa mga status na iyon ay nakikita ang Hindi ka pa nabe-verify."
+    "de": "Ein Basis-Konto sieht Sie sind noch nicht verifiziert. und sendet keine Bewerbung.",
+    "es": "Una cuenta básica ve Aún no estás verificada o verificado. y no envía la solicitud.",
+    "fil": "Nakikita ng basic na account ang Hindi ka pa nabe-verify. at hindi ito nagpapadala ng aplikasyon."
   },
   "/moderate/group:stipend": {
     "de": "Moderatorin oder Moderator. Geladener Gruppenthread mit der Nachricht von Rose Otero Great work today, moderators! und dem bezahlten Stipendium als Fußzeile in dieser Sprechblase (keine eigene Sprechblase): 21.gifts, der ₿-Betrag plus preferred-fiat-Suffix und die Zahlungszeit. Eingabefeld sichtbar.",
@@ -3455,9 +3440,9 @@
     "fil": "Pahina ng tauhan (moderator). Ang grapiko ng mga tao ay nananatiling nakataas (Mga tao bawat UTC-araw). Ang nakasarang Mga tungkulin ng moderator ay nasa pagitan ng grapiko ng mga tao at ng pook ng tindahan; Hindi pa nakikita ang Ipakita ang bayad bawat tao. Ang pook ng tindahan sa ilalim nito ay nagpapakita ng Hindi ma-load ang aktibidad ng tindahan. Pakisubukan muli. at Subukan ulit."
   },
   "/welcome:daily-payout-stopped": {
-    "de": "Angemeldet, keine Förderbewerbung. Der Titel der Mitteilung lautet Tägliche Auszahlung gestoppt, danach Bewerbungen sind zurzeit pausiert. Eine Bewerbung ist wieder möglich, wenn die Shop-Transaktionen gestiegen sind., danach der Link https://21.gifts/statistics. Kein Bewerben-Steuerelement. Das Wohnzimmer darunter ist die Standard-Willkommensansicht.",
-    "es": "Con sesión iniciada, sin solicitud de subvención. El título del aviso es Pago diario detenido, después Las solicitudes están en pausa por ahora. Volverán a ser posibles cuando hayan aumentado las transacciones de las tiendas., después el enlace https://21.gifts/statistics. Sin control para solicitar. El salón debajo es la bienvenida predeterminada.",
-    "fil": "Nakalog-in, walang aplikasyon para sa gawad. Ang pamagat ng abiso ay Huminto ang araw-araw na payout, pagkatapos Naka-pause ang mga aplikasyon sa ngayon. Magiging posible ulit ang pag-apply kapag tumaas ang mga transaksyon ng tindahan., pagkatapos ang link na https://21.gifts/statistics. Walang kontrol para mag-apply. Ang sala sa ibaba ay ang karaniwang pagtanggap."
+    "de": "Angemeldet, keine Förderbewerbung. Der Titel der Mitteilung lautet Tägliche Auszahlung gestoppt, danach der Satz zur gestoppten Auszahlung und der große Link Für 21 Förderprogramm bewerben zu /grants/apply. Bewerbungen sind für alle verifizierten Mitglieder offen. Darunter das Standard-Wohnzimmer.",
+    "es": "Sesión iniciada, sin solicitud de beca. El título del aviso es Pago diario detenido, luego la frase sobre el pago detenido y el enlace grande Solicitar la beca 21 gifts a /grants/apply. Las solicitudes están abiertas para todos los miembros verificados. Debajo, la sala de estar por defecto.",
+    "fil": "Naka-sign in, walang aplikasyon sa grant. Ang pamagat ng abiso ay Huminto ang araw-araw na payout, sunod ang pangungusap tungkol sa huminto na payout at ang malaking link na Mag-apply para sa 21 gifts grant papunta sa /grants/apply. Bukas ang pag-apply sa bawat verified na miyembro. Nasa ilalim ang default na living room."
   },
   "/welcome:pay-amount": {
     "de": "Zahlbare Antwort nach dem Anzeigen der Reaktionen, Geschenk geöffnet, Betrag ausgefüllt, nicht abgeschickt. Die Betrags-Handlungsaufforderung lautet auf jedem User-Agent Weiter (forum.payContinue). Aktueller Gegenwert in der bevorzugten Fiat-Währung (keine Auswahl). Kein Fehler und noch kein Zahlungsbereich. Der Beitrag selbst zeigt Bitcoin senden nicht.",
@@ -3520,14 +3505,14 @@
     "fil": "Nakunan sa kompyuter at sa mobile. Sa ibaba ng 1024px, ipinapakita ng pangkataasang bahagi ang pindutang Menu; sa pagbukas nito, lumilitaw ang parehong mga link na nakasalansan, na ang Happyland ay kaagad pagkatapos ng Paano ito gumagana. Ang pag-tap sa Happyland ay nagsasara ng menu at nag-i-scroll sa umiiral na sanaysay ng mga litrato. Sa kompyuter ito ang landing nang walang hamburger."
   },
   "/grants:open-applications": {
-    "de": "Moderator auf /grants mit zwei offenen Förderbewerbungen. Die Förderkarte wird gezeigt, und Offene Bewerbungen (2) verweist auf /grants/applications. Wenn die Liste leer ist, ist dieses Steuerelement der Satz Keine offenen Bewerbungen. und kein Link; dieser Zustand ist no-applications. Nadel state-grants-open-applications.",
-    "es": "Moderador en /grants con dos solicitudes de beca abiertas. Se muestra la tarjeta de beca, y Solicitudes abiertas (2) enlaza a /grants/applications. Cuando la lista está vacía, este control es la frase No hay solicitudes abiertas. y no un enlace; ese estado es no-applications. Aguja state-grants-open-applications.",
-    "fil": "Moderator sa /grants na may dalawang bukas na aplikasyon sa grant. Ipinapakita ang kard ng grant, at ang Mga bukas na aplikasyon (2) ay tumuturo sa /grants/applications. Kapag walang laman ang listahan, ang kontrol na ito ay ang pangungusap Walang bukas na aplikasyon. at hindi isang link; ang estadong iyon ay no-applications. Karayom state-grants-open-applications."
+    "de": "Moderator auf /grants mit zwei offenen Förderbewerbungen. Die Förderkarte wird gezeigt, und Offene Bewerbungen (2) verweist auf /grants/applications. Wenn die Liste leer ist, ist dieses Steuerelement der Satz Keine offenen Bewerbungen. und kein Link; dieser Zustand ist no-applications. Nadel state-grants-open-applications. Das Feld Förderplätze unter der Karte zeigt 10 von 10 Plätzen sind frei.",
+    "es": "Moderador en /grants con dos solicitudes de beca abiertas. Se muestra la tarjeta de beca, y Solicitudes abiertas (2) enlaza a /grants/applications. Cuando la lista está vacía, este control es la frase No hay solicitudes abiertas. y no un enlace; ese estado es no-applications. Aguja state-grants-open-applications. El panel Plazas de beca bajo la tarjeta muestra 10 de 10 plazas están libres.",
+    "fil": "Moderator sa /grants na may dalawang bukas na aplikasyon sa grant. Ipinapakita ang kard ng grant, at ang Mga bukas na aplikasyon (2) ay tumuturo sa /grants/applications. Kapag walang laman ang listahan, ang kontrol na ito ay ang pangungusap Walang bukas na aplikasyon. at hindi isang link; ang estadong iyon ay no-applications. Karayom state-grants-open-applications. Ipinapakita ng panel na Mga puwesto sa grant sa ilalim ng card ang 10 sa 10 puwesto ang bakante."
   },
   "/grants/goals:default": {
-    "de": "Angemeldete Seite mit geladenem Ziel. Überschrift Ziele. Text Das Förderprogramm läuft weiter, wenn wir 10 aktive Shops erreichen. Ein Shop ist an 5 der letzten 7 Tage aktiv. Der Transaktionssatz nennt https://21.gifts/pos. Die Zählung und das Diagramm Shops je UTC-Tag werden gezeigt. Der hellere Balken ist heute, noch offen.",
-    "es": "Página con sesión iniciada y la meta cargada. Encabezado Metas. Texto El programa de becas sigue cuando llegamos a 10 tiendas activas. Una tienda está activa en 5 de los últimos 7 días. La frase de transacción nombra https://21.gifts/pos. Se muestran el recuento y el gráfico Tiendas por día UTC. La barra más clara es hoy, aún abierta.",
-    "fil": "Naka-sign-in na pahina na naka-load ang layunin. Pamagat Mga layunin. Teksto Tuloy ang grant program kapag umabot tayo sa 10 aktibong tindahan. Aktibo ang isang tindahan sa 5 ng huling 7 araw. Ang pangungusap ng transaksyon ay nagnangalan ng https://21.gifts/pos. Ipinapakita ang bilang at ang grapiko Mga tindahan bawat araw na UTC. Ang mas maliwanag na bar ay ngayon, bukas pa."
+    "de": "Angemeldete Seite mit geladenem Ziel und geladenen Plätzen. Überschrift Ziele. Text Ziel erreicht: 10 aktive Shops. Das Förderprogramm ist wieder offen. Das Feld Förderplätze zeigt 10 von 10 Plätzen sind frei. und das Ziel von 20 Shops. Ein Shop ist an 5 der letzten 7 Tage aktiv. Der Transaktionssatz nennt https://21.gifts/pos. Die Zählung und das Diagramm Shops je UTC-Tag werden gezeigt. Der hellere Balken ist heute, noch offen.",
+    "es": "Página con sesión iniciada con el objetivo y las plazas cargados. Encabezado Objetivos. Texto Objetivo alcanzado: 10 tiendas activas. El programa de becas vuelve a estar abierto. El panel Plazas de beca muestra 10 de 10 plazas están libres. y el objetivo de 20 tiendas. Una tienda está activa 5 de los últimos 7 días. La frase de transacción nombra https://21.gifts/pos. Se muestran el conteo y el gráfico Tiendas por día UTC. La barra más clara es hoy, aún abierta.",
+    "fil": "Naka-sign in na pahina na naka-load ang layunin at ang mga puwesto. Pamagat na Mga layunin. Teksto Naabot na ang layunin: 10 aktibong tindahan. Bukas na ulit ang grant program. Ipinapakita ng panel na Mga puwesto sa grant ang 10 sa 10 puwesto ang bakante. at ang layuning 20 tindahan. Aktibo ang tindahan sa 5 sa huling 7 araw. Binabanggit ng pangungusap sa transaksyon ang https://21.gifts/pos. Ipinapakita ang bilang at ang tsart na Mga tindahan bawat araw na UTC. Ang mas maputlang bar ay ngayon, bukas pa."
   },
   "/members/[accountId]:staff-verify": {
     "de": "Angemeldeter Moderator betrachtet ein anderes Mitglied, das basis ist. Mitarbeiterkarte mit dem geschlossenen Aufklapper Moderatorenfunktionen, eine details / summary-Zeile (data-testid=\"state-members-staff-verify\"); Verifizieren ist erst sichtbar, wenn er geöffnet ist. Das gedrückte Ergebnis ist staff-verify-open.",
@@ -3715,9 +3700,9 @@
     "fil": "Wasto at kilalang UUID. Ang talakayan ay maaaring magulang lang kapag walang laman ang mga sagot. Kard na may pangalan ng may-akda, tatak ng oras, teksto (Hello from Ada), sats sa pamamagitan ng formatBitcoin plus opsyonal na ninanais na fiat · formatFiatDisplay ng halagang naka-imbak noong ginawa ang bayad (kung hindi, ang kasalukuyang rate; walang  · — kapag hindi magamit ang rate na iyon), opsyonal na larawan o <video> na sukat ng clip. CTA ng pagpapatunay sa ilalim ng kard."
   },
   "/grants:default": {
-    "de": "Verifizierter Inhaber mit funding.status none. Seiten-h1 21-Förderprogramm, der pausierte Satz Bewerbungen sind zurzeit pausiert. Eine Bewerbung ist wieder möglich, wenn die Shop-Transaktionen gestiegen sind., der Link https://21.gifts/statistics und Ziele. Kein Link Über uns und keine Schaltfläche Bewerben. Öffentliche pausierte Bildschirmfotos bleiben unverändert, weil diese Fixtures nicht joey-rosima, vincent oder jewel-bacolbas sind.",
-    "es": "Propietario verificado con funding.status none. h1 de la página Beca 21 gifts, la frase en pausa Las solicitudes están en pausa por ahora. Volverán a ser posibles cuando hayan aumentado las transacciones de las tiendas., el enlace https://21.gifts/statistics y Objetivos. Sin enlace Sobre nosotros y sin botón Solicitar. Las capturas públicas en pausa no cambian porque esos fixtures no son joey-rosima, vincent ni jewel-bacolbas.",
-    "fil": "Na-verify na may-ari na may funding.status none. h1 ng pahina na 21 gifts grant, ang naka-pause na pangungusap Naka-pause ang mga aplikasyon sa ngayon. Magiging posible ulit ang pag-apply kapag tumaas ang mga transaksyon ng tindahan., ang link na https://21.gifts/statistics, at Mga layunin. Walang link na Tungkol sa amin at walang pindutang Mag-apply. Hindi nagbabago ang mga naka-pause na pampublikong kuha dahil ang mga fixture na iyon ay hindi joey-rosima, vincent, o jewel-bacolbas."
+    "de": "Verifizierter Inhaber mit funding.status none. Seiten-h1 21-Förderprogramm, der Satz zur täglichen Gabe, der Link Über uns und der große Link Für 21 Förderprogramm bewerben. Darunter das Feld Förderplätze: 10 von 10 Plätzen sind frei., die Zulassungen dieser Runde, der Satz zu den offenen Bewerbungen und das Ziel von 20 Shops für weitere Personen. Danach Ziele.",
+    "es": "Titular verificado con funding.status none. h1 de la página Beca 21 gifts, la frase del regalo diario, el enlace Sobre nosotros y el enlace grande Solicitar la beca 21 gifts. Debajo, el panel Plazas de beca: 10 de 10 plazas están libres., las admisiones de esta ronda, la frase de solicitudes abiertas y el objetivo de 20 tiendas para más personas. Después, Objetivos.",
+    "fil": "Verified na may-ari na may funding.status none. Page h1 na 21 gifts grant, ang pangungusap tungkol sa araw-araw na gift, ang link na Tungkol sa amin at ang malaking link na Mag-apply para sa 21 gifts grant. Sa ilalim, ang panel na Mga puwesto sa grant: 10 sa 10 puwesto ang bakante., ang mga na-admit sa round na ito, ang pangungusap na bukas ang pag-apply, at ang layuning 20 tindahan para sa mas maraming tao. Sunod ang Mga layunin."
   },
   "/login:wrong-account": {
     "de": "GET /me 403 mit dem api-Text wrong-account, oder Passkey-Abschluss mit derselben Zeichenkette. Hinweis Sie haben sich mit dem falschen Konto angemeldet. Bitte versuchen Sie es nochmals mit dem richtigen Konto. (login.wrongAccount) und Erneut versuchen. Telefonbilder zeigen auch die gedämpfte Zeile für installiertes iOS. Die restliche Sitzung wird gelöscht, damit die Besuchenden nicht angemeldet bleiben. Erneut versuchen startet die Anmeldung mit Authentifizierung zuerst.",
@@ -3725,9 +3710,9 @@
     "fil": "GET /me 403 na may api na teksto na wrong-account, o tapos ng passkey na may parehong string. Alerto Nag-sign in kayo gamit ang maling account. Subukan ulit gamit ang tamang account. (login.wrongAccount) at Subukan ulit. Ipinapakita rin ng mga larawan ng telepono ang naka-mute na linya ng naka-install na iOS. Nililinis ang natitirang session para hindi maiwang naka-sign in ang bisita. Ang Subukan ulit ay nagsisimula ng pag-login na authenticate-first."
   },
   "/grants:funding-admitted": {
-    "de": "Verifizierter Inhaber mit funding.status admitted. Text Sie sind zum täglichen 21.gifts-Förderprogramm zugelassen. plus Nimmt seit {date} am 21.gifts Förderprogramm teil. Wenn reviewedByName gesetzt ist, nennt dieser Satz die prüfende Person. Trial, pending und rejected zeigen keinen Namen. Das Symbol des Förderprogramms auf den öffentlichen Fakten ist hier geschlossen. Das gedrückte Ergebnis ist funding-program-open.",
-    "es": "Propietario verificado con funding.status admitted. Texto Estás admitida o admitido a los pagos diarios de la beca 21.gifts. más Participa en el programa de apoyo de 21.gifts desde {date}. Cuando reviewedByName está definido, esa frase nombra a quien revisó. Trial, pending y rejected no muestran un nombre. El icono del programa de apoyo en los datos públicos está cerrado aquí. El resultado pulsado es funding-program-open.",
-    "fil": "Na-verify na may-ari na may funding.status admitted. Teksto Admitted ka sa araw-araw na 21.gifts grant payouts. plus Kasali sa programa ng tulong ng 21.gifts mula noong {date}. Kapag naka-set ang reviewedByName, pinangalanan ng pangungusap na iyon ang tagasuri. Ang trial, pending, at rejected ay hindi nagpapakita ng pangalan. Ang icon ng programa ng tulong sa mga pampublikong katotohanan ay sarado dito. Ang resultang nakapindot ay funding-program-open."
+    "de": "Verifizierter Inhaber mit funding.status admitted. Text Sie sind zum täglichen 21.gifts-Förderprogramm zugelassen. plus Nimmt seit {date} am 21.gifts Förderprogramm teil. Wenn reviewedByName gesetzt ist, nennt dieser Satz die prüfende Person. Trial, pending und rejected zeigen keinen Namen. Das Symbol des Förderprogramms auf den öffentlichen Fakten ist hier geschlossen. Das gedrückte Ergebnis ist funding-program-open. Das Feld Förderplätze unter der Karte zeigt 10 von 10 Plätzen sind frei.",
+    "es": "Propietario verificado con funding.status admitted. Texto Estás admitida o admitido a los pagos diarios de la beca 21.gifts. más Participa en el programa de apoyo de 21.gifts desde {date}. Cuando reviewedByName está definido, esa frase nombra a quien revisó. Trial, pending y rejected no muestran un nombre. El icono del programa de apoyo en los datos públicos está cerrado aquí. El resultado pulsado es funding-program-open. El panel Plazas de beca bajo la tarjeta muestra 10 de 10 plazas están libres.",
+    "fil": "Na-verify na may-ari na may funding.status admitted. Teksto Admitted ka sa araw-araw na 21.gifts grant payouts. plus Kasali sa programa ng tulong ng 21.gifts mula noong {date}. Kapag naka-set ang reviewedByName, pinangalanan ng pangungusap na iyon ang tagasuri. Ang trial, pending, at rejected ay hindi nagpapakita ng pangalan. Ang icon ng programa ng tulong sa mga pampublikong katotohanan ay sarado dito. Ang resultang nakapindot ay funding-program-open. Ipinapakita ng panel na Mga puwesto sa grant sa ilalim ng card ang 10 sa 10 puwesto ang bakante."
   },
   "/messages:thread": {
     "de": "Offizieller Faden geöffnet. Überschrift 21.gifts (eine Profilsteuerung, wenn die api accountId gesendet hat), Herkunft Kontakt unter der Überschrift, eingehend Hello team als gedämpfte Notizkarte über die volle Breite und rechts eine gesendete gefüllte app-btn-Sprechblase mit der Beschriftung Du, Eingabebereich sichtbar: die Foto-Symbolzeile (Foto aufnehmen und ImagePlus-Anhang), dann die Nachricht und Senden in einer Zeile, dann das Feld Betrag (₿ | Fiat, andere Einheit darunter) in der nächsten Zeile. Auswahl fehlt.",
@@ -5793,6 +5778,41 @@
     "de": "Angemeldeter Permalink von Marias Kredit, sobald er voll ist (sats gleich goalSats): Der Kreditblock zeigt Vollständig finanziert und bietet kein Leihen, und das Betragsfeld der offenen Karte behält die Beschriftung Betrag. Nachdem ₿210 gepostet wurde, zeigt das Zahlblatt in der Karte ₿210 · $0.21 zahlen, der Hinweis sagt Dieser Kredit ist bereits vollständig finanziert. Was Sie jetzt senden, ist ein Geschenk an Maria., und die Wallet-Schaltfläche bleibt Senden.",
     "es": "Enlace permanente con sesión iniciada del préstamo de Maria una vez lleno (sats igual a goalSats): el bloque del préstamo dice Totalmente financiado y no ofrece Prestar, y el campo de importe de la tarjeta abierta mantiene la etiqueta Importe. Tras publicar ₿210, la hoja de pago en la tarjeta dice Pagar ₿210 · $0.21, la nota dice Este préstamo ya está totalmente financiado. Lo que envíes ahora es un regalo para Maria., y el botón de la billetera sigue siendo Enviar.",
     "fil": "Naka-sign na permalink ng pautang ni Maria kapag buo na (katumbas ng sats ang goalSats): Buo na ang pondo ang nakasulat sa bloke ng pautang at walang Magpahiram, at nananatili ang tatak na Halaga sa field ng halaga ng bukas na kard. Pagkatapos i-post ang ₿210, Magbayad ng ₿210 · $0.21 ang nakasulat sa pay sheet sa loob ng kard, sinasabi ng paalala Buo na ang pondo ng utang na ito. Ang ipapadala mo ngayon ay regalo kay Maria., at nananatiling Ipadala ang button ng wallet."
+  },
+  "/grants/goals:places-full": {
+    "de": "Angemeldete Seite, wenn alle Plätze der Runde vergeben sind (placesLeft 0). Das Feld Förderplätze zeigt 0 von 10 Plätzen sind frei. und Alle 10 Plätze dieser Runde sind vergeben. Bewerbungen bleiben offen., danach das Ziel von 20 Shops. Die Zielmessung lädt trotzdem.",
+    "es": "Página con sesión iniciada cuando todas las plazas de la ronda están ocupadas (placesLeft 0). El panel Plazas de beca muestra 0 de 10 plazas están libres. y Las 10 plazas de esta ronda están ocupadas. Las solicitudes siguen abiertas., luego el objetivo de 20 tiendas. La medición del objetivo carga igual.",
+    "fil": "Naka-sign in na pahina kapag puno na ang lahat ng puwesto sa round (placesLeft 0). Ipinapakita ng panel na Mga puwesto sa grant ang 0 sa 10 puwesto ang bakante. at Puno na ang lahat ng 10 puwesto sa round na ito. Bukas pa rin ang pag-apply., sunod ang layuning 20 tindahan. Naglo-load pa rin ang sukat ng layunin."
+  },
+  "/grants/goals:places-error": {
+    "de": "Angemeldete Seite, wenn GET /funding/places fehlschlägt. Das Feld zeigt Die Förderplätze konnten nicht geladen werden. Bitte erneut versuchen. und Erneut versuchen. Die Zielmessung lädt unabhängig davon.",
+    "es": "Página con sesión iniciada cuando falla GET /funding/places. El panel muestra No se pudieron cargar las plazas de beca. Inténtalo de nuevo. e Intentar de nuevo. La medición del objetivo carga por su cuenta.",
+    "fil": "Naka-sign in na pahina kapag nabigo ang GET /funding/places. Ipinapakita ng panel ang Hindi ma-load ang mga puwesto sa grant. Pakisubukan muli. at Subukan ulit. Naglo-load nang hiwalay ang sukat ng layunin."
+  },
+  "/grants/applications/[accountId]:decide-full": {
+    "de": "Personal (Gründer): Zulassen nach Ja und Ja, die API antwortet 409 All grant places are taken. Text Alle Plätze dieser Runde sind vergeben. Bis zur nächsten Runde kann niemand mehr zugelassen werden. Das Mitglied bleibt auf der Detailseite, die Förderung ist unverändert.",
+    "es": "Personal (fundador): Admitir después de Sí y Sí cuando la api responde 409 All grant places are taken. Texto Todas las plazas de esta ronda están ocupadas. Nadie más puede ser admitido hasta que abra la siguiente ronda. Se queda en la página de detalle; la beca no cambia.",
+    "fil": "Kawani (founder): Admit pagkatapos ng Oo at Oo kapag sumagot ang api ng 409 All grant places are taken. Teksto Puno na ang lahat ng puwesto sa round na ito. Wala nang maa-admit hanggang magbukas ang susunod na round. Nananatili sa detail page; hindi nagbago ang grant."
+  },
+  "/grants:places-full": {
+    "de": "Verifizierter Inhaber mit Status none, wenn alle Plätze der Runde vergeben sind. Die Karte bietet weiterhin Für 21 Förderprogramm bewerben. Das Feld Förderplätze zeigt 0 von 10 Plätzen sind frei. und Alle 10 Plätze dieser Runde sind vergeben. Bewerbungen bleiben offen., danach das Ziel von 20 Shops. Nadel state-grants-places-full.",
+    "es": "Titular verificado con estado none cuando todas las plazas de la ronda están ocupadas. La tarjeta sigue ofreciendo Solicitar la beca 21 gifts. El panel Plazas de beca muestra 0 de 10 plazas están libres. y Las 10 plazas de esta ronda están ocupadas. Las solicitudes siguen abiertas., luego el objetivo de 20 tiendas. Aguja state-grants-places-full.",
+    "fil": "Verified na may-ari na may status none kapag puno na ang lahat ng puwesto sa round. Inaalok pa rin ng card ang Mag-apply para sa 21 gifts grant. Ipinapakita ng panel na Mga puwesto sa grant ang 0 sa 10 puwesto ang bakante. at Puno na ang lahat ng 10 puwesto sa round na ito. Bukas pa rin ang pag-apply., sunod ang layuning 20 tindahan. Karayom state-grants-places-full."
+  },
+  "/grants:places-error": {
+    "de": "Verifizierter Inhaber mit Status none, wenn GET /funding/places fehlschlägt. Karte und Für 21 Förderprogramm bewerben bleiben. Das Feld zeigt Die Förderplätze konnten nicht geladen werden. Bitte erneut versuchen. und Erneut versuchen. Nadel state-grants-places-error.",
+    "es": "Titular verificado con estado none cuando falla GET /funding/places. La tarjeta y Solicitar la beca 21 gifts se quedan. El panel muestra No se pudieron cargar las plazas de beca. Inténtalo de nuevo. e Intentar de nuevo. Aguja state-grants-places-error.",
+    "fil": "Verified na may-ari na may status none kapag nabigo ang GET /funding/places. Nanatili ang card at ang Mag-apply para sa 21 gifts grant. Ipinapakita ng panel ang Hindi ma-load ang mga puwesto sa grant. Pakisubukan muli. at Subukan ulit. Karayom state-grants-places-error."
+  },
+  "/grants:places-loading": {
+    "de": "Verifizierter Inhaber mit Status none, solange GET /funding/places nicht geantwortet hat. Karte und Für 21 Förderprogramm bewerben bleiben. Das Feld Förderplätze zeigt Wird geladen…. Nadel state-grants-places-loading.",
+    "es": "Titular verificado con estado none mientras GET /funding/places no ha respondido. La tarjeta y Solicitar la beca 21 gifts se quedan. El panel Plazas de beca muestra Cargando…. Aguja state-grants-places-loading.",
+    "fil": "Verified na may-ari na may status none habang hindi pa sumasagot ang GET /funding/places. Nanatili ang card at ang Mag-apply para sa 21 gifts grant. Ipinapakita ng panel na Mga puwesto sa grant ang Naglo-load…. Karayom state-grants-places-loading."
+  },
+  "/grants/goals:places-loading": {
+    "de": "Angemeldete Seite, solange GET /funding/places nicht geantwortet hat. Die Zielmessung ist geladen. Das Feld Förderplätze zeigt Wird geladen…. Nadel state-grants-goals-places-loading.",
+    "es": "Página con sesión iniciada mientras GET /funding/places no ha respondido. La medición del objetivo está cargada. El panel Plazas de beca muestra Cargando…. Aguja state-grants-goals-places-loading.",
+    "fil": "Naka-sign in na pahina habang hindi pa sumasagot ang GET /funding/places. Naka-load ang sukat ng layunin. Ipinapakita ng panel na Mga puwesto sa grant ang Naglo-load…. Karayom state-grants-goals-places-loading."
   },
   "/welcome:heart-cannot-receive": {
     "de": "Angemeldete Notiz eines anderen Mitglieds nach dem Öffnen von ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden. Die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",

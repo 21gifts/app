@@ -482,6 +482,27 @@ export const grantContinuationSchema = z.object({
 export type GrantContinuation = z.infer<typeof grantContinuationSchema>;
 
 /**
+ * Runtime schema for the public payload of `GET /funding/places`.
+ *
+ * The current grant round: how many people moderators may admit, how many
+ * they have admitted, how many places are left, and the active-shop goal
+ * that opens the next round.
+ */
+export const grantPlacesSchema = z.object({
+  round: z.number().int().positive(),
+  startsAt: z.string(),
+  places: z.number().int().nonnegative(),
+  admitted: z.number().int().nonnegative(),
+  placesLeft: z.number().int().nonnegative(),
+  nextGoalShops: z.number().int().positive(),
+});
+
+/**
+ * Grant round places from `GET /funding/places`.
+ */
+export type GrantPlaces = z.infer<typeof grantPlacesSchema>;
+
+/**
  * Runtime schema for `GET /messages/stats`.
  * `postCount` counts living notes and replies together.
  */
