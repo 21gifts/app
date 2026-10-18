@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, renderHook, screen } from '@testing-library/react';
-import { useEffect, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Collapse } from '@/components/Collapse';
 import {
@@ -11,6 +11,7 @@ import {
   usePaySheetHold,
   usePaySheetSent,
 } from '@/components/PaySheet';
+import type { WalletPaySent } from '@/hooks/useWalletPay';
 import { MOTION_FOLD_MS, MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -47,13 +48,34 @@ function sheet(
   );
 }
 
-/** A pay slot whose payment is out, as the wallet's pay slot reports it while it is paying. */
-function Sent({ sent = true }: { sent?: boolean }): ReactElement {
+/** A pay slot that reports where its send stands, as the wallet's pay slot does. */
+function Sent({ sent = 'paid' }: { sent?: WalletPaySent }): ReactElement {
   const report = usePaySheetSent();
   useEffect(() => {
     report?.(sent);
   }, [report, sent]);
   return <p>Pay slot</p>;
+}
+
+/** A pay slot whose send state the test changes after the host's fold froze its content. */
+function liveSent(initial: WalletPaySent): {
+  slot: ReactElement;
+  set: (sent: WalletPaySent) => void;
+} {
+  const setter: { current: (sent: WalletPaySent) => void } = { current: () => undefined };
+  function Live(): ReactElement {
+    const [sent, setSent] = useState<WalletPaySent>(initial);
+    setter.current = setSent;
+    return <Sent sent={sent} />;
+  }
+  return {
+    slot: <Live />,
+    set: (sent) => {
+      act(() => {
+        setter.current(sent);
+      });
+    },
+  };
 }
 
 /** Lets the pay step fade out, so the success step is on screen. */
@@ -319,7 +341,7 @@ describe('PaySheet', () => {
 
   it('slides away without a success step when the host closes a payment that is not out', () => {
     const onClose = vi.fn();
-    const slot = <Sent sent={false} />;
+    const slot = <Sent sent={null} />;
     const view = renderWithLocale(sheet(true, onClose, RATE_DAY, slot));
     act(() => {
       vi.advanceTimersToNextFrame();
@@ -351,6 +373,146 @@ describe('PaySheet', () => {
     expect(screen.queryByRole('status')).toBeNull();
     expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('keeps the pay step while a send is pending at the host close, then shows success once it went out', () => {
+    const onClose = vi.fn();
+    const live = liveSent('pending');
+    const view = renderWithLocale(sheet(true, onClose, RATE_DAY, live.slot));
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    view.rerender(sheet(false, onClose, RATE_DAY, live.slot));
+    expect(layer()).toBe('open');
+    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+    expect(screen.getByText('Pay slot')).toBeTruthy();
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    live.set('paid');
+    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
+    fadeToSuccess();
+    expect(screen.getByRole('status').textContent).toContain('Sent to Ana');
+    // The step ends PAY_SHEET_SUCCESS_MS after the host's close, not after the late success.
+    act(() => {
+      vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS - 300 - MOTION_SWAP_FADE_MS);
+    });
+    expect(layer()).toBe('closed');
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('slides away without a success step when a send pending at the host close then fails', () => {
+    const onClose = vi.fn();
+    const live = liveSent('pending');
+    const view = renderWithLocale(sheet(true, onClose, RATE_DAY, live.slot));
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    view.rerender(sheet(false, onClose, RATE_DAY, live.slot));
+    expect(layer()).toBe('open');
+    live.set(null);
+    expect(layer()).toBe('closed');
+    fadeToSuccess();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('slides away when a send pending at the host close never answers', () => {
+    const onClose = vi.fn();
+    const view = renderWithLocale(sheet(true, onClose, RATE_DAY, <Sent sent="pending" />));
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    view.rerender(sheet(false, onClose, RATE_DAY, <Sent sent="pending" />));
+    act(() => {
+      vi.advanceTimersByTime(PAY_SHEET_SUCCESS_MS - 1);
+    });
+    expect(layer()).toBe('open');
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(layer()).toBe('closed');
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('lets a sheet waiting on a pending send go on Escape without cancelling the closed payment', () => {
+    const onClose = vi.fn();
+    const view = renderWithLocale(sheet(true, onClose, RATE_DAY, <Sent sent="pending" />));
+    act(() => {
+      vi.advanceTimersToNextFrame();
+    });
+    view.rerender(sheet(false, onClose, RATE_DAY, <Sent sent="pending" />));
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(layer()).toBe('closed');
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  describe('Tab inside the open sheet', () => {
+    function slotWithButtons(): ReactElement {
+      return (
+        <>
+          <Sent sent={null} />
+          <button type="button">Middle</button>
+          <button type="button" disabled>
+            Off
+          </button>
+          <button type="button">Last</button>
+        </>
+      );
+    }
+
+    function tab(shiftKey = false): boolean {
+      return fireEvent.keyDown(window, { key: 'Tab', shiftKey });
+    }
+
+    it('wraps Tab from the last control to the first and Shift+Tab back', () => {
+      renderWithLocale(sheet(true, vi.fn(), RATE_DAY, slotWithButtons()));
+      const last = screen.getByRole('button', { name: 'Last' });
+      last.focus();
+      expect(tab()).toBe(false);
+      expect(document.activeElement).toBe(closeButton());
+      expect(tab(true)).toBe(false);
+      expect(document.activeElement).toBe(last);
+    });
+
+    it('lets Tab move on between controls inside the sheet', () => {
+      renderWithLocale(sheet(true, vi.fn(), RATE_DAY, slotWithButtons()));
+      screen.getByRole('button', { name: 'Middle' }).focus();
+      expect(tab()).toBe(true);
+      expect(tab(true)).toBe(true);
+    });
+
+    it('sends Shift+Tab from the panel itself to the last control', () => {
+      renderWithLocale(sheet(true, vi.fn(), RATE_DAY, slotWithButtons()));
+      expect(document.activeElement).toBe(screen.getByRole('dialog'));
+      expect(tab(true)).toBe(false);
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Last' }));
+    });
+
+    it('brings focus from the page behind to the first control', () => {
+      renderWithLocale(
+        <>
+          <button type="button">Behind</button>
+          {sheet(true, vi.fn(), RATE_DAY, slotWithButtons())}
+        </>,
+      );
+      screen.getByRole('button', { name: 'Behind' }).focus();
+      expect(tab()).toBe(false);
+      expect(document.activeElement).toBe(closeButton());
+    });
+
+    it('keeps focus on the panel when the success step has no control', () => {
+      const onClose = vi.fn();
+      const view = renderWithLocale(sheet(true, onClose));
+      act(() => {
+        vi.advanceTimersToNextFrame();
+      });
+      view.rerender(sheet(false, onClose));
+      fadeToSuccess();
+      expect(tab()).toBe(false);
+      expect(document.activeElement).toBe(screen.getByRole('dialog'));
+    });
   });
 
   it('lets the success step go at once on Escape', () => {
@@ -451,6 +613,21 @@ describe('usePaySheetHold', () => {
     });
     // A failed check closes the payment while nothing went out from the wallet.
     rerender({ key: null });
+    expect(result.current.held).toBeNull();
+  });
+
+  it('holds a payment pending at the close and frees it once that send does not go out', () => {
+    const { result, rerender } = renderHook(({ key }) => usePaySheetHold(key), {
+      initialProps: { key: 'pay-1' as string | null },
+    });
+    act(() => {
+      result.current.sentChange(true);
+    });
+    rerender({ key: null });
+    expect(result.current.held).toBe('pay-1');
+    act(() => {
+      result.current.sentChange(false);
+    });
     expect(result.current.held).toBeNull();
   });
 

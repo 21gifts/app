@@ -47,11 +47,18 @@ export function confirmResult(
 }
 
 /**
- * A wallet-pay state whose payment is out (sent, not yet confirmed), so a close by the host shows
+ * A wallet-pay state whose payment went out (paid, not yet confirmed by the host), so a close by the host shows
  * the pay sheet's success step. For tests that mock `useWalletPay`.
  *
  * @returns The sent state.
  */
 export function sentWalletPay(): UseWalletPayResult {
-  return { view: 'paying', feeSats: 0, missingSats: null, pay: vi.fn(), retry: vi.fn() };
+  return {
+    view: 'paying',
+    sent: 'paid',
+    feeSats: 0,
+    missingSats: null,
+    pay: vi.fn(),
+    retry: vi.fn(),
+  };
 }

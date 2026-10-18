@@ -1,11 +1,11 @@
-import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Collapse } from '@/components/Collapse';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
 import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
 import { useWalletPay } from '@/hooks/useWalletPay';
-import { payFromWallet } from '@/lib/wallet/wallet-service';
+import { payFromWallet, type WalletSendResult } from '@/lib/wallet/wallet-service';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import {
   SPARK_INVOICE,
@@ -218,11 +218,91 @@ describe('ForumReplyPayPage in-app wallet', () => {
       const { rerender } = renderWithLocale(ui(true));
       fireEvent.click(await screen.findByRole('button', { name: /₿21 · \$0\.02$/ }));
       rerender(ui(false));
-      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
       const status = (await screen.findByText(success)).closest('[role="status"]');
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
       expect(status?.textContent).toContain('₿21');
     },
   );
+
+  describe('a host close while the send is still pending', () => {
+    function pendingSend(): {
+      send: () => Promise<WalletSendResult>;
+      settle: (result: WalletSendResult) => void;
+    } {
+      let settle: (result: WalletSendResult) => void = () => undefined;
+      const pending = new Promise<WalletSendResult>((resolve) => {
+        settle = resolve;
+      });
+      return { send: vi.fn(() => pending), settle };
+    }
+
+    const ui = (show: boolean): ReactElement => (
+      <Collapse show={show} holdMs={PAY_SHEET_HOLD_MS}>
+        <ForumReplyPayPage
+          amountSats={21}
+          pr="lnbc21n1example"
+          sparkInvoice={SPARK_INVOICE}
+          rateDay={RATE_DAY}
+          onCancel={vi.fn()}
+          recipient="Bob"
+        />
+      </Collapse>
+    );
+
+    it('shows no success step when the send then fails', async () => {
+      const { send, settle } = pendingSend();
+      vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
+      setWalletUsable('ready');
+      const { rerender } = renderWithLocale(ui(true));
+      fireEvent.click(await screen.findByRole('button', { name: /₿21 · \$0\.02$/ }));
+      expect(send).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(
+          document.querySelector('[data-pay-sheet-layer]')?.getAttribute('data-pay-sheet-layer'),
+        ).toBe('open');
+      });
+      rerender(ui(false));
+      // The wallet has not answered: the sheet waits on its pay step.
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+      expect(
+        document.querySelector('[data-pay-sheet-layer]')?.getAttribute('data-pay-sheet-layer'),
+      ).toBe('open');
+      await act(async () => {
+        settle({
+          kind: 'failed',
+          failure: {
+            stage: 'send',
+            reason: 'sdk_error',
+            method: 'spark',
+            amountSats: 21,
+            feeSats: 0,
+          },
+        });
+        await Promise.resolve();
+      });
+      expect(
+        document.querySelector('[data-pay-sheet-layer]')?.getAttribute('data-pay-sheet-layer'),
+      ).toBe('closed');
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+      expect(screen.queryByText('Sent to Bob')).toBeNull();
+    });
+
+    it('shows the success step once the send then goes out', async () => {
+      const { send, settle } = pendingSend();
+      vi.mocked(payFromWallet).mockResolvedValue(confirmResult(send));
+      setWalletUsable('ready');
+      const { rerender } = renderWithLocale(ui(true));
+      fireEvent.click(await screen.findByRole('button', { name: /₿21 · \$0\.02$/ }));
+      rerender(ui(false));
+      expect(screen.queryByText('Sent to Bob')).toBeNull();
+      await act(async () => {
+        settle({ kind: 'paid' });
+        await Promise.resolve();
+      });
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
+      expect(await screen.findByText('Sent to Bob')).toBeTruthy();
+    });
+  });
 
   it('says the wallet is not available when it is not configured, and offers nothing else', () => {
     setWalletUsable('disabled');

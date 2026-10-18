@@ -493,9 +493,10 @@ function ConversationListItem({
  * a 8000-character composer and a sats amount field (`showAmount` false
  * hides it; the staff room has no gifts). When the open conversation has
  * `canReceive: false`, the amount field is disabled and a "Can't receive yet"
- * label shows under it; text still sends. An open invoice hides that amount
- * row too: the pay sheet states the amount once, as bitcoin plus the
- * default fiat from the current spot rate. Members (`showFilter`
+ * label shows under it; text still sends, and no pay sheet opens. An open
+ * invoice keeps that amount row on the page, disabled behind the pay sheet
+ * and through its success step; the sheet shows the amount as bitcoin plus
+ * the default fiat from the current spot rate. Members (`showFilter`
  * false) see inbound rows except `moderator_group`. Moderators
  * (`showFilter` true) see the origin control (Direct / Contact / Damus);
  * default Direct. Rows with `kind` `moderator_group` are never listed (the

@@ -87,16 +87,15 @@ export function WalletPay({
     amountPriced === null
       ? formatBitcoin(amountSats, numberFormat)
       : `${formatBitcoin(amountSats, numberFormat)} · ${formatFiatDisplay(amountPriced, fiat, numberFormat)}`;
-  const { view, feeSats, missingSats, pay, retry } = useWalletPay(
+  const { view, sent, feeSats, missingSats, pay, retry } = useWalletPay(
     sparkInvoice,
     pr,
     amountSats,
     flow,
   );
   const reportSent = usePaySheetSent();
-  // A payment that is out (sent, or sent and unconfirmed) lets the sheet show its success step when
-  // the host closes the payment.
-  const sent = view === 'paying' || view === 'unconfirmed';
+  // Only a send that went out lets the sheet show its success step when the host closes the
+  // payment; one still pending keeps the sheet waiting for the wallet's answer.
   useEffect(() => {
     reportSent?.(sent);
   }, [reportSent, sent]);

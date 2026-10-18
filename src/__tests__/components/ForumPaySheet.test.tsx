@@ -173,8 +173,8 @@ describe('ForumPaySheet', () => {
       );
       fireEvent.click(await within(dialog).findByRole('button', { name: button }));
       rerender(ui(false));
-      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
       expect((await screen.findByText(success)).closest('[role="status"]')).not.toBeNull();
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
       resetWallet();
     },
   );
@@ -241,8 +241,8 @@ describe('ForumPaySheet', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Send ₿21 · $0.02' }));
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'spark1x' });
     rerender(ui(false));
-    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
     const status = (await screen.findByText('Sent to Ana')).closest('[role="status"]');
+    expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
     expect(status).not.toBeNull();
     expect(status?.textContent).toContain('₿21');
     expect(status?.textContent).toContain('$0.02');

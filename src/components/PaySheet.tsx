@@ -18,6 +18,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Swap } from '@/components/Swap';
 import { IconButton } from '@/components/ui';
+import type { WalletPaySent } from '@/hooks/useWalletPay';
 import { MOTION_FOLD_MS } from '@/lib/motion';
 import {
   formatBitcoin,
@@ -39,6 +40,42 @@ export const PAY_SHEET_SUCCESS_MS = 1400;
  */
 export const PAY_SHEET_HOLD_MS = PAY_SHEET_SUCCESS_MS + MOTION_FOLD_MS;
 
+/** What the Tab key can reach inside the sheet. */
+const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Keeps Tab and Shift+Tab inside the open sheet, so the keyboard never reaches the page behind the
+ * scrim. Focus outside the panel moves to its first control; with no control, the panel keeps it.
+ *
+ * @param event - The Tab keydown.
+ * @param panel - The sheet's dialog panel.
+ */
+function keepTabInside(event: KeyboardEvent, panel: HTMLElement): void {
+  const items = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+    (item) => !item.hasAttribute('disabled') && item.closest('[inert]') === null,
+  );
+  const active = document.activeElement;
+  const first = items[0];
+  const last = items[items.length - 1];
+  if (first === undefined || last === undefined) {
+    event.preventDefault();
+    panel.focus({ preventScroll: true });
+    return;
+  }
+  if (!(active instanceof Node) || !panel.contains(active)) {
+    event.preventDefault();
+    first.focus({ preventScroll: true });
+    return;
+  }
+  if (event.shiftKey && (active === first || active === panel)) {
+    event.preventDefault();
+    last.focus({ preventScroll: true });
+  } else if (!event.shiftKey && active === last) {
+    event.preventDefault();
+    first.focus({ preventScroll: true });
+  }
+}
+
 const PaySheetCloseContext = createContext<(() => void) | null>(null);
 
 /**
@@ -51,17 +88,19 @@ export function usePaySheetClose(): (() => void) | null {
   return useContext(PaySheetCloseContext);
 }
 
-const PaySheetSentContext = createContext<((sent: boolean) => void) | null>(null);
+const PaySheetSentContext = createContext<((sent: WalletPaySent) => void) | null>(null);
 
 /**
- * Lets the pay slot tell the pay sheet around it whether a payment from the wallet is out (sent, or
- * sent and still unconfirmed). Only then does a close by the host count as the payment going out and
- * show the success step; a host that closes the payment otherwise (a failed check, another thread)
- * slides the sheet away like a cancel.
+ * Lets the pay slot tell the pay sheet around it where its send stands: `pending` while the wallet
+ * has not answered, `paid` once the payment went out, `null` otherwise. Only a `paid` send makes a
+ * close by the host show the success step. A host that closes during a `pending` send keeps the pay
+ * step until the send settles: `paid` then shows the success step, anything else slides the sheet
+ * away. A host that closes with no send (a failed check, another thread) slides it away like a
+ * cancel.
  *
  * @returns The sheet's report, or `null` outside a pay sheet.
  */
-export function usePaySheetSent(): ((sent: boolean) => void) | null {
+export function usePaySheetSent(): ((sent: WalletPaySent) => void) | null {
   return useContext(PaySheetSentContext);
 }
 
@@ -93,16 +132,17 @@ export interface PaySheetHold {
   held: string | null;
   /** Call before the host cancels a payment the member closed: no success step, nothing to hold. */
   closedByMember: () => void;
-  /** Pass to the sheet as `onSentChange`: only a payment that went out is held. */
+  /** Pass to the sheet as `onSentChange`: only a payment out or on its way is held, and freed if it does not go out. */
   sentChange: (sent: boolean) => void;
 }
 
 /**
  * Keeps the page controls behind a pay sheet disabled through its success step. A host whose form
  * sits beside the held sheet (not inside its `Collapse`) passes the key of the open payment, or
- * `null`; once that payment closes with a payment out (the sheet's `onSentChange`) and without the
- * member closing it, `held` names it for {@link PAY_SHEET_SUCCESS_MS}, then turns `null`. A close
- * by the member, or one with no payment out (a failed check), frees the controls at once.
+ * `null`; once that payment closes with a payment out or on its way (the sheet's `onSentChange`)
+ * and without the member closing it, `held` names it for {@link PAY_SHEET_SUCCESS_MS}, then turns
+ * `null`. A close by the member, one with no payment out (a failed check), and a pending send that
+ * then does not go out free the controls at once.
  *
  * @param openKey - Key of the payment whose sheet is open, or `null`.
  * @returns The held key, the member-close marker, and the sent report for the sheet.
@@ -126,7 +166,14 @@ export function usePaySheetHold(openKey: string | null): PaySheetHold {
     return () => window.clearTimeout(timer);
   }, [held]);
   const closedByMember = useCallback((): void => setMemberClosed(true), []);
-  return { held, closedByMember, sentChange: setSent };
+  // A send still pending at the close that then did not go out frees the controls at once.
+  const sentChange = useCallback((next: boolean): void => {
+    setSent(next);
+    if (!next) {
+      setHeld(null);
+    }
+  }, []);
+  return { held, closedByMember, sentChange };
 }
 
 /** Props for {@link PaySheet}. */
@@ -141,7 +188,10 @@ export interface PaySheetProps {
   successTitle: string;
   /** Called when the member closes the sheet (Close, a tap on the dimmed page, Escape, Add Bitcoin). */
   onClose: () => void;
-  /** Told whether the pay slot has a payment out (see {@link usePaySheetSent}), e.g. {@link usePaySheetHold}'s `sentChange`. */
+  /**
+   * Told whether the pay slot has a payment out or on its way (a `pending` or `paid` send, see
+   * {@link usePaySheetSent}), e.g. {@link usePaySheetHold}'s `sentChange`.
+   */
   onSentChange?: ((sent: boolean) => void) | undefined;
   /** The pay slot. */
   children: ReactNode;
@@ -178,7 +228,7 @@ export function PaySheet({
   const [entered, setEntered] = useState(false);
   const [succeeded, setSucceeded] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [sent, setSent] = useState<WalletPaySent>(null);
   const [wasPresent, setWasPresent] = useState(present);
   const panel = useRef<HTMLDivElement>(null);
   const opener = useRef<HTMLElement | null>(null);
@@ -191,37 +241,44 @@ export function PaySheet({
       setEntered(false);
       setSucceeded(false);
       setLeaving(false);
-      setSent(false);
+      setSent(null);
     }
   }
 
+  // The member's close. Once the host has closed the payment (success step, or a send still
+  // pending) it only lets the sheet go: the payment is no longer the member's to cancel.
   const close = useCallback((): void => {
     if (leaving) {
       return;
     }
     setLeaving(true);
-    onClose();
-  }, [leaving, onClose]);
+    if (present) {
+      onClose();
+    }
+  }, [leaving, present, onClose]);
 
-  // The host closed the payment while the member did not: with a payment out it went out, otherwise
-  // (a failed check, another thread, or a paid post that failed) the sheet leaves like a cancel.
+  // The host closed the payment while the member did not. A send that went out (`paid`) shows the
+  // success step. A send still `pending` keeps the pay step until the wallet answers, then this runs
+  // again. No send, one that did not go out, or a paid post that failed leaves like a cancel.
   // Adjusted during render, so no frame shows the pay slot of a closed payment as if it were still
   // open.
   if (!present && !leaving && !succeeded) {
-    if (sent && !failed) {
+    if (sent === 'paid' && !failed) {
       setSucceeded(true);
-    } else {
+    } else if (sent !== 'pending' || failed) {
       setLeaving(true);
     }
   }
 
+  // Counted from the host's close: the success step (or a send still pending) ends then, so the
+  // sheet has slid away before the host's hold ends.
   useEffect(() => {
-    if (!succeeded || leaving) {
+    if (present || leaving) {
       return;
     }
     const timer = window.setTimeout(() => setLeaving(true), PAY_SHEET_SUCCESS_MS);
     return () => window.clearTimeout(timer);
-  }, [succeeded, leaving]);
+  }, [present, leaving]);
 
   useEffect(() => {
     if (entered) {
@@ -237,7 +294,7 @@ export function PaySheet({
   }, [entered]);
 
   useEffect(() => {
-    onSentChange?.(sent);
+    onSentChange?.(sent !== null);
   }, [onSentChange, sent]);
 
   // A leaving sheet is out of reach (`inert` below) while its host still holds it: focus goes back
@@ -256,24 +313,25 @@ export function PaySheet({
     return () => cancelAnimationFrame(frame);
   }, [leaving]);
 
-  // Escape closes the open payment, or lets the success step go at once.
+  // Escape closes the open payment, or, once the host closed it, lets the sheet go at once. Tab and
+  // Shift+Tab stay inside the sheet while it is shown.
   useEffect(() => {
     if (leaving) {
       return;
     }
     const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Tab') {
+        keepTabInside(event, panel.current as HTMLDivElement);
+        return;
+      }
       if (event.key !== 'Escape') {
         return;
       }
-      if (succeeded) {
-        setLeaving(true);
-      } else {
-        close();
-      }
+      close();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [leaving, succeeded, close]);
+  }, [leaving, close]);
 
   const shown = entered && !leaving;
   const fiatAmount = satsToFiatAmount(amountSats, rateDay, fiat);
@@ -305,7 +363,7 @@ export function PaySheet({
               type="button"
               tabIndex={-1}
               aria-label={t('forum.payClose')}
-              onClick={succeeded ? () => setLeaving(true) : close}
+              onClick={close}
               className={`absolute inset-0 cursor-default bg-app-overlay transition-opacity duration-280 ease-glide motion-reduce:transition-none ${
                 shown ? 'opacity-100' : 'opacity-0'
               }`}

@@ -4,7 +4,12 @@ import type { ReactElement } from 'react';
 import { Collapse } from '@/components/Collapse';
 import { PAY_SHEET_HOLD_MS, PaySheet } from '@/components/PaySheet';
 import { WalletPay } from '@/components/WalletPay';
-import { useWalletPay, type UseWalletPayResult, type WalletPayView } from '@/hooks/useWalletPay';
+import {
+  useWalletPay,
+  type UseWalletPayResult,
+  type WalletPayView,
+  type WalletPaySent,
+} from '@/hooks/useWalletPay';
 import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
@@ -31,8 +36,9 @@ function hookWith(
   view: WalletPayView,
   feeSats: number | null = 0,
   missingSats: number | null = null,
+  sent: WalletPaySent = null,
 ): UseWalletPayResult {
-  const result = { view, feeSats, missingSats, pay: vi.fn(), retry: vi.fn() };
+  const result = { view, sent, feeSats, missingSats, pay: vi.fn(), retry: vi.fn() };
   vi.mocked(useWalletPay).mockReturnValue(result);
   return result;
 }
@@ -284,9 +290,9 @@ describe('WalletPay', () => {
     });
 
     it.each(['paying', 'unconfirmed'] as const)(
-      'lets the sheet show its success step when the host closes a payment that is %s',
+      'lets the sheet show its success step when the host closes a payment that went out (%s)',
       (view) => {
-        hookWith(view);
+        hookWith(view, 0, null, 'paid');
         const rendered = renderWithLocale(inSheet(true));
         rendered.rerender(inSheet(false));
         act(() => {
@@ -295,6 +301,17 @@ describe('WalletPay', () => {
         expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
       },
     );
+
+    it('keeps the pay step while the send is pending when the host closes, and shows no success', () => {
+      hookWith('paying', 0, null, 'pending');
+      const rendered = renderWithLocale(inSheet(true));
+      rendered.rerender(inSheet(false));
+      act(() => {
+        vi.advanceTimersByTime(MOTION_SWAP_FADE_MS);
+      });
+      expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('pay');
+      expect(screen.queryByText('Sent to Ana')).toBeNull();
+    });
 
     it('lets the sheet leave without a success step when no payment is out', () => {
       hookWith('confirm');

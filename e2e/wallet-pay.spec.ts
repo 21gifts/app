@@ -701,6 +701,29 @@ test('Function: PaySheet — a gift opens the bottom sheet over the page; Close,
   expect(await steps()).not.toContain('sheet:success');
 });
 
+test('Function: PaySheet — Tab and Shift+Tab stay inside the open sheet and never reach the page behind', async ({
+  page,
+}) => {
+  await signInAda(page);
+  await stubPayableReply(page, SPARK_INVOICE);
+  await openPaySheet(page, 'wallet-pay-confirm');
+  const sheet = page.getByRole('dialog', { name: 'Send to Carol' });
+  await expect(sheet.getByRole('button', { name: 'Send ₿21 · $0.02', exact: true })).toBeVisible();
+  const inSheet = (): Promise<boolean> =>
+    page.evaluate(() => {
+      const dialog = document.querySelector('[data-pay-sheet]');
+      return dialog !== null && dialog.contains(document.activeElement);
+    });
+  for (let step = 0; step < 4; step += 1) {
+    await page.keyboard.press('Tab');
+    expect(await inSheet()).toBe(true);
+  }
+  for (let step = 0; step < 4; step += 1) {
+    await page.keyboard.press('Shift+Tab');
+    expect(await inSheet()).toBe(true);
+  }
+});
+
 test('Function: usePresent — when the payment closes the posting fee sheet, it shows Paid and posted, then slides away', async ({
   page,
 }) => {
