@@ -2,11 +2,10 @@
 
 import { type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { useNumberFormat } from '@/components/NumberFormatProvider';
 import type { LoanPayTarget } from '@/components/LoanPayNotice';
 import { PaySheet } from '@/components/PaySheet';
 import { WalletPay } from '@/components/WalletPay';
-import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
+import type { FiatRateDay } from '@/lib/stats-money';
 
 /**
  * Pay sheet of a paid reaction: the {@link PaySheet} with the amount and the pay button, over the
@@ -47,7 +46,6 @@ export function ForumReplyPayPage({
   recipient?: string | undefined;
 }): ReactElement {
   const { t } = useTranslations();
-  const { numberFormat } = useNumberFormat();
   const lending = loan !== undefined && !loan.full;
   return (
     <PaySheet
@@ -72,9 +70,9 @@ export function ForumReplyPayPage({
         amountSats={amountSats}
         rateDay={rateDay}
         flow="reaction"
-        confirmLabel={t(lending ? 'forum.loan.payLend' : 'paySheet.sendAmount', {
-          amount: formatBitcoin(amountSats, numberFormat),
-        })}
+        confirmLabel={(amount) =>
+          t(lending ? 'forum.loan.payLend' : 'paySheet.sendAmount', { amount })
+        }
       />
     </PaySheet>
   );

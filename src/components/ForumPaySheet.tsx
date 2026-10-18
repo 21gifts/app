@@ -5,13 +5,12 @@ import { type FormEvent, type MouseEvent, type ReactElement } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Collapse } from '@/components/Collapse';
-import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { LoanPayNotice, type LoanPayTarget } from '@/components/LoanPayNotice';
 import { PaySheet } from '@/components/PaySheet';
 import { WalletPay } from '@/components/WalletPay';
 import { Button, IconButton } from '@/components/ui';
 import type { AmountUnit } from '@/lib/api-types';
-import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
+import type { FiatRateDay } from '@/lib/stats-money';
 
 /** Pay-sheet validation or request failure. */
 export type ForumPayError =
@@ -82,7 +81,6 @@ export function ForumPaySheet({
   recipient?: string | undefined;
 }): ReactElement {
   const { t } = useTranslations();
-  const { numberFormat } = useNumberFormat();
   const invoiceForCard =
     payInvoice !== null && payInvoice.messageId === messageId ? payInvoice : null;
   const postsOnPay = invoiceForCard?.postsOnPay === true;
@@ -198,9 +196,9 @@ export function ForumPaySheet({
             rateDay={rateDay}
             postsOnPay={postsOnPay}
             flow={postsOnPay ? 'post_fee' : 'gift'}
-            confirmLabel={t(lending ? 'forum.loan.payLend' : 'paySheet.sendAmount', {
-              amount: formatBitcoin(invoiceForCard.amountSats, numberFormat),
-            })}
+            confirmLabel={(amount) =>
+              t(lending ? 'forum.loan.payLend' : 'paySheet.sendAmount', { amount })
+            }
           />
         </PaySheet>
       )}

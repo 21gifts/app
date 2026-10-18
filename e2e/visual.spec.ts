@@ -7684,7 +7684,9 @@ test.describe('onboarding screens', () => {
 
   test('state /welcome reaction-wallet-pay-confirm', async ({ page }) => {
     const sheet = await openReactionWalletPay(page, 'wallet-pay-confirm');
-    await expect(sheet.getByRole('button', { name: 'Send ₿21', exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Send ₿21 · $0.02', exact: true }),
+    ).toBeVisible();
     await expect(sheet.getByText(/Fee ₿/)).toHaveCount(0);
     await shotScreen(page, 'state-welcome-reaction-wallet-pay-confirm');
   });
@@ -11788,7 +11790,9 @@ test.describe('onboarding screens', () => {
     await paySheetAtRest(page);
     await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
     await expect(sheet.getByText('$0.21', { exact: true })).toBeVisible();
-    await expect(sheet.getByRole('button', { name: 'Lend ₿210', exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Lend ₿210 · $0.21', exact: true }),
+    ).toBeVisible();
     await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
     // How the loan comes back stays on the page, at the top of the disabled form behind the sheet.
     await expect(form.locator('[data-loan-notice="lend"]')).toHaveText(
@@ -11825,7 +11829,9 @@ test.describe('onboarding screens', () => {
     await paySheetAtRest(page);
     await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
     await expect(sheet.getByText('$0.21', { exact: true })).toBeVisible();
-    await expect(sheet.getByRole('button', { name: 'Send ₿210', exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Send ₿210 · $0.21', exact: true }),
+    ).toBeVisible();
     await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
     await expect(form.locator('[data-loan-notice="full"]')).toHaveText(
       'This loan is already fully funded. What you send now is a gift to Carol.',
@@ -16968,7 +16974,9 @@ test.describe('onboarding screens', () => {
     await paySheetAtRest(page);
     await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
     await expect(sheet.getByText('$0.21', { exact: true })).toBeVisible();
-    await expect(sheet.getByRole('button', { name: 'Lend ₿210', exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Lend ₿210 · $0.21', exact: true }),
+    ).toBeVisible();
     await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
     // How the loan comes back stays on the page, at the top of the disabled form behind the sheet.
     await expect(form.locator('[data-loan-notice="lend"]')).toHaveText(
@@ -17000,7 +17008,9 @@ test.describe('onboarding screens', () => {
     await paySheetAtRest(page);
     await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
     await expect(sheet.getByText('$0.21', { exact: true })).toBeVisible();
-    await expect(sheet.getByRole('button', { name: 'Send ₿210', exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Send ₿210 · $0.21', exact: true }),
+    ).toBeVisible();
     await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
     await expect(form.locator('[data-loan-notice="full"]')).toHaveText(
       'This loan is already fully funded. What you send now is a gift to Maria.',
@@ -22096,7 +22106,9 @@ test.describe('welcome forum variants', () => {
     await paySheetAtRest(page);
     await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
     await expect(sheet.getByText('$0.21', { exact: true })).toBeVisible();
-    await expect(sheet.getByRole('button', { name: 'Lend ₿210', exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Lend ₿210 · $0.21', exact: true }),
+    ).toBeVisible();
     await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
     // How the loan comes back stays on the page, at the top of the disabled form behind the sheet.
     await expect(form.locator('[data-loan-notice="lend"]')).toHaveText(
@@ -22129,7 +22141,9 @@ test.describe('welcome forum variants', () => {
     await paySheetAtRest(page);
     await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
     await expect(sheet.getByText('$0.21', { exact: true })).toBeVisible();
-    await expect(sheet.getByRole('button', { name: 'Send ₿210', exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Send ₿210 · $0.21', exact: true }),
+    ).toBeVisible();
     await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
     await expect(form.locator('[data-loan-notice="full"]')).toHaveText(
       'This loan is already fully funded. What you send now is a gift to Maria.',
@@ -25209,7 +25223,7 @@ test.describe('welcome forum variants', () => {
 
   test('welcome wallet-pay-confirm', async ({ page }) => {
     const sheet = await openWalletPaySheet(page, 'wallet-pay-confirm');
-    const send = sheet.getByRole('button', { name: 'Send ₿21', exact: true });
+    const send = sheet.getByRole('button', { name: 'Send ₿21 · $0.02', exact: true });
     await expect(send).toBeVisible();
     await expect(sheet.getByText(/Fee ₿/)).toHaveCount(0);
     // The button takes the full width of the pay slot.
@@ -29543,7 +29557,9 @@ test.describe('inbox screens', () => {
 
   test('messages thread-wallet-pay-confirm', async ({ page }) => {
     const sheet = await openInboxWalletPay(page, 'wallet-pay-confirm');
-    await expect(sheet.getByRole('button', { name: 'Send ₿21', exact: true })).toBeVisible();
+    await expect(
+      sheet.getByRole('button', { name: 'Send ₿21 · $0.02', exact: true }),
+    ).toBeVisible();
     await expect(sheet.getByText(/Fee ₿/)).toHaveCount(0);
     await shotScreen(page, 'state-messages-thread-wallet-pay-confirm');
   });

@@ -11,7 +11,12 @@ import { usePaySheetSent } from '@/components/PaySheet';
 import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button } from '@/components/ui';
 import { useWalletPay } from '@/hooks/useWalletPay';
-import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
+import {
+  formatBitcoin,
+  formatFiatDisplay,
+  satsToFiatAmount,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 import type { PayFlow } from '@/lib/wallet/payment-failure';
 
 /** Props for {@link WalletPay}. */
@@ -22,7 +27,10 @@ export interface WalletPayProps {
   pr: string;
   /** Whole sats the sheet shows for this invoice; the wallet pays only this amount. */
   amountSats: number;
-  /** Current spot rate for the fiat line of a fee above ₿0 and of the missing amount, or `null`. */
+  /**
+   * Current spot rate for the fiat of the confirm label, of a fee above ₿0 and of the missing
+   * amount, or `null`.
+   */
   rateDay: FiatRateDay | null;
   /** Feature whose sheet this is: named on the report of a payment that did not go out. */
   flow: PayFlow;
@@ -31,8 +39,12 @@ export interface WalletPayProps {
    * says **Pay ₿500 and post** instead of **Send**.
    */
   postsOnPay?: boolean;
-  /** Label of the confirm button instead of **Send**, e.g. **Send ₿500** or **Lend ₿500**. */
-  confirmLabel?: string | undefined;
+  /**
+   * Label of the confirm button instead of **Send**, built from the amount with
+   * its fiat (`₿500 · $0.50`, bitcoin alone without a usable rate), e.g.
+   * **Send ₿500 · $0.50** or **Lend ₿500 · $0.50**.
+   */
+  confirmLabel?: ((amount: string) => string) | undefined;
 }
 
 /**
@@ -40,7 +52,7 @@ export interface WalletPayProps {
  * only, which is open whenever the member is signed in. It shows the fee from
  * the prepare response only when it is above ₿0 (in-app payments quote ₿0, so
  * the row is usually absent), then one full-width primary button: the
- * `confirmLabel` (**Send ₿500**, **Lend ₿500**), **Pay ₿500 and
+ * `confirmLabel` (**Send ₿500 · $0.50**, **Lend ₿500 · $0.50**), **Pay ₿500 and
  * post** on the posting fee, or **Send**. While sending it says so; the
  * host's own long-poll closes the sheet on confirmation. Too little balance
  * shows an alert, how much is still missing (amount plus the known fee minus
@@ -70,6 +82,11 @@ export function WalletPay({
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
+  const amountPriced = satsToFiatAmount(amountSats, rateDay, fiat);
+  const amountWithFiat =
+    amountPriced === null
+      ? formatBitcoin(amountSats, numberFormat)
+      : `${formatBitcoin(amountSats, numberFormat)} · ${formatFiatDisplay(amountPriced, fiat, numberFormat)}`;
   const { view, feeSats, missingSats, pay, retry } = useWalletPay(
     sparkInvoice,
     pr,
@@ -132,7 +149,7 @@ export function WalletPay({
                   {t('wallet.payAndPost', { amount: formatBitcoin(amountSats, numberFormat) })}
                 </span>
               ) : confirmLabel !== undefined ? (
-                <span className="text-center">{confirmLabel}</span>
+                <span className="text-center">{confirmLabel(amountWithFiat)}</span>
               ) : (
                 t('wallet.payFromWallet')
               )}

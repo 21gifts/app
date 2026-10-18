@@ -238,7 +238,7 @@ describe('ForumPaySheet', () => {
       </Collapse>
     );
     const { rerender } = renderWithLocale(ui(true));
-    fireEvent.click(await screen.findByRole('button', { name: 'Send ₿21' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Send ₿21 · $0.02' }));
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'spark1x' });
     rerender(ui(false));
     expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');

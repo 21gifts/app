@@ -168,13 +168,28 @@ describe('WalletPay', () => {
         amountSats={21}
         rateDay={RATE_DAY}
         flow="reaction"
-        confirmLabel="Lend ₿21 · $0.02"
+        confirmLabel={(amount) => `Lend ${amount}`}
       />,
     );
     const button = screen.getByRole('button', { name: 'Lend ₿21 · $0.02' });
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     fireEvent.click(button);
     expect(hook.pay).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives the confirm label the bitcoin amount alone when no rate is known', () => {
+    hookWith('confirm', 0);
+    renderWithLocale(
+      <WalletPay
+        sparkInvoice="spark1x"
+        pr="lnbc210n1x"
+        amountSats={21}
+        rateDay={null}
+        flow="reaction"
+        confirmLabel={(amount) => `Send ${amount}`}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Send ₿21' }).textContent).toBe('Send ₿21');
   });
 
   it('keeps Send when no rate is known', () => {

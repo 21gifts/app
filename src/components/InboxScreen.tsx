@@ -1309,9 +1309,7 @@ export function InboxScreen({
                 amountSats={invoice.amountSats}
                 rateDay={rateDay}
                 flow="inbox"
-                confirmLabel={t('paySheet.sendAmount', {
-                  amount: formatBitcoin(invoice.amountSats, numberFormat),
-                })}
+                confirmLabel={(amount) => t('paySheet.sendAmount', { amount })}
               />
             </PaySheet>
           )}

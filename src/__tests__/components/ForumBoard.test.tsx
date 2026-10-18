@@ -10326,7 +10326,7 @@ describe('ForumBoard loan block', () => {
     expect((screen.getByLabelText('Your reaction') as HTMLTextAreaElement).disabled).toBe(true);
   });
 
-  it('labels the reaction pay button of a loan Lend, with the amount in bitcoin only', async () => {
+  it('labels the reaction pay button of a loan Lend, with the amount and its fiat', async () => {
     setWalletUsable('ready');
     vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult(undefined, 210));
     try {
@@ -10348,8 +10348,8 @@ describe('ForumBoard loan block', () => {
         }),
       );
       const sheet = screen.getByRole('dialog', { name: 'Lend to Maria' });
-      const button = await within(sheet).findByRole('button', { name: 'Lend ₿210' });
-      expect(button.textContent).toBe('Lend ₿210');
+      const button = await within(sheet).findByRole('button', { name: 'Lend ₿210 · $0.21' });
+      expect(button.textContent).toBe('Lend ₿210 · $0.21');
     } finally {
       resetWallet();
     }

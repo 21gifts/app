@@ -165,7 +165,7 @@ test('Function: LoanPayNotice — the pay step says Lend and how the loan comes 
   await expect(sheet.getByText('₿210', { exact: true })).toBeVisible();
   await expect(sheet.getByText(/^\$\d/)).toBeVisible();
   await expect(sheet.locator('[data-loan-notice]')).toHaveCount(0);
-  await expect(sheet.getByRole('button', { name: 'Lend ₿210', exact: true })).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'Lend ₿210 · $0.21', exact: true })).toBeVisible();
   await expect(sheet.getByRole('button', { name: 'Send', exact: true })).toHaveCount(0);
 });
 

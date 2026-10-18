@@ -117,8 +117,8 @@ describe('ForumReplyPayPage in-app wallet', () => {
   it('pays the sparkInvoice from the wallet, with no invoice QR and no wallet-app button', async () => {
     setWalletUsable('ready');
     renderPage(SPARK_INVOICE);
-    const send = await screen.findByRole('button', { name: 'Send ₿21' });
-    expect(send.textContent).toBe('Send ₿21');
+    const send = await screen.findByRole('button', { name: 'Send ₿21 · $0.02' });
+    expect(send.textContent).toBe('Send ₿21 · $0.02');
     fireEvent.click(send);
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
     expect(await screen.findByText('Paying from your wallet…')).toBeTruthy();
@@ -132,7 +132,7 @@ describe('ForumReplyPayPage in-app wallet', () => {
   it('pays the payment request from the wallet without a sparkInvoice', async () => {
     setWalletUsable('ready');
     renderPage(null);
-    expect(await screen.findByRole('button', { name: 'Send ₿21' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send ₿21 · $0.02' })).toBeTruthy();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc21n1example' });
     expect(screen.queryByRole('img')).toBeNull();
   });
@@ -153,7 +153,7 @@ describe('ForumReplyPayPage in-app wallet', () => {
     );
     expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('Lend to Maria');
     expect(document.querySelector('[data-loan-notice]')).toBeNull();
-    expect(await screen.findByRole('button', { name: 'Lend ₿210' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Lend ₿210 · $0.21' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^Send/ })).toBeNull();
   });
 
@@ -189,7 +189,7 @@ describe('ForumReplyPayPage in-app wallet', () => {
     );
     expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('Send to Maria');
     expect(document.querySelector('[data-loan-notice]')).toBeNull();
-    expect(await screen.findByRole('button', { name: 'Send ₿21' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Send ₿21 · $0.02' })).toBeTruthy();
   });
 
   it.each([
@@ -216,7 +216,7 @@ describe('ForumReplyPayPage in-app wallet', () => {
         </Collapse>
       );
       const { rerender } = renderWithLocale(ui(true));
-      fireEvent.click(await screen.findByRole('button', { name: /₿21$/ }));
+      fireEvent.click(await screen.findByRole('button', { name: /₿21 · \$0\.02$/ }));
       rerender(ui(false));
       expect(screen.getByRole('dialog').getAttribute('data-pay-sheet')).toBe('success');
       const status = (await screen.findByText(success)).closest('[role="status"]');
