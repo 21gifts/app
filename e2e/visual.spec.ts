@@ -1705,6 +1705,29 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-pl-shop-awaiting');
   });
 
+  test('screen /pl shop-window-passed', async ({ page }, testInfo) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, { openedWithoutWindow: true });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('Waiting for payment…')).toBeVisible();
+    await expect(page.getByText('238.21 USDT')).toBeVisible();
+    await expect(page.getByText('1:30 left')).toBeVisible();
+    await expect(page.getByText(/\d+:\d\d left/)).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
+    if (isMobileProject(testInfo)) {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    } else {
+      await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toBeVisible();
+    }
+    await shotScreen(page, 'state-pl-shop-window-passed');
+  });
+
   test('screen /pl on-its-way', async ({ page }) => {
     await fulfillRateDay(page);
     await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });

@@ -83,7 +83,8 @@ async function pageNow(page: Page): Promise<number> {
  * - `GET /lnurlp/wait/p1` answers the current entry of `waits`; a `since` equal
  *   to its `paymentStatus` moves to the next entry (the last one repeats).
  * - `payLinkFails` answers every pay-link read with 503, and `detailFails`
- *   every Lightning detail.
+ *   every Lightning detail. `openedWithoutWindow` opens the payment without
+ *   `expiresAt`, so the page has no window time to show.
  * - Otherwise a mint answers 500, because a shop payment, or a repeat whose
  *   outcome stayed unknown, is never minted.
  */
@@ -99,6 +100,7 @@ export async function stubShopPayment(
     waits?: ShopWaitAnswer[];
     payLinkFails?: boolean;
     detailFails?: boolean;
+    openedWithoutWindow?: boolean;
   },
 ): Promise<void> {
   const posts = options.posts ?? [options.charge === true ? 409 : 'opened'];
@@ -118,7 +120,11 @@ export async function stubShopPayment(
           await route.fulfill({
             status: 200,
             contentType: 'application/json',
-            body: JSON.stringify({ payment: 'p1', expiresAt: '2026-09-24T12:05:00.000Z' }),
+            body: JSON.stringify(
+              options.openedWithoutWindow === true
+                ? { payment: 'p1' }
+                : { payment: 'p1', expiresAt: '2026-09-24T12:05:00.000Z' },
+            ),
           });
           return;
         }

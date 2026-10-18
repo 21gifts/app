@@ -1543,6 +1543,12 @@ An open till whose shop payment's invoice could not be read from the callback's 
 
 ![21.gifts pay link shop awaiting](images/pl-shop-awaiting.png)
 
+### Variant: shop-window-passed
+
+A shop payment that is still waiting but has no window time to show: its window has passed, or the opening answer had no readable `expiresAt`. The shop sticker, the sat amount, the viewer's default fiat beside it, **Waiting for payment…**, the Bitcoin invoice QR on a desktop, and **Pay**. Under **Pay**, the stablecoin lines, only the quote's time left, and the scan hint. No window time line. The invoice and **Pay** stay, because a transfer made in time can still move the payment.
+
+![21.gifts pay link shop window passed](images/pl-shop-window-passed.png)
+
 ### Variant: on-its-way
 
 The shop payment's transfer was accepted. The shop sticker, the sat amount, the viewer's default fiat beside it, and **On its way**. No time left, no invoice QR, no **Pay**, and no stablecoin lines.

@@ -195,13 +195,31 @@ async function attemptShopPayment(
   username: string,
   amountSats: number,
 ): Promise<ShopPaymentStart | 'unknown'> {
+  // A timer, not `AbortSignal.timeout`, which older Safari versions do not have.
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, SHOP_PAYMENT_START_TIMEOUT_MS);
+  try {
+    return await readShopPaymentStart(username, amountSats, controller.signal);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** The request and the reading of one `POST /pay/:username/payment`, until `signal` aborts. */
+async function readShopPaymentStart(
+  username: string,
+  amountSats: number,
+  signal: AbortSignal,
+): Promise<ShopPaymentStart | 'unknown'> {
   let response: Response;
   try {
     response = await fetch(`/pay/${encodeURIComponent(username)}/payment`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ amountSats }),
-      signal: AbortSignal.timeout(SHOP_PAYMENT_START_TIMEOUT_MS),
+      signal,
     });
   } catch {
     return 'unknown';

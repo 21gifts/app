@@ -318,6 +318,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pl',
+    id: 'shop-window-passed',
+    image: 'pl-shop-window-passed.png',
+    visual: 'state-pl-shop-window-passed',
+    needle: 'Waiting for payment…',
+  },
+  {
+    route: '/pl',
     id: 'on-its-way',
     image: 'pl-on-its-way.png',
     visual: 'state-pl-on-its-way',

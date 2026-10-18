@@ -210,6 +210,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pl:shop-window-passed",
+    "label": "/pl shop-window-passed",
+    "visual": "state-pl-shop-window-passed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pl:on-its-way",
     "label": "/pl on-its-way",
     "visual": "state-pl-on-its-way",

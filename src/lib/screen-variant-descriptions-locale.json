@@ -5913,5 +5913,10 @@
     "de": "Der Zustand comment-cannot-receive am lokalen Sonntag des Geräts. Das deaktivierte Geschenk und sein Label Kann noch nicht empfangen stehen im Zap-Tor, daher steht dort Am Sonntag ist das Zappen pausiert.",
     "es": "El estado comment-cannot-receive en el domingo local del dispositivo. El regalo desactivado y su etiqueta Aún no puede recibir están dentro de la pausa de zaps, así que en su lugar aparece El domingo no se puede zapear.",
     "fil": "Ang kalagayang comment-cannot-receive sa lokal na Linggo ng device. Nasa zap gate ang naka-disable na regalo at ang label nitong Hindi pa makatanggap, kaya Linggo, hindi puwedeng mag-zap. ang nasa puwesto nila."
+  },
+  "/pl:shop-window-passed": {
+    "de": "Eine wartende Shop-Zahlung ohne verbleibende Fensterzeit: Das Fenster ist abgelaufen, oder die Eröffnung nannte kein Ende. Der Shop-Aufkleber, der Sat-Betrag, die Standard-Fiat der betrachtenden Person daneben, Zahlung wird erwartet…, am Desktop der QR der Bitcoin-Rechnung und Zahlen. Unter Zahlen die Stablecoin-Zeilen, nur die verbleibende Zeit des Angebots und der Scan-Hinweis. Keine Zeile mit der Zeit des Fensters.",
+    "es": "Un pago de tienda en espera sin tiempo de ventana: la ventana terminó o la apertura no indicó su fin. La pegatina de la tienda, el importe en sats, el fiat predeterminado de quien mira al lado, Esperando el pago…, en escritorio el QR de la factura de Bitcoin, y Pagar. Debajo de Pagar, las líneas de stablecoin, solo el tiempo restante de la cotización y la indicación para escanear. Sin línea con el tiempo de la ventana.",
+    "fil": "Isang naghihintay na shop payment na walang oras ng window: tapos na ang window, o walang sinabing katapusan ang pagbukas. Ang sticker ng tindahan, ang halaga ng sat, ang default na fiat ng tumitingin sa tabi nito, ang paghihintay sa bayad, sa desktop ang QR ng invoice ng Bitcoin, at Magbayad. Sa ilalim ng Magbayad, ang mga linya ng stablecoin, ang natitirang oras ng quote lang, at ang paalala na mag-scan. Walang linya ng oras ng window."
   }
 }

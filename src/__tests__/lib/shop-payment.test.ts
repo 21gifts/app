@@ -262,34 +262,55 @@ describe('openShopPayment', () => {
   });
 
   it('gives up on a hanging start after the time limit, repeats once, and reports failed', async () => {
-    const controllers: AbortController[] = [];
-    const timeout = vi.spyOn(AbortSignal, 'timeout').mockImplementation(() => {
-      const controller = new AbortController();
-      controllers.push(controller);
-      return controller.signal;
-    });
-    const mock = stubFetch(
-      (_input, init) =>
-        new Promise((_resolve, reject) => {
-          init?.signal?.addEventListener('abort', () => {
-            reject(new DOMException('timed out', 'TimeoutError'));
-          });
-        }),
-    );
-    const started = openShopPayment('ada', 21);
-    await vi.waitFor(() => {
-      expect(controllers).toHaveLength(1);
-    });
-    controllers[0]?.abort();
-    await vi.waitFor(() => {
-      expect(controllers).toHaveLength(2);
-    });
-    controllers[1]?.abort();
-    expect(await started).toEqual({ kind: 'failed' });
-    expect(mock).toHaveBeenCalledTimes(2);
-    expect(timeout).toHaveBeenCalledWith(SHOP_PAYMENT_START_TIMEOUT_MS);
-    expect(SHOP_PAYMENT_START_TIMEOUT_MS).toBe(15_000);
-    timeout.mockRestore();
+    vi.useFakeTimers();
+    try {
+      const mock = stubFetch(
+        (_input, init) =>
+          new Promise((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () => {
+              reject(new DOMException('aborted', 'AbortError'));
+            });
+          }),
+      );
+      const started = openShopPayment('ada', 21);
+      await vi.advanceTimersByTimeAsync(SHOP_PAYMENT_START_TIMEOUT_MS - 1);
+      expect(mock).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(mock).toHaveBeenCalledTimes(2);
+      await vi.advanceTimersByTimeAsync(SHOP_PAYMENT_START_TIMEOUT_MS);
+      expect(await started).toEqual({ kind: 'failed' });
+      expect(SHOP_PAYMENT_START_TIMEOUT_MS).toBe(15_000);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('starts without AbortSignal.timeout, as on older Safari, and clears its timer', async () => {
+    const original = Object.getOwnPropertyDescriptor(AbortSignal, 'timeout');
+    Reflect.deleteProperty(AbortSignal, 'timeout');
+    vi.useFakeTimers();
+    try {
+      expect('timeout' in AbortSignal).toBe(false);
+      const mock = stubFetch(async () =>
+        Response.json({ payment: 'p1', expiresAt: '2026-10-17T12:05:00.000Z' }),
+      );
+      expect(await openShopPayment('ada', 21)).toEqual({
+        kind: 'opened',
+        payment: 'p1',
+        expiresAt: '2026-10-17T12:05:00.000Z',
+      });
+      expect(mock).toHaveBeenCalledWith(
+        '/pay/ada/payment',
+        expect.objectContaining({ method: 'POST' }),
+      );
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+      if (original !== undefined) {
+        Object.defineProperty(AbortSignal, 'timeout', original);
+      }
+    }
   });
 
   it('takes the answer of the repeat', async () => {
