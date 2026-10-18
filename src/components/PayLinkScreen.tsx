@@ -557,7 +557,8 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
           return;
         }
         if (link.kind === 'error') {
-          // A failed read says nothing about the payment: keep the lines and read again.
+          // A failed read says nothing about the payment: keep it and read again. Its lines stay
+          // hidden once the quote has run out, until a read returns a new quote.
           timer = setTimeout(refetch, PAY_POLL_MS);
           return;
         }

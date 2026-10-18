@@ -1144,7 +1144,7 @@ describe('PayLinkScreen shop payment', () => {
     expect(details).toBe(2);
   });
 
-  it('keeps the lines and reads again when a quote refetch fails', async () => {
+  it('hides the run-out quote lines while a refetch fails and shows the new quote', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     let links = 0;
     mockShopFetch(async (input) => {
@@ -1169,13 +1169,18 @@ describe('PayLinkScreen shop payment', () => {
     });
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     expect(await screen.findByText('Polygon')).toBeTruthy();
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED + 301);
     await waitFor(() => {
       expect(links).toBe(2);
     });
-    await new Promise((resolve) => {
-      setTimeout(resolve, 50);
-    });
-    expect(screen.getByText('Polygon')).toBeTruthy();
+    await waitFor(
+      () => {
+        expect(screen.queryByText('Polygon')).toBeNull();
+      },
+      { timeout: 2000 },
+    );
+    expect(links).toBe(2);
+    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
     expect(await screen.findByText('Arbitrum', undefined, { timeout: 4000 })).toBeTruthy();
     expect(screen.queryByText('Polygon')).toBeNull();
     expect(links).toBe(3);
