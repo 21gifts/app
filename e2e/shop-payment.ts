@@ -82,6 +82,8 @@ async function pageNow(page: Page): Promise<number> {
  *   other quote, and 400 otherwise.
  * - `GET /lnurlp/wait/p1` answers the current entry of `waits`; a `since` equal
  *   to its `paymentStatus` moves to the next entry (the last one repeats).
+ * - `payLinkFails` answers every pay-link read with 503, and `detailFails`
+ *   every Lightning detail.
  * - Otherwise a mint answers 500, because a shop payment, or a repeat whose
  *   outcome stayed unknown, is never minted.
  */
@@ -95,6 +97,8 @@ export async function stubShopPayment(
     posts?: ShopPostAnswer[];
     lightningOnly?: boolean;
     waits?: ShopWaitAnswer[];
+    payLinkFails?: boolean;
+    detailFails?: boolean;
   },
 ): Promise<void> {
   const posts = options.posts ?? [options.charge === true ? 409 : 'opened'];
@@ -160,6 +164,10 @@ export async function stubShopPayment(
   );
   const issued: { id: string; expiration: number }[] = [];
   await page.route('**/.well-known/lnurlp/ada', async (route) => {
+    if (options.payLinkFails === true) {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+      return;
+    }
     if (plain) {
       await route.fulfill({
         status: 200,
@@ -218,7 +226,8 @@ export async function stubShopPayment(
       // The current or the previous quote, while its own expiration has not passed.
       const now = await pageNow(page);
       const known = issued.slice(-2).some((quote) => quote.id === id && quote.expiration > now);
-      const status = id === null || !lightning ? 400 : known ? 200 : 404;
+      const status =
+        options.detailFails === true ? 503 : id === null || !lightning ? 400 : known ? 200 : 404;
       await route.fulfill({
         status,
         contentType: 'application/json',

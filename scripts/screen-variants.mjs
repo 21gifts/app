@@ -304,6 +304,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pl',
+    id: 'shop-invoice-failed',
+    image: 'pl-shop-invoice-failed.png',
+    visual: 'state-pl-shop-invoice-failed',
+    needle: 'Could not create the invoice.',
+  },
+  {
+    route: '/pl',
+    id: 'shop-awaiting',
+    image: 'pl-shop-awaiting.png',
+    visual: 'state-pl-shop-awaiting',
+    needle: 'Waiting for payment…',
+  },
+  {
+    route: '/pl',
     id: 'on-its-way',
     image: 'pl-on-its-way.png',
     visual: 'state-pl-on-its-way',

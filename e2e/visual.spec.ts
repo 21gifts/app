@@ -1665,6 +1665,45 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-pl-lightning-only');
   });
 
+  test('screen /pl shop-invoice-failed', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, { charge: true, detailFails: true });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await expect(page.getByText('Waiting for payment…')).toBeVisible();
+    await expect(page.getByText('Could not create the invoice.')).toBeVisible();
+    await expect(page.getByText('$238.09')).toBeVisible();
+    await expect(page.getByText('238.21 USDT')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    await shotScreen(page, 'state-pl-shop-invoice-failed');
+  });
+
+  test('screen /pl shop-awaiting', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await stubShopPayment(page, { payLinkFails: true });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await page.getByLabel('Amount').fill('21');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByText('Waiting for payment…')).toBeVisible();
+    await expect(page.getByText('5:00 left')).toBeVisible();
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' }),
+    ).toBeDisabled();
+    await expect(page.getByRole('img', { name: 'Bitcoin invoice' })).toHaveCount(0);
+    await expect(page.getByText(/USDT|USDC/)).toHaveCount(0);
+    await expect(page.getByLabel('Amount')).toHaveCount(0);
+    await shotScreen(page, 'state-pl-shop-awaiting');
+  });
+
   test('screen /pl on-its-way', async ({ page }) => {
     await fulfillRateDay(page);
     await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });

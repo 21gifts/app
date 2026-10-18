@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isSmartphoneUserAgent, lightningHref } from '@/lib/payment-link';
+import { isSmartphoneUserAgent, lightningHref, PAY_POLL_MS } from '@/lib/payment-link';
 
 describe('isSmartphoneUserAgent', () => {
   it('detects iPhone', () => {
@@ -48,5 +48,11 @@ describe('lightningHref', () => {
 
   it('trims surrounding whitespace from the request', () => {
     expect(lightningHref('  lnbc21n1abc\n')).toBe('lightning:lnbc21n1abc');
+  });
+});
+
+describe('PAY_POLL_MS', () => {
+  it('pauses two seconds between pay poll reads', () => {
+    expect(PAY_POLL_MS).toBe(2000);
   });
 });

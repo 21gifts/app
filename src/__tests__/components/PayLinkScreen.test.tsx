@@ -969,9 +969,10 @@ describe('PayLinkScreen shop payment', () => {
     ]);
   }, 15_000);
 
-  it('starts again from the pay link when the api does not know the payment', async () => {
+  it('starts again from the pay link once when the api does not know the payment', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     let profiles = 0;
+    let waits = 0;
     mockShopFetch(async (input) => {
       const url = String(input);
       if (url === '/.well-known/lnurlp/ada') {
@@ -981,18 +982,106 @@ describe('PayLinkScreen shop payment', () => {
         return Response.json({ pr: 'lnbc210n1shop' });
       }
       if (url.startsWith('/lnurlp/wait/')) {
-        return Response.json({ error: 'Not found' }, { status: 404 });
+        waits += 1;
+        return Response.json(
+          {
+            statusCode: 404,
+            message: 'Not found',
+            error: 'Not found',
+            status: 'ERROR',
+            reason: 'Not found',
+          },
+          { status: 404 },
+        );
       }
       if (url === '/pay/ada') {
         profiles += 1;
       }
-      return Response.json(profiles === 1 ? chargeProfile : profile);
+      return Response.json(chargeProfile);
     });
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
-    expect(await screen.findByRole('button', { name: 'Continue' })).toBeTruthy();
+    await waitFor(() => {
+      expect(profiles).toBe(2);
+    });
+    expect(await screen.findByText('Waiting for payment…')).toBeTruthy();
+    await waitFor(
+      () => {
+        expect(waits).toBe(3);
+      },
+      { timeout: 4000 },
+    );
     expect(profiles).toBe(2);
-  });
+    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+  }, 10_000);
 
+  it('reads the wait route again after a 404 that is not the api answer', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let profiles = 0;
+    let waits = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/.well-known/lnurlp/ada') {
+        return Response.json(shopPayLink());
+      }
+      if (url === DETAIL) {
+        return Response.json({ pr: 'lnbc210n1shop' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        waits += 1;
+        return new Response('<!doctype html><h1>404</h1>', { status: 404 });
+      }
+      if (url === '/pay/ada') {
+        profiles += 1;
+      }
+      return Response.json(chargeProfile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    await waitFor(
+      () => {
+        expect(waits).toBe(2);
+      },
+      { timeout: 4000 },
+    );
+    expect(profiles).toBe(1);
+    expect(screen.getByText('Waiting for payment…')).toBeTruthy();
+  }, 10_000);
+
+  it('stops reading the pay link of an opened payment once it is on its way', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let links = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        return Response.json({ payment: 'p1' });
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        links += 1;
+        return links === 1
+          ? new Response('busy', { status: 503 })
+          : Response.json({ tag: 'payRequest' });
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        return url.includes('since=')
+          ? pending()
+          : Response.json({ status: 'Pending', paymentStatus: 'accepted' });
+      }
+      if (url.endsWith('/invoice')) {
+        throw new Error('should not mint');
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    expect(await screen.findByText('On its way')).toBeTruthy();
+    await new Promise((resolve) => {
+      setTimeout(resolve, 2_500);
+    });
+    expect(screen.getByText('On its way')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+    expect(links).toBe(1);
+  }, 10_000);
   it('keeps an open payment payable after its window ends', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(FIXED);
     mockShopFetch(async (input) => {

@@ -8,6 +8,12 @@
 /** The standard a pay link names when it carries a shop payment. */
 const OPEN_CRYPTO_PAY = 'OpenCryptoPay';
 
+/**
+ * Limit of one `POST /pay/:username/payment` (ms). The api spends at most 8 s
+ * on a creation, so an answer that takes longer is lost and counts as unknown.
+ */
+export const SHOP_PAYMENT_START_TIMEOUT_MS = 15_000;
+
 /** `paymentStatus` of a shop payment, as `GET /lnurlp/wait/:payment` reports it. */
 export type ShopPaymentStatus = 'open' | 'accepted' | 'paid' | 'ended';
 
@@ -195,6 +201,7 @@ async function attemptShopPayment(
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ amountSats }),
+      signal: AbortSignal.timeout(SHOP_PAYMENT_START_TIMEOUT_MS),
     });
   } catch {
     return 'unknown';
@@ -262,8 +269,9 @@ export async function openShopPayment(
  * @param payment - Shop payment id.
  * @param since - The last `paymentStatus` seen, or `null` for the first call.
  * @param signal - Aborts the request when the page leaves the payment.
- * @returns The status; `missing` for 404, when the api does not know this
- *   payment; `null` for any other error status, a failed request, or an
+ * @returns The status; `missing` for a 404 with the api's error body
+ *   (`status` `ERROR`, `reason` `Not found`), when the api does not know this
+ *   payment; `null` for any other 404 or error status, a failed request, or an
  *   unreadable answer.
  */
 export async function waitShopPayment(
@@ -278,7 +286,10 @@ export async function waitShopPayment(
       ...(signal === undefined ? {} : { signal }),
     });
     if (response.status === 404) {
-      return 'missing';
+      // Only the api's own error body says it does not know the payment; another 404
+      // (for example a page that did not reach the api) is read again.
+      const error = fields<'status' | 'reason'>(await response.json());
+      return error?.status === 'ERROR' && error.reason === 'Not found' ? 'missing' : null;
     }
     if (!response.ok) {
       return null;

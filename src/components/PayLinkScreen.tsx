@@ -25,7 +25,7 @@ import {
   SHOP_STICKER_PICTOGRAM_VIEW_BOX,
   type ShopStickerPictogramPart,
 } from '@/lib/shop-sticker-pictogram';
-import { isSmartphoneUserAgent, lightningHref } from '@/lib/payment-link';
+import { isSmartphoneUserAgent, lightningHref, PAY_POLL_MS } from '@/lib/payment-link';
 import {
   fetchShopInvoice,
   fetchShopPayLink,
@@ -181,9 +181,6 @@ function shopStroke(part: ShopStickerPictogramPart): {
 /** Five minutes, the same lock as an open till. */
 const PAYMENT_TTL_MS = 5 * 60 * 1000;
 
-/** Pause between two status reads, the pay poll of the forum's pay sheets. */
-const PAY_POLL_MS = 2000;
-
 /**
  * Time until the pay link is read again for a quote.
  *
@@ -286,6 +283,8 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const [shop, setShop] = useState<ShopPaymentView | null>(null);
   const postingRef = useRef(false);
   const generationRef = useRef(0);
+  /** Payment ids the page already started again for once, after the api did not know them. */
+  const restartedRef = useRef(new Set<string>());
 
   useEffect(() => {
     setShowInvoiceQr(!isSmartphoneUserAgent(navigator.userAgent));
@@ -351,7 +350,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     shop !== null && shop.paymentStatus === 'open' && shop.quoteLive && shop.request !== null
       ? shop.request.quoteExpiresAt
       : null;
-  const awaitingRequest = shop !== null && shop.request === null;
+  // Only a waiting payment reads its pay link again: once it moved on, a plain or other
+  // pay request no longer means that another payer replaced it.
+  const awaitingRequest = shop !== null && shop.request === null && shop.paymentStatus === 'open';
 
   useEffect(() => {
     if (charge === null && mintedExpiresAt === null && shopId === null) {
@@ -594,12 +595,13 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         if (stale()) {
           return;
         }
-        if (result === 'missing') {
-          // The api does not know this payment: start again from the pay link.
+        if (result === 'missing' && !restartedRef.current.has(shopId)) {
+          // The api does not know this payment: start again from the pay link, once.
+          restartedRef.current.add(shopId);
           setReloadNonce((nonce) => nonce + 1);
           return;
         }
-        if (result !== null) {
+        if (result !== null && result !== 'missing') {
           since = result.paymentStatus;
           patchShop({ paymentStatus: result.paymentStatus });
           if (result.status !== 'Pending') {
@@ -759,7 +761,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                   {formatBitcoin(shop.sats, numberFormat)}
                 </p>
                 <ChargeFiat amountSats={shop.sats} rateDay={rateDay} />
-                <p role="status" className="text-center text-sm text-app-subtle">
+                <p role="status" className="text-center text-xs text-app-subtle">
                   {t(shopStatusKey(shop.paymentStatus))}
                 </p>
                 {shopOpen ? (

@@ -3,6 +3,7 @@ import {
   fetchShopInvoice,
   fetchShopPayLink,
   openShopPayment,
+  SHOP_PAYMENT_START_TIMEOUT_MS,
   type ShopPayRequest,
   waitShopPayment,
 } from '@/lib/shop-payment';
@@ -186,6 +187,7 @@ describe('openShopPayment', () => {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ amountSats: 21 }),
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -237,6 +239,7 @@ describe('openShopPayment', () => {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ amountSats: 21 }),
+        signal: expect.any(AbortSignal),
       };
       expect(mock.mock.calls).toEqual([
         ['/pay/ada/payment', call],
@@ -256,6 +259,37 @@ describe('openShopPayment', () => {
       });
       expect(mock).toHaveBeenCalledTimes(1);
     }
+  });
+
+  it('gives up on a hanging start after the time limit, repeats once, and reports failed', async () => {
+    const controllers: AbortController[] = [];
+    const timeout = vi.spyOn(AbortSignal, 'timeout').mockImplementation(() => {
+      const controller = new AbortController();
+      controllers.push(controller);
+      return controller.signal;
+    });
+    const mock = stubFetch(
+      (_input, init) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => {
+            reject(new DOMException('timed out', 'TimeoutError'));
+          });
+        }),
+    );
+    const started = openShopPayment('ada', 21);
+    await vi.waitFor(() => {
+      expect(controllers).toHaveLength(1);
+    });
+    controllers[0]?.abort();
+    await vi.waitFor(() => {
+      expect(controllers).toHaveLength(2);
+    });
+    controllers[1]?.abort();
+    expect(await started).toEqual({ kind: 'failed' });
+    expect(mock).toHaveBeenCalledTimes(2);
+    expect(timeout).toHaveBeenCalledWith(SHOP_PAYMENT_START_TIMEOUT_MS);
+    expect(SHOP_PAYMENT_START_TIMEOUT_MS).toBe(15_000);
+    timeout.mockRestore();
   });
 
   it('takes the answer of the repeat', async () => {
@@ -333,9 +367,24 @@ describe('waitShopPayment', () => {
     });
   });
 
-  it('reports a payment the api does not know as missing', async () => {
-    stubFetch(async () => Response.json({ error: 'Not found' }, { status: 404 }));
+  it("reports a payment the api does not know as missing, only with the api's error body", async () => {
+    const apiBody = {
+      statusCode: 404,
+      message: 'Not found',
+      error: 'Not found',
+      status: 'ERROR',
+      reason: 'Not found',
+    };
+    stubFetch(async () => Response.json(apiBody, { status: 404 }));
     expect(await waitShopPayment('p1', 'open')).toBe('missing');
+    stubFetch(async () => new Response('<!doctype html><h1>404</h1>', { status: 404 }));
+    expect(await waitShopPayment('p1', 'open')).toBeNull();
+    stubFetch(async () => Response.json({ error: 'Not found' }, { status: 404 }));
+    expect(await waitShopPayment('p1', 'open')).toBeNull();
+    stubFetch(async () => Response.json({ status: 'ERROR', reason: 'Other' }, { status: 404 }));
+    expect(await waitShopPayment('p1', 'open')).toBeNull();
+    stubFetch(async () => Response.json(null, { status: 404 }));
+    expect(await waitShopPayment('p1', 'open')).toBeNull();
   });
 
   it('returns null for an error, an unknown status, a bad body, or a failed request', async () => {

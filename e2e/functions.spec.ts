@@ -7709,10 +7709,16 @@ test('Endpoint: POST /pay/[username]/invoice — checker literal', async ({ requ
 test('Endpoint: POST /pay/[username]/payment — proxies the shop payment opening', async ({
   request,
 }) => {
-  // The mock api has no shop payments, as the default api boots without them.
+  // The mock api's shop has no stablecoin payment, so the route answers the fallback 503.
   const response = await request.post('/pay/shop/payment', { data: { amountSats: 7_000 } });
-  expect(response.status()).toBe(404);
-  expect(await response.json()).toEqual({ error: 'Not found' });
+  expect(response.status()).toBe(503);
+  expect(await response.json()).toEqual({
+    error: 'Stablecoin payment is unavailable',
+    code: 'stablecoin_unavailable',
+  });
+  const bad = await request.post('/pay/shop/payment', { data: { amountSats: 1.5 } });
+  expect(bad.status()).toBe(400);
+  expect(await bad.json()).toEqual({ error: 'Enter a whole number of sats' });
   await request.post('/pay/[username]/payment');
 });
 
