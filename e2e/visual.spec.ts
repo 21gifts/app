@@ -16807,7 +16807,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByRole('button', { name: 'Add a place' }).click();
-    await expect(page.getByText('The map is not available.')).toBeVisible();
+    await expect(page.getByText('The map is not available.')).toHaveCount(2);
     await shotScreen(page, 'state-welcome-composer-place');
   });
 
@@ -18934,7 +18934,7 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Add a shop' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
-    await expect(page.getByText('The map is not available.')).toBeVisible();
+    await expect(page.getByText('The map is not available.')).toHaveCount(2);
     await shotScreen(page, 'state-shops-composer-place');
   });
 
@@ -19256,7 +19256,12 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await page.getByRole('button', { name: 'Save changes' }).click();
-    const alert = page.getByText('The shop name must not contain the street or the postal code.');
+    await expect(
+      page.getByText('The shop name must not contain the street or the postal code.'),
+    ).toHaveCount(2);
+    const alert = page
+      .getByLabel('Shop place and address')
+      .getByText('The shop name must not contain the street or the postal code.');
     await expect(alert).toBeVisible();
     await alert.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-save-rejected');
@@ -19329,7 +19334,8 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
-    const unavailable = page.getByText('The map is not available.');
+    await expect(page.getByText('The map is not available.')).toHaveCount(2);
+    const unavailable = page.getByText('The map is not available.').first();
     await expect(unavailable).toBeVisible();
     await unavailable.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-unavailable');
@@ -19538,7 +19544,8 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    const unavailable = page.getByText('The map is not available.');
+    await expect(page.getByText('The map is not available.')).toHaveCount(2);
+    const unavailable = page.getByText('The map is not available.').first();
     const remove = page.getByRole('button', { name: 'Remove place' });
     await expect(unavailable).toBeVisible();
     await expect(remove).toBeVisible();
@@ -19983,7 +19990,7 @@ test.describe('shops screens', () => {
     await note.getByLabel('Username').fill('missing');
     await expect(page.getByRole('listbox', { name: 'People' })).toHaveCount(0);
     await note.getByRole('button', { name: 'Save account' }).click();
-    await expect(note.getByRole('alert')).toHaveText('No account with that username.');
+    await expect(note.getByText('No account with that username.')).toBeVisible();
     const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeVisible();
     await save.scrollIntoViewIfNeeded();

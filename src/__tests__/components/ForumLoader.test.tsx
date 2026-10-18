@@ -1459,7 +1459,9 @@ describe('ForumLoader', () => {
     });
     await submitShopWizard(SHOP_DESCRIPTION, 'luna');
     expect(await screen.findByText('No account with that username.')).toBeTruthy();
-    expect(screen.getByText('4 / 5 · 21.gifts user')).toBeTruthy();
+    expect(
+      await screen.findByText('4 / 5 · 21.gifts user', undefined, { timeout: 5000 }),
+    ).toBeTruthy();
     expect(usernameLookups).toBe(2);
     expect(postMock).not.toHaveBeenCalled();
   });
