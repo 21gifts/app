@@ -7816,13 +7816,17 @@ test('Function: openShopPayment — a stablecoin_unavailable repeat mints the Li
 }) => {
   const opens = recordRequests(page, '/pay/ada/payment');
   const minted = recordRequests(page, '/pay/ada/invoice');
+  const pay = recordRequests(page, '/.well-known/lnurlp/ada');
   await stubShopPayment(page, { posts: [502, 503] });
   await page.goto(`/pl?lightning=${ADA_LNURL}`);
   await page.getByLabel('Amount').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('Could not create the invoice.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
+  await expect(page.getByText('Could not create the invoice.')).toHaveCount(0);
+  await expect(page.getByText('Waiting for payment…')).toHaveCount(0);
   expect(opens).toHaveLength(2);
   expect(minted).toHaveLength(1);
+  expect(pay).toEqual([]);
 });
 
 test('Function: waitShopPayment — on its way hides Pay, paid stops the reads', async ({ page }) => {

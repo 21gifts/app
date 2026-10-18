@@ -56,9 +56,12 @@ function postErrorBody(status: Exclude<ShopPostAnswer, 'opened'>): object {
   return status === 400 ? { error: 'Enter a whole number of sats' } : {};
 }
 
-/** `2026-09-24T12:01:30Z` plus `n` further 90 s quote lifetimes. */
-function quoteExpiration(n: number): string {
-  return new Date(Date.parse('2026-09-24T12:01:30.000Z') + n * 90_000).toISOString();
+/** Lifetime of a stubbed quote; the first one expires at 12:01:30 on the suite clock. */
+const QUOTE_LIFETIME_MS = 90_000;
+
+/** The page's own clock (`page.clock`), which the route handlers cannot read directly. */
+async function pageNow(page: Page): Promise<number> {
+  return page.evaluate(() => Date.now());
 }
 
 /**
@@ -70,13 +73,17 @@ function quoteExpiration(n: number): string {
  *   `opened` is `{ payment: 'p1', expiresAt }`; 409 `payment_open` is the
  *   default with `charge`, and it opens the till for the next `GET /pay/ada`.
  * - The pay link is the OpenCryptoPay pay request (with stablecoin lines, or
- *   Lightning only); each later read has a new quote id, the same
- *   `quote.payment`, and an expiration 90 s later.
+ *   Lightning only). Its quote stays the same until its expiration on the
+ *   page's clock, then one new quote id with the same `quote.payment` lasts
+ *   another 90 s. After a 503 `stablecoin_unavailable` or another non-409 4xx
+ *   it is the plain Lightning request, and the mint answers today's invoice.
  * - The callback answers `{ pr }` only for `method=Lightning&asset=BTC` and the
- *   current or previous quote, 404 for another quote, and 400 otherwise.
+ *   current or previous quote whose expiration has not passed, 404 for any
+ *   other quote, and 400 otherwise.
  * - `GET /lnurlp/wait/p1` answers the current entry of `waits`; a `since` equal
  *   to its `paymentStatus` moves to the next entry (the last one repeats).
- * - A mint answers 500, because a shop payment is never minted.
+ * - Otherwise a mint answers 500, because a shop payment, or a repeat whose
+ *   outcome stayed unknown, is never minted.
  */
 export async function stubShopPayment(
   page: Page,
@@ -93,6 +100,9 @@ export async function stubShopPayment(
   const posts = options.posts ?? [options.charge === true ? 409 : 'opened'];
   let post = 0;
   let till = options.charge === true;
+  // A 503 `stablecoin_unavailable` or another non-409 4xx opens no shop payment: the pay
+  // link stays the plain Lightning request and the page mints as today.
+  let plain = false;
   await page.route(
     (url) => new URL(url).pathname.startsWith('/pay/'),
     async (route) => {
@@ -111,6 +121,9 @@ export async function stubShopPayment(
         if (answer === 409) {
           till = true;
         }
+        if (answer === 400 || answer === 503) {
+          plain = true;
+        }
         await route.fulfill({
           status: answer,
           contentType: 'application/json',
@@ -119,7 +132,17 @@ export async function stubShopPayment(
         return;
       }
       if (url.includes('/invoice')) {
-        await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+        if (!plain) {
+          // A tripwire: a shop payment, or a repeat whose outcome stayed unknown, never mints.
+          await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+          return;
+        }
+        const body = JSON.parse(route.request().postData() ?? '{}') as { amountSats?: number };
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ pr: 'lnbc210n1plain', amountSats: body.amountSats ?? 0 }),
+        });
         return;
       }
       await route.fulfill({
@@ -135,9 +158,32 @@ export async function stubShopPayment(
       });
     },
   );
-  let quotes = 0;
+  const issued: { id: string; expiration: number }[] = [];
   await page.route('**/.well-known/lnurlp/ada', async (route) => {
-    quotes += 1;
+    if (plain) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          tag: 'payRequest',
+          callback: 'https://21.gifts/lnurlp/ada/invoice',
+          minSendable: 1_000,
+          maxSendable: 100_000_000_000,
+          metadata: '[["text/plain","Ada Lovelace"]]',
+        }),
+      });
+      return;
+    }
+    const now = await pageNow(page);
+    const current = issued.at(-1);
+    if (current === undefined) {
+      const first = Date.parse('2026-09-24T12:01:30.000Z');
+      issued.push({ id: 'q1', expiration: first > now ? first : now + QUOTE_LIFETIME_MS });
+    } else if (current.expiration <= now) {
+      // The quote is replaced once its expiration has passed, and not before.
+      issued.push({ id: `q${issued.length + 1}`, expiration: now + QUOTE_LIFETIME_MS });
+    }
+    const quote = issued.at(-1) ?? { id: 'q1', expiration: 0 };
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -147,8 +193,8 @@ export async function stubShopPayment(
         standard: 'OpenCryptoPay',
         possibleStandards: ['OpenCryptoPay'],
         quote: {
-          id: `q${quotes}`,
-          expiration: quoteExpiration(quotes - 1),
+          id: quote.id,
+          expiration: new Date(quote.expiration).toISOString(),
           payment: options.payLinkPayment ?? 'p1',
         },
         transferAmounts: [
@@ -167,10 +213,12 @@ export async function stubShopPayment(
     (url) => new URL(url).pathname === '/lnurlp/cb/ada',
     async (route) => {
       const query = new URL(route.request().url()).searchParams;
-      const quote = query.get('quote');
-      const known = quote === `q${quotes}` || (quotes > 1 && quote === `q${quotes - 1}`);
+      const id = query.get('quote');
       const lightning = query.get('method') === 'Lightning' && query.get('asset') === 'BTC';
-      const status = quote === null || !lightning ? 400 : known ? 200 : 404;
+      // The current or the previous quote, while its own expiration has not passed.
+      const now = await pageNow(page);
+      const known = issued.slice(-2).some((quote) => quote.id === id && quote.expiration > now);
+      const status = id === null || !lightning ? 400 : known ? 200 : 404;
       await route.fulfill({
         status,
         contentType: 'application/json',

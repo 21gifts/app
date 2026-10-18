@@ -442,7 +442,14 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
     if (!chargeLive || profile === null || charge === null) {
       return;
     }
+    // Each attempt starts from nothing: a later answer of an earlier attempt (pay link,
+    // Lightning detail, or mint) is dropped, and only this attempt's one BOLT11 is shown.
+    generationRef.current += 1;
     const generation = generationRef.current;
+    setShop(null);
+    setInvoice(null);
+    setMintedSats(null);
+    setMintedExpiresAt(null);
     let active = true;
     postingRef.current = true;
     setPosting(true);
