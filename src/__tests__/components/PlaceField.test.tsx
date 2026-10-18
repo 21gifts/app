@@ -21,7 +21,7 @@ function jsonResponse(body: unknown): Response {
 
 async function expectMapUnavailable(): Promise<void> {
   const dialog = await screen.findByRole('dialog');
-  const messages = within(dialog).getAllByText('The map is not available.');
+  const messages = await within(dialog).findAllByText('The map is not available.');
   expect(messages).toHaveLength(2);
   expect(messages.some((message) => message.className.includes('mb-2'))).toBe(true);
   expect(messages.some((message) => !message.className.includes('mb-2'))).toBe(true);
@@ -85,7 +85,9 @@ describe('PlaceField', () => {
     expect(screen.queryByText('Add a place')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     await expectMapUnavailable();
-    expect(onAvailabilityChange).toHaveBeenLastCalledWith(true);
+    await waitFor(() => {
+      expect(onAvailabilityChange).toHaveBeenLastCalledWith(true);
+    });
   });
 
   it('says the map is unavailable when the key is blank or not a string', async () => {

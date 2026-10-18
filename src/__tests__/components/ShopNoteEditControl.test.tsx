@@ -543,8 +543,8 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(await screen.findAllByText('Enter the shop name.')).toHaveLength(2);
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByText('2 / 5 · Place')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
       target: { value: 'Cafe Sol is open every morning now.' },
     });
@@ -567,9 +567,7 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(await screen.findAllByText('Enter the shop name.')).toHaveLength(2);
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByText('2 / 5 · Place')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     await waitFor(() => {
       expect(listeners.has('click')).toBe(true);
@@ -595,7 +593,9 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(await screen.findAllByText('Enter the shop name.')).toHaveLength(2);
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByText('2 / 5 · Place')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'luna' } });
     expect(screen.queryByText('Enter the shop name.')).toBeNull();
   });

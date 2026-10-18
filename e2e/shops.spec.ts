@@ -955,7 +955,7 @@ test('shop summary keeps Post disabled with an off-screen reason', async ({ page
   await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
   await expect(page.getByText("Add the shop's place and address.")).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Post' })).toBeDisabled();
+  await expect(page.locator('form').getByRole('button', { name: 'Post' })).toBeDisabled();
 });
 
 test('shop description and username rules appear while typing before submit', async ({ page }) => {
