@@ -2,7 +2,7 @@
 
 ## Function: marketingMetadata
 
-- **Purpose:** Title, description, and the Open Graph image stay the same English sentences on every language URL. Only the canonical URL and the reciprocal hreflang links change with the language. Filipino pages are linked with `hreflang="tl"` because Google Search accepts only ISO 639-1 codes in hreflang and lists Filipino as `tl`. The URL prefix stays `/fil`.
+- **Purpose:** Title, description, and the Open Graph image stay the same English sentences on every language URL. Only the canonical URL, which is also the Open Graph URL, and the reciprocal hreflang links change with the language. Filipino pages are linked with `hreflang="tl"` because Google Search accepts only ISO 639-1 codes in hreflang and lists Filipino as `tl`. The URL prefix stays `/fil`.
 - **Inputs:** Unprefixed path, English title, English description, and an optional locale for Home, About, Donate, and Rules. `HREFLANG_BY_LOCALE` maps each UI locale to its hreflang code (`fil` → `tl`; `en`, `de`, and `es` stay themselves).
 - **Returns / side effects:** Next.js `Metadata`; no I/O. Localized Home, About, Donate, and Rules alternates use that map, so the Filipino alternate is `hreflang="tl"` with href `/fil…`, plus `x-default` on the unprefixed path.
 - **Used by:** Home, About, Donate, Rules, Stats, Legal, and Handbook pages.
