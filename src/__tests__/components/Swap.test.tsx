@@ -1,10 +1,29 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Swap } from '@/components/Swap';
 import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import { advance, endTransition, motionEnv, installMotionHooks } from '@/__tests__/motion-fixture';
 
+/** How the box looked each time {@link Swap} started waiting for its fade-out to end. */
+const waitsStarted = vi.hoisted((): string[] => []);
+
+vi.mock('@/lib/motion', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/motion')>();
+  return {
+    ...actual,
+    afterTransition: (...args: Parameters<typeof actual.afterTransition>): (() => void) => {
+      const [el] = args;
+      waitsStarted.push(`${el.className}${el.hasAttribute('inert') ? ' inert' : ''}`);
+      return actual.afterTransition(...args);
+    },
+  };
+});
+
 installMotionHooks();
+
+beforeEach(() => {
+  waitsStarted.length = 0;
+});
 
 describe('Swap', () => {
   function view(): HTMLElement {
@@ -55,6 +74,24 @@ describe('Swap', () => {
     expect(view().className).toContain('opacity-100');
     expect(view().hasAttribute('inert')).toBe(false);
     expect(view().getAttribute('data-swap')).toBe('pay');
+  });
+
+  it('starts waiting for the fade-out only once the old view is drawn faded and inert', () => {
+    const swap = render(
+      <Swap viewKey="form">
+        <p>Form</p>
+      </Swap>,
+    );
+    swap.rerender(
+      <Swap viewKey="pay">
+        <p>Pay</p>
+      </Swap>,
+    );
+    // A wait that began before the box turned opacity-0 would also end on a fade-in still running.
+    expect(waitsStarted).toHaveLength(1);
+    expect(waitsStarted[0]).toContain('opacity-0');
+    expect(waitsStarted[0]).toContain('inert');
+    expect(waitsStarted[0]).not.toContain('opacity-100');
   });
 
   it('swaps as soon as the fade out ends', () => {
