@@ -1721,7 +1721,7 @@ test.describe('screen baselines', () => {
 
   test('screen /pl start-failed', async ({ page }) => {
     await fulfillRateDay(page);
-    await stubShopPayment(page, { start: 'failed' });
+    await stubShopPayment(page, { posts: [502] });
     await page.goto(
       `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
     );

@@ -7775,7 +7775,7 @@ test('Function: openShopPayment — Continue opens a shop payment, a repeat fail
     }
   });
   const minted = recordRequests(page, '/invoice');
-  await stubShopPayment(page, { start: 'failed' });
+  await stubShopPayment(page, { posts: [502] });
   await page.goto(`/pl?lightning=${ADA_LNURL}`);
   await page.getByLabel('Amount').fill('21');
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -7790,6 +7790,39 @@ test('Function: openShopPayment — Continue opens a shop payment, a repeat fail
   await expect(page.getByText('238.19 USDT')).toBeVisible();
   expect(bodies).toEqual([posted, posted, posted]);
   expect(minted).toEqual([]);
+});
+
+test('Function: openShopPayment — payment_open loads the page again and shows the open till', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+  await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+  const opens = recordRequests(page, '/pay/ada/payment');
+  const minted = recordRequests(page, '/invoice');
+  await stubShopPayment(page, { posts: [409] });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Waiting for payment…')).toBeVisible();
+  await expect(page.getByText('5:00 left')).toBeVisible();
+  await expect(page.getByText("₿238'093")).toBeVisible();
+  await expect(page.getByLabel('Amount')).toHaveCount(0);
+  expect(opens).toHaveLength(1);
+  expect(minted).toEqual([]);
+});
+
+test('Function: openShopPayment — a stablecoin_unavailable repeat mints the Lightning invoice', async ({
+  page,
+}) => {
+  const opens = recordRequests(page, '/pay/ada/payment');
+  const minted = recordRequests(page, '/pay/ada/invoice');
+  await stubShopPayment(page, { posts: [502, 503] });
+  await page.goto(`/pl?lightning=${ADA_LNURL}`);
+  await page.getByLabel('Amount').fill('21');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByText('Could not create the invoice.')).toBeVisible();
+  expect(opens).toHaveLength(2);
+  expect(minted).toHaveLength(1);
 });
 
 test('Function: waitShopPayment — on its way hides Pay, paid stops the reads', async ({ page }) => {

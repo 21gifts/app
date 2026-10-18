@@ -262,19 +262,24 @@ export async function openShopPayment(
  * @param payment - Shop payment id.
  * @param since - The last `paymentStatus` seen, or `null` for the first call.
  * @param signal - Aborts the request when the page leaves the payment.
- * @returns The status, or `null` for a failed request or an unreadable answer.
+ * @returns The status; `missing` for 404, when the api does not know this
+ *   payment; `null` for any other error status, a failed request, or an
+ *   unreadable answer.
  */
 export async function waitShopPayment(
   payment: string,
   since: ShopPaymentStatus | null,
   signal?: AbortSignal,
-): Promise<ShopPaymentWait | null> {
+): Promise<ShopPaymentWait | 'missing' | null> {
   const query = since === null ? '' : `?since=${since}`;
   try {
     const response = await fetch(`/lnurlp/wait/${encodeURIComponent(payment)}${query}`, {
       cache: 'no-store',
       ...(signal === undefined ? {} : { signal }),
     });
+    if (response.status === 404) {
+      return 'missing';
+    }
     if (!response.ok) {
       return null;
     }

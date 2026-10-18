@@ -25,9 +25,12 @@ describe('POST /pay/:username/payment', () => {
     expect(proxyMock).not.toHaveBeenCalled();
     const slash = await POST(request, { params: Promise.resolve({ username: 'a/b' }) });
     expect(slash.status).toBe(404);
+    expect(proxyMock).not.toHaveBeenCalled();
     const dot = await POST(request, { params: Promise.resolve({ username: '.' }) });
     expect(dot.status).toBe(404);
+    expect(proxyMock).not.toHaveBeenCalled();
     const backslash = await POST(request, { params: Promise.resolve({ username: 'a\\b' }) });
     expect(backslash.status).toBe(404);
+    expect(proxyMock).toHaveBeenCalledTimes(0);
   });
 });

@@ -333,6 +333,11 @@ describe('waitShopPayment', () => {
     });
   });
 
+  it('reports a payment the api does not know as missing', async () => {
+    stubFetch(async () => Response.json({ error: 'Not found' }, { status: 404 }));
+    expect(await waitShopPayment('p1', 'open')).toBe('missing');
+  });
+
   it('returns null for an error, an unknown status, a bad body, or a failed request', async () => {
     stubFetch(async () => new Response('slow down', { status: 429 }));
     expect(await waitShopPayment('p1', null)).toBeNull();
