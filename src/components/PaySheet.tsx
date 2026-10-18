@@ -6,6 +6,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactElement,
@@ -328,8 +329,9 @@ export function PaySheet({
   }, [leaving]);
 
   // Escape closes the open payment, or, once the host closed it, lets the sheet go at once. Tab and
-  // Shift+Tab stay inside the sheet while it is shown.
-  useEffect(() => {
+  // Shift+Tab stay inside the sheet while it is shown. Attached before paint, so the keys work from
+  // the first frame the sheet is on screen, also when effects run late on a slow device.
+  useLayoutEffect(() => {
     if (leaving) {
       return;
     }
