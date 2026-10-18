@@ -2274,8 +2274,10 @@ export function ForumBoard({
                         </Collapse>
                         <SundayWritingGate>
                           <form onSubmit={handleReplySubmit} className="flex flex-col gap-2">
-                            {/* How a loan comes back stays on the page; the sheet shows no notice. */}
+                            {/* How a loan comes back stays on the page; the sheet shows no notice.
+                                No lending to an author who cannot receive, so no promise either. */}
                             {loanOfCard !== null &&
+                            !cannotReceive &&
                             !isOwnNote(viewerAccountId, message.accountId) ? (
                               <LoanPayNotice {...loanOfCard} />
                             ) : null}

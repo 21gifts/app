@@ -10478,6 +10478,18 @@ describe('ForumBoard loan block', () => {
     expect(screen.queryByText(notice)).toBeNull();
   });
 
+  it('shows no loan notice in the reaction form when the borrower cannot receive', () => {
+    renderWithLocale(
+      board({
+        messages: [{ ...LOAN, authorCanReceive: false }],
+        expandedId: 'loan1',
+        replies: [],
+      }),
+    );
+    expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    expect(document.querySelector('[data-loan-notice]')).toBeNull();
+  });
+
   it('words the note page pay sheet of a full loan as a gift', () => {
     renderWithLocale(
       board({
