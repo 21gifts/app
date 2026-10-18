@@ -451,6 +451,65 @@ describe('InboxLoader', () => {
     expect(screen.getByText("Can't receive yet")).toBeTruthy();
   });
 
+  it('drops a reply invoice that returns after the counterpart can no longer receive', async () => {
+    searchParams.set('c', 'conv-1');
+    let resolveReload: ((rows: Conversation[]) => void) | undefined;
+    listMock.mockResolvedValueOnce([THREAD]).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveReload = resolve;
+        }),
+    );
+    threadMock.mockResolvedValue(conversationPage([MESSAGE]));
+    let resolveMint:
+      ((value: { pr: string; amountSats: number; messageId: string }) => void) | undefined;
+    invoiceMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveMint = resolve;
+        }),
+    );
+    postMock.mockResolvedValue({
+      id: 'm2',
+      name: 'Ada',
+      text: 'Just text',
+      createdAt: '2026-08-28T13:00:00.000Z',
+      fromMe: true,
+      sats: 0,
+      hasPhoto: false,
+      photoCount: 0,
+    });
+    renderWithLocale(<InboxLoader />);
+    expect(await screen.findByText('Hello')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Just text' } });
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(invoiceMock).toHaveBeenCalledTimes(1);
+    });
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2' });
+    });
+    await act(async () => {
+      resolveReload?.([{ ...THREAD, canReceive: false }]);
+    });
+    await waitFor(() => {
+      expect(screen.getByText("Can't receive yet")).toBeTruthy();
+    });
+    await act(async () => {
+      resolveMint?.({ pr: 'lnbc21n1test', amountSats: 21, messageId: 'gift-1' });
+    });
+    expect(threadMock).not.toHaveBeenCalledWith(
+      expect.anything(),
+      'conv-1',
+      expect.objectContaining({ sinceMessageId: 'gift-1' }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess-2', 'conv-1', 'Just text');
+    });
+  });
+
   it('mints an amount invoice, clears posting before polling, and applies the paid row', async () => {
     searchParams.set('c', 'conv-1');
     listMock.mockResolvedValue([{ ...THREAD, unread: true, unreadMessageCount: 2 }, OLDER]);

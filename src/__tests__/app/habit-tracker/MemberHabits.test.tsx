@@ -2599,6 +2599,77 @@ describe('MemberHabits', () => {
     });
   });
 
+  it('closes an open gift and drops its late invoice when a reload says the author cannot receive', async () => {
+    let releasePay: (value: Response) => void = () => undefined;
+    let blocked = false;
+    const listed = () => {
+      const body = payload();
+      const owned = body.habits[0];
+      if (owned !== undefined) {
+        owned.comments = owned.comments.map((comment) => ({
+          ...comment,
+          canReceive: !blocked,
+        }));
+      }
+      return body;
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+        if (isRateRequest(input)) {
+          return Promise.resolve(json({ asOf: null, source: null, rates: {} }));
+        }
+        if (init?.method === 'POST') {
+          const body = JSON.parse(String(init.body)) as { action?: string };
+          if (body.action === 'invoice') {
+            return new Promise<Response>((resolve) => {
+              releasePay = resolve;
+            });
+          }
+          return Promise.resolve(json({}));
+        }
+        return Promise.resolve(json(listed()));
+      }),
+    );
+    useAuthStore.setState({ session: 'tok', account: viewer });
+    renderWithLocale(<MemberHabits />);
+    fireEvent.click(
+      (await screen.findAllByRole('button', { name: 'Send Bitcoin' }))[0] as HTMLButtonElement,
+    );
+    fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '21' } });
+    await waitFor(() => {
+      expect((screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(
+        false,
+      );
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    blocked = true;
+    const comment = screen.getAllByLabelText('Write a comment')[0];
+    if (comment === undefined) {
+      throw new Error('missing comment field');
+    }
+    fireEvent.change(comment, { target: { value: 'note' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
+    await waitFor(() => {
+      expect(screen.getAllByText("Can't receive yet").length).toBeGreaterThan(0);
+    });
+    await act(async () => {
+      releasePay(json({ pr: 'lnbc21', amountSats: 21 }));
+    });
+
+    blocked = false;
+    fireEvent.change(screen.getAllByLabelText('Write a comment')[0] as HTMLElement, {
+      target: { value: 'again' },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Post' })[0] as HTMLButtonElement);
+    await waitFor(() => {
+      expect(screen.queryByText("Can't receive yet")).toBeNull();
+    });
+    expect(screen.queryByText('Pay ₿21')).toBeNull();
+    expect(screen.queryByLabelText('Amount')).toBeNull();
+  });
+
   it('does not invoice until the spot rate read has settled', async () => {
     let releaseStats!: (value: Response) => void;
     const posts: string[] = [];

@@ -607,10 +607,15 @@ export function InboxLoader(): ReactElement | null {
     openId !== null &&
     conversations !== null &&
     conversations.some((row) => row.id === openId && row.canReceive === false);
+  // A reply invoice still being created when the flip arrives is dropped on its return.
+  const mintGeneration = useRef(0);
+  const openCannotReceiveRef = useRef(openCannotReceive);
+  openCannotReceiveRef.current = openCannotReceive;
   useEffect(() => {
     if (!openCannotReceive) {
       return;
     }
+    mintGeneration.current += 1;
     payPollRef.current?.abort();
     payPollRef.current = null;
     setAmountDraft('');
@@ -710,6 +715,7 @@ export function InboxLoader(): ReactElement | null {
       pickGeneration.current += 1;
       setPhotoDrafts([]);
       setPreparing(false);
+      const mint = mintGeneration.current;
       void (async () => {
         let minted;
         try {
@@ -737,7 +743,11 @@ export function InboxLoader(): ReactElement | null {
         }
 
         setPosting(false);
-        if (openIdRef.current !== conversationId) {
+        if (
+          openIdRef.current !== conversationId ||
+          mint !== mintGeneration.current ||
+          openCannotReceiveRef.current
+        ) {
           return;
         }
         setInvoice({
