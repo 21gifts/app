@@ -71,25 +71,30 @@ export interface PaySheetHold {
   held: string | null;
   /** Call before the host cancels a payment the member closed: no success step, nothing to hold. */
   closedByMember: () => void;
+  /** Pass to the sheet as `onSentChange`: only a payment that went out is held. */
+  sentChange: (sent: boolean) => void;
 }
 
 /**
  * Keeps the page controls behind a pay sheet disabled through its success step. A host whose form
  * sits beside the held sheet (not inside its `Collapse`) passes the key of the open payment, or
- * `null`; once that payment closes without the member closing it, `held` names it for
- * {@link PAY_SHEET_SUCCESS_MS}, then turns `null`. A close by the member frees the controls at once.
+ * `null`; once that payment closes with a payment out (the sheet's `onSentChange`) and without the
+ * member closing it, `held` names it for {@link PAY_SHEET_SUCCESS_MS}, then turns `null`. A close
+ * by the member, or one with no payment out (a failed check), frees the controls at once.
  *
  * @param openKey - Key of the payment whose sheet is open, or `null`.
- * @returns The held key and the member-close marker.
+ * @returns The held key, the member-close marker, and the sent report for the sheet.
  */
 export function usePaySheetHold(openKey: string | null): PaySheetHold {
   const [shownKey, setShownKey] = useState(openKey);
   const [held, setHeld] = useState<string | null>(null);
   const [memberClosed, setMemberClosed] = useState(false);
+  const [sent, setSent] = useState(false);
   if (openKey !== shownKey) {
     setShownKey(openKey);
-    setHeld(openKey === null && !memberClosed ? shownKey : null);
+    setHeld(openKey === null && sent && !memberClosed ? shownKey : null);
     setMemberClosed(false);
+    setSent(false);
   }
   useEffect(() => {
     if (held === null) {
@@ -99,7 +104,7 @@ export function usePaySheetHold(openKey: string | null): PaySheetHold {
     return () => window.clearTimeout(timer);
   }, [held]);
   const closedByMember = useCallback((): void => setMemberClosed(true), []);
-  return { held, closedByMember };
+  return { held, closedByMember, sentChange: setSent };
 }
 
 /** Props for {@link PaySheet}. */
@@ -114,6 +119,8 @@ export interface PaySheetProps {
   successTitle: string;
   /** Called when the member closes the sheet (Close, a tap on the dimmed page, Escape, Add Bitcoin). */
   onClose: () => void;
+  /** Told whether the pay slot has a payment out (see {@link usePaySheetSent}), e.g. {@link usePaySheetHold}'s `sentChange`. */
+  onSentChange?: ((sent: boolean) => void) | undefined;
   /** The pay slot. */
   children: ReactNode;
 }
@@ -138,6 +145,7 @@ export function PaySheet({
   rateDay,
   successTitle,
   onClose,
+  onSentChange,
   children,
 }: PaySheetProps): ReactElement {
   const { t } = useTranslations();
@@ -203,6 +211,10 @@ export function PaySheet({
     panel.current?.focus({ preventScroll: true });
     return () => cancelAnimationFrame(frame);
   }, [entered]);
+
+  useEffect(() => {
+    onSentChange?.(sent);
+  }, [onSentChange, sent]);
 
   // A leaving sheet is out of reach (`inert` below) while its host still holds it: focus goes back
   // to what had it before the sheet opened, when that is still on the page.

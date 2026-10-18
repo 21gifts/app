@@ -347,11 +347,14 @@ describe('PaySheet', () => {
 });
 
 describe('usePaySheetHold', () => {
-  it('holds a payment that closed without the member for the success step, then frees it', () => {
+  it('holds a payment that went out and closed without the member for the success step, then frees it', () => {
     const { result, rerender } = renderHook(({ key }) => usePaySheetHold(key), {
       initialProps: { key: 'pay-1' as string | null },
     });
     expect(result.current.held).toBeNull();
+    act(() => {
+      result.current.sentChange(true);
+    });
     rerender({ key: null });
     expect(result.current.held).toBe('pay-1');
     act(() => {
@@ -369,8 +372,18 @@ describe('usePaySheetHold', () => {
       initialProps: { key: 'pay-1' as string | null },
     });
     act(() => {
+      result.current.sentChange(true);
       result.current.closedByMember();
     });
+    rerender({ key: null });
+    expect(result.current.held).toBeNull();
+  });
+
+  it('holds nothing when the host closes a payment that is not out', () => {
+    const { result, rerender } = renderHook(({ key }) => usePaySheetHold(key), {
+      initialProps: { key: 'pay-1' as string | null },
+    });
+    // A failed check closes the payment while nothing went out from the wallet.
     rerender({ key: null });
     expect(result.current.held).toBeNull();
   });
@@ -378,6 +391,9 @@ describe('usePaySheetHold', () => {
   it('frees a held payment when the next one opens', () => {
     const { result, rerender } = renderHook(({ key }) => usePaySheetHold(key), {
       initialProps: { key: 'pay-1' as string | null },
+    });
+    act(() => {
+      result.current.sentChange(true);
     });
     rerender({ key: null });
     expect(result.current.held).toBe('pay-1');

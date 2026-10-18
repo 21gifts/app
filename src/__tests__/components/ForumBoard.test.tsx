@@ -9,6 +9,7 @@ import { LocaleProvider } from '@/components/LocaleProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import {
   ForumBoard,
+  type ForumPayInvoice,
   revealPaySheet,
   revealReplyForm,
   type ForumBoardProps,
@@ -7556,6 +7557,49 @@ describe('ForumBoard', () => {
     expect(top).toBe(12);
   });
 
+  it('leaves the feed in place behind a posting-fee sheet', () => {
+    const board = (payInvoice: ForumPayInvoice | null): ReactElement => (
+      <AppShell mode="fill">
+        <ForumBoard
+          messages={[SAMPLE]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          {...idleProps}
+          expandedId="m1"
+          replies={[]}
+          payMessageId={payInvoice === null ? null : 'compose'}
+          payHost={payInvoice === null ? null : 'composer'}
+          payInvoice={payInvoice}
+          {...modeProps('all')}
+        />
+      </AppShell>
+    );
+    const view = renderWithLocale(board(null));
+    const port = document.querySelector('[data-scrollport]');
+    if (!(port instanceof HTMLElement)) {
+      throw new Error('missing scrollport');
+    }
+    let top = 0;
+    Object.defineProperty(port, 'scrollTop', {
+      configurable: true,
+      get: () => top,
+      set: (value: number) => {
+        top = value;
+      },
+    });
+    // The open note's reaction form is not pulled into view while the fee sheet is open.
+    view.rerender(
+      board({ messageId: 'compose', pr: 'lnbc1n1example', amountSats: 1, postsOnPay: true }),
+    );
+    expect(top).toBe(0);
+  });
+
   it('consumes pending compose when the composer is hidden', () => {
     renderWithLocale(
       <ForumBoard
@@ -9153,6 +9197,7 @@ describe('ForumBoard in-app wallet pay', () => {
     it('stays disabled through the success step after the payment, then frees up', () => {
       vi.useFakeTimers();
       try {
+        vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
         const view = renderWithLocale(reactionBoard(true));
         const field = screen.getByLabelText('Your reaction') as HTMLTextAreaElement;
         expect(field.disabled).toBe(true);

@@ -1301,6 +1301,7 @@ export function InboxScreen({
                 payHold.closedByMember();
                 onPayCancel();
               }}
+              onSentChange={payHold.sentChange}
             >
               <WalletPay
                 sparkInvoice={invoice.sparkInvoice}

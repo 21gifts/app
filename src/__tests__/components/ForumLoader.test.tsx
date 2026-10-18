@@ -7289,6 +7289,7 @@ describe('ForumLoader', () => {
   });
 
   it('keeps the reply text until the paid reaction settles', async () => {
+    vi.mocked(useWalletPay).mockReturnValue(sentWalletPay());
     let resolvePublic!: (message: ForumMessage) => void;
     fetchMock.mockResolvedValue(forumPage([FOREIGN]));
     repliesMock.mockResolvedValue([]);

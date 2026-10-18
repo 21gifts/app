@@ -21,7 +21,7 @@ import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
  * The sheet reads **Send to Ana** and its button **Send ₿500**; on a loan that still
  * collects **Lend to Ana** and **Lend ₿500**. Without a name it reads **Send**.
  *
- * @param props - Invoice, rate, cancel handler, loan, and the name of the person paid.
+ * @param props - Invoice, rate, cancel handler, sent report, loan, and the name of the person paid.
  * @returns The pay sheet.
  */
 export function ForumReplyPayPage({
@@ -30,6 +30,7 @@ export function ForumReplyPayPage({
   sparkInvoice,
   rateDay,
   onCancel,
+  onSentChange,
   loan,
   recipient,
 }: {
@@ -38,6 +39,8 @@ export function ForumReplyPayPage({
   sparkInvoice?: string | null | undefined;
   rateDay: FiatRateDay | null;
   onCancel: () => void;
+  /** Told whether a payment is out, for a host that holds its form through the success step. */
+  onSentChange?: ((sent: boolean) => void) | undefined;
   /** Set when the note is a loan: borrower, term, and whether it is already fully funded. */
   loan?: LoanPayTarget | undefined;
   /** Display name of the person paid, for the sheet's title; without it the sheet reads **Send**. */
@@ -61,6 +64,7 @@ export function ForumReplyPayPage({
           : t(lending ? 'paySheet.lentTo' : 'paySheet.sentTo', { name: recipient })
       }
       onClose={onCancel}
+      onSentChange={onSentChange}
     >
       <WalletPay
         sparkInvoice={sparkInvoice}

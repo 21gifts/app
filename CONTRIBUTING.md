@@ -696,9 +696,9 @@ Detect smartphones with `isSmartphoneUserAgent` on `navigator.userAgent`
 width: a narrow MacBook window is still a desktop. iPad is not a
 smartphone.
 
-The address QR shown when the wallet balance is too low, and the QR in the
-`/wallet` Receive view, are the member's own profile QR and follow the
-profile rule.
+The QR in the `/wallet` Receive view (also opened by **Add Bitcoin** when the
+balance is too low) is the member's own profile QR and follows the profile
+rule. The pay slot itself shows no address and no QR.
 
 Mounting an invoice QR on a member pay sheet, mounting the public pay-link
 invoice QR on a smartphone UA, or adding a link or button to a named wallet

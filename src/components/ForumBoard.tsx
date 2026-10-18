@@ -1003,6 +1003,11 @@ export function ForumBoard({
         return;
       }
       sheetWasOpen.current = false;
+      // A posting fee has no amount box in the board and its sheet is drawn over the page: the
+      // feed behind it stays where it is.
+      if (payInvoice !== null && payHost === 'composer') {
+        return;
+      }
       revealReplyForm(scroller, replyFormElement(replyComposerRef.current));
     };
     // While a move runs, each step reveals from where the page last rested. The target already
@@ -1131,7 +1136,7 @@ export function ForumBoard({
       foldObserver.disconnect();
       root.removeEventListener(MOTION_SETTLE_EVENT, onSettle);
     };
-  }, [expandedId, repliesLoading, scroller, shownReplies, payMessageId, payInvoice]);
+  }, [expandedId, repliesLoading, scroller, shownReplies, payMessageId, payInvoice, payHost]);
   const [openRoleMessageId, setOpenRoleMessageId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   // Lend opens the card's money reaction and puts the focus in its amount field once it is enabled.
@@ -2255,6 +2260,7 @@ export function ForumBoard({
                                   reactionHold.closedByMember();
                                   onPayCancel();
                                 }}
+                                onSentChange={reactionHold.sentChange}
                               />
                             </SundayWritingGate>
                           )}
