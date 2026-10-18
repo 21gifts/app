@@ -58,7 +58,6 @@
   --container-home-lead: 510px;
   --container-home-preview: 540px;
   --container-home-path: 250px;
-  --size-home-mark: 27px;
   --grid-template-columns-home-flow: minmax(0, 1fr) auto minmax(0, 1fr);
   --grid-template-columns-home-split: 0.8fr 1.2fr;
   --grid-template-columns-home-happyland: 1fr 0.9fr;
