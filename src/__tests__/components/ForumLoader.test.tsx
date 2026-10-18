@@ -482,8 +482,23 @@ async function openBasisShopWizardAtPlace(): Promise<ReturnType<typeof stubShopM
 function bypassDisabledShopNext(): void {
   const next = screen.getByRole('button', { name: 'Next' });
   expect(next).toHaveProperty('disabled', true);
-  next.removeAttribute('disabled');
-  fireEvent.click(next);
+  const reactPropsKey = Object.getOwnPropertyNames(next).find((key) =>
+    key.startsWith('__reactProps$'),
+  );
+  if (reactPropsKey === undefined) {
+    throw new Error('Could not find the disabled shop Next button handler');
+  }
+  const reactProps = (next as unknown as Record<string, { onClick?: () => void } | undefined>)[
+    reactPropsKey
+  ];
+  const onClick = reactProps?.onClick;
+  if (typeof onClick !== 'function') {
+    throw new Error('The disabled shop Next button has no click handler');
+  }
+  // React suppresses delegated clicks while the button prop is disabled.
+  act(() => {
+    onClick();
+  });
 }
 
 function submitDisabledShopSummary(): void {
@@ -1430,9 +1445,14 @@ describe('ForumLoader', () => {
 
   it('feed="shops" returns to the username field when the submit lookup no longer finds it', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
-    vi.mocked(searchMentionAccounts)
-      .mockResolvedValueOnce([{ id: 'acc-luna', username: 'luna', name: 'Luna' }])
-      .mockResolvedValueOnce([]);
+    let usernameLookups = 0;
+    vi.mocked(searchMentionAccounts).mockImplementation(async (_session, query) => {
+      if (query !== 'luna') {
+        return [];
+      }
+      usernameLookups += 1;
+      return usernameLookups === 1 ? [{ id: 'acc-luna', username: 'luna', name: 'Luna' }] : [];
+    });
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
@@ -1440,20 +1460,30 @@ describe('ForumLoader', () => {
     await submitShopWizard(SHOP_DESCRIPTION, 'luna');
     expect(await screen.findByText('No account with that username.')).toBeTruthy();
     expect(screen.getByText('4 / 5 · 21.gifts user')).toBeTruthy();
+    expect(usernameLookups).toBe(2);
     expect(postMock).not.toHaveBeenCalled();
   });
 
   it('feed="shops" shows a request error when the submit username lookup fails', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
-    vi.mocked(searchMentionAccounts)
-      .mockResolvedValueOnce([{ id: 'acc-luna', username: 'luna', name: 'Luna' }])
-      .mockRejectedValueOnce(new Error('offline'));
+    let usernameLookups = 0;
+    vi.mocked(searchMentionAccounts).mockImplementation(async (_session, query) => {
+      if (query !== 'luna') {
+        return [];
+      }
+      usernameLookups += 1;
+      if (usernameLookups === 1) {
+        return [{ id: 'acc-luna', username: 'luna', name: 'Luna' }];
+      }
+      throw new Error('offline');
+    });
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
     await submitShopWizard(SHOP_DESCRIPTION, 'luna');
     expect((await screen.findByRole('alert')).textContent).toBe('Could not post your message');
+    expect(usernameLookups).toBe(2);
     expect(postMock).not.toHaveBeenCalled();
   });
 
@@ -1659,6 +1689,7 @@ describe('ForumLoader', () => {
     expectNoShopComposeOrPost();
 
     listeners.clear();
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     await fillCompleteShopPlace(listeners);
     await submitValidShopWizardFromCurrentStep();
     await expectShopComposeAfterRetry();
