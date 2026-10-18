@@ -3234,6 +3234,11 @@
     "es": "El estado heart-cannot-receive en una nota de tienda. Tras el corazón rechazado, una actualización indica que el autor aún no puede recibir (authorCanReceive: false). El corazón y su contador quedan desactivados con Aún no puede recibir, y la línea La wallet del autor no puede recibir este pago en Bitcoin sigue bajo el corazón hasta el siguiente toque.",
     "fil": "Ang kalagayang heart-cannot-receive sa isang shop note. Pagkatapos ng tinanggihang puso, sinasabi ng pag-refresh na hindi pa makatanggap ang may-akda (authorCanReceive: false). Naka-disable ang puso at ang bilang nito kasama ang Hindi pa makatanggap, at nananatili sa ilalim ng puso ang linyang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito hanggang sa susunod na tap."
   },
+  "/shops:heart-cannot-receive-older-api": {
+    "de": "Der Zustand heart-cannot-receive auf einer Shop-Notiz, aktualisiert von einer älteren API, die payable: false ohne authorCanReceive sendet. Das Herz fehlt, es gibt kein Kann noch nicht empfangen, und die Zeile Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen bleibt bis zum nächsten Tippen.",
+    "es": "El estado heart-cannot-receive en una nota de tienda, actualizado por una API anterior que envía payable: false sin authorCanReceive. El corazón desaparece, no hay Aún no puede recibir, y la línea La wallet del autor no puede recibir este pago en Bitcoin sigue hasta el siguiente toque.",
+    "fil": "Ang kalagayang heart-cannot-receive sa isang shop note, ni-refresh ng mas lumang API na nagpapadala ng payable: false nang walang authorCanReceive. Wala na ang puso, walang Hindi pa makatanggap, at nananatili ang linyang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito hanggang sa susunod na tap."
+  },
   "/shops:author-cannot-receive": {
     "de": "Eine Shop-Notiz eines Mitglieds ohne verifizierte Wallet (authorCanReceive: false). Die Aktionszeile zeigt vor dem Herz das kleine graue Label Kann noch nicht empfangen, und Herz samt Zähler sind deaktiviert.",
     "es": "Una nota de tienda de un miembro que aún no tiene wallet verificada (authorCanReceive: false). La fila de acciones muestra antes del corazón la etiqueta gris Aún no puede recibir, y el corazón con su contador está desactivado.",
@@ -5435,14 +5440,14 @@
     "fil": "Ang nabigong pagpapadala na bukas ang Sino ang babayaran. Nananatili sa due card ang ₿1'000 · $1.00 at ipinapakita sa pula ang Hindi masimulan ang Bitcoin payment. Ipinapakita ng listahan sina Bruno ₿500 · $0.50, Carla ₿300 · $0.30, at Diego ₿200 · $0.20. Bumabalik sa ilalim ang Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿1'000 · $1.00."
   },
   "/loans/repay:failed-cannot-receive": {
-    "de": "Der fehlgeschlagene Sendezustand, wenn die API für den Anteil eines Kreditgebers cannot_receive meldete. Die Fälligkeitskarte behält ₿1'000 · $1.00 und zeigt rot Eine Wallet kann noch nicht empfangen. Darunter kehren Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿1'000 · $1.00 senden zurück.",
-    "es": "El estado de envío fallido cuando la API respondió cannot_receive para la parte de un prestamista. La tarjeta conserva ₿1'000 · $1.00 y muestra en rojo Una wallet aún no puede recibir. Debajo vuelven Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿1'000 · $1.00.",
-    "fil": "Ang nabigong pagpapadala kapag sumagot ang API ng cannot_receive para sa bahagi ng isang nagpahiram. Nananatili sa due card ang ₿1'000 · $1.00 at ipinapakita sa pula ang Hindi pa makatanggap ang isang wallet. Bumabalik sa ilalim ang Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿1'000 · $1.00."
+    "de": "Der fehlgeschlagene Sendezustand, wenn die API für den Anteil eines Kreditgebers cannot_receive meldete. Die Fälligkeitskarte behält ₿1'000 · $1.00 und zeigt rot Die Wallet einer kreditgebenden Person kann noch nicht empfangen. Darunter kehren Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿1'000 · $1.00 senden zurück.",
+    "es": "El estado de envío fallido cuando la API respondió cannot_receive para la parte de un prestamista. La tarjeta conserva ₿1'000 · $1.00 y muestra en rojo La wallet de un prestamista aún no puede recibir. Debajo vuelven Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿1'000 · $1.00.",
+    "fil": "Ang nabigong pagpapadala kapag sumagot ang API ng cannot_receive para sa bahagi ng isang nagpahiram. Nananatili sa due card ang ₿1'000 · $1.00 at ipinapakita sa pula ang Hindi pa makatanggap ang wallet ng isang nagpautang. Bumabalik sa ilalim ang Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿1'000 · $1.00."
   },
   "/loans/repay:failed-cannot-receive-who-open": {
-    "de": "Derselbe Zustand mit geöffnetem „Wer wird bezahlt?“ Die Liste zeigt Bruno ₿500 · $0.50, Carla ₿300 · $0.30 und Diego ₿200 · $0.20 unter dem roten Hinweis Eine Wallet kann noch nicht empfangen.",
-    "es": "El mismo estado con Quién recibe el pago abierto. La lista muestra Bruno ₿500 · $0.50, Carla ₿300 · $0.30 y Diego ₿200 · $0.20 bajo el aviso rojo Una wallet aún no puede recibir.",
-    "fil": "Parehong kalagayan na bukas ang Sino ang babayaran. Ipinapakita ng listahan sina Bruno ₿500 · $0.50, Carla ₿300 · $0.30, at Diego ₿200 · $0.20 sa ilalim ng pulang paalala na Hindi pa makatanggap ang isang wallet."
+    "de": "Derselbe Zustand mit geöffnetem „Wer wird bezahlt?“ Die Liste zeigt Bruno ₿500 · $0.50, Carla ₿300 · $0.30 und Diego ₿200 · $0.20 unter dem roten Hinweis Die Wallet einer kreditgebenden Person kann noch nicht empfangen.",
+    "es": "El mismo estado con Quién recibe el pago abierto. La lista muestra Bruno ₿500 · $0.50, Carla ₿300 · $0.30 y Diego ₿200 · $0.20 bajo el aviso rojo La wallet de un prestamista aún no puede recibir.",
+    "fil": "Parehong kalagayan na bukas ang Sino ang babayaran. Ipinapakita ng listahan sina Bruno ₿500 · $0.50, Carla ₿300 · $0.30, at Diego ₿200 · $0.20 sa ilalim ng pulang paalala na Hindi pa makatanggap ang wallet ng isang nagpautang."
   },
   "/loans/repay:collecting": {
     "de": "Während Kredit A noch sammelt, gibt es keine Fälligkeitskarte. Ihr Kredit zeigt den Nähmaschinen-Text, ₿30'000 · $30.00 · 30 Tage · ₿1'000 · $1.00 pro Tag, Noch nicht vollständig finanziert. und Rückzahlungsliste; dieser Bildschirm zeigt keinen Finanzierungsbalken.",
@@ -5798,6 +5803,11 @@
     "de": "Der Zustand heart-cannot-receive auf Erins Notiz. Nach dem abgelehnten Herz meldet eine Aktualisierung, dass der Autor noch nicht empfangen kann (authorCanReceive: false). Herz und Zähler sind mit Kann noch nicht empfangen deaktiviert, und die Zeile Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen bleibt bis zum nächsten Tippen unter dem Herz.",
     "es": "El estado heart-cannot-receive en la nota de Erin. Tras el corazón rechazado, una actualización indica que el autor aún no puede recibir (authorCanReceive: false). El corazón y su contador quedan desactivados con Aún no puede recibir, y la línea La wallet del autor no puede recibir este pago en Bitcoin sigue bajo el corazón hasta el siguiente toque.",
     "fil": "Ang kalagayang heart-cannot-receive sa tala ni Erin. Pagkatapos ng tinanggihang puso, sinasabi ng pag-refresh na hindi pa makatanggap ang may-akda (authorCanReceive: false). Naka-disable ang puso at ang bilang nito kasama ang Hindi pa makatanggap, at nananatili sa ilalim ng puso ang linyang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito hanggang sa susunod na tap."
+  },
+  "/welcome:heart-cannot-receive-older-api": {
+    "de": "Der Zustand heart-cannot-receive auf Erins Notiz, aktualisiert von einer älteren API, die payable: false ohne authorCanReceive sendet. Das Herz fehlt, es gibt kein Kann noch nicht empfangen, und die Zeile Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen bleibt bis zum nächsten Tippen.",
+    "es": "El estado heart-cannot-receive en la nota de Erin, actualizado por una API anterior que envía payable: false sin authorCanReceive. El corazón desaparece, no hay Aún no puede recibir, y la línea La wallet del autor no puede recibir este pago en Bitcoin sigue hasta el siguiente toque.",
+    "fil": "Ang kalagayang heart-cannot-receive sa tala ni Erin, ni-refresh ng mas lumang API na nagpapadala ng payable: false nang walang authorCanReceive. Wala na ang puso, walang Hindi pa makatanggap, at nananatili ang linyang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito hanggang sa susunod na tap."
   },
   "/welcome:author-cannot-receive": {
     "de": "Eine Notiz eines Mitglieds ohne verifizierte Wallet (authorCanReceive: false). Die Aktionszeile zeigt vor dem Herz das kleine graue Label Kann noch nicht empfangen, und Herz samt Zähler sind deaktiviert, damit niemand eine Zahlung startet, die nur scheitern kann.",

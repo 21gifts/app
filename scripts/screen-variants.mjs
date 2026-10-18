@@ -6986,6 +6986,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'heart-cannot-receive-older-api',
+    image: 'welcome-heart-cannot-receive-older-api.png',
+    visual: 'state-welcome-heart-cannot-receive-older-api',
+    needle: "shotScreen(page, 'state-welcome-heart-cannot-receive-older-api')",
+  },
+  {
+    route: '/welcome',
     id: 'heart-paid',
     image: 'welcome-heart-paid.png',
     visual: 'state-welcome-heart-paid',
@@ -7193,6 +7200,13 @@ export const SCREEN_VARIANTS = [
     image: 'shops-heart-cannot-receive-refreshed.png',
     visual: 'state-shops-heart-cannot-receive-refreshed',
     needle: "shotScreen(page, 'state-shops-heart-cannot-receive-refreshed')",
+  },
+  {
+    route: '/shops',
+    id: 'heart-cannot-receive-older-api',
+    image: 'shops-heart-cannot-receive-older-api.png',
+    visual: 'state-shops-heart-cannot-receive-older-api',
+    needle: "shotScreen(page, 'state-shops-heart-cannot-receive-older-api')",
   },
   {
     route: '/shops',

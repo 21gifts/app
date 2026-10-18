@@ -2987,6 +2987,12 @@ The heart-cannot-receive state on Erin's note. After the refused heart, a refres
 
 ![21.gifts welcome heart cannot receive refreshed](images/welcome-heart-cannot-receive-refreshed.png)
 
+### Variant: heart-cannot-receive-older-api
+
+The heart-cannot-receive state on Erin's note, refreshed by an older api that sends `payable: false` without `authorCanReceive`. The heart is gone, there is no **Can't receive yet** label, and the line **The author's wallet cannot receive this Bitcoin payment** stays until the next tap.
+
+![21.gifts welcome heart cannot receive older api](images/welcome-heart-cannot-receive-older-api.png)
+
 ### Variant: heart-paid
 
 Same signed-in German note after opening `?visual=heart-paid` and clicking Send ₿1. The filled heart and **+1** that every tap shows are held for the shot.
@@ -3614,6 +3620,12 @@ Signed-in shop note by another member after opening `?visual=heart-cannot-receiv
 The heart-cannot-receive state on a shop note. After the refused heart, a refresh reports that the author cannot receive yet (`authorCanReceive: false`). The heart and its count show disabled with **Can't receive yet**, and the line **The author's wallet cannot receive this Bitcoin payment** stays under the heart until the next tap.
 
 ![21.gifts shops heart cannot receive refreshed](images/shops-heart-cannot-receive-refreshed.png)
+
+### Variant: heart-cannot-receive-older-api
+
+The heart-cannot-receive state on a shop note, refreshed by an older api that sends `payable: false` without `authorCanReceive`. The heart is gone, there is no **Can't receive yet** label, and the line **The author's wallet cannot receive this Bitcoin payment** stays until the next tap.
+
+![21.gifts shops heart cannot receive older api](images/shops-heart-cannot-receive-older-api.png)
 
 ### Variant: author-cannot-receive
 

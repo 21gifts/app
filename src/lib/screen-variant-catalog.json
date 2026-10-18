@@ -5922,6 +5922,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:heart-cannot-receive-older-api",
+    "label": "/welcome heart-cannot-receive-older-api",
+    "visual": "state-welcome-heart-cannot-receive-older-api",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:heart-paid",
     "label": "/welcome heart-paid",
     "visual": "state-welcome-heart-paid",
@@ -6099,6 +6105,12 @@
     "id": "/shops:heart-cannot-receive-refreshed",
     "label": "/shops heart-cannot-receive-refreshed",
     "visual": "state-shops-heart-cannot-receive-refreshed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:heart-cannot-receive-older-api",
+    "label": "/shops heart-cannot-receive-older-api",
+    "visual": "state-shops-heart-cannot-receive-older-api",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
