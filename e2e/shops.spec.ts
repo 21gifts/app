@@ -655,7 +655,7 @@ test('Function: setMessageShopText — moderator save updates the shop note', as
   await expect(note.getByText('Cafe Sol is open every morning.')).toBeVisible();
 });
 
-test('Function: ShopPlaceControl — moderator saves a pin; basis cannot edit', async ({ page }) => {
+test('Function: ShopPlaceControl — moderator saves; basis cannot edit', async ({ page }) => {
   await stubPlaceMap(page);
   await seedAda(page, 'moderator');
   await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
@@ -967,9 +967,7 @@ test('shop description and username rules appear while typing before submit', as
     field.dispatchEvent(new Event('input', { bubbles: true }));
   });
   await expect(
-    page.getByText(
-      'The description must not contain control characters other than line breaks.',
-    ),
+    page.getByText('The description must not contain control characters other than line breaks.'),
   ).toBeVisible();
   await expect(text).toHaveAttribute('aria-invalid', 'true');
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
@@ -984,7 +982,7 @@ test('shop description and username rules appear while typing before submit', as
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
 });
 
-test('Function: shopUsernameProblem — an unknown valid username blocks Next', async ({ page }) => {
+test('Function: shopUsernameProblem — a missing account blocks Next', async ({ page }) => {
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
@@ -1158,9 +1156,7 @@ test('Function: ShopAddressFields — street, house number, postal code, city, c
   await expect(address.getByLabel('Country', { exact: true })).toBeVisible();
 });
 
-test('Function: ShopLabeledInput — label names the field, typed value is not part of the name', async ({
-  page,
-}) => {
+test('Function: ShopLabeledInput — label excludes typed value', async ({ page }) => {
   await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);

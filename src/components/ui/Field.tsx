@@ -73,9 +73,7 @@ export function Field(props: FieldProps): ReactElement {
     );
   } else {
     const inputProps = rest as InputHTMLAttributes<HTMLInputElement>;
-    control = (
-      <input id={fieldId} className={CONTROL_CLASS} {...inputProps} {...validationProps} />
-    );
+    control = <input id={fieldId} className={CONTROL_CLASS} {...inputProps} {...validationProps} />;
   }
   return (
     <label

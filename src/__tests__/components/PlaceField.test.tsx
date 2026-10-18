@@ -19,6 +19,17 @@ function jsonResponse(body: unknown): Response {
   return { json: () => Promise.resolve(body) } as Response;
 }
 
+async function expectMapUnavailable(): Promise<void> {
+  const messages = await screen.findAllByText('The map is not available.');
+  expect(messages).toHaveLength(2);
+  expect(messages.filter((message) => message.closest('[data-scrollport]') !== null)).toHaveLength(
+    1,
+  );
+  expect(messages.filter((message) => message.closest('[data-scrollport]') === null)).toHaveLength(
+    1,
+  );
+}
+
 describe('PlaceField', () => {
   it('opens an accessible modal, closes on Escape, and restores trigger focus', async () => {
     stubMaps();
@@ -76,7 +87,7 @@ describe('PlaceField', () => {
     );
     expect(screen.queryByText('Add a place')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
     expect(onAvailabilityChange).toHaveBeenLastCalledWith(true);
   });
 
@@ -91,10 +102,10 @@ describe('PlaceField', () => {
       <PlaceField place={null} disabled={false} onChange={() => undefined} />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
     view.unmount();
   });
 
@@ -185,10 +196,12 @@ describe('PlaceField', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     expect(await screen.findByRole('button', { name: 'Use this place' })).toBeTruthy();
     expect(screen.getByLabelText('Place name')).toHaveProperty('value', 'Happyland');
-    expect(Marker).toHaveBeenCalledWith({
-      position: { lat: 14.6, lng: 120.98 },
-      map,
-      draggable: true,
+    await waitFor(() => {
+      expect(Marker).toHaveBeenCalledWith({
+        position: { lat: 14.6, lng: 120.98 },
+        map,
+        draggable: true,
+      });
     });
     markerListeners.get('dragend')?.();
     markerPos = null;
@@ -202,7 +215,7 @@ describe('PlaceField', () => {
     );
     renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    expect(screen.queryByText('The map is not available.')).toBeNull();
+    expect(screen.queryAllByText('The map is not available.')).toHaveLength(0);
     expect(screen.getByRole('dialog', { name: 'Add a place' })).toBeTruthy();
     expect(screen.getByLabelText('Place name')).toBeTruthy();
   });
@@ -275,10 +288,10 @@ describe('PlaceField', () => {
       <PlaceField place={null} disabled={false} onChange={() => undefined} />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
     view.rerender(<PlaceField place={null} disabled onChange={() => undefined} />);
     await waitFor(() => {
-      expect(screen.queryByText('The map is not available.')).toBeNull();
+      expect(screen.queryAllByText('The map is not available.')).toHaveLength(0);
     });
   });
 
@@ -326,7 +339,7 @@ describe('PlaceField', () => {
       expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
     });
     document.querySelector('script[data-gmaps="weekly"]')?.dispatchEvent(new Event('error'));
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
     view.unmount();
     document.querySelectorAll('script[data-gmaps="weekly"]').forEach((node) => {
       node.remove();
@@ -349,10 +362,10 @@ describe('PlaceField', () => {
       expect(loads).toBeGreaterThan(0);
     });
     existing.dispatchEvent(new Event('error'));
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
   });
 
   it('does not draw when maps disappear before the panel effect', async () => {
@@ -384,10 +397,10 @@ describe('PlaceField', () => {
       expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
     });
     document.querySelector('script[data-gmaps="weekly"]')?.dispatchEvent(new Event('error'));
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
   });
 
   it('marks an existing script that loads without maps and ignores a later load', async () => {
@@ -409,7 +422,7 @@ describe('PlaceField', () => {
       expect(loads).toBeGreaterThan(0);
     });
     existing.dispatchEvent(new Event('load'));
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     existing.dispatchEvent(new Event('load'));
     await Promise.resolve();
@@ -424,7 +437,7 @@ describe('PlaceField', () => {
     });
     const script = document.querySelector('script[data-gmaps="weekly"]');
     script?.dispatchEvent(new Event('load'));
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     script?.dispatchEvent(new Event('error'));
     await Promise.resolve();
@@ -451,7 +464,7 @@ describe('PlaceField', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     resolveJson({ key: 'k' });
     await Promise.resolve();
-    expect(screen.queryByText('The map is not available.')).toBeNull();
+    expect(screen.queryAllByText('The map is not available.')).toHaveLength(0);
   });
 
   it('shows the unavailable copy when Google rejects the key', async () => {
@@ -481,11 +494,11 @@ describe('PlaceField', () => {
     const fail = (window as { gm_authFailure?: () => void }).gm_authFailure;
     expect(fail).toBeTypeOf('function');
     fail?.();
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
     fireEvent.click(toggle);
     fireEvent.click(toggle);
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
-    expect(screen.queryByLabelText('Place name')).toBeNull();
+    await expectMapUnavailable();
+    expect(screen.getByLabelText('Place name')).toBeTruthy();
     expect(Map.mock.calls.length).toBe(drawn);
     view.unmount();
     fail?.();
@@ -515,12 +528,12 @@ describe('PlaceField', () => {
     });
     const drawn = Map.mock.calls.length;
     (window as { gm_authFailure?: () => void }).gm_authFailure?.();
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
     delete (window as { google?: unknown }).google;
     document.querySelector('script[data-gmaps="weekly"]')?.remove();
     fireEvent.click(toggle);
     fireEvent.click(toggle);
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
     expect(document.querySelector('script[data-gmaps="weekly"]')).toBeNull();
     expect(Map.mock.calls.length).toBe(drawn);
   });
@@ -550,7 +563,7 @@ describe('PlaceField', () => {
     expect(addListener).not.toHaveBeenCalled();
     expect(Marker).not.toHaveBeenCalled();
     expect(geo).not.toHaveBeenCalled();
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
     view.unmount();
     const saved = { lat: 14.6, lng: 120.98, label: 'Happyland' };
     const MarkerSaved = vi.fn(() => ({
@@ -569,7 +582,7 @@ describe('PlaceField', () => {
       expect(MapSaved).toHaveBeenCalled();
     });
     expect(MarkerSaved).not.toHaveBeenCalled();
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await expectMapUnavailable();
   });
 
   function stubMaps(): Map<string, (event?: unknown) => void> {
@@ -1072,10 +1085,7 @@ describe('PlaceField', () => {
     expect(house.getAttribute('aria-invalid')).toBe('true');
     expect(postal.getAttribute('aria-invalid')).toBe('true');
     expect(city.getAttribute('aria-invalid')).toBe('true');
-    expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty(
-      'disabled',
-      true,
-    );
+    expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty('disabled', true);
   });
 
   it('prefills shop fields from an existing pin', async () => {
@@ -1138,10 +1148,7 @@ describe('PlaceField', () => {
     const message = screen.getByText('Enter the shop name.');
     expect(name.getAttribute('aria-invalid')).toBe('true');
     expect(name.getAttribute('aria-describedby')).toContain(message.id);
-    expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty(
-      'disabled',
-      true,
-    );
+    expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty('disabled', true);
   });
 
   it.each([

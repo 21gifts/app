@@ -20115,9 +20115,7 @@ test.describe('shops screens', () => {
       field.dispatchEvent(new Event('input', { bubbles: true }));
     });
     await expect(
-      page.getByText(
-        'The description must not contain control characters other than line breaks.',
-      ),
+      page.getByText('The description must not contain control characters other than line breaks.'),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await shotScreen(page, 'state-shops-add-description-error');
@@ -24429,7 +24427,8 @@ test.describe('habit tracker baselines', () => {
       'aria-pressed',
       'true',
     );
-    // Weekly scrolls only to itself, by a layout-timed offset; show Add habit for a stable shot.
+    // Weekly scrolls only to itself, by a layout-timed offset;
+    // show Add habit for a stable shot.
     await page.getByRole('button', { name: 'Add habit' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-habit-tracker-add-weekly');
   });

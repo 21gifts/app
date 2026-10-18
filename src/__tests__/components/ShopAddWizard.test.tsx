@@ -274,7 +274,9 @@ describe('ShopAddWizard', () => {
       await screen.findByText('The map is unavailable, so a shop place cannot be added.'),
     ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(screen.getByText('The map is unavailable, so a shop place cannot be added.')).toBeTruthy();
+    expect(
+      screen.getByText('The map is unavailable, so a shop place cannot be added.'),
+    ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 
@@ -438,16 +440,9 @@ describe('ShopAddWizard', () => {
   it.each([
     ['tooMany' as const, 'You can add up to 10 photos'],
     ['tooLarge' as const, 'Keep photos under 1 MB and videos under 32 MB'],
-    [
-      'unsupported' as const,
-      'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video',
-    ],
+    ['unsupported' as const, 'Use a JPEG, PNG, or WebP photo, or an MP4, WebM, or MOV video'],
   ])('shows %s photo feedback and its 10-photo count at the picker', (photoError, message) => {
-    renderWizard(
-      <ShopAddWizard
-        {...props({ photoDrafts: [photo], photoError })}
-      />,
-    );
+    renderWizard(<ShopAddWizard {...props({ photoDrafts: [photo], photoError })} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     const picker = screen.getByRole('button', { name: 'Add a photo or video' });
     expect(screen.getByText('1 / 10')).toBeTruthy();
@@ -457,9 +452,7 @@ describe('ShopAddWizard', () => {
   });
 
   it('shows the 1000-character description error for a prefilled edit', () => {
-    renderWizard(
-      <ShopAddWizard {...props({ draft: 'x'.repeat(1001), place: COMPLETE_PLACE })} />,
-    );
+    renderWizard(<ShopAddWizard {...props({ draft: 'x'.repeat(1001), place: COMPLETE_PLACE })} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -578,11 +571,7 @@ describe('ShopAddWizard', () => {
       '4 / 5 · 21.gifts user',
       'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
     ],
-    [
-      'usernameMissing' as const,
-      '4 / 5 · 21.gifts user',
-      'No account with that username.',
-    ],
+    ['usernameMissing' as const, '4 / 5 · 21.gifts user', 'No account with that username.'],
   ])('returns known %s server errors to their field', async (serverProblem, step, message) => {
     renderWizard(
       <ShopAddWizard

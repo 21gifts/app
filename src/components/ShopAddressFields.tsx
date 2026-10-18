@@ -85,9 +85,7 @@ export function ShopAddressFields(props: {
           autoComplete="off"
           value={draft.houseNumber}
           disabled={props.disabled}
-          {...(errorFor('houseNumber') === undefined
-            ? {}
-            : { error: errorFor('houseNumber')! })}
+          {...(errorFor('houseNumber') === undefined ? {} : { error: errorFor('houseNumber')! })}
           onBlur={() => props.onBlur?.('houseNumber')}
           onChange={(event) => {
             patch({ houseNumber: event.target.value });
@@ -101,9 +99,7 @@ export function ShopAddressFields(props: {
           autoComplete="postal-code"
           value={draft.postalCode}
           disabled={props.disabled}
-          {...(errorFor('postalCode') === undefined
-            ? {}
-            : { error: errorFor('postalCode')! })}
+          {...(errorFor('postalCode') === undefined ? {} : { error: errorFor('postalCode')! })}
           onBlur={() => props.onBlur?.('postalCode')}
           onChange={(event) => {
             patch({ postalCode: event.target.value });
@@ -131,9 +127,7 @@ export function ShopAddressFields(props: {
           value={draft.country}
           disabled={props.disabled}
           aria-invalid={errorFor('country') === undefined ? undefined : true}
-          aria-describedby={
-            errorFor('country') === undefined ? undefined : `${countryId}-error`
-          }
+          aria-describedby={errorFor('country') === undefined ? undefined : `${countryId}-error`}
           onBlur={() => props.onBlur?.('country')}
           onChange={(event) => {
             patch({ country: event.target.value });

@@ -857,8 +857,7 @@ const en = {
   'shops.fillIn': 'Fill in: {fields}.',
   'shops.fixFields': 'Fix the fields marked above.',
   'shops.placeRequired': "Add the shop's place and address.",
-  'shops.placeUnavailableReason':
-    'The map is unavailable, so a shop place cannot be added.',
+  'shops.placeUnavailableReason': 'The map is unavailable, so a shop place cannot be added.',
   'shops.placeNameHint': "A short name, for example “Kiki's Bakery”. Not the address.",
   'shops.addressStreet': 'Street',
   'shops.addressHouseNumber': 'House number',
@@ -2052,7 +2051,8 @@ const de = {
   'shops.problemHouseNumberControls': 'Die Hausnummer darf keine Steuerzeichen enthalten.',
   'shops.problemPostalCodeRequired': 'Geben Sie die Postleitzahl ein.',
   'shops.problemPostalCodeChLi': 'Verwenden Sie 4 Ziffern für die Schweiz und Liechtenstein.',
-  'shops.problemPostalCodeOther': 'Verwenden Sie 2–16 Buchstaben, Ziffern, Leerzeichen oder Bindestriche.',
+  'shops.problemPostalCodeOther':
+    'Verwenden Sie 2–16 Buchstaben, Ziffern, Leerzeichen oder Bindestriche.',
   'shops.problemPostalCodeControls': 'Die Postleitzahl darf keine Steuerzeichen enthalten.',
   'shops.problemCityRequired': 'Geben Sie den Ort ein (1–80 Zeichen).',
   'shops.problemCityLength': 'Der Ort muss 1–80 Zeichen lang sein.',
@@ -2071,7 +2071,8 @@ const de = {
   'shops.problemUsernameFormat':
     'Verwenden Sie 1–32 Kleinbuchstaben, Ziffern, Punkte, Bindestriche oder Unterstriche; beginnen Sie mit einem Buchstaben oder einer Ziffer.',
   'shops.problemUsernameMissing': 'Kein Konto mit diesem Benutzernamen.',
-  'shops.problemUsernameLookup': 'Das Konto konnte nicht geprüft werden. Bitte versuchen Sie es erneut.',
+  'shops.problemUsernameLookup':
+    'Das Konto konnte nicht geprüft werden. Bitte versuchen Sie es erneut.',
 
   'inbox.heading': 'Nachrichten',
   'inbox.listLabel': 'Unterhaltungen',

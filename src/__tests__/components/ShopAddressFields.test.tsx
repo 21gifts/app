@@ -94,10 +94,10 @@ describe('ShopAddressFields', () => {
     const country = screen.getByLabelText('Country');
     expect(house.getAttribute('aria-invalid')).toBe('true');
     expect(country.getAttribute('aria-invalid')).toBe('true');
-    expect(document.getElementById(house.getAttribute('aria-describedby')!)).toHaveTextContent(
+    expect(document.getElementById(house.getAttribute('aria-describedby')!)?.textContent).toBe(
       'Starts with a digit.',
     );
-    expect(document.getElementById(country.getAttribute('aria-describedby')!)).toHaveTextContent(
+    expect(document.getElementById(country.getAttribute('aria-describedby')!)?.textContent).toBe(
       'Choose a country.',
     );
     fireEvent.blur(house);

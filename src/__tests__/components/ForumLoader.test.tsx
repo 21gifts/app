@@ -4113,7 +4113,10 @@ describe('ForumLoader', () => {
       expect(postMock).toHaveBeenCalled();
     });
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toBe(
+      const description = screen.getByLabelText('Shop text');
+      const feedback = document.getElementById(description.getAttribute('aria-describedby')!);
+      expect(description.getAttribute('aria-invalid')).toBe('true');
+      expect(feedback?.textContent).toContain(
         'The description must be 20 to 1000 characters and longer than the shop name.',
       );
     });

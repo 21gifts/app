@@ -331,9 +331,7 @@ export function ShopAddWizard({
           : usernameProblem === 'failed'
             ? t('shops.problemUsernameLookup')
             : undefined;
-  const usernameHint = usernamePending
-    ? t('shops.usernameChecking')
-    : t('shops.accountOptional');
+  const usernameHint = usernamePending ? t('shops.usernameChecking') : t('shops.accountOptional');
   const summaryProblem =
     step !== 5
       ? null
@@ -609,9 +607,7 @@ export function ShopAddWizard({
           </div>
         </dl>
       ) : null}
-      {summaryProblem === null ? null : (
-        <p className="text-sm text-app-danger">{summaryProblem}</p>
-      )}
+      {summaryProblem === null ? null : <p className="text-sm text-app-danger">{summaryProblem}</p>}
       <div className="flex flex-wrap gap-2">
         {step === 1 && cancelEdit !== undefined ? (
           <IconButton

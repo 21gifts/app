@@ -45,9 +45,7 @@ describe('Field', () => {
     );
     const input = screen.getByLabelText('Postal code');
     expect(input.getAttribute('aria-invalid')).toBe('true');
-    expect(input.getAttribute('aria-describedby')).toBe(
-      'outside-help postal-hint postal-error',
-    );
+    expect(input.getAttribute('aria-describedby')).toBe('outside-help postal-hint postal-error');
     expect(screen.getByText('Use the local format.').id).toBe('postal-hint');
     expect(screen.getByText('Use 4 digits.').id).toBe('postal-error');
     expect(screen.getByText('Use 4 digits.').className).toContain('text-app-danger');

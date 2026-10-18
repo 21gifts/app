@@ -240,8 +240,7 @@ export function shopAddressProblem(
  */
 export function shopAddressProblems(address: ForumPlaceAddress | null): ShopAddressProblems {
   const problems: ShopAddressProblems = {};
-  const value =
-    address ?? { street: '', houseNumber: '', postalCode: '', city: '', country: '' };
+  const value = address ?? { street: '', houseNumber: '', postalCode: '', city: '', country: '' };
   const street = value.street.trim();
   if (street === '') problems.street = 'required';
   else if (street.length > 120) problems.street = 'length';
@@ -402,7 +401,10 @@ export function shopDescriptionRemaining(text: string): number {
  * @returns One line.
  */
 export function formatShopAddressLine(address: ForumPlaceAddress, locale: string): string {
-  return `${address.street} ${address.houseNumber}, ${address.postalCode} ${address.city}, ${countryDisplayName(address.country, locale)}`;
+  return `${address.street} ${address.houseNumber}, ${address.postalCode} ${address.city}, ${countryDisplayName(
+    address.country,
+    locale,
+  )}`;
 }
 
 /**

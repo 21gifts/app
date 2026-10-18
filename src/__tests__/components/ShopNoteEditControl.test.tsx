@@ -693,9 +693,7 @@ describe('ShopNoteEditControl', () => {
     fireEvent.change(input, {
       target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
     });
-    expect(
-      await screen.findByText('Use a JPEG, PNG, or WebP photo'),
-    ).toBeTruthy();
+    expect(await screen.findByText('Use a JPEG, PNG, or WebP photo')).toBeTruthy();
     fireEvent.change(input, {
       target: { files: [new File(['b'], 'b.jpg', { type: 'image/jpeg' })] },
     });
@@ -1405,7 +1403,7 @@ describe('ShopNoteEditControl', () => {
     vi.unstubAllGlobals();
   });
 
-  it('saves a pin that differs from the stored place only by a pipe split in street and house number', async () => {
+  it('saves a pin that differs only by a pipe split in street and house number', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
     const stored = {
@@ -1571,7 +1569,7 @@ describe('ShopNoteEditControl', () => {
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeTruthy();
   });
 
-  it('writes the place before the text when only the final name and description are valid together', async () => {
+  it('writes the place first when only the final name and text are valid together', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
     const oldName = 'N'.repeat(30);
@@ -1621,7 +1619,7 @@ describe('ShopNoteEditControl', () => {
     vi.unstubAllGlobals();
   });
 
-  it('writes the text before the place when the new text is valid against the stored name', async () => {
+  it('writes text before place when the new text is valid against the stored name', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
     const newName = 'Luna';
