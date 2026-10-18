@@ -599,7 +599,7 @@ function usePosTillState(): PosTillState {
  * charge amount ({@link onPaymentReceived}), the charge is paid, and
  * {@link PosPaidOverlay} fills the screen with **Paid**, bitcoin, and fiat.
  * The till reads the api only on open, when a charge runs out, when the tab
- * becomes visible again, and when the confirmation is closed. A paid charge
+ * becomes visible again, after Cancel, and when the confirmation is closed. A paid charge
  * the api returns also opens the confirmation. Under the till, once it has
  * loaded, {@link PosHistory} lists the past charges, a charge the wallet saw
  * paid already as paid. An

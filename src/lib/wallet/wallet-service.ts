@@ -484,8 +484,9 @@ async function rememberKnownPayments(run: number, conn: WalletConnection): Promi
  * tells every {@link onPaymentReceived} listener at once, reads the balance again, and once that read and any newer one are done
  * (a newer read makes this one stale, and only the newest writes) tells every
  * {@link onIncomingPayment} listener, so a listener that shows the balance
- * never shows the one from before the payment. Nothing is told when the
- * connection ended meanwhile (sign-out, or a failed read that drops it).
+ * never shows the one from before the payment. Those listeners are not told
+ * when the connection ended meanwhile (sign-out, or a failed read that drops
+ * it); the {@link onPaymentReceived} listeners were told before the read.
  *
  * @param known - The known payment ids of the current connection.
  * @param payment - The received, completed payment.
