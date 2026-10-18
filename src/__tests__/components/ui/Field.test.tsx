@@ -60,9 +60,9 @@ describe('Field', () => {
 
   it('applies className on the label wrapper and ignores empty className', () => {
     const { rerender } = renderWithLocale(<Field label="Tagged" className="wrap" />);
-    expect(screen.getByText('Tagged').className).toContain('wrap');
+    expect(screen.getByText('Tagged').parentElement?.className).toContain('wrap');
 
     rerender(<Field label="Plain" className="" />);
-    expect(screen.getByText('Plain').className).not.toContain('undefined');
+    expect(screen.getByText('Plain').parentElement?.className).not.toContain('undefined');
   });
 });

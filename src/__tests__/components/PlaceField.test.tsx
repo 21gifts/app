@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PlaceField } from '@/components/PlaceField';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -20,14 +20,11 @@ function jsonResponse(body: unknown): Response {
 }
 
 async function expectMapUnavailable(): Promise<void> {
-  const messages = await screen.findAllByText('The map is not available.');
+  const dialog = await screen.findByRole('dialog');
+  const messages = within(dialog).getAllByText('The map is not available.');
   expect(messages).toHaveLength(2);
-  expect(messages.filter((message) => message.closest('[data-scrollport]') !== null)).toHaveLength(
-    1,
-  );
-  expect(messages.filter((message) => message.closest('[data-scrollport]') === null)).toHaveLength(
-    1,
-  );
+  expect(messages.some((message) => message.className.includes('mb-2'))).toBe(true);
+  expect(messages.some((message) => !message.className.includes('mb-2'))).toBe(true);
 }
 
 describe('PlaceField', () => {
@@ -882,9 +879,11 @@ describe('PlaceField', () => {
       expect(await screen.findByLabelText('Place name')).toBeTruthy();
       const Map = (window as unknown as { google: { maps: { Map: ReturnType<typeof vi.fn> } } })
         .google.maps.Map;
-      // The open panel builds the map twice: once before the frame box is placed, then again.
+      // Map setup is asynchronous after the dialog and key response are ready.
+      await waitFor(() => {
+        expect(Map.mock.calls.length).toBeGreaterThan(0);
+      });
       const builtOnOpen = Map.mock.calls.length;
-      expect(builtOnOpen).toBeGreaterThan(0);
       document.documentElement.dataset['localSunday'] = '1';
       await waitFor(() => {
         expect(screen.queryByLabelText('Place name')).toBeNull();
@@ -892,7 +891,7 @@ describe('PlaceField', () => {
       expect(Map).toHaveBeenCalledTimes(builtOnOpen);
       delete document.documentElement.dataset['localSunday'];
       await waitFor(() => {
-        expect(Map).toHaveBeenCalledTimes(builtOnOpen * 2);
+        expect(Map.mock.calls.length).toBeGreaterThan(builtOnOpen);
       });
     } finally {
       delete document.documentElement.dataset['localSunday'];

@@ -221,7 +221,6 @@ export function PlaceField(props: {
     if (!open) {
       return;
     }
-    authFailedRef.current = false;
     let cancelled = false;
     const load = async (): Promise<void> => {
       try {
@@ -254,6 +253,11 @@ export function PlaceField(props: {
           }
         };
         googleWindow.gm_authFailure = rejectKey;
+        if (authFailedRef.current) {
+          setUnavailable(true);
+          setScriptReady(false);
+          return;
+        }
         if (googleWindow.google?.maps !== undefined) {
           acceptKey();
           return;
@@ -340,7 +344,12 @@ export function PlaceField(props: {
       return;
     }
     const saved = props.place;
-    const map = new maps.Map(el, { center: saved ?? START_CENTER, zoom: 2 });
+    const savedPosition = saved === null ? null : { lat: saved.lat, lng: saved.lng };
+    const map = new maps.Map(el, { center: savedPosition ?? START_CENTER, zoom: 2 });
+    if (authFailedRef.current) {
+      el.replaceChildren();
+      return;
+    }
     markerRef.current = null;
     const updateFromMarker = (marker: GoogleMarker): void => {
       if (savingRef.current) {
@@ -352,7 +361,11 @@ export function PlaceField(props: {
       }
     };
     if (saved !== null) {
-      const marker = new maps.Marker({ position: saved, map, draggable: true });
+      const marker = new maps.Marker({
+        position: { lat: saved.lat, lng: saved.lng },
+        map,
+        draggable: true,
+      });
       marker.addListener('dragend', () => updateFromMarker(marker));
       markerRef.current = marker;
     }
@@ -564,7 +577,11 @@ export function PlaceField(props: {
                       aria-label={t('forum.placeLabel')}
                       value={labelDraft}
                       disabled={fieldsDisabled}
-                      onChange={(event) => setLabelDraft(event.target.value)}
+                      onChange={(event) => {
+                        setLabelDraft(event.target.value);
+                        setSaveError(null);
+                        setUnknownSaveError(false);
+                      }}
                       className="w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
                     />
                   )}

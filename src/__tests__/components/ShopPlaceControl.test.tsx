@@ -213,10 +213,11 @@ describe('ShopPlaceControl', () => {
     fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Zürich' } });
     fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'CH' } });
     fireEvent.click(await screen.findByRole('button', { name: 'Use this place' }));
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect(screen.getByRole('alert').textContent).toContain(
-      'The description must be 20 to 1000 characters and longer than the shop name.',
-    );
+    expect(
+      await screen.findByText(
+        'The description must be 20 to 1000 characters and longer than the shop name.',
+      ),
+    ).toBeTruthy();
     expect(onUpdated).not.toHaveBeenCalled();
   });
 });

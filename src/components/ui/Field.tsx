@@ -76,11 +76,8 @@ export function Field(props: FieldProps): ReactElement {
     control = <input id={fieldId} className={CONTROL_CLASS} {...inputProps} {...validationProps} />;
   }
   return (
-    <label
-      htmlFor={fieldId}
-      className={`flex flex-col gap-1 text-left text-sm text-app-fg${extra}`}
-    >
-      {label}
+    <div className={`flex flex-col gap-1 text-left text-sm text-app-fg${extra}`}>
+      <label htmlFor={fieldId}>{label}</label>
       {control}
       {hint === undefined ? null : (
         <span id={hintId!} className="text-sm text-app-muted">
@@ -92,6 +89,6 @@ export function Field(props: FieldProps): ReactElement {
           {error}
         </span>
       )}
-    </label>
+    </div>
   );
 }

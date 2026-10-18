@@ -75,6 +75,22 @@ async function seedShopList(page: import('@playwright/test').Page): Promise<void
   await fulfillForumMessages(page, [SHOP_NOTE, LIVING_ROOM_NOTE]);
 }
 
+async function invokeDisabledReactButton(
+  button: import('@playwright/test').Locator,
+): Promise<void> {
+  await button.evaluate((node) => {
+    const propsKey = Object.keys(node).find((key) => key.startsWith('__reactProps$'));
+    const props =
+      propsKey === undefined
+        ? undefined
+        : (node as unknown as Record<string, { onClick?: () => void }>)[propsKey];
+    if (props?.onClick === undefined) {
+      throw new Error('React button props are unavailable');
+    }
+    props.onClick();
+  });
+}
+
 test('Function: ShopsViewSwitch — post, map, and table', async ({ page }) => {
   await seedShopList(page);
   await page.route('**/forum/messages/places', async (route) => {
@@ -148,10 +164,11 @@ test('Function: ShopAddWizard — steps then summary', async ({ page }) => {
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('Shop text').fill('Fresh bread every morning.');
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByLabel('21.gifts username').fill('@luna');
+  await page.getByLabel('21.gifts username').fill('@ada');
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
   await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
-  await expect(page.getByText('@luna')).toBeVisible();
+  await expect(page.getByText('@ada')).toBeVisible();
   await expect(page.getByText("Kiki's Bakery")).toBeVisible();
   await expect(page.getByText('Bahnhofstrasse 12, 8001 Zürich, Switzerland')).toBeVisible();
   await expect(page.getByText('Fresh bread every morning.')).toBeVisible();
@@ -925,23 +942,16 @@ test('Function: shopAddressProblems — address errors appear before confirm', a
 });
 
 test('shop summary keeps Post disabled with an off-screen reason', async ({ page }) => {
+  await stubPlaceMap(page);
   await seedSignedIn(page);
   await fulfillForumMessages(page, []);
   await page.goto('/shops');
   await page.getByRole('button', { name: 'Add a shop' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByText("Add the shop's place and address.")).toBeVisible();
-  await page.getByRole('button', { name: 'Next' }).evaluate((node) => {
-    const button = node as HTMLButtonElement;
-    button.removeAttribute('disabled');
-    button.click();
-  });
+  await invokeDisabledReactButton(page.getByRole('button', { name: 'Next' }));
   await expect(page.getByText(/Describe the shop in at least 20 more characters/)).toBeVisible();
-  await page.getByRole('button', { name: 'Next' }).evaluate((node) => {
-    const button = node as HTMLButtonElement;
-    button.removeAttribute('disabled');
-    button.click();
-  });
+  await invokeDisabledReactButton(page.getByRole('button', { name: 'Next' }));
   await page.getByRole('button', { name: 'Next' }).click();
   await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
   await expect(page.getByText("Add the shop's place and address.")).toBeVisible();
@@ -963,7 +973,11 @@ test('shop description and username rules appear while typing before submit', as
   const text = page.getByLabel('Shop text');
   await text.evaluate((node) => {
     const field = node as HTMLTextAreaElement;
-    field.value = 'Fresh bread\u0001 every morning.';
+    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+    if (setter === undefined) {
+      throw new Error('Textarea value setter is unavailable');
+    }
+    setter.call(field, 'Fresh bread\u0001 every morning.');
     field.dispatchEvent(new Event('input', { bubbles: true }));
   });
   await expect(
