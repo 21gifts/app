@@ -328,7 +328,7 @@ Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1'425.00` / `EUR 1.30` / `₱80.00`
 | 16      | 64        | `pt-16`                  | Stats top                                        |
 | 20      | 80        | `py-20`                  | Marketing section py                             |
 | 24      | 96        | `py-24`                  | Legal/handbook top                               |
-| 28 / 36 | 112 / 144 | `pt-28 sm:pt-36`         | Marketing hero                                   |
+| 28 / 36 | 112 / 144 | `pt-28 sm:pt-36`         | `/about` first section                           |
 
 App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-5` (20px). Do not mix.
 
