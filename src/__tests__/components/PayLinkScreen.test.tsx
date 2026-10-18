@@ -1967,13 +1967,31 @@ describe('PayLinkScreen shop payment', () => {
     });
     renderWithLocale(<PayLinkScreen lightning={ADA} />);
     await screen.findByRole('heading', { name: 'Ada Lovelace' });
+    // Every text the page ever paints, including values replaced before an effect ran.
+    const painted: string[] = [];
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        if (record.type === 'characterData') {
+          painted.push(record.oldValue ?? '', record.target.textContent ?? '');
+        }
+        record.addedNodes.forEach((node) => painted.push(node.textContent ?? ''));
+      }
+    });
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      characterDataOldValue: true,
+    });
     clock = FIXED;
     await enterAmount();
     expect(await screen.findByRole('img', { name: 'Bitcoin invoice' })).toBeTruthy();
+    observer.disconnect();
     expect(screen.getAllByText(/left/).map((node) => node.textContent)).toEqual([
       '5:00 left',
       '1:30 left',
     ]);
+    expect(painted.filter((text) => /7:00 left|3:30 left/.test(text))).toEqual([]);
   });
 
   it('reads the pay link again for the same or a past quote expiry', async () => {

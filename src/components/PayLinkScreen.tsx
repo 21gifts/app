@@ -424,6 +424,8 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       request: ShopPayRequest | null,
       generation: number,
     ): void => {
+      // Same render as the payment: its first paint already counts from now.
+      setNow(Date.now());
       setShop({
         id,
         sats,
@@ -716,6 +718,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       }
       setInvoice(result.pr);
       setMintedSats(result.amountSats);
+      setNow(Date.now());
       setMintedExpiresAt(new Date(Date.now() + PAYMENT_TTL_MS).toISOString());
     } catch {
       if (generationRef.current === generation) {
