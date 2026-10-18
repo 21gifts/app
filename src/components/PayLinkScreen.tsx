@@ -523,11 +523,14 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         if (!active) {
           return;
         }
-        if (link.kind === 'error') {
+        if (link.kind !== 'payment') {
+          // A failed read says nothing, and the plain request also answers once the payment was
+          // accepted or its window passed: keep it, the status poll tells which, and a status
+          // other than `open` ends these reads.
           timer = setTimeout(read, PAY_POLL_MS);
           return;
         }
-        if (link.kind === 'plain' || link.request.payment !== shopId) {
+        if (link.request.payment !== shopId) {
           // Another payer's amount replaced this one: back to the amount field.
           setShop(null);
           setFormError('replaced');
@@ -673,15 +676,12 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         if (generationRef.current !== generation) {
           return;
         }
-        if (
-          link.kind === 'plain' ||
-          (link.kind === 'payment' && link.request.payment !== start.payment)
-        ) {
+        if (link.kind === 'payment' && link.request.payment !== start.payment) {
           setFormError('replaced');
           return;
         }
-        // An unreadable pay link keeps the opened payment: it is read again, and Continue
-        // would replace the live payment.
+        // An unreadable or plain pay link keeps the opened payment: it is read again, the status
+        // poll tells whether it moved on, and Continue would replace the live payment.
         showShopPayment(
           start.payment,
           amountSats,
