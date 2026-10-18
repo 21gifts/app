@@ -453,11 +453,12 @@ export function PlaceField(props: {
       .filter((field) => addressDraft[field].trim() === '')
       .map((field) => fieldLabel[field]),
   ];
+  // The unavailable map is already explained where the map would be.
   const footerReason =
     saveError !== null && nameError === undefined
       ? t(saveError)
       : unavailable
-        ? t('forum.placeUnavailable')
+        ? null
         : missing.length > 0
           ? t('shops.fillIn', { fields: missing.join(', ') })
           : blocked

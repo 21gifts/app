@@ -16807,7 +16807,7 @@ test.describe('welcome forum variants', () => {
     await page.goto('/welcome');
     await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
     await page.getByRole('button', { name: 'Add a place' }).click();
-    await expect(page.getByText('The map is not available.')).toHaveCount(2);
+    await expect(page.getByText('The map is not available.')).toBeVisible();
     await shotScreen(page, 'state-welcome-composer-place');
   });
 
@@ -18934,7 +18934,7 @@ test.describe('shops screens', () => {
     await page.getByRole('button', { name: 'Add a shop' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Add a place' }).click();
-    await expect(page.getByText('The map is not available.')).toHaveCount(2);
+    await expect(page.getByText('The map is not available.')).toBeVisible();
     await shotScreen(page, 'state-shops-composer-place');
   });
 
@@ -19334,8 +19334,7 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Add a place' }).click();
-    await expect(page.getByText('The map is not available.')).toHaveCount(2);
-    const unavailable = page.getByText('The map is not available.').first();
+    const unavailable = page.getByText('The map is not available.');
     await expect(unavailable).toBeVisible();
     await unavailable.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-place-unavailable');
@@ -19544,8 +19543,7 @@ test.describe('shops screens', () => {
     await page.goto('/shops');
     const note = page.locator('[data-message-id="m-staff"]');
     await note.getByRole('button', { name: 'Edit place' }).click();
-    await expect(page.getByText('The map is not available.')).toHaveCount(2);
-    const unavailable = page.getByText('The map is not available.').first();
+    const unavailable = page.getByText('The map is not available.');
     const remove = page.getByRole('button', { name: 'Remove place' });
     await expect(unavailable).toBeVisible();
     await expect(remove).toBeVisible();

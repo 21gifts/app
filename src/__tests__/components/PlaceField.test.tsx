@@ -22,9 +22,8 @@ function jsonResponse(body: unknown): Response {
 async function expectMapUnavailable(): Promise<void> {
   const dialog = await screen.findByRole('dialog');
   const messages = await within(dialog).findAllByText('The map is not available.');
-  expect(messages).toHaveLength(2);
-  expect(messages.some((message) => message.className.includes('mb-2'))).toBe(true);
-  expect(messages.some((message) => !message.className.includes('mb-2'))).toBe(true);
+  expect(messages).toHaveLength(1);
+  expect(messages[0].className.includes('mb-2')).toBe(false);
 }
 
 describe('PlaceField', () => {

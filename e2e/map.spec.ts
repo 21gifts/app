@@ -237,7 +237,7 @@ test('Function: PlaceField — add a place is on the shop composer', async ({ pa
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
   await page.getByRole('button', { name: 'Add a place' }).click();
   const unavailable = page.getByText('The map is not available.');
-  await expect(unavailable).toHaveCount(2);
-  await expect(unavailable.first()).toBeVisible();
+  await expect(unavailable).toHaveCount(1);
+  await expect(unavailable).toBeVisible();
   await expect(page.getByLabel('Shop name', { exact: true })).toBeVisible();
 });

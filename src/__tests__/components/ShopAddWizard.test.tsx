@@ -306,7 +306,7 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    expect(await screen.findAllByText('The map is not available.')).toHaveLength(2);
+    expect(await screen.findAllByText('The map is not available.')).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
