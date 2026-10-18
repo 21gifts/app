@@ -426,7 +426,7 @@ app/
 │   ├── smoke.spec.ts            # Playwright smoke tests (outside vitest scope)
 │   ├── rules.spec.ts            # /rules living-room laws + CTAs
 │   ├── contact.spec.ts          # /contact composer, validation, success
-│   ├── login.spec.ts            # /login Log in + Open a new account + signed-in forms
+│   ├── login.spec.ts            # /login Log in + account choice + signed-in forms
 │   ├── login-gate.spec.ts       # logins_closed / app_outdated notices, X-App-Build, wiped session falls back to signed out
 │   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, Send (camera), Receive, and Function titles
 │   ├── data-collection.spec.ts  # POST /me/wallet/report, /me/wallet/hearts, and /me/events proxies, interaction log in the browser

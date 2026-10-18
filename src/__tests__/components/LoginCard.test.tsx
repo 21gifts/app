@@ -292,22 +292,14 @@ describe('LoginCard', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('shows Log in and Open a new account when logged out and idle', () => {
+  it('shows only Log in when logged out and idle', () => {
     renderWithLocale(<LoginCard />);
     const buttons = screen.getAllByRole('button');
-    expect(buttons.map((button) => button.textContent)).toEqual(['Log in', 'Open a new account']);
-    expect(screen.getByText('New to 21.gifts?')).toBeTruthy();
+    expect(buttons.map((button) => button.textContent)).toEqual(['Log in']);
+    expect(screen.queryByText('New to 21.gifts?')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /^log in$/i }));
     expect(loginSpy).toHaveBeenCalledTimes(1);
     expect(registerSpy).not.toHaveBeenCalled();
-  });
-
-  it('opens the name form from idle without starting login', () => {
-    renderWithLocale(<LoginCard />);
-    fireEvent.click(screen.getByRole('button', { name: 'Open a new account' }));
-    expect(registerSpy).toHaveBeenCalledTimes(1);
-    expect(registerSpy).toHaveBeenCalledWith();
-    expect(loginSpy).not.toHaveBeenCalled();
   });
 
   it('shows the account choice with existing and new-account buttons', () => {
