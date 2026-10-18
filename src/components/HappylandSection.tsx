@@ -66,7 +66,7 @@ export function HappylandSection({ locale }: { locale: Locale }): ReactElement {
             >
               {messages['happyland.title']}
             </h2>
-            <p className="mt-7 max-w-xl text-base leading-relaxed text-paper/75 sm:text-lg">
+            <p className="mt-8 max-w-xl text-base leading-relaxed text-paper/75 sm:text-lg">
               {messages['happyland.intro']}
             </p>
           </div>
@@ -80,7 +80,7 @@ export function HappylandSection({ locale }: { locale: Locale }): ReactElement {
               sizes="(min-width: 1024px) 500px, 100vw"
               className="block aspect-4/3 w-full object-cover"
             />
-            <figcaption className="px-5 py-4 text-sm leading-relaxed text-paper/75 sm:px-7">
+            <figcaption className="px-5 py-4 text-sm leading-relaxed text-paper/75 sm:px-8">
               {messages['happyland.photoCaption']}
             </figcaption>
           </figure>
@@ -111,7 +111,7 @@ export function HappylandSection({ locale }: { locale: Locale }): ReactElement {
           {notes.map((note) => (
             <article
               key={note.number}
-              className="rounded-2xl border border-paper/12 bg-paper/5 p-6 sm:p-7"
+              className="rounded-2xl border border-paper/12 bg-paper/5 p-6 sm:p-8"
             >
               <span className="text-xs font-semibold tracking-home-label text-accent">
                 {note.number}
@@ -121,7 +121,7 @@ export function HappylandSection({ locale }: { locale: Locale }): ReactElement {
             </article>
           ))}
         </div>
-        <p className="mt-7 text-sm text-paper/50">{messages['happyland.source']}</p>
+        <p className="mt-8 text-sm text-paper/50">{messages['happyland.source']}</p>
       </div>
     </section>
   );

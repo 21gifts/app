@@ -322,16 +322,13 @@ Fiat: `formatFiatDisplay` → `$1.43` / `CHF 1'425.00` / `EUR 1.30` / `₱80.00`
 | 4       | 16        | `p-4` `top-4` `gap-4`    | Note card `px-4 py-3` (y=12)                     |
 | 5       | 20        | `px-5` `right-5` `gap-5` | Marketing horizontal, clustered `sm` IconButtons |
 | 6       | 24        | `px-6` `gap-6` `p-6`     | App page padding, card gap                       |
-| 7       | 28        | `mt-7` `p-7` `px-7`      | Home sections (`pt-7`, `sm:p-7`, `sm:px-7`)      |
 | 8       | 32        | `p-8` `gap-8`            | Card padding                                     |
-| 9       | 36        | `mt-9`                   | Home hero actions                                |
 | 10      | 40        | `gap-10` `py-10`         | PageChrome gap, footer py                        |
 | 12      | 48        | `mt-12` `gap-12`         | Section rhythm, stats `space-y-12`               |
-| 14      | 56        | `gap-14`                 | Home hero columns                                |
 | 16      | 64        | `pt-16`                  | Stats top                                        |
 | 20      | 80        | `py-20`                  | Marketing section py                             |
 | 24      | 96        | `py-24`                  | Legal/handbook top                               |
-| 28 / 36 | 112 / 144 | `pt-28 sm:pt-36`         | `/about` first section                           |
+| 28 / 36 | 112 / 144 | `pt-28 sm:pt-36`         | Marketing hero                                   |
 
 App page padding is `px-6` (24px), not `px-5`. Marketing content padding is `px-5` (20px). Do not mix.
 

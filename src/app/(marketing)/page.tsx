@@ -62,7 +62,7 @@ export default async function Home(): Promise<ReactElement> {
       title: 'home.discoverStoryTitle' as const,
       body: 'home.discoverStoryBody' as const,
       graphic: (
-        <div className="flex h-48 flex-col justify-end overflow-hidden bg-home-story p-7 text-paper">
+        <div className="flex h-48 flex-col justify-end overflow-hidden bg-home-story p-8 text-paper">
           <span className="text-xs font-semibold tracking-home-kicker text-accent uppercase">
             {messages['happyland.kicker']}
           </span>
@@ -94,7 +94,7 @@ export default async function Home(): Promise<ReactElement> {
       title: 'home.discoverTrustTitle' as const,
       body: 'home.discoverTrustBody' as const,
       graphic: (
-        <div className="flex h-48 items-center justify-center bg-ink px-7">
+        <div className="flex h-48 items-center justify-center bg-ink px-8">
           <div
             aria-hidden="true"
             className="flex w-full max-w-home-path items-center justify-between gap-3"
@@ -128,7 +128,7 @@ export default async function Home(): Promise<ReactElement> {
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 -z-10 bg-home-glow"
         />
-        <div className="mx-auto grid max-w-[1100px] items-center gap-14 lg:grid-cols-2 lg:gap-12">
+        <div className="mx-auto grid max-w-[1100px] items-center gap-12 lg:grid-cols-2">
           <div className="max-w-home-copy">
             <p className="text-xs font-semibold tracking-home-hero text-accent uppercase sm:text-sm">
               {t('home.heroKicker')}
@@ -138,10 +138,10 @@ export default async function Home(): Promise<ReactElement> {
               <br />
               <span className="text-accent">{t('home.headline2')}</span>
             </h1>
-            <p className="mt-7 max-w-home-lead text-lg leading-relaxed text-paper/75 sm:text-xl">
+            <p className="mt-8 max-w-home-lead text-lg leading-relaxed text-paper/75 sm:text-xl">
               {t('home.lead')}
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-3">
+            <div className="mt-8 flex flex-wrap items-center gap-3">
               <ButtonLink href="/login" variant="accent" tone="dark">
                 {t('home.ctaAsk')} <ArrowRight aria-hidden="true" className="h-4 w-4" />
               </ButtonLink>
@@ -178,7 +178,7 @@ export default async function Home(): Promise<ReactElement> {
                   {t('home.previewLabel')}
                 </span>
               </div>
-              <div className="px-6 pt-7 pb-6 sm:px-8 sm:pt-8">
+              <div className="px-6 pt-8 pb-6 sm:px-8">
                 <p className="text-xs font-semibold tracking-home-preview text-ink/60 uppercase">
                   {t('home.previewKicker')}
                 </p>
@@ -307,7 +307,7 @@ export default async function Home(): Promise<ReactElement> {
             ).map(({ num, Icon, title, body }) => (
               <article
                 key={title}
-                className="rounded-2xl border border-ink/10 bg-home-card p-6 sm:p-7"
+                className="rounded-2xl border border-ink/10 bg-home-card p-6 sm:p-8"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-ink/60">{t(num)}</span>
@@ -318,7 +318,7 @@ export default async function Home(): Promise<ReactElement> {
               </article>
             ))}
           </div>
-          <div className="mt-7 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-ink px-6 py-5 text-paper sm:px-8">
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-ink px-6 py-5 text-paper sm:px-8">
             <p className="text-sm leading-relaxed text-paper/75">
               <span className="font-semibold text-paper">{t('home.receiveTitle')}</span>{' '}
               {t('home.receiveBody')}
@@ -417,7 +417,7 @@ export default async function Home(): Promise<ReactElement> {
             <p className="max-w-xl text-lg leading-relaxed text-paper/70">
               {t('home.projectLead')}
             </p>
-            <div className="mt-7 inline-flex max-w-full flex-col gap-2 rounded-xl border border-paper/15 bg-paper/5 px-5 py-4">
+            <div className="mt-8 inline-flex max-w-full flex-col gap-2 rounded-xl border border-paper/15 bg-paper/5 px-5 py-4">
               <span className="text-xs font-semibold tracking-widest text-paper/50 uppercase">
                 Wallet of Satoshi
               </span>
