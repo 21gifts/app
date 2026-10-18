@@ -301,7 +301,7 @@ describe('PaySheet', () => {
             rateDay={RATE_DAY}
             successTitle="Sent to Ana"
             onClose={vi.fn()}
-            onSentChange={hold.sentChange}
+            onSentChange={(sent) => hold.sentChange('pay-1', sent)}
           >
             <Sent />
           </PaySheet>
@@ -581,7 +581,7 @@ describe('usePaySheetHold', () => {
     });
     expect(result.current.held).toBeNull();
     act(() => {
-      result.current.sentChange(true);
+      result.current.sentChange('pay-1', true);
     });
     rerender({ key: null });
     expect(result.current.held).toBe('pay-1');
@@ -600,7 +600,7 @@ describe('usePaySheetHold', () => {
       initialProps: { key: 'pay-1' as string | null },
     });
     act(() => {
-      result.current.sentChange(true);
+      result.current.sentChange('pay-1', true);
       result.current.closedByMember();
     });
     rerender({ key: null });
@@ -621,13 +621,46 @@ describe('usePaySheetHold', () => {
       initialProps: { key: 'pay-1' as string | null },
     });
     act(() => {
-      result.current.sentChange(true);
+      result.current.sentChange('pay-1', true);
     });
     rerender({ key: null });
     expect(result.current.held).toBe('pay-1');
     act(() => {
-      result.current.sentChange(false);
+      result.current.sentChange('pay-1', false);
     });
+    expect(result.current.held).toBeNull();
+  });
+
+  it('counts a late report only for its own payment, never for the next one', () => {
+    const { result, rerender } = renderHook(({ key }) => usePaySheetHold(key), {
+      initialProps: { key: 'pay-a' as string | null },
+    });
+    // A closes with its send pending, so its controls are held.
+    act(() => {
+      result.current.sentChange('pay-a', true);
+    });
+    rerender({ key: null });
+    expect(result.current.held).toBe('pay-a');
+    // B opens and its send is on its way; then A's send fails late.
+    rerender({ key: 'pay-b' });
+    act(() => {
+      result.current.sentChange('pay-b', true);
+      result.current.sentChange('pay-a', false);
+    });
+    rerender({ key: null });
+    expect(result.current.held).toBe('pay-b');
+  });
+
+  it('does not hold the next payment for a late report of the one before', () => {
+    const { result, rerender } = renderHook(({ key }) => usePaySheetHold(key), {
+      initialProps: { key: 'pay-a' as string | null },
+    });
+    rerender({ key: 'pay-b' });
+    // A's sheet, still held, reports a late paid send; B sends nothing.
+    act(() => {
+      result.current.sentChange('pay-a', true);
+    });
+    rerender({ key: null });
     expect(result.current.held).toBeNull();
   });
 
@@ -636,7 +669,7 @@ describe('usePaySheetHold', () => {
       initialProps: { key: 'pay-1' as string | null },
     });
     act(() => {
-      result.current.sentChange(true);
+      result.current.sentChange('pay-1', true);
     });
     rerender({ key: null });
     expect(result.current.held).toBe('pay-1');

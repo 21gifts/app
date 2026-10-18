@@ -616,7 +616,8 @@ export function InboxScreen({
   const [armedForOpenId, setArmedForOpenId] = useState<string | null>(null);
   const [filter, setFilter] = useState<InboxFilter>('direct');
   // After a payment the sheet still shows its success step: the amount row stays disabled behind it.
-  const payHold = usePaySheetHold(invoice === null ? null : 'invoice');
+  // Keyed by the invoice, so a held sheet's late report never reaches the next invoice.
+  const payHold = usePaySheetHold(invoice === null ? null : invoice.pr);
   const historyArmed = openId !== null && openId !== '' && armedForOpenId === openId;
 
   const messagesReady = messages !== null;
@@ -1302,7 +1303,7 @@ export function InboxScreen({
                 payHold.closedByMember();
                 onPayCancel();
               }}
-              onSentChange={payHold.sentChange}
+              onSentChange={(sent) => payHold.sentChange(invoice.pr, sent)}
             >
               <WalletPay
                 sparkInvoice={invoice.sparkInvoice}

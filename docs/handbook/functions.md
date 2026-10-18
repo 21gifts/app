@@ -1947,8 +1947,8 @@ First post free: while the signed-in member is below verified and has no missing
 
 - **Purpose:** Keeps the page controls behind a pay sheet disabled through its success step, for a host whose form sits beside the held sheet rather than inside its `Collapse` (the forum reaction form, the inbox amount row).
 - **Inputs:** `openKey`, the key of the payment whose sheet is open, or `null`.
-- **Returns / side effects:** `{ held, closedByMember, sentChange }`. The host passes `sentChange` to the sheet as `onSentChange`. When the open payment closes with a payment out or on its way (a `paid` or `pending` send) and without the member closing it, `held` is its key for `PAY_SHEET_SUCCESS_MS`, then `null`; the next payment frees it at once, and so does a pending send that then does not go out (`sentChange(false)`). `closedByMember()`, called before the host cancels a payment the member closed, makes that close hold nothing, and so does a close with no payment out (a failed check). A timer only; no network.
-- **Used by:** `ForumBoard` (the reaction form beside `ForumReplyPayPage`) and `InboxScreen` (the amount row).
+- **Returns / side effects:** `{ held, closedByMember, sentChange }`. The host passes `sentChange` to the sheet as `onSentChange` with the key of the payment that sheet shows (`(sent) => sentChange(key, sent)`); a report counts only for its own payment, so a sheet still held for one payment never frees or holds the next one. When the open payment closes with a payment out or on its way (a `paid` or `pending` send) and without the member closing it, `held` is its key for `PAY_SHEET_SUCCESS_MS`, then `null`; the next payment frees it at once, and so does a pending send that then does not go out (`sentChange(key, false)`). `closedByMember()`, called before the host cancels a payment the member closed, makes that close hold nothing, and so does a close with no payment out (a failed check). A timer only; no network.
+- **Used by:** `ForumBoard` (the reaction form beside `ForumReplyPayPage`, keyed by the card) and `InboxScreen` (the amount row, keyed by the invoice's `pr`).
 
 ## Function: AddBitcoinButton
 

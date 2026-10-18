@@ -132,8 +132,12 @@ export interface PaySheetHold {
   held: string | null;
   /** Call before the host cancels a payment the member closed: no success step, nothing to hold. */
   closedByMember: () => void;
-  /** Pass to the sheet as `onSentChange`: only a payment out or on its way is held, and freed if it does not go out. */
-  sentChange: (sent: boolean) => void;
+  /**
+   * The sheet's `onSentChange`, with the key of the payment that sheet shows: only a payment out or
+   * on its way is held, and freed if it then does not go out. A report counts only for its own
+   * payment, so a sheet still held for one payment never frees or holds the next one.
+   */
+  sentChange: (key: string, sent: boolean) => void;
 }
 
 /**
@@ -142,7 +146,8 @@ export interface PaySheetHold {
  * `null`; once that payment closes with a payment out or on its way (the sheet's `onSentChange`)
  * and without the member closing it, `held` names it for {@link PAY_SHEET_SUCCESS_MS}, then turns
  * `null`. A close by the member, one with no payment out (a failed check), and a pending send that
- * then does not go out free the controls at once.
+ * then does not go out free the controls at once. Each sheet reports under its own payment's key,
+ * so a late report from a sheet that is still held cannot free or hold another payment.
  *
  * @param openKey - Key of the payment whose sheet is open, or `null`.
  * @returns The held key, the member-close marker, and the sent report for the sheet.
@@ -151,12 +156,17 @@ export function usePaySheetHold(openKey: string | null): PaySheetHold {
   const [shownKey, setShownKey] = useState(openKey);
   const [held, setHeld] = useState<string | null>(null);
   const [memberClosed, setMemberClosed] = useState(false);
-  const [sent, setSent] = useState(false);
+  // Whether each payment's sheet has a payment out or on its way, by payment key.
+  const [sent, setSent] = useState<Readonly<Record<string, boolean>>>({});
   if (openKey !== shownKey) {
     setShownKey(openKey);
-    setHeld(openKey === null && sent && !memberClosed ? shownKey : null);
+    const hold =
+      openKey === null && shownKey !== null && sent[shownKey] === true && !memberClosed
+        ? shownKey
+        : null;
+    setHeld(hold);
     setMemberClosed(false);
-    setSent(false);
+    setSent(hold === null ? {} : { [hold]: true });
   }
   useEffect(() => {
     if (held === null) {
@@ -166,14 +176,11 @@ export function usePaySheetHold(openKey: string | null): PaySheetHold {
     return () => window.clearTimeout(timer);
   }, [held]);
   const closedByMember = useCallback((): void => setMemberClosed(true), []);
-  // A send still pending at the close that then did not go out frees the controls at once.
-  const sentChange = useCallback((next: boolean): void => {
-    setSent(next);
-    if (!next) {
-      setHeld(null);
-    }
+  const sentChange = useCallback((key: string, next: boolean): void => {
+    setSent((current) => (current[key] === next ? current : { ...current, [key]: next }));
   }, []);
-  return { held, closedByMember, sentChange };
+  // A send still pending at the close that then did not go out frees the controls at once.
+  return { held: held !== null && sent[held] === false ? null : held, closedByMember, sentChange };
 }
 
 /** Props for {@link PaySheet}. */
@@ -186,7 +193,11 @@ export interface PaySheetProps {
   rateDay: FiatRateDay | null;
   /** Heading of the success step, e.g. **Sent to Ana**, **Lent to Ana**, **Paid and posted**, or **Sent**. */
   successTitle: string;
-  /** Called when the member closes the sheet (Close, a tap on the dimmed page, Escape, Add Bitcoin). */
+  /**
+   * Called when the member closes the sheet (Close, a tap on the dimmed page, Escape, Add Bitcoin)
+   * while the host still shows the payment. Once the host has closed it (the success step, or a
+   * send still pending), those only let the sheet go and this is not called.
+   */
   onClose: () => void;
   /**
    * Told whether the pay slot has a payment out or on its way (a `pending` or `paid` send, see
@@ -203,10 +214,13 @@ export interface PaySheetProps {
  * with the title, the amount with its fiat, a Close, and the pay slot. Close, a tap on the dimmed
  * page, and Escape close it at once. The host renders it inside a `Collapse` with `holdMs`
  * {@link PAY_SHEET_HOLD_MS}: when that closes without the member closing the sheet ({@link usePresent}
- * turns false) while the pay slot reports a payment out ({@link usePaySheetSent}), the pay step fades
- * into a short success step with the amount ({@link Swap}), then the sheet slides away; without a
- * payment out it slides away at once. With reduced motion it appears and leaves without a slide or a
- * fade.
+ * turns false) while the pay slot reports a send that went out ({@link usePaySheetSent} `paid`), the
+ * pay step fades into a short success step with the amount ({@link Swap}), then the sheet slides
+ * away. A send still `pending` at that close keeps the pay step until the wallet answers: once it
+ * went out the success step follows, otherwise the sheet slides away. Either way it is gone
+ * {@link PAY_SHEET_SUCCESS_MS} after the close. With no send out (or under {@link PaySheetFailed})
+ * it slides away at once. Tab and Shift+Tab stay inside the open sheet. With reduced motion it
+ * appears and leaves without a slide or a fade.
  *
  * @param props - Title, amount, rate, success heading, close handler, and the pay slot.
  * @returns The sheet in the frame's overlay layer.

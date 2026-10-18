@@ -28,7 +28,7 @@ import { formatForumTime } from '@/lib/forum-time';
 import type { ForumVideoPayload } from '@/lib/forum-video';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
-import { payFromWallet } from '@/lib/wallet/wallet-service';
+import { payFromWallet, type WalletSendResult } from '@/lib/wallet/wallet-service';
 import { useWalletPay } from '@/hooks/useWalletPay';
 import {
   SPARK_INVOICE,
@@ -9234,6 +9234,118 @@ describe('ForumBoard in-app wallet pay', () => {
       } finally {
         vi.useRealTimers();
       }
+    });
+
+    describe('two cards one after the other', () => {
+      const cardB: ForumMessage = { ...SAMPLE, id: 'm2', accountId: 'acc-bea', name: 'Bea' };
+
+      function deferredSend(): {
+        send: () => Promise<WalletSendResult>;
+        settle: (result: WalletSendResult) => void;
+      } {
+        let settle: (result: WalletSendResult) => void = () => undefined;
+        const pending = new Promise<WalletSendResult>((resolve) => {
+          settle = resolve;
+        });
+        return { send: vi.fn(() => pending), settle };
+      }
+
+      function twoCards(expanded: 'm1' | 'm2', open: boolean): ReactElement {
+        return (
+          <ForumBoard
+            messages={[SAMPLE, cardB]}
+            error={false}
+            loading={false}
+            posting={false}
+            draft=""
+            onDraftChange={() => undefined}
+            onPost={() => undefined}
+            onRetry={() => undefined}
+            formError={null}
+            {...idleProps}
+            expandedId={expanded}
+            replies={[]}
+            replyDraft="Hi"
+            replyAmountDraft="21"
+            replyPayPreview={open ? 'Hi' : null}
+            payMessageId={open ? expanded : null}
+            payHost={open ? 'card' : null}
+            payInvoice={
+              open
+                ? {
+                    messageId: expanded,
+                    pr: `lnbc21n1${expanded}`,
+                    amountSats: 21,
+                    sparkInvoice: `spark-${expanded}`,
+                  }
+                : null
+            }
+            {...modeProps('all')}
+          />
+        );
+      }
+
+      function field(): HTMLTextAreaElement {
+        return screen.getByLabelText('Your reaction') as HTMLTextAreaElement;
+      }
+
+      afterEach(resetWallet);
+
+      it("never lets card A's late failed send free card B's form through B's success step", async () => {
+        setWalletUsable('ready');
+        const a = deferredSend();
+        const b = deferredSend();
+        vi.mocked(payFromWallet)
+          .mockReset()
+          .mockResolvedValueOnce(confirmResult(a.send))
+          .mockResolvedValueOnce(confirmResult(b.send));
+        const view = renderWithLocale(twoCards('m1', true));
+        fireEvent.click(await screen.findByRole('button', { name: /^Send ₿21/ }));
+        // A's host closes while A's send is pending: A's form is held.
+        view.rerender(twoCards('m1', false));
+        expect(field().disabled).toBe(true);
+        view.rerender(twoCards('m2', true));
+        fireEvent.click(await screen.findByRole('button', { name: /^Send ₿21/ }));
+        await act(async () => {
+          a.settle({
+            kind: 'failed',
+            failure: {
+              stage: 'send',
+              reason: 'sdk_error',
+              method: 'spark',
+              amountSats: 21,
+              feeSats: 0,
+            },
+          });
+          b.settle({ kind: 'paid' });
+          await Promise.resolve();
+        });
+        view.rerender(twoCards('m2', false));
+        expect(await screen.findByText('Sent to Bea')).toBeTruthy();
+        expect(field().disabled).toBe(true);
+      });
+
+      it("never lets card A's late paid send hold card B's form when B sent nothing", async () => {
+        setWalletUsable('ready');
+        const a = deferredSend();
+        vi.mocked(payFromWallet)
+          .mockReset()
+          .mockResolvedValueOnce(confirmResult(a.send))
+          .mockResolvedValueOnce(confirmResult());
+        const view = renderWithLocale(twoCards('m1', true));
+        fireEvent.click(await screen.findByRole('button', { name: /^Send ₿21/ }));
+        view.rerender(twoCards('m1', false));
+        view.rerender(twoCards('m2', true));
+        await screen.findByRole('button', { name: /^Send ₿21/ });
+        await act(async () => {
+          a.settle({ kind: 'paid' });
+          await Promise.resolve();
+        });
+        // B closes without a send: nothing to hold.
+        view.rerender(twoCards('m2', false));
+        expect(field().disabled).toBe(false);
+        expect(screen.queryByText('Sent to Bea')).toBeNull();
+      });
     });
 
     it('frees up at once when the member closes the sheet', () => {

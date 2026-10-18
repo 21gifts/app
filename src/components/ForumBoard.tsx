@@ -2267,7 +2267,7 @@ export function ForumBoard({
                                   reactionHold.closedByMember();
                                   onPayCancel();
                                 }}
-                                onSentChange={reactionHold.sentChange}
+                                onSentChange={(sent) => reactionHold.sentChange(message.id, sent)}
                               />
                             </SundayWritingGate>
                           )}
