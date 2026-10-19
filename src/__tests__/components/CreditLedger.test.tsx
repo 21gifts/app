@@ -699,7 +699,7 @@ describe('CreditLedger', () => {
     expect(await screen.findByText('8 of 8 days paid.')).toBeTruthy();
     expect(screen.queryByText('Next repayment')).toBeNull();
     expect(document.body.textContent).not.toContain('Every other day is');
-    expect(screen.getAllByText('Paid').length).toBeGreaterThan(0);
+    expect(document.body.textContent).toContain('8 days · Paid');
   });
 
   it('marks a month due when one share is due', async () => {
@@ -732,7 +732,8 @@ describe('CreditLedger', () => {
       }),
     );
     renderWithLocale(<CreditLedger messageId="m1" list="page" />);
-    expect(await screen.findByText('Day 8')).toBeTruthy();
+    expect((await screen.findAllByText('Day 8')).length).toBeGreaterThan(0);
+    expect(screen.getByText('Nov 2, 2026')).toBeTruthy();
     expect(screen.queryByText('Next repayment')).toBeNull();
   });
 });
