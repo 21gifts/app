@@ -807,6 +807,42 @@ describe('CreditLedger', () => {
       expect(document.body.textContent).toContain('₿10 · $0.01');
     });
   });
+
+  it('does not treat a later month as an exception of an earlier month', async () => {
+    ledger(
+      longPlan({
+        dueOn: (day) => new Date(Date.UTC(2026, 10, 28 + day)).toISOString().slice(0, 10),
+        cyrillAmount: (day) => (day < 3 ? '50.00' : '40.00'),
+      }),
+    );
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('November 2026')).toBeTruthy();
+    expect(screen.getByText('December 2026')).toBeTruthy();
+    expect(document.body.textContent).toContain('3 days at');
+    expect(document.body.textContent).toContain('5 days at');
+    expect(document.body.textContent).not.toContain('All other days are');
+    expect(document.body.textContent).not.toContain('Dec 1, 2026');
+  });
+
+  it('lists only a month exception when the other days do not share one total', async () => {
+    ledger(
+      longPlan({
+        dueOn: (day) => new Date(Date.UTC(2026, 10, 28 + day)).toISOString().slice(0, 10),
+        cyrillAmount: (day) => (day < 4 ? '50.00' : '40.00'),
+      }),
+    );
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Dec 1, 2026')).toBeTruthy();
+    expect(document.body.textContent).toContain('4 days at');
+    expect(document.body.textContent).not.toContain('All other days are');
+  });
+
+  it('lists each day of a long plan while the credit is not fully given', async () => {
+    ledger({ ...longPlan(), fundedAt: null });
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect((await screen.findAllByText('Day 1')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Next repayment')).toBeNull();
+  });
 });
 
 function isoDay(day: number): string {

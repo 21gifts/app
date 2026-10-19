@@ -33,6 +33,8 @@ import {
  * when every share in that month has it. A bitcoin amount on that overview
  * also shows the visitor's fiat when a spot rate is loaded. A day matches
  * another day by the amount the page shows: the ask currency, or satoshis.
+ * The footnote lists the days a month lists, and names one remaining total
+ * only when every other day shares it.
  * `onLedger` hears every loaded ledger (the first read and
  * each refresh), so the loan block above can show the paid-back share without
  * a second request.
@@ -294,9 +296,22 @@ function LongRepayment({
   const people = peopleOf(ledger.repayments);
   const usualIndex = usualGroupIndex(groups, fiat);
   const usual = groups[usualIndex]!;
-  const usualKey = daySignature(usual.rows, fiat);
-  const exceptions = groups.filter((group) => daySignature(group.rows, fiat) !== usualKey);
-  const months = monthsOf(groups);
+  const months = monthsOf(groups).map((month) => {
+    const usualGroup = month.groups[usualGroupIndex(month.groups, fiat)]!;
+    const key = daySignature(usualGroup.rows, fiat);
+    return {
+      key: month.key,
+      usualGroup,
+      rows: month.groups.flatMap((group) => group.rows),
+      usualGroups: month.groups.filter((group) => daySignature(group.rows, fiat) === key),
+      exceptions: month.groups.filter((group) => daySignature(group.rows, fiat) !== key),
+    };
+  });
+  const exceptions = months.flatMap((month) => month.exceptions);
+  const rest = groups.filter(
+    (group) => !exceptions.some((item) => item.dayIndex === group.dayIndex),
+  );
+  const restUsual = exceptions.length > 0 ? uniformDay(rest, fiat) : null;
   return (
     <div className="mt-2">
       <p className="text-xs font-medium text-app-fg">
@@ -381,26 +396,17 @@ function LongRepayment({
       </section>
       <div className="mt-3 flex flex-col gap-3">
         {months.map((month) => {
-          const monthUsual = month.groups[usualGroupIndex(month.groups, fiat)]!;
-          const monthKey = daySignature(monthUsual.rows, fiat);
-          const monthRows = month.groups.flatMap((group) => group.rows);
-          const monthUsualGroups = month.groups.filter(
-            (group) => daySignature(group.rows, fiat) === monthKey,
-          );
-          const monthExceptions = month.groups.filter(
-            (group) => daySignature(group.rows, fiat) !== monthKey,
-          );
           return (
             <section key={month.key}>
               <h3 className="text-xs font-medium text-app-fg">{formatMonth(month.key, locale)}</h3>
               <p className="mt-1 text-xs text-app-muted">
-                {monthCountLabel(month.groups.length, monthRows, t)}
+                {monthCountLabel(month.usualGroups.length + month.exceptions.length, month.rows, t)}
               </p>
               <p className="mt-1 text-xs text-app-muted">
                 {t('forum.creditUsualDays', {
-                  count: monthUsualGroups.length,
+                  count: month.usualGroups.length,
                   amount: totalAmountText(
-                    dayAmount(monthUsual.rows, fiat),
+                    dayAmount(month.usualGroup.rows, fiat),
                     fiat,
                     numberFormat,
                     rateDay,
@@ -410,12 +416,12 @@ function LongRepayment({
               </p>
               <p className="mt-1 text-xs text-app-muted">
                 {t('forum.creditUsualSplit', {
-                  split: splitText(monthUsual.rows, fiat, numberFormat, rateDay, visitorFiat),
+                  split: splitText(month.usualGroup.rows, fiat, numberFormat, rateDay, visitorFiat),
                 })}
               </p>
-              {monthExceptions.length > 0 ? (
+              {month.exceptions.length > 0 ? (
                 <DayGroups
-                  groups={monthExceptions}
+                  groups={month.exceptions}
                   fundedAt={ledger.fundedAt}
                   fiat={fiat}
                   locale={locale}
@@ -435,16 +441,18 @@ function LongRepayment({
             .map((group) => {
               return `${formatUtcDay(group.dueOn!, locale)}: ${splitText(group.rows, fiat, numberFormat, rateDay, visitorFiat)} ${totalAmountText(dayAmount(group.rows, fiat), fiat, numberFormat, rateDay, visitorFiat)}.`;
             })
-            .join(' ')}{' '}
-          {t('forum.creditUsualRest', {
-            amount: totalAmountText(
-              dayAmount(usual.rows, fiat),
-              fiat,
-              numberFormat,
-              rateDay,
-              visitorFiat,
-            ),
-          })}
+            .join(' ')}
+          {restUsual !== null
+            ? ` ${t('forum.creditUsualRest', {
+                amount: totalAmountText(
+                  dayAmount(restUsual.rows, fiat),
+                  fiat,
+                  numberFormat,
+                  rateDay,
+                  visitorFiat,
+                ),
+              })}`
+            : ''}
         </p>
       ) : null}
     </div>
@@ -486,6 +494,15 @@ function monthCountLabel(count: number, rows: readonly RepaymentLine[], t: Trans
     return t('forum.creditDaysCount', { count });
   }
   return t('forum.creditMonthDays', { count, status: t(statusKey(status)) });
+}
+
+function uniformDay(groups: readonly DayGroup[], fiat: FiatCode | null): DayGroup | null {
+  const first = groups[0]!;
+  const key = daySignature(first.rows, fiat);
+  if (groups.every((group) => daySignature(group.rows, fiat) === key)) {
+    return first;
+  }
+  return null;
 }
 
 function daySignature(rows: readonly RepaymentLine[], fiat: FiatCode | null): string {
