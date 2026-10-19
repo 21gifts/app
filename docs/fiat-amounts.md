@@ -24,8 +24,7 @@ The other supported currencies are the amounts frozen at that same moment.
 Later screens show those frozen strings. They do not recompute them.
 
 A missing frozen string stays missing. It is not filled from the current spot,
-and it is not filled later from a daily close. The amount stays bitcoin until
-the frozen string exists.
+and it is not filled later from a daily close. The amount stays bitcoin.
 
 ## What may use the rate of now
 
