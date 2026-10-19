@@ -661,4 +661,254 @@ describe('CreditLedger', () => {
       fetchMock.mock.calls.filter(([input]) => String(input).includes('/repayment')),
     ).toHaveLength(1);
   });
+
+  it('groups a long fiat plan by month and keeps the summary link free of that overview', async () => {
+    const plan = longPlan();
+    ledger(plan);
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(document.body.textContent).toContain('Nov 1, 2026');
+    expect(document.body.textContent).toContain('7 days at');
+    expect(document.body.textContent).toContain('Nov 8, 2026');
+    expect(document.body.textContent).not.toContain('Nov 2, 2026');
+    expect(screen.getByText('Together')).toBeTruthy();
+    expect(document.body.textContent).toContain('Every other day is');
+    cleanup();
+    ledger(plan);
+    renderWithLocale(<CreditLedger messageId="m1" />);
+    expect(await screen.findByRole('link', { name: 'Repayment list' })).toBeTruthy();
+    expect(screen.queryByText('Next repayment')).toBeNull();
+  });
+
+  it('names the next repayment in German', async () => {
+    ledger(longPlan());
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />, 'de');
+    expect(await screen.findByText('Nächste Rate')).toBeTruthy();
+    expect(document.body.textContent).toContain('7 Tage zu je');
+  });
+
+  it('omits the next repayment once every day is paid', async () => {
+    ledger(
+      longPlan({
+        daysPaid: 8,
+        status: () => 'paid',
+        cyrillAmount: () => '40.00',
+      }),
+    );
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('8 of 8 days paid.')).toBeTruthy();
+    expect(screen.queryByText('Next repayment')).toBeNull();
+    expect(document.body.textContent).not.toContain('Every other day is');
+    expect(screen.getAllByText('Paid').length).toBeGreaterThan(0);
+  });
+
+  it('marks a month due when one share is due', async () => {
+    ledger(longPlan({ status: (day) => (day === 0 ? 'due' : 'scheduled') }));
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(screen.getAllByText('Due').length).toBeGreaterThan(0);
+  });
+
+  it('prices a long bitcoin plan in bitcoin across two months', async () => {
+    ledger(longBitcoinPlan());
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('November 2026')).toBeTruthy();
+    expect(screen.getByText('December 2026')).toBeTruthy();
+    expect(document.body.textContent).toContain('Every other day is');
+    expect(document.body.textContent).toContain('₿10');
+  });
+
+  it('keeps seven dated days as a day list', async () => {
+    ledger(longPlan({ count: 7 }));
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Nov 2, 2026')).toBeTruthy();
+    expect(screen.queryByText('Next repayment')).toBeNull();
+  });
+
+  it('keeps a long plan on day numbers while a date is missing', async () => {
+    ledger(
+      longPlan({
+        dueOn: (day) => (day === 7 ? null : isoDay(day)),
+      }),
+    );
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Day 8')).toBeTruthy();
+    expect(screen.queryByText('Next repayment')).toBeNull();
+  });
 });
+
+function isoDay(day: number): string {
+  const date = new Date(Date.UTC(2026, 10, 1 + day));
+  return date.toISOString().slice(0, 10);
+}
+
+function longPlan(options?: {
+  count?: number;
+  daysPaid?: number;
+  status?: (day: number) => 'scheduled' | 'due' | 'paid';
+  cyrillAmount?: (day: number) => string;
+  dueOn?: (day: number) => string | null;
+}): {
+  currency: 'PHP';
+  fundedAt: string;
+  startsOn: string;
+  termDays: number;
+  daysDue: number;
+  daysPaid: number;
+  unassignedSats: number;
+  givers: [];
+  repayments: {
+    dayIndex: number;
+    dueOn: string | null;
+    accountId: string;
+    name: string;
+    username: string | null;
+    amount: string | null;
+    sats: number | null;
+    status: 'scheduled' | 'due' | 'paid';
+    via: 'lightning';
+  }[];
+  next: null;
+} {
+  const count = options?.count ?? 8;
+  const status = options?.status ?? (() => 'scheduled' as const);
+  const cyrillAmount =
+    options?.cyrillAmount ?? ((day: number) => (day === count - 1 ? '40.02' : '40.00'));
+  const dueOn = options?.dueOn ?? isoDay;
+  const repayments: {
+    dayIndex: number;
+    dueOn: string | null;
+    accountId: string;
+    name: string;
+    username: string | null;
+    amount: string | null;
+    sats: number | null;
+    status: 'scheduled' | 'due' | 'paid';
+    via: 'lightning';
+  }[] = [];
+  for (let day = 0; day < count; day += 1) {
+    const rowStatus = status(day);
+    repayments.push({
+      dayIndex: day,
+      dueOn: dueOn(day),
+      accountId: '11111111-1111-4111-8111-111111111111',
+      name: 'Cyrill',
+      username: 'cyrill',
+      amount: cyrillAmount(day),
+      sats: null,
+      status: rowStatus,
+      via: 'lightning' as const,
+    });
+    repayments.push({
+      dayIndex: day,
+      dueOn: dueOn(day),
+      accountId: '22222222-2222-4222-8222-222222222222',
+      name: 'Yorelene',
+      username: 'yorelene',
+      amount: '0.80',
+      sats: null,
+      status: rowStatus,
+      via: 'lightning' as const,
+    });
+    if (day === count - 1 && cyrillAmount(day) !== '40.00') {
+      repayments.push({
+        dayIndex: day,
+        dueOn: dueOn(day),
+        accountId: '33333333-3333-4333-8333-333333333333',
+        name: 'Gap',
+        username: null,
+        amount: null,
+        sats: null,
+        status: rowStatus,
+        via: 'lightning' as const,
+      });
+    }
+  }
+  return {
+    currency: 'PHP',
+    fundedAt: '2026-10-09T12:00:00.000Z',
+    startsOn: '2026-11-01',
+    termDays: count,
+    daysDue: 0,
+    daysPaid: options?.daysPaid ?? 0,
+    unassignedSats: 0,
+    givers: [],
+    repayments,
+    next: null,
+  };
+}
+
+function longBitcoinPlan(): {
+  currency: 'BTC';
+  fundedAt: string;
+  startsOn: string;
+  termDays: number;
+  daysDue: number;
+  daysPaid: number;
+  unassignedSats: number;
+  givers: {
+    accountId: string;
+    name: string;
+    username: string;
+    givenSats: number;
+    givenAmount: null;
+  }[];
+  repayments: {
+    dayIndex: number;
+    dueOn: string;
+    accountId: string;
+    name: string;
+    username: string;
+    amount: null;
+    sats: number;
+    status: 'scheduled';
+    via: 'lightning';
+  }[];
+  next: null;
+} {
+  const repayments: {
+    dayIndex: number;
+    dueOn: string;
+    accountId: string;
+    name: string;
+    username: string;
+    amount: null;
+    sats: number;
+    status: 'scheduled';
+    via: 'lightning';
+  }[] = [];
+  for (let day = 0; day < 8; day += 1) {
+    const date = new Date(Date.UTC(2026, 10, 28 + day));
+    repayments.push({
+      dayIndex: day,
+      dueOn: date.toISOString().slice(0, 10),
+      accountId: '11111111-1111-4111-8111-111111111111',
+      name: 'Bea',
+      username: 'bea',
+      amount: null,
+      sats: day === 7 ? 11 : 10,
+      status: 'scheduled' as const,
+      via: 'lightning' as const,
+    });
+  }
+  return {
+    currency: 'BTC',
+    fundedAt: '2026-10-09T12:00:00.000Z',
+    startsOn: '2026-11-28',
+    termDays: 8,
+    daysDue: 0,
+    daysPaid: 0,
+    unassignedSats: 0,
+    givers: [
+      {
+        accountId: '11111111-1111-4111-8111-111111111111',
+        name: 'Bea',
+        username: 'bea',
+        givenSats: 81,
+        givenAmount: null,
+      },
+    ],
+    repayments,
+    next: null,
+  };
+}

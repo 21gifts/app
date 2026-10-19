@@ -26,8 +26,10 @@ import {
  * stays blank. Changing `messageId` drops the previous note immediately, so a
  * slow read never keeps the last person's rows on screen.
  * `list="summary"` (default) shows givers, the explanation, the chart, and a
- * link to the repayment list. `list="page"` also shows the day-group rows and
- * omits that link. `onLedger` hears every loaded ledger (the first read and
+ * link to the repayment list. `list="page"` omits that link. A short plan, or
+ * one that is not fully given or is missing a date, lists each day. A fully
+ * given plan with more than 7 dated days shows the month overview instead.
+ * `onLedger` hears every loaded ledger (the first read and
  * each refresh), so the loan block above can show the paid-back share without
  * a second request.
  *
@@ -151,39 +153,28 @@ export function CreditLedger({
           visitorFiat={visitorFiat}
         />
         {list === 'page' ? (
-          <div className="mt-1 flex flex-col gap-2">
-            {groupsOf(ledger.repayments).map((group) => (
-              <div key={group.dayIndex}>
-                <p className="text-xs font-medium text-app-fg">
-                  {ledger.fundedAt === null || group.dueOn === null
-                    ? t('forum.creditDay', { day: String(group.dayIndex + 1) })
-                    : formatUtcDay(group.dueOn, locale)}
-                </p>
-                <ul>
-                  {group.rows.map((row) => (
-                    <li
-                      key={`${row.dayIndex}:${row.accountId}`}
-                      className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5 first:border-t-0"
-                    >
-                      <span className="min-w-0 truncate text-sm text-app-fg">
-                        {giverLabel(row.name, row.username, row.accountId)}
-                      </span>
-                      <span className="flex shrink-0 flex-col items-end gap-0.5 sm:grid sm:grid-cols-[auto_5.5rem] sm:items-baseline sm:gap-x-2 sm:gap-y-0">
-                        <span className="text-right text-sm tabular-nums text-app-fg">
-                          {rowAmount(row, fiat, visitorFiat, rateDay, numberFormat)}
-                        </span>
-                        <span
-                          className={`whitespace-nowrap text-right text-xs font-medium ${statusClass(row.status)}`}
-                        >
-                          {t(statusKey(row.status))}
-                        </span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+          isLongRepayment(ledger) ? (
+            <LongRepayment
+              ledger={ledger}
+              fiat={fiat}
+              locale={locale}
+              rateDay={rateDay}
+              visitorFiat={visitorFiat}
+              numberFormat={numberFormat}
+              t={t}
+            />
+          ) : (
+            <DayGroups
+              groups={groupsOf(ledger.repayments)}
+              fundedAt={ledger.fundedAt}
+              fiat={fiat}
+              locale={locale}
+              rateDay={rateDay}
+              visitorFiat={visitorFiat}
+              numberFormat={numberFormat}
+              t={t}
+            />
+          )
         ) : (
           <Link
             href={`/messages/${encodeURIComponent(messageId)}/repayment-list`}
@@ -198,6 +189,381 @@ export function CreditLedger({
       </section>
     </div>
   );
+}
+
+type Translate = ReturnType<typeof useTranslations>['t'];
+
+type DayGroup = {
+  dayIndex: number;
+  dueOn: string | null;
+  rows: RepaymentLine[];
+};
+
+function DayGroups({
+  groups,
+  fundedAt,
+  fiat,
+  locale,
+  rateDay,
+  visitorFiat,
+  numberFormat,
+  t,
+}: {
+  groups: readonly DayGroup[];
+  fundedAt: string | null;
+  fiat: FiatCode | null;
+  locale: string;
+  rateDay: ReturnType<typeof useSpotRate>;
+  visitorFiat: FiatCode;
+  numberFormat: NumberFormatStyle;
+  t: Translate;
+}): ReactElement {
+  return (
+    <div className="mt-1 flex flex-col gap-2">
+      {groups.map((group) => (
+        <div key={group.dayIndex}>
+          <p className="text-xs font-medium text-app-fg">
+            {fundedAt === null || group.dueOn === null
+              ? t('forum.creditDay', { day: String(group.dayIndex + 1) })
+              : formatUtcDay(group.dueOn, locale)}
+          </p>
+          <ul>
+            {group.rows.map((row) => (
+              <li
+                key={`${row.dayIndex}:${row.accountId}`}
+                className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5 first:border-t-0"
+              >
+                <span className="min-w-0 truncate text-sm text-app-fg">
+                  {giverLabel(row.name, row.username, row.accountId)}
+                </span>
+                <span className="flex shrink-0 flex-col items-end gap-0.5 sm:grid sm:grid-cols-[auto_5.5rem] sm:items-baseline sm:gap-x-2 sm:gap-y-0">
+                  <span className="text-right text-sm tabular-nums text-app-fg">
+                    {rowAmount(row, fiat, visitorFiat, rateDay, numberFormat)}
+                  </span>
+                  <span
+                    className={`whitespace-nowrap text-right text-xs font-medium ${statusClass(row.status)}`}
+                  >
+                    {t(statusKey(row.status))}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LongRepayment({
+  ledger,
+  fiat,
+  locale,
+  rateDay,
+  visitorFiat,
+  numberFormat,
+  t,
+}: {
+  ledger: RepaymentLedger;
+  fiat: FiatCode | null;
+  locale: string;
+  rateDay: ReturnType<typeof useSpotRate>;
+  visitorFiat: FiatCode;
+  numberFormat: NumberFormatStyle;
+  t: Translate;
+}): ReactElement {
+  const groups = groupsOf(ledger.repayments);
+  const owed = groups
+    .filter((group) => rowsStatus(group.rows) !== 'paid')
+    .reduce((sum, group) => sum + dayAmount(group.rows, fiat), 0);
+  const first = groups[0]!;
+  const last = groups[groups.length - 1]!;
+  const next = groups.find((group) => rowsStatus(group.rows) !== 'paid');
+  const people = peopleOf(ledger.repayments);
+  const usualIndex = usualGroupIndex(groups);
+  const usual = groups[usualIndex]!;
+  const usualKey = daySignature(usual.rows);
+  const exceptions = groups.filter((group) => daySignature(group.rows) !== usualKey);
+  const months = monthsOf(groups);
+  return (
+    <div className="mt-2">
+      <p className="text-xs font-medium text-app-fg">
+        {t('forum.creditChartDebt')} {totalAmountText(owed, fiat, numberFormat)}
+      </p>
+      <p className="mt-1 text-xs text-app-muted">
+        {t('forum.creditRange', {
+          from: formatUtcDay(first.dueOn!, locale),
+          to: formatUtcDay(last.dueOn!, locale),
+        })}
+      </p>
+      <p className="mt-1 text-xs text-app-muted">
+        {t('forum.creditProgress', {
+          paid: String(ledger.daysPaid),
+          days: String(groups.length),
+        })}
+      </p>
+      {next !== undefined ? (
+        <div className="mt-2">
+          <p className="text-xs font-medium text-app-fg">{t('forum.creditNext')}</p>
+          <DayGroups
+            groups={[next]}
+            fundedAt={ledger.fundedAt}
+            fiat={fiat}
+            locale={locale}
+            rateDay={rateDay}
+            visitorFiat={visitorFiat}
+            numberFormat={numberFormat}
+            t={t}
+          />
+        </div>
+      ) : null}
+      <section aria-label={t('forum.creditEachDay')} className="mt-3">
+        <h3 className="text-xs font-medium text-app-fg">{t('forum.creditEachDay')}</h3>
+        <ul className="mt-1">
+          {people.map((person) => {
+            const own = ledger.repayments.filter((row) => row.accountId === person.accountId);
+            const usualAmount = usualPersonAmount(own, fiat);
+            const usualRow: RepaymentLine = { ...own[0]!, ...usualAmount };
+            return (
+              <li
+                key={person.accountId}
+                className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5 first:border-t-0"
+              >
+                <span className="min-w-0 truncate text-sm text-app-fg">
+                  {giverLabel(person.name, person.username, person.accountId)}
+                </span>
+                <span className="shrink-0 text-right text-sm tabular-nums text-app-fg">
+                  {lineAmountText(usualRow, fiat, numberFormat)}
+                  {' · '}
+                  {t('forum.creditDaysCount', { days: String(own.length) })}
+                  {' · '}
+                  {totalAmountText(dayAmount(own, fiat), fiat, numberFormat)}
+                </span>
+              </li>
+            );
+          })}
+          <li className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5">
+            <span className="text-sm font-medium text-app-fg">{t('forum.creditTogether')}</span>
+            <span className="shrink-0 text-right text-sm font-medium tabular-nums text-app-fg">
+              {totalAmountText(dayAmount(usual.rows, fiat), fiat, numberFormat)}
+              {' · '}
+              {t('forum.creditDaysCount', { days: String(groups.length) })}
+              {' · '}
+              {totalAmountText(dayAmount(ledger.repayments, fiat), fiat, numberFormat)}
+            </span>
+          </li>
+        </ul>
+      </section>
+      <div className="mt-3 flex flex-col gap-3">
+        {months.map((month) => {
+          const monthUsual = month.groups[usualGroupIndex(month.groups)]!;
+          const monthKey = daySignature(monthUsual.rows);
+          const monthUsualGroups = month.groups.filter(
+            (group) => daySignature(group.rows) === monthKey,
+          );
+          const monthExceptions = month.groups.filter(
+            (group) => daySignature(group.rows) !== monthKey,
+          );
+          return (
+            <section key={month.key}>
+              <h3 className="text-xs font-medium text-app-fg">{formatMonth(month.key, locale)}</h3>
+              <p className="mt-1 text-xs text-app-muted">
+                {t('forum.creditMonthDays', {
+                  days: String(month.groups.length),
+                  status: t(statusKey(rowsStatus(month.groups.flatMap((group) => group.rows)))),
+                })}
+              </p>
+              <p className="mt-1 text-xs text-app-muted">
+                {t('forum.creditUsualDays', {
+                  days: String(monthUsualGroups.length),
+                  amount: totalAmountText(dayAmount(monthUsual.rows, fiat), fiat, numberFormat),
+                })}
+              </p>
+              <p className="mt-1 text-xs text-app-muted">
+                {t('forum.creditUsualSplit', {
+                  split: splitText(monthUsual.rows, fiat, numberFormat),
+                })}
+              </p>
+              {monthExceptions.length > 0 ? (
+                <DayGroups
+                  groups={monthExceptions}
+                  fundedAt={ledger.fundedAt}
+                  fiat={fiat}
+                  locale={locale}
+                  rateDay={rateDay}
+                  visitorFiat={visitorFiat}
+                  numberFormat={numberFormat}
+                  t={t}
+                />
+              ) : null}
+            </section>
+          );
+        })}
+      </div>
+      {exceptions.length > 0 ? (
+        <p className="mt-2 text-xs text-app-muted">
+          {exceptions
+            .map((group) => {
+              return `${formatUtcDay(group.dueOn!, locale)}: ${splitText(group.rows, fiat, numberFormat)} ${totalAmountText(dayAmount(group.rows, fiat), fiat, numberFormat)}.`;
+            })
+            .join(' ')}{' '}
+          {t('forum.creditUsualRest', {
+            amount: totalAmountText(dayAmount(usual.rows, fiat), fiat, numberFormat),
+          })}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function isLongRepayment(ledger: RepaymentLedger): boolean {
+  if (ledger.fundedAt === null) {
+    return false;
+  }
+  const groups = groupsOf(ledger.repayments);
+  if (groups.length <= 7) {
+    return false;
+  }
+  return groups.every((group) => group.dueOn !== null);
+}
+
+function rowsStatus(rows: readonly RepaymentLine[]): RepaymentLine['status'] {
+  if (rows.every((row) => row.status === 'paid')) {
+    return 'paid';
+  }
+  if (rows.some((row) => row.status === 'due')) {
+    return 'due';
+  }
+  return 'scheduled';
+}
+
+function daySignature(rows: readonly RepaymentLine[]): string {
+  return rows
+    .map((row) => `${row.accountId}\u0000${row.amount}\u0000${row.sats}`)
+    .sort()
+    .join('\u0001');
+}
+
+function usualGroupIndex(groups: readonly DayGroup[]): number {
+  const counts = new Map<string, { count: number; index: number }>();
+  groups.forEach((group, index) => {
+    const key = daySignature(group.rows);
+    const seen = counts.get(key);
+    if (seen === undefined) {
+      counts.set(key, { count: 1, index });
+    } else {
+      seen.count += 1;
+    }
+  });
+  let bestIndex = 0;
+  let bestCount = -1;
+  for (const info of counts.values()) {
+    if (info.count > bestCount) {
+      bestCount = info.count;
+      bestIndex = info.index;
+    }
+  }
+  return bestIndex;
+}
+
+function peopleOf(rows: readonly RepaymentLine[]): RepaymentLine[] {
+  const seen = new Set<string>();
+  const people: RepaymentLine[] = [];
+  for (const row of rows) {
+    if (seen.has(row.accountId)) {
+      continue;
+    }
+    seen.add(row.accountId);
+    people.push(row);
+  }
+  return people;
+}
+
+function usualPersonAmount(
+  rows: readonly RepaymentLine[],
+  fiat: FiatCode | null,
+): { amount: string | null; sats: number | null } {
+  const counts = new Map<string, { count: number; amount: string | null; sats: number | null }>();
+  for (const row of rows) {
+    const key = fiat !== null ? `${row.amount}` : `${row.sats}`;
+    const seen = counts.get(key);
+    if (seen === undefined) {
+      counts.set(key, { count: 1, amount: row.amount, sats: row.sats });
+    } else {
+      seen.count += 1;
+    }
+  }
+  let bestCount = 0;
+  let bestAmount: string | null = null;
+  let bestSats: number | null = null;
+  for (const info of counts.values()) {
+    if (info.count > bestCount) {
+      bestCount = info.count;
+      bestAmount = info.amount;
+      bestSats = info.sats;
+    }
+  }
+  return { amount: bestAmount, sats: bestSats };
+}
+
+function lineAmountText(
+  row: RepaymentLine,
+  fiat: FiatCode | null,
+  numberFormat: NumberFormatStyle,
+): string {
+  if (fiat !== null && row.amount !== null) {
+    return formatFiatDisplay(row.amount, fiat, numberFormat);
+  }
+  if (row.sats !== null) {
+    return formatBitcoin(row.sats, numberFormat);
+  }
+  return '';
+}
+
+function totalAmountText(
+  total: number,
+  fiat: FiatCode | null,
+  numberFormat: NumberFormatStyle,
+): string {
+  if (fiat !== null) {
+    return formatFiatDisplay(total.toFixed(2), fiat, numberFormat);
+  }
+  return formatBitcoin(total, numberFormat);
+}
+
+function splitText(
+  rows: readonly RepaymentLine[],
+  fiat: FiatCode | null,
+  numberFormat: NumberFormatStyle,
+): string {
+  return rows
+    .map(
+      (row) =>
+        `${giverLabel(row.name, row.username, row.accountId)} ${lineAmountText(row, fiat, numberFormat)}`,
+    )
+    .join(' · ');
+}
+
+function formatMonth(monthKey: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: 'UTC',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(`${monthKey}-01T00:00:00Z`));
+}
+
+function monthsOf(groups: readonly DayGroup[]): { key: string; groups: DayGroup[] }[] {
+  const months: { key: string; groups: DayGroup[] }[] = [];
+  for (const group of groups) {
+    const key = group.dueOn!.slice(0, 7);
+    const last = months[months.length - 1];
+    if (last !== undefined && last.key === key) {
+      last.groups.push(group);
+    } else {
+      months.push({ key, groups: [group] });
+    }
+  }
+  return months;
 }
 
 function giverLabel(name: string, username: string | null, accountId: string): string {

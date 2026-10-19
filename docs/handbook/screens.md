@@ -7102,7 +7102,7 @@ Unsigned permalink of Cyrill's reply **You got it right.** The parent **Hello fr
 
 ## Screen: /messages/[id]/repayment-list
 
-- **Purpose:** The repayment list for one credit note: who gave, the chart, and every day's shares. The day rows render only here. The note, the forum, and a profile show a link instead of those rows. Nothing renders until the public ledger loads. A failed read stays blank. Chrome is PublicMessageChrome. There is no second back control.
+- **Purpose:** The repayment list for one credit note: who gave, the chart, and the plan. A fully given plan of more than 7 dated days is grouped by calendar month and lists only the days that differ from that month's usual amount; the pictured 2-day state still lists each day. The day rows render only here. The note, the forum, and a profile show a link instead of those rows. Nothing renders until the public ledger loads. A failed read stays blank. Chrome is PublicMessageChrome. There is no second back control.
 - **Inputs:** Dynamic route `id`. Loads `GET /messages/:id/repayment` through `getRepayment`. No session is required to view. Chrome follows the hydrated session.
 - **Actions:** The top-left arrow is the existing ProfileChromeLeft control (previous in-app view, or `/welcome` when this tab has none). No other control. Names are text.
 - **Used by:** Route `/messages/[id]/repayment-list` (`RepaymentListPage`). The **Repayment list** link on a collapsed `ForumGoalBar` and on `CreditLedger` summary.
