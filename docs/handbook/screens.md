@@ -5870,7 +5870,7 @@ Founder types `@`, picks **@cara**, and spend answers that the person was not fo
 
 ### Variant: no-lightning
 
-Founder types `@`, picks **@cara**, and spend answers that the person has no Lightning address. Alert **This person has no Wallet of Satoshi address.** Needle `This person has no Wallet of Satoshi address.`
+Founder types `@`, picks **@cara**, and spend answers that the person has no Lightning address. Alert **This person's wallet cannot receive Bitcoin payments yet.** Needle `This person's wallet cannot receive Bitcoin payments yet.`
 
 ![21.gifts moderator payments no lightning](images/grants-payments-moderators-no-lightning.png)
 

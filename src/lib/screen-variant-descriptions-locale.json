@@ -5975,8 +5975,8 @@
     "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na hindi nahanap ang taong iyon. Alerto Hindi nahanap ang taong iyon. Karayom Hindi nahanap ang taong iyon."
   },
   "/grants/payments/moderators:no-lightning": {
-    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person keine Lightning-Adresse hat. Hinweis Diese Person hat keine Wallet of Satoshi address. Nadel Diese Person hat keine Wallet of Satoshi address.",
-    "es": "El fundador escribe @, elige @cara, y Spend responde que esa persona no tiene dirección Lightning. Alerta Esta persona no tiene dirección de Wallet of Satoshi. Aguja Esta persona no tiene dirección de Wallet of Satoshi.",
-    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na walang Lightning address ang taong iyon. Alerto Walang Wallet of Satoshi address ang taong ito. Karayom Walang Wallet of Satoshi address ang taong ito."
+    "de": "Der Gründer tippt @, wählt @cara, und Spend antwortet, dass die Person keine Lightning-Adresse hat. Hinweis Die Wallet dieser Person kann noch keine Bitcoin-Zahlungen empfangen. Nadel Die Wallet dieser Person kann noch keine Bitcoin-Zahlungen empfangen.",
+    "es": "El fundador escribe @, elige @cara, y Spend responde que esa persona no tiene dirección Lightning. Alerta La wallet de esta persona aún no puede recibir pagos en Bitcoin. Aguja La wallet de esta persona aún no puede recibir pagos en Bitcoin.",
+    "fil": "Nag-type ang tagapagtatag ng @, pinili ang @cara, at sumagot ang Spend na walang Lightning address ang taong iyon. Alerto Hindi pa makatanggap ng Bitcoin na bayad ang wallet ng taong ito. Karayom Hindi pa makatanggap ng Bitcoin na bayad ang wallet ng taong ito."
   }
 }
