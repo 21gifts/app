@@ -669,10 +669,11 @@ describe('CreditLedger', () => {
     expect(await screen.findByText('Next repayment')).toBeTruthy();
     expect(document.body.textContent).toContain('Nov 1, 2026');
     expect(document.body.textContent).toContain('7 days at');
+    expect(document.body.textContent).toContain('8 days · Scheduled');
     expect(document.body.textContent).toContain('Nov 8, 2026');
     expect(document.body.textContent).not.toContain('Nov 2, 2026');
     expect(screen.getByText('Together')).toBeTruthy();
-    expect(document.body.textContent).toContain('Every other day is');
+    expect(document.body.textContent).toContain('All other days are');
     cleanup();
     ledger(plan);
     renderWithLocale(<CreditLedger messageId="m1" />);
@@ -698,7 +699,7 @@ describe('CreditLedger', () => {
     renderWithLocale(<CreditLedger messageId="m1" list="page" />);
     expect(await screen.findByText('8 of 8 days paid.')).toBeTruthy();
     expect(screen.queryByText('Next repayment')).toBeNull();
-    expect(document.body.textContent).not.toContain('Every other day is');
+    expect(document.body.textContent).not.toContain('All other days are');
     expect(document.body.textContent).toContain('8 days · Paid');
   });
 
@@ -707,6 +708,7 @@ describe('CreditLedger', () => {
     renderWithLocale(<CreditLedger messageId="m1" list="page" />);
     expect(await screen.findByText('Next repayment')).toBeTruthy();
     expect(screen.getAllByText('Due').length).toBeGreaterThan(0);
+    expect(document.body.textContent).not.toContain('8 days · Due');
   });
 
   it('prices a long bitcoin plan in bitcoin across two months', async () => {
@@ -714,7 +716,7 @@ describe('CreditLedger', () => {
     renderWithLocale(<CreditLedger messageId="m1" list="page" />);
     expect(await screen.findByText('November 2026')).toBeTruthy();
     expect(screen.getByText('December 2026')).toBeTruthy();
-    expect(document.body.textContent).toContain('Every other day is');
+    expect(document.body.textContent).toContain('All other days are');
     expect(document.body.textContent).toContain('₿10');
   });
 
@@ -735,6 +737,75 @@ describe('CreditLedger', () => {
     expect((await screen.findAllByText('Day 8')).length).toBeGreaterThan(0);
     expect(screen.getByText('Nov 2, 2026')).toBeTruthy();
     expect(screen.queryByText('Next repayment')).toBeNull();
+  });
+
+  it('uses the singular when a month has one day', async () => {
+    ledger(
+      longPlan({
+        dueOn: (day) => new Date(Date.UTC(2026, 10, 30 + day)).toISOString().slice(0, 10),
+      }),
+    );
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('November 2026')).toBeTruthy();
+    expect(document.body.textContent).toContain('1 day');
+    expect(document.body.textContent).not.toContain('1 days');
+  });
+
+  it('counts only unpaid shares and omits a status when the month is mixed', async () => {
+    const plan = longPlan({ cyrillAmount: () => '40.00' });
+    plan.repayments = plan.repayments.map((row) =>
+      row.dayIndex === 0 && row.accountId === '11111111-1111-4111-8111-111111111111'
+        ? { ...row, status: 'paid' as const }
+        : row,
+    );
+    ledger(plan);
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(document.body.textContent).toContain('Still owed ₱286.40');
+    expect(document.body.textContent).not.toContain('Still owed ₱326.40');
+    expect(document.body.textContent).not.toContain('8 days · Scheduled');
+  });
+
+  it('keeps the same fiat split together when the bitcoin amount differs', async () => {
+    const plan = longPlan({ cyrillAmount: () => '40.00' });
+    plan.repayments = plan.repayments.map((row) =>
+      row.dayIndex === 7 && row.accountId === '11111111-1111-4111-8111-111111111111'
+        ? { ...row, sats: 100 }
+        : row,
+    );
+    ledger(plan);
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('Next repayment')).toBeTruthy();
+    expect(document.body.textContent).toContain('8 days at');
+    expect(document.body.textContent).not.toContain('All other days are');
+  });
+
+  it('prices a long bitcoin overview in the visitor fiat when a rate exists', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo) => {
+        const url = String(input);
+        if (url.includes('/gifts/stats')) {
+          return new Response(JSON.stringify({ spendOverTime: [] }), { status: 200 });
+        }
+        if (url.includes('/fx/spot')) {
+          return new Response(
+            JSON.stringify({
+              asOf: '2026-09-26T00:00:00.000Z',
+              source: 'test',
+              rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+            }),
+            { status: 200 },
+          );
+        }
+        return new Response(JSON.stringify(longBitcoinPlan()), { status: 200 });
+      }),
+    );
+    renderWithLocale(<CreditLedger messageId="m1" list="page" />);
+    expect(await screen.findByText('November 2026')).toBeTruthy();
+    await waitFor(() => {
+      expect(document.body.textContent).toContain('₿10 · $0.01');
+    });
   });
 });
 
