@@ -657,7 +657,7 @@ Every control where a person types an amount uses `AmountEntry`: the gift `Segme
 
 ### Shown amounts (hard requirement)
 
-Every place that shows a bitcoin amount also shows that amount in the visitor's default fiat.
+Every place that shows a bitcoin amount also shows the visitor's default fiat when a string for that currency was frozen for this amount, or when the figure is what a holding is worth right now. A committed amount whose string for that currency is missing stays bitcoin.
 
 Signed in, the code is the currency stored for that person. `useFiatPreference` is that code: a profile choice they already stored wins. Signed out, there is no profile currency, so the code is the one implied by the UI language (`defaultFiatForLocale`: German CHF, English USD, Spanish EUR, Filipino PHP).
 
