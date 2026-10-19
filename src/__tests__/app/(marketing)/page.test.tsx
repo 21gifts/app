@@ -42,28 +42,7 @@ describe('Home', () => {
     expect(screen.getByText('Your wallet')).toBeTruthy();
     expect(screen.getByText('Their wallet')).toBeTruthy();
     expect(screen.getByText('React and donate')).toBeTruthy();
-    const marks = [...document.querySelectorAll('svg.lucide-bitcoin')];
-    expect(marks).toHaveLength(5);
-    const classes = marks.map((mark) => mark.getAttribute('class') ?? '');
-    expect(
-      classes.filter(
-        (name) => name.includes('h-12') && name.includes('w-12') && name.includes('text-accent'),
-      ),
-    ).toHaveLength(3);
-    expect(
-      classes.filter(
-        (name) => name.includes('h-8') && name.includes('w-8') && name.includes('text-accent'),
-      ),
-    ).toHaveLength(2);
-    expect(
-      classes.filter(
-        (name) => name.includes('h-5') && name.includes('w-5') && name.includes('text-ink'),
-      ),
-    ).toHaveLength(1);
-    for (const mark of marks) {
-      expect(mark.getAttribute('aria-hidden')).toBe('true');
-      expect(mark.getAttribute('class') ?? '').toContain('lucide-bitcoin');
-    }
+    expect(document.querySelectorAll('img[src="/bitcoin-symbol.svg"]')).toHaveLength(5);
     expect(screen.queryByRole('spinbutton')).toBeNull();
     expect(screen.queryByRole('button', { name: /pay with/i })).toBeNull();
   });

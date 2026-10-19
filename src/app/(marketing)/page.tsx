@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   ArrowDown,
   ArrowRight,
   ArrowUpRight,
-  Bitcoin,
   MessageCircle,
   Reply,
   Search,
@@ -77,7 +77,14 @@ export default async function Home(): Promise<ReactElement> {
       body: 'home.discoverBitcoinBody' as const,
       graphic: (
         <div className="flex h-48 items-center justify-center bg-home-bitcoin">
-          <Bitcoin aria-hidden="true" className="h-12 w-12 text-accent" />
+          <Image
+            src="/bitcoin-symbol.svg"
+            alt=""
+            loading="eager"
+            width={112}
+            height={112}
+            className="block h-28 w-28"
+          />
         </div>
       ),
     },
@@ -96,7 +103,14 @@ export default async function Home(): Promise<ReactElement> {
               <Wallet className="h-6 w-6" strokeWidth={1.5} />
             </span>
             <span className="h-px flex-1 bg-accent" />
-            <Bitcoin aria-hidden="true" className="h-12 w-12 shrink-0 text-accent" />
+            <Image
+              src="/bitcoin-symbol.svg"
+              alt=""
+              loading="eager"
+              width={64}
+              height={64}
+              className="block h-16 w-16 shrink-0"
+            />
             <span className="h-px flex-1 bg-accent" />
             <span className="flex h-14 w-14 items-center justify-center rounded-full border border-accent text-2xl text-paper">
               <UserRound className="h-6 w-6" strokeWidth={1.5} />
@@ -141,7 +155,14 @@ export default async function Home(): Promise<ReactElement> {
               <PwaInstall tone="dark" placement="hero" />
             </div>
             <div className="mt-12 flex items-center gap-3 border-t border-paper/15 pt-5 text-sm text-paper/70">
-              <Bitcoin aria-hidden="true" className="h-8 w-8 shrink-0 text-accent" />
+              <Image
+                src="/bitcoin-symbol.svg"
+                alt=""
+                loading="eager"
+                width={36}
+                height={36}
+                className="block h-9 w-9 shrink-0"
+              />
               <span>{t('home.heroProof')}</span>
             </div>
           </div>
@@ -194,7 +215,13 @@ export default async function Home(): Promise<ReactElement> {
                   </div>
                   <div className="flex items-center gap-3 text-sm font-medium sm:text-base">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-ink">
-                      <Bitcoin aria-hidden="true" className="h-5 w-5 text-ink" />
+                      <Image
+                        src="/bitcoin-symbol.svg"
+                        alt=""
+                        width={27}
+                        height={27}
+                        className="size-home-mark"
+                      />
                     </span>
                     {t('home.previewStep3')}
                   </div>
@@ -210,7 +237,14 @@ export default async function Home(): Promise<ReactElement> {
                     </span>
                   </div>
                   <div className="flex w-11 flex-col items-center justify-center gap-1.5 sm:w-14">
-                    <Bitcoin aria-hidden="true" className="h-8 w-8 text-accent sm:h-12 sm:w-12" />
+                    <Image
+                      src="/bitcoin-symbol.svg"
+                      alt=""
+                      loading="eager"
+                      width={48}
+                      height={48}
+                      className="block h-11 w-11 sm:h-12 sm:w-12"
+                    />
                     <ArrowRight aria-hidden="true" className="h-4 w-4 text-accent" />
                   </div>
                   <div className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-paper/15 bg-paper/5 px-1 py-3 text-center">

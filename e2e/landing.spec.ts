@@ -7,12 +7,17 @@ test('landing shows the 21.gifts wordmark', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Help people.*with Bitcoin/i })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Send help' })).toHaveAttribute('href', '/en/donate');
   await expect(page.locator('main').getByText('How it works', { exact: true })).toBeVisible();
-  const bitcoinMarks = page.locator('main svg.lucide-bitcoin');
+  const bitcoinMarks = page.locator('main img[src="/bitcoin-symbol.svg"]');
   await expect(bitcoinMarks).toHaveCount(5);
-  for (let index = 0; index < 5; index += 1) {
-    await expect(bitcoinMarks.nth(index)).toBeVisible();
-    await expect(bitcoinMarks.nth(index)).toHaveAttribute('aria-hidden', 'true');
-  }
+  await expect
+    .poll(() =>
+      bitcoinMarks.evaluateAll((images) =>
+        images.every(
+          (image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0,
+        ),
+      ),
+    )
+    .toBe(true);
   await expect(page.getByRole('spinbutton')).toHaveCount(0);
 });
 
