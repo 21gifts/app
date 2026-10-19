@@ -9454,6 +9454,11 @@ test.describe('onboarding screens', () => {
     await expect(page.getByLabel('Your reaction')).toBeVisible();
     await page.getByLabel('Your reaction').fill('Hello');
     await page.getByLabel('Amount').fill('1');
+    // ForumBoard re-reveals the form when the fiat line grows it; wait before the dialog locks.
+    await expect(page.getByText('$0.00')).toBeVisible();
+    await page.evaluate(
+      () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))),
+    );
     await page.getByRole('button', { name: 'Post', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Add your 21.gifts name' });
     await expect(dialog).toBeVisible();
