@@ -200,11 +200,32 @@ describe('LocaleRouteSync', () => {
   it('refreshes an unprefixed path to the saved account language without a cookie write', () => {
     useAuthStore.setState({ account: account('route_sync_app', 'de') });
     window.history.replaceState({}, '', '/login');
-    const jar = installCookieJar(`${LOCALE_COOKIE}=en`);
+    const jar = installCookieJar(`${LOCALE_COOKIE}=de`);
     try {
       renderWithLocale(<LocaleRouteSync />);
       expect(localeWrites(jar.set)).toEqual([]);
       expect(refresh).toHaveBeenCalledTimes(1);
+    } finally {
+      jar.restore();
+    }
+  });
+
+  it('writes the saved account language before the one refresh on an unprefixed path', () => {
+    useAuthStore.setState({ account: account('route_sync_welcome', 'de') });
+    window.history.replaceState({}, '', '/welcome');
+    const jar = installCookieJar(`${LOCALE_COOKIE}=en`);
+    try {
+      renderWithLocale(<LocaleRouteSync />);
+      expect(localeWrites(jar.set)).toEqual([expectedLocaleCookie('de')]);
+      expect(refresh).toHaveBeenCalledTimes(1);
+      const writeIndex = jar.set.mock.calls.findIndex(
+        (call) => typeof call[0] === 'string' && call[0].startsWith(`${LOCALE_COOKIE}=`),
+      );
+      const writeOrder = jar.set.mock.invocationCallOrder[writeIndex];
+      const refreshOrder = refresh.mock.invocationCallOrder[0];
+      expect(writeOrder).toBeTypeOf('number');
+      expect(refreshOrder).toBeTypeOf('number');
+      expect(writeOrder as number).toBeLessThan(refreshOrder as number);
     } finally {
       jar.restore();
     }

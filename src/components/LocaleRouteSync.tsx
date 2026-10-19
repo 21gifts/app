@@ -18,7 +18,9 @@ type RefreshKey = { current: string | null };
  * Aligns the locale cookie and a stale layout with the path that is showing.
  *
  * A language URL is written to the cookie when it differs and the account has
- * no saved language. The language the server should render is the URL language,
+ * no saved language. A path without a language prefix writes the saved account
+ * language into the cookie when that cookie differs, before anything else.
+ * The language the server should render is the URL language,
  * otherwise the saved account language, otherwise the cookie. When that differs
  * from the surrounding provider, refresh runs once for that path and language.
  * The guard stays only while they still differ, so the refresh does not loop.
@@ -40,6 +42,10 @@ function syncRouteLocale(
   const localized = parseLocalizedPublicPath(path);
   const accountLocale = useAuthStore.getState().account?.locale;
   const saved = typeof accountLocale === 'string' ? accountLocale : null;
+
+  if (localized === null && saved !== null && readLocaleCookie() !== saved) {
+    writeLocaleCookie(saved);
+  }
 
   if (localized !== null && saved === null && readLocaleCookie() !== localized.locale) {
     writeLocaleCookie(localized.locale);
