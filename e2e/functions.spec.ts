@@ -8668,12 +8668,19 @@ test('Function: resyncPushSubscription — signed-in chrome still shows Menu', a
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
 });
 
-test('Function: WelcomeTopRight — signed-out welcome offers the log-in link', async ({ page }) => {
+test('Function: WelcomeLayout — /welcome is noindex and offers guests the log-in link', async ({
+  page,
+  request,
+}) => {
   await page.goto('/welcome');
   const login = page.getByRole('link', { name: 'Log in' });
   await expect(login).toBeVisible();
   await expect(login).toHaveAttribute('href', '/login');
   await expect(page.getByRole('button', { name: 'Menu' })).toHaveCount(0);
+  const response = await request.get('/welcome');
+  expect(response.ok()).toBe(true);
+  const html = await response.text();
+  expect(html).toContain('<meta name="robots" content="noindex, nofollow"');
 });
 
 test('Function: SignedInChrome — Menu reveals Profile and log out', async ({ page, request }) => {

@@ -501,12 +501,12 @@
 - **Returns / side effects:** Children on the correct screen, otherwise a spinner. Follows `nextOnboardingPath`. The recovery phrase is not a setup step and does not replace the opened page; `nextOnboardingPath` never returns `/wallet`. `/wallet` itself stays on screen when `setup` is `'wallet'` or the next step is `/welcome`. `allowGuest` on `/welcome` renders the children with no session instead of `/login`. Profile and members stay only when the next step is `/welcome`. Name, username, address, and rules still redirect when that is the next step. Other `router.replace` targets are `/login`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, or `/welcome` (`nextOnboardingPath` never returns `/profile`).
 - **Used by:** Screens `/login`, `/wallet`, `/setup/name`, `/setup/username`, `/setup/address`, `/setup/rules`, `/welcome`, `/profile`, `/pos`, `/members/[accountId]`, `/contact`, `/messages`, `/notifications`, `/moderate`, `/moderate/hidden`, `/moderate/proposals`, `/grants`, `/grants/apply`, `/grants/applications`, `/grants/applications/[accountId]`, `/trust-chain`, `/shops`, `/statistics`.
 
-## Function: WelcomeTopRight
+## Function: WelcomeLayout
 
-- **Purpose:** Top-right chrome slot of `/welcome`. Signed-in visitors get the full `SignedInChrome` menu; signed-out guests, who reach the welcome screen through the guest gate, get a plain log-in link instead. Keeps `/welcome` itself a server component so the page can declare `robots: noindex` metadata.
-- **Inputs:** Reads `session` from `useAuthStore` and the active catalog via `useTranslations` (`nav.login`). No props.
-- **Returns / side effects:** `SignedInChrome` when a session exists, otherwise an underlined `Link` to `/login` labelled `nav.login`. No I/O, no storage writes.
-- **Used by:** `WelcomePage`.
+- **Purpose:** Segment layout for `/welcome`. Publishes noindex metadata so the signed-in living room is not public search content.
+- **Inputs:** `children`, the nested page.
+- **Returns / side effects:** Renders `children` unchanged. `metadata.robots` is `{ index: false, follow: false }`.
+- **Used by:** Route `/welcome`.
 
 ## Function: SignedInChrome
 
@@ -1238,7 +1238,7 @@
 
 - **Purpose:** Next.js page for `/welcome`.
 - **Inputs:** None.
-- **Returns / side effects:** Flow `PageChrome` (`AppShell` wrapper) with `ProfileChromeLeft` `hideWithoutHistory` and `ForumHomeWordmark` top-left, `WelcomeTopRight` (the member menu when a session exists, otherwise a link to `/login`), and `OnboardingGate` `screen="welcome"` `allowGuest` around `WelcomeScreen`. The arrow is omitted only when this tab has no earlier view. An ask-wizard step uses that same slot.
+- **Returns / side effects:** Flow `PageChrome` (`AppShell` wrapper) with `ProfileChromeLeft` `hideWithoutHistory` and `ForumHomeWordmark` top-left, the member menu when a session exists, otherwise a link to `/login`, and `OnboardingGate` `screen="welcome"` `allowGuest` around `WelcomeScreen`. The arrow is omitted only when this tab has no earlier view. An ask-wizard step uses that same slot.
 - **Used by:** Route `/welcome`.
 
 ## Function: WelcomeScreen
