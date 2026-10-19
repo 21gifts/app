@@ -34,8 +34,10 @@ current spot. That is not a committed amount.
 
 While a person is still typing, the field shows the digits they type. The
 current spot may turn those digits into sats for the payment that is about to
-be created. The peso, dollar, franc, or euro figure on that amount, once it
-exists, is the figure they typed, not the sats converted back.
+be created. While bitcoin is still being typed, the fiat counter under the
+field may use the current spot to show the preferred fiat. That counter is
+not the stored amount. The peso, dollar, franc, or euro figure on that
+amount, once it exists, is the figure they typed, not the sats converted back.
 
 ## Daily rates
 
