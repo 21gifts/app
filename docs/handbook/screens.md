@@ -553,13 +553,13 @@ Pinned fixture (`?visual=send-confirm-sending`, Playwright builds only). The con
 
 ### Variant: send-confirm-fixed
 
-Pinned fixture (`?visual=send-confirm-fixed`, Playwright builds only). The confirm step reached straight from a shop's point-of-sale QR while a charge is open: the large **₿7'000** with **$7.00** under it, **To shop@21.gifts** (read from the QR's `/pl/?lightning=` link), and **Fee ₿3** with the default fiat; at the bottom the large **Send** and **Cancel**. This is the Lightning payment of that charge, used when the api issues no Spark invoice for it; the fee is the Lightning fee. No amount field and no message; **Cancel** returns to the input step.
+Pinned fixture (`?visual=send-confirm-fixed`, Playwright builds only). The confirm step reached straight from a shop's point-of-sale QR while a charge is open: the large **₿7'000** with the currency figure the shop operator typed under it (this fixture shows **$7.00** as that stored figure, not as a fresh spot price), **To shop@21.gifts** (read from the QR's `/pl/?lightning=` link), and **Fee ₿3** with the default fiat; at the bottom the large **Send** and **Cancel**. This is the Lightning payment of that charge, used when the api issues no Spark invoice for it; the fee is the Lightning fee. No amount field and no message; **Cancel** returns to the input step.
 
 ![21.gifts wallet send confirm fixed amount](images/wallet-send-confirm-fixed.png)
 
 ### Variant: send-confirm-shop
 
-Pinned fixture (`?visual=send-confirm-shop`, Playwright builds only). The confirm step of the same point-of-sale QR when the api issued a Spark invoice for the open charge: the large **₿7'000** with **$7.00** under it, **To shop@21.gifts**, and **Fee ₿0** without fiat; at the bottom the large **Send** and **Cancel**. The in-app wallet pays the shop's charge without a fee. No amount field and no message; **Cancel** returns to the input step.
+Pinned fixture (`?visual=send-confirm-shop`, Playwright builds only). The confirm step of the same point-of-sale QR when the api issued a Spark invoice for the open charge: the large **₿7'000** with the currency figure the shop operator typed under it (this fixture shows **$7.00** as that stored figure, not as a fresh spot price), **To shop@21.gifts**, and **Fee ₿0** without fiat; at the bottom the large **Send** and **Cancel**. The in-app wallet pays the shop's charge without a fee. No amount field and no message; **Cancel** returns to the input step.
 
 ![21.gifts wallet send confirm shop charge](images/wallet-send-confirm-shop.png)
 
@@ -704,7 +704,7 @@ Pinned fixture (`?visual=move-arrived`, Playwright builds only): the last step a
 ## Screen: /wallet/payment
 
 - **URL:** `/wallet/payment?id=<payment id>` — one payment of the signed-in member's wallet, opened from a row of the **Payments** list on `/wallet`.
-- **What the user sees:** The same frame as `/wallet`: one top-left arrow (the previous in-app view, the list when opened from it, or `/welcome` when this tab has none) and the wordmark, **Menu** top-right. The heading **Payment** is for screen readers only. At the top, centred: a round badge with the direction arrow, the title (a gift on your post, Gift when a gift memo was sent, Gift on your post when one was received, Shop payment for a shop memo, the paid Lightning address, the description, the on-chain direction, or Received / Sent; neither gift nor shop memo is shown as the description, and a gift memo's 64 hex digits are the payment hash when the payment has none of its own), the amount large with **+** or **−** (a failed payment struck through and muted), the default fiat under it, and a status pill: **Completed** in green, **Pending** in the notice colour, **Failed** in red. A resolved heart replaces the direction badge and the **Gift** title with the filled heart and that post card. A payment that is still pending keeps the direction arrow and the **Gift** title and is not looked up. A pending send adds **Still on its way. The amount stays reserved until it arrives or comes back.**; a failed send adds **Nothing left your wallet.** A message that came with the payment (the payer's note, the zap message, or the comment sent to a Lightning address) follows in a soft box. A bordered list shows **Date**, **Type**, **To** (the paid Lightning address as plain text, or a link to that member's profile when the payment names a member), **Description** (only when it is not already the title), **Amount**, **Fee** (**Free** at ₿0; left out for a fee-less receive and for a failed payment), **Total** (a send with a fee), and **Arrived on-chain** (a deposit whose claim fee was deducted); each Bitcoin figure there also shows the default fiat. Details is a button that starts closed. Pressing it shows the shortened technical values, each with a Copy icon: **Transaction** and **Output**, **Payment request**, **Payment hash**, **Proof of payment**, and **Payment ID**. An on-chain payment adds **View on mempool.space**, which first asks **Open external link?**. Nothing shows while the payment or the rate is still loading; when the rate read finds no usable rate, the Bitcoin amounts show without a fiat line. The screen reads the payment again after each wallet sync, so a pending payment updates in place. A missing or unknown id shows **This payment could not be found.**
+- **What the user sees:** The same frame as `/wallet`: one top-left arrow (the previous in-app view, the list when opened from it, or `/welcome` when this tab has none) and the wordmark, **Menu** top-right. The heading **Payment** is for screen readers only. At the top, centred: a round badge with the direction arrow, the title (a gift on your post, Gift when a gift memo was sent, Gift on your post when one was received, Shop payment for a shop memo, the paid Lightning address, the description, the on-chain direction, or Received / Sent; neither gift nor shop memo is shown as the description, and a gift memo's 64 hex digits are the payment hash when the payment has none of its own), the amount large with **+** or **−** (a failed payment struck through and muted), the default fiat under it, except a shop payment, which shows the currency figure stored on that charge and does not use the current spot (a missing string for that charge stays absent), and a status pill: **Completed** in green, **Pending** in the notice colour, **Failed** in red. A resolved heart replaces the direction badge and the **Gift** title with the filled heart and that post card. A payment that is still pending keeps the direction arrow and the **Gift** title and is not looked up. A pending send adds **Still on its way. The amount stays reserved until it arrives or comes back.**; a failed send adds **Nothing left your wallet.** A message that came with the payment (the payer's note, the zap message, or the comment sent to a Lightning address) follows in a soft box. A bordered list shows **Date**, **Type**, **To** (the paid Lightning address as plain text, or a link to that member's profile when the payment names a member), **Description** (only when it is not already the title), **Amount**, **Fee** (**Free** at ₿0; left out for a fee-less receive and for a failed payment), **Total** (a send with a fee), and **Arrived on-chain** (a deposit whose claim fee was deducted); each Bitcoin figure there also shows the default fiat, except a shop payment, which uses the figure stored on that charge. Details is a button that starts closed. Pressing it shows the shortened technical values, each with a Copy icon: **Transaction** and **Output**, **Payment request**, **Payment hash**, **Proof of payment**, and **Payment ID**. An on-chain payment adds **View on mempool.space**, which first asks **Open external link?**. Nothing shows while the payment or the rate is still loading; when the rate read finds no usable rate, the Bitcoin amounts show without a fiat line. A shop payment does not wait on that rate for its fiat line. The screen reads the payment again after each wallet sync, so a pending payment updates in place. A missing or unknown id shows **This payment could not be found.**
 - **Actions:** Copy a technical value; open that profile from **To**; open the transaction on mempool.space after the warning; go back to the previous in-app view (the list when opened from it) with the top-left arrow; open **Menu** (see **Signed-in header**).
 - **Calls:** `AppShell`, `WalletChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletPaymentDetails`, `useWalletPayment`, `getWalletPayment`, `paymentTitle`, `paymentMessage`, `ExternalLinkWarning`, `openInSystemBrowser`, `useSpotRateState`.
 
@@ -1472,8 +1472,8 @@ Heading **Send help**, explainer lead, **Open the forum**.
 ## Screen: /pl
 
 - **URL:** `/pl?lightning=LNURL…` — public, no auth gate. `/pl` without a usable link stays on this page and does not 404.
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none). The shop sticker's storefront sits above the person's name, which is the only heading. With no open payment, under it an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When a payment is active, either because `GET /pay/:username` returned an unexpired `charge` or because **Continue** minted an invoice, that amount field and **Continue** are gone. The page shows the same active payment: five minutes left, the sat amount, the viewer's default fiat beside it, and **Pay**. **Pay** is the width of the invoice QR plate (232px plus its padding and border), centered, not the width of the page. **Pay** hands the invoice to the visitor's own Bitcoin wallet app with a generic `lightning:` link; no particular wallet is named. The fiat code is the profile cookie when set, otherwise the language default. Desktop shows the Bitcoin invoice QR only while that payment is active. A smartphone (`isSmartphoneUserAgent`, not viewport) never shows it. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
-- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. A positive fiat amount that the spot rate cannot price in the preferred fiat (typed before that fiat changed to one without a price) shows **No {code} exchange rate yet.** and keeps the form; `{code}` is the preferred fiat. Success leaves that form and shows the active payment: the locked sat amount, the viewer's default fiat beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with a Bitcoin wallet app**), which sets `location.href` to `lightning:` plus the invoice (`lightningHref`), so the device opens whichever Bitcoin wallet app handles that link. An open till mints that exact amount with no amount step. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` with `HomeWordmark` and the light language switcher inside the rounded sheet; the arrow returns to the previous in-app view, or `/welcome` when this tab has none). The shop sticker's storefront sits above the person's name, which is the only heading. With no open payment, under it an **Amount** field and **Continue**. The field has the ₿ / fiat switch, and the other unit sits under it. With no account the switch starts at ₿ and is not stored. There is no **Pay** and no invoice QR. When a payment is active, either because `GET /pay/:username` returned an unexpired `charge` or because **Continue** minted an invoice, that amount field and **Continue** are gone. The page shows the same active payment: five minutes left, the sat amount, the currency figure fixed for that payment beside it, and **Pay**. On an open till charge that figure is the one the shop operator typed. Typing 12.00 shows 12.00, never 12.01 or 11.99. The payer's display currency does not replace it. **Pay** is the width of the invoice QR plate (232px plus its padding and border), centered, not the width of the page. **Pay** hands the invoice to the visitor's own Bitcoin wallet app with a generic `lightning:` link; no particular wallet is named. The profile cookie and the language default apply only while the payer is still typing. They do not price an open till charge. Desktop shows the Bitcoin invoice QR only while that payment is active. A smartphone (`isSmartphoneUserAgent`, not viewport) never shows it. A bad link shows the gift glyph and **This payment link is not valid.** and no form.
+- **Actions:** With no open payment, type a whole number and press **Continue** (`forum.payContinue`). An empty or non-whole amount shows **Enter a whole number.** and keeps the form. A positive fiat amount that the spot rate cannot price in the preferred fiat (typed before that fiat changed to one without a price) shows **No {code} exchange rate yet.** and keeps the form; `{code}` is the preferred fiat. Success leaves that form and shows the active payment: the locked sat amount, the currency figure fixed for that payment beside it, and **Pay** (`forum.payOpenWallet`, aria **Pay with a Bitcoin wallet app**), which sets `location.href` to `lightning:` plus the invoice (`lightningHref`), so the device opens whichever Bitcoin wallet app handles that link. An open till mints that exact amount with no amount step. The currency figure is the one the shop operator typed. Typing 12.00 shows 12.00, never 12.01 or 11.99. Desktop shows the Bitcoin invoice QR. A smartphone does not. A failed mint on an open till keeps the charge and shows **Could not create the invoice.**; **Pay** tries the mint again. A failed **Continue** keeps the amount form and shows the same sentence. Change language from the header.
 - **Calls:** `PayLinkPage`, `PayLinkScreen`, `PageChrome`, `ProfileChromeLeft`, `HomeWordmark`, `LanguageSwitcher`, `payLinkUsername`, `GET /pay/[username]`, `POST /pay/[username]/invoice`.
 
 ### Variant: default
@@ -1484,7 +1484,7 @@ Scanned pay link with no open payment (`charge` null or absent). The shop sticke
 
 ### Variant: invoice
 
-After **Continue**, the same active payment as an open till: the shop sticker, five minutes left, the locked sat amount, the viewer's default fiat beside it, and **Pay**. No amount field. Desktop shows the Bitcoin invoice QR. A smartphone shows the countdown and **Pay**, not the QR.
+After **Continue**, the same active payment as an open till: the shop sticker, five minutes left, the locked sat amount, the currency figure fixed for that payment beside it, and **Pay**. No amount field. Desktop shows the Bitcoin invoice QR. A smartphone shows the countdown and **Pay**, not the QR.
 
 ![21.gifts pay link invoice](images/pl-invoice.png)
 
@@ -1508,13 +1508,13 @@ The form stays, and **Could not create the invoice.** is shown under it.
 
 ### Variant: charge
 
-The open till: the shop sticker's storefront above the name, then time left, the sat amount, the viewer's default fiat beside it, and **Pay**. Desktop also shows the Bitcoin invoice QR. A smartphone does not. No gift glyph and no amount field.
+The open till: the shop sticker's storefront above the name, then time left, the sat amount, the currency figure the shop operator typed beside it, and **Pay**. Typing 12.00 shows 12.00, never 12.01 or 11.99. Desktop also shows the Bitcoin invoice QR. A smartphone does not. No gift glyph and no amount field.
 
 ![21.gifts pay link charge](images/pl-charge.png)
 
 ### Variant: charge-failed
 
-Open till, mint failed. The shop sticker, time left, the sat amount, the viewer's default fiat beside it, **Could not create the invoice.**, and **Pay**. No invoice QR. **Pay** tries the mint again.
+Open till, mint failed. The shop sticker, time left, the sat amount, the currency figure the shop operator typed beside it, **Could not create the invoice.**, and **Pay**. No invoice QR. **Pay** tries the mint again.
 
 ![21.gifts pay link charge failed](images/pl-charge-failed.png)
 
@@ -5028,19 +5028,19 @@ Signed-in Ada with a username and a verified wallet, no open charge and no past 
 
 ### Variant: open
 
-Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, the sat amount, the default fiat under it, and **Cancel** stay up. The amount form is gone. The open charge is not in **History**, which says **No payments yet.** Desktop, iPad, and smartphone all show the Open CryptoPay QR.
+Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, the sat amount, the currency figure the operator typed under it, and **Cancel** stay up. The amount form is gone. The open charge is not in **History**, which says **No payments yet.** Desktop, iPad, and smartphone all show the Open CryptoPay QR.
 
 ![21.gifts point of sale open](images/pos-open.png)
 
 ### Variant: paid
 
-Signed-in Ada whose charge of ₿21 the api has marked paid. **Paid ✓** in green, the sat amount, the default fiat under it, and **New payment** (to `/pos/amount`). No countdown, no **Cancel**, and no **Set an amount**. **History** lists that charge as **Paid ✓ 12:00 PM** with ₿21 and its fiat. Desktop, iPad, and smartphone all show the Open CryptoPay QR.
+Signed-in Ada whose charge of ₿21 the api has marked paid. **Paid ✓** in green, the sat amount, the currency figure the operator typed under it, and **New payment** (to `/pos/amount`). No countdown, no **Cancel**, and no **Set an amount**. **History** lists that charge as **Paid ✓ 12:00 PM** with ₿21 and the currency figure stored on that charge. Desktop, iPad, and smartphone all show the Open CryptoPay QR.
 
 ![21.gifts point of sale paid](images/pos-paid.png)
 
 ### Variant: history
 
-Signed-in Ada with no open charge and three past charges, scrolled to **History**: **Paid ✓ 12:00 PM** in green with ₿2’100 and $2.10, then **Expired** with ₿500, then **Cancelled** with ₿42, each with the date and time it was created, newest first. **Set an amount** stays above.
+Signed-in Ada with no open charge and three past charges, scrolled to **History**: **Paid ✓ 12:00 PM** in green with ₿2’100 and the currency figure stored on that charge, then **Expired** with ₿500, then **Cancelled** with ₿42, each with the currency figure stored on that charge and the date and time it was created, newest first. That figure is not a price taken from the current spot. **Set an amount** stays above.
 
 ![21.gifts point of sale history](images/pos-history.png)
 
@@ -5058,13 +5058,13 @@ The till request failed. Alert **Point of sale is unavailable.**
 
 ### Variant: cancel-failed
 
-Open charge of ₿21 with 5:00 left and the default fiat under the sat amount. **Cancel** fails. The charge and **Cancel** stay. Alert **Point of sale is unavailable.**
+Open charge of ₿21 with 5:00 left and the currency figure the operator typed under the sat amount. **Cancel** fails. The charge and **Cancel** stay. Alert **Point of sale is unavailable.**
 
 ![21.gifts point of sale cancel failed](images/pos-cancel-failed.png)
 
 ### Variant: refresh-failed
 
-The open charge has already run out (0:00). The sat amount and the default fiat stay. Refreshing it fails. **Cancel** stays. Alert **Point of sale is unavailable.**
+The open charge has already run out (0:00). The sat amount and the currency figure the operator typed stay. Refreshing it fails. **Cancel** stays. Alert **Point of sale is unavailable.**
 
 ![21.gifts point of sale refresh failed](images/pos-refresh-failed.png)
 
