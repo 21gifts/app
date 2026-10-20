@@ -335,7 +335,8 @@ export function shopNameProblem(
  * Description problem of a shop note, or null when it is complete.
  *
  * Uses {@link stripShopHashtag} after CRLF is folded to LF. The description
- * must be 20–1000 characters and strictly longer than the pin label.
+ * must be 20–1000 characters and strictly longer than the pin label. Control
+ * characters are checked on the trimmed text, like the API.
  *
  * @param text - Composer or stored note text.
  * @param label - Pin label, or `null` / `undefined` when the note has none.

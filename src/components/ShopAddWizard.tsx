@@ -607,11 +607,7 @@ export function ShopAddWizard({
           </div>
           <div>
             <dt className="text-app-muted">{t('shops.stepAccount')}</dt>
-            <dd>
-              {username.trim() === ''
-                ? t('shops.summaryNone')
-                : `@${username.trim().replace(/^@/, '')}`}
-            </dd>
+            <dd>{normalizedUsername === '' ? t('shops.summaryNone') : `@${normalizedUsername}`}</dd>
           </div>
         </dl>
       ) : null}

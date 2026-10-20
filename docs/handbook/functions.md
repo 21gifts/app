@@ -1542,7 +1542,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: shopDescriptionProblem
 
-- **Purpose:** Shop-text problem of a shop note. Apart from LF/CR, control characters are rejected. After CRLF is folded to LF and the shop tag is stripped, the text must be 20–1000 characters and strictly longer than the pin label.
+- **Purpose:** Shop-text problem of a shop note. Apart from LF/CR, control characters are rejected after the text is trimmed (an edge tab is ignored, like in the API). After CRLF is folded to LF and the shop tag is stripped, the text must be 20–1000 characters and strictly longer than the pin label.
 - **Inputs:** Composer or stored note `text`, and the pin `label` (or `null`).
 - **Returns / side effects:** `'short'`, `'long'`, `'notLonger'`, `'controls'`, or `null`. No network.
 - **Used by:** `ShopAddWizard`.

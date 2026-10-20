@@ -1766,9 +1766,10 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 
 ### Variant: shop-edit-save-rejected
 
-The moderator changed **Shop text** and pressed **Save changes**. The API rejected the save with
-the known reason **The shop name must not contain the street or the postal code.** The editor
-returns to step **2 / 5 · Place** and keeps that reason visible.
+The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
+pressed **Save changes**. The client lookup was inconclusive, then the API rejected the account
+update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No account with that
+username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts welcome shop edit save rejected](images/welcome-shop-edit-save-rejected.png)
 
@@ -2254,9 +2255,10 @@ A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save
 
 ### Variant: edit-save-rejected
 
-A moderator opened **Edit shop note** on Cafe Luna, changed the text, and **Save changes** was
-rejected. The editor stays open. The alert
-**The shop name must not contain the street or the postal code.** is visible.
+A moderator opened **Edit shop note** on Cafe Luna, changed **Shop text**, entered **luna** on
+step **4 / 5 · 21.gifts user**, and pressed **Save changes**. The client lookup was inconclusive,
+then the API rejected the account update. The editor returns to step **4 / 5 · 21.gifts user** and
+shows **No account with that username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts shops edit save rejected](images/shops-edit-save-rejected.png)
 
@@ -2993,9 +2995,10 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 
 ### Variant: shop-edit-save-rejected
 
-The moderator changed **Shop text** and pressed **Save changes**. The API rejected the save with
-the known reason **The shop name must not contain the street or the postal code.** The editor
-returns to step **2 / 5 · Place** and keeps that reason visible.
+The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
+pressed **Save changes**. The client lookup was inconclusive, then the API rejected the account
+update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No account with that
+username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts member shop edit save rejected](images/members-shop-edit-save-rejected.png)
 
@@ -4860,9 +4863,10 @@ scroll surface; the header Close and pinned footer **Use this place** stay visib
 
 ### Variant: shop-edit-save-rejected
 
-The moderator changed **Shop text** and pressed **Save changes**. The API rejected the save with
-the known reason **The shop name must not contain the street or the postal code.** The editor
-returns to step **2 / 5 · Place** and keeps that reason visible.
+The moderator changed **Shop text**, entered **luna** on step **4 / 5 · 21.gifts user**, and
+pressed **Save changes**. The client lookup was inconclusive, then the API rejected the account
+update. The editor returns to step **4 / 5 · 21.gifts user** and shows **No account with that
+username. Check the spelling of the 21.gifts username.**
 
 ![21.gifts public message shop edit save rejected](images/messages-id-shop-edit-save-rejected.png)
 

@@ -719,6 +719,24 @@ async function fulfillMentionPeople(
   });
 }
 
+const UNKNOWN_LUNA_MENTION_ACCOUNTS = Array.from({ length: 20 }, (_, index) => ({
+  id: `acc-luna-${String(index + 1)}`,
+  username: `luna.${String(index + 1).padStart(2, '0')}`,
+  name: `Luna ${String(index + 1)}`,
+}));
+
+/** Enter luna after a full, inconclusive mention page and wait for the lookup to settle. */
+async function fillUnknownShopUsername(page: Page): Promise<void> {
+  const lookup = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return url.pathname === '/forum/mentions' && url.searchParams.get('q') === 'luna';
+  });
+  await page.getByLabel('21.gifts username').fill('luna');
+  await lookup;
+  await expect(page.getByText('Checking that account…')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+}
+
 /** Empty public thread replies so `/messages/[id]` does not hang on the replies GET. */
 async function fulfillPublicThreadReplies(
   page: Page,
@@ -3128,6 +3146,7 @@ test.describe('onboarding screens', () => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
+    await fulfillMentionPeople(page, UNKNOWN_LUNA_MENTION_ACCOUNTS);
     await page.route(/\/me$/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -3188,9 +3207,37 @@ test.describe('onboarding screens', () => {
     });
     await page.route('**/forum/messages/m-shop/text', async (route) => {
       await route.fulfill({
-        status: 400,
+        status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Shop name must not contain the address' }),
+        body: JSON.stringify({
+          id: 'm-shop',
+          name: 'Ada',
+          text: 'Cafe Luna is open every morning and on Sunday afternoons.\n\n#21GiftsShop',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 5,
+          payable: true,
+          hasPhoto: false,
+          role: 'basis',
+          place: {
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Happyland',
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          },
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-shop/shop-account', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No account with that username' }),
       });
     });
     await page.goto('/welcome');
@@ -3206,7 +3253,12 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('2 / 5 · Place')).toBeVisible();
     await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-place');
-    await page.getByRole('button', { name: 'Edit place' }).click();
+    // Open the editor's own place button, not the composer's.
+    await page
+      .getByText('2 / 5 · Place')
+      .locator('..')
+      .getByRole('button', { name: 'Add a place' })
+      .click();
     await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
     await page.getByRole('button', { name: 'Use this place' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-place-open');
@@ -3231,13 +3283,17 @@ test.describe('onboarding screens', () => {
       .getByLabel('Shop text')
       .fill('Cafe Luna is open every morning and on Sunday afternoons.');
     await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page);
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Save changes' }).click();
-    const rejected = page.getByText(
-      'The shop name must not contain the street or the postal code.',
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const rejected = page.getByRole('alert').filter({
+      hasText: 'No account with that username. Check the spelling of the 21.gifts username.',
+    });
+    await expect(rejected).toHaveText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
     );
-    await expect(rejected.first()).toBeVisible();
-    await rejected.first().scrollIntoViewIfNeeded();
+    await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-save-rejected');
   });
 
@@ -6399,6 +6455,7 @@ test.describe('onboarding screens', () => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
+    await fulfillMentionPeople(page, UNKNOWN_LUNA_MENTION_ACCOUNTS);
     await page.route(/\/me$/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -6486,9 +6543,41 @@ test.describe('onboarding screens', () => {
     });
     await page.route(`**/forum/messages/${noteId}/text`, async (route) => {
       await route.fulfill({
-        status: 400,
+        status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Shop name must not contain the address' }),
+        body: JSON.stringify({
+          id: noteId,
+          accountId: memberId,
+          name: 'Carol',
+          text: 'Cafe Luna is open every morning and on Sunday afternoons.\n\n#21GiftsShop',
+          createdAt: '2026-08-02T10:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          hasVideo: false,
+          videoContentType: null,
+          role: 'verified',
+          replyCount: 0,
+          place: {
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Happyland',
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          },
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${noteId}/shop-account`, async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No account with that username' }),
       });
     });
     await page.goto(`/members/${memberId}`);
@@ -6505,7 +6594,12 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('2 / 5 · Place')).toBeVisible();
     await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-place');
-    await page.getByRole('button', { name: 'Edit place' }).click();
+    // Open the editor's own place button, not the composer's.
+    await page
+      .getByText('2 / 5 · Place')
+      .locator('..')
+      .getByRole('button', { name: 'Add a place' })
+      .click();
     await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
     await page.getByRole('button', { name: 'Use this place' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-place-open');
@@ -6530,13 +6624,17 @@ test.describe('onboarding screens', () => {
       .getByLabel('Shop text')
       .fill('Cafe Luna is open every morning and on Sunday afternoons.');
     await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page);
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Save changes' }).click();
-    const rejected = page.getByText(
-      'The shop name must not contain the street or the postal code.',
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const rejected = page.getByRole('alert').filter({
+      hasText: 'No account with that username. Check the spelling of the 21.gifts username.',
+    });
+    await expect(rejected).toHaveText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
     );
-    await expect(rejected.first()).toBeVisible();
-    await rejected.first().scrollIntoViewIfNeeded();
+    await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-save-rejected');
   });
 
@@ -11065,6 +11163,7 @@ test.describe('onboarding screens', () => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
+    await fulfillMentionPeople(page, UNKNOWN_LUNA_MENTION_ACCOUNTS);
     await page.route(/\/me$/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -11100,9 +11199,38 @@ test.describe('onboarding screens', () => {
     });
     await page.route(`**/forum/messages/${id}/text`, async (route) => {
       await route.fulfill({
-        status: 400,
+        status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Shop name must not contain the address' }),
+        body: JSON.stringify({
+          id,
+          name: 'Ada',
+          text: 'Cafe Luna is open every morning and on Sunday afternoons.\n\n#21GiftsShop',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          replyCount: 0,
+          place: {
+            lat: 14.6,
+            lng: 120.98,
+            label: 'Happyland',
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          },
+        }),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/shop-account`, async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No account with that username' }),
       });
     });
     const shopNote = {
@@ -11158,7 +11286,12 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('2 / 5 · Place')).toBeVisible();
     await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-place');
-    await page.getByRole('button', { name: 'Edit place' }).click();
+    // Open the editor's own place button, not the composer's.
+    await page
+      .getByText('2 / 5 · Place')
+      .locator('..')
+      .getByRole('button', { name: 'Add a place' })
+      .click();
     await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
     await page.getByRole('button', { name: 'Use this place' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-place-open');
@@ -11183,13 +11316,17 @@ test.describe('onboarding screens', () => {
       .getByLabel('Shop text')
       .fill('Cafe Luna is open every morning and on Sunday afternoons.');
     await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page);
     await page.getByRole('button', { name: 'Next' }).click();
     await page.getByRole('button', { name: 'Save changes' }).click();
-    const rejected = page.getByText(
-      'The shop name must not contain the street or the postal code.',
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const rejected = page.getByRole('alert').filter({
+      hasText: 'No account with that username. Check the spelling of the 21.gifts username.',
+    });
+    await expect(rejected).toHaveText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
     );
-    await expect(rejected.first()).toBeVisible();
-    await rejected.first().scrollIntoViewIfNeeded();
+    await rejected.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-save-rejected');
   });
 
@@ -19265,6 +19402,7 @@ test.describe('shops screens', () => {
 
   test('shops edit-save-rejected', async ({ page }) => {
     await seedAda(page, 'moderator');
+    await fulfillMentionPeople(page, UNKNOWN_LUNA_MENTION_ACCOUNTS);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -19295,9 +19433,26 @@ test.describe('shops screens', () => {
     });
     await page.route('**/forum/messages/m-staff/text', async (route) => {
       await route.fulfill({
-        status: 400,
+        status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Shop name must not contain the address' }),
+        body: JSON.stringify({
+          id: 'm-staff',
+          name: 'Ada',
+          text: 'Cafe Luna is open every morning and on Sunday afternoons.\n\n#21GiftsShop',
+          createdAt: '2026-08-28T12:00:00.000Z',
+          sats: 0,
+          payable: false,
+          hasPhoto: false,
+          role: 'basis',
+          place: COMPLETE_SHOP_PLACE,
+        }),
+      });
+    });
+    await page.route('**/forum/messages/m-staff/shop-account', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No account with that username' }),
       });
     });
     await page.goto('/shops');
@@ -19310,16 +19465,17 @@ test.describe('shops screens', () => {
       .getByLabel('Shop text')
       .fill('Cafe Luna is open every morning and on Sunday afternoons.');
     await page.getByRole('button', { name: 'Next' }).click();
+    await fillUnknownShopUsername(page);
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('5 / 5 · Summary')).toBeVisible();
     await page.getByRole('button', { name: 'Save changes' }).click();
-    await expect(
-      page.getByText('The shop name must not contain the street or the postal code.'),
-    ).toHaveCount(2);
-    const alert = page
-      .getByLabel('Shop place and address')
-      .getByText('The shop name must not contain the street or the postal code.');
-    await expect(alert).toBeVisible();
+    await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+    const alert = page.getByRole('alert').filter({
+      hasText: 'No account with that username. Check the spelling of the 21.gifts username.',
+    });
+    await expect(alert).toHaveText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
     await alert.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-edit-save-rejected');
   });
