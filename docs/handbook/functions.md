@@ -1069,7 +1069,7 @@
 
 - **Purpose:** Shared Google Maps JavaScript canvas used by the all-places screen and the one-shop public page. It draws the supplied markers, centers one point at zoom 14, or fits several points and caps fitted zoom at 14.
 - **Inputs:** Browser maps key or null, marker points, anchor, `fitAll`, and a test id. A null key leaves its frame empty; `ShopScreen` omits that frame entirely.
-- **Returns / side effects:** Bounded map frame. Loads Google's script once, clears an authentication-failure dialog, and leaves surrounding text usable on script failure.
+- **Returns / side effects:** Bounded map frame. Loads Google's script through the shared `loadGoogleMaps`, clears an authentication-failure dialog, and leaves surrounding text usable on script failure.
 - **Used by:** `PlacesMapScreen`, `ShopScreen`.
 
 ## Function: PublicMessagePage
@@ -1421,6 +1421,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** `Promise<string | null>`: the trimmed key, or `null` for a missing, non-string, or blank key and for any network or JSON failure. Never rejects.
 - **Used by:** `PlacesMapScreen`, `ShopScreen`.
 
+## Function: loadGoogleMaps
+
+- **Purpose:** One page-wide loader for the Google Maps JavaScript API, shared by `GoogleMapCanvas` and `PlaceField` so they never add a second script. Calls made while the script is still loading get the same in-flight promise.
+- **Inputs:** Browser key from `GET /maps/key`. The one script (`script[data-gmaps="weekly"]`) loads `https://maps.googleapis.com/maps/api/js?key=…&v=weekly` with no extra libraries; a script already on the page keeps its key.
+- **Returns / side effects:** `Promise<void>` that resolves at once when `google.maps` exists, otherwise when the script loads and installs `google.maps`. It rejects on a script error or a load without `google.maps`, marks that script `data-gmaps-state="error"`, and every later call rejects until the script is removed from the document.
+- **Used by:** `GoogleMapCanvas`, `PlaceField`.
+
 ## Function: fetchPlaces
 
 - **Purpose:** Load every live top-level forum pin for the signed-in session.
@@ -1439,7 +1446,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Optional place control on the top-level forum composer, and the compact editor a moderator uses on a shop note. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin. On the device's local Sunday neither the preview nor the map panel is rendered; the pin stays inside the Sunday writing gate. Otherwise, once the frame box is measured, the preview and the map panel are fixed to the window and kept inside the app frame, and are not sized from the viewport (`vw`). Until that box is measured they sit under the pin as an absolute anchor. The map shrinks so the confirm control stays inside the window, and the page still has one scroller.
 - **Inputs:** `place`, `disabled`, `onChange`. Optional `buttonSize` (`lg` default, or `sm`), `buttonVariant` (`secondary` default, or `ghost`), `showPreview` (default true), `ariaLabel` (default **Add a place**), and `onCommit`. Without `onCommit`, Done and Remove call `onChange` and close. With `onCommit`, those buttons wait; a rejection keeps the panel open and shows the save error; a success closes without calling `onChange`. When preview is hidden and a pin is already set, Remove stays inside the open panel, including when the map is unavailable.
-- **Returns / side effects:** Attach button, optional preview, and panel. Fetches `/maps/key` when opened.
+- **Returns / side effects:** Attach button, optional preview, and panel. Fetches `/maps/key` when opened and loads Google's script through the shared `loadGoogleMaps`.
 - **Used by:** `ForumBoard` (top-level composer) and `ShopPlaceControl`.
 
 ## Function: fitBoxInFrame

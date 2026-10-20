@@ -47,7 +47,7 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   useAuthStore.setState({ session: null, account: null });
-  document.querySelectorAll('script[data-google-maps="1"]').forEach((node) => {
+  document.querySelectorAll('script[data-gmaps="weekly"]').forEach((node) => {
     node.remove();
   });
   delete (window as { google?: unknown }).google;
@@ -321,9 +321,9 @@ describe('PlacesMapScreen', () => {
     renderWithLocale(<PlacesMapScreen />);
     await screen.findByRole('link', { name: 'Ada · Happyland' });
     await waitFor(() => {
-      expect(document.querySelector('script[data-google-maps="1"]')).toBeTruthy();
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
     });
-    document.querySelector('script[data-google-maps="1"]')?.dispatchEvent(new Event('error'));
+    document.querySelector('script[data-gmaps="weekly"]')?.dispatchEvent(new Event('error'));
     expect(screen.getByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
   });
 
@@ -334,21 +334,21 @@ describe('PlacesMapScreen', () => {
     const view = renderWithLocale(<PlacesMapScreen />);
     await screen.findByRole('link', { name: 'Ada · Happyland' });
     await waitFor(() => {
-      expect(document.querySelector('script[data-google-maps="1"]')).toBeTruthy();
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
     });
-    const script = document.querySelector('script[data-google-maps="1"]');
+    const script = document.querySelector('script[data-gmaps="weekly"]');
     script?.dispatchEvent(new Event('load'));
     await Promise.resolve();
     view.unmount();
-    document.querySelectorAll('script[data-google-maps="1"]').forEach((node) => {
+    document.querySelectorAll('script[data-gmaps="weekly"]').forEach((node) => {
       node.remove();
     });
     const again = renderWithLocale(<PlacesMapScreen />);
     await screen.findByRole('link', { name: 'Ada · Happyland' });
     await waitFor(() => {
-      expect(document.querySelector('script[data-google-maps="1"]')).toBeTruthy();
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
     });
-    const pending = document.querySelector('script[data-google-maps="1"]');
+    const pending = document.querySelector('script[data-gmaps="weekly"]');
     again.unmount();
     pending?.dispatchEvent(new Event('load'));
     await Promise.resolve();
@@ -385,7 +385,7 @@ describe('PlacesMapScreen', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'browser-key' })));
     renderWithLocale(<PlacesMapScreen />);
     expect(await screen.findByText('No places yet.')).toBeTruthy();
-    expect(document.querySelector('script[data-google-maps="1"]')).toBeNull();
+    expect(document.querySelector('script[data-gmaps="weekly"]')).toBeNull();
   });
 
   it('treats a null, missing, blank, or non-string key as no map', async () => {
@@ -395,7 +395,7 @@ describe('PlacesMapScreen', () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(body)));
       const view = renderWithLocale(<PlacesMapScreen />);
       expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
-      expect(document.querySelector('script[data-google-maps="1"]')).toBeNull();
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeNull();
       view.unmount();
     }
   });
@@ -410,12 +410,12 @@ describe('PlacesMapScreen', () => {
     renderWithLocale(<PlacesMapScreen />);
     await screen.findByRole('link', { name: 'Ada · Happyland' });
     await waitFor(() => {
-      expect(document.querySelector('script[data-google-maps="1"]')).toBeTruthy();
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
     });
     (window as { google?: unknown }).google = {
       maps: { Map: vi.fn(() => map), Marker },
     };
-    document.querySelector('script[data-google-maps="1"]')?.dispatchEvent(new Event('load'));
+    document.querySelector('script[data-gmaps="weekly"]')?.dispatchEvent(new Event('load'));
     await waitFor(() => {
       expect(map.setCenter).toHaveBeenCalledWith({ lat: 14.6, lng: 120.98 });
     });
@@ -434,7 +434,7 @@ describe('PlacesMapScreen', () => {
     resolvePlaces([ROW]);
     expect(await screen.findByRole('link', { name: 'Ada · Happyland' })).toBeTruthy();
     const script = await waitFor(() => {
-      const node = document.querySelector('script[data-google-maps="1"]');
+      const node = document.querySelector('script[data-gmaps="weekly"]');
       expect(node).toBeTruthy();
       return node as HTMLScriptElement;
     });
@@ -483,7 +483,7 @@ describe('PlacesMapScreen', () => {
     renderWithLocale(<PlacesMapScreen />);
     await screen.findByRole('link', { name: 'Ada · Happyland' });
     const script = await waitFor(() => {
-      const node = document.querySelector('script[data-google-maps="1"]');
+      const node = document.querySelector('script[data-gmaps="weekly"]');
       expect(node).toBeTruthy();
       return node as HTMLScriptElement;
     });

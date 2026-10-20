@@ -1,6 +1,7 @@
 import { Profiler } from 'react';
 import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { GoogleMapCanvas } from '@/components/GoogleMapCanvas';
 import { PlaceField } from '@/components/PlaceField';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -403,6 +404,49 @@ describe('PlaceField', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     script?.dispatchEvent(new Event('error'));
     await Promise.resolve();
+  });
+
+  it('ignores a script error after the panel closed', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    const toggle = screen.getByRole('button', { name: 'Add a place' });
+    fireEvent.click(toggle);
+    await waitFor(() => {
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
+    });
+    fireEvent.click(toggle);
+    document.querySelector('script[data-gmaps="weekly"]')?.dispatchEvent(new Event('error'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.queryByText('The map is not available.')).toBeNull();
+  });
+
+  it('shares one map script with GoogleMapCanvas', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
+    const map = { setCenter: vi.fn(), addListener: vi.fn() };
+    const canvas = renderWithLocale(
+      <GoogleMapCanvas
+        mapsKey="k"
+        points={[{ lat: 1, lng: 2 }]}
+        anchor={{ lat: 1, lng: 2 }}
+        fitAll={false}
+        testId="shared-map"
+      />,
+    );
+    renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
+    expect(document.querySelectorAll('script[data-gmaps="weekly"]')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalled();
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(document.querySelectorAll('script[data-gmaps="weekly"]')).toHaveLength(1);
+    (window as { google?: unknown }).google = {
+      maps: { Map: vi.fn(() => map), Marker: vi.fn(() => ({ addListener: vi.fn() })) },
+    };
+    document.querySelector('script[data-gmaps="weekly"]')?.dispatchEvent(new Event('load'));
+    expect(await screen.findByLabelText('Place name')).toBeTruthy();
+    expect(document.querySelectorAll('script[data-gmaps="weekly"]')).toHaveLength(1);
+    canvas.unmount();
   });
 
   it('cancels an in-flight key load on close', async () => {

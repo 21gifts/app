@@ -4730,6 +4730,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/[npub]',
+    id: 'photos',
+    image: 'npub-photos.png',
+    visual: 'state-npub-photos',
+    needle: "shotScreen(page, 'state-npub-photos')",
+  },
+  {
+    route: '/[npub]',
+    id: 'photo-2',
+    image: 'npub-photo-2.png',
+    visual: 'state-npub-photo-2',
+    needle: "shotScreen(page, 'state-npub-photo-2')",
+  },
+  {
+    route: '/[npub]',
     id: 'no-payment',
     image: 'npub-no-payment.png',
     visual: 'state-npub-no-payment',

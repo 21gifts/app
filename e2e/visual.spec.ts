@@ -17862,6 +17862,19 @@ test.describe('public shop screen', () => {
   const goneNpub = `npub1${'3'.repeat(58)}`;
   const unavailableNpub = `npub1${'4'.repeat(58)}`;
   const noPaymentNpub = `npub1${'5'.repeat(58)}`;
+  const galleryNpub = `npub1${'7'.repeat(58)}`;
+  /** Waits until both gallery stills have decoded, so no shot shows a broken image. */
+  const galleryLoaded = async (page: Page): Promise<void> => {
+    const stills = page.getByRole('img', { name: 'Photo from Twin Gallery' });
+    await expect(stills).toHaveCount(2);
+    for (const still of await stills.all()) {
+      await expect
+        .poll(() =>
+          still.evaluate((node: HTMLImageElement) => node.complete && node.naturalWidth > 0),
+        )
+        .toBe(true);
+    }
+  };
 
   test('public shop default', async ({ page }) => {
     await page.goto(`/${listedNpub}`);
@@ -17891,6 +17904,40 @@ test.describe('public shop screen', () => {
     await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
     await photoLoaded(page);
     await shotScreen(page, 'state-npub-copied');
+  });
+
+  test('public shop photos', async ({ page }) => {
+    await page.goto(`/${galleryNpub}`);
+    await expect(page.getByRole('heading', { name: 'Twin Gallery' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Photo 1 of 2' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    await expect(page.getByRole('button', { name: 'Photo 2 of 2' })).toBeVisible();
+    await galleryLoaded(page);
+    await shotScreen(page, 'state-npub-photos');
+  });
+
+  test('public shop photo 2', async ({ page }) => {
+    await page.goto(`/${galleryNpub}`);
+    await expect(page.getByRole('heading', { name: 'Twin Gallery' })).toBeVisible();
+    await galleryLoaded(page);
+    await page.getByRole('button', { name: 'Photo 2 of 2' }).click();
+    await expect(page.getByRole('button', { name: 'Photo 2 of 2' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    await expect(page.getByText('2/2')).toBeVisible();
+    // The row scrolls smoothly; wait until it rests on the last still.
+    await expect
+      .poll(() =>
+        page
+          .locator('[data-scroll-x]')
+          .first()
+          .evaluate((node) => Math.abs(node.scrollWidth - node.clientWidth - node.scrollLeft) < 1),
+      )
+      .toBe(true);
+    await shotScreen(page, 'state-npub-photo-2');
   });
 
   test('public shop no payment', async ({ page }) => {

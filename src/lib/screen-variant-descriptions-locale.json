@@ -14,6 +14,16 @@
     "es": "Después de pulsar el control de solo icono Copiar, el icono de verificación tiene el nombre accesible Copiado. El npub sigue visible.",
     "fil": "Pagkatapos pindutin ang icon-only na kontrol na Kopyahin, ang check icon ay may accessible na pangalang Nakopya. Nananatiling nakikita ang npub."
   },
+  "/[npub]:photos": {
+    "de": "Gelistete Twin Gallery mit zwei verschiedenen Fotos. Die Galerie zeigt das erste Foto, das zweite ragt rechts herein, oben rechts steht 1/2 und darunter zwei Punkte; der erste Punkt ist aktiv.",
+    "es": "Twin Gallery listada con dos fotos distintas. La galería muestra la primera foto, la segunda asoma a la derecha, arriba a la derecha pone 1/2 y debajo hay dos puntos; el primero está activo.",
+    "fil": "Nakalistang Twin Gallery na may dalawang magkaibang litrato. Ipinapakita ng gallery ang unang litrato, sumisilip sa kanan ang pangalawa, may 1/2 sa kanang itaas, at may dalawang tuldok sa ibaba; aktibo ang una."
+  },
+  "/[npub]:photo-2": {
+    "de": "Nach dem Drücken des zweiten Punkts (Foto 2 von 2) zeigt die Galerie das zweite Foto in voller Breite, oben rechts steht 2/2 und der zweite Punkt ist aktiv.",
+    "es": "Después de pulsar el segundo punto (Foto 2 de 2), la galería muestra la segunda foto a todo el ancho, arriba a la derecha pone 2/2 y el segundo punto está activo.",
+    "fil": "Pagkatapos pindutin ang pangalawang tuldok (Litrato 2 sa 2), ipinapakita ng gallery ang pangalawang litrato sa buong lapad, may 2/2 sa kanang itaas, at aktibo ang pangalawang tuldok."
+  },
   "/[npub]:no-payment": {
     "de": "Gelistetes Quiet Shop mit payUsername: null und nip05: null. Adresse, Forumslink und npub bleiben; der Abschnitt mit der verifizierten Adresse und der ganze Zahlungsblock (Überschrift, Adresse, QR) fehlen.",
     "es": "Quiet Shop listado con payUsername: null y nip05: null. Permanecen la dirección, el enlace al foro y el npub; faltan la sección de dirección verificada y todo el bloque de pago (título, dirección, QR).",

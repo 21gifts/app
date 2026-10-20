@@ -1773,6 +1773,18 @@ After pressing the icon-only **Copy** control, its check icon has the accessible
 
 ![21.gifts public shop copied](images/npub-copied.png)
 
+### Variant: photos
+
+Listed **Twin Gallery** with two different photos. The gallery shows the first photo with the second peeking in on the right, the position badge **1/2**, and two dot controls below; the first dot (**Photo 1 of 2**) is current.
+
+![21.gifts public shop with two photos](images/npub-photos.png)
+
+### Variant: photo-2
+
+After pressing the second dot (**Photo 2 of 2**), the gallery shows the second photo at full width, the badge reads **2/2**, and the second dot is current.
+
+![21.gifts public shop second photo](images/npub-photo-2.png)
+
 ### Variant: no-payment
 
 Listed **Quiet Shop** with `payUsername: null` and `nip05: null`. Address, forum link, and npub remain; the verified-address section and the whole payment block (heading, address, QR) are absent.

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactElement } from 'react';
+import { loadGoogleMaps } from '@/lib/google-maps-loader';
 
 /** One latitude/longitude shown on {@link GoogleMapCanvas}. */
 export interface GoogleMapPoint {
@@ -34,32 +35,6 @@ type GoogleWindow = Window & {
   google?: { maps?: GoogleMapsNamespace };
   gm_authFailure?: () => void;
 };
-
-/**
- * Load the Maps JavaScript API once. Resolves when `google.maps` exists.
- *
- * @param key - Browser key from GET /maps/key. Not logged.
- * @returns Resolves when the script has loaded.
- */
-function loadGoogleMaps(key: string): Promise<void> {
-  const host = window as GoogleWindow;
-  if (host.google?.maps !== undefined) {
-    return Promise.resolve();
-  }
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly`;
-    script.async = true;
-    script.dataset['googleMaps'] = '1';
-    script.onload = () => {
-      resolve();
-    };
-    script.onerror = () => {
-      reject(new Error('map'));
-    };
-    document.head.appendChild(script);
-  });
-}
 
 /** Props for {@link GoogleMapCanvas}. */
 export interface GoogleMapCanvasProps {

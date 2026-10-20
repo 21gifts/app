@@ -3990,6 +3990,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/[npub]:photos",
+    "label": "/[npub] photos",
+    "visual": "state-npub-photos",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/[npub]:photo-2",
+    "label": "/[npub] photo-2",
+    "visual": "state-npub-photo-2",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/[npub]:no-payment",
     "label": "/[npub] no-payment",
     "visual": "state-npub-no-payment",

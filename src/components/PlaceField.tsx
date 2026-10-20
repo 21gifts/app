@@ -14,6 +14,7 @@ import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGat
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import type { ForumPlacePin } from '@/lib/api-types';
+import { loadGoogleMaps } from '@/lib/google-maps-loader';
 import { fitBoxInFrame, type PlacedFrameBox } from '@/lib/page-frame';
 
 type GoogleLatLng = {
@@ -191,62 +192,20 @@ export function PlaceField(props: {
           acceptKey();
           return;
         }
-        const existing = document.querySelector('script[data-gmaps="weekly"]');
-        const onLoad = (): void => {
-          if (cancelled) {
-            return;
-          }
-          if (googleWindow.google?.maps === undefined || authFailedRef.current) {
-            if (existing instanceof HTMLScriptElement) {
-              existing.dataset['gmapsState'] = 'error';
-            }
-            setUnavailable(true);
-            setScriptReady(false);
-            return;
-          }
-          acceptKey();
-        };
-        const onError = (): void => {
-          if (cancelled) {
-            return;
-          }
-          if (existing instanceof HTMLScriptElement) {
-            existing.dataset['gmapsState'] = 'error';
-          }
-          setUnavailable(true);
-          setScriptReady(false);
-        };
-        if (existing instanceof HTMLScriptElement) {
-          if (existing.dataset['gmapsState'] === 'error' || authFailedRef.current) {
-            setUnavailable(true);
-            setScriptReady(false);
-            return;
-          }
-          setUnavailable(false);
-          existing.addEventListener('load', onLoad);
-          existing.addEventListener('error', onError);
-          return;
-        }
         if (authFailedRef.current) {
           setUnavailable(true);
           setScriptReady(false);
           return;
         }
         setUnavailable(false);
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(nextKey)}&v=weekly`;
-        script.dataset['gmaps'] = 'weekly';
-        script.addEventListener('load', () => {
-          if (googleWindow.google?.maps === undefined) {
-            script.dataset['gmapsState'] = 'error';
+        // One shared script for this field and every GoogleMapCanvas on the page.
+        loadGoogleMaps(nextKey).then(acceptKey, () => {
+          if (cancelled) {
+            return;
           }
-          onLoad();
+          setUnavailable(true);
+          setScriptReady(false);
         });
-        script.addEventListener('error', () => {
-          script.dataset['gmapsState'] = 'error';
-          onError();
-        });
-        document.head.appendChild(script);
       } catch {
         if (!cancelled) {
           setMapsKey(null);

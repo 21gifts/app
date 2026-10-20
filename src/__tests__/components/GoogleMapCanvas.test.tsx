@@ -4,7 +4,7 @@ import { GoogleMapCanvas } from '@/components/GoogleMapCanvas';
 
 afterEach(() => {
   cleanup();
-  document.querySelectorAll('script[data-google-maps="1"]').forEach((node) => node.remove());
+  document.querySelectorAll('script[data-gmaps="weekly"]').forEach((node) => node.remove());
   delete (window as { google?: unknown }).google;
 });
 
@@ -59,7 +59,7 @@ describe('GoogleMapCanvas', () => {
         testId="shop-map"
       />,
     );
-    const script = document.querySelector('script[data-google-maps="1"]');
+    const script = document.querySelector('script[data-gmaps="weekly"]');
     expect(script).toBeTruthy();
     view.unmount();
     const Map = vi.fn();
@@ -67,6 +67,30 @@ describe('GoogleMapCanvas', () => {
     script?.dispatchEvent(new Event('load'));
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(Map).not.toHaveBeenCalled();
+  });
+
+  it('leaves the frame empty when google.maps disappears after the load resolved', async () => {
+    let reads = 0;
+    Object.defineProperty(window, 'google', {
+      configurable: true,
+      get() {
+        reads += 1;
+        return reads === 1 ? { maps: { Map: vi.fn(), Marker: vi.fn() } } : undefined;
+      },
+    });
+    render(
+      <GoogleMapCanvas
+        mapsKey="browser-key"
+        points={[{ lat: 47.37, lng: 8.54 }]}
+        anchor={{ lat: 47.37, lng: 8.54 }}
+        fitAll={false}
+        testId="shop-map"
+      />,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(reads).toBe(2);
+    expect(screen.getByTestId('shop-map').childElementCount).toBe(0);
+    expect(document.querySelector('script[data-gmaps="weekly"]')).toBeNull();
   });
 
   it('does not load the map after Google rejected the key', async () => {
@@ -90,6 +114,6 @@ describe('GoogleMapCanvas', () => {
       />,
     );
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(document.querySelector('script[data-google-maps="1"]')).toBeNull();
+    expect(document.querySelector('script[data-gmaps="weekly"]')).toBeNull();
   });
 });

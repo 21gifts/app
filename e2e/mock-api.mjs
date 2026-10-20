@@ -2099,6 +2099,20 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const galleryPhotoMatch = pathName.match(/^\/e2e\/shop-photos\/(one|two)\.jpg$/);
+  if (method === 'GET' && galleryPhotoMatch !== null) {
+    // Two different fixture stills, so the gallery shot shows which photo is selected.
+    const file = galleryPhotoMatch[1] === 'one' ? 'technical-note.jpg' : 'profile-about.jpg';
+    const bytes = fs.readFileSync(new URL(`./fixtures/${file}`, import.meta.url));
+    res.writeHead(200, {
+      'content-type': 'image/jpeg',
+      'cache-control': 'public, max-age=60',
+      'access-control-allow-origin': '*',
+    });
+    res.end(bytes);
+    return;
+  }
+
   const shopMatch = pathName.match(/^\/shops\/([^/]+)$/);
   if (method === 'GET' && shopMatch !== null) {
     const value = decodeURIComponent(shopMatch[1]);
@@ -2106,6 +2120,7 @@ const server = http.createServer(async (req, res) => {
     const goneNpub = `npub1${'3'.repeat(58)}`;
     const unavailableNpub = `npub1${'4'.repeat(58)}`;
     const noPaymentNpub = `npub1${'5'.repeat(58)}`;
+    const galleryNpub = `npub1${'7'.repeat(58)}`;
     const knownHex = 'a'.repeat(64);
     if (value === knownHex) {
       res.writeHead(301, {
@@ -2144,6 +2159,41 @@ const server = http.createServer(async (req, res) => {
                 width: 1,
                 height: 1,
               },
+            ],
+            payUsername: 'luna',
+            nip05: 'luna@21.gifts',
+            createdAt: '2026-08-28T12:00:00.000Z',
+          },
+        },
+        { 'cache-control': 'public, max-age=60' },
+      );
+      return;
+    }
+    if (value === galleryNpub) {
+      json(
+        res,
+        200,
+        {
+          shop: {
+            npub: galleryNpub,
+            messageId: '11111111-1111-4111-8111-111111111111',
+            name: 'Twin Gallery',
+            description: 'Two photos, one shop.',
+            place: {
+              lat: 47.3769,
+              lng: 8.5417,
+              label: 'Zurich Old Town',
+              address: {
+                street: 'Moon Street',
+                houseNumber: '21',
+                postalCode: '8001',
+                city: 'Zurich',
+                country: 'CH',
+              },
+            },
+            photos: [
+              { url: `http://${HOST}:${PORT}/e2e/shop-photos/one.jpg`, width: 1168, height: 784 },
+              { url: `http://${HOST}:${PORT}/e2e/shop-photos/two.jpg`, width: 1400, height: 933 },
             ],
             payUsername: 'luna',
             nip05: 'luna@21.gifts',

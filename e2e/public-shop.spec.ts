@@ -6,6 +6,7 @@ const GONE_NPUB = `npub1${'3'.repeat(58)}`;
 const UNAVAILABLE_NPUB = `npub1${'4'.repeat(58)}`;
 const NO_PAYMENT_NPUB = `npub1${'5'.repeat(58)}`;
 const UNKNOWN_NPUB = `npub1${'6'.repeat(58)}`;
+const GALLERY_NPUB = `npub1${'7'.repeat(58)}`;
 const KNOWN_HEX = 'a'.repeat(64);
 
 test('e2e:check dynamic path token for /[npub]', async ({ page }) => {
@@ -31,6 +32,34 @@ test('Function: ShopPage renders the public shop identity', async ({ page }) => 
   );
   await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
   await expect(page.getByTestId('shop-map')).toHaveCount(0);
+});
+
+test('ShopScreen gallery: two photos show dots and the second dot selects photo 2', async ({
+  page,
+}) => {
+  await page.goto(`/${GALLERY_NPUB}`);
+  await expect(page.getByRole('heading', { name: 'Twin Gallery' })).toBeVisible();
+  const stills = page.getByRole('img', { name: 'Photo from Twin Gallery' });
+  await expect(stills).toHaveCount(2);
+  await expect(stills.nth(0)).toHaveAttribute('src', /\/e2e\/shop-photos\/one\.jpg$/);
+  await expect(stills.nth(1)).toHaveAttribute('src', /\/e2e\/shop-photos\/two\.jpg$/);
+  const first = page.getByRole('button', { name: 'Photo 1 of 2' });
+  const second = page.getByRole('button', { name: 'Photo 2 of 2' });
+  await expect(first).toHaveAttribute('aria-current', 'true');
+  await expect(second).not.toHaveAttribute('aria-current', 'true');
+  await expect(page.getByText('1/2')).toBeVisible();
+  await second.click();
+  await expect(second).toHaveAttribute('aria-current', 'true');
+  await expect(first).not.toHaveAttribute('aria-current', 'true');
+  await expect(page.getByText('2/2')).toBeVisible();
+  await expect
+    .poll(() =>
+      page
+        .locator('[data-scroll-x]')
+        .first()
+        .evaluate((node) => Math.abs(node.scrollWidth - node.clientWidth - node.scrollLeft) < 1),
+    )
+    .toBe(true);
 });
 
 test('ShopScreen shows the payment address under the heading with the logo QR', async ({
@@ -119,6 +148,45 @@ test('Function: GoogleMapCanvas draws only the public shop marker when a key exi
       page.evaluate(() => (window as Window & { shopMarkerCount?: number }).shopMarkerCount),
     )
     .toBe(1);
+});
+
+test('Function: loadGoogleMaps — the shop map adds one weekly Maps script', async ({ page }) => {
+  let scripts = 0;
+  await page.route('**/maps/key', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ key: 'e2e' }),
+    });
+  });
+  await page.route('https://maps.googleapis.com/maps/api/js*', async (route) => {
+    scripts += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/javascript',
+      body: [
+        'window.shopMarkerCount = 0;',
+        'window.google = { maps: {',
+        '  Map: class { setCenter() {} },',
+        '  Marker: class { constructor() { window.shopMarkerCount += 1; } },',
+        '} };',
+      ].join('\n'),
+    });
+  });
+  await page.goto(`/${LISTED_NPUB}`);
+  await expect(page.getByTestId('shop-map')).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as Window & { shopMarkerCount?: number }).shopMarkerCount),
+    )
+    .toBe(1);
+  const script = page.locator('script[data-gmaps="weekly"]');
+  await expect(script).toHaveCount(1);
+  await expect(script).toHaveAttribute(
+    'src',
+    'https://maps.googleapis.com/maps/api/js?key=e2e&v=weekly',
+  );
+  expect(scripts).toBe(1);
 });
 
 test('hex shop identity redirects permanently to the canonical npub', async ({ request }) => {
