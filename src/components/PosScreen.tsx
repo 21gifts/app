@@ -216,16 +216,15 @@ function settleOpen(
   settledChanged();
 }
 
-/** Make `charge` the open charge of `session` and try the kept payments on it again. */
+/** Make `charge` the open charge of `session` and try the kept payments on it again; the rest stay kept. */
 function armOpen(session: string | null, charge: PosCharge): void {
   const memory = settledFor(session);
   memory.open = charge;
   const early = memory.early;
   memory.early = [];
   for (const payment of early) {
-    if (pays(charge, payment)) {
-      settleOpen(session, payment);
-    }
+    // One this charge does not take stays kept: `pays` never lets it pay a charge made after it.
+    settleOpen(session, payment);
   }
 }
 
@@ -672,7 +671,10 @@ export function PosTill(): ReactElement {
   const shownPaid = till.paid;
   const paidId = till.paid?.id ?? null;
   const paidSats = till.paid?.amountSats ?? 0;
-  const paidFor = till.stateSession;
+  // The session whose read showed the charge, or before any read the session the wallet memory is
+  // for, so a confirmation closed before the first read is still recorded.
+  const session = useAuthStore((state) => state.session);
+  const paidFor = till.stateSession ?? session;
   useEffect(() => {
     if (paidId !== null && paidFor !== null && !paidSeen.has(paidId)) {
       paidSeen.add(paidId);

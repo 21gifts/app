@@ -1351,7 +1351,7 @@ describe('PosScreen', () => {
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       expect(screen.getByText('No payments yet.')).toBeTruthy();
       receive(21);
-      const dialog = screen.getByRole('alertdialog', { name: 'Paid' });
+      const dialog = await confirmation();
       expect(within(dialog).getByText('₿21')).toBeTruthy();
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
@@ -1368,7 +1368,7 @@ describe('PosScreen', () => {
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       receive(20, 1);
-      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      expect(await confirmation()).toBeTruthy();
     });
 
     it('ignores another amount, and any payment while no charge was open', async () => {
@@ -1378,7 +1378,8 @@ describe('PosScreen', () => {
       );
       const empty = renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
-      receive(21);
+      // Made well before the next charge exists.
+      receive(21, 0, Date.now() - 5_000);
       expect(screen.queryByRole('alertdialog')).toBeNull();
       empty.unmount();
       // The next charge is created after that payment, so the payment is not its.
@@ -1422,7 +1423,7 @@ describe('PosScreen', () => {
       expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
       expect(fetchMock).toHaveBeenCalledTimes(2);
       receive(21);
-      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      expect(await confirmation()).toBeTruthy();
       const history = screen.getByRole('region', { name: 'History' });
       expect(within(history).getByText(/^Paid ✓ /)).toBeTruthy();
       expect(within(history).queryByText('Expired')).toBeNull();
@@ -1469,7 +1470,7 @@ describe('PosScreen', () => {
       const till = renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       receive(21);
-      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      expect(await confirmation()).toBeTruthy();
       till.unmount();
       const amountPage = renderWithLocale(<PosAmount />);
       await waitFor(() => {
@@ -1503,7 +1504,7 @@ describe('PosScreen', () => {
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       receive(21);
-      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      expect(await confirmation()).toBeTruthy();
       act(() => {
         useAuthStore.setState({ session: 'other' });
       });
@@ -1523,7 +1524,7 @@ describe('PosScreen', () => {
       expect(await screen.findByRole('alert')).toBeTruthy();
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
       receive(21);
-      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      expect(await confirmation()).toBeTruthy();
     });
 
     it('New payment closes the confirmation, so the next till does not show it again', async () => {
@@ -1554,7 +1555,7 @@ describe('PosScreen', () => {
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       receive(21);
-      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      expect(await confirmation()).toBeTruthy();
       showTab();
       await waitFor(() => {
         expect(screen.queryByRole('alertdialog')).toBeNull();
@@ -1580,7 +1581,7 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
-    it('records a wallet-paid charge as seen only once the till of its session is in', async () => {
+    it('records a wallet-paid charge as seen at once, under the session the wallet memory is for', async () => {
       let answer: (response: Response) => void = () => undefined;
       const fetchMock = vi
         .fn()
@@ -1603,10 +1604,7 @@ describe('PosScreen', () => {
       amountPage.unmount();
       renderWithLocale(<PosScreen />);
       expect(await confirmation()).toBeTruthy();
-      expect(logInteraction).not.toHaveBeenCalled();
-      await act(async () => {
-        answer(jsonResponse({ charge: OPEN, history: [OPEN] }));
-      });
+      // Before the till read is in, recorded under the signed-in session.
       await waitFor(() => {
         expect(logInteraction).toHaveBeenCalledWith(
           'pos_charge_paid_seen',
@@ -1614,6 +1612,10 @@ describe('PosScreen', () => {
           'tok',
         );
       });
+      await act(async () => {
+        answer(jsonResponse({ charge: OPEN, history: [OPEN] }));
+      });
+      expect(logInteraction).toHaveBeenCalledTimes(1);
     });
 
     it('confirms on the till a late payment that lands while the amount page is up', async () => {
@@ -1915,7 +1917,7 @@ describe('PosScreen', () => {
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
       // The next payment of that amount is the new charge's.
       receive(21);
-      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      expect(await confirmation()).toBeTruthy();
     });
 
     it('counts the payment of a new charge reported before the late report of the one before', async () => {
@@ -1932,11 +1934,52 @@ describe('PosScreen', () => {
       showTab();
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       receive(21);
-      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      expect(await confirmation()).toBeTruthy();
       fireEvent.click(screen.getByRole('button', { name: 'Done' }));
       // The first charge's own report, made before the new charge, arrives last and pays nothing.
       receive(21, 0, Date.parse(next.createdAt) - 5_000);
       expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
+    it('keeps a payment the charge before does not take when a create fails', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let failPost: ((value: Response) => void) | undefined;
+      let serverCharge: Record<string, unknown> | null = ended;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return new Promise<Response>((resolve) => {
+              failPost = resolve;
+            });
+          }
+          const charge = serverCharge;
+          serverCharge = charge === ended ? null : charge;
+          return Promise.resolve(
+            jsonResponse({ charge, history: charge === null ? [] : [charge] }),
+          );
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      const amountPage = renderWithLocale(<PosAmount />);
+      await pressAmount('42');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(failPost).toBeDefined();
+      });
+      // The api did create the ₿42 charge, and it was paid, but its answer is lost.
+      const lost = { ...OPEN, id: 'c2', amountSats: 42, createdAt: new Date().toISOString() };
+      receive(42);
+      await act(async () => {
+        failPost?.(jsonResponse({ error: 'down' }, 502));
+      });
+      amountPage.unmount();
+      serverCharge = lost;
+      renderWithLocale(<PosScreen />);
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('₿42')).toBeTruthy();
     });
 
     it('never asks the api on a timer while a charge is open', async () => {
@@ -1968,7 +2011,7 @@ describe('PosScreen', () => {
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       receive(21);
       fireEvent.click(
-        within(screen.getByRole('alertdialog', { name: 'Paid' })).getByRole('button', {
+        within(await confirmation()).getByRole('button', {
           name: 'Done',
         }),
       );
@@ -2033,7 +2076,7 @@ describe('PosScreen', () => {
         expect(fetchMock).toHaveBeenCalledTimes(2);
       });
       await act(async () => undefined);
-      const dialog = screen.getByRole('alertdialog', { name: 'Paid' });
+      const dialog = await confirmation();
       expect(within(dialog).getByText('₿21')).toBeTruthy();
     });
 

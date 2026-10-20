@@ -236,8 +236,11 @@ html:not([data-local-sunday='1']) .sunday-write-notice {
   animation-delay: 1200ms;
 }
 
+/* Reduced motion: the paid confirmation shows at once with its check drawn, no rings. */
 @media (prefers-reduced-motion: reduce) {
-  .pos-paid-ring {
+  .pos-paid-ring,
+  .animate-paid-in,
+  .animate-paid-check {
     animation: none !important;
   }
 }
