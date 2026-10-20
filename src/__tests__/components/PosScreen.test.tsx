@@ -2285,6 +2285,61 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
     });
 
+    it('gives the charge before no payment when the read after a lost create shows a newer charge paid', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      const newerPaid = {
+        ...PAID,
+        id: 'c-paid',
+        createdAt: new Date().toISOString(),
+        paidAt: new Date().toISOString(),
+      };
+      let reads = 0;
+      let failPost: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return new Promise<Response>((resolve) => {
+              failPost = resolve;
+            });
+          }
+          reads += 1;
+          if (reads === 1) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          if (reads <= 3) {
+            return jsonResponse({ charge: null, history: [ended] });
+          }
+          if (reads === 4) {
+            throw new TypeError('Failed to fetch');
+          }
+          return jsonResponse({ charge: newerPaid, history: [newerPaid, ended] });
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      const amountPage = renderWithLocale(<PosAmount />);
+      await pressAmount('21');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(failPost).toBeDefined();
+      });
+      receive(21);
+      await act(async () => {
+        failPost?.(jsonResponse({ error: 'Bad gateway' }, 502));
+        await Promise.resolve();
+      });
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      amountPage.unmount();
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      // One payment, one paid sale: the charge before stays expired.
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(await within(history).findByText('Expired')).toBeTruthy();
+      expect(within(history).getAllByText(/^Paid ✓/)).toHaveLength(1);
+    });
+
     it('falls back to the charge before when the read after a lost create answer fails', async () => {
       const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
       let reads = 0;
