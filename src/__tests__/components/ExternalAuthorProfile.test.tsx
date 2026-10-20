@@ -1147,8 +1147,10 @@ describe('ExternalAuthorProfile', () => {
       expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
     });
     await waitFor(() => {
-      expect(screen.getByText('$0.00')).toBeTruthy();
+      expect(fetchFxSpot).toHaveBeenCalled();
     });
+    expect(screen.getByText('₿0')).toBeTruthy();
+    expect(screen.queryByText('$0.00')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
     expect(push).toHaveBeenCalledWith('/messages/note-1');
   });

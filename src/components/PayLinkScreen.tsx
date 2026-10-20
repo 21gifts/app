@@ -12,12 +12,12 @@ import { Button, Card, PageChrome } from '@/components/ui';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import type { AmountUnit } from '@/lib/api-types';
+import { committedFiatFigure, type FiatCode, type StoredFiat } from '@/lib/committed-fiat';
 import { payLinkUsername } from '@/lib/pay-link';
 import {
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
-  satsToFiatAmount,
   type FiatRateDay,
 } from '@/lib/stats-money';
 import {
@@ -48,7 +48,8 @@ function PayLinkAmount(props: {
   );
 }
 
-interface PayCharge {
+interface PayCharge extends StoredFiat {
+  id: string | null;
   amountSats: number;
   expiresAt: string;
 }
@@ -76,12 +77,36 @@ function formatLeft(ms: number): string {
  * @param now - Clock in epoch milliseconds.
  * @returns The charge the page should show.
  */
+/** A stored decimal, or `null` when the field is absent or not a string. */
+function readDecimal(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
+/** A stored fiat code, or `null` when the field is absent or not one of the four. */
+function readFiatCode(value: unknown): FiatCode | null {
+  if (value === 'USD' || value === 'CHF' || value === 'EUR' || value === 'PHP') {
+    return value;
+  }
+  return null;
+}
+
 function readCharge(value: unknown, now: number): PayCharge | null {
   if (value === null || typeof value !== 'object') {
     return null;
   }
-  const amountSats = (value as { amountSats?: unknown }).amountSats;
-  const expiresAt = (value as { expiresAt?: unknown }).expiresAt;
+  const record = value as {
+    id?: unknown;
+    amountSats?: unknown;
+    expiresAt?: unknown;
+    amountCurrency?: unknown;
+    amount?: unknown;
+    amountUsd?: unknown;
+    amountChf?: unknown;
+    amountEur?: unknown;
+    amountPhp?: unknown;
+  };
+  const amountSats = record.amountSats;
+  const expiresAt = record.expiresAt;
   if (typeof amountSats !== 'number' || !Number.isSafeInteger(amountSats) || amountSats < 1) {
     return null;
   }
@@ -92,7 +117,17 @@ function readCharge(value: unknown, now: number): PayCharge | null {
   if (!Number.isFinite(expiresMs) || expiresMs <= now) {
     return null;
   }
-  return { amountSats, expiresAt };
+  return {
+    id: typeof record.id === 'string' ? record.id : null,
+    amountSats,
+    expiresAt,
+    amountCurrency: readFiatCode(record.amountCurrency),
+    amount: readDecimal(record.amount),
+    amountUsd: readDecimal(record.amountUsd),
+    amountChf: readDecimal(record.amountChf),
+    amountEur: readDecimal(record.amountEur),
+    amountPhp: readDecimal(record.amountPhp),
+  };
 }
 
 /**
@@ -106,20 +141,16 @@ function openWallet(invoice: string): void {
   window.location.href = lightningHref(invoice);
 }
 
-/** Viewer's fiat for a till amount, or nothing when no spot rate is ready. */
-function ChargeFiat(props: {
-  amountSats: number;
-  rateDay: FiatRateDay | null;
-}): ReactElement | null {
-  const { fiat } = useFiatPreference();
+/** Stored figure of an open till charge. Absent when the charge stored none. */
+function ChargeFiat(props: { stored: StoredFiat }): ReactElement | null {
   const { numberFormat } = useNumberFormat();
-  const amount = satsToFiatAmount(props.amountSats, props.rateDay, fiat);
-  if (amount === null) {
+  const figure = committedFiatFigure(props.stored);
+  if (figure === null) {
     return null;
   }
   return (
     <p className="text-center text-sm text-app-subtle">
-      {formatFiatDisplay(amount, fiat, numberFormat)}
+      {formatFiatDisplay(figure.amount, figure.code, numberFormat)}
     </p>
   );
 }
@@ -448,7 +479,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
                 <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
                   {formatBitcoin(activeSats, numberFormat)}
                 </p>
-                <ChargeFiat amountSats={activeSats} rateDay={rateDay} />
+                {chargeLive && charge !== null ? <ChargeFiat stored={charge} /> : null}
                 {formError === 'failed' ? (
                   <p role="alert" className="text-center text-sm text-app-danger">
                     {t('pay.failed')}

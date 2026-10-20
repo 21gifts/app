@@ -474,6 +474,62 @@ test.describe('wallet history', () => {
     await expect(page.locator('[data-scrollport] button', { hasText: 'Receive' })).toHaveCount(0);
   });
 
+  test('Function: fetchShopChargeReceipt — a shop row shows the stored 12.00', async ({ page }) => {
+    await page.route(/\/pay\/charges\/01a12748-till$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: '01a12748-till',
+          amountSats: 1,
+          status: 'paid',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          expiresAt: '2026-01-01T00:05:00.000Z',
+          paidAt: '2026-01-01T00:01:00.000Z',
+          amountCurrency: 'PHP',
+          amount: '12.00',
+          amountUsd: null,
+          amountChf: null,
+          amountEur: null,
+          amountPhp: '12.00',
+        }),
+      });
+    });
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await openWallet(page, '?visual=history-rows');
+    const payments = page.getByRole('region', { name: 'Payments' });
+    await expect(payments.getByText('₱12.00')).toBeVisible();
+    await expect(payments.getByText('$12.00')).toHaveCount(0);
+  });
+
+  test('Function: useShopChargeFigure — a shop row shows the stored 12.00', async ({ page }) => {
+    await page.route(/\/pay\/charges\/01a12748-till$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: '01a12748-till',
+          amountSats: 1,
+          status: 'paid',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          expiresAt: '2026-01-01T00:05:00.000Z',
+          paidAt: '2026-01-01T00:01:00.000Z',
+          amountCurrency: 'PHP',
+          amount: '12.00',
+          amountUsd: null,
+          amountChf: null,
+          amountEur: null,
+          amountPhp: '12.00',
+        }),
+      });
+    });
+    await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
+    await openWallet(page, '?visual=history-rows');
+    const payments = page.getByRole('region', { name: 'Payments' });
+    await expect(payments.getByText('₱12.00')).toBeVisible();
+    await expect(payments.getByText('$12.00')).toHaveCount(0);
+  });
+
   test('Function: useWalletHistory — pinned rows stay ten after scrolling', async ({ page }) => {
     await signIn(page, { sparkWalletVerified: true, sparkPubkey: PUBKEY });
     await openWallet(page, '?visual=history-rows');

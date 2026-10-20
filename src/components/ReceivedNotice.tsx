@@ -4,13 +4,11 @@ import { ArrowDownLeft, X } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
-import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { IconButton } from '@/components/ui';
 import { useIncomingPayment } from '@/hooks/useIncomingPayment';
-import { useSpotRate } from '@/hooks/useSpotRate';
-import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
+import { formatBitcoin } from '@/lib/stats-money';
 
 /** How long the banner stays, in milliseconds. */
 const RECEIVED_NOTICE_MS = 6000;
@@ -20,8 +18,8 @@ const RECEIVED_NOTICE_MS = 6000;
  * (`useIncomingPayment`; never for a payment the wallet already held when it
  * connected). It slides down at the top centre of the window: a `max-w-sm`
  * card with a success-tinted border, an `ArrowDownLeft` in a success circle,
- * **You received ₿500** (`wallet.receivedNotice`) and under it the default
- * fiat (left out without a usable rate). The text is one
+ * **You received ₿500** (`wallet.receivedNotice`). A received payment has no
+ * stored fiat figure, so the banner stays bitcoin. The text is one
  * `next/link` to `/wallet` that also closes the banner; the icon-only `X`
  * (`wallet.receivedClose`) closes it. It closes itself after 6 s, and a newer
  * payment replaces it and starts the time again. `role="status"`. No system
@@ -32,14 +30,11 @@ const RECEIVED_NOTICE_MS = 6000;
 export function ReceivedNotice(): ReactElement | null {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const { fiat } = useFiatPreference();
   const { payment, dismiss } = useIncomingPayment(RECEIVED_NOTICE_MS);
-  const rateDay = useSpotRate(payment !== null);
 
   if (payment === null) {
     return null;
   }
-  const fiatAmount = satsToFiatAmount(payment.amountSats, rateDay, fiat);
 
   return createPortal(
     <div className="pointer-events-none fixed inset-x-0 top-3 z-[90] flex justify-center px-3">
@@ -61,11 +56,6 @@ export function ReceivedNotice(): ReactElement | null {
               amount: formatBitcoin(payment.amountSats, numberFormat),
             })}
           </p>
-          {fiatAmount === null ? null : (
-            <p className="truncate text-xs tabular-nums lining-nums text-app-muted">
-              {formatFiatDisplay(fiatAmount, fiat, numberFormat)}
-            </p>
-          )}
         </Link>
         <IconButton
           type="button"

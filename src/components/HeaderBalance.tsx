@@ -6,7 +6,6 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { SKELETON_CLASS } from '@/components/MenuAccountHeader';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
-import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { useIncomingPayment } from '@/hooks/useIncomingPayment';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
@@ -83,7 +82,6 @@ export function HeaderBalance(): ReactElement | null {
           className="absolute top-full right-2 text-[10px] font-semibold tabular-nums lining-nums text-app-success"
         >
           +{formatBitcoin(payment.amountSats, numberFormat)}
-          {preferredFiatSuffix(payment.amountSats, rateDay, fiat, numberFormat)}
         </span>
       )}
     </Link>

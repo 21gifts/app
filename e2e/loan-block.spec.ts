@@ -91,7 +91,7 @@ test('Function: LoanBlock — a feed loan shows what is lent and reads no repaym
   const blocks = page.getByRole('region', { name: 'Loan request' });
   await expect(blocks).toHaveCount(2);
   await expect(blocks.first()).toHaveAttribute('data-loan-block', 'collecting');
-  await expect(blocks.first().getByText(/of ₿21'000 · \$\d.* lent$/)).toBeVisible();
+  await expect(blocks.first().getByText(/of ₿21'000 lent$/)).toBeVisible();
   await expect(blocks.first().getByRole('button', { name: 'Lend' })).toBeVisible();
   await expect(blocks.nth(1)).toHaveAttribute('data-loan-block', 'funded');
   await expect(blocks.nth(1).getByText('Fully funded', { exact: true })).toBeVisible();

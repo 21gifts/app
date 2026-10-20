@@ -6687,7 +6687,7 @@ test('Function: formatFiatDisplay — empty stats hero shows $0.00', async ({ pa
   await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
 });
 
-test('Function: satsToFiatAmount — a note without stored fiat shows the viewer fiat', async ({
+test('Function: satsToFiatAmount — a note without stored fiat shows bitcoin', async ({
   page,
 }) => {
   await stubGiftStats(page, POPULATED_STATS);
@@ -6739,7 +6739,7 @@ test('Function: satsToFiatAmount — a note without stored fiat shows the viewer
   await page.goto('/welcome');
   await chooseForumView(page, 'All');
   await expect(page.getByText('₿21')).toBeVisible();
-  await expect(page.getByText('$0.02')).toBeVisible();
+  await expect(page.getByText('$0.02')).toHaveCount(0);
   await openHomeWriter(page);
   await page.getByRole('button', { name: 'Ask for money' }).click();
   await page.getByLabel('Ask').fill('21');
@@ -7700,6 +7700,14 @@ test('Endpoint: GET /pay/[username] — checker literal', async ({ request }) =>
 
 test('Endpoint: POST /pay/[username]/invoice — checker literal', async ({ request }) => {
   await request.post('/pay/[username]/invoice');
+});
+
+test('Endpoint: GET /pay/[username]/charges/[id] — checker literal', async ({ request }) => {
+  await request.get('/pay/[username]/charges/[id]');
+});
+
+test('Endpoint: GET /pay/charges/[id] — checker literal', async ({ request }) => {
+  await request.get('/pay/charges/[id]');
 });
 
 test('Function: encodeLnurl — BIP-173 LNURL of a cleartext URL', async ({ page, request }) => {
@@ -10603,6 +10611,64 @@ test('Function: PosHistory — Cancel puts the charge in the list as Cancelled',
   await expect(history.getByText('Cancelled')).toBeVisible();
   await expect(history.getByText('₿21')).toBeVisible();
   await expect(history.getByText('No payments yet.')).toHaveCount(0);
+});
+
+test('Function: committedFiatFigure — the open till shows the typed 12.00', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        sparkWalletVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  const charge = {
+    id: 'pos-php',
+    amountSats: 21000,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+    amountCurrency: 'PHP',
+    amount: '12.00',
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: '12.00',
+  };
+  await page.route(/\/pos\/charge$/, async (route) => {
+    const method = route.request().method();
+    if (method !== 'GET' && method !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge, history: [] }),
+    });
+  });
+  await page.goto('/pos');
+  await expect(page.getByText('₱12.00')).toBeVisible();
+  await expect(page.getByText('$12.00')).toHaveCount(0);
+  await expect(page.getByText('₱12.01')).toHaveCount(0);
 });
 
 test('Function: proxyPosGet — GET /pos/charge without bearer is 401', async ({ request }) => {
@@ -14916,7 +14982,7 @@ test('Function: fittingPrefix — a short wallet offers the ordered fitting pref
   await openLoanUi(page, '/loans/repay?visual=repay-short');
   await expect(
     page.getByRole('button', {
-      name: 'Send ₿500 · $0.50 now to Bruno, the rest after your top-up',
+      name: 'Send ₿500 now to Bruno, the rest after your top-up',
     }),
   ).toBeVisible();
 });
@@ -14932,7 +14998,7 @@ test('Function: useLoanRepay — wallet availability and sending pins reach the 
   await openLoanUi(page, '/loans/repay');
   await expect(page.getByText(WALLET_UNAVAILABLE)).toBeVisible();
   await page.goto('/loans/repay?visual=repay-sending');
-  await expect(page.getByText("Sending ₿1'000 · $1.00…")).toBeVisible();
+  await expect(page.getByText("Sending ₿1'000…")).toBeVisible();
 });
 
 test('Function: LoansCard — the welcome screen renders the loan card', async ({ page }) => {

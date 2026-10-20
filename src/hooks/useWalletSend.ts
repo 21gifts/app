@@ -6,6 +6,7 @@ import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { LnurlRelayError, postLnurlInvoice, postLnurlPayRequest } from '@/lib/api';
 import { encodeLnurl } from '@/lib/lnurl';
 import { lnurlPayAddress } from '@/lib/pay-link';
+import { committedFiatFigure, type FiatCode } from '@/lib/committed-fiat';
 import { fetchMemberSparkInvoice, fetchShopChargeInvoice } from '@/lib/pos';
 import { visualPin } from '@/lib/visual-pin';
 import { lnurlRelayTarget, ownShop, type OwnShop } from '@/lib/wallet/lnurl-relay';
@@ -127,6 +128,9 @@ export interface WalletSendOnchain extends WalletOnchainFees {
   renewed?: true;
 }
 
+/** Stored fiat of a till charge on the quote, confirm, or sent step. `null` means bitcoin only. */
+type ChargeFigure = { code: FiatCode; amount: string } | null;
+
 /** Step of the `/wallet` send flow. */
 export type WalletSendState =
   | { step: 'input'; error: WalletSendError | null }
@@ -145,6 +149,8 @@ export type WalletSendState =
       step: 'quote';
       recipient: string;
       amountSats: number;
+      /** Set for a till charge. Absent while an amount is still being typed. */
+      chargeFigure?: ChargeFigure;
     }
   | {
       step: 'confirm';
@@ -153,8 +159,16 @@ export type WalletSendState =
       feeSats: number;
       /** Speed choice when the payment goes to a base-chain address. */
       onchain?: WalletSendOnchain;
+      /** Set for a till charge. Absent while an amount is still being typed. */
+      chargeFigure?: ChargeFigure;
     }
-  | { step: 'sent'; amountSats: number; recipient: string };
+  | {
+      step: 'sent';
+      amountSats: number;
+      recipient: string;
+      /** Set for a till charge. Absent while an amount is still being typed. */
+      chargeFigure?: ChargeFigure;
+    };
 
 /** State and actions of the `/wallet` send flow. */
 export interface UseWalletSendResult {
@@ -262,6 +276,11 @@ interface PrepareOptions {
   renewSpeed?: OnchainSpeed;
   /** Feature that started the payment, for the failure report; absent means `send`. */
   flow?: PayFlow;
+  /**
+   * Stored figure of a till charge. Omit it for a payment that is still being
+   * typed. `null` means the charge stored no fiat.
+   */
+  chargeFigure?: ChargeFigure;
 }
 
 /** The last prepare that opened the confirm step, kept to renew an expired quote. */
@@ -385,6 +404,7 @@ function visualState(name: string | null): WalletSendState | null {
         recipient: recipientOf(fixture.fixedLink, fixture.recipient),
         amountSats: fixture.fixedAmountSats,
         feeSats: name === 'send-confirm-shop' ? fixture.feeSats : fixture.fixedFeeSats,
+        chargeFigure: { code: 'USD', amount: '7.00' },
       };
     case 'send-confirm-member':
       return {
@@ -756,13 +776,15 @@ export function useWalletSend(): UseWalletSendResult {
       options: PrepareOptions = {},
     ): void {
       const { expectedSats, fallback, onchainTarget, renewSpeed, flow = 'send' } = options;
+      const figureFields =
+        options.chargeFigure === undefined ? {} : { chargeFigure: options.chargeFigure };
       const run = generation.current;
       const again = (): void => {
         prepareSend(request, recipient, amountSats, options);
       };
       const wait = holdForWallet(run, again);
       if (wait === 'held') {
-        setState({ step: 'quote', recipient, amountSats });
+        setState({ step: 'quote', recipient, amountSats, ...figureFields });
       }
       if (wait !== 'ready') {
         return;
@@ -795,6 +817,7 @@ export function useWalletSend(): UseWalletSendResult {
                 recipient,
                 amountSats: result.amountSats,
                 feeSats: result.feeSats,
+                ...figureFields,
               });
               return;
             }
@@ -807,6 +830,7 @@ export function useWalletSend(): UseWalletSendResult {
               recipient,
               amountSats: result.amountSats,
               feeSats: fees.fees[speed],
+              ...figureFields,
               onchain: {
                 ...fees,
                 speed,
@@ -1192,6 +1216,7 @@ export function useWalletSend(): UseWalletSendResult {
             readWithWallet(null, 'pos');
           },
           flow: 'pos',
+          chargeFigure: committedFiatFigure(charge),
         });
       })
       .catch(() => {
@@ -1232,7 +1257,7 @@ export function useWalletSend(): UseWalletSendResult {
       prepare(prepared.request, prepared.recipient, state.amountSats, prepared.options);
       return;
     }
-    const { amountSats, recipient } = state;
+    const { amountSats, recipient, chargeFigure } = state;
     const speed = state.onchain?.speed;
     const run = generation.current;
     const flow = sendFlowRef.current;
@@ -1271,7 +1296,11 @@ export function useWalletSend(): UseWalletSendResult {
       if (result.kind === 'paid') {
         setTextState('');
         setComment('');
-        setState({ step: 'sent', amountSats, recipient });
+        setState(
+          chargeFigure === undefined
+            ? { step: 'sent', amountSats, recipient }
+            : { step: 'sent', amountSats, recipient, chargeFigure },
+        );
         return;
       }
       setState({

@@ -11,6 +11,7 @@ import { usePaySheetSent } from '@/components/PaySheet';
 import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button } from '@/components/ui';
 import { useWalletPay } from '@/hooks/useWalletPay';
+import type { FiatCode } from '@/lib/committed-fiat';
 import {
   formatBitcoin,
   formatFiatDisplay,
@@ -32,6 +33,13 @@ export interface WalletPayProps {
    * amount, or `null`.
    */
   rateDay: FiatRateDay | null;
+  /**
+   * Stored figure of a till charge. Omit it for a payment that is still being
+   * typed: that amount keeps the spot. `null` is a charge that stored no fiat,
+   * so the label stays bitcoin. A figure is shown as stored and is not priced
+   * from the spot.
+   */
+  chargeFigure?: { code: FiatCode; amount: string } | null;
   /** Feature whose sheet this is: named on the report of a payment that did not go out. */
   flow: PayFlow;
   /**
@@ -75,6 +83,7 @@ export function WalletPay({
   pr,
   amountSats,
   rateDay,
+  chargeFigure,
   flow,
   postsOnPay = false,
   confirmLabel,
@@ -82,11 +91,20 @@ export function WalletPay({
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
-  const amountPriced = satsToFiatAmount(amountSats, rateDay, fiat);
-  const amountWithFiat =
-    amountPriced === null
-      ? formatBitcoin(amountSats, numberFormat)
-      : `${formatBitcoin(amountSats, numberFormat)} · ${formatFiatDisplay(amountPriced, fiat, numberFormat)}`;
+  const bitcoin = formatBitcoin(amountSats, numberFormat);
+  let amountWithFiat = bitcoin;
+  if (chargeFigure === undefined) {
+    const amountPriced = satsToFiatAmount(amountSats, rateDay, fiat);
+    if (amountPriced !== null) {
+      amountWithFiat = `${bitcoin} · ${formatFiatDisplay(amountPriced, fiat, numberFormat)}`;
+    }
+  } else if (chargeFigure !== null) {
+    amountWithFiat = `${bitcoin} · ${formatFiatDisplay(
+      chargeFigure.amount,
+      chargeFigure.code,
+      numberFormat,
+    )}`;
+  }
   const { view, sent, feeSats, missingSats, pay, retry } = useWalletPay(
     sparkInvoice,
     pr,

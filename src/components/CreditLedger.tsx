@@ -4,20 +4,11 @@ import { useEffect, useState, type ReactElement } from 'react';
 import Link from 'next/link';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
-import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
-import { useSpotRate } from '@/hooks/useSpotRate';
 import { RepaymentPlanChart } from '@/components/RepaymentPlanChart';
 import { getRepayment, type RepaymentLedger, type RepaymentLine } from '@/lib/api';
 import type { MessageKey } from '@/lib/messages';
 import type { NumberFormatStyle } from '@/lib/number-format';
-import {
-  formatBitcoin,
-  formatFiatDisplay,
-  satsToFiatAmount,
-  type FiatCode,
-  type FiatRateDay,
-} from '@/lib/stats-money';
+import { formatBitcoin, formatFiatDisplay, type FiatCode } from '@/lib/stats-money';
 
 /**
  * Who gave what on a credit, and who is paid back how much, when, and by one bitcoin payment.
@@ -31,7 +22,7 @@ import {
  * given plan with more than 7 dated days shows the month overview instead.
  * Still owed there counts only unpaid shares. A month names one status only
  * when every share in that month has it. A bitcoin amount on that overview
- * also shows the visitor's fiat when a spot rate is loaded. A day matches
+ * stays bitcoin and does not add a spot price. A day matches
  * another day by the amount the page shows: the ask currency, or satoshis.
  * The footnote lists the days a month lists, and names one remaining total
  * only when every other day shares it.
@@ -53,8 +44,6 @@ export function CreditLedger({
 }): ReactElement | null {
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const { fiat: visitorFiat } = useFiatPreference();
-  const rateDay = useSpotRate();
   const [loaded, setLoaded] = useState<{
     messageId: string;
     ledger: RepaymentLedger;
@@ -114,14 +103,9 @@ export function CreditLedger({
                   {giverLabel(giver.name, giver.username, giver.accountId)}
                 </span>
                 <span className="shrink-0 text-right text-sm tabular-nums text-app-fg">
-                  {fiat !== null && giver.givenAmount !== null ? (
-                    formatFiatDisplay(giver.givenAmount, fiat, numberFormat)
-                  ) : (
-                    <>
-                      {formatBitcoin(giver.givenSats, numberFormat)}
-                      {preferredFiatSuffix(giver.givenSats, rateDay, visitorFiat, numberFormat)}
-                    </>
-                  )}
+                  {fiat !== null && giver.givenAmount !== null
+                    ? formatFiatDisplay(giver.givenAmount, fiat, numberFormat)
+                    : formatBitcoin(giver.givenSats, numberFormat)}
                 </span>
               </li>
             ))}
@@ -131,7 +115,6 @@ export function CreditLedger({
           <p className="mt-2 text-xs text-app-muted">
             <span className="tabular-nums">
               {formatBitcoin(ledger.unassignedSats, numberFormat)}
-              {preferredFiatSuffix(ledger.unassignedSats, rateDay, visitorFiat, numberFormat)}
             </span>{' '}
             {t('forum.creditUnassigned')}
           </p>
@@ -151,21 +134,13 @@ export function CreditLedger({
         {fiat !== null ? (
           <p className="mt-1 text-xs text-app-muted">{t('forum.creditFiatHow')}</p>
         ) : null}
-        <RepaymentChart
-          ledger={ledger}
-          fiat={fiat}
-          locale={locale}
-          rateDay={rateDay}
-          visitorFiat={visitorFiat}
-        />
+        <RepaymentChart ledger={ledger} fiat={fiat} locale={locale} />
         {list === 'page' ? (
           isLongRepayment(ledger) ? (
             <LongRepayment
               ledger={ledger}
               fiat={fiat}
               locale={locale}
-              rateDay={rateDay}
-              visitorFiat={visitorFiat}
               numberFormat={numberFormat}
               t={t}
             />
@@ -175,8 +150,6 @@ export function CreditLedger({
               fundedAt={ledger.fundedAt}
               fiat={fiat}
               locale={locale}
-              rateDay={rateDay}
-              visitorFiat={visitorFiat}
               numberFormat={numberFormat}
               t={t}
             />
@@ -210,8 +183,6 @@ function DayGroups({
   fundedAt,
   fiat,
   locale,
-  rateDay,
-  visitorFiat,
   numberFormat,
   t,
 }: {
@@ -219,8 +190,6 @@ function DayGroups({
   fundedAt: string | null;
   fiat: FiatCode | null;
   locale: string;
-  rateDay: ReturnType<typeof useSpotRate>;
-  visitorFiat: FiatCode;
   numberFormat: NumberFormatStyle;
   t: Translate;
 }): ReactElement {
@@ -244,7 +213,7 @@ function DayGroups({
                 </span>
                 <span className="flex shrink-0 flex-col items-end gap-0.5 sm:grid sm:grid-cols-[auto_5.5rem] sm:items-baseline sm:gap-x-2 sm:gap-y-0">
                   <span className="text-right text-sm tabular-nums text-app-fg">
-                    {rowAmount(row, fiat, visitorFiat, rateDay, numberFormat)}
+                    {rowAmount(row, fiat, numberFormat)}
                   </span>
                   <span
                     className={`whitespace-nowrap text-right text-xs font-medium ${statusClass(row.status)}`}
@@ -265,16 +234,12 @@ function LongRepayment({
   ledger,
   fiat,
   locale,
-  rateDay,
-  visitorFiat,
   numberFormat,
   t,
 }: {
   ledger: RepaymentLedger;
   fiat: FiatCode | null;
   locale: string;
-  rateDay: ReturnType<typeof useSpotRate>;
-  visitorFiat: FiatCode;
   numberFormat: NumberFormatStyle;
   t: Translate;
 }): ReactElement {
@@ -316,7 +281,7 @@ function LongRepayment({
     <div className="mt-2">
       <p className="text-xs font-medium text-app-fg">
         {t('forum.creditChartDebt')}{' '}
-        {totalAmountText(owed, fiat, numberFormat, rateDay, visitorFiat)}
+        {totalAmountText(owed, fiat, numberFormat)}
       </p>
       <p className="mt-1 text-xs text-app-muted">
         {t('forum.creditRange', {
@@ -338,8 +303,6 @@ function LongRepayment({
             fundedAt={ledger.fundedAt}
             fiat={fiat}
             locale={locale}
-            rateDay={rateDay}
-            visitorFiat={visitorFiat}
             numberFormat={numberFormat}
             t={t}
           />
@@ -361,11 +324,11 @@ function LongRepayment({
                   {giverLabel(person.name, person.username, person.accountId)}
                 </span>
                 <span className="shrink-0 text-right text-sm tabular-nums text-app-fg">
-                  {lineAmountText(usualRow, fiat, numberFormat, rateDay, visitorFiat)}
+                  {lineAmountText(usualRow, fiat, numberFormat)}
                   {' · '}
                   {t('forum.creditDaysCount', { count: own.length })}
                   {' · '}
-                  {totalAmountText(dayAmount(own, fiat), fiat, numberFormat, rateDay, visitorFiat)}
+                  {totalAmountText(dayAmount(own, fiat), fiat, numberFormat)}
                 </span>
               </li>
             );
@@ -377,8 +340,6 @@ function LongRepayment({
                 dayAmount(usual.rows, fiat),
                 fiat,
                 numberFormat,
-                rateDay,
-                visitorFiat,
               )}
               {' · '}
               {t('forum.creditDaysCount', { count: groups.length })}
@@ -387,8 +348,6 @@ function LongRepayment({
                 dayAmount(ledger.repayments, fiat),
                 fiat,
                 numberFormat,
-                rateDay,
-                visitorFiat,
               )}
             </span>
           </li>
@@ -409,14 +368,12 @@ function LongRepayment({
                     dayAmount(month.usualGroup.rows, fiat),
                     fiat,
                     numberFormat,
-                    rateDay,
-                    visitorFiat,
                   ),
                 })}
               </p>
               <p className="mt-1 text-xs text-app-muted">
                 {t('forum.creditUsualSplit', {
-                  split: splitText(month.usualGroup.rows, fiat, numberFormat, rateDay, visitorFiat),
+                  split: splitText(month.usualGroup.rows, fiat, numberFormat),
                 })}
               </p>
               {month.exceptions.length > 0 ? (
@@ -425,8 +382,6 @@ function LongRepayment({
                   fundedAt={ledger.fundedAt}
                   fiat={fiat}
                   locale={locale}
-                  rateDay={rateDay}
-                  visitorFiat={visitorFiat}
                   numberFormat={numberFormat}
                   t={t}
                 />
@@ -439,7 +394,7 @@ function LongRepayment({
         <p className="mt-2 text-xs text-app-muted">
           {exceptions
             .map((group) => {
-              return `${formatUtcDay(group.dueOn!, locale)}: ${splitText(group.rows, fiat, numberFormat, rateDay, visitorFiat)} ${totalAmountText(dayAmount(group.rows, fiat), fiat, numberFormat, rateDay, visitorFiat)}.`;
+              return `${formatUtcDay(group.dueOn!, locale)}: ${splitText(group.rows, fiat, numberFormat)} ${totalAmountText(dayAmount(group.rows, fiat), fiat, numberFormat)}.`;
             })
             .join(' ')}
           {restUsual !== null
@@ -448,8 +403,6 @@ function LongRepayment({
                   dayAmount(restUsual.rows, fiat),
                   fiat,
                   numberFormat,
-                  rateDay,
-                  visitorFiat,
                 ),
               })}`
             : ''}
@@ -585,32 +538,20 @@ function usualPersonAmount(
   return { amount: bestAmount, sats: bestSats };
 }
 
-function bitcoinText(
-  sats: number,
-  rateDay: FiatRateDay | null,
-  visitorFiat: FiatCode,
-  numberFormat: NumberFormatStyle,
-): string {
-  const bitcoin = formatBitcoin(sats, numberFormat);
-  const priced = rateDay === null ? null : satsToFiatAmount(sats, rateDay, visitorFiat);
-  if (priced === null) {
-    return bitcoin;
-  }
-  return `${bitcoin} · ${formatFiatDisplay(priced, visitorFiat, numberFormat)}`;
+function bitcoinText(sats: number, numberFormat: NumberFormatStyle): string {
+  return formatBitcoin(sats, numberFormat);
 }
 
 function lineAmountText(
   row: RepaymentLine,
   fiat: FiatCode | null,
   numberFormat: NumberFormatStyle,
-  rateDay: FiatRateDay | null,
-  visitorFiat: FiatCode,
 ): string {
   if (fiat !== null && row.amount !== null) {
     return formatFiatDisplay(row.amount, fiat, numberFormat);
   }
   if (row.sats !== null) {
-    return bitcoinText(row.sats, rateDay, visitorFiat, numberFormat);
+    return bitcoinText(row.sats, numberFormat);
   }
   return '';
 }
@@ -619,26 +560,22 @@ function totalAmountText(
   total: number,
   fiat: FiatCode | null,
   numberFormat: NumberFormatStyle,
-  rateDay: FiatRateDay | null,
-  visitorFiat: FiatCode,
 ): string {
   if (fiat !== null) {
     return formatFiatDisplay(total.toFixed(2), fiat, numberFormat);
   }
-  return bitcoinText(total, rateDay, visitorFiat, numberFormat);
+  return bitcoinText(total, numberFormat);
 }
 
 function splitText(
   rows: readonly RepaymentLine[],
   fiat: FiatCode | null,
   numberFormat: NumberFormatStyle,
-  rateDay: FiatRateDay | null,
-  visitorFiat: FiatCode,
 ): string {
   return rows
     .map(
       (row) =>
-        `${giverLabel(row.name, row.username, row.accountId)} ${lineAmountText(row, fiat, numberFormat, rateDay, visitorFiat)}`,
+        `${giverLabel(row.name, row.username, row.accountId)} ${lineAmountText(row, fiat, numberFormat)}`,
     )
     .join(' · ');
 }
@@ -701,8 +638,6 @@ function statusClass(status: RepaymentLine['status']): string {
 function rowAmount(
   row: RepaymentLine,
   fiat: FiatCode | null,
-  visitorFiat: FiatCode,
-  rateDay: ReturnType<typeof useSpotRate>,
   numberFormat: NumberFormatStyle,
 ): ReactElement | null {
   if (fiat !== null && row.amount !== null) {
@@ -715,21 +650,13 @@ function rowAmount(
         {priced}
         <span aria-hidden="true"> · </span>
         {formatBitcoin(row.sats, numberFormat)}
-        {visitorFiat === fiat
-          ? null
-          : preferredFiatSuffix(row.sats, rateDay, visitorFiat, numberFormat)}
       </>
     );
   }
   if (row.sats === null) {
     return null;
   }
-  return (
-    <>
-      {formatBitcoin(row.sats, numberFormat)}
-      {preferredFiatSuffix(row.sats, rateDay, visitorFiat, numberFormat)}
-    </>
-  );
+  return <>{formatBitcoin(row.sats, numberFormat)}</>;
 }
 
 function yearOf(dueOn: string): string {
@@ -767,14 +694,10 @@ function RepaymentChart({
   ledger,
   fiat,
   locale,
-  rateDay,
-  visitorFiat,
 }: {
   ledger: RepaymentLedger;
   fiat: FiatCode | null;
   locale: string;
-  rateDay: FiatRateDay | null;
-  visitorFiat: FiatCode;
 }): ReactElement | null {
   const { t, numberFormat } = useChartFormat();
   const groups = groupsOf(ledger.repayments);
@@ -802,13 +725,8 @@ function RepaymentChart({
           first.dueOn === null || yearOf(first.dueOn) !== yearOf(last.dueOn),
         );
   const bitcoin = formatBitcoin(total, numberFormat);
-  const priced = fiat === null ? satsToFiatAmount(total, rateDay, visitorFiat) : null;
   const totalText =
-    fiat === null
-      ? priced === null
-        ? bitcoin
-        : `${bitcoin} · ${formatFiatDisplay(priced, visitorFiat, numberFormat)}`
-      : formatFiatDisplay(total.toFixed(2), fiat, numberFormat);
+    fiat === null ? bitcoin : formatFiatDisplay(total.toFixed(2), fiat, numberFormat);
   return <RepaymentPlanChart amounts={amounts} from={from} to={to} totalText={totalText} />;
 }
 

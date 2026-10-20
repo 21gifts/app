@@ -699,6 +699,38 @@ describe('WalletSend confirm and sent', () => {
     expect(send.cancel).toHaveBeenCalledTimes(1);
   });
 
+  it('shows the stored PHP figure under the bitcoin amount instead of the spot', () => {
+    renderSend(
+      sendWith({
+        step: 'confirm',
+        recipient: 'shop@21.gifts',
+        amountSats: 2_100,
+        feeSats: 0,
+        chargeFigure: { code: 'PHP', amount: '12.00' },
+      }),
+    );
+    expect(screen.getByText("₿2'100")).toBeTruthy();
+    expect(screen.getByText('₱12.00')).toBeTruthy();
+    expect(screen.queryByText('$2.10')).toBeNull();
+    expect(screen.getByText('Fee ₿0').textContent).toBe('Fee ₿0');
+  });
+
+  it('shows no fiat line when the charge stored no figure', () => {
+    renderSend(
+      sendWith({
+        step: 'confirm',
+        recipient: 'shop@21.gifts',
+        amountSats: 2_100,
+        feeSats: 0,
+        chargeFigure: null,
+      }),
+    );
+    expect(screen.getByText("₿2'100")).toBeTruthy();
+    expect(screen.queryByText('₱12.00')).toBeNull();
+    expect(screen.queryByText('$2.10')).toBeNull();
+    expect(screen.queryByText(/\$/)).toBeNull();
+  });
+
   it('shows the fiat of a fee above zero', () => {
     renderSend(
       sendWith({ step: 'confirm', recipient: 'shop@21.gifts', amountSats: 7_000, feeSats: 3_000 }),

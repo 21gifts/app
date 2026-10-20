@@ -1009,7 +1009,7 @@ describe('toWalletPayment', () => {
           invoiceDetails: { description: 'pos:chg_abc', invoice: 'spark1p' },
         },
       }).info,
-    ).toEqual({ purpose: 'shop', invoice: 'spark1p' });
+    ).toEqual({ purpose: 'shop', chargeId: 'chg_abc', invoice: 'spark1p' });
   });
 
   it('reads the transaction of a deposit and a withdrawal', () => {

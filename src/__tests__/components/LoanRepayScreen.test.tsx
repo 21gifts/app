@@ -188,7 +188,7 @@ describe('LoanRepayScreen', () => {
     await act(async () => {
       await expect(options?.reload()).resolves.toBeNull();
     });
-    expect(screen.getByRole('status').textContent).toContain("Sending ₿1'000 · $1.00…");
+    expect(screen.getByRole('status').textContent).toContain("Sending ₿1'000…");
 
     vi.mocked(useMyLoans).mockReturnValue({ loans: null, reload });
     view.rerender(<LoanRepayScreen />);
@@ -206,7 +206,7 @@ describe('LoanRepayScreen', () => {
     show({ sundayRest: false, loans: [loan({ fundedAt: null, sats: 12_000 })] });
     expect(screen.getByText('Not fully funded yet.')).toBeTruthy();
     expect(screen.queryByText('Due today')).toBeNull();
-    expect(screen.getByText("₿30'000 · $30.00 · 30 days · ₿1'000 · $1.00 per day")).toBeTruthy();
+    expect(screen.getByText("₿30'000 · $30.00 · 30 days · ₿1'000 per day")).toBeTruthy();
     expect(screen.queryByRole('img', { name: /Repaid/ })).toBeNull();
   });
 
@@ -215,7 +215,7 @@ describe('LoanRepayScreen', () => {
     show({ sundayRest: false, loans: [loan()] }, state);
     await waitFor(() => expect(getRepayment).toHaveBeenCalledWith('loan-1'));
     expect(screen.getByText("₿1'000")).toBeTruthy();
-    expect(screen.getByText('$1.00')).toBeTruthy();
+    expect(screen.queryByText('$1.00')).toBeNull();
     expect(screen.getByText('to 1 person')).toBeTruthy();
     const who = screen.getByRole('button', { name: 'Who gets paid' });
     expect(who.className).toContain('w-full');
@@ -225,15 +225,17 @@ describe('LoanRepayScreen', () => {
     fireEvent.click(who);
     expect(who.querySelector('svg')?.className.baseVal).toContain('rotate-180');
     expect(screen.getByText(/Bruno/).parentElement?.textContent).toContain('Oct 9');
-    expect(screen.getByText("₿1'000 · $1.00")).toBeTruthy();
+    const bruno = screen.getByText(/Bruno/).closest('li');
+    expect(bruno?.textContent).toContain("₿1'000");
+    expect(bruno?.textContent).not.toContain('$');
     expect(screen.getByText("From your wallet · ₿21'000 · $21.00")).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: "Send ₿1'000 · $1.00" }));
+    fireEvent.click(screen.getByRole('button', { name: "Send ₿1'000" }));
     expect(state.pay).toHaveBeenCalledWith(
       [expect.objectContaining({ messageId: 'loan-1' })],
       undefined,
     );
     const list = screen.getByRole('region', { name: 'Your loan' });
-    expect(within(list).getByText("Repaid ₿11'000 · $11.00 of ₿30'000 · $30.00")).toBeTruthy();
+    expect(within(list).getByText("Repaid ₿11'000 of ₿30'000 · $30.00")).toBeTruthy();
     expect(within(list).getByText('Day 12 of 30')).toBeTruthy();
     expect(within(list).getByRole('img').getAttribute('viewBox')).toBe('0 0 100 8');
     expect(within(list).getByRole('link', { name: 'Repayment list' }).getAttribute('href')).toBe(
@@ -241,12 +243,37 @@ describe('LoanRepayScreen', () => {
     );
   });
 
-  it('omits every fiat part when no spot rate exists', () => {
+  it('shows the loan total in bitcoin when the goal stored no fiat', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'BTC',
+          goalAmountUsd: null,
+          goalAmountChf: null,
+          goalAmountEur: null,
+          goalAmountPhp: null,
+        }),
+      ],
+    });
+    const list = screen.getByRole('region', { name: 'Your loan' });
+    const plan = within(list).getByText("₿30'000 · 30 days · ₿1'000 per day");
+    const repaid = within(list).getByText("Repaid ₿11'000 of ₿30'000");
+    expect(plan.textContent).not.toContain('$');
+    expect(repaid.textContent).not.toContain('$');
+    expect(screen.getByText("₿1'000")).toBeTruthy();
+    expect(screen.queryByText('$1.00')).toBeNull();
+    expect(screen.getByText("From your wallet · ₿21'000 · $21.00")).toBeTruthy();
+  });
+
+  it('keeps the stored loan total and shows payable sats in bitcoin without a spot rate', () => {
     vi.mocked(useSpotRate).mockReturnValue(null);
     show({ sundayRest: false, loans: [loan()] });
     expect(screen.getByText("₿1'000")).toBeTruthy();
     expect(screen.getByRole('button', { name: "Send ₿1'000" })).toBeTruthy();
-    expect(screen.queryByText(/\$/)).toBeNull();
+    expect(screen.getByText("From your wallet · ₿21'000")).toBeTruthy();
+    expect(screen.getByText("₿30'000 · $30.00 · 30 days · ₿1'000 per day")).toBeTruthy();
+    expect(screen.queryByText(/\$1\.00/)).toBeNull();
   });
 
   it('omits the secondary member-fiat line when the loan uses that fiat', async () => {
@@ -280,7 +307,7 @@ describe('LoanRepayScreen', () => {
       ],
     });
     expect(screen.getByText("EUR 0.00 · ₿1'000")).toBeTruthy();
-    expect(screen.getByText('$1.00')).toBeTruthy();
+    expect(screen.queryByText('$1.00')).toBeNull();
   });
 
   it('puts a shared fiat loan currency first and shows waiting shares as notices', async () => {
@@ -311,7 +338,7 @@ describe('LoanRepayScreen', () => {
     );
     show({ sundayRest: false, loans: [phpLoan] });
     expect(screen.getByText('₱30.00 · ₿536')).toBeTruthy();
-    expect(screen.getByText('$0.54')).toBeTruthy();
+    expect(screen.queryByText('$0.54')).toBeNull();
     const waitingNotice = screen.getByText(/waits for a lender/).parentElement;
     expect(waitingNotice?.querySelector('svg')?.getAttribute('class')).toContain(
       'text-app-notice-fg',
@@ -319,7 +346,8 @@ describe('LoanRepayScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
     const waitingRow = (await screen.findByText('No wallet yet · waits')).closest('li');
     expect(waitingRow?.querySelector('svg')?.getAttribute('class')).toContain('text-app-notice-fg');
-    expect(screen.getByText(/₱10.00 · ₿200 · \$0.20/)).toBeTruthy();
+    expect(screen.getByText('₱10.00 · ₿200')).toBeTruthy();
+    expect(screen.queryByText('$0.20')).toBeNull();
   });
 
   it('shows a defined amount or a dash for recipient shares whose sats are unknown', async () => {
@@ -382,7 +410,7 @@ describe('LoanRepayScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Top up your wallet' }));
     expect(state.openTopUp).toHaveBeenCalledTimes(1);
     const sendNow = await screen.findByRole('button', {
-      name: /Send ₿500 · \$0.50 now to Bruno/,
+      name: /Send ₿500 now to Bruno/,
     });
     expect(sendNow.className).toContain('inline-flex');
     expect(sendNow.className).toContain('min-h-11');
@@ -392,7 +420,7 @@ describe('LoanRepayScreen', () => {
     expect(state.pay).toHaveBeenCalledWith(expect.any(Array), new Set(['loan-1:11:giver-1']));
     vi.mocked(useLoanRepay).mockReturnValue({ ...state, phase: 'preparing' });
     view.rerender(<LoanRepayScreen />);
-    expect(screen.getByRole('status').textContent).toContain('Sending ₿500 · $0.50…');
+    expect(screen.getByRole('status').textContent).toContain('Sending ₿500…');
     cleanup();
     show({ sundayRest: false, loans: [loan()] }, repay({ balanceSats: 600, topUpOpen: true }));
     expect(screen.getByTestId('own-address').textContent).toBe('ada:true');
@@ -587,9 +615,9 @@ describe('LoanRepayScreen', () => {
   it.each([
     ['unavailable', 'Your 21.gifts wallet is not available here'],
     ['connecting', 'Checking your wallet…'],
-    ['preparing', "Sending ₿1'000 · $1.00…"],
-    ['sending', "Sending ₿1'000 · $1.00…"],
-    ['waiting', "Sending ₿1'000 · $1.00…"],
+    ['preparing', "Sending ₿1'000…"],
+    ['sending', "Sending ₿1'000…"],
+    ['waiting', "Sending ₿1'000…"],
     ['unconfirmed', 'This payment is not confirmed yet'],
   ] as const)('shows the %s payment state', (phase, text) => {
     show({ sundayRest: false, loans: [loan()] }, repay({ phase }));
@@ -608,7 +636,7 @@ describe('LoanRepayScreen', () => {
     });
     show({ sundayRest: false, loans: [loan()] }, state);
     expect(screen.getByText('Still due today')).toBeTruthy();
-    expect(screen.getByText(/Sent ₿500 · \$0.50 to Bruno/)).toBeTruthy();
+    expect(screen.getByText(/Sent ₿500 to Bruno/)).toBeTruthy();
     expect(screen.getByRole('alert')).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Send ₿/ })).toBeTruthy();
   });
@@ -657,7 +685,7 @@ describe('LoanRepayScreen', () => {
     const clearLoan = loan({ due: { ...loan().due, payableSats: 0, payablePeople: 0 } });
     show({ sundayRest: false, loans: [clearLoan] });
     expect(screen.getByText('Nothing due today')).toBeTruthy();
-    expect(await screen.findByText(/Next: tomorrow, ₿1'000 · \$1.00 to 1 person/)).toBeTruthy();
+    expect(await screen.findByText(/Next: tomorrow, ₿1'000 to 1 person/)).toBeTruthy();
   });
 
   it('shows tomorrow and later next lines when the recipient count is unknown', () => {
@@ -667,13 +695,13 @@ describe('LoanRepayScreen', () => {
       sundayRest: false,
       loans: [loan({ due: clearDue, next: { dueOn: '2026-10-11', sats: 1_000, amount: null } })],
     });
-    expect(screen.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeTruthy();
+    expect(screen.getByText("Next: tomorrow, ₿1'000")).toBeTruthy();
     cleanup();
     show({
       sundayRest: false,
       loans: [loan({ due: clearDue, next: { dueOn: '2026-10-13', sats: 1_000, amount: null } })],
     });
-    expect(screen.getByText("Next: Tuesday, October 13, ₿1'000 · $1.00")).toBeTruthy();
+    expect(screen.getByText("Next: Tuesday, October 13, ₿1'000")).toBeTruthy();
   });
 
   it('shows tomorrow and later next lines for several recipients', async () => {
@@ -690,15 +718,13 @@ describe('LoanRepayScreen', () => {
       sundayRest: false,
       loans: [loan({ due: clearDue, next: { dueOn: '2026-10-11', sats: 1_000, amount: null } })],
     });
-    expect(await screen.findByText(/Next: tomorrow, ₿1'000 · \$1.00 to 2 people/)).toBeTruthy();
+    expect(await screen.findByText(/Next: tomorrow, ₿1'000 to 2 people/)).toBeTruthy();
     cleanup();
     show({
       sundayRest: false,
       loans: [loan({ due: clearDue, next: { dueOn: '2026-10-13', sats: 1_000, amount: null } })],
     });
-    expect(
-      await screen.findByText(/Next: Tuesday, October 13, ₿1'000 · \$1.00 to 2 people/),
-    ).toBeTruthy();
+    expect(await screen.findByText(/Next: Tuesday, October 13, ₿1'000 to 2 people/)).toBeTruthy();
   });
 
   it('shows a later next line for one known recipient', async () => {
@@ -711,9 +737,7 @@ describe('LoanRepayScreen', () => {
         }),
       ],
     });
-    expect(
-      await screen.findByText(/Next: Tuesday, October 13, ₿1'000 · \$1.00 to 1 person/),
-    ).toBeTruthy();
+    expect(await screen.findByText(/Next: Tuesday, October 13, ₿1'000 to 1 person/)).toBeTruthy();
   });
 
   it('omits the next line from a nothing-due box when no next payment exists', () => {
@@ -757,9 +781,9 @@ describe('LoanRepayScreen', () => {
       },
       repay({ phase: 'repaid', sentSats: 1_000, feeSats: 2 }),
     );
-    expect(screen.getByText(/Repaid ₿1'000 · \$1.00/)).toBeTruthy();
+    expect(screen.getByText(/Repaid ₿1'000/)).toBeTruthy();
     expect(screen.getByText('Fee ₿2 · $0.00')).toBeTruthy();
-    expect(screen.getByText(/₿200 · \$0.20 waits until/)).toBeTruthy();
+    expect(screen.getByText(/₿200 waits until/)).toBeTruthy();
     expect(screen.getByText(/Next: Tuesday, October 13/)).toBeTruthy();
   });
 
@@ -768,7 +792,7 @@ describe('LoanRepayScreen', () => {
       { sundayRest: false, loans: [loan({ next: null })] },
       repay({ phase: 'repaid', sentSats: 0, pinned: true }),
     );
-    expect(screen.getByText('Repaid ₿0 · $0.00')).toBeTruthy();
+    expect(screen.getByText('Repaid ₿0')).toBeTruthy();
     expect(screen.queryByText(/^Fee/)).toBeNull();
     expect(screen.queryByText(/^Next:/)).toBeNull();
   });
@@ -803,7 +827,7 @@ describe('LoanRepayScreen', () => {
       },
       repay({ phase: 'repaid', sentSats: 2_000 }),
     );
-    expect(screen.getByText("Repaid ₿2'000 · $2.00")).toBeTruthy();
+    expect(screen.getByText("Repaid ₿2'000")).toBeTruthy();
     expect(screen.getByText(new RegExp(`last payment for “${expectedText}”`))).toBeTruthy();
   });
 
@@ -816,7 +840,7 @@ describe('LoanRepayScreen', () => {
       repay({ phase: 'repaid', sentSats: 500, sentNames: ['Bruno'] }),
     );
     expect(screen.getByText('Still due today')).toBeTruthy();
-    expect(screen.getByText('Sent ₿500 · $0.50 to Bruno')).toBeTruthy();
+    expect(screen.getByText('Sent ₿500 to Bruno')).toBeTruthy();
     expect(screen.queryByText('Repaid ₿500 · $0.50')).toBeNull();
     expect(screen.getByRole('button', { name: /^Send ₿/ })).toBeTruthy();
     cleanup();
@@ -825,7 +849,7 @@ describe('LoanRepayScreen', () => {
       repay({ phase: 'idle', sentSats: 500, sentNames: ['Bruno'] }),
     );
     expect(screen.getByText('Still due today')).toBeTruthy();
-    expect(screen.getByText('Sent ₿500 · $0.50 to Bruno')).toBeTruthy();
+    expect(screen.getByText('Sent ₿500 to Bruno')).toBeTruthy();
   });
 
   it('keeps the last-payment success when the refreshed loan list is empty', () => {

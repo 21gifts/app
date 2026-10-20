@@ -14,7 +14,6 @@ import { forumAskPercent, formatDefinedGoalAmount } from '@/lib/forum-goal';
 import {
   formatBitcoin,
   formatFiatDisplay,
-  satsToFiatAmount,
   type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
@@ -97,8 +96,9 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * so it stays readable, and is not capped. The asked amount is the Ask label
  * plus the defined fiat when the ask was defined in fiat, `formatBitcoin(goalSats)`,
  * and the visitor's default fiat unless the ask was defined in that same fiat.
- * The visitor figure is the frozen snapshot when that string exists, otherwise
- * the current spot rate. Lengths use
+ * That visitor figure is the frozen snapshot when the string is present. A
+ * missing snapshot stays absent on a posted ask. The wizard preview may still
+ * fill it from the spot when the ask is not a defined fiat. Lengths use
  * SVG `width` / `x` / `viewBox` attributes, not React `style`.
  *
  * A posted loan (`goalRepayable` with `messageId`, not the wizard preview)
@@ -108,8 +108,8 @@ function fiatSuffixMarkup(text: string): ReactElement {
  *
  * @param sats - Collected sats on the note.
  * @param goalSats - Whole-sat goal; `<= 0` → `null`.
- * @param rateDay - Current spot rate. Fills the visitor's fiat when no
- *   snapshot string is stored.
+ * @param rateDay - Current spot rate. Fills a missing viewer suffix only in the
+ *   wizard preview, and only when the ask is not a defined fiat.
  * @param goalCurrency - Ask definition code when the api sent one.
  * @param goalAmount - Typed definition string when the api sent one.
  * @param goalAmountUsd - Frozen USD snapshot of the goal, or null.
@@ -120,7 +120,8 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * @param amountChf - Payment CHF snapshot used for a CHF fiat percent.
  * @param amountEur - Payment EUR snapshot used for a EUR fiat percent.
  * @param amountPhp - Payment PHP snapshot used for a PHP fiat percent.
- * @param preview - Wizard unsent preview. Same pair rule as a posted ask.
+ * @param preview - Wizard unsent preview. May fill a missing viewer suffix from
+ *   the spot when the ask is not a defined fiat.
  * @param goalRepayable - Credit ask. The loan tag sits beside the author, not in this bar.
  * @param goalTermDays - Repayment days. With `goalRepayable`, also shows the daily plan.
  * @param messageId - Posted credit id. Omitted in the wizard, so the ledger stays off.
@@ -224,13 +225,12 @@ export function ForumGoalBar({
   const viewWidth = 100 + overflowWidth;
   const percentLabel = String(percent);
   const viewerSnapshot = snapshots[GOAL_SNAPSHOT_FIELD[fiat]];
-  const definedInViewerFiat = showDefinedFiat && goalCurrency === fiat;
   const frozenViewer =
-    !definedInViewerFiat && typeof viewerSnapshot === 'string'
+    !(showDefinedFiat && goalCurrency === fiat) && typeof viewerSnapshot === 'string'
       ? fiatSuffixMarkup(formatFiatDisplay(viewerSnapshot, fiat, numberFormat))
       : null;
   const liveViewer =
-    !definedInViewerFiat && frozenViewer === null
+    preview && !showDefinedFiat && frozenViewer === null
       ? preferredFiatSuffix(goalSats, rateDay, fiat, numberFormat)
       : null;
   const askAmount = (
@@ -249,21 +249,24 @@ export function ForumGoalBar({
   if (goalRepayable === true && messageId !== undefined && !preview) {
     const withViewerFiat = (amountSats: number, stored: string | null | undefined): string => {
       const bitcoin = formatBitcoin(amountSats, numberFormat);
-      const priced =
-        typeof stored === 'string' && COLLECTED_FIAT_RE.test(stored)
-          ? stored
-          : satsToFiatAmount(amountSats, rateDay, fiat);
+      const priced = typeof stored === 'string' && COLLECTED_FIAT_RE.test(stored) ? stored : null;
       return priced === null
         ? bitcoin
         : `${bitcoin} · ${formatFiatDisplay(priced, fiat, numberFormat)}`;
     };
     const collectedSats = Number.isFinite(sats) && sats > 0 ? sats : 0;
-    // Like the ask: the defined fiat, then bitcoin, then the visitor's fiat unless it is the defined one.
-    const withBitcoin = (amountSats: number, stored: string | null | undefined): string =>
-      definedInViewerFiat
-        ? formatBitcoin(amountSats, numberFormat)
-        : withViewerFiat(amountSats, stored);
     const definedCode = defined !== '' && isFiatGoalCurrency(goalCurrency) ? goalCurrency : null;
+    // Defined fiat, then bitcoin, then the stored viewer snapshot unless it is the defined currency.
+    const withBitcoin = (amountSats: number, stored: string | null | undefined): string => {
+      const bitcoin = formatBitcoin(amountSats, numberFormat);
+      if (definedCode === null || definedCode === fiat) {
+        return bitcoin;
+      }
+      const priced = typeof stored === 'string' && COLLECTED_FIAT_RE.test(stored) ? stored : null;
+      return priced === null
+        ? bitcoin
+        : `${bitcoin} · ${formatFiatDisplay(priced, fiat, numberFormat)}`;
+    };
     const collectedDefined =
       definedCode === null ? undefined : collectedByCode[COLLECTED_FIELD[definedCode]];
     // A fiat loan counts in its own currency, like its percent: a missing snapshot is zero.
@@ -276,7 +279,10 @@ export function ForumGoalBar({
         collectedByCode[COLLECTED_FIELD[fiat]],
       )}`;
     } else {
-      collected = `${formatFiatDisplay('0.00', definedCode, numberFormat)} · ${withBitcoin(0, '0.00')}`;
+      collected = `${formatFiatDisplay('0.00', definedCode, numberFormat)} · ${withBitcoin(
+        0,
+        collectedByCode[COLLECTED_FIELD[fiat]],
+      )}`;
     }
     const goalText =
       definedCode === null
@@ -313,8 +319,6 @@ export function ForumGoalBar({
           goalAmount={goalAmount}
           goalSats={goalSats}
           days={goalTermDays}
-          rateDay={rateDay}
-          fiat={fiat}
         />
       ) : null}
       <div className="flex items-center gap-2">
@@ -348,20 +352,17 @@ export function ForumGoalBar({
   );
 }
 
+/** Daily plan. Bitcoin is only bitcoin. Fiat keeps the stored amount's trailing zeros. */
 function CreditPlanLines({
   goalCurrency,
   goalAmount,
   goalSats,
   days,
-  rateDay,
-  fiat,
 }: {
   goalCurrency: ForumGoalCurrency | undefined;
   goalAmount: string | undefined;
   goalSats: number;
   days: number;
-  rateDay: FiatRateDay | null;
-  fiat: FiatCode;
 }): ReactElement | null {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
@@ -372,17 +373,12 @@ function CreditPlanLines({
     return null;
   }
   const format = (value: bigint): string => {
-    if (bitcoin) {
-      const btc = formatBitcoin(Number(value), numberFormat);
-      const priced = satsToFiatAmount(Number(value), rateDay, fiat);
-      if (priced === null) {
-        return btc;
-      }
-      return `${btc} · ${formatFiatDisplay(priced, fiat, numberFormat)}`;
+    if (bitcoin || !isFiatGoalCurrency(goalCurrency)) {
+      return formatBitcoin(Number(value), numberFormat);
     }
     const whole = value / 100n;
     const frac = (value % 100n).toString().padStart(2, '0');
-    return formatFiatDisplay(`${whole.toString()}.${frac}`, goalCurrency as FiatCode, numberFormat);
+    return formatDefinedGoalAmount(`${whole.toString()}.${frac}`, goalCurrency, numberFormat);
   };
   const plan =
     split.remainder === 0n

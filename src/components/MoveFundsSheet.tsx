@@ -263,7 +263,6 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
     const bitcoin = formatBitcoin(sats, numberFormat);
     return fiatText === null ? bitcoin : `${bitcoin} · ${fiatText}`;
   };
-  const arrivedFiat = fiatOf(state.arrivedSats);
 
   let body: ReactElement;
   if (state.step === 'intro') {
@@ -358,9 +357,6 @@ export function MoveFundsSheet({ onOpenChange }: MoveFundsSheetProps = {}): Reac
               amount: formatBitcoin(state.arrivedSats, numberFormat),
             })}
           </h2>
-          {arrivedFiat === null ? null : (
-            <p className="text-sm tabular-nums lining-nums text-app-muted">{arrivedFiat}</p>
-          )}
           <p className="text-sm text-app-muted">
             {balanceSats === null
               ? t('moveFunds.arrivedAgain')

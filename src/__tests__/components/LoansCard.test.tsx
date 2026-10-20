@@ -149,7 +149,7 @@ describe('LoansCard', () => {
     expect(card.className).toContain('border-app-danger/50');
     expect(screen.getByText('1 of 2 fully funded.')).toBeTruthy();
     expect(screen.getByText("You're 2 days behind")).toBeTruthy();
-    expect(screen.getByText("₿1'000").textContent).toBe("₿1'000 · $1.00");
+    expect(screen.getByText("₿1'000").textContent).toBe("₿1'000");
     expect(screen.getByRole('link', { name: 'Send' }).getAttribute('href')).toBe('/loans/repay');
     expect(goalBar).toHaveBeenCalledWith(
       expect.objectContaining({ sats: 36_000, goalSats: 42_000 }),
@@ -169,7 +169,7 @@ describe('LoansCard', () => {
     show({ sundayRest: false, loans: [loan()] });
     expect(screen.getByText('Fully funded.')).toBeTruthy();
     expect(screen.getByText('Due today')).toBeTruthy();
-    expect(screen.getByText("₿1'000").textContent).toBe("₿1'000 · $1.00");
+    expect(screen.getByText("₿1'000").textContent).toBe("₿1'000");
   });
 
   it('shows a one-day warning and omits fiat when no spot rate exists', () => {
@@ -206,7 +206,7 @@ describe('LoansCard', () => {
     });
     const card = screen.getByRole('region', { name: 'Your loan' });
     expect(card.className).toContain('border-app-success/50');
-    expect(screen.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeTruthy();
+    expect(screen.getByText("Next: tomorrow, ₿1'000")).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Repayment details' }).getAttribute('href')).toBe(
       '/loans/repay',
     );
@@ -239,7 +239,7 @@ describe('LoansCard', () => {
     expect(card.className).toContain('-mt-2');
     expect(card.className).toContain('max-w-xl');
     expect(card.className).not.toContain('mt-4');
-    expect(screen.getByText('₿200 · $0.20 waits · 2 lenders have no wallet yet')).toBeTruthy();
+    expect(screen.getByText('₿200 waits · 2 lenders have no wallet yet')).toBeTruthy();
     expect(screen.getByText('Nothing due today').className).toContain('text-app-muted');
   });
 
@@ -262,7 +262,7 @@ describe('LoansCard', () => {
       },
       'wallet',
     );
-    expect(screen.getByText('₿200 · $0.20 waits · a lender has no wallet yet')).toBeTruthy();
+    expect(screen.getByText('₿200 waits · a lender has no wallet yet')).toBeTruthy();
     expect(screen.queryByText(/^Next:/)).toBeNull();
   });
 });
