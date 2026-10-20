@@ -380,6 +380,83 @@ async function fulfillRateDay(page: Page): Promise<void> {
   await fulfillSpot(page, spotRatesFromStats(RATE_DAY_STATS));
 }
 
+/**
+ * One loan-balance day for a screenshot fixture.
+ *
+ * Amount strings are signed so the client schema accepts a balance below zero.
+ */
+function loanVisualDay(
+  day: string,
+  sats: number,
+  cumulativeSats: number,
+  btc: string,
+  cumulativeBtc: string,
+  usd: string,
+  cumulativeUsd: string,
+) {
+  return {
+    day,
+    giftCount: 1,
+    officialCount: 0,
+    sats,
+    cumulativeSats,
+    btc,
+    cumulativeBtc,
+    usd,
+    cumulativeUsd,
+    chf: null,
+    eur: null,
+    php: null,
+    cumulativeChf: null,
+    cumulativeEur: null,
+    cumulativePhp: null,
+  };
+}
+
+/**
+ * Debt and credit for a screenshot that must show both lines.
+ *
+ * Debt falls through zero. Credit rises, then falls through zero on another
+ * path, so the two strokes do not sit on top of each other.
+ */
+function loanVisualSeries(days: readonly [string, string, string]) {
+  const first = days[0];
+  const second = days[1];
+  const third = days[2];
+  return {
+    owedSats: -20_000,
+    creditSats: -30_000,
+    owedOverTime: [
+      loanVisualDay(first, 100_000, 100_000, '0.00100000', '0.00100000', '95.00', '95.00'),
+      loanVisualDay(second, -40_000, 60_000, '-0.00040000', '0.00060000', '-38.00', '57.00'),
+      loanVisualDay(third, -80_000, -20_000, '-0.00080000', '-0.00020000', '-76.00', '-19.00'),
+    ],
+    creditOverTime: [
+      loanVisualDay(first, 20_000, 20_000, '0.00020000', '0.00020000', '19.00', '19.00'),
+      loanVisualDay(second, 100_000, 120_000, '0.00100000', '0.00120000', '95.00', '114.00'),
+      loanVisualDay(third, -150_000, -30_000, '-0.00150000', '-0.00030000', '-142.50', '-28.50'),
+    ],
+  };
+}
+
+const PROFILE_LOAN_SERIES = loanVisualSeries(['2026-06-01', '2026-06-02', '2026-06-03']);
+const VIEW_LOAN_SERIES = loanVisualSeries(['2026-06-01', '2026-06-02', '2026-07-01']);
+
+/** Fails the shot when Debt and Credit are missing or drawn as one line. */
+async function expectDebtAndCreditLines(page: Page): Promise<void> {
+  const chart = page.getByLabel('Debt and credit in ₿');
+  await expect(chart).toBeVisible();
+  await expect(chart.getByText("₿-30'000")).toBeVisible();
+  await expect(chart.getByText("₿120'000")).toBeVisible();
+  const lines = chart.locator('polyline');
+  await expect(lines).toHaveCount(2);
+  const owed = await lines.nth(0).getAttribute('points');
+  const credit = await lines.nth(1).getAttribute('points');
+  expect(owed).toBeTruthy();
+  expect(credit).toBeTruthy();
+  expect(owed).not.toBe(credit);
+}
+
 const EMPTY_ACTIVITY = {
   donatedSats: 0,
   receivedSats: 0,
@@ -439,6 +516,7 @@ const VIEW_RECEIVED_ACTIVITY = {
       cumulativePhp: '80.00',
     },
   ],
+  ...VIEW_LOAN_SERIES,
   fx: FX_ALL,
 };
 
@@ -19191,6 +19269,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Ada')).toBeVisible();
     await expect(page.getByText('Action required, the account must be activated')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();
+    await expectDebtAndCreditLines(page);
     await shotScreen(page, 'screen-view-viewKey');
   });
 
@@ -19728,6 +19807,7 @@ const PROFILE_RECEIVE_STATS = {
       cumulativePhp: '80.00',
     },
   ],
+  ...PROFILE_LOAN_SERIES,
   fx: FX_ALL,
 };
 
@@ -19752,6 +19832,7 @@ const PROFILE_SINGLE_DAY_STATS = {
       cumulativePhp: '1.00',
     },
   ],
+  ...PROFILE_LOAN_SERIES,
   fx: FX_ALL,
 };
 
@@ -19791,6 +19872,7 @@ const PROFILE_LARGE_USD_STATS = {
       cumulativePhp: '80000.00',
     },
   ],
+  ...PROFILE_LOAN_SERIES,
   fx: FX_ALL,
 };
 
@@ -19815,6 +19897,7 @@ const GIVEN_RECEIVED_ACTIVITY = {
     },
   ],
   receivedOverTime: PROFILE_RECEIVE_STATS.receivedOverTime,
+  ...PROFILE_LOAN_SERIES,
   fx: FX_ALL,
 };
 
@@ -19893,7 +19976,10 @@ test.describe('profile activity chart variants', () => {
     await seedAdaProfile(page);
     await stubProfileStats(page, PROFILE_RECEIVE_STATS);
     await openProfile(page);
-    await expect(page.getByText('2026-06-01')).toBeVisible();
+    await expect(
+      page.getByRole('group', { name: 'Given and received' }).getByText('2026-06-01'),
+    ).toBeVisible();
+    await expectDebtAndCreditLines(page);
     await shotScreen(page, 'state-profile-receive');
   });
 
@@ -19902,10 +19988,12 @@ test.describe('profile activity chart variants', () => {
     await stubProfileStats(page, PROFILE_RECEIVE_STATS);
     await openProfile(page);
     await page
+      .getByRole('group', { name: 'Given and received' })
       .getByRole('group', { name: 'Chart scale' })
       .getByRole('button', { name: 'USD' })
       .click();
     await expect(page.getByLabel('Given and received in USD')).toBeVisible();
+    await expectDebtAndCreditLines(page);
     await shotScreen(page, 'state-profile-usd-scale');
   });
 
@@ -19913,7 +20001,10 @@ test.describe('profile activity chart variants', () => {
     await seedAdaProfile(page);
     await stubProfileStats(page, PROFILE_SINGLE_DAY_STATS);
     await openProfile(page);
-    await expect(page.getByText('2026-06-01')).toBeVisible();
+    await expect(
+      page.getByRole('group', { name: 'Given and received' }).getByText('2026-06-01'),
+    ).toBeVisible();
+    await expectDebtAndCreditLines(page);
     await shotScreen(page, 'state-profile-single-day');
   });
 
@@ -19922,11 +20013,13 @@ test.describe('profile activity chart variants', () => {
     await stubProfileStats(page, PROFILE_LARGE_USD_STATS);
     await openProfile(page);
     await page
+      .getByRole('group', { name: 'Given and received' })
       .getByRole('group', { name: 'Chart scale' })
       .getByRole('button', { name: 'USD' })
       .click();
     await expect(page.getByLabel('Given and received in USD')).toBeVisible();
     await expect(page.getByText("$1'425")).toBeVisible();
+    await expectDebtAndCreditLines(page);
     await shotScreen(page, 'state-profile-large-usd');
   });
 
@@ -19935,7 +20028,10 @@ test.describe('profile activity chart variants', () => {
     await seedAdaProfile(page);
     await stubProfileStats(page, GIVEN_RECEIVED_ACTIVITY);
     await openProfile(page);
-    await expect(page.getByText('2026-06-01')).toBeVisible();
+    await expect(
+      page.getByRole('group', { name: 'Given and received' }).getByText('2026-06-01'),
+    ).toBeVisible();
+    await expectDebtAndCreditLines(page);
     await shotScreen(page, 'state-profile-given-received');
   });
 

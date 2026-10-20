@@ -5260,31 +5260,31 @@ Choosing `@ada` from that open list writes `@ada ` into the reaction field and c
 
 ### Variant: receive
 
-Filtered receive series with three UTC days (including a zero-gap day) and received total ₿1'500. Chart shows day ticks such as **2026-06-01**; Given stays flat at zero with a visible legend.
+Filtered receive series with three UTC days (including a zero-gap day) and received total ₿1'500. Chart shows day ticks such as **2026-06-01**; Given stays flat at zero with a visible legend. Under that chart, Debt falls from ₿100'000 through ₿60'000 to ₿-20'000 and Credit rises from ₿20'000 to ₿120'000 then falls to ₿-30'000. Both lines are drawn, and the axis shows **₿-30'000**.
 
 ![21.gifts profile receive](images/profile-receive.png)
 
 ### Variant: usd-scale
 
-Same receive stub as **receive**, with the fiat scale selected and USD pressed (`Given and received in USD`).
+Same receive stub as **receive**, with the fiat scale selected and USD pressed (`Given and received in USD`). The loan chart under it stays on ₿ and draws the same Debt and Credit lines, including **₿-30'000**.
 
 ![21.gifts profile USD scale](images/profile-usd-scale.png)
 
 ### Variant: single-day
 
-One receive day (₿21 on **2026-06-01**). Chart draws a horizontal single-point line.
+One receive day (₿21 on **2026-06-01**). Chart draws a horizontal single-point line. Under it, Debt falls from ₿100'000 through ₿60'000 to ₿-20'000 and Credit rises from ₿20'000 to ₿120'000 then falls to ₿-30'000 across **2026-06-01**, **2026-06-02**, and **2026-06-03**.
 
 ![21.gifts profile single day](images/profile-single-day.png)
 
 ### Variant: large-usd
 
-Two-day series with cumulative USD **1425.00**, scale switched to USD so the axis shows **$1'425** (Swiss default grouping).
+Two-day series with cumulative USD **1425.00**, scale switched to USD so the axis shows **$1'425** (Swiss default grouping). The loan chart under it stays on ₿: Debt falls from ₿100'000 to ₿-20'000 and Credit rises to ₿120'000 then falls to ₿-30'000.
 
 ![21.gifts profile large USD](images/profile-large-usd.png)
 
 ### Variant: given-received
 
-Both series non-zero: received ₿1,500 over three UTC days and given ₿2,100 on **2026-06-02**. Chart shows Given and Received together. Needle `state-profile-given-received`.
+Both series non-zero: received ₿1,500 over three UTC days and given ₿2,100 on **2026-06-02**. Chart shows Given and Received together. Under it, Debt falls from ₿100'000 through ₿60'000 to ₿-20'000 and Credit rises from ₿20'000 to ₿120'000 then falls to ₿-30'000. Needle `state-profile-given-received`.
 
 ![21.gifts profile given and received](images/profile-given-received.png)
 
@@ -7476,7 +7476,7 @@ After a failed translation of that reaction. The feed shows `Could not translate
 
 ### Variant: default
 
-Valid known key. Heading **Profile**, FiatPicker only while unsigned; empty series shows FiatPicker + `profile.chartEmpty` when unsigned (**No gifts yet.**, no legend/SVG / no ₿|fiat scale; never **Loading…** on the chart) and `profile.chartEmpty` alone when signed in (a failed activity load is `profile.chartError` on the gift chart and `profile.loanChartError` on the loan chart; `LoanBalanceChart` sits directly under the gift chart, empty is `profile.loanChartEmpty`, and its axis includes zero and may fall below zero), About me inside the card when `aboutMe` is a string (not a forum post), icon-only **Copy link to this profile**, name, location, and 21.gifts address, yellow **Action required, the account must be activated** / **Activate** banner under the card when unclaimed (even if signed in), no visible view-key URL/text. The card has no back control; the page header has the one top-left arrow.
+Valid known key. Heading **Profile**, FiatPicker only while unsigned; empty series shows FiatPicker + `profile.chartEmpty` when unsigned (**No gifts yet.**, no legend/SVG / no ₿|fiat scale; never **Loading…** on the chart) and `profile.chartEmpty` alone when signed in (a failed activity load is `profile.chartError` on the gift chart and `profile.loanChartError` on the loan chart; `LoanBalanceChart` sits directly under the gift chart, empty is `profile.loanChartEmpty`, and its axis includes zero and may fall below zero), About me inside the card when `aboutMe` is a string (not a forum post), icon-only **Copy link to this profile**, name, location, and 21.gifts address, yellow **Action required, the account must be activated** / **Activate** banner under the card when unclaimed (even if signed in), no visible view-key URL/text. The card has no back control; the page header has the one top-left arrow. This shot draws Debt and Credit under the gift chart: debt ₿100'000, ₿60'000, then ₿-20'000, and credit ₿20'000, ₿120'000, then ₿-30'000.
 
 ![21.gifts public view profile](images/view-viewKey.png)
 
