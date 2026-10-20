@@ -2232,6 +2232,59 @@ describe('PosScreen', () => {
       expect(within(history).getAllByText(/^Paid ✓ /)).toHaveLength(1);
     });
 
+    it('gives the charge before no payment when the read after a lost create shows a newer charge open', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      const newer = { ...OPEN, id: 'c-new', createdAt: new Date().toISOString() };
+      let reads = 0;
+      let failPost: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return new Promise<Response>((resolve) => {
+              failPost = resolve;
+            });
+          }
+          reads += 1;
+          if (reads === 1) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          if (reads <= 3) {
+            return jsonResponse({ charge: null, history: [ended] });
+          }
+          if (reads === 4) {
+            // The read right before the create fails.
+            throw new TypeError('Failed to fetch');
+          }
+          return jsonResponse({ charge: newer, history: [newer, ended] });
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      const amountPage = renderWithLocale(<PosAmount />);
+      await pressAmount('21');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(failPost).toBeDefined();
+      });
+      // The payer pays the new charge while the create's answer is on its way, within the late
+      // minute of the charge before.
+      receive(21);
+      await act(async () => {
+        failPost?.(jsonResponse({ error: 'Bad gateway' }, 502));
+        await Promise.resolve();
+      });
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/pos');
+      });
+      amountPage.unmount();
+      renderWithLocale(<PosScreen />);
+      // The payment counts for the open charge, not for the charge before.
+      expect(await confirmation()).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    });
+
     it('falls back to the charge before when the read after a lost create answer fails', async () => {
       const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
       let reads = 0;

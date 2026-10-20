@@ -697,6 +697,8 @@ function usePosTillState(): PosTillState {
           err instanceof WalletRequiredError ||
           err instanceof CannotReceiveError ||
           POS_CREATE_REFUSALS.has(message);
+        // Whether the read after a lost answer shows a newer charge open: payments then belong to it.
+        let newerOpen = false;
         if (!refused) {
           // The answer may be lost although the charge was made (and even paid): read the till once.
           try {
@@ -706,6 +708,10 @@ function usePosTillState(): PosTillState {
             // (the api's clock may lag) and after the one before. Any other charge the read finds is
             // set as the till's answer, and the error shows.
             const found = next.charge;
+            newerOpen =
+              found !== null &&
+              found.status === 'pending' &&
+              (before === null || found.id !== before.id);
             const made =
               found !== null &&
               known !== null &&
@@ -740,8 +746,11 @@ function usePosTillState(): PosTillState {
           }
         }
         // Back to the charge before, with any payment reported while the create was on its way; a
-        // read applied above that no longer shows it open ends it again (the arming effect).
-        rearm(creating, before);
+        // read applied above that no longer shows it open ends it again (the arming effect). Not
+        // when that read shows a newer charge open: a payment of this amount now belongs to it.
+        if (!newerOpen) {
+          rearm(creating, before);
+        }
         whenCurrent(generation, mine, () => {
           if (err instanceof WalletRequiredError) {
             showError(t('pos.needWallet'));
