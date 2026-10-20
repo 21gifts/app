@@ -662,6 +662,25 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('Could not save. Please try again.')).toBeTruthy();
   });
 
+  it('shows the public gifts address from the account before fetchMember returns', () => {
+    const current = useAuthStore.getState().account;
+    if (current === null) {
+      throw new Error('account missing');
+    }
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        ...current,
+        username: 'alice',
+        lightningAddress: 'alice@walletofsatoshi.com',
+        lightningAddressVerified: true,
+      },
+    });
+    renderWithLocale(<ProfileScreen />);
+    expect(screen.getByText('alice@21.gifts')).toBeTruthy();
+    expect(screen.queryByText("Can't receive yet")).toBeNull();
+  });
+
   it('shows the public gifts address, shop sticker, and post count after fetchMember', async () => {
     vi.mocked(fetchMember).mockResolvedValue(OWN_MEMBER);
     renderWithLocale(<ProfileScreen />);

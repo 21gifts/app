@@ -1,13 +1,14 @@
 'use client';
 
-import { HandHeart, Loader2, Mail } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
 import { LoanBalanceChart } from '@/components/LoanBalanceChart';
 import { LocationForm } from '@/components/LocationForm';
+import { MemberIdentityPills } from '@/components/MemberIdentityPills';
 import { MemberTrustActions } from '@/components/MemberTrustActions';
 import { NameForm } from '@/components/NameForm';
 import { ProfileImages } from '@/components/ProfileImages';
@@ -22,7 +23,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
-import { Button, Card, IconButton } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import {
   CannotReceiveError,
   fetchAboutMePhoto,
@@ -54,21 +55,13 @@ import {
   type AccountActivity,
   type MemberProfile,
 } from '@/lib/api-types';
-import type { MessageKey } from '@/lib/messages';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
 import { useHeartTip } from '@/lib/heart-tip';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shopStickerLangFromLocation } from '@/lib/shop-sticker';
 import { shortResourceUrl } from '@/lib/short-link';
-import {
-  authorCannotReceive,
-  isOwnNote,
-  isReplyPaymentExempt,
-  roleAtLeast,
-  verifiedChipHiddenByStaffTag,
-} from '@/lib/roles';
-import { formatForumTimeFromMs } from '@/lib/forum-time';
+import { authorCannotReceive, isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { paySatsFromDraft, replySatsFromDraft, shownFiatForSats } from '@/lib/stats-money';
@@ -119,20 +112,6 @@ function isRateLimitError(err: unknown): boolean {
  */
 function isAuthorWalletError(err: unknown): boolean {
   return err instanceof CannotReceiveError;
-}
-
-/** Roles that show a clickable tag beside the author name. */
-type MemberTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
-
-const ROLE_TAG_KEYS: Record<MemberTaggedRole, { label: MessageKey; hint: MessageKey }> = {
-  founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
-  moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
-  initiator: { label: 'forum.role.initiator', hint: 'forum.role.initiatorHint' },
-  verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
-};
-
-function isMemberTaggedRole(role: string): role is MemberTaggedRole {
-  return role in ROLE_TAG_KEYS;
 }
 
 /**
@@ -255,85 +234,6 @@ function PublicProfileHeader({
   return null;
 }
 
-/**
- * Role pill, Software Developer label, and funding-program icon that sit
- * beside a member's name, plus the sentences those controls reveal.
- *
- * The same marks are what a visitor sees and what the account owner sees
- * on `/profile`. `children` places the marks and the hint paragraphs.
- *
- * @param props - Member profile and a render prop `(marks, hints)`.
- * @returns Whatever `children` returns.
- */
-export function MemberIdentityPills({
-  profile,
-  children,
-}: {
-  profile: MemberProfile | null;
-  children: (marks: ReactNode, hints: ReactNode) => ReactElement;
-}): ReactElement {
-  const { t, locale } = useTranslations();
-  const [roleHintOpen, setRoleHintOpen] = useState(false);
-  const [fundingHintOpen, setFundingHintOpen] = useState(false);
-  if (profile === null) {
-    return children(null, null);
-  }
-  const tagged = isMemberTaggedRole(profile.role) ? profile.role : null;
-  const roleKeys =
-    tagged !== null && !verifiedChipHiddenByStaffTag(profile.role, profile.staffTag)
-      ? ROLE_TAG_KEYS[tagged]
-      : null;
-  const fundingReviewedAt = profile.fundingReviewedAt;
-  const showMarks =
-    roleKeys !== null ||
-    typeof fundingReviewedAt === 'number' ||
-    profile.staffTag === 'software_developer';
-  const marks = showMarks ? (
-    <>
-      {roleKeys !== null ? (
-        <button
-          type="button"
-          aria-expanded={roleHintOpen}
-          onClick={() => {
-            setRoleHintOpen((open) => !open);
-          }}
-          className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-        >
-          {t(roleKeys.label)}
-        </button>
-      ) : null}
-      {profile.staffTag === 'software_developer' ? (
-        <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-          {t('forum.staff.softwareDeveloper')}
-        </span>
-      ) : null}
-      {typeof fundingReviewedAt === 'number' ? (
-        <FundingProgramMark
-          admittedAt={fundingReviewedAt}
-          reviewerName={profile.fundingReviewedByName ?? null}
-          expanded={fundingHintOpen}
-          onToggle={() => setFundingHintOpen((open) => !open)}
-        />
-      ) : null}
-    </>
-  ) : null;
-  const hints = (
-    <>
-      {roleHintOpen && roleKeys !== null ? (
-        <p role="status" className="text-center text-xs text-app-muted">
-          {t(roleKeys.hint)}
-        </p>
-      ) : null}
-      {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
-        <p role="status" className="text-center text-xs text-app-muted">
-          {fundingParticipationLabel(t, locale, fundingReviewedAt, profile.fundingReviewedByName)}
-        </p>
-      ) : null}
-    </>
-  );
-  return children(marks, hints);
-}
-
 /* v8 ignore start -- ForumBoard defaults for on-demand member feeds */
 const IDLE_BOARD = {
   error: false,
@@ -379,46 +279,6 @@ const IDLE_BOARD = {
 };
 /* v8 ignore stop */
 
-function fundingParticipationLabel(
-  t: (key: MessageKey, vars?: Record<string, string | number>) => string,
-  locale: string,
-  admittedAt: number,
-  reviewerName: string | null | undefined,
-): string {
-  const name = (reviewerName ?? '').trim();
-  const date = formatForumTimeFromMs(admittedAt, locale);
-  if (name !== '') {
-    return t('funding.participatesSinceBy', { date, name });
-  }
-  return t('funding.participatesSince', { date });
-}
-
-function FundingProgramMark({
-  admittedAt,
-  reviewerName = null,
-  expanded,
-  onToggle,
-}: {
-  admittedAt: number;
-  reviewerName?: string | null;
-  expanded: boolean;
-  onToggle: () => void;
-}): ReactElement {
-  const { t, locale } = useTranslations();
-  const label = fundingParticipationLabel(t, locale, admittedAt, reviewerName);
-  return (
-    <IconButton
-      size="sm"
-      variant="secondary"
-      aria-label={label}
-      aria-expanded={expanded}
-      onClick={onToggle}
-    >
-      <HandHeart aria-hidden="true" className="h-3.5 w-3.5" />
-    </IconButton>
-  );
-}
-
 /**
  * Signed-in member identity card: chart, About me, name, location, Lightning
  * Address, role pill, optional funding-program icon-only button (HandHeart;
@@ -441,7 +301,8 @@ function FundingProgramMark({
  *   load only when `factsOnly` is false and the viewer is not the owner. A
  *   missing public photo or wide image draws nothing. `activityFailed`
  *   (default false) is passed to both charts as `failed`. `loadPublicList`
- *   loads the four feeds without a session (the share link).
+ *   loads the four feeds without a session (the share link). `loadAboutPhoto`
+ *   loads the About me photo on that link when the card has no profile-note id.
  * @returns The presentational member profile.
  */
 export function MemberProfileScreen({
@@ -454,6 +315,7 @@ export function MemberProfileScreen({
   omitPills = false,
   activityFailed = false,
   loadPublicList,
+  loadAboutPhoto,
 }: {
   profile: MemberProfile;
   received: AccountActivity['receivedOverTime'];
@@ -464,6 +326,7 @@ export function MemberProfileScreen({
   omitPills?: boolean;
   activityFailed?: boolean;
   loadPublicList?: (kind: 'posts' | 'replies' | 'shops' | 'credits') => Promise<ForumMessage[]>;
+  loadAboutPhoto?: () => Promise<Blob>;
 }): ReactElement {
   const { t } = useTranslations();
   const router = useRouter();
@@ -1986,7 +1849,9 @@ export function MemberProfileScreen({
                         ? fetchMessagePhoto(session, profileMessagePhotoId)
                         : fetchPublicMessagePhoto(profileMessagePhotoId),
                   }
-                : {})}
+                : loadAboutPhoto !== undefined
+                  ? { loadPhoto: loadAboutPhoto }
+                  : {})}
               /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
               {...(profileUrl !== '' ? { profileUrl } : {})}
             />

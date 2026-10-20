@@ -8,6 +8,7 @@ import { ViewProfileClaim } from '@/components/ViewProfileClaim';
 import {
   fetchMember,
   fetchMemberActivity,
+  fetchViewAboutMePhoto,
   fetchViewActivity,
   fetchViewForumList,
   fetchViewProfile,
@@ -220,6 +221,7 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
         credit={credit}
         activityFailed={activityFailed}
         {...(usePublicLists ? { loadPublicList: (kind) => fetchViewForumList(viewKey, kind) } : {})}
+        loadAboutPhoto={() => fetchViewAboutMePhoto(viewKey)}
       />
       <ViewProfileClaim viewKey={viewKey} hasPasskey={hasPasskey} />
     </div>

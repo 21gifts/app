@@ -1,7 +1,8 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemberIdentityPills, MemberProfileScreen } from '@/components/MemberProfileScreen';
+import { MemberIdentityPills } from '@/components/MemberIdentityPills';
+import { MemberProfileScreen } from '@/components/MemberProfileScreen';
 import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
 import {
@@ -4788,6 +4789,26 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '1 post' }));
     expect(await screen.findByText('Second post from Carol.')).toBeTruthy();
     expect(photoMock).not.toHaveBeenCalled();
+  });
+
+  it('loads the About me photo from the share link when the note id is absent', async () => {
+    const loadAboutPhoto = vi
+      .fn()
+      .mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, aboutMeHasPhoto: true, profileMessage: null }}
+        received={[]}
+        donated={[]}
+        loadAboutPhoto={loadAboutPhoto}
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByAltText('About me photo')).toBeTruthy();
+    });
+    expect(loadAboutPhoto).toHaveBeenCalledTimes(1);
+    expect(fetchPublicMessagePhoto).not.toHaveBeenCalled();
   });
 
   it('shows the About me photo when aboutMeHasPhoto is true', async () => {

@@ -19,18 +19,20 @@ import { useAuthStore } from '@/stores/auth-store';
  * @returns A {@link MemberProfile} for the same id.
  */
 function ownerPreview(account: Account): MemberProfile {
+  const username = account.username;
   return {
     id: account.id,
     name: account.name,
     location: account.location,
     role: account.role,
-    lightningAddress: null,
+    lightningAddress: account.lightningAddressVerified ? account.lightningAddress : null,
     createdAt: new Date(account.createdAt).toISOString(),
     profileMessage: null,
     postCount: 0,
     replyCount: 0,
     aboutMe: account.aboutMe,
     aboutMeHasPhoto: account.aboutMeHasPhoto === true,
+    ...(typeof username === 'string' ? { username } : {}),
     trust: {
       verifiedBy: null,
       proposedBy: null,

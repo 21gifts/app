@@ -49,6 +49,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
     fetchViewActivity: vi.fn(),
     fetchMember: vi.fn(),
     fetchMemberActivity: vi.fn(),
+    fetchViewAboutMePhoto: vi.fn(),
     fetchViewForumList: vi.fn(),
     fetchFxSpot: vi.fn().mockResolvedValue({
       asOf: '2026-10-07T00:00:00.000Z',
@@ -62,6 +63,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
 import {
   fetchMember,
   fetchMemberActivity,
+  fetchViewAboutMePhoto,
   fetchViewActivity,
   fetchViewForumList,
   fetchViewProfile,
@@ -72,6 +74,7 @@ const fetchActivity = vi.mocked(fetchViewActivity);
 const fetchSignedInMember = vi.mocked(fetchMember);
 const fetchSignedInActivity = vi.mocked(fetchMemberActivity);
 const fetchPublicList = vi.mocked(fetchViewForumList);
+const fetchAboutPhoto = vi.mocked(fetchViewAboutMePhoto);
 
 beforeEach(() => {
   useAuthStore.setState({ session: null, account: null });
@@ -81,6 +84,8 @@ beforeEach(() => {
   fetchPublicList.mockReset();
   fetchActivity.mockReset();
   fetchActivity.mockResolvedValue(EMPTY_ACTIVITY);
+  fetchAboutPhoto.mockReset();
+  fetchAboutPhoto.mockResolvedValue(new Blob([new Uint8Array([1])], { type: 'image/jpeg' }));
 });
 
 afterEach(() => {
@@ -121,6 +126,29 @@ describe('ViewProfileLoader', () => {
       expect(screen.getByText('Ada')).toBeTruthy();
     });
     expect(fetchProfile).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows the About me photo from the share link when the note id is absent', async () => {
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => 'blob:about',
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: () => undefined,
+    });
+    fetchProfile.mockResolvedValue({
+      ...profile,
+      aboutMe: 'Hello from Ada.',
+      aboutMeHasPhoto: true,
+    });
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByAltText('About me photo')).toBeTruthy();
+    });
+    expect(fetchAboutPhoto).toHaveBeenCalledWith(VIEW_KEY);
   });
 
   it('renders the profile card on success', async () => {
