@@ -1,19 +1,12 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { LoanBalanceChart } from '@/components/LoanBalanceChart';
 import type { AccountActivity } from '@/lib/api-types';
 import { formatBitcoin, formatFiatTick } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
-let hydrateReady = true;
-
-vi.mock('@/hooks/useHydrateSession', () => ({
-  useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
-}));
-
 beforeEach(() => {
-  hydrateReady = true;
   useAuthStore.setState({ session: null, account: null });
 });
 
@@ -52,23 +45,16 @@ function clickChartScale(name: string): void {
 }
 
 describe('LoanBalanceChart', () => {
-  it('renders empty copy with FiatPicker when unsigned and ready', () => {
+  it('renders empty copy and no FiatPicker when unsigned', () => {
     renderWithLocale(<LoanBalanceChart />);
     expect(screen.getByRole('status').textContent).toBe('No loans yet.');
-    expect(screen.getByRole('group', { name: 'Fiat currency' })).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
     expect(screen.queryByRole('img', { name: 'Debt and credit in ₿' })).toBeNull();
     expect(screen.queryByRole('group', { name: 'Chart scale' })).toBeNull();
   });
 
-  it('hides the fiat switcher when a session is set and still shows empty copy', () => {
+  it('still shows empty copy and no FiatPicker when a session is set', () => {
     useAuthStore.setState({ session: 'tok', account: null });
-    renderWithLocale(<LoanBalanceChart />);
-    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
-    expect(screen.getByRole('status').textContent).toBe('No loans yet.');
-  });
-
-  it('hides the fiat switcher while hydration is not ready and still shows empty copy', () => {
-    hydrateReady = false;
     renderWithLocale(<LoanBalanceChart />);
     expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
     expect(screen.getByRole('status').textContent).toBe('No loans yet.');
@@ -78,7 +64,7 @@ describe('LoanBalanceChart', () => {
     renderWithLocale(<LoanBalanceChart failed={true} />);
     expect(screen.getByRole('alert').textContent).toBe('Could not load loans.');
     expect(screen.queryByText('No loans yet.')).toBeNull();
-    expect(screen.getByRole('group', { name: 'Fiat currency' })).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Fiat currency' })).toBeNull();
   });
 
   it('draws the chart when failed and cumulative sats are non-zero', () => {

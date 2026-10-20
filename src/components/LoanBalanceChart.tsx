@@ -1,16 +1,13 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
-import { FiatPicker } from '@/components/FiatPicker';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { SegmentedControl } from '@/components/ui';
-import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { alignLoanSeries, loanAxis, loanValue, type ActivityScale } from '@/lib/account-activity';
 import type { AccountActivity } from '@/lib/api-types';
 import { formatBitcoin, formatFiatTick, formatUsdTick } from '@/lib/stats-money';
-import { useAuthStore } from '@/stores/auth-store';
 
 /** Props for {@link LoanBalanceChart}. */
 export interface LoanBalanceChartProps {
@@ -37,19 +34,17 @@ const PAD_T = 8;
 const PAD_B = 20;
 
 /**
- * Compact dual-line open-balance chart of Debt and Credit. FiatPicker only
- * when hydration is ready AND session is null (unsigned public view).
- * Signed-in mounts omit it. Fiat code comes from {@link useFiatPreference}.
- * Y-axis always includes 0 and may extend below for negative balances. Circles
- * mark every value change (rise or fall), not only increases.
+ * Compact dual-line open-balance chart of Debt and Credit. Does not mount
+ * FiatPicker. Fiat code comes from {@link useFiatPreference} (written by the
+ * unsigned gift chart and by settings). The ₿|fiat scale is local to this
+ * chart. Y-axis always includes 0 and may extend below for negative balances.
+ * Circles mark every value change (rise or fall), not only increases.
  *
  * @param props - Owed series, credit series, and optional `failed`.
- * @returns When unsigned, FiatPicker then empty `profile.loanChartEmpty`
- *   status, failed-empty `profile.loanChartError` alert, or FiatPicker plus
- *   legend, selected-fiat chrome, and reserved-height SVG. Signed-in empty is
- *   `profile.loanChartEmpty` alone (or `profile.loanChartError` when
- *   `failed`); populated signed-in starts at legend + ₿\|selected fiat scale
- *   (no title heading).
+ * @returns Empty `profile.loanChartEmpty` status, failed-empty
+ *   `profile.loanChartError` alert, or legend, selected-fiat chrome, and
+ *   reserved-height SVG. Signed-in and unsigned empty states match (no title
+ *   heading).
  */
 export function LoanBalanceChart({
   owed = [],
@@ -58,24 +53,16 @@ export function LoanBalanceChart({
 }: LoanBalanceChartProps): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const { fiat, setFiat } = useFiatPreference();
-  const { ready } = useHydrateSession();
-  const session = useAuthStore((state) => state.session);
-  const showFiatSwitcher = ready && session === null;
+  const { fiat } = useFiatPreference();
   const [scale, setScale] = useState<ActivityScale>('sat');
   const points = alignLoanSeries(owed, credit);
   const emptySats =
     points.length === 0 ||
     points.every((point) => point.cumulativeOwedSats === 0 && point.cumulativeCreditSats === 0);
 
-  const picker = showFiatSwitcher ? (
-    <FiatPicker value={fiat} onChange={setFiat} shell="app" ariaLabel={t('profile.fiatCurrency')} />
-  ) : null;
-
   if (emptySats) {
     return (
       <div className="flex w-full flex-col gap-2">
-        {picker}
         {failed ? (
           <p className="text-center text-sm text-app-danger" role="alert">
             {t('profile.loanChartError')}
@@ -150,7 +137,6 @@ export function LoanBalanceChart({
 
   return (
     <div className="flex w-full flex-col gap-2">
-      {picker}
       <div
         role="group"
         aria-label={t('profile.loanChartTitle')}
