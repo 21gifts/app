@@ -5034,7 +5034,7 @@ Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, the sat a
 
 ### Variant: paid
 
-Signed-in Ada whose charge of ₿21 the api has marked paid. The whole window is green: a white disc with a green check, **Paid** very large, ₿21 larger still, the default fiat under it, **The amount has arrived in your wallet.**, then **New payment** (to `/pos/amount`) and **Done**. Nothing of the till shows through.
+Signed-in Ada whose charge of ₿21 the api has marked paid. The whole window is green: a disc in the page colour (white, dark in the dark theme) with a green check, **Paid** very large, ₿21 larger still, the default fiat under it, **The amount has arrived in your wallet.**, then **New payment** (to `/pos/amount`) and **Done**. Nothing of the till shows through.
 
 ![21.gifts point of sale paid](images/pos-paid.png)
 
