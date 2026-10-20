@@ -2039,7 +2039,7 @@ const de = {
   'shops.placeDialogTitle': 'Ort und Adresse des Shops',
   'shops.placeMapHint': 'Tippen Sie auf die Karte, um die Markierung zu setzen.',
   'shops.setPinAbove': 'Setzen Sie die Markierung auf der Karte oben.',
-  'shops.fillIn': 'Ausfüllen: {fields}.',
+  'shops.fillIn': 'Füllen Sie aus: {fields}.',
   'shops.fixFieldsNamed': 'Korrigieren Sie: {fields}.',
   'shops.placeRequired': 'Fügen Sie Ort und Adresse des Shops hinzu.',
   'shops.placeUnavailableReason':

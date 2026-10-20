@@ -1041,7 +1041,7 @@ describe('PlaceField', () => {
     expect(await screen.findByRole('dialog', { name: 'Ort und Adresse des Shops' })).toBeTruthy();
     expect(
       screen.getByText(
-        'Setzen Sie die Markierung auf der Karte oben. Ausfüllen: Shopname, Strasse, Hausnummer, Postleitzahl, Ort, Land.',
+        'Setzen Sie die Markierung auf der Karte oben. Füllen Sie aus: Shopname, Strasse, Hausnummer, Postleitzahl, Ort, Land.',
       ),
     ).toBeTruthy();
   });
@@ -1457,8 +1457,71 @@ describe('PlaceField', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
     const street = screen.getByLabelText('Street');
     const houseNumber = screen.getByLabelText('House number');
-    street.setAttribute('aria-invalid', 'true');
     houseNumber.setAttribute('aria-invalid', 'true');
+    await act(async () => {
+      rejectCommit(new Error('Place address is invalid'));
+    });
+    expect((await screen.findByRole('alert')).textContent).toContain('The address is invalid.');
+    await waitFor(() => {
+      expect(document.activeElement).toBe(houseNumber);
+    });
+  });
+
+  it('keeps focus in a dialog without address fields after a mapped rejection', async () => {
+    let rejectCommit!: (reason?: unknown) => void;
+    const onCommit = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectCommit = reject;
+        }),
+    );
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField place={null} disabled={false} onChange={() => undefined} onCommit={onCommit} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
+    fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Stall' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    await act(async () => {
+      rejectCommit(new Error('Place address is invalid'));
+    });
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() => {
+      expect(document.activeElement).not.toBe(document.body);
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    });
+  });
+
+  it('focuses Street after an address rejection that marks no field', async () => {
+    let rejectCommit!: (reason?: unknown) => void;
+    const onCommit = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectCommit = reject;
+        }),
+    );
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={onCommit}
+        shopDetails
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
+    fillShopAddress();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    const street = screen.getByLabelText('Street');
     await act(async () => {
       rejectCommit(new Error('Place address is invalid'));
     });

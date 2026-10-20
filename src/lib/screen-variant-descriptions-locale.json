@@ -2340,7 +2340,7 @@
     "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng lugar sa tala ng Cafe Luna na may mapa. May klik na naglagay ng tuldok at walang laman pa ang Pangalan ng shop. Nakikita ang palatandaan Ilagay ang pangalan ng shop. Nakikita at naka-disable ang Gamitin ang lugar na ito."
   },
   "/shops:staff-place-hint": {
-    "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Notiz Cafe Luna ist geöffnet, mit einer Karte. Ein Klick hat eine Stecknadel gesetzt und Shopname ist Happyland, aber die Adresse ist noch leer. Die Fußzeile Ausfüllen: Strasse, Hausnummer, Postleitzahl, Ort, Land. ist sichtbar. Diesen Ort verwenden ist sichtbar und deaktiviert.",
+    "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Notiz Cafe Luna ist geöffnet, mit einer Karte. Ein Klick hat eine Stecknadel gesetzt und Shopname ist Happyland, aber die Adresse ist noch leer. Die Fußzeile Füllen Sie aus: Strasse, Hausnummer, Postleitzahl, Ort, Land. ist sichtbar. Diesen Ort verwenden ist sichtbar und deaktiviert.",
     "es": "Una sesión de moderador. Añadir un lugar en la nota Cafe Luna está abierto con un mapa. Un clic ha puesto un pin y Nombre de la tienda es Happyland, pero la dirección sigue vacía. El pie Completa: Calle, Número, Código postal, Ciudad, País. es visible. Usar este lugar está visible y desactivado.",
     "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng lugar sa tala ng Cafe Luna na may mapa. May tuldok mula sa isang klik at ang Pangalan ng shop ay Happyland, pero walang laman pa ang address. Nakikita sa footer ang Punan: Kalye, Numero ng bahay, Postal code, Lungsod, Bansa. Nakikita at naka-disable ang Gamitin ang lugar na ito."
   },

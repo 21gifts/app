@@ -343,6 +343,7 @@ export function PlaceField(props: {
       return;
     }
     const opener = document.activeElement as HTMLElement | null;
+    const triggerWrap = triggerWrapRef.current;
     const handleDialogKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape' && !savingRef.current) {
         setOpen(false);
@@ -384,7 +385,7 @@ export function PlaceField(props: {
       if (opener !== null && opener !== document.body && opener.isConnected) {
         opener.focus();
       } else {
-        triggerWrapRef.current?.querySelector('button')?.focus();
+        triggerWrap?.querySelector('button')?.focus();
       }
     };
   }, [open]);
@@ -408,9 +409,13 @@ export function PlaceField(props: {
       saveError?.startsWith('shops.problemName') === true
         ? dialog.querySelector<HTMLElement>(`[id="${shopNameId}"]`)
         : null;
+    // An address the client accepted but the API rejected marks no field; start at Street.
     const invalidAddress =
       saveError !== null && nameInput === null
-        ? dialog.querySelector<HTMLElement>('[aria-invalid="true"]')
+        ? (dialog.querySelector<HTMLElement>('[aria-invalid="true"]') ??
+          dialog.querySelector<HTMLElement>(
+            '[data-testid="shop-address-fields"] input:not([disabled])',
+          ))
         : null;
     const commitButton = dialog.querySelector<HTMLElement>('[data-place-commit]:not([disabled])');
     const firstFocusable = dialog.querySelector<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR);

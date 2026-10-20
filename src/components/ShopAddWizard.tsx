@@ -205,7 +205,10 @@ export function ShopAddWizard({
     serverProblem !== lastAutoOpenedPlaceProblem.current;
 
   useEffect(() => {
-    if (autoOpenPlaceProblem) {
+    // A cleared problem may come back from the next post; announce it again then.
+    if (serverProblem === null) {
+      lastAutoOpenedPlaceProblem.current = null;
+    } else if (autoOpenPlaceProblem) {
       lastAutoOpenedPlaceProblem.current = serverProblem;
     }
   }, [autoOpenPlaceProblem, serverProblem]);

@@ -821,11 +821,14 @@ describe('ShopAddWizard', () => {
 
   it('auto-opens each server place problem only once', async () => {
     function ServerProblemHost(): ReactElement {
-      const [serverProblem, setServerProblem] = useState<ShopApiProblem>('shopName');
+      const [serverProblem, setServerProblem] = useState<ShopApiProblem | null>('shopName');
       return (
         <>
           <button type="button" onClick={() => setServerProblem('shopNameAddress')}>
             Report another place problem
+          </button>
+          <button type="button" onClick={() => setServerProblem(null)}>
+            Clear the place problem
           </button>
           <ShopAddWizard
             {...props({
@@ -854,5 +857,11 @@ describe('ShopAddWizard', () => {
     expect(within(nextDialog).getByRole('alert').textContent).toBe(
       'The shop name must not contain the street or the postal code.',
     );
+
+    // The same problem after a cleared one is a new rejection and opens again.
+    fireEvent.click(within(nextDialog).getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear the place problem' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Report another place problem' }));
+    expect(await screen.findByRole('dialog')).toBeTruthy();
   });
 });

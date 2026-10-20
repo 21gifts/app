@@ -1,6 +1,7 @@
 'use client';
 
 import { revealInScrollport } from '@/lib/reveal-in-scrollport';
+
 import {
   ArrowUp,
   Check,
@@ -61,7 +62,6 @@ import {
   type ForumMessage,
   type ForumPlacePin,
 } from '@/lib/api-types';
-
 import { DeletePostControl } from '@/components/DeletePostControl';
 import { ShopAccountControl } from '@/components/ShopAccountControl';
 import { ShopAddWizard } from '@/components/ShopAddWizard';
