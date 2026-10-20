@@ -6720,9 +6720,7 @@ test('Function: formatFiatDisplay — empty stats hero shows $0.00', async ({ pa
   await expect(page.locator('dl').getByText('$0.00')).toBeVisible();
 });
 
-test('Function: satsToFiatAmount — a note without stored fiat shows bitcoin', async ({
-  page,
-}) => {
+test('Function: satsToFiatAmount — a note without stored fiat shows bitcoin', async ({ page }) => {
   await stubGiftStats(page, POPULATED_STATS);
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
