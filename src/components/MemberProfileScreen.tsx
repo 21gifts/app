@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
+import { LoanBalanceChart } from '@/components/LoanBalanceChart';
 import { MemberTrustActions } from '@/components/MemberTrustActions';
 import {
   ForumBoard,
@@ -222,22 +223,26 @@ function FundingProgramMark({
  * null), the gifts block shows a "Can't receive yet" label instead of the
  * address, QR, and shop sticker.
  *
- * @param props - Member profile and both activity series for the chart.
+ * @param props - Member profile and gift/loan activity series for the charts.
  *   `factsOnly` (default false) keeps every hook and returns only the public
  *   pills, gifts block, post/reaction/shop/credit counts, and activity feed.
- *   `activityFailed` (default false) is passed to the chart as `failed`.
+ *   `activityFailed` (default false) is passed to both charts as `failed`.
  * @returns The presentational member profile.
  */
 export function MemberProfileScreen({
   profile,
   received,
   donated = [],
+  owed = [],
+  credit = [],
   factsOnly = false,
   activityFailed = false,
 }: {
   profile: MemberProfile;
   received: AccountActivity['receivedOverTime'];
   donated?: AccountActivity['donatedOverTime'];
+  owed?: NonNullable<AccountActivity['owedOverTime']>;
+  credit?: NonNullable<AccountActivity['creditOverTime']>;
   factsOnly?: boolean;
   activityFailed?: boolean;
 }): ReactElement {
@@ -1679,6 +1684,7 @@ export function MemberProfileScreen({
             {t('profile.title')}
           </h1>
           <AccountActivityChart received={received} donated={donated} failed={activityFailed} />
+          <LoanBalanceChart owed={owed} credit={credit} failed={activityFailed} />
           <AboutMeSection
             mode="public"
             aboutMe={profile.aboutMe}

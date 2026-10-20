@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
+import { LoanBalanceChart } from '@/components/LoanBalanceChart';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { Card } from '@/components/ui';
@@ -18,8 +19,8 @@ import { profileQrLogo } from '@/lib/profile-qr-logo';
  * When the member cannot receive yet (`lightningAddressVerified` false), the
  * gifts block shows a "Can't receive yet" label instead of the address and QR.
  *
- * @param props - Public profile, view key, both activity series, and optional
- *   `activityFailed` for the chart.
+ * @param props - Public profile, view key, gift and loan activity series, and
+ *   optional `activityFailed` for both charts.
  * @returns The presentational card.
  */
 export function ViewProfileScreen({
@@ -27,12 +28,16 @@ export function ViewProfileScreen({
   viewKey,
   received,
   donated = [],
+  owed = [],
+  credit = [],
   activityFailed = false,
 }: {
   profile: ViewProfile;
   viewKey: string;
   received: AccountActivity['receivedOverTime'];
   donated?: AccountActivity['donatedOverTime'];
+  owed?: NonNullable<AccountActivity['owedOverTime']>;
+  credit?: NonNullable<AccountActivity['creditOverTime']>;
   activityFailed?: boolean;
 }): ReactElement {
   const { t } = useTranslations();
@@ -63,6 +68,7 @@ export function ViewProfileScreen({
         {t('profile.title')}
       </h1>
       <AccountActivityChart received={received} donated={donated} failed={activityFailed} />
+      <LoanBalanceChart owed={owed} credit={credit} failed={activityFailed} />
       <AboutMeSection
         mode="public"
         aboutMe={profile.aboutMe}
