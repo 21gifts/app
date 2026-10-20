@@ -1053,7 +1053,7 @@
 
 ## Function: ShopScreen
 
-- **Purpose:** Public shop identity body: name, description, `ForumPhotoGallery`, text address, optional one-marker map, forum-note link, optional NIP-05, npub copy control, and an optional payment block like the profile cards: heading **21.gifts address**, the `giftsLightningAddress(payUsername, host)` line, then the Open CryptoPay QR with `profileQrLogo`.
+- **Purpose:** Public shop identity body: name, description, `ForumPhotoGallery`, text address, optional one-marker map, forum-note link, optional NIP-05, npub copy control, and an optional payment block like the profile cards: heading **21.gifts address**, the `giftsLightningAddress(payUsername, host)` line, then the Open CryptoPay QR with `profileQrLogo`; the address line and the QR use the browser host and appear only after mount.
 - **Inputs:** Discriminated `state`: `ready` with a parsed `Shop`, `gone`, or `unavailable`. Uses translations and browser hostname; asks `fetchMapsKey` only while ready.
 - **Returns / side effects:** Ready card, anonymous unlisted heading, or `forum.error` plus `view.retry`. Retry calls `router.refresh`; a non-empty maps key mounts `GoogleMapCanvas` for one point.
 - **Used by:** `ShopPage`.
