@@ -2312,6 +2312,98 @@ describe('PosScreen', () => {
       expect(within(dialog).queryByText(/CHF/)).toBeNull();
     });
 
+    /** Types CHF 68 on the amount page; the create's answer is lost and the till then reads `found`. */
+    async function loseCreateAnswer(found: Record<string, unknown>): Promise<void> {
+      vi.mocked(fetchFxSpot).mockResolvedValue(SPOT);
+      useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
+      let lost = false;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            lost = true;
+            return jsonResponse({ error: 'Bad gateway' }, 502);
+          }
+          return lost
+            ? jsonResponse({ charge: found, history: [found] })
+            : jsonResponse({ charge: null, history: [] });
+        }),
+      );
+      const amountPage = renderWithLocale(<PosAmount />, 'en', 'ch', 'CHF');
+      await pressAmount('68');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/pos');
+      });
+      amountPage.unmount();
+      renderWithLocale(<PosScreen />, 'en', 'ch', 'CHF');
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(Number(found['amountSats']));
+      vi.mocked(fetchFxSpot).mockResolvedValue({ asOf: SPOT.asOf, source: 'test', rates: {} });
+    }
+
+    it('gives a charge found after a lost create answer the typed figure when it is that create', async () => {
+      await loseCreateAnswer({
+        ...OPEN,
+        id: 'c5',
+        amountSats: 85_000,
+        createdAt: new Date().toISOString(),
+      });
+      expect(within(await confirmation()).getByText('CHF 68.00')).toBeTruthy();
+    });
+
+    it('confirms at once a charge the lost create made that is already paid', async () => {
+      vi.mocked(fetchFxSpot).mockResolvedValue(SPOT);
+      useAuthStore.setState({ session: 'tok', account: { ...ACCOUNT, amountUnit: 'fiat' } });
+      const paidMeanwhile = {
+        ...OPEN,
+        id: 'c11',
+        amountSats: 85_000,
+        status: 'paid',
+        createdAt: new Date().toISOString(),
+        paidAt: new Date().toISOString(),
+      };
+      let lost = false;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            lost = true;
+            return jsonResponse({ error: 'Bad gateway' }, 502);
+          }
+          return lost
+            ? jsonResponse({ charge: paidMeanwhile, history: [paidMeanwhile] })
+            : jsonResponse({ charge: null, history: [] });
+        }),
+      );
+      const amountPage = renderWithLocale(<PosAmount />, 'en', 'ch', 'CHF');
+      await pressAmount('68');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/pos');
+      });
+      expect(screen.queryByRole('alert')).toBeNull();
+      amountPage.unmount();
+      renderWithLocale(<PosScreen />, 'en', 'ch', 'CHF');
+      expect(within(await confirmation()).getByText('CHF 68.00')).toBeTruthy();
+      vi.mocked(fetchFxSpot).mockResolvedValue({ asOf: SPOT.asOf, source: 'test', rates: {} });
+    });
+
+    it('gives no typed figure to another amount found after a lost create answer', async () => {
+      await loseCreateAnswer({ ...OPEN, id: 'c6', createdAt: new Date().toISOString() });
+      expect(within(await confirmation()).queryByText(/CHF/)).toBeNull();
+    });
+
+    it('gives no typed figure to a charge made well before a lost create', async () => {
+      await loseCreateAnswer({
+        ...OPEN,
+        id: 'c10',
+        amountSats: 85_000,
+        createdAt: new Date(Date.now() - 60_000).toISOString(),
+      });
+      expect(within(await confirmation()).queryByText(/CHF/)).toBeNull();
+    });
+
     it('never asks the api on a timer while a charge is open', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
       const fetchMock = vi

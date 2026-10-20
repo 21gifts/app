@@ -259,6 +259,9 @@ function rearm(memory: WalletSettled, charge: PosCharge | null): void {
   }
 }
 
+/** How far the api's clock may run behind this one when a lost create is matched to its charge. */
+const POS_CREATE_SKEW_MS = 30_000;
+
 /** Create answers that say for certain no charge was made. */
 const POS_CREATE_REFUSALS = new Set([
   'Amount is outside the wallet range',
@@ -571,6 +574,7 @@ function usePosTillState(): PosTillState {
         ? amount.trim().replace(',', '.').replace(/\.$/, '')
         : satsToFiatAmount(amountSats, rateDay, fiat);
     const figure = typed === null ? null : { amount: typed, code: fiat };
+    const startedAt = Date.now();
     const work = (async (): Promise<void> => {
       try {
         const created = await createPosCharge(session, amountSats);
@@ -593,10 +597,15 @@ function usePosTillState(): PosTillState {
           try {
             const seq = startRead(reads);
             const next = await fetchPosState(session);
+            // This create's charge: the amount requested, made during this create and after the one
+            // before. Any other charge the read finds still shows, but is not taken for this create.
+            const found = next.charge;
             const made =
-              next.charge !== null &&
-              (before === null || Date.parse(next.charge.createdAt) > Date.parse(before.createdAt))
-                ? next.charge
+              found !== null &&
+              found.amountSats === amountSats &&
+              Date.parse(found.createdAt) >= startedAt - POS_CREATE_SKEW_MS &&
+              (before === null || Date.parse(found.createdAt) > Date.parse(before.createdAt))
+                ? found
                 : null;
             whenCurrent(generation, mine, () => {
               applyRead(reads, seq, () => {
@@ -609,6 +618,11 @@ function usePosTillState(): PosTillState {
             if (made !== null) {
               // The charge was made: the till shows it and counts the payments kept meanwhile.
               rememberFigure(creating, made.id, figure);
+              if (made.status === 'paid') {
+                // Already paid while the answer was lost: confirm it like a payment the wallet saw.
+                creating.paid.set(made.id, made);
+                settledChanged();
+              }
               return;
             }
           } catch {
@@ -736,10 +750,12 @@ function usePosTillState(): PosTillState {
  * payment that pays the charge ({@link onPaymentReceived}: its amount, or
  * that amount after the fee, made from one second before its creation to a
  * minute after its end), the charge is paid, and
- * {@link PosPaidOverlay} fills the screen with **Paid**, bitcoin, and fiat.
+ * {@link PosPaidOverlay} fills the screen with **Paid**, bitcoin, and the
+ * charge's fixed currency figure when this tab has one.
  * The till reads the api only on open, when the session or the language
  * changes, when a charge runs out, when the tab becomes visible again, after
- * Cancel, and when the confirmation is closed. A paid charge
+ * Cancel, once after a create whose answer was lost, and when the
+ * confirmation is closed. A paid charge
  * the api returns also opens the confirmation. Under the till, once it has
  * loaded, {@link PosHistory} lists the past charges, a charge the wallet saw
  * paid already as paid. An
