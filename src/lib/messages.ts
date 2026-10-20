@@ -899,10 +899,11 @@ const en = {
   'shops.problemDescription':
     'The description must be 20 to 1000 characters and longer than the shop name.',
   'shops.problemAddressInvalid':
-    'The address is invalid. Check the street, house number, postal code, city and country.',
+    'The address is invalid. The house number must start with a digit, the postal code must have 4 digits in Switzerland and Liechtenstein, the city must contain a letter, and the country must be chosen from the list.',
   'shops.problemUsernameFormat':
     'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
-  'shops.problemUsernameMissing': 'No account with that username.',
+  'shops.problemUsernameMissing':
+    'No account with that username. Check the spelling of the 21.gifts username.',
   'shops.problemUsernameLookup': 'The account could not be checked. Please try again.',
 
   'inbox.heading': 'Messages',
@@ -2071,10 +2072,11 @@ const de = {
   'shops.problemDescription':
     'Die Beschreibung muss 20 bis 1000 Zeichen lang und länger als der Shopname sein.',
   'shops.problemAddressInvalid':
-    'Die Adresse ist ungültig. Prüfen Sie Strasse, Hausnummer, Postleitzahl, Ort und Land.',
+    'Die Adresse ist ungültig. Die Hausnummer muss mit einer Ziffer beginnen, die Postleitzahl muss in der Schweiz und in Liechtenstein 4 Ziffern haben, der Ort muss einen Buchstaben enthalten und das Land muss aus der Liste ausgewählt werden.',
   'shops.problemUsernameFormat':
     'Verwenden Sie 1–32 Kleinbuchstaben, Ziffern, Punkte, Bindestriche oder Unterstriche; beginnen Sie mit einem Buchstaben oder einer Ziffer.',
-  'shops.problemUsernameMissing': 'Kein Konto mit diesem Benutzernamen.',
+  'shops.problemUsernameMissing':
+    'Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens.',
   'shops.problemUsernameLookup':
     'Das Konto konnte nicht geprüft werden. Bitte versuchen Sie es erneut.',
 
@@ -3248,10 +3250,11 @@ const es = {
   'shops.problemDescription':
     'La descripción debe tener entre 20 y 1000 caracteres y ser más larga que el nombre de la tienda.',
   'shops.problemAddressInvalid':
-    'La dirección no es válida. Comprueba la calle, el número, el código postal, la ciudad y el país.',
+    'La dirección no es válida. El número debe empezar con un dígito, el código postal debe tener 4 dígitos en Suiza y Liechtenstein, la ciudad debe contener una letra y el país debe elegirse de la lista.',
   'shops.problemUsernameFormat':
     'Usa de 1 a 32 letras minúsculas, dígitos, puntos, guiones o guiones bajos; empieza con una letra o un dígito.',
-  'shops.problemUsernameMissing': 'No hay ninguna cuenta con ese nombre de usuario.',
+  'shops.problemUsernameMissing':
+    'No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.',
   'shops.problemUsernameLookup': 'No se pudo comprobar la cuenta. Inténtalo de nuevo.',
 
   'inbox.heading': 'Mensajes',
@@ -4421,10 +4424,11 @@ const fil = {
   'shops.problemDescription':
     'Dapat 20 hanggang 1000 karakter ang paglalarawan at mas mahaba kaysa sa pangalan ng shop.',
   'shops.problemAddressInvalid':
-    'Hindi wasto ang address. Suriin ang kalye, numero ng bahay, postal code, lungsod, at bansa.',
+    'Hindi wasto ang address. Dapat magsimula sa digit ang numero ng bahay, dapat may 4 na digit ang postal code sa Switzerland at Liechtenstein, dapat may titik ang lungsod, at dapat piliin ang bansa mula sa listahan.',
   'shops.problemUsernameFormat':
     'Gumamit ng 1–32 lowercase na titik, digit, tuldok, gitling, o underscore; magsimula sa titik o digit.',
-  'shops.problemUsernameMissing': 'Walang account na may ganitong username.',
+  'shops.problemUsernameMissing':
+    'Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts.',
   'shops.problemUsernameLookup': 'Hindi masuri ang account. Pakisubukan muli.',
 
   'inbox.heading': 'Mga mensahe',

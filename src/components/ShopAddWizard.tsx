@@ -154,6 +154,7 @@ export function ShopAddWizard({
   const photoFeedbackId = `${idPrefix}-photo-feedback`;
   const descriptionHintId = `${idPrefix}-description-feedback`;
   const accountUsernameId = `${idPrefix}-account-username`;
+  const accountUsernameServerErrorId = `${idPrefix}-account-username-server-error`;
   const [step, setStep] = useState<ShopAddStep | 'closed'>(mode === 'edit' ? 1 : 'closed');
   // The summary control replaces Next in the same spot. Ignore that same click.
   const [summaryArmed, setSummaryArmed] = useState(false);
@@ -404,7 +405,7 @@ export function ShopAddWizard({
               })}
             </p>
             {photoError !== null ? (
-              <p className="text-sm text-app-danger">
+              <p role="alert" className="text-sm text-app-danger">
                 {t(
                   photoError === 'tooMany'
                     ? 'forum.errorTooMany'
@@ -514,7 +515,10 @@ export function ShopAddWizard({
             onAvailabilityChange={setMapsUnavailable}
           />
           {!placeComplete || placeServerProblem ? (
-            <p className="text-sm text-app-danger">
+            <p
+              role={placeServerMessage === null ? undefined : 'alert'}
+              className="text-sm text-app-danger"
+            >
               {placeServerMessage ??
                 (mapsUnavailable ? t('shops.placeUnavailableReason') : t('shops.placeRequired'))}
             </p>
@@ -541,7 +545,12 @@ export function ShopAddWizard({
           />
           <div id={descriptionHintId} className="flex flex-col gap-1">
             {descriptionHint !== null ? (
-              <p className="text-sm text-app-danger">{descriptionHint}</p>
+              <p
+                role={descriptionServerProblem ? 'alert' : undefined}
+                className="text-sm text-app-danger"
+              >
+                {descriptionHint}
+              </p>
             ) : null}
             <p className="text-sm text-app-muted">
               {t('shops.descriptionCount', { n: draft.length, max: SHOP_DESCRIPTION_MAX })}
@@ -550,15 +559,26 @@ export function ShopAddWizard({
         </div>
       ) : null}
       {step === 4 ? (
-        <Field
-          id={accountUsernameId}
-          label={t('shops.accountLabel')}
-          value={username}
-          disabled={posting}
-          hint={usernameHint}
-          {...(usernameError === undefined ? {} : { error: usernameError })}
-          onChange={(event) => onUsernameChange(event.target.value)}
-        />
+        <div className="flex flex-col gap-1">
+          <Field
+            id={accountUsernameId}
+            label={t('shops.accountLabel')}
+            value={username}
+            disabled={posting}
+            hint={usernameHint}
+            aria-describedby={usernameServerProblem ? accountUsernameServerErrorId : undefined}
+            aria-invalid={usernameServerProblem ? true : undefined}
+            {...(usernameError === undefined || usernameServerProblem
+              ? {}
+              : { error: usernameError })}
+            onChange={(event) => onUsernameChange(event.target.value)}
+          />
+          {usernameServerProblem ? (
+            <p id={accountUsernameServerErrorId} role="alert" className="text-sm text-app-danger">
+              {usernameError}
+            </p>
+          ) : null}
+        </div>
       ) : null}
       {step === 5 ? (
         <dl className="flex flex-col gap-2 text-sm text-app-fg">

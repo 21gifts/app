@@ -1782,7 +1782,7 @@
   "/shops:add-place-field-invalid": {
     "de": "Einen Ort hinzufügen ist als Dialog geöffnet. Hausnummer abc, Postleitzahl 80 und Ort 1234 zeigen gleichzeitig konkrete Feldfehler. Diesen Ort verwenden bleibt deaktiviert.",
     "es": "Añadir un lugar está abierto como diálogo. Número abc, código postal 80 y ciudad 1234 muestran a la vez errores concretos. Usar este lugar sigue desactivado.",
-    "fil": "Bukas bilang dialog ang Magdagdag ng lugar. Sabay na nakikita ang tiyak na errors para sa house number abc, postal code 80, at city 1234. Naka-disable pa ang Gamitin ang lugar na ito."
+    "fil": "Bukas bilang dialog ang Magdagdag ng lugar. Sabay na nakikita ang tiyak na error para sa numero ng bahay abc, postal code 80, at lungsod 1234. Naka-disable pa ang Gamitin ang lugar na ito."
   },
   "/shops:add-place-complete": {
     "de": "Einen Ort hinzufügen ist als Dialog geöffnet. Shopname Kiki's Bakery und die vollständige Adresse sind ausgefüllt. Diesen Ort verwenden ist aktiviert; die Stecknadel ist noch nicht bestätigt.",
@@ -2325,9 +2325,9 @@
     "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng lugar sa tala ng Cafe Luna na may mapa. May klik na naglagay ng tuldok at walang laman pa ang Pangalan ng shop. Nakikita ang palatandaan Ilagay ang pangalan ng shop. Nakikita at naka-disable ang Gamitin ang lugar na ito."
   },
   "/shops:staff-place-hint": {
-    "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Notiz Cafe Luna ist geöffnet, mit einer Karte. Ein Klick hat eine Stecknadel gesetzt und Shopname ist Happyland, aber die Adresse ist noch leer. Der Hinweis Geben Sie die vollständige Adresse ein: Strasse, Hausnummer, Postleitzahl, Ort und Land. ist sichtbar. Diesen Ort verwenden ist sichtbar und deaktiviert.",
-    "es": "Una sesión de moderador. Añadir un lugar en la nota Cafe Luna está abierto con un mapa. Un clic ha puesto un pin y Nombre de la tienda es Happyland, pero la dirección sigue vacía. El aviso Introduce la dirección completa: calle, número, código postal, ciudad y país. es visible. Usar este lugar está visible y desactivado.",
-    "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng lugar sa tala ng Cafe Luna na may mapa. May tuldok mula sa isang klik at ang Pangalan ng shop ay Happyland, pero walang laman pa ang address. Nakikita ang palatandaan Ilagay ang buong address: kalye, numero ng bahay, postal code, lungsod at bansa. Nakikita at naka-disable ang Gamitin ang lugar na ito."
+    "de": "Eine Moderatorsitzung. Ort hinzufügen auf der Notiz Cafe Luna ist geöffnet, mit einer Karte. Ein Klick hat eine Stecknadel gesetzt und Shopname ist Happyland, aber die Adresse ist noch leer. Die Fußzeile Ausfüllen: Strasse, Hausnummer, Postleitzahl, Ort, Land. ist sichtbar. Diesen Ort verwenden ist sichtbar und deaktiviert.",
+    "es": "Una sesión de moderador. Añadir un lugar en la nota Cafe Luna está abierto con un mapa. Un clic ha puesto un pin y Nombre de la tienda es Happyland, pero la dirección sigue vacía. El pie Completa: Calle, Número, Código postal, Ciudad, País. es visible. Usar este lugar está visible y desactivado.",
+    "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng lugar sa tala ng Cafe Luna na may mapa. May tuldok mula sa isang klik at ang Pangalan ng shop ay Happyland, pero walang laman pa ang address. Nakikita sa footer ang Punan: Kalye, Numero ng bahay, Postal code, Lungsod, Bansa. Nakikita at naka-disable ang Gamitin ang lugar na ito."
   },
   "/welcome:ask-credit-error-request-daily": {
     "de": "Kredit, Schritt 9 von 9, mit Täglich gedrückt, nachdem Senden fehlschlägt. Derselbe Fehler bleibt auf der Kreditvorschau. Täglich und Kredit bleiben gedrückt. Der Zähler zeigt 9 von 9.",
@@ -2790,9 +2790,9 @@
     "fil": "Hilera sa forum para kay Ada na may palabas na Caption waiting for the photo to load. at hasPhoto, hindi pa na-load ang mga byte ng larawan kaya walang <img>. Magkapareho ang hitsura ng nabigong pagkuha ng larawan (hilera ng teksto lang) — hindi ito hiwalay na baryante."
   },
   "/shops:composer-place-set-coords": {
-    "de": "Ort hinzufügen ist mit einer Karte geöffnet. Ein Klick hat eine Stecknadel gesetzt. Shopname ist Happyland. Die Adressfelder sind leer. Der Hinweis Geben Sie die vollständige Adresse ein: ist sichtbar. Diesen Ort verwenden ist deaktiviert. Weiter bleibt deaktiviert. Die Shopliste ist weiterhin leer.",
-    "es": "Añadir un lugar está abierto con un mapa. Un clic ha puesto un pin. Nombre de la tienda es Happyland. Los campos de dirección están vacíos. El aviso Introduce la dirección completa: es visible. Usar este lugar está desactivado. Siguiente sigue desactivado. La lista de tiendas sigue vacía.",
-    "fil": "Bukas ang Magdagdag ng lugar na may mapa. May klik na naglagay ng tuldok. Pangalan ng shop ay Happyland. Walang laman ang mga patlang ng address. Nakikita ang palatandaan Ilagay ang buong address:. Naka-disable ang Gamitin ang lugar na ito. Naka-disable pa ang Susunod. Walang laman pa rin ang listahan ng tindahan."
+    "de": "Ort hinzufügen ist mit einer Karte geöffnet. Ein Klick hat eine Stecknadel gesetzt. Shopname ist Happyland. Die Adressfelder sind leer. Die Fußzeile Ausfüllen: Strasse, Hausnummer, Postleitzahl, Ort, Land. ist sichtbar. Diesen Ort verwenden ist deaktiviert. Weiter bleibt deaktiviert. Die Shopliste ist weiterhin leer.",
+    "es": "Añadir un lugar está abierto con un mapa. Un clic ha puesto un pin. Nombre de la tienda es Happyland. Los campos de dirección están vacíos. El pie Completa: Calle, Número, Código postal, Ciudad, País. es visible. Usar este lugar está desactivado. Siguiente sigue desactivado. La lista de tiendas sigue vacía.",
+    "fil": "Bukas ang Magdagdag ng lugar na may mapa. May klik na naglagay ng tuldok. Pangalan ng shop ay Happyland. Walang laman ang mga patlang ng address. Nakikita sa footer ang Punan: Kalye, Numero ng bahay, Postal code, Lungsod, Bansa. Naka-disable ang Gamitin ang lugar na ito. Naka-disable pa ang Susunod. Walang laman pa rin ang listahan ng tindahan."
   },
   "/shops:staff-place-edit-unavailable-error": {
     "de": "Eine Moderatorsitzung. Ort bearbeiten ist ohne Kartenschlüssel geöffnet, und Ort entfernen wurde gedrückt. Das Speichern ist fehlgeschlagen, daher ist der Hinweis Der Ort konnte nicht gespeichert werden. Bitte erneut versuchen. sichtbar und Ort entfernen bleibt.",

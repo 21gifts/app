@@ -1020,7 +1020,9 @@ test('Function: shopUsernameProblem — a missing account blocks Next', async ({
   await page.getByLabel('Shop text').fill('Fresh bread every morning.');
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('21.gifts username').fill('missing');
-  await expect(page.getByText('No account with that username.')).toBeVisible();
+  await expect(
+    page.getByText('No account with that username. Check the spelling of the 21.gifts username.'),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
 });
 
@@ -1055,7 +1057,9 @@ test('Function: usernameLookupVerdict — a full suggestion page is inconclusive
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByLabel('21.gifts username').fill('luna');
   await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
-  await expect(page.getByText('No account with that username.')).toHaveCount(0);
+  await expect(
+    page.getByText('No account with that username. Check the spelling of the 21.gifts username.'),
+  ).toHaveCount(0);
 });
 
 test('Function: shopNameProblem — a street in the name is rejected', async ({ page }) => {

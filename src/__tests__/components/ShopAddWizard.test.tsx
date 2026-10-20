@@ -549,6 +549,7 @@ describe('ShopAddWizard', () => {
     const picker = screen.getByRole('button', { name: 'Add a photo or video' });
     expect(screen.getByText('1 / 10')).toBeTruthy();
     expect(screen.getByText(message)).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(message);
     expect(picker.getAttribute('aria-describedby')).toBeTruthy();
     expect(picker.getAttribute('aria-invalid')).toBe('true');
   });
@@ -590,6 +591,7 @@ describe('ShopAddWizard', () => {
         'The description must not contain control characters other than line breaks.',
       ),
     ).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByText('27 / 1000')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     fireEvent.change(description, { target: { value: SHOP_DESCRIPTION } });
@@ -601,6 +603,7 @@ describe('ShopAddWizard', () => {
         'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
       ),
     ).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 
@@ -627,8 +630,13 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(screen.getByText('Checking that account…')).toBeTruthy();
     await waitFor(() => {
-      expect(screen.getByText('No account with that username.')).toBeTruthy();
+      expect(
+        screen.getByText(
+          'No account with that username. Check the spelling of the 21.gifts username.',
+        ),
+      ).toBeTruthy();
     });
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     expect(searchPeople).toHaveBeenCalledWith('sess', 'missing');
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'ada' } });
@@ -659,7 +667,11 @@ describe('ShopAddWizard', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
     });
-    expect(screen.queryByText('No account with that username.')).toBeNull();
+    expect(
+      screen.queryByText(
+        'No account with that username. Check the spelling of the 21.gifts username.',
+      ),
+    ).toBeNull();
   });
 
   it('keeps Next disabled when the username lookup fails', async () => {
@@ -697,7 +709,11 @@ describe('ShopAddWizard', () => {
       '4 / 5 · 21.gifts user',
       'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
     ],
-    ['usernameMissing' as const, '4 / 5 · 21.gifts user', 'No account with that username.'],
+    [
+      'usernameMissing' as const,
+      '4 / 5 · 21.gifts user',
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    ],
   ])('returns known %s server errors to their field', async (serverProblem, step, message) => {
     renderWizard(
       <ShopAddWizard
@@ -711,6 +727,7 @@ describe('ShopAddWizard', () => {
     );
     expect(await screen.findByText(step)).toBeTruthy();
     expect(screen.getAllByText(message).length).toBeGreaterThan(0);
+    expect(screen.getByRole('alert').textContent).toBe(message);
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 });

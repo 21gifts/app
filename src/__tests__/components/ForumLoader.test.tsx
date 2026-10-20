@@ -1458,7 +1458,11 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
     await submitShopWizard(SHOP_DESCRIPTION, 'luna');
-    expect(await screen.findByText('No account with that username.')).toBeTruthy();
+    expect(
+      await screen.findByText(
+        'No account with that username. Check the spelling of the 21.gifts username.',
+      ),
+    ).toBeTruthy();
     expect(
       await screen.findByText('4 / 5 · 21.gifts user', undefined, { timeout: 5000 }),
     ).toBeTruthy();
@@ -1489,7 +1493,11 @@ describe('ForumLoader', () => {
       expect(invoiceMock).toHaveBeenCalledWith('sess', 'fee-note', 1, undefined, NO_RATE_SHOWN);
     });
     expect(postMock).not.toHaveBeenCalled();
-    expect(screen.queryByText('No account with that username.')).toBeNull();
+    expect(
+      screen.queryByText(
+        'No account with that username. Check the spelling of the 21.gifts username.',
+      ),
+    ).toBeNull();
   });
 
   it('feed="shops" shows a request error when the submit username lookup fails', async () => {
@@ -5027,14 +5035,17 @@ describe('ForumLoader', () => {
     ],
     [
       'Place address is invalid',
-      'The address is invalid. Check the street, house number, postal code, city and country.',
+      'The address is invalid. The house number must start with a digit, the postal code must have 4 digits in Switzerland and Liechtenstein, the city must contain a letter, and the country must be chosen from the list.',
     ],
     ['Place label must be at most 80 characters', 'The shop name must be at most 80 characters.'],
     [
       'Username is not valid',
       'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
     ],
-    ['No account with that username', 'No account with that username.'],
+    [
+      'No account with that username',
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    ],
     [
       'Text contains invalid control characters',
       'The description must not contain control characters other than line breaks.',

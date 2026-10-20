@@ -2791,7 +2791,7 @@ describe('ForumBoard', () => {
     ],
     [
       'placeAddress',
-      'The address is invalid. Check the street, house number, postal code, city and country.',
+      'The address is invalid. The house number must start with a digit, the postal code must have 4 digits in Switzerland and Liechtenstein, the city must contain a letter, and the country must be chosen from the list.',
     ],
   ] as const)('shows formError %s alert', (formError, copy) => {
     renderWithLocale(

@@ -458,7 +458,7 @@ describe('ShopNoteEditControl', () => {
     ],
     [
       'Place address is invalid',
-      'The address is invalid. Check the street, house number, postal code, city and country.',
+      'The address is invalid. The house number must start with a digit, the postal code must have 4 digits in Switzerland and Liechtenstein, the city must contain a letter, and the country must be chosen from the list.',
       2,
     ],
     [
@@ -471,7 +471,11 @@ describe('ShopNoteEditControl', () => {
       'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
       4,
     ],
-    ['No account with that username', 'No account with that username.', 4],
+    [
+      'No account with that username',
+      'No account with that username. Check the spelling of the 21.gifts username.',
+      4,
+    ],
     [
       'Text contains invalid control characters',
       'The description must not contain control characters other than line breaks.',
@@ -607,9 +611,17 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(await screen.findByText('4 / 5 · 21.gifts user')).toBeTruthy();
-    expect(screen.getAllByText('No account with that username.').length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(
+        'No account with that username. Check the spelling of the 21.gifts username.',
+      ).length,
+    ).toBeGreaterThan(0);
     fireEvent.change(screen.getByLabelText('21.gifts username'), { target: { value: 'luna' } });
-    expect(screen.queryAllByText('No account with that username.')).toHaveLength(0);
+    expect(
+      screen.queryAllByText(
+        'No account with that username. Check the spelling of the 21.gifts username.',
+      ),
+    ).toHaveLength(0);
   });
 
   it('clears a mapped save error when the editor is reopened', async () => {
