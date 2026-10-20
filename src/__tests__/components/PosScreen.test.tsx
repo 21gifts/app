@@ -2265,6 +2265,10 @@ describe('PosScreen', () => {
       renderWithLocale(<PosScreen />);
       fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
       expect(await screen.findByRole('alert')).toBeTruthy();
+      // The api cancelled: the till drops the charge without waiting for the next read.
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+      expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      expect(screen.getByText('Cancelled')).toBeTruthy();
       receive(21);
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });

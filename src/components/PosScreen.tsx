@@ -104,6 +104,22 @@ function newerCharge(a: PosCharge | null, b: PosCharge | null): PosCharge | null
   return Date.parse(b.createdAt) > Date.parse(a.createdAt) ? b : a;
 }
 
+/** `state` after its open charge was cancelled: no open charge, and that charge listed as cancelled. */
+function withoutOpenCharge(state: PosState): PosState {
+  const open = state.charge;
+  /* v8 ignore next 3 -- Cancel shows only while the newest read has the charge open */
+  if (open === null || open.status !== 'pending') {
+    return state;
+  }
+  return {
+    charge: null,
+    history: [
+      { ...open, status: 'cancelled' },
+      ...state.history.filter((row) => row.id !== open.id),
+    ],
+  };
+}
+
 /** Till reads started and the newest one whose answer is on screen. */
 type TillReads = { started: number; applied: number };
 
@@ -750,8 +766,8 @@ function usePosTillState(): PosTillState {
         }
         return;
       }
+      const seq = startRead(reads);
       try {
-        const seq = startRead(reads);
         const next = await fetchPosState(session);
         whenCurrent(generation, mine, () => {
           applyRead(reads, seq, () => {
@@ -760,6 +776,15 @@ function usePosTillState(): PosTillState {
         });
       } catch {
         whenCurrent(generation, mine, () => {
+          // The api cancelled: without its answer the till still drops the charge it showed.
+          applyRead(reads, seq, () => {
+            setTill((prev) =>
+              /* v8 ignore next 3 -- Cancel shows only on this session's answered till */
+              prev.session === session && prev.state !== null
+                ? { state: withoutOpenCharge(prev.state), session }
+                : prev,
+            );
+          });
           setError(t('pos.error'));
         });
       }
