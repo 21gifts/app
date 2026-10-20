@@ -17877,6 +17877,10 @@ test.describe('public shop screen', () => {
     await expect(page.getByTestId('shop-map')).toBeVisible();
     await expect(page.locator('[data-e2e-map="pin"]')).toHaveCount(1);
     await photoLoaded(page);
+    // The map sits below the address; bring it into the one-window shot.
+    await page.getByTestId('shop-map').evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
     await shotScreen(page, 'state-npub-map');
   });
 
