@@ -12821,34 +12821,26 @@ test.describe('profile activity chart variants', () => {
     });
   }
 
-  /**
-   * Header inputs are named. The editor's unnamed inputs are the note photo,
-   * the profile photo, then the wide image.
-   */
+  /** Empty wide-image slot uses the header input named profile-banner. */
   async function chooseEditorWideImage(page: Page): Promise<void> {
     await page.getByRole('button', { name: 'Write your About me' }).click();
     await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
     await page
-      .locator('input[type="file"]:not([name])')
-      .nth(2)
+      .locator('input[name="profile-banner"]')
       .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
     await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Use this crop' })).toBeEnabled();
-    await expect(
-      page
-        .getByRole('button', { name: 'Add a wide image' })
-        .filter({ hasText: 'Add a wide image' }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toHaveCount(1);
   }
 
-  /** The editor cropper sits under the chart. Bring that block into the viewport shot. */
+  /** The wide-image cropper is in the profile header. Keep its photo in the viewport shot. */
   async function frameEditorWideCrop(page: Page): Promise<void> {
-    const about = page.getByRole('textbox', { name: 'About me' });
-    await about.evaluate((node) => {
+    const frame = page.getByRole('group', { name: 'Drag the photo to choose the wide image' });
+    await frame.evaluate((node) => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
-    await expect(about).toBeInViewport();
-    await expect(page.getByText('Drag the photo to choose the wide image')).toBeInViewport();
+    await expect(frame).toBeInViewport();
     await expect(page.getByRole('button', { name: 'Use this crop' })).toBeInViewport();
   }
 
@@ -13313,6 +13305,15 @@ test.describe('profile activity chart variants', () => {
     await page.getByRole('button', { name: 'Write your About me' }).click();
     await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save About me' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Add a profile photo' })).toHaveText(
+      'Add a profile photo',
+    );
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveText(
+      'Add a wide image',
+    );
+    await expect(page.getByRole('button', { name: 'Add a photo' })).toHaveCount(1);
     await shotScreen(page, 'state-profile-about-editing');
   });
 
@@ -13348,7 +13349,7 @@ test.describe('profile activity chart variants', () => {
     await expect(confirm).toBeDisabled();
     await expect(confirm.locator('.animate-spin')).toBeVisible();
     const save = page.getByRole('button', { name: 'Save About me' });
-    await expect(save).toBeDisabled();
+    await expect(save).toBeEnabled();
     await expect(save.locator('.animate-spin')).toHaveCount(0);
     await frameEditorWideCrop(page);
     await expect(confirm.locator('.animate-spin')).toBeInViewport();

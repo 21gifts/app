@@ -1591,4 +1591,79 @@ describe('AboutMeSection', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Remove wide image' }));
     expect(screen.getByAltText('Wide profile image')).toBeTruthy();
   });
+
+  it('omits empty portrait and banner add buttons when omitEmptySlotAdds is set', () => {
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        omitEmptySlotAdds
+        onSavePicture={vi.fn()}
+        onSaveBanner={vi.fn()}
+      />,
+    );
+    openEditor();
+    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Add a profile photo' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add a wide image' })).toBeNull();
+  });
+
+  it('keeps replace icons for stored portrait and banner when omitEmptySlotAdds is set', async () => {
+    const blob = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        omitEmptySlotAdds
+        loadPicture={() => Promise.resolve(blob)}
+        onSavePicture={vi.fn()}
+        loadBanner={() => Promise.resolve(blob)}
+        onSaveBanner={vi.fn()}
+      />,
+    );
+    openEditor();
+    expect(await screen.findByAltText('Profile photo')).toBeTruthy();
+    expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add a profile photo' })).toBeTruthy();
+    expect(screen.queryByText('Add a profile photo')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add a wide image' })).toBeTruthy();
+    expect(screen.queryByText('Add a wide image')).toBeNull();
+  });
+
+  it('reloads stored portrait and wide image when imageEpoch changes while editing', async () => {
+    const jpeg = new Blob([new Uint8Array([1])], { type: 'image/jpeg' });
+    const { rerender } = renderWithLocale(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        startEditing
+        omitEmptySlotAdds
+        onSavePicture={vi.fn()}
+        onSaveBanner={vi.fn()}
+        imageEpoch={0}
+        loadPicture={() => Promise.reject(new Error('none'))}
+        loadBanner={() => Promise.reject(new Error('none'))}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Add a profile photo' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add a wide image' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeTruthy();
+    rerender(
+      <AboutMeSection
+        mode="owner"
+        aboutMe={null}
+        startEditing
+        omitEmptySlotAdds
+        onSavePicture={vi.fn()}
+        onSaveBanner={vi.fn()}
+        imageEpoch={1}
+        loadPicture={() => Promise.resolve(jpeg)}
+        loadBanner={() => Promise.resolve(jpeg)}
+      />,
+    );
+    expect(await screen.findByRole('button', { name: 'Add a profile photo' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add a wide image' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Remove profile photo' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Remove wide image' })).toBeTruthy();
+  });
 });
