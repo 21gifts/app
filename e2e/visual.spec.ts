@@ -963,7 +963,9 @@ async function openUnavailableShopPlace(page: Page): Promise<void> {
 
 /** Close the unavailable place dialog and wait for the persistent wizard reason. */
 async function closeUnavailableShopPlace(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Close' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Shop place and address' });
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
   const reason = page.getByText('The map is unavailable, so a shop place cannot be added.');
   await expect(reason).toBeVisible();
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
