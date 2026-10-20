@@ -929,10 +929,16 @@ describe('ProfileScreen', () => {
     renderWithLocale(<ProfileScreen />);
     expect(await screen.findByAltText('Wide profile image')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Write your About me' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Remove wide image' }));
+    expect(await screen.findByRole('button', { name: 'Remove wide image' })).toBeTruthy();
+    vi.mocked(fetchWideBanner).mockRejectedValue(new Error('gone'));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove wide image' }));
     await waitFor(() => {
       expect(putWideBanner).toHaveBeenCalledWith('tok', null);
+      expect(screen.queryByAltText('Wide profile image')).toBeNull();
     });
+    const bannerAdds = screen.getAllByRole('button', { name: 'Add a wide image' });
+    expect(bannerAdds).toHaveLength(1);
+    expect(bannerAdds[0]?.textContent?.trim()).toBe('Add a wide image');
   });
 
   it('saves a profile photo from the empty-slot button', async () => {
