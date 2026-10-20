@@ -1783,7 +1783,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** SVG QR for a string (LNURL or bolt11). Optional `logo` centers that image at 48px and sets error correction `H`; profile cards pass `profileQrLogo`, the inlined apple-touch icon.
 - **Inputs:** `value` (required) and `label` (required accessible name, already translated). Optional `logo`.
 - **Returns / side effects:** React element.
-- **Used by:** `ForumBoard`, `InboxScreen`, and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `PosTill`, `MemberProfileScreen`, `ViewProfileScreen`, and `ShopScreen` also on a smartphone when the value exists.
+- **Used by:** `ForumBoard`, `InboxScreen`, and `PayLinkScreen` only when the UA is not a smartphone (a specific invoice). `PosTill`, `MemberProfileScreen`, `ViewProfileScreen`, and `ShopScreen` also on a smartphone when the value exists. `WalletScreenView` when its `showQr` prop is set and the value exists.
 
 ## Function: RootLayout
 
@@ -2752,7 +2752,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Build the public `username@21.gifts` address shown on profiles. Loopback hosts fall back to `21.gifts`.
 - **Inputs:** `username` (nullable), optional `hostname`.
 - **Returns / side effects:** `local@domain` or `null`. No I/O.
-- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopScreen`, `openCryptoPayQrValue`.
+- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopScreen`, `PosScreen`, `WalletScreenView`, `openCryptoPayQrValue`.
 
 ## Function: encodeLnurl
 
@@ -2766,7 +2766,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Build the Open CryptoPay QR payload for a profile handle. Null when `giftsLightningAddress` is null.
 - **Inputs:** `username` (nullable), optional `hostname`.
 - **Returns / side effects:** `https://<domain>/pl/?lightning=<LNURL>` or `null`. No I/O. The browser page for that URL is `/pl`.
-- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopScreen`, `ShopStickerOverlay` (sticker QR payload).
+- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopScreen`, `PosScreen`, `WalletScreenView`, `ShopStickerOverlay` (sticker QR payload).
 
 ## Function: buildShopStickerSvg
 
