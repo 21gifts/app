@@ -310,25 +310,21 @@ describe('PlaceField', () => {
 
     const existing = document.createElement('script');
     existing.dataset['gmaps'] = 'weekly';
-    let loads = 0;
-    const orig = existing.addEventListener.bind(existing);
-    existing.addEventListener = ((type: string, listener: EventListener) => {
-      if (type === 'load' || type === 'error') {
-        loads += 1;
-      }
-      orig(type, listener);
-    }) as typeof existing.addEventListener;
     document.head.appendChild(existing);
     renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    // A script the loader did not add is replaced, never waited on.
     await waitFor(() => {
-      expect(loads).toBeGreaterThan(0);
+      expect(existing.isConnected).toBe(false);
     });
-    existing.dispatchEvent(new Event('error'));
+    const fresh = document.querySelector('script[data-gmaps="weekly"]');
+    expect(fresh).toBeTruthy();
+    fresh?.dispatchEvent(new Event('load'));
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    expect(document.querySelectorAll('script[data-gmaps="weekly"]')).toHaveLength(1);
   });
 
   it('does not draw when maps disappear before the panel effect', async () => {
@@ -352,42 +348,52 @@ describe('PlaceField', () => {
     expect(await screen.findByLabelText('Place name')).toBeTruthy();
   });
 
-  it('stays unavailable when a failed map script is opened again', async () => {
+  it('retries a failed map script when the panel is opened again', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
+    vi.stubGlobal('navigator', { geolocation: undefined });
     renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     await waitFor(() => {
       expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
     });
-    document.querySelector('script[data-gmaps="weekly"]')?.dispatchEvent(new Event('error'));
+    const failed = document.querySelector('script[data-gmaps="weekly"]');
+    failed?.dispatchEvent(new Event('error'));
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    expect(document.querySelector('script[data-gmaps="weekly"]')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    await waitFor(() => {
+      expect(document.querySelector('script[data-gmaps="weekly"]')).toBeTruthy();
+    });
+    const retry = document.querySelector('script[data-gmaps="weekly"]');
+    expect(retry).not.toBe(failed);
+    (window as { google?: unknown }).google = {
+      maps: {
+        Map: vi.fn(() => ({ setCenter: vi.fn(), addListener: vi.fn() })),
+        Marker: vi.fn(() => ({ addListener: vi.fn() })),
+      },
+    };
+    retry?.dispatchEvent(new Event('load'));
+    expect(await screen.findByLabelText('Place name')).toBeTruthy();
+    expect(screen.queryByText('The map is not available.')).toBeNull();
   });
 
-  it('marks an existing script that loads without maps and ignores a later load', async () => {
+  it('replaces an existing script, marks a load without maps, and ignores a later load', async () => {
     const existing = document.createElement('script');
     existing.dataset['gmaps'] = 'weekly';
-    let loads = 0;
-    const orig = existing.addEventListener.bind(existing);
-    existing.addEventListener = ((type: string, listener: EventListener) => {
-      if (type === 'load') {
-        loads += 1;
-      }
-      orig(type, listener);
-    }) as typeof existing.addEventListener;
     document.head.appendChild(existing);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: 'k' })));
     renderWithLocale(<PlaceField place={null} disabled={false} onChange={() => undefined} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     await waitFor(() => {
-      expect(loads).toBeGreaterThan(0);
+      expect(existing.isConnected).toBe(false);
     });
-    existing.dispatchEvent(new Event('load'));
+    const fresh = document.querySelector<HTMLScriptElement>('script[data-gmaps="weekly"]');
+    fresh?.dispatchEvent(new Event('load'));
     expect(await screen.findByText('The map is not available.')).toBeTruthy();
+    expect(fresh?.dataset['gmapsState']).toBe('error');
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
-    existing.dispatchEvent(new Event('load'));
+    fresh?.dispatchEvent(new Event('load'));
     await Promise.resolve();
   });
 

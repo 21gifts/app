@@ -11,14 +11,16 @@ let pending: { script: HTMLScriptElement; promise: Promise<void> } | null = null
  *
  * `GoogleMapCanvas` and `PlaceField` share this loader. Calls made while the
  * script is still loading get the same promise, so the page never holds a
- * second script. A script that failed, or loaded without installing
- * `google.maps`, is marked `data-gmaps-state="error"` and stays failed until it
- * is removed from the document. The URL is
+ * second script. A script error removes the script, so the next call adds a
+ * fresh one and retries. A script that loaded without installing
+ * `google.maps` is marked `data-gmaps-state="error"` and stays failed until it
+ * is removed from the document. A `script[data-gmaps="weekly"]` this loader
+ * did not add is replaced by a fresh script, because its load or error event
+ * may already have fired. The URL is
  * `https://maps.googleapis.com/maps/api/js?key=…&v=weekly` with no extra
  * libraries.
  *
- * @param key - Browser key from GET /maps/key. Not logged. A script already on
- *   the page keeps the key it was created with.
+ * @param key - Browser key from GET /maps/key. Not logged.
  * @returns Resolves when `google.maps` exists; rejects when the script fails.
  */
 export function loadGoogleMaps(key: string): Promise<void> {
@@ -30,34 +32,42 @@ export function loadGoogleMaps(key: string): Promise<void> {
     return pending.promise;
   }
   const existing = document.querySelector(GOOGLE_MAPS_SCRIPT_SELECTOR);
-  const script =
-    existing instanceof HTMLScriptElement ? existing : document.createElement('script');
+  if (existing instanceof HTMLScriptElement && existing.dataset['gmapsState'] === 'error') {
+    const failed = Promise.reject(new Error('map'));
+    failed.catch(() => undefined);
+    return failed;
+  }
+  // A script this loader did not add may have fired load or error already.
+  existing?.remove();
+  const script = document.createElement('script');
   const promise = new Promise<void>((resolve, reject) => {
-    const fail = (): void => {
-      script.dataset['gmapsState'] = 'error';
-      reject(new Error('map'));
-    };
-    if (script.dataset['gmapsState'] === 'error') {
-      reject(new Error('map'));
-      return;
-    }
+    let loaded = false;
     script.addEventListener('load', () => {
+      loaded = true;
       if (host.google?.maps === undefined) {
-        fail();
+        script.dataset['gmapsState'] = 'error';
+        reject(new Error('map'));
         return;
       }
       resolve();
     });
-    script.addEventListener('error', fail);
+    script.addEventListener('error', () => {
+      // An error after load must not undo a "loaded without google.maps" failure.
+      if (loaded) {
+        return;
+      }
+      // Drop the failed script; a disconnected pending script no longer counts,
+      // so the next call adds a fresh one.
+      script.remove();
+      reject(new Error('map'));
+    });
   });
   // Callers that only await may drop a failure; keep it out of unhandled rejections.
   promise.catch(() => undefined);
-  if (script !== existing) {
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly`;
-    script.async = true;
-    script.dataset['gmaps'] = 'weekly';
-    document.head.appendChild(script);
-  }
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly`;
+  script.async = true;
+  script.dataset['gmaps'] = 'weekly';
+  document.head.appendChild(script);
   pending = { script, promise };
   return promise;
 }

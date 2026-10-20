@@ -39,38 +39,52 @@ describe('loadGoogleMaps', () => {
     await expect(second).resolves.toBeUndefined();
   });
 
-  it('rejects on a script error and keeps that script failed while it is on the page', async () => {
+  it('rejects on a script error, removes that script, and retries with a fresh one', async () => {
     const first = loadGoogleMaps('k');
-    const [script] = scripts();
-    script?.dispatchEvent(new Event('error'));
+    const [failed] = scripts();
+    failed?.dispatchEvent(new Event('error'));
     await expect(first).rejects.toThrow('map');
-    expect(script?.dataset['gmapsState']).toBe('error');
-    await expect(loadGoogleMaps('k')).rejects.toThrow('map');
-    expect(scripts()).toHaveLength(1);
+    expect(failed?.isConnected).toBe(false);
+    expect(scripts()).toHaveLength(0);
+    const retry = loadGoogleMaps('k');
+    expect(retry).not.toBe(first);
+    const [script, ...rest] = scripts();
+    expect(rest).toHaveLength(0);
+    expect(script).not.toBe(failed);
+    installMaps();
+    script?.dispatchEvent(new Event('load'));
+    await expect(retry).resolves.toBeUndefined();
   });
 
-  it('rejects a load that does not install google.maps', async () => {
+  it('keeps a load without google.maps failed, even after a later error event', async () => {
     const pending = loadGoogleMaps('k');
     const [script] = scripts();
     script?.dispatchEvent(new Event('load'));
     await expect(pending).rejects.toThrow('map');
     expect(script?.dataset['gmapsState']).toBe('error');
+    script?.dispatchEvent(new Event('error'));
+    expect(scripts()).toEqual([script]);
+    await expect(loadGoogleMaps('k')).rejects.toThrow('map');
+    expect(scripts()).toEqual([script]);
   });
 
-  it('adopts a script already on the page and keeps its key', async () => {
+  it('replaces a script it did not add, whose events may already have fired', async () => {
     const existing = document.createElement('script');
     existing.dataset['gmaps'] = 'weekly';
     existing.src = 'https://maps.googleapis.com/maps/api/js?key=first&v=weekly';
     document.head.appendChild(existing);
     const pending = loadGoogleMaps('second');
-    expect(scripts()).toEqual([existing]);
-    expect(existing.src).toContain('key=first');
+    expect(existing.isConnected).toBe(false);
+    const [script, ...rest] = scripts();
+    expect(rest).toHaveLength(0);
+    expect(script).not.toBe(existing);
+    expect(script?.src).toBe('https://maps.googleapis.com/maps/api/js?key=second&v=weekly');
     installMaps();
-    existing.dispatchEvent(new Event('load'));
+    script?.dispatchEvent(new Event('load'));
     await expect(pending).resolves.toBeUndefined();
   });
 
-  it('rejects at once for a script on the page that already failed', async () => {
+  it('rejects at once for a script on the page that is marked failed', async () => {
     const existing = document.createElement('script');
     existing.dataset['gmaps'] = 'weekly';
     existing.dataset['gmapsState'] = 'error';
@@ -81,7 +95,7 @@ describe('loadGoogleMaps', () => {
 
   it('adds a fresh script after the failed one was removed', async () => {
     const failed = loadGoogleMaps('k');
-    scripts()[0]?.dispatchEvent(new Event('error'));
+    scripts()[0]?.dispatchEvent(new Event('load'));
     await expect(failed).rejects.toThrow('map');
     scripts().forEach((node) => {
       node.remove();

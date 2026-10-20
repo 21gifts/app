@@ -69,6 +69,31 @@ describe('GoogleMapCanvas', () => {
     expect(Map).not.toHaveBeenCalled();
   });
 
+  it('loads a fresh script on the next mount after a script error', async () => {
+    const props = {
+      mapsKey: 'browser-key',
+      points: [{ lat: 47.37, lng: 8.54 }],
+      anchor: { lat: 47.37, lng: 8.54 },
+      fitAll: false,
+      testId: 'shop-map',
+    };
+    const first = render(<GoogleMapCanvas {...props} />);
+    const failed = document.querySelector('script[data-gmaps="weekly"]');
+    failed?.dispatchEvent(new Event('error'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(document.querySelector('script[data-gmaps="weekly"]')).toBeNull();
+    first.unmount();
+    render(<GoogleMapCanvas {...props} />);
+    const retry = document.querySelector('script[data-gmaps="weekly"]');
+    expect(retry).toBeTruthy();
+    expect(retry).not.toBe(failed);
+    const Map = vi.fn(() => ({ setCenter: vi.fn() }));
+    (window as { google?: unknown }).google = { maps: { Map, Marker: vi.fn() } };
+    retry?.dispatchEvent(new Event('load'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(Map).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves the frame empty when google.maps disappears after the load resolved', async () => {
     let reads = 0;
     Object.defineProperty(window, 'google', {

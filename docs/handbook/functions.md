@@ -1424,8 +1424,8 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 ## Function: loadGoogleMaps
 
 - **Purpose:** One page-wide loader for the Google Maps JavaScript API, shared by `GoogleMapCanvas` and `PlaceField` so they never add a second script. Calls made while the script is still loading get the same in-flight promise.
-- **Inputs:** Browser key from `GET /maps/key`. The one script (`script[data-gmaps="weekly"]`) loads `https://maps.googleapis.com/maps/api/js?key=…&v=weekly` with no extra libraries; a script already on the page keeps its key.
-- **Returns / side effects:** `Promise<void>` that resolves at once when `google.maps` exists, otherwise when the script loads and installs `google.maps`. It rejects on a script error or a load without `google.maps`, marks that script `data-gmaps-state="error"`, and every later call rejects until the script is removed from the document.
+- **Inputs:** Browser key from `GET /maps/key`. The one script (`script[data-gmaps="weekly"]`) loads `https://maps.googleapis.com/maps/api/js?key=…&v=weekly` with no extra libraries. A `script[data-gmaps="weekly"]` this loader did not add is replaced by a fresh one with the given key, since its load or error event may already have fired; one marked `data-gmaps-state="error"` rejects at once.
+- **Returns / side effects:** `Promise<void>` that resolves at once when `google.maps` exists, otherwise when the script loads and installs `google.maps`. On a script error it rejects and removes the script, so the next call adds a fresh script and retries. On a load without `google.maps` it rejects, marks that script `data-gmaps-state="error"`, and every later call rejects until the script is removed from the document.
 - **Used by:** `GoogleMapCanvas`, `PlaceField`.
 
 ## Function: fetchPlaces
