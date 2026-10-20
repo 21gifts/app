@@ -192,16 +192,17 @@ function pays(
 }
 
 /**
- * The open charge of `session` is paid the moment this tab's wallet reports
- * a payment that {@link pays} it. No reading of the api in between. A payment
+ * The open charge in `memory` is paid the moment this tab's wallet reports a
+ * payment that {@link pays} it. No reading of the api in between. A payment
  * the known open charge does not take (the till is still reading the next
- * one) is kept and tried again once the next open charge is known.
+ * one) is kept and tried again once the next open charge is known. Works on
+ * the memory it is given, so a session that ended meanwhile never touches the
+ * memory of the next one.
  */
 function settleOpen(
-  session: string | null,
+  memory: WalletSettled,
   payment: Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>,
 ): void {
-  const memory = settledFor(session);
   const open = memory.open;
   if (open === null || !pays(open, payment)) {
     // Not this charge's: it may be the next one's, which the till has not read yet.
@@ -216,15 +217,14 @@ function settleOpen(
   settledChanged();
 }
 
-/** Make `charge` the open charge of `session` and try the kept payments on it again; the rest stay kept. */
-function armOpen(session: string | null, charge: PosCharge): void {
-  const memory = settledFor(session);
+/** Make `charge` the open charge in `memory` and try the kept payments on it again; the rest stay kept. */
+function armOpen(memory: WalletSettled, charge: PosCharge): void {
   memory.open = charge;
   const early = memory.early;
   memory.early = [];
   for (const payment of early) {
     // One this charge does not take stays kept: `pays` never lets it pay a charge made after it.
-    settleOpen(session, payment);
+    settleOpen(memory, payment);
   }
 }
 
@@ -418,7 +418,7 @@ function usePosTillState(): PosTillState {
     const memory = settledFor(session);
     if (charge !== null) {
       // A payment the wallet reported while this charge was still being read counts for it.
-      armOpen(session, charge);
+      armOpen(memory, charge);
     } else if (memory.open !== null && Date.now() < Date.parse(memory.open.expiresAt)) {
       // Gone before its end (cancelled elsewhere, or paid per the api): no further payment belongs
       // to it. One that ran out stays, so a payment just after its end still counts.
@@ -431,13 +431,17 @@ function usePosTillState(): PosTillState {
       return;
     }
     return onPaymentReceived((payment) => {
-      settleOpen(session, payment);
+      settleOpen(settledFor(session), payment);
     });
   }, [session]);
 
   useEffect(() => {
     if (charge !== null && visualPin() === POS_RECEIVED_VISUAL_PIN) {
-      settleOpen(session, { amountSats: charge.amountSats, feesSats: 0, timestamp: Date.now() });
+      settleOpen(settledFor(session), {
+        amountSats: charge.amountSats,
+        feesSats: 0,
+        timestamp: Date.now(),
+      });
     }
   }, [charge, session]);
 
@@ -538,7 +542,7 @@ function usePosTillState(): PosTillState {
       } catch (err) {
         if (before !== null) {
           // Back to the charge before, with any payment reported while the create was on its way.
-          armOpen(session, before);
+          armOpen(creating, before);
         }
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- createPosCharge only rejects with Error */

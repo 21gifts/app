@@ -1982,6 +1982,54 @@ describe('PosScreen', () => {
       expect(within(dialog).getByText('₿42')).toBeTruthy();
     });
 
+    it('leaves the next session alone when a create of the session before fails', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      const theirs = { ...OPEN, id: 'c9', amountSats: 42 };
+      let failPost: ((value: Response) => void) | undefined;
+      let first = true;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return new Promise<Response>((resolve) => {
+              failPost = resolve;
+            });
+          }
+          const auth = new Headers(init?.headers).get('authorization') ?? '';
+          const charge = auth.endsWith('other') ? theirs : first ? ended : null;
+          first = false;
+          return Promise.resolve(
+            jsonResponse({ charge, history: charge === null ? [] : [charge] }),
+          );
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      const amountPage = renderWithLocale(<PosAmount />);
+      await pressAmount('5');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(failPost).toBeDefined();
+      });
+      amountPage.unmount();
+      act(() => {
+        useAuthStore.setState({ session: 'other' });
+      });
+      // The next session's till waits for that create; its wallet reports a payment meanwhile.
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(received.listeners.size).toBe(1);
+      });
+      receive(42);
+      // The create of the session before fails only now.
+      await act(async () => {
+        failPost?.(jsonResponse({ error: 'down' }, 502));
+      });
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('₿42')).toBeTruthy();
+    });
+
     it('never asks the api on a timer while a charge is open', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
       const fetchMock = vi
