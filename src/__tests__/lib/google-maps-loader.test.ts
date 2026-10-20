@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { loadGoogleMaps } from '@/lib/google-maps-loader';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { loadGoogleMaps, onGoogleMapsAuthFailure } from '@/lib/google-maps-loader';
 
 const SELECTOR = 'script[data-gmaps="weekly"]';
 
@@ -16,7 +16,14 @@ afterEach(() => {
     node.remove();
   });
   delete (window as { google?: unknown }).google;
+  delete (window as { gm_authFailure?: unknown }).gm_authFailure;
 });
+
+type HookWindow = { gm_authFailure?: () => void };
+
+function reportAuthFailure(): void {
+  (window as HookWindow).gm_authFailure?.();
+}
 
 describe('loadGoogleMaps', () => {
   it('resolves at once without a script when google.maps already exists', async () => {
@@ -107,5 +114,77 @@ describe('loadGoogleMaps', () => {
     installMaps();
     script?.dispatchEvent(new Event('load'));
     await expect(retry).resolves.toBeUndefined();
+  });
+});
+
+describe('onGoogleMapsAuthFailure', () => {
+  it('installs one hook and tells both subscribers', () => {
+    installMaps();
+    const canvas = vi.fn();
+    const field = vi.fn();
+    const stopCanvas = onGoogleMapsAuthFailure(canvas);
+    const hook = (window as HookWindow).gm_authFailure;
+    const stopField = onGoogleMapsAuthFailure(field);
+    expect((window as HookWindow).gm_authFailure).toBe(hook);
+    reportAuthFailure();
+    expect(canvas).toHaveBeenCalledTimes(1);
+    expect(field).toHaveBeenCalledTimes(1);
+    stopCanvas();
+    stopField();
+  });
+
+  it('stops calling a listener after unsubscribe', () => {
+    installMaps();
+    const gone = vi.fn();
+    const kept = vi.fn();
+    const stop = onGoogleMapsAuthFailure(gone);
+    const stopKept = onGoogleMapsAuthFailure(kept);
+    stop();
+    reportAuthFailure();
+    expect(gone).not.toHaveBeenCalled();
+    expect(kept).toHaveBeenCalledTimes(1);
+    stopKept();
+  });
+
+  it('tells a late subscriber at once about a failure for the same google.maps', () => {
+    installMaps();
+    const early = onGoogleMapsAuthFailure(() => undefined);
+    reportAuthFailure();
+    early();
+    const late = vi.fn();
+    const stop = onGoogleMapsAuthFailure(late);
+    expect(late).toHaveBeenCalledTimes(1);
+    stop();
+    installMaps();
+    const fresh = vi.fn();
+    const stopFresh = onGoogleMapsAuthFailure(fresh);
+    expect(fresh).not.toHaveBeenCalled();
+    stopFresh();
+  });
+
+  it('passes on a report before google.maps exists without remembering it', () => {
+    const early = vi.fn();
+    const stop = onGoogleMapsAuthFailure(early);
+    reportAuthFailure();
+    expect(early).toHaveBeenCalledTimes(1);
+    stop();
+    const late = vi.fn();
+    const stopLate = onGoogleMapsAuthFailure(late);
+    expect(late).not.toHaveBeenCalled();
+    stopLate();
+  });
+
+  it('puts its hook back when another script replaced it, and loadGoogleMaps installs it too', () => {
+    installMaps();
+    const listener = vi.fn();
+    const stop = onGoogleMapsAuthFailure(listener);
+    const foreign = vi.fn();
+    (window as HookWindow).gm_authFailure = foreign;
+    void loadGoogleMaps('k');
+    expect((window as HookWindow).gm_authFailure).not.toBe(foreign);
+    reportAuthFailure();
+    expect(foreign).not.toHaveBeenCalled();
+    expect(listener).toHaveBeenCalledTimes(1);
+    stop();
   });
 });

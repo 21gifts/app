@@ -1048,15 +1048,22 @@
 
 - **Purpose:** Next.js page for `/{npub}`. Rejects every segment except a valid npub or 64 lowercase hex; api 404 uses `notFound` and 410 renders the anonymous unlisted state. Only an exact answer renders the shop: status 200 (not any 2xx) for an npub whose `shop.npub` equals the segment, or a 301 to a valid npub for a hex key. Any other status, a 200 for a hex key, a 200 for a different npub, and unusable data render the retryable state.
 - **Inputs:** Dynamic `npub` route segment. Calls public api `GET /shops/:npub` with manual redirect handling, no session, and `AbortSignal.timeout(API_FETCH_TIMEOUT_MS)` (2500 ms, from `src/lib/api-timeout.ts`) — the same limit as metadata; a timeout or abort renders the retryable `unavailable` state. The loader is wrapped in React `cache`, so `generateMetadata` and the page share one api call and one answer per request.
-- **Returns / side effects:** `ShopScreen` inside `PublicMessageChrome`, or a 308 `permanentRedirect` from a known hex key to `/{npub}` after the api's 301. Also exports shop `generateMetadata`.
+- **Returns / side effects:** `ShopScreen` inside `PublicMessageChrome`, or a 308 `permanentRedirect` from a known hex key to `/{npub}` after the api's 301. Also exports shop `generateMetadata`. Every photo URL goes through `resolveShopPhotoUrl` against `getApiUrl()`: a relative path becomes an api URL, and a photo that is not http(s) is dropped before the page and `og:image` use the list.
 - **Used by:** Route `/[npub]`.
 
 ## Function: ShopScreen
 
 - **Purpose:** Public shop identity body: name, description, `ForumPhotoGallery`, text address, optional one-marker map, forum-note link, optional NIP-05, npub copy control, and an optional payment block like the profile cards: heading **21.gifts address**, the `giftsLightningAddress(payUsername, host)` line, then the Open CryptoPay QR with `profileQrLogo`; the address line and the QR use the browser host and appear only after mount.
-- **Inputs:** Discriminated `state`: `ready` with a parsed `Shop`, `gone`, or `unavailable`. Uses translations and browser hostname; asks `fetchMapsKey` only while ready.
+- **Inputs:** Discriminated `state`: `ready` with a parsed `Shop`, `gone`, or `unavailable`. Uses translations and browser hostname; asks `fetchMapsKey` only while ready. Renders only absolute http(s) photos (`resolveShopPhotoUrl` without an api base), numbered in order.
 - **Returns / side effects:** Ready card, anonymous unlisted heading, or `forum.error` plus `view.retry`. Retry calls `router.refresh`; a non-empty maps key mounts `GoogleMapCanvas` for one point.
 - **Used by:** `ShopPage`.
+
+## Function: resolveShopPhotoUrl
+
+- **Purpose:** Make one public shop photo URL safe to render and to publish as `og:image`.
+- **Inputs:** The photo `url` from `GET /shops/:npub` and an optional api base. With the base, a relative path resolves against it (trailing slashes trimmed, like the same-origin proxies). Without it, only an absolute URL is accepted.
+- **Returns / side effects:** The absolute `http:` or `https:` URL, or null for every other scheme (`javascript:`, `data:`, …) and for an unparsable value. No side effects.
+- **Used by:** `ShopPage` (with `getApiUrl()`), `ShopScreen` (without a base).
 
 ## Function: NpubCopyButton
 
@@ -1069,7 +1076,7 @@
 
 - **Purpose:** Shared Google Maps JavaScript canvas used by the all-places screen and the one-shop public page. It draws the supplied markers, centers one point at zoom 14, or fits several points and caps fitted zoom at 14.
 - **Inputs:** Browser maps key or null, marker points, anchor, `fitAll`, and a test id. A null key leaves its frame empty; `ShopScreen` omits that frame entirely.
-- **Returns / side effects:** Bounded map frame. Loads Google's script through the shared `loadGoogleMaps`, clears an authentication-failure dialog, and leaves surrounding text usable on script failure.
+- **Returns / side effects:** Bounded map frame. Loads Google's script through the shared `loadGoogleMaps`, subscribes to a rejected key through `onGoogleMapsAuthFailure` (unsubscribes on unmount), clears Google's authentication-failure dialog from the frame and draws nothing more after it, and leaves surrounding text usable on script failure.
 - **Used by:** `PlacesMapScreen`, `ShopScreen`.
 
 ## Function: PublicMessagePage
@@ -1428,6 +1435,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** `Promise<void>` that resolves at once when `google.maps` exists, otherwise when the script loads and installs `google.maps`. On a script error it rejects and removes the script, so the next call adds a fresh script and retries. On a load without `google.maps` it rejects, marks that script `data-gmaps-state="error"`, and every later call rejects until the script is removed from the document.
 - **Used by:** `GoogleMapCanvas`, `PlaceField`.
 
+## Function: onGoogleMapsAuthFailure
+
+- **Purpose:** One owner for Google's global rejected-key hook `window.gm_authFailure`. `GoogleMapCanvas` and `PlaceField` on the same page both subscribe, so neither overwrites or deletes the other's handler.
+- **Inputs:** A listener called when Google rejects the browser key. The module installs its one hook on the first subscribe or `loadGoogleMaps` call, and puts it back if another script replaced it.
+- **Returns / side effects:** An unsubscribe function. A report is remembered for the `google.maps` namespace that was on the page when Google made it: a later subscriber on the same page is called at once. A report before `google.maps` exists reaches current subscribers only.
+- **Used by:** `GoogleMapCanvas`, `PlaceField`.
+
 ## Function: fetchPlaces
 
 - **Purpose:** Load every live top-level forum pin for the signed-in session.
@@ -1446,7 +1460,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Optional place control on the top-level forum composer, and the compact editor a moderator uses on a shop note. Opens a map when `/maps/key` returns a key. Confirm stores `{ lat, lng, label }`. No key shows the unavailable sentence and does not confirm a pin. On the device's local Sunday neither the preview nor the map panel is rendered; the pin stays inside the Sunday writing gate. Otherwise, once the frame box is measured, the preview and the map panel are fixed to the window and kept inside the app frame, and are not sized from the viewport (`vw`). Until that box is measured they sit under the pin as an absolute anchor. The map shrinks so the confirm control stays inside the window, and the page still has one scroller.
 - **Inputs:** `place`, `disabled`, `onChange`. Optional `buttonSize` (`lg` default, or `sm`), `buttonVariant` (`secondary` default, or `ghost`), `showPreview` (default true), `ariaLabel` (default **Add a place**), and `onCommit`. Without `onCommit`, Done and Remove call `onChange` and close. With `onCommit`, those buttons wait; a rejection keeps the panel open and shows the save error; a success closes without calling `onChange`. When preview is hidden and a pin is already set, Remove stays inside the open panel, including when the map is unavailable.
-- **Returns / side effects:** Attach button, optional preview, and panel. Fetches `/maps/key` when opened and loads Google's script through the shared `loadGoogleMaps`.
+- **Returns / side effects:** Attach button, optional preview, and panel. Fetches `/maps/key` when opened and loads Google's script through the shared `loadGoogleMaps`. Subscribes to a rejected key through `onGoogleMapsAuthFailure` for its whole lifetime: an open panel switches to the unavailable sentence, and a closed one stays unavailable when it is opened again.
 - **Used by:** `ForumBoard` (top-level composer) and `ShopPlaceControl`.
 
 ## Function: fitBoxInFrame

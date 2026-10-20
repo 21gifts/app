@@ -166,6 +166,31 @@ describe('ShopScreen', () => {
     });
   });
 
+  it('renders only absolute http(s) photos and numbers them in order', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    renderWithLocale(
+      <ShopScreen
+        state="ready"
+        shop={{
+          ...SHOP,
+          photos: [
+            { url: '/messages/111/photo.jpg', width: null, height: null },
+            { url: 'javascript:alert(1)', width: null, height: null },
+            { url: 'http://api.21.gifts/one.jpg', width: null, height: null },
+            { url: 'https://api.21.gifts/two.jpg', width: null, height: null },
+          ],
+        }}
+      />,
+    );
+    const stills = screen.getAllByAltText('Photo from Cafe Luna');
+    expect(stills.map((node) => node.getAttribute('src'))).toEqual([
+      'http://api.21.gifts/one.jpg',
+      'https://api.21.gifts/two.jpg',
+    ]);
+    expect(stills.map((node) => node.getAttribute('data-photo-index'))).toEqual(['0', '1']);
+    expect(await screen.findByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
+  });
+
   it('shows the anonymous unlisted notice without a shop name', () => {
     vi.stubGlobal('fetch', vi.fn());
     renderWithLocale(<ShopScreen state="gone" />);

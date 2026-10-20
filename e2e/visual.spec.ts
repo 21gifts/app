@@ -17884,6 +17884,34 @@ test.describe('public shop screen', () => {
     await shotScreen(page, 'screen-npub');
   });
 
+  test('public shop signed-in', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.goto(`/${listedNpub}`);
+    await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Cafe Luna' })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+    await photoLoaded(page);
+    await shotScreen(page, 'state-npub-signed-in');
+  });
+
   test('public shop map', async ({ page }) => {
     await installBaselineMap(page);
     await page.goto(`/${listedNpub}`);

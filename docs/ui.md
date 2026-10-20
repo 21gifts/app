@@ -1217,7 +1217,7 @@ Listed shop: `ShopScreen` → `Card xl` `surface={false}`. **h1** shop name, `te
 
 Unlisted shop (API 410): `Card md` `surface={false}` with only **h1** `shop.noLongerListed`; never the hidden name. Error (API 503, any status other than 200/301/404/410, a 200 for a hex key or for a different npub, timeout, or unusable response): `forum.error` (`role="alert"` `text-app-danger`) + **Try again** (`view.retry`, `router.refresh`).
 
-Handbook states: default, map, copied, photos, photo-2, no-payment, gone, error.
+Handbook states: default, signed-in, map, copied, photos, photo-2, no-payment, gone, error.
 
 ### `/view/[viewKey]`
 

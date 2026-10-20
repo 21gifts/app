@@ -4716,6 +4716,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/[npub]',
+    id: 'signed-in',
+    image: 'npub-signed-in.png',
+    visual: 'state-npub-signed-in',
+    needle: "shotScreen(page, 'state-npub-signed-in')",
+  },
+  {
+    route: '/[npub]',
     id: 'map',
     image: 'npub-map.png',
     visual: 'state-npub-map',

@@ -3978,6 +3978,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/[npub]:signed-in",
+    "label": "/[npub] signed-in",
+    "visual": "state-npub-signed-in",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/[npub]:map",
     "label": "/[npub] map",
     "visual": "state-npub-map",

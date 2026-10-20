@@ -4,6 +4,11 @@
     "es": "Cafe Luna listado con descripción, una foto, dirección completa, enlace a la publicación del foro, NIP-05, control para copiar el npub y el bloque de pago (luna@21.gifts y QR de Open CryptoPay con logotipo). No hay clave de mapas, así que no aparece el marco del mapa. La dirección permanece visible.",
     "fil": "Nakalistang Cafe Luna na may paglalarawan, isang litrato, kumpletong address, link sa post sa forum, NIP-05, kontrol na kumokopya ng npub, at ang payment block (luna@21.gifts at Open CryptoPay QR na may logo). Walang maps key kaya walang frame ng mapa. Nananatiling nakikita ang address."
   },
+  "/[npub]:signed-in": {
+    "de": "Dasselbe gelistete Cafe Luna mit dem Menü-Steuerelement statt der Sprachauswahl. Beschreibung, ein Foto, vollständige Adresse, Link zum Forumsbeitrag, NIP-05, npub-Kopiersteuerung und der Zahlungsblock (luna@21.gifts und Open-CryptoPay-QR mit Logo). Kein Kartenschlüssel, daher kein Kartenrahmen.",
+    "es": "El mismo Cafe Luna listado con el control Menú en lugar del selector de idioma. Descripción, una foto, dirección completa, enlace a la publicación del foro, NIP-05, control para copiar el npub y el bloque de pago (luna@21.gifts y QR de Open CryptoPay con logotipo). No hay clave de mapas, así que no aparece el marco del mapa.",
+    "fil": "Parehong nakalistang Cafe Luna na may kontrol na Menyu sa halip na pampili ng wika. Paglalarawan, isang litrato, kumpletong address, link sa post sa forum, NIP-05, kontrol na kumokopya ng npub, at ang payment block (luna@21.gifts at Open CryptoPay QR na may logo). Walang maps key kaya walang frame ng mapa."
+  },
   "/[npub]:map": {
     "de": "Dasselbe gelistete Geschäft mit einem Browser-Kartenschlüssel. Ein deterministischer Kartenrahmen zeichnet genau eine Markierung für das Geschäft; die vollständige Ortsliste wird nie geladen.",
     "es": "La misma tienda listada con una clave de mapas del navegador. Un marco de mapa determinista dibuja exactamente un marcador para la tienda; nunca carga la lista completa de lugares.",

@@ -1,7 +1,7 @@
 /** Selector of the one Maps JavaScript API script on the page. */
 const GOOGLE_MAPS_SCRIPT_SELECTOR = 'script[data-gmaps="weekly"]';
 
-type MapsWindow = Window & { google?: { maps?: unknown } };
+type MapsWindow = Window & { google?: { maps?: unknown }; gm_authFailure?: () => void };
 
 /** The script this module watches and the promise every caller shares. */
 let pending: { script: HTMLScriptElement; promise: Promise<void> } | null = null;
@@ -24,6 +24,7 @@ let pending: { script: HTMLScriptElement; promise: Promise<void> } | null = null
  * @returns Resolves when `google.maps` exists; rejects when the script fails.
  */
 export function loadGoogleMaps(key: string): Promise<void> {
+  installAuthFailureHook();
   const host = window as MapsWindow;
   if (host.google?.maps !== undefined) {
     return Promise.resolve();
@@ -70,4 +71,52 @@ export function loadGoogleMaps(key: string): Promise<void> {
   document.head.appendChild(script);
   pending = { script, promise };
   return promise;
+}
+
+/** Callbacks waiting for Google's rejected-key report. */
+const authFailureListeners = new Set<() => void>();
+
+/**
+ * `google.maps` namespace that was on the page when Google reported a rejected
+ * key. A report before `google.maps` exists is passed on but not remembered.
+ */
+let authFailedMaps: unknown = undefined;
+
+/** Tell every subscriber that Google rejected the key, and remember it. */
+function reportAuthFailure(): void {
+  authFailedMaps = (window as MapsWindow).google?.maps;
+  for (const listener of [...authFailureListeners]) {
+    listener();
+  }
+}
+
+/** Put this module's one `window.gm_authFailure` back if it is missing or replaced. */
+function installAuthFailureHook(): void {
+  const host = window as MapsWindow;
+  if (host.gm_authFailure !== reportAuthFailure) {
+    host.gm_authFailure = reportAuthFailure;
+  }
+}
+
+/**
+ * Subscribe to Google's rejected-key report (`window.gm_authFailure`).
+ *
+ * This module owns the one global hook, so `GoogleMapCanvas` and `PlaceField`
+ * on the same page are both told; neither overwrites the other. Google calls
+ * the hook once, after the script has installed `google.maps`. That report is
+ * remembered for the `google.maps` it belongs to: a subscriber that arrives
+ * later on the same page is called at once.
+ *
+ * @param listener - Called when Google rejects the key.
+ * @returns Unsubscribe; after it the listener is not called again.
+ */
+export function onGoogleMapsAuthFailure(listener: () => void): () => void {
+  installAuthFailureHook();
+  authFailureListeners.add(listener);
+  if (authFailedMaps !== undefined && authFailedMaps === (window as MapsWindow).google?.maps) {
+    listener();
+  }
+  return () => {
+    authFailureListeners.delete(listener);
+  };
 }

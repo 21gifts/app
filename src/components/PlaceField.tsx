@@ -14,7 +14,7 @@ import { SundayWritingGate, useLocalSunday } from '@/components/SundayWritingGat
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import type { ForumPlacePin } from '@/lib/api-types';
-import { loadGoogleMaps } from '@/lib/google-maps-loader';
+import { loadGoogleMaps, onGoogleMapsAuthFailure } from '@/lib/google-maps-loader';
 import { fitBoxInFrame, type PlacedFrameBox } from '@/lib/page-frame';
 
 type GoogleLatLng = {
@@ -52,7 +52,6 @@ type GoogleMapsNamespace = {
 
 type GoogleWindow = Window & {
   google?: { maps?: GoogleMapsNamespace };
-  gm_authFailure?: () => void;
 };
 
 const START_CENTER = { lat: 20, lng: 0 };
@@ -126,6 +125,8 @@ export function PlaceField(props: {
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
   const authFailedRef = useRef(false);
+  /** Reaction of the open panel to a rejected key; null while closed. */
+  const rejectKeyRef = useRef<(() => void) | null>(null);
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const [placedBox, setPlacedBox] = useState<PlacedFrameBox | null>(null);
   const placedBoxRef = useRef<PlacedFrameBox | null>(null);
@@ -136,6 +137,16 @@ export function PlaceField(props: {
       setOpen(false);
     }
   }, [props.disabled]);
+
+  // A rejected key stays rejected, also after the panel closes.
+  useEffect(
+    () =>
+      onGoogleMapsAuthFailure(() => {
+        authFailedRef.current = true;
+        rejectKeyRef.current?.();
+      }),
+    [],
+  );
 
   useEffect(() => {
     if (!open) {
@@ -168,11 +179,8 @@ export function PlaceField(props: {
         setMapsKey(nextKey);
         const googleWindow = window as GoogleWindow;
         // A rejected key stays rejected. Google still defines `google.maps`.
+        // Cleanup clears the ref, so this only runs for the open panel.
         const rejectKey = (): void => {
-          authFailedRef.current = true;
-          if (cancelled) {
-            return;
-          }
           setUnavailable(true);
           setScriptReady(false);
         };
@@ -187,7 +195,7 @@ export function PlaceField(props: {
           setUnavailable(false);
           setScriptReady(true);
         };
-        googleWindow.gm_authFailure = rejectKey;
+        rejectKeyRef.current = rejectKey;
         if (googleWindow.google?.maps !== undefined) {
           acceptKey();
           return;
@@ -217,10 +225,7 @@ export function PlaceField(props: {
     void load();
     return () => {
       cancelled = true;
-      // Keep the rejection if Google calls back after the panel closes.
-      (window as GoogleWindow).gm_authFailure = () => {
-        authFailedRef.current = true;
-      };
+      rejectKeyRef.current = null;
     };
   }, [open]);
 

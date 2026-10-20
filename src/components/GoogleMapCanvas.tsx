@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactElement } from 'react';
-import { loadGoogleMaps } from '@/lib/google-maps-loader';
+import { loadGoogleMaps, onGoogleMapsAuthFailure } from '@/lib/google-maps-loader';
 
 /** One latitude/longitude shown on {@link GoogleMapCanvas}. */
 export interface GoogleMapPoint {
@@ -33,7 +33,6 @@ type GoogleMapsNamespace = {
 
 type GoogleWindow = Window & {
   google?: { maps?: GoogleMapsNamespace };
-  gm_authFailure?: () => void;
 };
 
 /** Props for {@link GoogleMapCanvas}. */
@@ -66,17 +65,15 @@ export function GoogleMapCanvas({
   const frameRef = useRef<HTMLDivElement | null>(null);
   const authFailedRef = useRef(false);
 
-  useEffect(() => {
-    const host = window as GoogleWindow;
-    // A rejected key would paint Google's dialog into the frame. Clear it.
-    host.gm_authFailure = () => {
-      authFailedRef.current = true;
-      frameRef.current?.replaceChildren();
-    };
-    return () => {
-      delete host.gm_authFailure;
-    };
-  }, []);
+  useEffect(
+    () =>
+      // A rejected key would paint Google's dialog into the frame. Clear it.
+      onGoogleMapsAuthFailure(() => {
+        authFailedRef.current = true;
+        frameRef.current?.replaceChildren();
+      }),
+    [],
+  );
 
   useEffect(() => {
     if (mapsKey === null || points.length === 0 || anchor === undefined) {

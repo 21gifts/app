@@ -7,6 +7,7 @@ import { API_FETCH_TIMEOUT_MS } from '@/lib/api-timeout';
 import { SHOP_NPUB_RE, shopResponseSchema, type Shop } from '@/lib/api-types';
 import { getApiUrl } from '@/lib/config';
 import { DEFAULT_OG_ALT, ogDescriptionText } from '@/lib/public-message-og';
+import { resolveShopPhotoUrl } from '@/lib/shop-photo-url';
 
 const HEX_PUBKEY_RE = /^[0-9a-f]{64}$/;
 
@@ -42,7 +43,9 @@ function redirectNpub(response: Response): string | null {
  * valid npub. An npub segment is usable only as a 200 whose `shop.npub` is
  * that same npub. Every other status, a 200 for a hex segment, and a timeout
  * or abort after {@link API_FETCH_TIMEOUT_MS} become `unavailable`; 404 and 410
- * stay `missing` and `gone`.
+ * stay `missing` and `gone`. Photo URLs go through {@link resolveShopPhotoUrl}
+ * against the api base: a relative path becomes an api URL, and a photo that
+ * is not http(s) is dropped, so the page and `og:image` share the same list.
  *
  * Wrapped in React `cache`, so `generateMetadata` and `ShopPage` share one api
  * call and one answer per request.
@@ -52,7 +55,8 @@ function redirectNpub(response: Response): string | null {
  */
 const loadShop = cache(async (segment: string): Promise<ShopLoadResult> => {
   try {
-    const response = await fetch(`${getApiUrl()}/shops/${encodeURIComponent(segment)}`, {
+    const apiBase = getApiUrl();
+    const response = await fetch(`${apiBase}/shops/${encodeURIComponent(segment)}`, {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
       redirect: 'manual',
@@ -72,9 +76,15 @@ const loadShop = cache(async (segment: string): Promise<ShopLoadResult> => {
       return { kind: 'unavailable' };
     }
     const parsed = shopResponseSchema.safeParse(await response.json());
-    return parsed.success && parsed.data.shop.npub === segment
-      ? { kind: 'ready', shop: parsed.data.shop }
-      : { kind: 'unavailable' };
+    if (!parsed.success || parsed.data.shop.npub !== segment) {
+      return { kind: 'unavailable' };
+    }
+    // A relative photo path belongs to the api; only http(s) photos render.
+    const photos = parsed.data.shop.photos.flatMap((photo) => {
+      const url = resolveShopPhotoUrl(photo.url, apiBase);
+      return url === null ? [] : [{ ...photo, url }];
+    });
+    return { kind: 'ready', shop: { ...parsed.data.shop, photos } };
   } catch {
     return { kind: 'unavailable' };
   }

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { ogDescriptionText } from '../src/lib/public-message-og';
+import { resolveShopPhotoUrl } from '../src/lib/shop-photo-url';
 
 const LISTED_NPUB = `npub1${'2'.repeat(58)}`;
 const GONE_NPUB = `npub1${'3'.repeat(58)}`;
@@ -187,6 +188,64 @@ test('Function: loadGoogleMaps — the shop map adds one weekly Maps script', as
     'https://maps.googleapis.com/maps/api/js?key=e2e&v=weekly',
   );
   expect(scripts).toBe(1);
+});
+
+test('Function: resolveShopPhotoUrl — a relative shop photo becomes an api URL and a non-http one is dropped', async ({
+  page,
+}) => {
+  expect(resolveShopPhotoUrl('/e2e/shop-photos/one.jpg', 'http://127.0.0.1:3001')).toBe(
+    'http://127.0.0.1:3001/e2e/shop-photos/one.jpg',
+  );
+  expect(resolveShopPhotoUrl('javascript:alert(1)', 'http://127.0.0.1:3001')).toBeNull();
+  await page.goto(`/${GALLERY_NPUB}`);
+  const stills = page.getByRole('img', { name: 'Photo from Twin Gallery' });
+  await expect(stills).toHaveCount(2);
+  await expect(stills.nth(0)).toHaveAttribute(
+    'src',
+    'http://127.0.0.1:3001/e2e/shop-photos/one.jpg',
+  );
+  await expect(stills.nth(1)).toHaveAttribute(
+    'src',
+    'http://127.0.0.1:3001/e2e/shop-photos/two.jpg',
+  );
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    'content',
+    'http://127.0.0.1:3001/e2e/shop-photos/one.jpg',
+  );
+});
+
+test('Function: onGoogleMapsAuthFailure — a rejected key clears the shop map frame', async ({
+  page,
+}) => {
+  await page.route('**/maps/key', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ key: 'rejected' }),
+    });
+  });
+  await page.route('https://maps.googleapis.com/maps/api/js*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/javascript',
+      body: [
+        'window.google = { maps: {',
+        '  Map: class { constructor(el) { el.textContent = "dialog"; } setCenter() {} },',
+        '  Marker: class {},',
+        '} };',
+      ].join('\n'),
+    });
+  });
+  await page.goto(`/${LISTED_NPUB}`);
+  const frame = page.getByTestId('shop-map');
+  await expect(frame).toBeVisible();
+  await expect(frame).toHaveText('dialog');
+  // Google reports the rejected key through the one hook the loader owns.
+  await page.evaluate(() => {
+    (window as Window & { gm_authFailure?: () => void }).gm_authFailure?.();
+  });
+  await expect.poll(() => frame.evaluate((node) => node.childNodes.length)).toBe(0);
+  await expect(page.getByRole('heading', { name: 'Cafe Luna' })).toBeVisible();
 });
 
 test('hex shop identity redirects permanently to the canonical npub', async ({ request }) => {

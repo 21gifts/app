@@ -56,8 +56,18 @@ vi.mock('@/components/PublicMessageChrome', () => ({
 }));
 
 vi.mock('@/app/[npub]/ShopScreen', () => ({
-  ShopScreen: ({ state, shop }: { state: string; shop?: { name: string } }) => (
-    <div data-testid="shop-screen" data-state={state}>
+  ShopScreen: ({
+    state,
+    shop,
+  }: {
+    state: string;
+    shop?: { name: string; photos: ReadonlyArray<{ url: string }> };
+  }) => (
+    <div
+      data-testid="shop-screen"
+      data-state={state}
+      data-photos={shop?.photos.map((photo) => photo.url).join(' ')}
+    >
       {shop?.name}
     </div>
   ),
@@ -318,8 +328,49 @@ describe('shop generateMetadata', () => {
     });
     const unknownSize = await generateMetadata({ params: Promise.resolve({ npub: NPUB }) });
     expect(unknownSize.openGraph).toMatchObject({
-      images: [{ url: '/photo.jpg', alt: 'Cafe Luna' }],
+      images: [{ url: 'https://api.test/photo.jpg', alt: 'Cafe Luna' }],
     });
+  });
+
+  it('resolves relative photos against the api and drops photos that are not http(s)', async () => {
+    const photos = [
+      { url: 'javascript:alert(1)', width: 10, height: 10 },
+      { url: 'data:image/png;base64,AAAA', width: null, height: null },
+      { url: '/messages/1/photo.jpg', width: 640, height: 480 },
+      { url: 'https://cdn.example/two.jpg', width: null, height: null },
+    ];
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation(() => Promise.resolve(response(200, { shop: { ...SHOP, photos } }))),
+    );
+    const metadata = await generateMetadata({ params: Promise.resolve({ npub: NPUB }) });
+    expect(metadata.openGraph).toMatchObject({
+      images: [
+        { url: 'https://api.test/messages/1/photo.jpg', alt: 'Cafe Luna', width: 640, height: 480 },
+      ],
+    });
+    expect(metadata.twitter).toMatchObject({
+      images: [{ url: 'https://api.test/messages/1/photo.jpg', alt: 'Cafe Luna' }],
+    });
+    render(await ShopPage({ params: Promise.resolve({ npub: NPUB }) }));
+    expect(screen.getByTestId('shop-screen').getAttribute('data-photos')).toBe(
+      'https://api.test/messages/1/photo.jpg https://cdn.example/two.jpg',
+    );
+  });
+
+  it('uses og.png when no photo is http(s)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        response(200, {
+          shop: { ...SHOP, photos: [{ url: 'javascript:alert(1)', width: null, height: null }] },
+        }),
+      ),
+    );
+    const metadata = await generateMetadata({ params: Promise.resolve({ npub: NPUB }) });
+    expect(metadata.openGraph).toMatchObject({ images: [{ url: '/og.png' }] });
   });
 
   it('uses the public-note description rules: trimmed, name fallback, 300-unit cut', async () => {

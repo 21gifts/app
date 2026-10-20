@@ -2191,8 +2191,11 @@ const server = http.createServer(async (req, res) => {
                 country: 'CH',
               },
             },
+            // A relative path resolves against the api base (the same URL as
+            // before); a non-http(s) photo is dropped, so the gallery still has two.
             photos: [
-              { url: `http://${HOST}:${PORT}/e2e/shop-photos/one.jpg`, width: 1168, height: 784 },
+              { url: '/e2e/shop-photos/one.jpg', width: 1168, height: 784 },
+              { url: 'javascript:alert(1)', width: 1, height: 1 },
               { url: `http://${HOST}:${PORT}/e2e/shop-photos/two.jpg`, width: 1400, height: 933 },
             ],
             payUsername: 'luna',
