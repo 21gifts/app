@@ -34,9 +34,10 @@ const PAD_B = 20;
 
 /**
  * Compact dual-line open-balance chart of Debt and Credit. Does not mount
- * FiatPicker. Fiat code comes from {@link useFiatPreference} (written by the
- * unsigned gift chart and by settings). The ₿|fiat scale is local to this
- * chart. Y-axis always includes 0 and may extend below for negative balances.
+ * FiatPicker. Fiat code comes from {@link useFiatPreference} (the Settings
+ * Display row when signed in, otherwise the cookie or the locale default).
+ * The ₿|fiat scale is local to this chart. Y-axis always includes 0 and may
+ * extend below for negative balances.
  * Circles mark every value change (rise or fall), not only increases.
  *
  * @param props - Owed series, credit series, and optional `failed`.

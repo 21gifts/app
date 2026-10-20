@@ -51,9 +51,9 @@ async function persistFiat(
  * Settings Display row: preferred fiat via {@link FiatPicker}.
  *
  * Always visible on the signed-in Settings page. Not page chrome. The only
- * signed-in control that writes the `fiat` cookie. Unsigned chart, stats, and
- * day FiatPickers still write that cookie. Forum and the pay sheet only display
- * that code.
+ * signed-in control that writes the `fiat` cookie. Unsigned stats and day
+ * FiatPickers still write that cookie. Profile charts do not mount one.
+ * Forum and the pay sheet only display that code.
  *
  * @returns The fiat settings section.
  */

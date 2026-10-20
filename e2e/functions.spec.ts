@@ -12167,6 +12167,7 @@ test('Function: fetchViewActivity — public view card shows empty activity copy
   await page.goto(`/view/${key}`);
   await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
   await expect(page.getByText('No gifts yet.')).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Fiat currency' })).toHaveCount(0);
 });
 test('Function: proxyMeActivityGet — GET /me/activity is 401', async ({ request }) => {
   expect((await request.get('/me/activity')).status()).toBe(401);
