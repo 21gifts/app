@@ -69,6 +69,10 @@ export type AboutMeSectionProps = {
   onSave?: (text: string, photo?: AboutMeSavePhoto | null) => Promise<boolean | void>;
   /** Open the owner editor on mount. Default false. */
   startEditing?: boolean;
+  /** When true, omit empty portrait/banner adds that the profile header already shows. */
+  omitEmptySlotAdds?: boolean;
+  /** Reload stored portrait and wide image while the editor stays open. Default 0. */
+  imageEpoch?: number;
 };
 
 /**
@@ -78,7 +82,9 @@ export type AboutMeSectionProps = {
  *
  * @param props - About me value, owner vs public mode, optional display name,
  * optional message id, photo loaders, profile URL and save, optional
- * `startEditing` to open the owner editor on mount.
+ * `startEditing` to open the owner editor on mount, optional
+ * `omitEmptySlotAdds` to hide empty portrait and wide-image adds, optional
+ * `imageEpoch` reloads the stored portrait and wide image while the editor stays open.
  * @returns The section, or `null` in public mode when unfilled and there is no copy URL.
  */
 export function AboutMeSection({
@@ -95,6 +101,8 @@ export function AboutMeSection({
   onSaveBanner,
   onSave,
   startEditing = false,
+  omitEmptySlotAdds = false,
+  imageEpoch = 0,
 }: AboutMeSectionProps): ReactElement | null {
   const { t } = useTranslations();
   const textareaId = useId();
@@ -163,7 +171,7 @@ export function AboutMeSection({
         setBannerUrl(null);
       }
     })();
-  }, [editing]);
+  }, [editing, imageEpoch]);
 
   useEffect(() => {
     if (!editing || loadPictureRef.current === undefined) {
@@ -198,7 +206,7 @@ export function AboutMeSection({
         setPictureUrl(null);
       }
     })();
-  }, [editing]);
+  }, [editing, imageEpoch]);
 
   const trimmedAbout = typeof aboutMe === 'string' ? aboutMe.trim() : '';
   const trimmedName = (name ?? '').trim();
@@ -633,7 +641,7 @@ export function AboutMeSection({
                   disabled={saving}
                   onChange={handleFileChange}
                 />
-                {onSavePicture !== undefined ? (
+                {onSavePicture !== undefined && !(omitEmptySlotAdds && pictureUrl === null) ? (
                   <>
                     <CameraPhotoButton
                       label={t('profile.about.portraitCamera')}
@@ -664,7 +672,7 @@ export function AboutMeSection({
                     />
                   </>
                 ) : null}
-                {onSaveBanner !== undefined ? (
+                {onSaveBanner !== undefined && !(omitEmptySlotAdds && bannerUrl === null) ? (
                   <>
                     <CameraPhotoButton
                       label={t('profile.about.bannerCamera')}

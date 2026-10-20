@@ -1795,6 +1795,8 @@ export function MemberProfileScreen({
                 await putWideBanner(owner.session, photo);
                 setImageEpoch((epoch) => epoch + 1);
               }}
+              omitEmptySlotAdds
+              imageEpoch={imageEpoch}
               /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
               {...(profileUrl !== '' ? { profileUrl } : {})}
               onSave={async (text, photo) => {
