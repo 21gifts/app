@@ -17,6 +17,7 @@ import {
   shopDescriptionProblem,
   shopDescriptionRemaining,
   shopPlaceComplete,
+  shopProblemField,
   shopUsernameProblem,
   usernameLookupVerdict,
   type ShopApiProblem,
@@ -182,23 +183,23 @@ export function ShopAddWizard({
 
   useEffect(() => {
     if (serverProblem === null) return;
-    if (
-      serverProblem === 'shopName' ||
-      serverProblem === 'shopNameAddress' ||
-      serverProblem === 'shopNameLong' ||
-      serverProblem === 'shopNameControls' ||
-      serverProblem === 'shopAddress' ||
-      serverProblem === 'placeAddress'
-    ) {
+    const field = shopProblemField(serverProblem);
+    if (field === 'place') {
       setStep(2);
       return;
     }
-    if (serverProblem === 'shopDescription' || serverProblem === 'shopDescriptionControls') {
+    if (field === 'text') {
       setStep(3);
       return;
     }
     setStep(4);
   }, [serverProblem]);
+
+  useEffect(() => {
+    if (mode === 'edit' && photoError !== null) {
+      setStep(1);
+    }
+  }, [mode, photoError]);
 
   const normalizedUsername = username.trim().replace(/^@/, '').trim().toLowerCase();
   const usernameFormatProblem = shopUsernameProblem(username);
@@ -280,17 +281,10 @@ export function ShopAddWizard({
         ? 'missing'
         : null;
   const usernamePending = normalizedUsername !== '' && usernameLookup === 'checking';
-  const placeServerProblem =
-    serverProblem === 'shopName' ||
-    serverProblem === 'shopNameAddress' ||
-    serverProblem === 'shopNameLong' ||
-    serverProblem === 'shopNameControls' ||
-    serverProblem === 'shopAddress' ||
-    serverProblem === 'placeAddress';
-  const descriptionServerProblem =
-    serverProblem === 'shopDescription' || serverProblem === 'shopDescriptionControls';
-  const usernameServerProblem =
-    serverProblem === 'usernameInvalid' || serverProblem === 'usernameMissing';
+  const serverProblemField = serverProblem === null ? null : shopProblemField(serverProblem);
+  const placeServerProblem = serverProblemField === 'place';
+  const descriptionServerProblem = serverProblemField === 'text';
+  const usernameServerProblem = serverProblemField === 'username';
   const placeServerMessage =
     placeServerProblem && serverProblem !== null ? t(SHOP_API_MESSAGE[serverProblem]) : null;
   const nextDisabled =
@@ -309,7 +303,7 @@ export function ShopAddWizard({
     usernamePending ||
     usernameServerProblem;
   const descriptionHint =
-    serverProblem === 'shopDescription' || serverProblem === 'shopDescriptionControls'
+    descriptionServerProblem && serverProblem !== null
       ? t(SHOP_API_MESSAGE[serverProblem])
       : descriptionProblem === 'short'
         ? t('shops.problemDescriptionShort', { n: shopDescriptionRemaining(draft) })
@@ -321,7 +315,7 @@ export function ShopAddWizard({
               ? t('shops.problemDescriptionControls')
               : null;
   const usernameError =
-    serverProblem === 'usernameInvalid' || serverProblem === 'usernameMissing'
+    usernameServerProblem && serverProblem !== null
       ? t(SHOP_API_MESSAGE[serverProblem])
       : usernameProblem === 'format'
         ? t('shops.problemUsernameFormat')
@@ -388,7 +382,6 @@ export function ShopAddWizard({
             variant="secondary"
             aria-label={t('forum.attach')}
             aria-describedby={photoFeedbackId}
-            aria-invalid={photoError === null ? undefined : true}
             disabled={posting}
             onClick={() => {
               fileInputRef.current?.click();
@@ -410,7 +403,7 @@ export function ShopAddWizard({
                     : photoError === 'tooLarge'
                       ? 'forum.errorTooLarge'
                       : imagesOnly
-                        ? 'shops.photoUnsupported'
+                        ? 'inbox.errorUnsupported'
                         : 'forum.errorUnsupported',
                 )}
               </p>
@@ -529,11 +522,7 @@ export function ShopAddWizard({
             onChange={onDraftChange}
             maxLength={Math.min(maxLength, SHOP_DESCRIPTION_MAX)}
             ariaDescribedBy={descriptionHintId}
-            ariaInvalid={
-              descriptionProblem !== null ||
-              serverProblem === 'shopDescription' ||
-              serverProblem === 'shopDescriptionControls'
-            }
+            ariaInvalid={descriptionProblem !== null || descriptionServerProblem}
             rows={4}
             disabled={posting}
             wrapperClassName="relative w-full"

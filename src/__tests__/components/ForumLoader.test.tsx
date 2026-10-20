@@ -5361,7 +5361,7 @@ describe('ForumLoader', () => {
     },
   );
 
-  it('clears a mapped shop error when the place draft changes', async () => {
+  it('keeps a text shop error when the place changes, then clears it when the text changes', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockRejectedValue(
       new Error('Shop description must be 20 to 1000 characters and longer than the shop name'),
@@ -5403,6 +5403,10 @@ describe('ForumLoader', () => {
     listeners.get('click')?.({ latLng: { lat: () => 14.6, lng: () => 120.98 } });
     fireEvent.change(screen.getByLabelText('Place name'), { target: { value: 'Stall' } });
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    expect(screen.getByRole('alert').textContent).toBe(
+      'The shop text must be 20 to 1000 characters and longer than the shop name.',
+    );
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hello again' } });
     expect(screen.queryByRole('alert')).toBeNull();
     fetchSpy.mockRestore();
     delete (window as { google?: unknown }).google;

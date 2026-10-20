@@ -81,6 +81,7 @@ import {
   formatPlacePinText,
   isShopApiProblem,
   isShopNote,
+  shopProblemField,
   stripShopHashtag,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
@@ -114,15 +115,11 @@ export type ForumFormError =
   | ShopApiProblem
   | null;
 
-const SHOP_ELSEWHERE_FORM_ERRORS = new Set<ForumFormError>([
-  'shopElsewhere',
-  'shopName',
-  'shopNameAddress',
-  'shopNameLong',
-  'shopNameControls',
-  'shopAddress',
-  'placeAddress',
-]);
+function isShopElsewhereFormError(error: ForumFormError): boolean {
+  return (
+    error === 'shopElsewhere' || (isShopApiProblem(error) && shopProblemField(error) === 'place')
+  );
+}
 
 /** Reply composer validation; `amount` is the paid-reply sats field. */
 export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted';
@@ -2127,7 +2124,7 @@ export function ForumBoard({
         {!hideCompose &&
         !shopComposer &&
         !shopElsewhereHintVisible &&
-        SHOP_ELSEWHERE_FORM_ERRORS.has(formError) ? (
+        isShopElsewhereFormError(formError) ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.shopPostUseShops')}
           </p>
@@ -2135,7 +2132,7 @@ export function ForumBoard({
         {!hideCompose &&
         !shopComposer &&
         isShopApiProblem(formError) &&
-        !SHOP_ELSEWHERE_FORM_ERRORS.has(formError) ? (
+        !isShopElsewhereFormError(formError) ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t(SHOP_API_MESSAGE[formError])}
           </p>

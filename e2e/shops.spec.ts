@@ -1177,6 +1177,63 @@ test('Function: isShopApiProblem — a shop-feed account rejection returns to th
   ).toHaveText('No account with that username. Check the spelling of the 21.gifts username.');
 });
 
+test('Function: shopProblemField — editing the username clears its server rejection', async ({
+  page,
+}) => {
+  await stubPlaceMap(page);
+  await seedAda(page, 'verified');
+  await fulfillForumMessages(page, []);
+  // A full suggestion page without the exact name leaves the lookup undecided,
+  // so only the API can tell that the account does not exist.
+  await page.route(/\/forum\/mentions(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        accounts: Array.from({ length: 20 }, (_, index) => ({
+          id: `acc-${String(index)}`,
+          username: `other-${String(index)}`,
+          name: `Other ${String(index)}`,
+        })),
+      }),
+    });
+  });
+  await page.route(
+    (url) => new URL(url).pathname === '/forum/messages',
+    async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'No account with that username' }),
+      });
+    },
+  );
+  await page.goto('/shops');
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  await fillShopAddress(page);
+  await page.getByRole('button', { name: 'Use this place' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Fresh bread every morning.');
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('21.gifts username').fill('luna');
+  await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.locator('form').getByRole('button', { name: 'Post', exact: true }).click();
+  await expect(page.getByText('4 / 5 · 21.gifts user')).toBeVisible();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'No account with that username.' }),
+  ).toHaveText('No account with that username. Check the spelling of the 21.gifts username.');
+  // The rejection belongs to the username field, so editing that field clears it.
+  await page.getByLabel('21.gifts username').fill('lunar');
+  await expect(page.getByText('No account with that username.', { exact: false })).toHaveCount(0);
+});
 test('Function: shopNameProblem — a street in the name is rejected', async ({ page }) => {
   await stubPlaceMap(page);
   await seedSignedIn(page);
@@ -1277,7 +1334,7 @@ test('Function: shopPlaceComplete — place step Next stays off until the pin is
   await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
 });
 
-test('Function: shopApiProblem — a shop 400 is shown as localized copy', async ({ page }) => {
+test('Function: shopApiProblem — a shop 400 is shown at its field', async ({ page }) => {
   await stubPlaceMap(page);
   await seedAda(page, 'moderator');
   await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);

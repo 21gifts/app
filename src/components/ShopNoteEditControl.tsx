@@ -23,6 +23,7 @@ import {
   shopApiProblem,
   shopDescriptionProblem,
   shopPlaceComplete,
+  shopProblemField,
   stripShopHashtag,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
@@ -409,6 +410,7 @@ export function ShopNoteEditControl({
     setSaving(true);
     setSaveError(false);
     setSaveProblem(null);
+    setPhotoError(null);
     try {
       const keptPhotos = kept.filter((item) => item.kind === 'photo');
       const textChanged = draft !== stripShopHashtag(message.text);
@@ -472,9 +474,22 @@ export function ShopNoteEditControl({
       onUpdated(latest);
       setOpen(false);
     } catch (error) {
-      setSaveError(true);
+      const photoProblem =
+        error instanceof Error && error.message === 'At most 10 photos'
+          ? 'tooMany'
+          : error instanceof Error &&
+              error.message === 'Photo must be a JPEG, PNG, or WebP under 1 MiB'
+            ? 'tooLarge'
+            : null;
       const problem = error instanceof Error ? shopApiProblem(error.message, true) : null;
-      setSaveProblem(problem);
+      if (photoProblem !== null) {
+        setSaveError(false);
+        setSaveProblem(null);
+        setPhotoError(photoProblem);
+      } else {
+        setSaveError(true);
+        setSaveProblem(problem);
+      }
     } finally {
       setSaving(false);
     }
@@ -517,7 +532,9 @@ export function ShopNoteEditControl({
               onDraftChange={(value) => {
                 setDraft(value);
                 setSaveError(false);
-                setSaveProblem(null);
+                setSaveProblem((current) =>
+                  current !== null && shopProblemField(current) === 'text' ? null : current,
+                );
               }}
               photoDrafts={photoDrafts}
               videoDraft={null}
@@ -535,13 +552,17 @@ export function ShopNoteEditControl({
               onPlaceChange={(next) => {
                 setPlace(next);
                 setSaveError(false);
-                setSaveProblem(null);
+                setSaveProblem((current) =>
+                  current !== null && shopProblemField(current) === 'place' ? null : current,
+                );
               }}
               username={username}
               onUsernameChange={(value) => {
                 setUsername(value);
                 setSaveError(false);
-                setSaveProblem(null);
+                setSaveProblem((current) =>
+                  current !== null && shopProblemField(current) === 'username' ? null : current,
+                );
               }}
               onSubmit={() => {
                 void save();

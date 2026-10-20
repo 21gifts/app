@@ -549,6 +549,46 @@ describe('ShopNoteEditControl', () => {
     },
   );
 
+  it.each([
+    ['At most 10 photos', 'You can add up to 10 photos'],
+    [
+      'Photo must be a JPEG, PNG, or WebP under 1 MiB',
+      'Keep photos under 1 MB and videos under 32 MB',
+    ],
+  ])('maps photo 400 %s to announced picker feedback', async (apiMessage, localized) => {
+    signIn('founder');
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(prepareForumPhoto).mockResolvedValueOnce({
+      ok: true,
+      photo: {
+        contentType: 'image/jpeg',
+        data: 'abc',
+        previewUrl: 'data:image/jpeg;base64,abc',
+      },
+    });
+    vi.mocked(setMessageShopPhotos).mockRejectedValueOnce(new Error(apiMessage));
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(['a'], 'a.jpg', { type: 'image/jpeg' })] },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Remove photo' })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toBe(localized);
+    expect(screen.queryByText('Could not save this shop note')).toBeNull();
+    expect(setMessageShopPhotos).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the generic save copy when save rejects a non-Error value', async () => {
     signIn('founder');
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -568,7 +608,7 @@ describe('ShopNoteEditControl', () => {
     );
   });
 
-  it('clears a mapped save error when the shop text changes', async () => {
+  it('keeps a text save error through a place edit, then clears it when the text changes', async () => {
     signIn('founder');
     stubShopMaps();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -586,6 +626,19 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(await screen.findByText('3 / 5 · Text')).toBeTruthy();
+    expect(
+      screen.getAllByText(
+        'The shop text must be 20 to 1000 characters and longer than the shop name.',
+      ).length,
+    ).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: 'Shop place and address' })).toBeTruthy();
+    });
+    fillShopAddressFields("Kiki's Cafe");
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(
       screen.getAllByText(
         'The shop text must be 20 to 1000 characters and longer than the shop name.',
@@ -628,7 +681,7 @@ describe('ShopNoteEditControl', () => {
     expect(screen.queryByText('Enter the shop name.')).toBeNull();
   });
 
-  it('clears a mapped save error when the account draft changes', async () => {
+  it('keeps an account save error through a text edit, then clears it with the account draft', async () => {
     signIn('founder');
     stubShopMaps();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -644,6 +697,16 @@ describe('ShopNoteEditControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(await screen.findByText('4 / 5 · 21.gifts user')).toBeTruthy();
+    expect(
+      screen.getAllByText(
+        'No account with that username. Check the spelling of the 21.gifts username.',
+      ).length,
+    ).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+      target: { value: 'Cafe Sol is open every afternoon.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(
       screen.getAllByText(
         'No account with that username. Check the spelling of the 21.gifts username.',

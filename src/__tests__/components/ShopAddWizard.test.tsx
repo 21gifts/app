@@ -551,7 +551,10 @@ describe('ShopAddWizard', () => {
     expect(screen.getByText(message)).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe(message);
     expect(picker.getAttribute('aria-describedby')).toBeTruthy();
-    expect(picker.getAttribute('aria-invalid')).toBe('true');
+    expect(picker.getAttribute('aria-invalid')).toBeNull();
+    const input = document.querySelector('input[type="file"]');
+    expect(input?.getAttribute('aria-invalid')).toBe('true');
+    expect(input?.getAttribute('aria-describedby')).toBe(picker.getAttribute('aria-describedby'));
   });
 
   it('shows the 1000-character description error for a prefilled edit', () => {

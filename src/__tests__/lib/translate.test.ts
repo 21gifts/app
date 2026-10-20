@@ -154,7 +154,6 @@ describe('catalogs', () => {
         'shops.addressCity',
         'shops.addressCountry',
         'shops.addressCountryChoose',
-        'shops.photoUnsupported',
         'shops.problemName',
         'shops.problemNameAddress',
         'shops.problemNameLong',

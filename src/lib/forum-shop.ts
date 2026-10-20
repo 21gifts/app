@@ -82,6 +82,22 @@ export function isShopApiProblem(error: unknown): error is ShopApiProblem {
   return typeof error === 'string' && Object.hasOwn(SHOP_API_MESSAGE, error);
 }
 
+/**
+ * Editable field that owns a mapped shop API problem.
+ *
+ * @param problem - Mapped shop API problem.
+ * @returns The place, text, or username field that can correct it.
+ */
+export function shopProblemField(problem: ShopApiProblem): 'place' | 'text' | 'username' {
+  if (problem === 'shopDescription' || problem === 'shopDescriptionControls') {
+    return 'text';
+  }
+  if (problem === 'usernameInvalid' || problem === 'usernameMissing') {
+    return 'username';
+  }
+  return 'place';
+}
+
 const HOUSE_NUMBER = /^[0-9][0-9A-Za-z/ .&–-]{0,31}$/;
 const POSTAL_CH_LI = /^[0-9]{4}$/;
 const POSTAL_OTHER = /^[A-Za-z0-9][A-Za-z0-9 -]{1,15}$/;

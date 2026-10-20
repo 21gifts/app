@@ -74,6 +74,7 @@ import {
   shopDescriptionProblem,
   shopNameProblem,
   shopPlaceComplete,
+  shopProblemField,
   shopUsernameProblem,
   usernameLookupVerdict,
   type ShopApiProblem,
@@ -112,15 +113,6 @@ function isRateLimitError(err: unknown): boolean {
   return /too many (messages|payments)/i.test(err.message);
 }
 
-const SHOP_ELSEWHERE_PROBLEMS = new Set<ShopApiProblem>([
-  'shopName',
-  'shopNameAddress',
-  'shopNameLong',
-  'shopNameControls',
-  'shopAddress',
-  'placeAddress',
-]);
-
 /**
  * Composer error for an API 400: the shop problem, or `shopElsewhere` when a
  * non-shop composer cannot fix shop-only name or address details.
@@ -131,7 +123,7 @@ const SHOP_ELSEWHERE_PROBLEMS = new Set<ShopApiProblem>([
  */
 function composerShopError(err: unknown, shop: boolean): ShopApiProblem | 'shopElsewhere' | null {
   const problem = err instanceof Error ? shopApiProblem(err.message, shop) : null;
-  return !shop && problem !== null && SHOP_ELSEWHERE_PROBLEMS.has(problem)
+  return !shop && problem !== null && shopProblemField(problem) === 'place'
     ? 'shopElsewhere'
     : problem;
 }
@@ -2658,7 +2650,13 @@ export function ForumLoader({
               shopUsername,
               onShopUsernameChange: (value: string) => {
                 setShopUsername(value);
-                setFormError(null);
+                setFormError((current) =>
+                  current !== null &&
+                  isShopApiProblem(current) &&
+                  shopProblemField(current) === 'username'
+                    ? null
+                    : current,
+                );
               },
               shopResetToken,
             }
@@ -2818,11 +2816,19 @@ export function ForumLoader({
         placeDraft={placeDraft}
         onPlaceDraftChange={(next) => {
           setPlaceDraft(next);
-          setFormError((current) => (isShopComposerError(current) ? null : current));
+          setFormError((current) =>
+            current !== null && isShopApiProblem(current) && shopProblemField(current) === 'place'
+              ? null
+              : current,
+          );
         }}
         onDraftChange={(value) => {
           setDraft(value);
-          setFormError(null);
+          setFormError((current) =>
+            current !== null && isShopApiProblem(current) && shopProblemField(current) !== 'text'
+              ? current
+              : null,
+          );
         }}
         askDraft={askDraft}
         askDraftUnit={askDraftUnit}

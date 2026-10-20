@@ -17,6 +17,7 @@ import {
   shopDescriptionRemaining,
   shopNameProblem,
   shopPlaceComplete,
+  shopProblemField,
   shopUsernameProblem,
   stripShopHashtag,
   usernameLookupVerdict,
@@ -442,6 +443,21 @@ describe('forum-shop', () => {
       expect(isShopApiProblem('toString')).toBe(false);
       expect(isShopApiProblem(null)).toBe(false);
       expect(isShopApiProblem({ error: 'shopDescription' })).toBe(false);
+    });
+  });
+
+  describe('shopProblemField', () => {
+    it('maps every shop problem to the field that can correct it', () => {
+      expect(shopProblemField('shopName')).toBe('place');
+      expect(shopProblemField('shopNameAddress')).toBe('place');
+      expect(shopProblemField('shopNameLong')).toBe('place');
+      expect(shopProblemField('shopNameControls')).toBe('place');
+      expect(shopProblemField('shopAddress')).toBe('place');
+      expect(shopProblemField('placeAddress')).toBe('place');
+      expect(shopProblemField('shopDescription')).toBe('text');
+      expect(shopProblemField('shopDescriptionControls')).toBe('text');
+      expect(shopProblemField('usernameInvalid')).toBe('username');
+      expect(shopProblemField('usernameMissing')).toBe('username');
     });
   });
 
