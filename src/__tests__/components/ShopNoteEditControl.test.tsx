@@ -453,7 +453,7 @@ describe('ShopNoteEditControl', () => {
     ],
     [
       'Shop description must be 20 to 1000 characters and longer than the shop name',
-      'The description must be 20 to 1000 characters and longer than the shop name.',
+      'The shop text must be 20 to 1000 characters and longer than the shop name.',
       3,
     ],
     [
@@ -478,7 +478,7 @@ describe('ShopNoteEditControl', () => {
     ],
     [
       'Text must be 1–8000 characters',
-      'The description must be 20 to 1000 characters and longer than the shop name.',
+      'The shop text must be 20 to 1000 characters and longer than the shop name.',
       3,
     ],
   ];
@@ -555,7 +555,7 @@ describe('ShopNoteEditControl', () => {
     expect(await screen.findByText('3 / 5 · Text')).toBeTruthy();
     expect(
       screen.getAllByText(
-        'The description must be 20 to 1000 characters and longer than the shop name.',
+        'The shop text must be 20 to 1000 characters and longer than the shop name.',
       ).length,
     ).toBeGreaterThan(0);
     fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
@@ -563,7 +563,7 @@ describe('ShopNoteEditControl', () => {
     });
     expect(
       screen.queryAllByText(
-        'The description must be 20 to 1000 characters and longer than the shop name.',
+        'The shop text must be 20 to 1000 characters and longer than the shop name.',
       ),
     ).toHaveLength(0);
   });
@@ -991,6 +991,38 @@ describe('ShopNoteEditControl', () => {
     vi.unstubAllGlobals();
   });
 
+  it('clears the photo reason when a kept photo is removed', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => 'blob:loaded'),
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    });
+    vi.mocked(fetchMessagePhoto).mockResolvedValueOnce(new Blob([Uint8Array.of(1)]));
+    vi.mocked(prepareForumPhoto).mockResolvedValue({ ok: false, error: 'tooLarge' });
+    renderWithLocale(
+      <ShopNoteEditControl
+        message={{ ...shopMessage, hasPhoto: true, photoCount: 1 }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect((await screen.findByRole('img')).getAttribute('src')).toBe('blob:loaded');
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(['large'], 'large.jpg', { type: 'image/jpeg' })] },
+    });
+    expect(await screen.findByText('Keep photos under 1 MB and videos under 32 MB')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    expect(screen.queryByText('Keep photos under 1 MB and videos under 32 MB')).toBeNull();
+  });
+
   it('loads stills that are not already shown and drops them on failure', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -1245,7 +1277,9 @@ describe('ShopNoteEditControl', () => {
       target: { value: 'x'.repeat(8000) },
     });
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
-    expect(screen.getByText('The description is too long (max. 1000 characters).')).toBeTruthy();
+    expect(
+      screen.getByText('The shop text is too long. Shorten it to at most 1000 characters.'),
+    ).toBeTruthy();
     expect(setMessageShopText).not.toHaveBeenCalled();
   });
 

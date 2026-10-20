@@ -1003,7 +1003,7 @@ test('shop description and username rules appear while typing before submit', as
     field.dispatchEvent(new Event('input', { bubbles: true }));
   });
   await expect(
-    page.getByText('The description must not contain control characters other than line breaks.'),
+    page.getByText('The shop text must not contain control characters other than line breaks.'),
   ).toBeVisible();
   await expect(text).toHaveAttribute('aria-invalid', 'true');
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();

@@ -1100,14 +1100,14 @@
     "fil": "Bukas ang Magdagdag ng shop sa 3 sa 5 · Teksto. Ang Teksto ng shop ay may @ at bukas ang listahan ng Mga tao, na may @ada."
   },
   "/shops:add-text": {
-    "de": "Shop hinzufügen ist geöffnet bei Schritt 3 von 5 · Text. Eine vollständige Stecknadel Kiki's Bakery ist bereits gesetzt. Der Shoptext ist leer. Der Hinweis 20 weitere Zeichen. ist sichtbar. Weiter ist die einzige Schaltfläche auf der Karte und bleibt deaktiviert.",
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 3 von 5 · Text. Eine vollständige Stecknadel Kiki's Bakery ist bereits gesetzt. Der Shop-Text ist leer. Der Hinweis 20 weitere Zeichen. ist sichtbar. Weiter ist die einzige Schaltfläche auf der Karte und bleibt deaktiviert.",
     "es": "Añadir una tienda está abierto en el paso 3 de 5 · Texto. Ya hay un pin completo Kiki's Bakery. El texto de la tienda está vacío. El aviso 20 caracteres más. es visible. Siguiente es el único botón de la tarjeta y permanece desactivado.",
     "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 sa 5 · Teksto. May kumpletong pin na Kiki's Bakery. Walang laman ang teksto ng shop. Nakikita ang palatandaan 20 pang karakter. Ang Susunod ang tanging pindutan sa kard at naka-disable."
   },
   "/shops:add-description-error": {
-    "de": "Shop hinzufügen ist bei Schritt 3 von 5 · Text geöffnet. Der Shoptext enthält ein unzulässiges Steuerzeichen. Der konkrete Fehler ist vor dem Absenden unter dem Textfeld sichtbar. Weiter ist deaktiviert.",
-    "es": "Añadir una tienda está abierto en el paso 3 de 5 · Texto. El texto contiene un carácter de control no permitido. El error concreto aparece bajo el campo antes de enviar. Siguiente está desactivado.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 sa 5 · Teksto. May hindi pinapayagang control character ang teksto. Nakikita sa ilalim ng field ang tiyak na error bago isumite. Naka-disable ang Susunod."
+    "de": "Shop hinzufügen ist bei Schritt 3 von 5 · Text geöffnet. Der Shop-Text enthält ein unzulässiges Steuerzeichen. Der konkrete Fehler ist vor dem Absenden unter dem Textfeld sichtbar. Weiter ist deaktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 3 de 5 · Texto. El texto de la tienda contiene un carácter de control no permitido. El error concreto aparece bajo el campo antes de enviar. Siguiente está desactivado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 sa 5 · Teksto. May hindi pinapayagang control character ang teksto ng shop. Nakikita sa ilalim ng field ang tiyak na error bago isumite. Naka-disable ang Susunod."
   },
   "/shops:add-user-invalid": {
     "de": "Shop hinzufügen ist bei Schritt 4 von 5 · 21.gifts-Benutzer geöffnet. Der Benutzername ist _, der Formatfehler steht unter dem Feld und Weiter ist deaktiviert.",
@@ -1115,9 +1115,9 @@
     "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · 21.gifts user. _ ang username, nakikita sa ilalim ng field ang format error, at naka-disable ang Susunod."
   },
   "/shops:add-text-not-longer": {
-    "de": "Shop hinzufügen ist geöffnet bei Schritt 3 von 5 · Text. Eine vollständige Stecknadel Kiki's Bakery and Coffee House Zurich ist bereits gesetzt. Der Shoptext ist Fresh bread every morning. Der Hinweis Die Beschreibung muss länger sein als der Shopname. ist sichtbar. Weiter ist die einzige Schaltfläche auf der Karte und bleibt deaktiviert.",
-    "es": "Añadir una tienda está abierto en el paso 3 de 5 · Texto. Ya hay un pin completo Kiki's Bakery and Coffee House Zurich. El texto de la tienda es Fresh bread every morning. El aviso La descripción debe ser más larga que el nombre de la tienda. es visible. Siguiente es el único botón de la tarjeta y permanece desactivado.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 sa 5 · Teksto. May kumpletong pin na Kiki's Bakery and Coffee House Zurich. Ang teksto ng shop ay Fresh bread every morning. Nakikita ang palatandaan Dapat mas mahaba ang paglalarawan kaysa sa pangalan ng shop. Ang Susunod ang tanging pindutan sa kard at naka-disable."
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 3 von 5 · Text. Eine vollständige Stecknadel Kiki's Bakery and Coffee House Zurich ist bereits gesetzt. Der Shop-Text ist Fresh bread every morning. Der Hinweis Der Shop-Text muss länger sein als der Shopname. ist sichtbar. Weiter ist die einzige Schaltfläche auf der Karte und bleibt deaktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 3 de 5 · Texto. Ya hay un pin completo Kiki's Bakery and Coffee House Zurich. El Texto de la tienda es Fresh bread every morning. El aviso El texto de la tienda debe ser más largo que el nombre de la tienda. es visible. Siguiente es el único botón de la tarjeta y permanece desactivado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 3 sa 5 · Teksto. May kumpletong pin na Kiki's Bakery and Coffee House Zurich. Ang Teksto ng shop ay Fresh bread every morning. Nakikita ang palatandaan Dapat mas mahaba ang teksto ng shop kaysa sa pangalan ng shop. Ang Susunod ang tanging pindutan sa kard at naka-disable."
   },
   "/moderate/payouts:empty": {
     "de": "Personal-Seite, wenn niemand berechtigt war. In diesen sieben Tagen war niemand berechtigt. Keine Tabelle.",
@@ -1135,9 +1135,9 @@
     "fil": "Wala pang mensaheng nakatanggap ng Bitcoin. Napili ang Aktibo, nakatago ang hindi pa bayad na tala, nakikita ang pambubuo."
   },
   "/welcome:composer-place-set": {
-    "de": "Eine bestätigte Stecknadel Stall sitzt unter Ort hinzufügen als Vorschau mit Ort entfernen. Das Feld ist geschlossen.",
-    "es": "Un pin confirmado Stall aparece bajo Añadir un lugar como vista previa con Quitar lugar. El panel está cerrado.",
-    "fil": "Ang kumpirmadong tulos na Stall ay nasa ilalim ng Magdagdag ng lugar bilang paunang tanaw na may Alisin ang lugar. Sarado ang panelo."
+    "de": "Eine bestätigte Stecknadel Stall sitzt unter Ort hinzufügen als Vorschau mit Ort entfernen. Der Dialog ist geschlossen.",
+    "es": "Un pin confirmado Stall aparece bajo Añadir un lugar como vista previa con Quitar lugar. El diálogo está cerrado.",
+    "fil": "Ang kumpirmadong pin na Stall ay nasa ilalim ng Magdagdag ng lugar bilang preview na may Alisin ang lugar. Sarado ang dialog."
   },
   "/shops:table-more": {
     "de": "Tabelle ist ausgewählt. Eine Zeile Cafe Luna wird angezeigt, und Mehr anzeigen steht unter der Tabelle. Der Eingabebereich ist weg.",
@@ -1355,9 +1355,9 @@
     "fil": "Nakabuka ang tala ng tindahan, ang patlang ng reaksyon nito ay naglalaman ng @, at bukas ang listahan ng Mga tao. Sarado pa ang Magdagdag ng shop."
   },
   "/shops:add-user": {
-    "de": "Shop hinzufügen ist geöffnet bei Schritt 4 von 5 · 21.gifts-Nutzer. Der Benutzername ist leer. Weiter ist die einzige Schaltfläche auf der Karte.",
-    "es": "Añadir una tienda está abierto en el paso 4 de 5 · usuario de 21.gifts. El nombre de usuario está vacío. Siguiente es el único botón en la tarjeta.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · User ng 21.gifts. Walang laman ang pangalan ng gumagamit. Ang Susunod ang tanging pindutan sa kahon."
+    "de": "Shop hinzufügen ist bei Schritt 4 von 5 · 21.gifts-Nutzer geöffnet. Der Benutzername ist leer, und der Hinweis Optional. Leer lassen, um zu überspringen. steht direkt unter dem Feld. Weiter ist aktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 4 de 5 · usuario de 21.gifts. El nombre de usuario está vacío y el aviso Opcional. Déjalo en blanco para saltarlo. está directamente bajo el campo. Siguiente está habilitado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 4 sa 5 · User ng 21.gifts. Walang laman ang username at nasa ilalim mismo ng field ang Opsyonal. Iwanang blangko para laktawan. Naka-enable ang Susunod."
   },
   "/pos:loading": {
     "de": "Die Anfrage der Kasse ist noch nicht zurück. Überschrift Kasse, die Adresse und die Warteanzeige. Noch kein Betrag festlegen.",
@@ -1480,9 +1480,9 @@
     "fil": "Pagkatapos ng Ipakita ang orihinal: nakatago ang isinaling katawan ng teksto, ang icon na Mga wika ay pinangalanang Ipakita ang pagsasalin at walang nakikitang teksto."
   },
   "/welcome:composer-place-set-coords": {
-    "de": "Eine bestätigte Stecknadel ohne Namen sitzt unter Ort hinzufügen als 14.50000, 120.90000 mit Ort entfernen. Die Leiste ist geschlossen.",
-    "es": "Una chincheta confirmada sin nombre queda bajo Añadir un lugar como 14.50000, 120.90000 con Quitar lugar. El panel está cerrado.",
-    "fil": "Ang isang kumpirmadong tuldok na walang pangalan ay nasa ilalim ng Magdagdag ng lugar bilang 14.50000, 120.90000 na may Alisin ang lugar. Sarado ang panig na panel."
+    "de": "Eine bestätigte Stecknadel ohne Namen sitzt unter Ort hinzufügen als 14.50000, 120.90000 mit Ort entfernen. Der Dialog ist geschlossen.",
+    "es": "Un pin confirmado sin nombre queda bajo Añadir un lugar como 14.50000, 120.90000 con Quitar lugar. El diálogo está cerrado.",
+    "fil": "Ang kumpirmadong pin na walang pangalan ay nasa ilalim ng Magdagdag ng lugar bilang 14.50000, 120.90000 na may Alisin ang lugar. Sarado ang dialog."
   },
   "/members/[accountId]:translate-hidden": {
     "de": "Nach Original anzeigen: übersetzter Textkörper ausgeblendet, das Sprachen-Symbol heisst Übersetzung anzeigen und hat keinen sichtbaren Text.",
@@ -1520,9 +1520,9 @@
     "fil": "Pagkatapos ng Ipakita ang orihinal: nakatago ang isinaling katawan ng teksto, ang icon na Mga wika ay pinangalanang Ipakita ang pagsasalin at walang nakikitang teksto."
   },
   "/welcome:composer-place-unlabeled": {
-    "de": "Ort hinzufügen ist geöffnet mit einer Karte. Ein Klick hat eine Stecknadel gesetzt und der Ortsname ist noch leer. Diesen Ort verwenden ist sichtbar.",
-    "es": "Añadir un lugar está abierto con un mapa. Un clic ha colocado una chincheta y el nombre del lugar sigue vacío. Usar este lugar está visible.",
-    "fil": "Bukas ang Magdagdag ng lugar na may mapa. May klik na naglagay ng tuldok at walang laman pa ang pangalan ng lugar. Nakikita ang Gamitin ang lugar na ito."
+    "de": "Ort hinzufügen ist als Dialog mit einer Karte geöffnet. Ein Klick hat eine Stecknadel gesetzt, und der Ortsname ist noch leer. Diesen Ort verwenden ist sichtbar und aktiviert.",
+    "es": "Añadir un lugar está abierto como diálogo con un mapa. Un clic ha colocado un pin y el nombre del lugar sigue vacío. Usar este lugar está visible y habilitado.",
+    "fil": "Bukas bilang dialog na may mapa ang Magdagdag ng lugar. Nagtakda ng pin ang isang click at wala pa ring laman ang Pangalan ng lugar. Nakikita at naka-enable ang Gamitin ang lugar na ito."
   },
   "/messages:damus": {
     "de": "Personal (Moderator). Damus ausgewählt. Die Liste zeigt npub1abc…xyz. Auswahl vorhanden. Keine angeheftete Zeile Personalraum / Moderatoren.",
@@ -1830,14 +1830,14 @@
     "fil": "Habang nakabinbin ang DELETE ng sagot, naka-disable ang kumpirmasyon at pagkansela sa sagot na iyon at pumapalit sa tsek ang isang umiikot na tagapaghintay."
   },
   "/shops:add-summary": {
-    "de": "Shop hinzufügen ist geöffnet bei Schritt 5 von 5 · Zusammenfassung. Fotos und die Nutzerin oder der Nutzer wurden übersprungen. Die Zusammenfassung zeigt Kiki's Bakery und Bahnhofstrasse 12, 8001 Zürich, Schweiz. Die Beschreibung ist Fresh bread every morning. Senden ist die einzige Schaltfläche auf der Karte und ist aktiviert.",
-    "es": "Añadir una tienda está abierto en el paso 5 de 5 · Resumen. Se omitieron las fotos y la usuaria o el usuario. El resumen muestra Kiki's Bakery y Bahnhofstrasse 12, 8001 Zürich, Suiza. La descripción es Fresh bread every morning. Publicar es el único botón de la ficha y está activado.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 sa 5 · Buod. Nilaktawan ang mga litrato at ang user. Ipinapakita ng buod ang Kiki's Bakery at Bahnhofstrasse 12, 8001 Zürich, Switzerland. Ang paglalarawan ay Fresh bread every morning. Ang I-post ang tanging pindutan sa kard at naka-enable."
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 5 von 5 · Zusammenfassung. Fotos und die Nutzerin oder der Nutzer wurden übersprungen. Die Zusammenfassung zeigt Kiki's Bakery und Bahnhofstrasse 12, 8001 Zürich, Schweiz. Der Shop-Text ist Fresh bread every morning. Senden ist die einzige Schaltfläche auf der Karte und ist aktiviert.",
+    "es": "Añadir una tienda está abierto en el paso 5 de 5 · Resumen. Se omitieron las fotos y la usuaria o el usuario. El resumen muestra Kiki's Bakery y Bahnhofstrasse 12, 8001 Zürich, Suiza. El Texto de la tienda es Fresh bread every morning. Publicar es el único botón de la ficha y está activado.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 sa 5 · Buod. Nilaktawan ang mga litrato at ang user. Ipinapakita ng buod ang Kiki's Bakery at Bahnhofstrasse 12, 8001 Zürich, Switzerland. Ang Teksto ng shop ay Fresh bread every morning. Ang I-post ang tanging pindutan sa kard at naka-enable."
   },
   "/shops:add-post-rejected": {
-    "de": "Shop hinzufügen ist geöffnet bei Schritt 5 von 5 · Zusammenfassung. Senden wurde gedrückt und abgelehnt. Die Zusammenfassung bleibt geöffnet. Die Meldung Die Beschreibung muss 20 bis 1000 Zeichen lang und länger als der Shopname sein. ist sichtbar.",
-    "es": "Añadir una tienda está abierto en el paso 5 de 5 · Resumen. Se pulsó Publicar y fue rechazado. El resumen sigue abierto. La alerta La descripción debe tener entre 20 y 1000 caracteres y ser más larga que el nombre de la tienda. está visible.",
-    "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 sa 5 · Buod. Pinindot ang I-post at tinanggihan. Bukas pa ang buod. Nakikita ang alerto Dapat 20 hanggang 1000 karakter ang paglalarawan at mas mahaba kaysa sa pangalan ng shop."
+    "de": "Shop hinzufügen ist geöffnet bei Schritt 5 von 5 · Zusammenfassung. Senden wurde gedrückt und aus einem unbekannten Servergrund abgelehnt. Die Zusammenfassung bleibt geöffnet, und die allgemeine Meldung Nachricht konnte nicht gesendet werden ist sichtbar.",
+    "es": "Añadir una tienda está abierto en el paso 5 de 5 · Resumen. Se pulsó Publicar y fue rechazado por un motivo desconocido del servidor. El resumen sigue abierto y el error genérico No se pudo publicar el mensaje está visible.",
+    "fil": "Bukas ang Magdagdag ng shop sa hakbang 5 sa 5 · Buod. Pinindot ang I-post at tinanggihan dahil sa hindi kilalang dahilan ng server. Bukas pa ang buod at nakikita ang pangkalahatang error na Hindi ma-post ang mensahe."
   },
   "/shops:place": {
     "de": "Eine Shop-Notiz mit einem Ort. Die Karte zeigt einen MapPin-Link Happyland · Bahnhofstrasse 12, 8001 Zürich, Schweiz zu /map?pin=m-place. Das rohe Token #21GiftsShop bleibt verborgen.",
@@ -2070,9 +2070,9 @@
     "fil": "Natukoy ang Telegram o ibang WebView sa loob ng app. Ulo Buksan ang page na ito sa browser; walang pindutang Mag-log in; sa halip Buksan sa browser at Kopyahin ang link."
   },
   "/welcome:composer-place-confirm": {
-    "de": "Ort hinzufügen ist geöffnet mit einer Karte. Ein Klick hat eine Stecknadel gesetzt, Ortsname ist Stall, und Diesen Ort verwenden ist weiterhin sichtbar. Die Stecknadel ist noch nicht bestätigt.",
-    "es": "Añadir un lugar está abierto con un mapa. Un clic ha colocado un marcador, Nombre del lugar es Stall, y Usar este lugar sigue visible. El marcador aún no está confirmado.",
-    "fil": "Bukas ang Magdagdag ng lugar na may mapa. May klik na naglagay ng pananda, Pangalan ng lugar ay Stall, at Gamitin ang lugar na ito ay nakikita pa. Hindi pa kumpirmado ang pananda."
+    "de": "Ort hinzufügen ist als Dialog mit einer Karte geöffnet. Ein Klick hat eine Stecknadel gesetzt, Ortsname ist Stall, und Diesen Ort verwenden ist sichtbar und aktiviert. Die Stecknadel ist noch nicht bestätigt.",
+    "es": "Añadir un lugar está abierto como diálogo con un mapa. Un clic ha colocado un pin, Nombre del lugar es Stall y Usar este lugar está visible y habilitado. El pin aún no está confirmado.",
+    "fil": "Bukas bilang dialog na may mapa ang Magdagdag ng lugar. Nagtakda ng pin ang isang click, Stall ang Pangalan ng lugar, at nakikita at naka-enable ang Gamitin ang lugar na ito. Hindi pa kumpirmado ang pin."
   },
   "/shops:composer-place-confirm": {
     "de": "Ort hinzufügen ist geöffnet mit einer Karte. Ein Klick hat eine Stecknadel gesetzt, Shopname ist Stall, und die vollständige Adresse ist ausgefüllt. Diesen Ort verwenden ist sichtbar und aktiviert. Die Stecknadel ist noch nicht bestätigt.",
@@ -2365,9 +2365,9 @@
     "fil": "Humingi ng pera ang napili. Hakbang 1 sa 4 na naka-pindot ang Araw-araw sa pildoras sa itaas ng halaga at 1000 ang nai-type sa bitcoin kaya $1.00 ang lumalabas sa ilalim ng patlang. Naka-enable ang Magpatuloy."
   },
   "/shops:staff-place-edit": {
-    "de": "Eine Moderatorsitzung. Die Notiz Cafe Luna hat den Ort Happyland. Ort bearbeiten ist geöffnet. Der Kartenrahmen ist sichtbar und Ort entfernen ist sichtbar. Die Stecknadel ist noch nicht geändert.",
-    "es": "Una sesión de moderador. La nota Cafe Luna tiene el lugar Happyland. Editar lugar está abierto. El marco del mapa está visible y Quitar lugar está visible. El pin aún no se ha cambiado.",
-    "fil": "Isang sesyon ng tagapamagitan. Ang tala ng Cafe Luna ay may lugar na Happyland. Bukas ang I-edit ang lugar. Nakikita ang kuwadro ng mapa at nakikita ang Alisin ang lugar. Hindi pa nababago ang tuldok."
+    "de": "Eine Moderatorsitzung. Die Notiz Cafe Luna hat den Ort Happyland. Ort bearbeiten ist als Dialog geöffnet. Der Kartenrahmen und Ort entfernen sind sichtbar. Die Stecknadel ist noch nicht geändert.",
+    "es": "Una sesión de moderador. La nota Cafe Luna tiene el lugar Happyland. Editar el lugar está abierto como diálogo. El mapa y Quitar el lugar están visibles. El pin aún no se ha cambiado.",
+    "fil": "Isang session ng moderator. May lugar na Happyland ang tala ng Cafe Luna. Bukas bilang dialog ang Baguhin ang lugar. Nakikita ang mapa at Alisin ang lugar. Hindi pa nababago ang pin."
   },
   "/messages:thread-gift": {
     "de": "Offiziellen Thread geöffnet. fromMe-Blase nur mit Geschenk senden ₿21. Verfasser weiterhin sichtbar: ImagePlus in der Nachrichtenzeile, Betrag in der Zeile unter der Nachricht. Auswähler fehlt.",
@@ -2788,11 +2788,6 @@
     "de": "Forumszeile für Ada mit der Bildunterschrift Caption waiting for the photo to load. und hasPhoto, Bilddaten noch nicht geladen, daher kein <img>. Ein fehlgeschlagener Fotoabruf sieht gleich aus (nur-Text-Zeile) — keine eigene Variante.",
     "es": "Fila del foro de Ada con el pie Caption waiting for the photo to load. y hasPhoto, los bytes de la imagen aún no cargados así que no hay <img>. Una obtención fallida de la foto se ve igual (fila solo de texto) — no es una variante aparte.",
     "fil": "Hilera sa forum para kay Ada na may palabas na Caption waiting for the photo to load. at hasPhoto, hindi pa na-load ang mga byte ng larawan kaya walang <img>. Magkapareho ang hitsura ng nabigong pagkuha ng larawan (hilera ng teksto lang) — hindi ito hiwalay na baryante."
-  },
-  "/shops:composer-place-set-coords": {
-    "de": "Ort hinzufügen ist mit einer Karte geöffnet. Ein Klick hat eine Stecknadel gesetzt. Shopname ist Happyland. Die Adressfelder sind leer. Die Fußzeile Ausfüllen: Strasse, Hausnummer, Postleitzahl, Ort, Land. ist sichtbar. Diesen Ort verwenden ist deaktiviert. Weiter bleibt deaktiviert. Die Shopliste ist weiterhin leer.",
-    "es": "Añadir un lugar está abierto con un mapa. Un clic ha puesto un pin. Nombre de la tienda es Happyland. Los campos de dirección están vacíos. El pie Completa: Calle, Número, Código postal, Ciudad, País. es visible. Usar este lugar está desactivado. Siguiente sigue desactivado. La lista de tiendas sigue vacía.",
-    "fil": "Bukas ang Magdagdag ng lugar na may mapa. May klik na naglagay ng tuldok. Pangalan ng shop ay Happyland. Walang laman ang mga patlang ng address. Nakikita sa footer ang Punan: Kalye, Numero ng bahay, Postal code, Lungsod, Bansa. Naka-disable ang Gamitin ang lugar na ito. Naka-disable pa ang Susunod. Walang laman pa rin ang listahan ng tindahan."
   },
   "/shops:staff-place-edit-unavailable-error": {
     "de": "Eine Moderatorsitzung. Ort bearbeiten ist ohne Kartenschlüssel geöffnet, und Ort entfernen wurde gedrückt. Das Speichern ist fehlgeschlagen, daher ist der Hinweis Der Ort konnte nicht gespeichert werden. Bitte erneut versuchen. sichtbar und Ort entfernen bleibt.",
@@ -3958,5 +3953,35 @@
     "de": "Verifizieren-POST unterwegs. Ja deaktiviert mit einem Drehsymbol; Nein deaktiviert. Der Name Ada und die Frage bleiben.",
     "es": "POST de Verificar en curso. Sí desactivado con un indicador giratorio; No desactivado. El nombre Ada y la pregunta siguen.",
     "fil": "POST ng I-verify na isinasagawa. Naka-disable ang Oo na may umiikot na pananda; naka-disable ang Hindi. Nananatili ang pangalan na Ada at ang tanong."
+  },
+  "/welcome:shop-edit-place-open": {
+    "de": "In Schritt 2 von 5 · Ort hat die Moderation Ort bearbeiten gedrückt. Das Formularblatt Ort und Adresse des Shops ist mit der vorhandenen Stecknadel, dem Shopnamen und der vollständigen Adresse geöffnet. Sein innerer Bereich ist die aktive Scrollfläche; Kopfzeile und angeheftete Fusszeile mit Diesen Ort verwenden bleiben sichtbar.",
+    "es": "En el paso 2 de 5 · Lugar, el moderador pulsó Editar el lugar. La hoja de formulario Lugar y dirección de la tienda está abierta con el pin, el nombre y la dirección completa existentes. Su cuerpo interior es la superficie de desplazamiento activa; el encabezado y el pie fijado con Usar este lugar permanecen visibles.",
+    "fil": "Sa hakbang 2 sa 5 · Lugar, pinindot ng moderator ang Baguhin ang lugar. Bukas ang form sheet na Lugar at address ng shop kasama ang kasalukuyang pin, pangalan ng shop, at buong address. Ang loob nito ang aktibong scroll surface; nananatiling nakikita ang header at naka-pin na footer na may Gamitin ang lugar na ito."
+  },
+  "/welcome:shop-edit-save-rejected": {
+    "de": "Die Moderation hat den Shop-Text geändert und Änderungen speichern gedrückt. Die API hat das Speichern mit dem bekannten Grund Der Shopname darf die Strasse oder die Postleitzahl nicht enthalten. abgelehnt. Der Editor kehrt zu Schritt 2 von 5 · Ort zurück und zeigt diesen Grund weiter an.",
+    "es": "El moderador cambió el Texto de la tienda y pulsó Guardar cambios. La API rechazó el guardado con el motivo conocido El nombre de la tienda no debe contener la calle ni el código postal. El editor vuelve al paso 2 de 5 · Lugar y mantiene visible ese motivo.",
+    "fil": "Binago ng moderator ang Teksto ng shop at pinindot ang I-save ang mga pagbabago. Tinanggihan ng API ang pag-save dahil Hindi dapat kasama sa pangalan ng shop ang kalye o ang postal code. Bumalik ang editor sa hakbang 2 sa 5 · Lugar at nananatiling nakikita ang dahilang iyon."
+  },
+  "/members/[accountId]:shop-edit-place-open": {
+    "de": "In Schritt 2 von 5 · Ort hat die Moderation Ort bearbeiten gedrückt. Das Formularblatt Ort und Adresse des Shops ist mit der vorhandenen Stecknadel, dem Shopnamen und der vollständigen Adresse geöffnet. Sein innerer Bereich ist die aktive Scrollfläche; Kopfzeile und angeheftete Fusszeile mit Diesen Ort verwenden bleiben sichtbar.",
+    "es": "En el paso 2 de 5 · Lugar, el moderador pulsó Editar el lugar. La hoja de formulario Lugar y dirección de la tienda está abierta con el pin, el nombre y la dirección completa existentes. Su cuerpo interior es la superficie de desplazamiento activa; el encabezado y el pie fijado con Usar este lugar permanecen visibles.",
+    "fil": "Sa hakbang 2 sa 5 · Lugar, pinindot ng moderator ang Baguhin ang lugar. Bukas ang form sheet na Lugar at address ng shop kasama ang kasalukuyang pin, pangalan ng shop, at buong address. Ang loob nito ang aktibong scroll surface; nananatiling nakikita ang header at naka-pin na footer na may Gamitin ang lugar na ito."
+  },
+  "/members/[accountId]:shop-edit-save-rejected": {
+    "de": "Die Moderation hat den Shop-Text geändert und Änderungen speichern gedrückt. Die API hat das Speichern mit dem bekannten Grund Der Shopname darf die Strasse oder die Postleitzahl nicht enthalten. abgelehnt. Der Editor kehrt zu Schritt 2 von 5 · Ort zurück und zeigt diesen Grund weiter an.",
+    "es": "El moderador cambió el Texto de la tienda y pulsó Guardar cambios. La API rechazó el guardado con el motivo conocido El nombre de la tienda no debe contener la calle ni el código postal. El editor vuelve al paso 2 de 5 · Lugar y mantiene visible ese motivo.",
+    "fil": "Binago ng moderator ang Teksto ng shop at pinindot ang I-save ang mga pagbabago. Tinanggihan ng API ang pag-save dahil Hindi dapat kasama sa pangalan ng shop ang kalye o ang postal code. Bumalik ang editor sa hakbang 2 sa 5 · Lugar at nananatiling nakikita ang dahilang iyon."
+  },
+  "/messages/[id]:shop-edit-place-open": {
+    "de": "In Schritt 2 von 5 · Ort hat die Moderation Ort bearbeiten gedrückt. Das Formularblatt Ort und Adresse des Shops ist mit der vorhandenen Stecknadel, dem Shopnamen und der vollständigen Adresse geöffnet. Sein innerer Bereich ist die aktive Scrollfläche; Kopfzeile und angeheftete Fusszeile mit Diesen Ort verwenden bleiben sichtbar.",
+    "es": "En el paso 2 de 5 · Lugar, el moderador pulsó Editar el lugar. La hoja de formulario Lugar y dirección de la tienda está abierta con el pin, el nombre y la dirección completa existentes. Su cuerpo interior es la superficie de desplazamiento activa; el encabezado y el pie fijado con Usar este lugar permanecen visibles.",
+    "fil": "Sa hakbang 2 sa 5 · Lugar, pinindot ng moderator ang Baguhin ang lugar. Bukas ang form sheet na Lugar at address ng shop kasama ang kasalukuyang pin, pangalan ng shop, at buong address. Ang loob nito ang aktibong scroll surface; nananatiling nakikita ang header at naka-pin na footer na may Gamitin ang lugar na ito."
+  },
+  "/messages/[id]:shop-edit-save-rejected": {
+    "de": "Die Moderation hat den Shop-Text geändert und Änderungen speichern gedrückt. Die API hat das Speichern mit dem bekannten Grund Der Shopname darf die Strasse oder die Postleitzahl nicht enthalten. abgelehnt. Der Editor kehrt zu Schritt 2 von 5 · Ort zurück und zeigt diesen Grund weiter an.",
+    "es": "El moderador cambió el Texto de la tienda y pulsó Guardar cambios. La API rechazó el guardado con el motivo conocido El nombre de la tienda no debe contener la calle ni el código postal. El editor vuelve al paso 2 de 5 · Lugar y mantiene visible ese motivo.",
+    "fil": "Binago ng moderator ang Teksto ng shop at pinindot ang I-save ang mga pagbabago. Tinanggihan ng API ang pag-save dahil Hindi dapat kasama sa pangalan ng shop ang kalye o ang postal code. Bumalik ang editor sa hakbang 2 sa 5 · Lugar at nananatiling nakikita ang dahilang iyon."
   }
 }

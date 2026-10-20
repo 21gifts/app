@@ -889,7 +889,7 @@ const en = {
   'shops.problemPostalCodeChLi':
     'The postal code must have 4 digits for Switzerland and Liechtenstein.',
   'shops.problemPostalCodeOther':
-    'The postal code must have 2–16 letters, digits, spaces, or hyphens.',
+    'The postal code must start with a letter or digit and have 2–16 letters, digits, spaces, or hyphens.',
   'shops.problemPostalCodeControls': 'The postal code must not contain control characters.',
   'shops.problemCityRequired': 'Enter the city (1–80 characters).',
   'shops.problemCityLength': 'The city must be 1–80 characters.',
@@ -898,12 +898,13 @@ const en = {
   'shops.problemCountryRequired': 'Choose a country.',
   'shops.problemCountryInvalid': 'Choose a country from the list.',
   'shops.problemDescriptionShort': 'Describe the shop in at least {n} more characters.',
-  'shops.problemDescriptionLong': 'The description is too long (max. 1000 characters).',
-  'shops.problemDescriptionNotLonger': 'The description must be longer than the shop name.',
+  'shops.problemDescriptionLong':
+    'The shop text is too long. Shorten it to at most 1000 characters.',
+  'shops.problemDescriptionNotLonger': 'The shop text must be longer than the shop name.',
   'shops.problemDescriptionControls':
-    'The description must not contain control characters other than line breaks.',
+    'The shop text must not contain control characters other than line breaks.',
   'shops.problemDescription':
-    'The description must be 20 to 1000 characters and longer than the shop name.',
+    'The shop text must be 20 to 1000 characters and longer than the shop name.',
   'shops.problemAddressInvalid':
     'The address is invalid. The house number must start with a digit, the postal code must have 4 digits in Switzerland and Liechtenstein, the city must contain a letter, and the country must be chosen from the list.',
   'shops.problemUsernameFormat':
@@ -2048,9 +2049,9 @@ const de = {
   'shops.problemNameLong': 'Der Shopname darf höchstens 80 Zeichen lang sein.',
   'shops.problemNameControls': 'Der Shopname darf keine Steuerzeichen enthalten.',
   'shops.problemNameLongerThanText':
-    'Der Shopname muss kürzer sein als der Shoptext. Kürzen Sie den Namen oder bearbeiten Sie zuerst den Shoptext.',
+    'Der Shopname muss kürzer sein als der Shop-Text. Kürzen Sie den Namen oder bearbeiten Sie zuerst den Shop-Text.',
   'shops.problemShopTextLengthForName':
-    'Der Shoptext muss 20 bis 1000 Zeichen lang sein, bevor dieser Ort gespeichert werden kann. Bearbeiten Sie zuerst den Shoptext.',
+    'Der Shop-Text muss 20 bis 1000 Zeichen lang sein, bevor dieser Ort gespeichert werden kann. Bearbeiten Sie zuerst den Shop-Text.',
   'shops.problemAddress':
     'Geben Sie die vollständige Adresse ein: Strasse, Hausnummer, Postleitzahl, Ort und Land.',
   'shops.problemStreetRequired': 'Geben Sie die Strasse ein (1–120 Zeichen).',
@@ -2067,7 +2068,7 @@ const de = {
   'shops.problemPostalCodeChLi':
     'Die Postleitzahl muss für die Schweiz und Liechtenstein 4 Ziffern haben.',
   'shops.problemPostalCodeOther':
-    'Die Postleitzahl muss 2–16 Buchstaben, Ziffern, Leerzeichen oder Bindestriche haben.',
+    'Die Postleitzahl muss mit einem Buchstaben oder einer Ziffer beginnen und 2–16 Buchstaben, Ziffern, Leerzeichen oder Bindestriche enthalten.',
   'shops.problemPostalCodeControls': 'Die Postleitzahl darf keine Steuerzeichen enthalten.',
   'shops.problemCityRequired': 'Geben Sie den Ort ein (1–80 Zeichen).',
   'shops.problemCityLength': 'Der Ort muss 1–80 Zeichen lang sein.',
@@ -2076,12 +2077,13 @@ const de = {
   'shops.problemCountryRequired': 'Wählen Sie ein Land.',
   'shops.problemCountryInvalid': 'Wählen Sie ein Land aus der Liste.',
   'shops.problemDescriptionShort': 'Beschreiben Sie den Shop in mindestens {n} weiteren Zeichen.',
-  'shops.problemDescriptionLong': 'Die Beschreibung ist zu lang (max. 1000 Zeichen).',
-  'shops.problemDescriptionNotLonger': 'Die Beschreibung muss länger sein als der Shopname.',
+  'shops.problemDescriptionLong':
+    'Der Shop-Text ist zu lang. Kürzen Sie ihn auf höchstens 1000 Zeichen.',
+  'shops.problemDescriptionNotLonger': 'Der Shop-Text muss länger sein als der Shopname.',
   'shops.problemDescriptionControls':
-    'Die Beschreibung darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten.',
+    'Der Shop-Text darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten.',
   'shops.problemDescription':
-    'Die Beschreibung muss 20 bis 1000 Zeichen lang und länger als der Shopname sein.',
+    'Der Shop-Text muss 20 bis 1000 Zeichen lang und länger als der Shopname sein.',
   'shops.problemAddressInvalid':
     'Die Adresse ist ungültig. Die Hausnummer muss mit einer Ziffer beginnen, die Postleitzahl muss in der Schweiz und in Liechtenstein 4 Ziffern haben, der Ort muss einen Buchstaben enthalten und das Land muss aus der Liste ausgewählt werden.',
   'shops.problemUsernameFormat':
@@ -3248,7 +3250,7 @@ const es = {
   'shops.problemPostalCodeChLi':
     'El código postal debe tener 4 dígitos para Suiza y Liechtenstein.',
   'shops.problemPostalCodeOther':
-    'El código postal debe tener de 2 a 16 letras, dígitos, espacios o guiones.',
+    'El código postal debe empezar con una letra o un dígito y tener entre 2 y 16 letras, dígitos, espacios o guiones.',
   'shops.problemPostalCodeControls': 'El código postal no debe contener caracteres de control.',
   'shops.problemCityRequired': 'Introduce la ciudad (1–80 caracteres).',
   'shops.problemCityLength': 'La ciudad debe tener entre 1 y 80 caracteres.',
@@ -3257,13 +3259,14 @@ const es = {
   'shops.problemCountryRequired': 'Elige un país.',
   'shops.problemCountryInvalid': 'Elige un país de la lista.',
   'shops.problemDescriptionShort': 'Describe la tienda en al menos {n} caracteres más.',
-  'shops.problemDescriptionLong': 'La descripción es demasiado larga (máx. 1000 caracteres).',
+  'shops.problemDescriptionLong':
+    'El texto de la tienda es demasiado largo. Acórtalo a un máximo de 1000 caracteres.',
   'shops.problemDescriptionNotLonger':
-    'La descripción debe ser más larga que el nombre de la tienda.',
+    'El texto de la tienda debe ser más largo que el nombre de la tienda.',
   'shops.problemDescriptionControls':
-    'La descripción no debe contener caracteres de control salvo saltos de línea.',
+    'El texto de la tienda no debe contener caracteres de control salvo saltos de línea.',
   'shops.problemDescription':
-    'La descripción debe tener entre 20 y 1000 caracteres y ser más larga que el nombre de la tienda.',
+    'El texto de la tienda debe tener entre 20 y 1000 caracteres y ser más largo que el nombre de la tienda.',
   'shops.problemAddressInvalid':
     'La dirección no es válida. El número debe empezar con un dígito, el código postal debe tener 4 dígitos en Suiza y Liechtenstein, la ciudad debe contener una letra y el país debe elegirse de la lista.',
   'shops.problemUsernameFormat':
@@ -4426,7 +4429,8 @@ const fil = {
   'shops.problemPostalCodeRequired': 'Ilagay ang postal code.',
   'shops.problemPostalCodeChLi':
     'Dapat 4 na digit ang postal code para sa Switzerland at Liechtenstein.',
-  'shops.problemPostalCodeOther': 'Dapat 2–16 titik, digit, espasyo, o gitling ang postal code.',
+  'shops.problemPostalCodeOther':
+    'Dapat magsimula sa titik o digit ang postal code at magkaroon ng 2–16 titik, digit, espasyo, o gitling.',
   'shops.problemPostalCodeControls': 'Hindi dapat may control character ang postal code.',
   'shops.problemCityRequired': 'Ilagay ang lungsod (1–80 karakter).',
   'shops.problemCityLength': 'Dapat 1–80 karakter ang lungsod.',
@@ -4435,13 +4439,14 @@ const fil = {
   'shops.problemCountryRequired': 'Pumili ng bansa.',
   'shops.problemCountryInvalid': 'Pumili ng bansa mula sa listahan.',
   'shops.problemDescriptionShort': 'Ilarawan ang shop sa hindi bababa sa {n} pang karakter.',
-  'shops.problemDescriptionLong': 'Masyadong mahaba ang paglalarawan (max. 1000 karakter).',
+  'shops.problemDescriptionLong':
+    'Masyadong mahaba ang teksto ng shop. Paikliin ito sa hindi hihigit sa 1000 karakter.',
   'shops.problemDescriptionNotLonger':
-    'Dapat mas mahaba ang paglalarawan kaysa sa pangalan ng shop.',
+    'Dapat mas mahaba ang teksto ng shop kaysa sa pangalan ng shop.',
   'shops.problemDescriptionControls':
-    'Hindi dapat may control character ang paglalarawan maliban sa line break.',
+    'Hindi dapat may control character ang teksto ng shop maliban sa line break.',
   'shops.problemDescription':
-    'Dapat 20 hanggang 1000 karakter ang paglalarawan at mas mahaba kaysa sa pangalan ng shop.',
+    'Dapat 20 hanggang 1000 karakter ang teksto ng shop at mas mahaba kaysa sa pangalan ng shop.',
   'shops.problemAddressInvalid':
     'Hindi wasto ang address. Dapat magsimula sa digit ang numero ng bahay, dapat may 4 na digit ang postal code sa Switzerland at Liechtenstein, dapat may titik ang lungsod, at dapat piliin ang bansa mula sa listahan.',
   'shops.problemUsernameFormat':

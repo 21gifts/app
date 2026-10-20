@@ -348,7 +348,8 @@ export function shopDescriptionProblem(
   const lf = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const description = stripShopHashtag(lf);
   const name = label ?? '';
-  if (!hasNoForumControls(lf)) {
+  // The API trims before it checks, so a pasted edge tab is fine.
+  if (!hasNoForumControls(lf.trim())) {
     return 'controls';
   }
   if (description.length < SHOP_DESCRIPTION_MIN) {
@@ -367,14 +368,14 @@ export function shopDescriptionProblem(
  * Optional shop-account username format problem, mirroring the API regex.
  *
  * @param raw - Optional username with or without one leading `@`.
- * @returns `'format'` when non-empty input is invalid, otherwise `null`.
+ * @returns `'format'` when non-empty input is invalid, otherwise `null`. A bare
+ * `@` counts as empty, like in the API.
  */
 export function shopUsernameProblem(raw: string): 'format' | null {
-  const trimmed = raw.trim();
-  if (trimmed === '') {
+  const username = raw.trim().replace(/^@/, '').toLowerCase();
+  if (username === '') {
     return null;
   }
-  const username = trimmed.replace(/^@/, '').toLowerCase();
   return /^[a-z0-9][a-z0-9._-]{0,31}$/.test(username) ? null : 'format';
 }
 

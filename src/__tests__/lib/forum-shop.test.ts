@@ -296,8 +296,10 @@ describe('forum-shop', () => {
       ).toBe(null);
       expect(shopDescriptionProblem('Fresh bread every morning.', null)).toBe(null);
       expect(shopDescriptionProblem('Fresh bread\u0001 every morning.', null)).toBe('controls');
-      expect(shopDescriptionProblem('\tFresh bread every morning.', null)).toBe('controls');
+      expect(shopDescriptionProblem('\tFresh bread every morning.', null)).toBe(null);
       expect(shopDescriptionProblem('Fresh bread\n every morning.', null)).toBe(null);
+      expect(shopDescriptionProblem('Fresh bread every morning.\t', null)).toBe(null);
+      expect(shopDescriptionProblem('Fresh bread\u0001 every morning.', null)).toBe('controls');
       expect(SHOP_DESCRIPTION_MIN).toBe(20);
     });
   });
@@ -307,7 +309,8 @@ describe('forum-shop', () => {
       expect(shopUsernameProblem('')).toBe(null);
       expect(shopUsernameProblem('@alice_21')).toBe(null);
       expect(shopUsernameProblem('@Ada')).toBe(null);
-      expect(shopUsernameProblem('@')).toBe('format');
+      expect(shopUsernameProblem('@')).toBe(null);
+      expect(shopUsernameProblem(' @ ')).toBe(null);
       expect(shopUsernameProblem('_')).toBe('format');
       expect(shopUsernameProblem('A User')).toBe('format');
       expect(shopUsernameProblem(`a${'x'.repeat(32)}`)).toBe('format');

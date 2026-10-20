@@ -363,12 +363,12 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect(screen.getByText('The description must be longer than the shop name.')).toBeTruthy();
+    expect(screen.getByText('The shop text must be longer than the shop name.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
     fireEvent.change(screen.getByLabelText('Shop text'), {
       target: { value: 'Fresh bread every morning here.' },
     });
-    expect(screen.queryByText('The description must be longer than the shop name.')).toBeNull();
+    expect(screen.queryByText('The shop text must be longer than the shop name.')).toBeNull();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
   });
 
@@ -559,7 +559,9 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add a shop' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect(screen.getByText('The description is too long (max. 1000 characters).')).toBeTruthy();
+    expect(
+      screen.getByText('The shop text is too long. Shorten it to at most 1000 characters.'),
+    ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 
@@ -587,9 +589,7 @@ describe('ShopAddWizard', () => {
     expect(description.getAttribute('maxlength')).toBe('1000');
     expect(description.getAttribute('aria-invalid')).toBe('true');
     expect(
-      screen.getByText(
-        'The description must not contain control characters other than line breaks.',
-      ),
+      screen.getByText('The shop text must not contain control characters other than line breaks.'),
     ).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByText('27 / 1000')).toBeTruthy();
@@ -702,12 +702,12 @@ describe('ShopAddWizard', () => {
     [
       'shopDescription' as const,
       '3 / 5 · Text',
-      'The description must be 20 to 1000 characters and longer than the shop name.',
+      'The shop text must be 20 to 1000 characters and longer than the shop name.',
     ],
     [
       'shopDescriptionControls' as const,
       '3 / 5 · Text',
-      'The description must not contain control characters other than line breaks.',
+      'The shop text must not contain control characters other than line breaks.',
     ],
     [
       'usernameInvalid' as const,

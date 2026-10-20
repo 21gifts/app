@@ -114,7 +114,7 @@
 
 ## Function: postMessageVideo
 
-- **Purpose:** Multipart `POST /forum/messages` with `video` + optional `poster`, optional `goalCurrency` and `goalAmount` (trimmed draft, comma stays; omitted from the form when either is missing, and on replies), optional `placeLat` / `placeLng` / `placeLabel` (only when a pin is set; replies must not send them), and optional `shopUsername` (leading `@` stripped; omitted when blank). Not `goalSats`.
+- **Purpose:** Multipart `POST /forum/messages` with `video` + optional `poster`, optional `goalCurrency` and `goalAmount` (trimmed draft, comma stays; omitted from the form when either is missing, and on replies), optional `placeLat` / `placeLng` / `placeLabel` plus `placeStreet` / `placeHouseNumber` / `placePostalCode` / `placeCity` / `placeCountry` when the pin has an address (place fields are top-level only; replies must not send them), and optional `shopUsername` (leading `@` stripped; omitted when blank). Not `goalSats`.
 - **Inputs:** session token, `{ text, video, poster?, goalCurrency?, goalAmount?, place?, shopUsername? }`.
 - **Returns / side effects:** `ForumMessage`. On 400, 404, or 429 uses the api error string when present; otherwise throws `Could not post your message`.
 - **Used by:** `ForumLoader` submit.
@@ -1542,14 +1542,14 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: shopDescriptionProblem
 
-- **Purpose:** Description problem of a shop note. Apart from LF/CR, control characters are rejected. After CRLF is folded to LF and the shop tag is stripped, the text must be 20–1000 characters and strictly longer than the pin label.
+- **Purpose:** Shop-text problem of a shop note. Apart from LF/CR, control characters are rejected. After CRLF is folded to LF and the shop tag is stripped, the text must be 20–1000 characters and strictly longer than the pin label.
 - **Inputs:** Composer or stored note `text`, and the pin `label` (or `null`).
 - **Returns / side effects:** `'short'`, `'long'`, `'notLonger'`, `'controls'`, or `null`. No network.
 - **Used by:** `ShopAddWizard`.
 
 ## Function: shopDescriptionRemaining
 
-- **Purpose:** Remaining characters needed to reach the 20-character shop description minimum after the shop tag is stripped.
+- **Purpose:** Remaining characters needed to reach the 20-character shop-text minimum after the shop tag is stripped.
 - **Inputs:** Composer or stored note `text`.
 - **Returns / side effects:** Non-negative count. No network.
 - **Used by:** `ShopAddWizard` for the text-step hint.
@@ -2179,7 +2179,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: postMessage
 
-- **Purpose:** POST `/forum/messages` with bearer + `{ text, photo?, photos?, inReplyTo?, goalCurrency?, goalAmount?, place?, shopUsername? }`, parse `forumMessageSchema`, and return the created message or reply (text and/or up to ten photos). Non-empty `photos` dual-sends `photo` as the first still plus `photos`. A non-blank string `takenAt` on a still is included; a blank or missing time is omitted. Optional `goalCurrency` and `goalAmount` go together on a top-level note, never as `goalSats`; omitted on replies and when either is missing. `goalSats` remains a field of the read note. Optional `place` is `{ lat, lng, label }` on a top-level note; omitted when unset. Replies must not send it. Optional `shopUsername` is sent only when the trimmed value without a leading `@` is non-blank.
+- **Purpose:** POST `/forum/messages` with bearer + `{ text, photo?, photos?, inReplyTo?, goalCurrency?, goalAmount?, place?, shopUsername? }`, parse `forumMessageSchema`, and return the created message or reply (text and/or up to ten photos). Non-empty `photos` dual-sends `photo` as the first still plus `photos`. A non-blank string `takenAt` on a still is included; a blank or missing time is omitted. Optional `goalCurrency` and `goalAmount` go together on a top-level note, never as `goalSats`; omitted on replies and when either is missing. `goalSats` remains a field of the read note. Optional `place` is `{ lat, lng, label, address? }` on a top-level note, where `address` contains street, house number, postal code, city, and country; omitted when unset. Replies must not send it. Optional `shopUsername` is sent only when the trimmed value without a leading `@` is non-blank.
 - **Inputs:** `sessionToken`, `input` with `text`, optional `{ contentType, data, takenAt? }` photo, optional `photos` array (max 10), optional `inReplyTo` parent id (thread composer only), optional `goalCurrency` and `goalAmount` (together, never `goalSats`), optional `place` (`ForumPlacePin`, top-level only), and optional `shopUsername` (leading `@` stripped; omitted when blank).
 - **Returns / side effects:** `ForumMessage`. Omits `inReplyTo`, `goalCurrency`/`goalAmount`, `place`, and `shopUsername` from the JSON body when absent; omits both Ask fields on replies even if passed. On 400 or 429 uses the api error string when present; otherwise throws `Could not post your message`. On 403 uses the api error string when present; otherwise throws `A reply needs a Bitcoin payment`. On 404 whose api error is exactly `No account with that username` throws that string; any other 404 throws `NoteDeletedError`.
 - **Used by:** `ForumLoader`, `MemberProfileScreen`.
@@ -4107,7 +4107,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: MentionTextarea
 
 - **Purpose:** Forum text field that lists people as soon as `@` is typed. The field stays mounted when the list opens. The first page is prefetched for the signed-in session. More letters narrow the list to usernames that start that way in the same update, even when a previous server page is still stored. Choosing a row inserts `@username ` and closes the list. A space already after the token stays a single space. A choice that would pass the length limit is not inserted. Keys during text composition stay with the input method. The caret sits after that space even when the text was already that handle. Escape or Tab, even while the first page is still loading, or a click outside the open list, keeps each such `@` closed until that character is gone, and a different `@` does not inherit the closure when text shifts. Choosing does not remember that `@` as closed. The list sits under the field, and above it only when this list would not fit underneath and there is more room above. No session, or a disabled field, is a plain textarea.
-- **Inputs:** Controlled value, `onChange`, disabled, wrapper and textarea classes, accessible name, and optional placeholder, max length, rows, and textarea ref.
+- **Inputs:** Controlled value, `onChange`, disabled, wrapper and textarea classes, accessible name, and optional placeholder, max length, rows, `ariaDescribedBy`, `ariaInvalid`, and textarea ref.
 - **Returns / side effects:** The textarea. When a token is active and at least one person matches, a `People` listbox. Inserts the chosen handle through `onChange`.
 - **Used by:** The post composer and reply composer in `ForumBoard`, the ask-for-money text step in `ForumAskWizard`, the shop text step in `ShopAddWizard`, and `InboxScreen` (inbox and the moderator room).
 

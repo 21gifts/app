@@ -2425,6 +2425,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'shop-edit-place-open',
+    image: 'members-shop-edit-place-open.png',
+    visual: 'state-members-shop-edit-place-open',
+    needle: "shotScreen(page, 'state-members-shop-edit-place-open')",
+  },
+  {
+    route: '/members/[accountId]',
     id: 'shop-edit-text',
     image: 'members-shop-edit-text.png',
     visual: 'state-members-shop-edit-text',
@@ -2443,6 +2450,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-shop-edit-summary.png',
     visual: 'state-members-shop-edit-summary',
     needle: "shotScreen(page, 'state-members-shop-edit-summary')",
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'shop-edit-save-rejected',
+    image: 'members-shop-edit-save-rejected.png',
+    visual: 'state-members-shop-edit-save-rejected',
+    needle: "shotScreen(page, 'state-members-shop-edit-save-rejected')",
   },
   {
     route: '/members/[accountId]/verify',
@@ -4380,6 +4394,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]',
+    id: 'shop-edit-place-open',
+    image: 'messages-id-shop-edit-place-open.png',
+    visual: 'state-messages-id-shop-edit-place-open',
+    needle: "shotScreen(page, 'state-messages-id-shop-edit-place-open')",
+  },
+  {
+    route: '/messages/[id]',
     id: 'shop-edit-text',
     image: 'messages-id-shop-edit-text.png',
     visual: 'state-messages-id-shop-edit-text',
@@ -4398,6 +4419,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-shop-edit-summary.png',
     visual: 'state-messages-id-shop-edit-summary',
     needle: "shotScreen(page, 'state-messages-id-shop-edit-summary')",
+  },
+  {
+    route: '/messages/[id]',
+    id: 'shop-edit-save-rejected',
+    image: 'messages-id-shop-edit-save-rejected.png',
+    visual: 'state-messages-id-shop-edit-save-rejected',
+    needle: "shotScreen(page, 'state-messages-id-shop-edit-save-rejected')",
   },
   {
     route: '/messages/[id]',
@@ -4688,6 +4716,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'shop-edit-place-open',
+    image: 'welcome-shop-edit-place-open.png',
+    visual: 'state-welcome-shop-edit-place-open',
+    needle: "shotScreen(page, 'state-welcome-shop-edit-place-open')",
+  },
+  {
+    route: '/welcome',
     id: 'shop-edit-text',
     image: 'welcome-shop-edit-text.png',
     visual: 'state-welcome-shop-edit-text',
@@ -4706,6 +4741,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-shop-edit-summary.png',
     visual: 'state-welcome-shop-edit-summary',
     needle: "shotScreen(page, 'state-welcome-shop-edit-summary')",
+  },
+  {
+    route: '/welcome',
+    id: 'shop-edit-save-rejected',
+    image: 'welcome-shop-edit-save-rejected.png',
+    visual: 'state-welcome-shop-edit-save-rejected',
+    needle: "shotScreen(page, 'state-welcome-shop-edit-save-rejected')",
   },
   {
     route: '/shops',
@@ -5147,13 +5189,6 @@ export const SCREEN_VARIANTS = [
     image: 'shops-composer-place-unlabeled.png',
     visual: 'state-shops-composer-place-unlabeled',
     needle: "shotScreen(page, 'state-shops-composer-place-unlabeled'",
-  },
-  {
-    route: '/shops',
-    id: 'composer-place-set-coords',
-    image: 'shops-composer-place-set-coords.png',
-    visual: 'state-shops-composer-place-set-coords',
-    needle: "shotScreen(page, 'state-shops-composer-place-set-coords')",
   },
   {
     route: '/shops',

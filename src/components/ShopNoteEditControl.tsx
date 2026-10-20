@@ -557,6 +557,7 @@ export function ShopNoteEditControl({
               keptMedia={kept}
               onRemoveKept={(index) => {
                 setKept((current) => current.filter((_, keptIndex) => keptIndex !== index));
+                setPhotoError(null);
               }}
               imagesOnly
               photoError={photoError}

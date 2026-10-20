@@ -1341,7 +1341,7 @@ describe('PlaceField', () => {
     ],
     [
       'Shop description must be 20 to 1000 characters and longer than the shop name',
-      'The description must be 20 to 1000 characters and longer than the shop name.',
+      'The shop text must be 20 to 1000 characters and longer than the shop name.',
     ],
     [
       'Place address is invalid',

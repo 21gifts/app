@@ -1439,7 +1439,7 @@ describe('ForumLoader', () => {
     const feedback = document.getElementById(description.getAttribute('aria-describedby')!);
     expect(description.getAttribute('aria-invalid')).toBe('true');
     expect(feedback?.textContent).toContain(
-      'The description must be 20 to 1000 characters and longer than the shop name.',
+      'The shop text must be 20 to 1000 characters and longer than the shop name.',
     );
     expect(screen.queryByText('Could not post your message')).toBeNull();
   });
@@ -1839,7 +1839,7 @@ describe('ForumLoader', () => {
     expect(description.getAttribute('aria-invalid')).toBe('true');
     expect(
       screen.getByText(
-        'The description must be 20 to 1000 characters and longer than the shop name.',
+        'The shop text must be 20 to 1000 characters and longer than the shop name.',
       ),
     ).toBeTruthy();
     expectNoShopComposeOrPost();
@@ -1864,9 +1864,7 @@ describe('ForumLoader', () => {
     const description = await screen.findByLabelText('Shop text');
     expect(description.getAttribute('aria-invalid')).toBe('true');
     expect(
-      screen.getByText(
-        'The description must not contain control characters other than line breaks.',
-      ),
+      screen.getByText('The shop text must not contain control characters other than line breaks.'),
     ).toBeTruthy();
     expectNoShopComposeOrPost();
 
@@ -4509,7 +4507,7 @@ describe('ForumLoader', () => {
       const feedback = document.getElementById(description.getAttribute('aria-describedby')!);
       expect(description.getAttribute('aria-invalid')).toBe('true');
       expect(feedback?.textContent).toContain(
-        'The description must be 20 to 1000 characters and longer than the shop name.',
+        'The shop text must be 20 to 1000 characters and longer than the shop name.',
       );
     });
     expect(screen.queryByText('Could not post your message')).toBeNull();
@@ -5160,7 +5158,7 @@ describe('ForumLoader', () => {
     expect((await screen.findByRole('alert')).textContent).toBe('Could not post your message');
     expect(
       screen.queryByText(
-        'The description must be 20 to 1000 characters and longer than the shop name.',
+        'The shop text must be 20 to 1000 characters and longer than the shop name.',
       ),
     ).toBeNull();
   });
@@ -5177,7 +5175,7 @@ describe('ForumLoader', () => {
     ],
     [
       'Shop description must be 20 to 1000 characters and longer than the shop name',
-      'The description must be 20 to 1000 characters and longer than the shop name.',
+      'The shop text must be 20 to 1000 characters and longer than the shop name.',
     ],
     [
       'Place address is invalid',
@@ -5292,7 +5290,7 @@ describe('ForumLoader', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe(
-      'The description must be 20 to 1000 characters and longer than the shop name.',
+      'The shop text must be 20 to 1000 characters and longer than the shop name.',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     await waitFor(() => {

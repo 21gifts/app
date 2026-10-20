@@ -2787,7 +2787,7 @@ describe('ForumBoard', () => {
     ['shopAddress', 'Enter the full address: street, house number, postal code, city and country.'],
     [
       'shopDescription',
-      'The description must be 20 to 1000 characters and longer than the shop name.',
+      'The shop text must be 20 to 1000 characters and longer than the shop name.',
     ],
     [
       'placeAddress',

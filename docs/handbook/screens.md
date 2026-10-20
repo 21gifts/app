@@ -1738,6 +1738,14 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ![21.gifts welcome shop edit place](images/welcome-shop-edit-place.png)
 
+### Variant: shop-edit-place-open
+
+From step **2 / 5 · Place**, the moderator pressed **Edit place**. The **Shop place and address**
+form sheet is open with the existing pin, shop name, and full address. Its inner body is the active
+scroll surface; the header Close and pinned footer **Use this place** stay visible.
+
+![21.gifts welcome shop edit place open](images/welcome-shop-edit-place-open.png)
+
 ### Variant: shop-edit-text
 
 **Next** again. Step **3 / 5 · Text** is open. The shop text is already filled.
@@ -1755,6 +1763,14 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 **Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**.
 
 ![21.gifts welcome shop edit summary](images/welcome-shop-edit-summary.png)
+
+### Variant: shop-edit-save-rejected
+
+The moderator changed **Shop text** and pressed **Save changes**. The API rejected the save with
+the known reason **The shop name must not contain the street or the postal code.** The editor
+returns to step **2 / 5 · Place** and keeps that reason visible.
+
+![21.gifts welcome shop edit save rejected](images/welcome-shop-edit-save-rejected.png)
 
 ## Screen: /shops
 
@@ -2020,7 +2036,7 @@ field before submission. **Next** is disabled.
 **Add a shop** is open on step **3 / 5 · Text**. A complete pin
 **Kiki's Bakery and Coffee House Zurich** is already set. The shop text is
 **Fresh bread every morning.** The field error
-**The description must be longer than the shop name.** and live counter are visible. **Next** is
+**The shop text must be longer than the shop name.** and live counter are visible. **Next** is
 disabled.
 
 ![21.gifts shops add text not longer](images/shops-add-text-not-longer.png)
@@ -2042,7 +2058,7 @@ is visible under the field, and **Next** is disabled.
 ### Variant: add-summary
 
 **Add a shop** is open on step **5 / 5 · Summary**. Photos and the user were skipped. The summary
-shows **Kiki's Bakery** and **Bahnhofstrasse 12, 8001 Zürich, Switzerland**. The description is
+shows **Kiki's Bakery** and **Bahnhofstrasse 12, 8001 Zürich, Switzerland**. The shop text is
 **Fresh bread every morning.** **Post** is the only button on the card, and it is enabled.
 
 ![21.gifts shops add summary](images/shops-add-summary.png)
@@ -2193,15 +2209,6 @@ empty. The footer lists the fields that remain to fill. **Use this place** is vi
 The shop list is still empty.
 
 ![21.gifts shops composer place unlabeled](images/shops-composer-place-unlabeled.png)
-
-### Variant: composer-place-set-coords
-
-**Add a place** is open as a dialog with a map. A click has set a pin. **Shop name** is
-**Happyland**. The address fields are empty. The footer lists street, house number, postal code,
-city, and country. **Use this place** is disabled. **Next** stays disabled. The shop list is still
-empty.
-
-![21.gifts shops composer place set coordinates](images/shops-composer-place-set-coords.png)
 
 ### Variant: staff-place
 
@@ -2958,6 +2965,14 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ![21.gifts member shop edit place](images/members-shop-edit-place.png)
 
+### Variant: shop-edit-place-open
+
+From step **2 / 5 · Place**, the moderator pressed **Edit place**. The **Shop place and address**
+form sheet is open with the existing pin, shop name, and full address. Its inner body is the active
+scroll surface; the header Close and pinned footer **Use this place** stay visible.
+
+![21.gifts member shop edit place open](images/members-shop-edit-place-open.png)
+
 ### Variant: shop-edit-text
 
 **Next** again. Step **3 / 5 · Text** is open.
@@ -2975,6 +2990,14 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 **Next** again. Step **5 / 5 · Summary** is open. The card lists Photos **None**, Place **None**, Text **Cafe Luna**, and 21.gifts user **None**.
 
 ![21.gifts member shop edit summary](images/members-shop-edit-summary.png)
+
+### Variant: shop-edit-save-rejected
+
+The moderator changed **Shop text** and pressed **Save changes**. The API rejected the save with
+the known reason **The shop name must not contain the street or the postal code.** The editor
+returns to step **2 / 5 · Place** and keeps that reason visible.
+
+![21.gifts member shop edit save rejected](images/members-shop-edit-save-rejected.png)
 
 ## Screen: /members/[accountId]/verify
 
@@ -4809,6 +4832,14 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 
 ![21.gifts public message shop edit place](images/messages-id-shop-edit-place.png)
 
+### Variant: shop-edit-place-open
+
+From step **2 / 5 · Place**, the moderator pressed **Edit place**. The **Shop place and address**
+form sheet is open with the existing pin, shop name, and full address. Its inner body is the active
+scroll surface; the header Close and pinned footer **Use this place** stay visible.
+
+![21.gifts public message shop edit place open](images/messages-id-shop-edit-place-open.png)
+
 ### Variant: shop-edit-text
 
 **Next** again. Step **3 / 5 · Text** is open. **History** still says there are no edits yet.
@@ -4826,6 +4857,14 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 **Next** again. Step **5 / 5 · Summary** is open. **Save changes** is the button on the card. **History** still says there are no edits yet.
 
 ![21.gifts public message shop edit summary](images/messages-id-shop-edit-summary.png)
+
+### Variant: shop-edit-save-rejected
+
+The moderator changed **Shop text** and pressed **Save changes**. The API rejected the save with
+the known reason **The shop name must not contain the street or the postal code.** The editor
+returns to step **2 / 5 · Place** and keeps that reason visible.
+
+![21.gifts public message shop edit save rejected](images/messages-id-shop-edit-save-rejected.png)
 
 ### Variant: sunday
 

@@ -3124,6 +3124,7 @@ test.describe('onboarding screens', () => {
   });
 
   test('welcome shop-edit-open', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -3185,6 +3186,13 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ edits: [] }),
       });
     });
+    await page.route('**/forum/messages/m-shop/text', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Shop name must not contain the address' }),
+      });
+    });
     await page.goto('/welcome');
     await page.getByRole('button', { name: 'Edit shop note' }).click();
     await expect(page.getByText('1 / 5 · Photos')).toBeVisible();
@@ -3198,6 +3206,11 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('2 / 5 · Place')).toBeVisible();
     await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-place');
+    await page.getByRole('button', { name: 'Edit place' }).click();
+    await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
+    await page.getByRole('button', { name: 'Use this place' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-place-open');
+    await page.getByRole('button', { name: 'Close' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('3 / 5 · Text')).toBeVisible();
     await page.getByText('3 / 5 · Text').scrollIntoViewIfNeeded();
@@ -3211,6 +3224,21 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-shop-edit-summary');
+    const back = page.locator('[data-app-chrome]').getByRole('button', { name: 'Back' });
+    await back.click();
+    await back.click();
+    await page
+      .getByLabel('Shop text')
+      .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    const rejected = page.getByText(
+      'The shop name must not contain the street or the postal code.',
+    );
+    await expect(rejected.first()).toBeVisible();
+    await rejected.first().scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-shop-edit-save-rejected');
   });
 
   test('state /welcome laws', async ({ page }) => {
@@ -6367,6 +6395,7 @@ test.describe('onboarding screens', () => {
   test('state /members shop-edit-open', async ({ page }) => {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const noteId = '55555555-5555-4555-8555-555555555555';
+    await installBaselineMap(page, { click: true });
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -6455,6 +6484,13 @@ test.describe('onboarding screens', () => {
         body: JSON.stringify({ edits: [] }),
       });
     });
+    await page.route(`**/forum/messages/${noteId}/text`, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Shop name must not contain the address' }),
+      });
+    });
     await page.goto(`/members/${memberId}`);
     await page.getByRole('button', { name: '1 post' }).click();
     await page.getByRole('button', { name: 'Edit shop note' }).click();
@@ -6469,6 +6505,11 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('2 / 5 · Place')).toBeVisible();
     await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-place');
+    await page.getByRole('button', { name: 'Edit place' }).click();
+    await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
+    await page.getByRole('button', { name: 'Use this place' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-place-open');
+    await page.getByRole('button', { name: 'Close' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('3 / 5 · Text')).toBeVisible();
     await page.getByText('3 / 5 · Text').scrollIntoViewIfNeeded();
@@ -6482,6 +6523,21 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-shop-edit-summary');
+    const back = page.locator('[data-app-chrome]').getByRole('button', { name: 'Back' });
+    await back.click();
+    await back.click();
+    await page
+      .getByLabel('Shop text')
+      .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    const rejected = page.getByText(
+      'The shop name must not contain the street or the postal code.',
+    );
+    await expect(rejected.first()).toBeVisible();
+    await rejected.first().scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-shop-edit-save-rejected');
   });
 
   /** Posts open on Carol's profile, her note expanded, reaction field ready. */
@@ -11005,6 +11061,7 @@ test.describe('onboarding screens', () => {
 
   test('state /messages/[id] shop-edit-open', async ({ page }) => {
     const id = '12121212-1212-4121-8121-121212121212';
+    await installBaselineMap(page, { click: true });
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
     });
@@ -11039,6 +11096,13 @@ test.describe('onboarding screens', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ edits: [] }),
+      });
+    });
+    await page.route(`**/forum/messages/${id}/text`, async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Shop name must not contain the address' }),
       });
     });
     const shopNote = {
@@ -11094,6 +11158,11 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('2 / 5 · Place')).toBeVisible();
     await page.getByText('2 / 5 · Place').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-place');
+    await page.getByRole('button', { name: 'Edit place' }).click();
+    await expect(page.getByRole('dialog', { name: 'Shop place and address' })).toBeVisible();
+    await page.getByRole('button', { name: 'Use this place' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-place-open');
+    await page.getByRole('button', { name: 'Close' }).click();
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('3 / 5 · Text')).toBeVisible();
     await page.getByText('3 / 5 · Text').scrollIntoViewIfNeeded();
@@ -11107,6 +11176,21 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toBeVisible();
     await page.getByText('5 / 5 · Summary').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-shop-edit-summary');
+    const back = page.locator('[data-app-chrome]').getByRole('button', { name: 'Back' });
+    await back.click();
+    await back.click();
+    await page
+      .getByLabel('Shop text')
+      .fill('Cafe Luna is open every morning and on Sunday afternoons.');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    const rejected = page.getByText(
+      'The shop name must not contain the street or the postal code.',
+    );
+    await expect(rejected.first()).toBeVisible();
+    await rejected.first().scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-shop-edit-save-rejected');
   });
 
   test('state /messages sunday', async ({ page }) => {
@@ -19035,34 +19119,6 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-composer-place-unlabeled', false);
   });
 
-  test('shops composer-place-set-coords', async ({ page }) => {
-    await stubPlaceMap(page);
-    await seedAda(page);
-    await fulfillMixedSatsMessages(page);
-    await page.goto('/shops');
-    await expect(page.getByText('No shops yet — add the first one.')).toBeVisible();
-    await page.getByRole('button', { name: 'Add a shop' }).click();
-    await page.getByRole('button', { name: 'Next' }).click();
-    await page.getByRole('button', { name: 'Add a place' }).click();
-    await page.locator('.h-64').click();
-    const name = page.getByLabel('Shop name', { exact: true });
-    await name.fill('Happyland');
-    const confirm = page.getByRole('button', { name: 'Use this place' });
-    await expect(
-      page.getByText(/Fill in: Street, House number, Postal code, City, Country/),
-    ).toBeVisible();
-    await expect(confirm).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
-    await confirm.scrollIntoViewIfNeeded();
-    // Focusing the name leaves the dialog body at a timing-dependent offset.
-    await name.evaluate((node) => {
-      (node as HTMLInputElement).blur();
-      const port = node.closest('[data-scrollport]') as HTMLElement;
-      port.scrollTop = 0;
-    });
-    await shotScreen(page, 'state-shops-composer-place-set-coords');
-  });
-
   test('shops staff-place', async ({ page }) => {
     await seedAda(page, 'moderator');
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -20135,7 +20191,7 @@ test.describe('shops screens', () => {
       field.dispatchEvent(new Event('input', { bubbles: true }));
     });
     await expect(
-      page.getByText('The description must not contain control characters other than line breaks.'),
+      page.getByText('The shop text must not contain control characters other than line breaks.'),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await shotScreen(page, 'state-shops-add-description-error');
@@ -20161,9 +20217,7 @@ test.describe('shops screens', () => {
       const port = node.closest('[data-scrollport]') as HTMLElement;
       port.scrollTop = 0;
     });
-    await expect(
-      page.getByText('The description must be longer than the shop name.'),
-    ).toBeVisible();
+    await expect(page.getByText('The shop text must be longer than the shop name.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await shotScreen(page, 'state-shops-add-text-not-longer');
   });
