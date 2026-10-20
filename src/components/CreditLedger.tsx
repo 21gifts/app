@@ -280,8 +280,7 @@ function LongRepayment({
   return (
     <div className="mt-2">
       <p className="text-xs font-medium text-app-fg">
-        {t('forum.creditChartDebt')}{' '}
-        {totalAmountText(owed, fiat, numberFormat)}
+        {t('forum.creditChartDebt')} {totalAmountText(owed, fiat, numberFormat)}
       </p>
       <p className="mt-1 text-xs text-app-muted">
         {t('forum.creditRange', {
@@ -336,19 +335,11 @@ function LongRepayment({
           <li className="flex items-baseline justify-between gap-3 border-t border-app-border py-1.5">
             <span className="text-sm font-medium text-app-fg">{t('forum.creditTogether')}</span>
             <span className="shrink-0 text-right text-sm font-medium tabular-nums text-app-fg">
-              {totalAmountText(
-                dayAmount(usual.rows, fiat),
-                fiat,
-                numberFormat,
-              )}
+              {totalAmountText(dayAmount(usual.rows, fiat), fiat, numberFormat)}
               {' · '}
               {t('forum.creditDaysCount', { count: groups.length })}
               {' · '}
-              {totalAmountText(
-                dayAmount(ledger.repayments, fiat),
-                fiat,
-                numberFormat,
-              )}
+              {totalAmountText(dayAmount(ledger.repayments, fiat), fiat, numberFormat)}
             </span>
           </li>
         </ul>
@@ -399,11 +390,7 @@ function LongRepayment({
             .join(' ')}
           {restUsual !== null
             ? ` ${t('forum.creditUsualRest', {
-                amount: totalAmountText(
-                  dayAmount(restUsual.rows, fiat),
-                  fiat,
-                  numberFormat,
-                ),
+                amount: totalAmountText(dayAmount(restUsual.rows, fiat), fiat, numberFormat),
               })}`
             : ''}
         </p>
