@@ -7223,7 +7223,7 @@ Unsigned permalink of Cyrill's reply **You got it right.** The parent **Hello fr
 
 ## Screen: /messages/[id]/repayment-list
 
-- **Purpose:** The repayment list for one credit note: who gave, the chart, and every day's shares. The day rows render only here. The note, the forum, and a profile show a link instead of those rows. Nothing renders until the public ledger loads. A failed read stays blank. Chrome is PublicMessageChrome. There is no second back control.
+- **Purpose:** The repayment list for one credit note: who gave, the chart, and the plan. A fully given plan of more than 7 dated days is grouped by calendar month and lists only the days that differ from that month's usual amount; the pictured 2-day state still lists each day. The day rows render only here. The note, the forum, and a profile show a link instead of those rows. Nothing renders until the public ledger loads. A failed read stays blank. Chrome is PublicMessageChrome. There is no second back control.
 - **Inputs:** Dynamic route `id`. Loads `GET /messages/:id/repayment` through `getRepayment`. No session is required to view. Chrome follows the hydrated session.
 - **Actions:** The top-left arrow is the existing ProfileChromeLeft control (previous in-app view, or `/welcome` when this tab has none). No other control. Names are text.
 - **Used by:** Route `/messages/[id]/repayment-list` (`RepaymentListPage`). The **Repayment list** link on a collapsed `ForumGoalBar` and on `CreditLedger` summary.
@@ -7252,6 +7252,12 @@ Unsigned chrome only. The repayment request has not returned, so **Given**, the 
 Unsigned. The ledger loaded with no givers and no repayment rows. **Given** shows **No one has given yet.** **Paid back** shows **Each share is one bitcoin payment to that person.** and **The days are fixed once the credit is fully given. Repayment starts the day after that, but never before November 1, 2026. Until then this is the plan for what has been given.** No chart and no day rows.
 
 ![21.gifts repayment list empty](images/messages-id-repayment-list-empty.png)
+
+### Variant: overview
+
+Unsigned. A fully given plan of eight dated days for one person. Bea @bea is shown at ₿81 · $0.08. **Paid back** shows **Each share is one bitcoin payment to that person.** and **First repayment day: November 1, 2026.** The chart runs from 1 Nov 2026 to 8 Nov 2026. **Still owed** is ₿81 · $0.08, then **Nov 1, 2026 – Nov 8, 2026** and **0 of 8 days paid.** **Next repayment** is Nov 1, 2026 with Bea's ₿10 · $0.01 **Scheduled**. **Each day** lists Bea @bea at ₿10 · $0.01 · 8 days · ₿81 · $0.08, then **Together** at that same daily amount over 8 days. **November 2026** says **8 days · Scheduled**, **7 days at ₿10 · $0.01 a day.**, and **Bea @bea ₿10 · $0.01.** The different day is Nov 8, 2026 with Bea's ₿11 · $0.01 **Scheduled**. The note reads **Nov 8, 2026: Bea @bea ₿11 · $0.01 ₿11 · $0.01. All other days are ₿10 · $0.01.** This page has no **Repayment list** link.
+
+![21.gifts repayment list overview](images/messages-id-repayment-list-overview.png)
 
 ## Screen: /messages/[id]/author
 

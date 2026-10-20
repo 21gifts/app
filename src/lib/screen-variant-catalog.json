@@ -6972,6 +6972,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]/repayment-list:overview",
+    "label": "/messages/[id]/repayment-list overview",
+    "visual": "state-messages-id-repayment-list-overview",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]/author:default",
     "label": "/messages/[id]/author default",
     "visual": "screen-messages-id-author",

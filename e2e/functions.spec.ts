@@ -15126,6 +15126,80 @@ test('Function: RepaymentListPage — day rows render on the repayment list', as
   await expect(page.getByText('Due', { exact: true })).toBeVisible();
 });
 
+test('Function: CreditLedger — a long plan groups the months', async ({ page }) => {
+  const id = '11111111-1111-4111-8111-111111111111';
+  await page.route('**/gifts/stats**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalSats: 0,
+        totalBtc: '0',
+        totalUsd: '0.00',
+        totalChf: '0.00',
+        totalEur: '0.00',
+        totalPhp: '0.00',
+        spendOverTime: [{ day: '2026-09-01', sats: 100000000, usd: '100000.00' }],
+      }),
+    });
+  });
+  const repayments: {
+    dayIndex: number;
+    dueOn: string;
+    accountId: string;
+    name: string;
+    username: string;
+    amount: null;
+    sats: number;
+    status: 'scheduled';
+    via: 'lightning';
+  }[] = [];
+  for (let day = 0; day < 8; day += 1) {
+    const due = new Date(Date.UTC(2026, 10, 1 + day)).toISOString().slice(0, 10);
+    repayments.push({
+      dayIndex: day,
+      dueOn: due,
+      accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      name: 'Bea',
+      username: 'bea',
+      amount: null,
+      sats: day === 7 ? 11 : 10,
+      status: 'scheduled',
+      via: 'lightning',
+    });
+  }
+  await page.route(`**/messages/${id}/repayment`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        currency: 'BTC',
+        fundedAt: '2026-10-09T12:00:00.000Z',
+        startsOn: '2026-11-01',
+        termDays: 8,
+        daysDue: 0,
+        daysPaid: 0,
+        unassignedSats: 0,
+        givers: [
+          {
+            accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            name: 'Bea',
+            username: 'bea',
+            givenSats: 81,
+            givenAmount: null,
+          },
+        ],
+        repayments,
+        next: null,
+      }),
+    });
+  });
+  await page.goto(`/messages/${id}/repayment-list`);
+  await expect(page.getByText('Next repayment')).toBeVisible();
+  await expect(page.getByText(/7 days at/)).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Repayment list' })).toHaveCount(0);
+});
+
 test('Function: RepaymentPlanChart — dates run from the first day to the last', async ({
   page,
 }) => {
