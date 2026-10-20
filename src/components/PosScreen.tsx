@@ -228,6 +228,20 @@ function armOpen(memory: WalletSettled, charge: PosCharge): void {
   }
 }
 
+/** Make `charge` the open charge in `memory` again, when there was one. */
+function rearm(memory: WalletSettled, charge: PosCharge | null): void {
+  if (charge !== null) {
+    armOpen(memory, charge);
+  }
+}
+
+/** Create answers that say for certain no charge was made. */
+const POS_CREATE_REFUSALS = new Set([
+  'Amount is outside the wallet range',
+  'A payment is already open',
+  'Set a username first',
+]);
+
 /**
  * Drop a till write, the paid charges recorded as seen, and what the wallet
  * settled, left behind by a test. Production clears the write when the
@@ -310,6 +324,8 @@ function usePosTillState(): PosTillState {
   const [now, setNow] = useState(() => Date.now());
   const [showQr, setShowQr] = useState(false);
   const [reload, setReload] = useState(0);
+  // The read after a closed confirmation fails quietly: the till already shows what it needs.
+  const quietReload = useRef(false);
   const [, setSettledVersion] = useState(0);
   const memory = settledFor(session);
   const walletPaid = memory.paid;
@@ -338,6 +354,8 @@ function usePosTillState(): PosTillState {
     let alive = true;
     const mine = generation.current;
     const pending = tillWrite;
+    const quiet = quietReload.current;
+    quietReload.current = false;
     void (async (): Promise<void> => {
       if (pending !== null) {
         await pending;
@@ -357,7 +375,7 @@ function usePosTillState(): PosTillState {
           });
         });
       } catch {
-        if (!alive) {
+        if (!alive || quiet) {
           return;
         }
         whenCurrent(generation, mine, () => {
@@ -540,13 +558,39 @@ function usePosTillState(): PosTillState {
           setAmount('');
         });
       } catch (err) {
-        if (before !== null) {
-          // Back to the charge before, with any payment reported while the create was on its way.
-          armOpen(creating, before);
+        /* v8 ignore next -- createPosCharge only rejects with Error */
+        const message = err instanceof Error ? err.message : '';
+        const refused =
+          err instanceof WalletRequiredError ||
+          err instanceof CannotReceiveError ||
+          POS_CREATE_REFUSALS.has(message);
+        if (!refused) {
+          // The answer may be lost although the charge was made (and even paid): read the till once.
+          try {
+            const seq = startRead(reads);
+            const next = await fetchPosState(session);
+            const made =
+              next.charge !== null &&
+              (before === null || Date.parse(next.charge.createdAt) > Date.parse(before.createdAt));
+            whenCurrent(generation, mine, () => {
+              applyRead(reads, seq, () => {
+                setTill({ state: next, session });
+              });
+              if (made) {
+                setAmount('');
+              }
+            });
+            if (made) {
+              // The charge was made: the till shows it and counts the payments kept meanwhile.
+              return;
+            }
+          } catch {
+            // Unknown: fall back to the charge before.
+          }
         }
+        // Back to the charge before, with any payment reported while the create was on its way.
+        rearm(creating, before);
         whenCurrent(generation, mine, () => {
-          /* v8 ignore next -- createPosCharge only rejects with Error */
-          const message = err instanceof Error ? err.message : t('pos.error');
           if (err instanceof WalletRequiredError) {
             setError(t('pos.needWallet'));
           } else if (err instanceof CannotReceiveError) {
@@ -582,12 +626,21 @@ function usePosTillState(): PosTillState {
     setError(null);
     // The memory of the session that cancels, even if another session signs in meanwhile.
     const cancelling = settledFor(session);
+    // While the cancel is on its way the charge takes no payment: one reported meanwhile is kept,
+    // and pays the charge only if the cancel fails.
+    const cancelled = cancelling.open;
+    cancelling.open = null;
     const work = (async (): Promise<void> => {
       try {
         await cancelPosCharge(session);
-        // A cancelled charge is no longer paid by a payment that lands now; one whose cancel
-        // failed still is.
-        cancelling.open = null;
+      } catch {
+        rearm(cancelling, cancelled);
+        whenCurrent(generation, mine, () => {
+          setError(t('pos.error'));
+        });
+        return;
+      }
+      try {
         const seq = startRead(reads);
         const next = await fetchPosState(session);
         whenCurrent(generation, mine, () => {
@@ -642,6 +695,8 @@ function usePosTillState(): PosTillState {
     closePaid: (id) => {
       settledFor(session).closed.add(id);
       settledChanged();
+      setError(null);
+      quietReload.current = true;
       setReload((n) => n + 1);
     },
   };

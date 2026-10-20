@@ -2030,6 +2030,210 @@ describe('PosScreen', () => {
       expect(within(dialog).getByText('₿42')).toBeTruthy();
     });
 
+    it('takes over a charge whose create answer was lost, with the payment made meanwhile', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      const made = { ...OPEN, id: 'c2', createdAt: new Date().toISOString() };
+      let failPost: ((value: Response) => void) | undefined;
+      let serverCharge: Record<string, unknown> | null = ended;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return new Promise<Response>((resolve) => {
+              failPost = resolve;
+            });
+          }
+          const charge = serverCharge;
+          serverCharge = charge === ended ? null : charge;
+          return Promise.resolve(
+            jsonResponse({ charge, history: charge === null ? [] : [charge] }),
+          );
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      const amountPage = renderWithLocale(<PosAmount />);
+      await pressAmount('21');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(failPost).toBeDefined();
+      });
+      // The api made the ₿21 charge and it was paid, but the answer to the create is lost.
+      serverCharge = made;
+      receive(21);
+      await act(async () => {
+        failPost?.(jsonResponse({ error: 'Bad gateway' }, 502));
+      });
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/pos');
+      });
+      expect(screen.queryByRole('alert')).toBeNull();
+      amountPage.unmount();
+      renderWithLocale(<PosScreen />);
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('₿21')).toBeTruthy();
+      // The charge before keeps its own status: the payment was the new charge's.
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(within(history).getAllByText(/^Paid ✓ /)).toHaveLength(1);
+    });
+
+    it('falls back to the charge before when the read after a lost create answer fails', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return jsonResponse({ error: 'Bad gateway' }, 502);
+          }
+          reads += 1;
+          if (reads === 1) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          // The till's read at 0:00 and the amount page's read find no charge open.
+          if (reads <= 3) {
+            return jsonResponse({ charge: null, history: [ended] });
+          }
+          throw new TypeError('Failed to fetch');
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      renderWithLocale(<PosAmount />);
+      await pressAmount('5');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      expect(reads).toBe(4);
+      // The charge before is payable again for its late minute.
+      receive(21);
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/pos');
+      });
+    });
+
+    it('does not read the till again when the api refuses a create', async () => {
+      const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
+        init?.method === 'POST'
+          ? jsonResponse({ error: 'A payment is already open' }, 409)
+          : jsonResponse({ charge: null, history: [] }),
+      );
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosAmount />);
+      await pressAmount('5');
+      const before = fetchMock.mock.calls.length;
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      expect(await screen.findByText('A payment is already open.')).toBeTruthy();
+      expect(fetchMock.mock.calls.length).toBe(before + 1);
+    });
+
+    it('does not count a payment reported while a cancel that goes through is on its way', async () => {
+      let releaseDelete: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return new Promise<Response>((resolve) => {
+              releaseDelete = resolve;
+            });
+          }
+          return Promise.resolve(
+            releaseDelete === undefined
+              ? jsonResponse({ charge: OPEN, history: [OPEN] })
+              : jsonResponse({ charge: null, history: [{ ...OPEN, status: 'cancelled' }] }),
+          );
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+      await waitFor(() => {
+        expect(releaseDelete).toBeDefined();
+      });
+      receive(21);
+      await act(async () => {
+        releaseDelete?.(jsonResponse({ charge: null }));
+      });
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
+    it('counts a payment reported while a cancel that fails is on its way', async () => {
+      let failDelete: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return new Promise<Response>((resolve) => {
+              failDelete = resolve;
+            });
+          }
+          return Promise.resolve(jsonResponse({ charge: OPEN, history: [OPEN] }));
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+      await waitFor(() => {
+        expect(failDelete).toBeDefined();
+      });
+      receive(21);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      await act(async () => {
+        failDelete?.(jsonResponse({ error: 'down' }, 502));
+      });
+      expect(await confirmation()).toBeTruthy();
+    });
+
+    it('shows the till error when the read after a cancel that went through fails', async () => {
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return jsonResponse({ charge: null });
+          }
+          reads += 1;
+          if (reads === 1) {
+            return jsonResponse({ charge: OPEN, history: [OPEN] });
+          }
+          throw new TypeError('Failed to fetch');
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      receive(21);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
+    it('clears an earlier error on Done and keeps a failed read after it quiet', async () => {
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return jsonResponse({ error: 'down' }, 502);
+          }
+          reads += 1;
+          if (reads === 1) {
+            return jsonResponse({ charge: OPEN, history: [OPEN] });
+          }
+          throw new TypeError('Failed to fetch');
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      receive(21);
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      await act(async () => undefined);
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
+    });
+
     it('never asks the api on a timer while a charge is open', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
       const fetchMock = vi
