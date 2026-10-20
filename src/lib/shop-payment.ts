@@ -405,7 +405,11 @@ export async function openShopPayment(
     // A payment ends the ambiguous state; a pending till charge leaves it as it is.
     return { start: attempt, ambiguousAtMs: attempt.kind === 'opened' ? null : ambiguousAtMs };
   }
-  await pause(Math.max(0, ambiguousAtMs + SHOP_PAYMENT_RECHECK_DELAY_MS - Date.now()), signal);
+  const waitMs = ambiguousAtMs + SHOP_PAYMENT_RECHECK_DELAY_MS - Date.now();
+  if (waitMs > 0) {
+    // Once the 20 s have passed the pay link is read at once, without a timer.
+    await pause(waitMs, signal);
+  }
   if (signal.aborted) {
     return { start: { kind: 'aborted' }, ambiguousAtMs };
   }

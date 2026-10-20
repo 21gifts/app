@@ -444,12 +444,12 @@ describe('openShopPayment', () => {
     const refused = async (): Promise<Response> =>
       Response.json({ error: 'Enter a whole number of sats' }, { status: 400 });
     let mock = stubStarts([refused]);
-    const elapsed = open(T0 - SHOP_PAYMENT_RECHECK_DELAY_MS);
-    await vi.advanceTimersByTimeAsync(0);
-    expect(await elapsed).toEqual({
+    // The 20 s have passed: the pay link is read without a timer, so no clock has to move.
+    expect(await open(T0 - SHOP_PAYMENT_RECHECK_DELAY_MS)).toEqual({
       start: { kind: 'invoice' },
       ambiguousAtMs: T0 - SHOP_PAYMENT_RECHECK_DELAY_MS,
     });
+    expect(vi.getTimerCount()).toBe(0);
     expect(mock).toHaveBeenCalledTimes(2);
     expect(linkReads(mock)).toBe(1);
 

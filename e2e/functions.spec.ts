@@ -7882,7 +7882,7 @@ test('Function: waitShopPayment — on its way hides Pay, paid stops the reads',
     charge: true,
     waits: [
       { status: 'Pending', paymentStatus: 'accepted' },
-      { status: 'Completed', paymentStatus: 'paid' },
+      { status: 'Completed', paymentStatus: 'paid', at: '2026-09-24T12:00:02.000Z' },
     ],
   });
   await page.goto(`/pl?lightning=${ADA_LNURL}`);

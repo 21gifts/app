@@ -40,6 +40,35 @@ const STABLECOIN_AMOUNTS = [
 export interface ShopWaitAnswer {
   status: string;
   paymentStatus: string;
+  /**
+   * When the status changes to this entry, on the page's clock. Until then the api holds a
+   * read whose `since` is the previous entry's status; without it the change is already there.
+   */
+  at?: string;
+}
+
+/** How often a held wait read looks at the page's clock again, in real time. */
+const HELD_READ_CHECK_MS = 50;
+
+/**
+ * Resolves once the page's clock reaches `at`, or `false` when the page closed first.
+ *
+ * @param page - The page whose clock counts.
+ * @param at - The time on the page's clock.
+ */
+async function pageReaches(page: Page, at: number): Promise<boolean> {
+  for (;;) {
+    let now: number;
+    try {
+      now = await pageNow(page);
+    } catch {
+      return false;
+    }
+    if (now >= at) {
+      return true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, HELD_READ_CHECK_MS));
+  }
 }
 
 /**
@@ -92,7 +121,8 @@ async function pageNow(page: Page): Promise<number> {
  *   current or previous quote whose expiration has not passed, 404 for any
  *   other quote, and 400 otherwise.
  * - `GET /lnurlp/wait/p1` answers the current entry of `waits`; a `since` equal
- *   to its `paymentStatus` moves to the next entry (the last one repeats).
+ *   to its `paymentStatus` moves to the next entry, held until the page's clock
+ *   reaches that entry's `at`.
  * - `payLinks` scripts the pay-link reads in turn (the last one repeated):
  *   `payment` is the OpenCryptoPay request above, `plain` the plain Lightning
  *   request, and `error` a 503; without it the reads follow the rules above.
@@ -293,6 +323,11 @@ export async function stubShopPayment(
       if (wait === waits.length - 1) {
         // The status is unchanged: the api holds the read, and the page asks only once.
         await never();
+        return;
+      }
+      const at = waits[wait + 1]?.at;
+      // The api holds the read while the status is unchanged, until the change at `at`.
+      if (at !== undefined && !(await pageReaches(page, Date.parse(at)))) {
         return;
       }
       wait += 1;
