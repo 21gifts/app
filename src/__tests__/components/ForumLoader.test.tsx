@@ -5093,6 +5093,48 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('alert').textContent).toBe(localized);
   });
 
+  it.each(['photo', 'video'] as const)(
+    'keeps a mapped shop error after a %s pick succeeds',
+    async (kind) => {
+      fetchMock.mockResolvedValue(forumPage([]));
+      postMock.mockRejectedValue(new Error('Place address is invalid'));
+      prepareMock.mockResolvedValue({
+        ok: true,
+        photo: { contentType: 'image/jpeg', data: 'abc', previewUrl: 'data:image/jpeg;base64,abc' },
+      });
+      const clip = new File([new Uint8Array([1, 2, 3])], 'clip.mp4', { type: 'video/mp4' });
+      isVideoMock.mockImplementation((file) => file === clip);
+      prepareVideoMock.mockResolvedValue({
+        ok: true,
+        video: { file: clip, poster: new Blob([]), previewUrl: 'blob:video' },
+      });
+      renderWithLocale(<ForumLoader />);
+      await waitFor(() => {
+        expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+      });
+      fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+      fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+      const shopError = /^The address is invalid\./;
+      expect((await screen.findByRole('alert')).textContent).toMatch(shopError);
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      const file =
+        kind === 'photo' ? new File([new Uint8Array([1])], 'a.jpg', { type: 'image/jpeg' }) : clip;
+      fireEvent.change(input, { target: { files: [file] } });
+      await waitFor(() => {
+        expect((kind === 'photo' ? prepareMock : prepareVideoMock).mock.calls).toHaveLength(1);
+        expect(screen.queryByText('Preparing…')).toBeNull();
+      });
+      await waitFor(() => {
+        expect(
+          kind === 'photo'
+            ? screen.queryByAltText('Selected photo')
+            : document.querySelector('video'),
+        ).toBeTruthy();
+      });
+      expect(screen.getByRole('alert').textContent).toMatch(shopError);
+    },
+  );
+
   it('clears a mapped shop error when the place draft changes', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockRejectedValue(

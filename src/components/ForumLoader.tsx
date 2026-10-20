@@ -1747,7 +1747,8 @@ export function ForumLoader({
           revokeObjectUrlIfPresent(videoDraftRef.current?.previewUrl);
           setPhotoDrafts([]);
           setVideoDraft(result.video);
-          setFormError(null);
+          // A shop error clears only when its own field changes.
+          setFormError((current) => (isShopFormError(current) ? current : null));
           return;
         }
 
@@ -1784,7 +1785,7 @@ export function ForumLoader({
           return;
         }
         setPhotoDrafts(nextPhotos);
-        setFormError(nextError);
+        setFormError((current) => nextError ?? (isShopFormError(current) ? current : null));
       } catch {
         if (generation === pickGeneration.current) {
           setFormError('unsupported');
