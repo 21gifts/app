@@ -144,7 +144,7 @@ type WalletSettled = {
   closed: Set<string>;
   /** Payments no known open charge took (a till still reading the next one), newest last. */
   early: Array<Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>>;
-  /** The currency figure fixed for each charge this tab created, by charge id. */
+  /** The currency figure of each charge this tab created in a currency, by charge id. */
   figures: Map<string, PosFigure>;
 };
 
@@ -320,7 +320,7 @@ type PosTillState = {
   history: PosState['history'];
   remaining: number;
   chargeFiat: string | null;
-  /** The currency figure fixed for `paid` when this tab created it, otherwise `null`. */
+  /** The currency figure of `paid` when this tab created it in a currency, otherwise `null`. */
   paidFigure: PosFigure | null;
   amount: string;
   setAmount: (value: string) => void;
@@ -592,10 +592,18 @@ function usePosTillState(): PosTillState {
         ? { amount: amount.trim().replace(',', '.').replace(/\.$/, ''), code: fiat }
         : null;
     const startedAt = Date.now();
-    // The charges this till already knows: a lost create never takes one of them for its own.
     /* v8 ignore next -- the form is only shown once the till has an answer */
-    const known = new Set((state === null ? [] : tillCharges(state)).map((row) => row.id));
+    const shown = state === null ? [] : tillCharges(state);
     const work = (async (): Promise<void> => {
+      // The charges that exist right before this create, read now (the amount page does not read
+      // again on its own): a lost create never takes one of them for its own. When that read
+      // fails, the charges the till last read stand in.
+      let known: Set<string>;
+      try {
+        known = new Set(tillCharges(await fetchPosState(session)).map((row) => row.id));
+      } catch {
+        known = new Set(shown.map((row) => row.id));
+      }
       try {
         const created = await createPosCharge(session, amountSats);
         rememberFigure(creating, created.id, figure);
@@ -794,8 +802,9 @@ function usePosTillState(): PosTillState {
  * minute after its end), the charge is paid, and
  * {@link PosPaidOverlay} fills the screen with **Paid**, bitcoin, and the
  * charge's fixed currency figure when this tab has one.
- * The till reads the api only on open, when the session or the language
- * changes, when a charge runs out, when the tab becomes visible again, after
+ * The till reads the api only on open, right before each create, on **Try again**
+ * after a failed load,
+ * when the session or the language changes, when a charge runs out, when the tab becomes visible again, after
  * Cancel, once after a create or cancel whose answer was lost, and when the
  * confirmation is closed. A paid charge
  * the api returns also opens the confirmation. Under the till, once it has

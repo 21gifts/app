@@ -334,12 +334,12 @@ describe('PosScreen', () => {
     const callsAtForm = fetchMock.mock.calls.length;
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     await waitFor(() => {
-      expect(fetchMock.mock.calls.length).toBe(callsAtForm + 1);
+      expect(fetchMock.mock.calls.length).toBe(callsAtForm + 2);
     });
     act(() => {
       useAuthStore.setState({ session: 'other', account: ACCOUNT });
     });
-    expect(fetchMock.mock.calls.length).toBe(callsAtForm + 1);
+    expect(fetchMock.mock.calls.length).toBe(callsAtForm + 2);
     await act(async () => {
       releasePost?.(
         jsonResponse({
@@ -413,9 +413,10 @@ describe('PosScreen', () => {
     expect(screen.getByText('No exchange rate yet')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls.some((call) => call[1]?.method === 'POST')).toBe(true);
     });
-    const body = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body)) as { amountSats: number };
+    const post = fetchMock.mock.calls.find((call) => call[1]?.method === 'POST');
+    const body = JSON.parse(String(post?.[1]?.body)) as { amountSats: number };
     expect(body.amountSats).toBe(68);
     expect(screen.queryByText('Enter a whole number.')).toBeNull();
   });
@@ -438,9 +439,10 @@ describe('PosScreen', () => {
     expect(screen.getByText("₿85'000")).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls.some((call) => call[1]?.method === 'POST')).toBe(true);
     });
-    const body = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body)) as { amountSats: number };
+    const post = fetchMock.mock.calls.find((call) => call[1]?.method === 'POST');
+    const body = JSON.parse(String(post?.[1]?.body)) as { amountSats: number };
     expect(body.amountSats).toBe(85_000);
   });
 
@@ -2092,8 +2094,9 @@ describe('PosScreen', () => {
           if (reads === 1) {
             return jsonResponse({ charge: ended, history: [ended] });
           }
-          // The till's read at 0:00 and the amount page's read find no charge open.
-          if (reads <= 3) {
+          // The till's read at 0:00, the amount page's read, and the read right before the create find
+          // no charge open.
+          if (reads <= 4) {
             return jsonResponse({ charge: null, history: [ended] });
           }
           throw new TypeError('Failed to fetch');
@@ -2106,7 +2109,7 @@ describe('PosScreen', () => {
       await pressAmount('5');
       fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
       expect(await screen.findByRole('alert')).toBeTruthy();
-      expect(reads).toBe(4);
+      expect(reads).toBe(5);
       // The charge before is payable again for its late minute.
       receive(21);
       await waitFor(() => {
@@ -2126,7 +2129,8 @@ describe('PosScreen', () => {
       const before = fetchMock.mock.calls.length;
       fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
       expect(await screen.findByText('A payment is already open.')).toBeTruthy();
-      expect(fetchMock.mock.calls.length).toBe(before + 1);
+      // The read right before the create and the create; no read after the refusal.
+      expect(fetchMock.mock.calls.length).toBe(before + 2);
     });
 
     it('does not count a payment reported while a cancel that goes through is on its way', async () => {
@@ -2454,6 +2458,53 @@ describe('PosScreen', () => {
       receive(21);
       await act(async () => undefined);
       expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
+    it('does not take for a lost create a charge another device made before the click', async () => {
+      const theirs = { ...OPEN, id: 'c12', createdAt: new Date().toISOString() };
+      let page = true;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return jsonResponse({ error: 'Bad gateway' }, 502);
+          }
+          // The amount page read before the other device made its charge; every later read shows it.
+          const charge = page ? null : theirs;
+          page = false;
+          return jsonResponse({ charge, history: charge === null ? [] : [charge] });
+        }),
+      );
+      renderWithLocale(<PosAmount />);
+      await pressAmount('21');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      expect(await screen.findByText('Point of sale is unavailable.')).toBeTruthy();
+    });
+
+    it('takes the charge a lost create made when the read right before it failed', async () => {
+      let reads = 0;
+      const made = { ...OPEN, id: 'c13', createdAt: new Date().toISOString() };
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return jsonResponse({ error: 'Bad gateway' }, 502);
+          }
+          reads += 1;
+          if (reads === 2) {
+            throw new TypeError('Failed to fetch');
+          }
+          const charge = reads === 1 ? null : made;
+          return jsonResponse({ charge, history: charge === null ? [] : [charge] });
+        }),
+      );
+      renderWithLocale(<PosAmount />);
+      await pressAmount('21');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/pos');
+      });
+      expect(screen.queryByRole('alert')).toBeNull();
     });
 
     it('never asks the api on a timer while a charge is open', async () => {
