@@ -695,6 +695,11 @@ describe('ShopAddWizard', () => {
   it.each([
     ['shopName' as const, '2 / 5 · Place', 'Enter the shop name.'],
     [
+      'shopNameControls' as const,
+      '2 / 5 · Place',
+      'The shop name must not contain control characters.',
+    ],
+    [
       'shopDescription' as const,
       '3 / 5 · Text',
       'The description must be 20 to 1000 characters and longer than the shop name.',
@@ -726,7 +731,7 @@ describe('ShopAddWizard', () => {
       />,
     );
     expect(await screen.findByText(step)).toBeTruthy();
-    if (serverProblem === 'shopName') {
+    if (serverProblem === 'shopName' || serverProblem === 'shopNameControls') {
       // The place dialog reopens and announces it at the name field; the wizard
       // line behind the dialog repeats it as plain text for after the dialog closes.
       const dialog = await screen.findByRole('dialog');
@@ -734,7 +739,14 @@ describe('ShopAddWizard', () => {
       expect(screen.getAllByText(message)).toHaveLength(2);
     } else {
       expect(screen.getByText(message)).toBeTruthy();
-      expect(screen.getByRole('alert').textContent).toBe(message);
+      const alert = screen.getByRole('alert');
+      expect(alert.textContent).toBe(message);
+      if (serverProblem === 'usernameInvalid' || serverProblem === 'usernameMissing') {
+        const username = screen.getByLabelText('21.gifts username');
+        expect(alert.tagName).toBe('SPAN');
+        expect(alert.id).toBe(`${username.id}-error`);
+        expect(username.getAttribute('aria-describedby')).toContain(alert.id);
+      }
     }
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });

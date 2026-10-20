@@ -1524,8 +1524,15 @@ describe('ForumLoader', () => {
     ).toBeNull();
   });
 
-  it('feed="shops" shows a request error when the submit username lookup fails', async () => {
+  it('feed="shops" posts when the submit username lookup fails', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockResolvedValue({
+      ...SAMPLE,
+      id: 'shop-new',
+      text: SHOP_NOTE_BODY,
+      sats: 0,
+      payable: false,
+    });
     let usernameLookups = 0;
     vi.mocked(searchMentionAccounts).mockImplementation(async (_session, query) => {
       if (query !== 'luna') {
@@ -1542,9 +1549,15 @@ describe('ForumLoader', () => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
     });
     await submitShopWizard(SHOP_DESCRIPTION, 'luna');
-    expect((await screen.findByRole('alert')).textContent).toBe('Could not post your message');
+    await waitFor(() => {
+      expect(postMock).toHaveBeenCalledWith('sess', {
+        text: SHOP_NOTE_BODY,
+        place: COMPLETE_SHOP_PLACE,
+        shopUsername: 'luna',
+      });
+    });
     expect(usernameLookups).toBe(2);
-    expect(postMock).not.toHaveBeenCalled();
+    expect(screen.queryByText('Could not post your message')).toBeNull();
   });
 
   it('feed="shops" invoices a basis post with #21GiftsShop', async () => {
@@ -1779,6 +1792,34 @@ describe('ForumLoader', () => {
     expect(within(dialog).getByRole('alert').textContent).toBe(
       'The shop name must not contain the street or the postal code.',
     );
+    expectNoShopComposeOrPost();
+  });
+
+  it('feed="shops" returns a control-character name to the place step', async () => {
+    const listeners = await openBasisShopWizardAtPlace();
+    await fillCompleteShopPlace(listeners);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    fireEvent.change(await screen.findByLabelText('Shop name'), {
+      target: { value: 'Kiki\u0001' },
+    });
+    invokeDisabledButton(
+      screen.getByRole('button', { name: 'Use this place' }),
+      'Could not find the disabled place commit handler',
+    );
+    bypassDisabledShopNext();
+    fireEvent.change(screen.getByLabelText('Shop text'), {
+      target: { value: SHOP_DESCRIPTION },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    submitDisabledShopSummary();
+
+    expect(await screen.findByText('2 / 5 · Place')).toBeTruthy();
+    expect(
+      screen.getAllByText('The shop name must not contain control characters.').length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByText('Enter the shop name.')).toBeNull();
     expectNoShopComposeOrPost();
   });
 

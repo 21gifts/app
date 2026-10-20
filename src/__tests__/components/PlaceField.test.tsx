@@ -1186,6 +1186,77 @@ describe('PlaceField', () => {
     expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty('disabled', true);
   });
 
+  it('compares the shop text with the trimmed name that will be committed', async () => {
+    stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={{
+          lat: 47.3769,
+          lng: 8.5417,
+          label: 'Original',
+          address: {
+            street: 'Bahnhofstrasse',
+            houseNumber: '12',
+            postalCode: '8001',
+            city: 'Zürich',
+            country: 'CH',
+          },
+        }}
+        disabled={false}
+        onChange={() => undefined}
+        shopDetails
+        shopText="12345678901234567890"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    const name = await screen.findByLabelText('Shop name');
+    fireEvent.change(name, { target: { value: '1234567890123456789  ' } });
+    expect(
+      screen.queryByText(
+        'The shop name must be shorter than the shop text. Shorten the name or edit the shop text first.',
+      ),
+    ).toBeNull();
+    expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty(
+      'disabled',
+      false,
+    );
+  });
+
+  it('announces a reported name error with the current live text until the name is edited', async () => {
+    stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={{
+          lat: 47.3769,
+          lng: 8.5417,
+          label: 'Kiki\u0001',
+          address: {
+            street: 'Bahnhofstrasse',
+            houseNumber: '12',
+            postalCode: '8001',
+            city: 'Zürich',
+            country: 'CH',
+          },
+        }}
+        disabled={false}
+        onChange={() => undefined}
+        shopDetails
+        problem="shopName"
+      />,
+    );
+    const name = await screen.findByLabelText('Shop name');
+    const message = screen.getByText('The shop name must not contain control characters.');
+    expect(screen.queryByText('Enter the shop name.')).toBeNull();
+    // The reported problem is announced with the current live text until the name is edited.
+    expect(screen.getByRole('alert')).toBe(message);
+    expect(name.getAttribute('aria-describedby')).toContain(message.id);
+    fireEvent.change(name, { target: { value: 'Kiki\u0002' } });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(
+      screen.getByText('The shop name must not contain control characters.').getAttribute('role'),
+    ).toBeNull();
+  });
+
   it.each([
     ['short', 'Too short'],
     ['long', 'x'.repeat(1001)],
@@ -1296,7 +1367,14 @@ describe('PlaceField', () => {
     listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
     fillShopAddress();
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
-    expect((await screen.findByRole('alert')).textContent).toBe(localized);
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe(localized);
+    if (apiMessage.startsWith('Shop name')) {
+      const name = screen.getByLabelText('Shop name');
+      expect(alert.tagName).toBe('SPAN');
+      expect(alert.id).toBe(`${name.id}-error`);
+      expect(name.getAttribute('aria-describedby')).toContain(alert.id);
+    }
   });
 
   it('keeps a while-typing footer reason out of the alert live region', async () => {

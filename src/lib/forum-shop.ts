@@ -46,6 +46,7 @@ export type ShopApiProblem =
   | 'shopName'
   | 'shopNameAddress'
   | 'shopNameLong'
+  | 'shopNameControls'
   | 'shopAddress'
   | 'shopDescription'
   | 'shopDescriptionControls'
@@ -58,6 +59,7 @@ export const SHOP_API_MESSAGE: Record<ShopApiProblem, MessageKey> = {
   shopName: 'shops.problemName',
   shopNameAddress: 'shops.problemNameAddress',
   shopNameLong: 'shops.problemNameLong',
+  shopNameControls: 'shops.problemNameControls',
   shopAddress: 'shops.problemAddress',
   shopDescription: 'shops.problemDescription',
   shopDescriptionControls: 'shops.problemDescriptionControls',
@@ -295,16 +297,16 @@ function containsStandaloneToken(name: string, token: string): boolean {
 /**
  * Name problem of a shop pin, or null when the name is complete.
  *
- * @param label - Pin label (shop name).
- * @param address - Structured address, or `null` when unset.
+ * @param label - Pin label (shop name); `null` or `undefined` when unset.
+ * @param address - Structured address; `null` or `undefined` when unset.
  * @returns A required, length, control-character, or embedded-address problem;
  * otherwise `null`.
  */
 export function shopNameProblem(
-  label: string | null,
-  address: ForumPlaceAddress | null,
+  label: string | null | undefined,
+  address: ForumPlaceAddress | null | undefined,
 ): 'name' | 'nameAddress' | 'nameLong' | 'nameControls' | null {
-  if (label === null || label.trim() === '') {
+  if (label === null || label === undefined || label.trim() === '') {
     return 'name';
   }
   if (label.trim().length > 80) {
@@ -313,7 +315,7 @@ export function shopNameProblem(
   if (!hasNoControls(label.trim())) {
     return 'nameControls';
   }
-  if (address === null) {
+  if (address === null || address === undefined) {
     return null;
   }
   if (
@@ -450,9 +452,7 @@ export function shopPlaceComplete(place: ForumPlacePin | null): place is ForumPl
     return false;
   }
   const address = place.address ?? null;
-  return (
-    shopNameProblem(place.label ?? null, address) === null && shopAddressProblem(address) === null
-  );
+  return shopNameProblem(place.label, address) === null && shopAddressProblem(address) === null;
 }
 
 /**

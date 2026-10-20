@@ -118,16 +118,15 @@ describe('ShopAccountControl', () => {
     expect(button).toBeTruthy();
   });
 
-  it('shows the missing error when the untouched account picker is saved', async () => {
+  it('keeps the untouched initial @ quiet but disables Save', () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
-    expect(screen.getByLabelText('Username')).toHaveProperty('value', '@');
-    fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
-    expect((await screen.findByRole('alert')).textContent).toBe(
-      'No account with that username. Check the spelling of the 21.gifts username.',
-    );
-    expect(screen.getByRole('button', { name: 'Save account' })).toBeTruthy();
+    const input = screen.getByLabelText('Username');
+    expect(input).toHaveProperty('value', '@');
+    expect(input.getAttribute('aria-invalid')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
     expect(setMessageShopAccount).not.toHaveBeenCalled();
   });
 
@@ -246,6 +245,38 @@ describe('ShopAccountControl', () => {
       ),
     ).toBeTruthy();
     expect(screen.getByLabelText('Username').getAttribute('aria-invalid')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
+  });
+
+  it('shows the live format error after typing @a and returning to @', () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    const input = screen.getByLabelText('Username');
+    fireEvent.change(input, { target: { value: '@a' } });
+    fireEvent.change(input, { target: { value: '@' } });
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(
+      screen.getByText(
+        'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
+  });
+
+  it('shows the live format error and disables Save after clearing the field', () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    const input = screen.getByLabelText('Username');
+    fireEvent.change(input, { target: { value: '' } });
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(
+      screen.getByText(
+        'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+      ),
+    ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
     expect(setMessageShopAccount).not.toHaveBeenCalled();
   });

@@ -42,6 +42,7 @@ describe('Field', () => {
         id="postal"
         hint="Use the local format."
         error="Use 4 digits."
+        errorAnnounce={false}
         aria-describedby="outside-help"
       />,
     );
@@ -51,6 +52,15 @@ describe('Field', () => {
     expect(screen.getByText('Use the local format.').id).toBe('postal-hint');
     expect(screen.getByText('Use 4 digits.').id).toBe('postal-error');
     expect(screen.getByText('Use 4 digits.').className).toContain('text-app-danger');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('announces an action error when requested', () => {
+    renderWithLocale(<Field label="Username" error="Could not save." errorAnnounce />);
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe('Could not save.');
+    expect(alert.id).toBe('field-username-error');
+    expect(screen.getByLabelText('Username').getAttribute('aria-describedby')).toBe(alert.id);
   });
 
   it('links validation copy on a multiline field', () => {

@@ -126,7 +126,7 @@ const SHOP_NAME_FORM_ERROR = {
   name: 'shopName',
   nameAddress: 'shopNameAddress',
   nameLong: 'shopNameLong',
-  nameControls: 'shopName',
+  nameControls: 'shopNameControls',
 } as const satisfies Record<NonNullable<ReturnType<typeof shopNameProblem>>, ShopApiProblem>;
 
 /** Revokes a blob object URL when present; no-op for undefined or empty. */
@@ -1911,9 +1911,7 @@ export function ForumLoader({
     if (session === null) return;
     if (feed === 'shops') {
       const nameProblem =
-        pendingPlace === null
-          ? null
-          : shopNameProblem(pendingPlace.label ?? null, pendingPlace.address ?? null);
+        pendingPlace === null ? null : shopNameProblem(pendingPlace.label, pendingPlace.address);
       if (!shopPlaceComplete(pendingPlace)) {
         setFormError(nameProblem === null ? 'shopAddress' : SHOP_NAME_FORM_ERROR[nameProblem]);
         notePostInFlightRef.current = false;
@@ -1942,9 +1940,7 @@ export function ForumLoader({
             return;
           }
         } catch {
-          setFormError('request');
-          notePostInFlightRef.current = false;
-          return;
+          // A failed optional lookup is inconclusive; the posting API validates it.
         }
       }
     }

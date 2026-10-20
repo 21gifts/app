@@ -155,7 +155,6 @@ export function ShopAddWizard({
   const photoFeedbackId = `${idPrefix}-photo-feedback`;
   const descriptionHintId = `${idPrefix}-description-feedback`;
   const accountUsernameId = `${idPrefix}-account-username`;
-  const accountUsernameServerErrorId = `${idPrefix}-account-username-server-error`;
   const [step, setStep] = useState<ShopAddStep | 'closed'>(mode === 'edit' ? 1 : 'closed');
   // The summary control replaces Next in the same spot. Ignore that same click.
   const [summaryArmed, setSummaryArmed] = useState(false);
@@ -187,6 +186,7 @@ export function ShopAddWizard({
       serverProblem === 'shopName' ||
       serverProblem === 'shopNameAddress' ||
       serverProblem === 'shopNameLong' ||
+      serverProblem === 'shopNameControls' ||
       serverProblem === 'shopAddress' ||
       serverProblem === 'placeAddress'
     ) {
@@ -284,6 +284,7 @@ export function ShopAddWizard({
     serverProblem === 'shopName' ||
     serverProblem === 'shopNameAddress' ||
     serverProblem === 'shopNameLong' ||
+    serverProblem === 'shopNameControls' ||
     serverProblem === 'shopAddress' ||
     serverProblem === 'placeAddress';
   const descriptionServerProblem =
@@ -562,18 +563,11 @@ export function ShopAddWizard({
             value={username}
             disabled={posting}
             hint={usernameHint}
-            aria-describedby={usernameServerProblem ? accountUsernameServerErrorId : undefined}
-            aria-invalid={usernameServerProblem ? true : undefined}
-            {...(usernameError === undefined || usernameServerProblem
+            {...(usernameError === undefined
               ? {}
-              : { error: usernameError })}
+              : { error: usernameError, errorAnnounce: usernameServerProblem })}
             onChange={(event) => onUsernameChange(event.target.value)}
           />
-          {usernameServerProblem ? (
-            <p id={accountUsernameServerErrorId} role="alert" className="text-sm text-app-danger">
-              {usernameError}
-            </p>
-          ) : null}
         </div>
       ) : null}
       {step === 5 ? (

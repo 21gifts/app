@@ -18,6 +18,8 @@ interface FieldShellProps {
   hint?: string;
   /** Validation copy shown under the control. */
   error?: string;
+  /** Announce the error with `role="alert"`; use for errors that arrive after an action, not while typing. */
+  errorAnnounce?: boolean;
 }
 
 /** Props for a single-line {@link Field}. */
@@ -44,7 +46,7 @@ export type FieldProps = FieldInputProps | FieldTextareaProps;
  * @returns The labeled field.
  */
 export function Field(props: FieldProps): ReactElement {
-  const { label, id, className, multiline, hint, error, ...rest } = props;
+  const { label, id, className, multiline, hint, error, errorAnnounce, ...rest } = props;
   const fieldId =
     id ??
     `field-${label
@@ -85,7 +87,11 @@ export function Field(props: FieldProps): ReactElement {
         </span>
       )}
       {error === undefined ? null : (
-        <span id={errorId!} className="text-sm text-app-danger">
+        <span
+          id={errorId!}
+          className="text-sm text-app-danger"
+          role={errorAnnounce === true ? 'alert' : undefined}
+        >
           {error}
         </span>
       )}

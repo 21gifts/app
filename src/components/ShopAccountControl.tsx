@@ -166,6 +166,7 @@ export function ShopAccountControl({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState(draftFor(message.shopAccount?.username));
+  const [edited, setEdited] = useState(false);
   const [errorKey, setErrorKey] = useState<'format' | 'missing' | 'failed' | null>(null);
   const [usernameLookup, setUsernameLookup] = useState<{
     username: string;
@@ -185,7 +186,12 @@ export function ShopAccountControl({
   const normalizedUsername = draft.trim().replace(/^@/, '').toLowerCase();
   // A newly opened picker starts with `@` so the people list is useful before
   // typing. Once the visitor edits the field, a bare `@` is a live format error.
-  const formatProblem = draft === '@' && errorKey === null ? null : shopUsernameProblem(draft);
+  const formatProblem =
+    !edited && draft === '@'
+      ? null
+      : normalizedUsername === ''
+        ? 'format'
+        : shopUsernameProblem(draft);
 
   useEffect(() => {
     if (session === null || !open || query === null) {
@@ -359,10 +365,6 @@ export function ShopAccountControl({
       trimmed = trimmed.slice(1);
     }
     trimmed = trimmed.toLowerCase();
-    if (trimmed === '') {
-      setErrorKey('missing');
-      return;
-    }
     setSaving(true);
     setErrorKey(null);
     try {
@@ -418,6 +420,7 @@ export function ShopAccountControl({
           setOpen((current) => {
             if (!current) {
               setDraft(draftFor(message.shopAccount?.username));
+              setEdited(false);
               setUsernameLookup(null);
               setSeed([]);
               setRemote(null);
@@ -449,6 +452,7 @@ export function ShopAccountControl({
             disabled={saving}
             onChange={(event) => {
               setDraft(event.target.value);
+              setEdited(true);
               setRemote(null);
               setErrorKey(null);
             }}
@@ -509,7 +513,13 @@ export function ShopAccountControl({
             type="button"
             variant="secondary"
             className="mt-3"
-            disabled={saving || formatProblem !== null || usernameMissing || usernamePending}
+            disabled={
+              saving ||
+              normalizedUsername === '' ||
+              formatProblem !== null ||
+              usernameMissing ||
+              usernamePending
+            }
             onClick={() => {
               void saveUsername();
             }}

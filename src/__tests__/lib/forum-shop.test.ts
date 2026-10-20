@@ -231,6 +231,11 @@ describe('forum-shop', () => {
   });
 
   describe('shopNameProblem', () => {
+    it('treats an unset label as missing and an unset address as not checked', () => {
+      expect(shopNameProblem(undefined, undefined)).toBe('name');
+      expect(shopNameProblem('Kiki', undefined)).toBeNull();
+    });
+
     it('returns name when the label is blank', () => {
       expect(shopNameProblem(null, ADDRESS)).toBe('name');
       expect(shopNameProblem('   ', ADDRESS)).toBe('name');
@@ -431,6 +436,7 @@ describe('forum-shop', () => {
       const problems: ShopApiProblem[] = [
         'shopName',
         'shopNameAddress',
+        'shopNameControls',
         'shopNameLong',
         'shopAddress',
         'shopDescription',

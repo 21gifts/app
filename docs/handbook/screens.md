@@ -2290,9 +2290,8 @@ A moderator session. **Edit place** is open on the Cafe Luna note, the map is vi
 
 A moderator session. **Edit place** is open on a shop note (text **Fresh bread every morning.**).
 **Shop name** is **Happyland**, the full address is filled, and **Use this place** was pressed. The
-server rejected the place with **Shop address is required** after a concurrent change, so the
-fallback alert **Enter the full address: street, house number, postal code, city and country.** is
-visible. The dialog stays open with **Use this place**.
+server fallback alert **Enter the full address: street, house number, postal code, city and
+country.** is visible in the dialog footer. The dialog stays open with **Use this place**.
 
 ![21.gifts shops staff place edit rejected](images/shops-staff-place-edit-rejected.png)
 
