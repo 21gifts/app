@@ -5307,6 +5307,21 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('alert').textContent).toBe(localized);
   });
 
+  it('keeps a username shop error when only the text changes', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockRejectedValue(new Error('No account with that username'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+    const missing = 'No account with that username. Check the spelling of the 21.gifts username.';
+    expect((await screen.findByRole('alert')).textContent).toBe(missing);
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi there' } });
+    expect(screen.getByRole('alert').textContent).toBe(missing);
+  });
+
   it.each(['photo', 'video'] as const)(
     'keeps a mapped shop error when a %s is picked and removed',
     async (kind) => {
