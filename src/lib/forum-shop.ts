@@ -42,8 +42,9 @@ export type ShopAddressFieldProblem =
 export type ShopAddressProblems = Partial<Record<ShopAddressField, ShopAddressFieldProblem>>;
 
 /**
- * Shop form errors: exact API 400 bodies, plus `shopNameControls`, which only the
- * client pre-fee guard sets (the API reports it as a label length error).
+ * Shop form errors: exact API 400 bodies, plus `shopNameControls` and
+ * `shopDescriptionControls`, which only the client pre-fee guard sets (the API
+ * reports them as the label-length and text-range errors).
  */
 export type ShopApiProblem =
   | 'shopName'
@@ -57,7 +58,7 @@ export type ShopApiProblem =
   | 'usernameInvalid'
   | 'usernameMissing';
 
-/** Visitor-facing catalog key for each {@link ShopApiProblem} API 400 body. */
+/** Visitor-facing catalog key for each {@link ShopApiProblem}, from the API or the pre-fee guard. */
 export const SHOP_API_MESSAGE: Record<ShopApiProblem, MessageKey> = {
   shopName: 'shops.problemName',
   shopNameAddress: 'shops.problemNameAddress',
