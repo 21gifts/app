@@ -112,7 +112,9 @@ describe('ShopAccountControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     expect(screen.getByLabelText('Username')).toHaveProperty('value', '@');
     fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
-    expect((await screen.findByRole('alert')).textContent).toBe('No account with that username.');
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
     expect(screen.getByRole('button', { name: 'Save account' })).toBeTruthy();
     expect(setMessageShopAccount).not.toHaveBeenCalled();
   });
@@ -142,7 +144,9 @@ describe('ShopAccountControl', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
-    expect((await screen.findByRole('alert')).textContent).toBe('No account with that username.');
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
     expect(screen.getByRole('button', { name: 'Save account' })).toBeTruthy();
     expect(onUpdated).not.toHaveBeenCalled();
   });

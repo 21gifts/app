@@ -811,6 +811,32 @@ describe('ShopNoteEditControl', () => {
     expect(await screen.findByText('Keep photos under 1 MB and videos under 32 MB')).toBeTruthy();
   });
 
+  it('removes the last photo reason while a new pick prepares', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    let finishSecond: (value: { ok: false; error: 'tooLarge' }) => void = () => undefined;
+    vi.mocked(prepareForumPhoto)
+      .mockResolvedValueOnce({ ok: false, error: 'tooLarge' })
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          finishSecond = resolve;
+        }),
+      );
+    renderEdit(<ShopNoteEditControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const large = (): File[] => [new File(['large'], 'large.jpg', { type: 'image/jpeg' })];
+    fireEvent.change(input, { target: { files: large() } });
+    expect(await screen.findByText('Keep photos under 1 MB and videos under 32 MB')).toBeTruthy();
+    fireEvent.change(input, { target: { files: large() } });
+    await waitFor(() => {
+      expect(screen.queryByText('Keep photos under 1 MB and videos under 32 MB')).toBeNull();
+    });
+    finishSecond({ ok: false, error: 'tooLarge' });
+    expect(await screen.findByText('Keep photos under 1 MB and videos under 32 MB')).toBeTruthy();
+  });
+
   it('shows a fallback photo reason when preparation throws', async () => {
     signIn();
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);

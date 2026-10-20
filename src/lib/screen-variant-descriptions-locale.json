@@ -2705,9 +2705,9 @@
     "fil": "Pinindot ng parehong tagapamagitan ang Susunod. Bukas ang hakbang 2 sa 5 · Lugar sa talahanayan. Sinasabi pa ng kasaysayan na wala pang mga pagbabago. Wala na ang Isara (X) ng hakbang ng litrato. Nanatili ang lugar na Happyland · Bahnhofstrasse 12, 8001 Zürich, Switzerland at ang Operator na @luna."
   },
   "/shops:staff-account-error": {
-    "de": "Eine Moderationssitzung. Konto hinzufügen ist auf der Notiz Cafe Luna geöffnet. Benutzername missing wurde gespeichert. Das Speichern lieferte 404, daher ist der Hinweis Kein Konto mit diesem Benutzernamen. sichtbar. Konto speichern bleibt.",
-    "es": "Una sesión de moderador. Añadir una cuenta está abierto en la nota Cafe Luna. Se guardó el nombre de usuario missing. El guardado devolvió 404, así que la alerta No hay ninguna cuenta con ese nombre de usuario. es visible. Guardar cuenta permanece.",
-    "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng account sa tala ng Cafe Luna. Na-save ang username na missing. Ang pag-save ay nagbalik ng 404, kaya nakikita ang alerto Walang account na may ganitong username. Nanatili ang I-save ang account."
+    "de": "Eine Moderationssitzung. Konto hinzufügen ist auf der Notiz Cafe Luna geöffnet. Benutzername missing wurde gespeichert. Das Speichern lieferte 404, daher ist der Hinweis Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens. sichtbar. Konto speichern bleibt.",
+    "es": "Una sesión de moderador. Añadir una cuenta está abierto en la nota Cafe Luna. Se guardó el nombre de usuario missing. El guardado devolvió 404, así que la alerta No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts. es visible. Guardar cuenta permanece.",
+    "fil": "Isang sesyon ng tagapamagitan. Bukas ang Magdagdag ng account sa tala ng Cafe Luna. Na-save ang username na missing. Ang pag-save ay nagbalik ng 404, kaya nakikita ang alerto Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts. Nanatili ang I-save ang account."
   },
   "/grants:funding-program-open": {
     "de": "Zugelassene Inhaberin oder zugelassener Inhaber auf /grants. Der Teilnahmesatz Nimmt seit {date} am 21.gifts Förderprogramm teil ist auf der Förderkarte sichtbar. Aufnahme des Sichtfensters, nachdem diese Zeile ins Bild gescrollt wurde.",

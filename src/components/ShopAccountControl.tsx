@@ -429,7 +429,7 @@ export function ShopAccountControl({
               {errorKey === 'format'
                 ? t('shops.problemUsernameFormat')
                 : errorKey === 'missing'
-                  ? t('forum.shopAccountMissing')
+                  ? t('shops.problemUsernameMissing')
                   : t('forum.shopAccountSaveFailed')}
             </p>
           ) : null}

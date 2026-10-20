@@ -377,6 +377,8 @@ export function ShopNoteEditControl({
   /* v8 ignore stop */
 
   async function onPickFiles(files: File[]): Promise<void> {
+    // A new pick replaces the last pick's reason, so a repeated reason is announced again.
+    setPhotoError(null);
     const prepared: ForumPhotoPayload[] = [];
     let nextError: 'unsupported' | 'tooLarge' | 'tooMany' | null = null;
     for (const file of files) {

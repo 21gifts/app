@@ -2377,7 +2377,7 @@ A moderator session. The Cafe Luna note includes `shopAccount: { id: 'acc-luna',
 
 ### Variant: staff-account-error
 
-A moderator session. **Add an account** is open on the Cafe Luna note. Username **missing** was saved. The save returned 404, so the alert **No account with that username.** is visible. **Save account** stays.
+A moderator session. **Add an account** is open on the Cafe Luna note. Username **missing** was saved. The save returned 404, so the alert **No account with that username. Check the spelling of the 21.gifts username.** is visible. **Save account** stays.
 
 ![21.gifts shops staff account error](images/shops-staff-account-error.png)
 

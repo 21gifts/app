@@ -1723,6 +1723,10 @@ export function ForumLoader({
     const generation = pickGeneration.current + 1;
     pickGeneration.current = generation;
     setPreparing(true);
+    // A new pick replaces the last pick's reason, so a repeated reason is announced again.
+    setFormError((current) =>
+      current === 'unsupported' || current === 'tooLarge' || current === 'tooMany' ? null : current,
+    );
     void (async () => {
       const videoFile = files.find(isForumVideoFile);
       try {

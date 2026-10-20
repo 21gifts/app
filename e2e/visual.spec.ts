@@ -19988,7 +19988,9 @@ test.describe('shops screens', () => {
     await note.getByLabel('Username').fill('missing');
     await expect(page.getByRole('listbox', { name: 'People' })).toHaveCount(0);
     await note.getByRole('button', { name: 'Save account' }).click();
-    await expect(note.getByText('No account with that username.')).toBeVisible();
+    await expect(
+      note.getByText('No account with that username. Check the spelling of the 21.gifts username.'),
+    ).toBeVisible();
     const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeVisible();
     await save.scrollIntoViewIfNeeded();
