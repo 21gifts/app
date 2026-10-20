@@ -77,6 +77,7 @@ import {
   shopPlaceComplete,
   shopProblemField,
   shopUsernameProblem,
+  stripShopHashtag,
   usernameLookupVerdict,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
@@ -1461,6 +1462,14 @@ export function ForumLoader({
       .catch(() => undefined);
   };
 
+  // The kept caption carries the shop tag on Shops; the wizard edits the text without it.
+  const restoreComposeCaption = (): void => {
+    const keptCaption = pendingComposeTextRef.current;
+    if (keptCaption !== null && keptCaption !== '') {
+      setDraft(feed === 'shops' ? stripShopHashtag(keptCaption) : keptCaption);
+    }
+  };
+
   const clearPaySheet = (): void => {
     bumpPayPollGeneration();
     setPayMessageId(null);
@@ -1474,10 +1483,7 @@ export function ForumLoader({
     notePostInFlightRef.current = false;
     setPayHost(null);
     setReplyPayPreview(null);
-    const keptCaption = pendingComposeTextRef.current;
-    if (keptCaption !== null && keptCaption !== '') {
-      setDraft(keptCaption);
-    }
+    restoreComposeCaption();
   };
 
   const startPayPoll = (
@@ -1615,10 +1621,7 @@ export function ForumLoader({
                       (isRateLimitError(err) ? 'rateLimit' : 'request'),
                   );
                   composeFeePaidRef.current = true;
-                  const keptCaption = pendingComposeTextRef.current;
-                  if (keptCaption !== null && keptCaption !== '') {
-                    setDraft(keptCaption);
-                  }
+                  restoreComposeCaption();
                   setPayWaiting(false);
                   setPayInvoice(null);
                   setPayMessageId(null);

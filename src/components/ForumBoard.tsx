@@ -1982,7 +1982,10 @@ export function ForumBoard({
               <PlacePinChip
                 place={placeDraft}
                 disabled={posting}
-                onRemove={() => onPlaceDraftChange(null)}
+                onRemove={() => {
+                  onPlaceDraftChange(null);
+                  composerRef.current!.focus();
+                }}
               />
             ) : null}
             {videoDraft !== null ? (

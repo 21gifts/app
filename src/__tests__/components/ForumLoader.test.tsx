@@ -4641,6 +4641,8 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       const description = screen.getByLabelText('Shop text');
       const feedback = document.getElementById(description.getAttribute('aria-describedby')!);
+      expect((description as HTMLTextAreaElement).value).toBe(SHOP_DESCRIPTION);
+      expect(screen.getByText(`${String(SHOP_DESCRIPTION.length)} / 1000`)).toBeTruthy();
       expect(description.getAttribute('aria-invalid')).toBe('true');
       expect(feedback?.textContent).toContain(
         'The shop text must be 20 to 1000 characters and longer than the shop name.',

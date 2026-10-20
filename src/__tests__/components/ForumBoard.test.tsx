@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/components/AppShell';
 import { LocaleProvider } from '@/components/LocaleProvider';
@@ -10,7 +10,7 @@ import {
   revealReplyForm,
   type ForumBoardProps,
 } from '@/components/ForumBoard';
-import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage } from '@/lib/api-types';
+import { FORUM_MESSAGE_MAX_LENGTH, type ForumMessage, type ForumPlacePin } from '@/lib/api-types';
 import { getCatalog } from '@/lib/messages';
 import {
   FORUM_COMPOSE_EVENT,
@@ -669,6 +669,41 @@ describe('ForumBoard', () => {
     expect(onPost).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
     expect(onPlaceDraftChange).toHaveBeenCalledWith(null);
+  });
+
+  it('focuses the composer after removing its place chip', () => {
+    function BoardWithPlace(): ReactElement {
+      const [place, setPlace] = useState<ForumPlacePin | null>({
+        lat: 14.6,
+        lng: 120.98,
+        label: 'Cafe Luna',
+      });
+      return (
+        <ForumBoard
+          messages={[]}
+          error={false}
+          loading={false}
+          posting={false}
+          draft=""
+          onDraftChange={() => undefined}
+          onPost={() => undefined}
+          onRetry={() => undefined}
+          formError={null}
+          placeDraft={place}
+          {...idleProps}
+          onPlaceDraftChange={setPlace}
+          {...modeProps('active')}
+        />
+      );
+    }
+
+    renderWithLocale(<BoardWithPlace />);
+    const composer = screen.getByLabelText('Your message');
+    const remove = screen.getByRole('button', { name: 'Remove place' });
+    remove.focus();
+    fireEvent.click(remove);
+    expect(screen.queryByRole('button', { name: 'Remove place' })).toBeNull();
+    expect(document.activeElement).toBe(composer);
   });
 
   it('passes live shop guidance into the Ask text step', () => {

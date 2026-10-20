@@ -19,6 +19,12 @@ function jsonResponse(body: unknown): Response {
   return { json: () => Promise.resolve(body) } as Response;
 }
 
+function focusDocumentBody(): void {
+  document.body.tabIndex = -1;
+  document.body.focus();
+  document.body.removeAttribute('tabindex');
+}
+
 async function expectMapUnavailable(): Promise<void> {
   const dialog = await screen.findByRole('dialog');
   const messages = await within(dialog).findAllByText('The map is not available.');
@@ -38,10 +44,15 @@ describe('PlaceField', () => {
     expect(document.activeElement).toBe(dialog);
     fireEvent.keyDown(dialog, { key: 'Enter' });
     expect(document.activeElement).toBe(dialog);
-    fireEvent.keyDown(dialog, { key: 'Tab' });
+    fireEvent.keyDown(document, { key: 'Tab' });
     expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Close' }));
-    dialog.focus();
-    fireEvent.keyDown(dialog, { key: 'Tab', shiftKey: true });
+    focusDocumentBody();
+    expect(document.activeElement).toBe(document.body);
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Close' }));
+    focusDocumentBody();
+    expect(document.activeElement).toBe(document.body);
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
     expect(document.activeElement).toBe(
       within(dialog).getByRole('textbox', { name: 'Place name' }),
     );
@@ -113,7 +124,11 @@ describe('PlaceField', () => {
         ),
       ).toHaveLength(0);
     });
-    expect(fireEvent.keyDown(dialog, { key: 'Tab' })).toBe(false);
+    expect(document.activeElement).toBe(dialog);
+    focusDocumentBody();
+    expect(document.activeElement).toBe(document.body);
+    expect(fireEvent.keyDown(document, { key: 'Tab' })).toBe(false);
+    expect(document.activeElement).toBe(dialog);
   });
 
   it('says the map is unavailable when the key request fails', async () => {
@@ -696,7 +711,11 @@ describe('PlaceField', () => {
       'The place could not be saved. Please try again.',
     );
     expect(onChange).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Use this place' })).toBeTruthy();
+    const commit = screen.getByRole('button', { name: 'Use this place' });
+    expect(commit).toBeTruthy();
+    await waitFor(() => {
+      expect(document.activeElement).toBe(commit);
+    });
   });
 
   it('disables Done and Remove while onCommit is pending', async () => {

@@ -58,6 +58,8 @@ type GoogleWindow = Window & {
 };
 
 const START_CENTER = { lat: 20, lng: 0 };
+const DIALOG_FOCUSABLE_SELECTOR =
+  'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
 
 function addressFromDraft(draft: ForumPlaceAddressDraft): ForumPlaceAddress | null {
   if (Object.values(draft).every((value) => value === '')) return null;
@@ -175,6 +177,7 @@ export function PlaceField(props: {
   const markerRef = useRef<GoogleMarker | null>(null);
   const authFailedRef = useRef(false);
   const savingRef = useRef(false);
+  const restoreFocusAfterFailedSaveRef = useRef(false);
   savingRef.current = saving;
   const fieldsDisabled = props.disabled || saving;
 
@@ -334,15 +337,43 @@ export function PlaceField(props: {
       return;
     }
     const opener = document.activeElement as HTMLElement | null;
-    const closeOnEscape = (event: KeyboardEvent): void => {
+    const handleDialogKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape' && !savingRef.current) {
         setOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') {
+        return;
+      }
+      const dialog = dialogRef.current;
+      /* v8 ignore next 3 -- the listener is removed with the open dialog */
+      if (dialog === null) {
+        return;
+      }
+      const focusable = dialog.querySelectorAll<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable.item(0);
+      const last = focusable.item(focusable.length - 1);
+      const active = document.activeElement;
+      if (active === dialog || !dialog.contains(active)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
     dialogRef.current?.focus();
-    document.addEventListener('keydown', closeOnEscape, true);
+    document.addEventListener('keydown', handleDialogKeyDown, true);
     return () => {
-      document.removeEventListener('keydown', closeOnEscape, true);
+      document.removeEventListener('keydown', handleDialogKeyDown, true);
       // A dialog opened by a server problem has no live opener; return to the place button.
       if (opener !== null && opener !== document.body && opener.isConnected) {
         opener.focus();
@@ -351,6 +382,27 @@ export function PlaceField(props: {
       }
     };
   }, [open]);
+
+  useEffect(() => {
+    if (saving || !restoreFocusAfterFailedSaveRef.current) {
+      return;
+    }
+    restoreFocusAfterFailedSaveRef.current = false;
+    const dialog = dialogRef.current;
+    /* v8 ignore next 3 -- a failed commit keeps the open dialog mounted */
+    if (dialog === null) {
+      return;
+    }
+    const commitButton = dialog.querySelector<HTMLElement>('[data-place-commit]:not([disabled])');
+    const firstFocusable = dialog.querySelector<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR);
+    const focusTarget = commitButton ?? firstFocusable;
+    /* v8 ignore next 4 -- Close is enabled again after every failed save */
+    if (focusTarget === null) {
+      dialog.focus();
+      return;
+    }
+    focusTarget.focus();
+  });
 
   useEffect(() => {
     if (!open || unavailable || mapsKey === null || !scriptReady) {
@@ -529,6 +581,8 @@ export function PlaceField(props: {
       setOpen(false);
       return;
     }
+    dialogRef.current!.focus();
+    restoreFocusAfterFailedSaveRef.current = false;
     setSaving(true);
     setSaveError(null);
     setUnknownSaveError(false);
@@ -536,6 +590,7 @@ export function PlaceField(props: {
       await props.onCommit(next);
       setOpen(false);
     } catch (error) {
+      restoreFocusAfterFailedSaveRef.current = true;
       const problem = error instanceof Error ? shopApiProblem(error.message, shopDetails) : null;
       if (problem === null) {
         setUnknownSaveError(true);
@@ -557,31 +612,6 @@ export function PlaceField(props: {
             aria-modal="true"
             aria-labelledby={titleId}
             tabIndex={-1}
-            onKeyDown={(event) => {
-              if (event.key !== 'Tab') return;
-              const focusable = event.currentTarget.querySelectorAll<HTMLElement>(
-                'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
-              );
-              if (focusable.length === 0) {
-                event.preventDefault();
-                return;
-              }
-              const first = focusable.item(0);
-              const last = focusable.item(focusable.length - 1);
-              if (
-                event.shiftKey &&
-                (document.activeElement === first || document.activeElement === event.currentTarget)
-              ) {
-                event.preventDefault();
-                last.focus();
-              } else if (
-                !event.shiftKey &&
-                (document.activeElement === last || document.activeElement === event.currentTarget)
-              ) {
-                event.preventDefault();
-                first.focus();
-              }
-            }}
           >
             <div className="flex h-full w-full max-w-[560px] flex-col bg-app-card sm:h-auto sm:max-h-[calc(100vh-2rem)] sm:rounded-2xl sm:border sm:border-app-border">
               <div className="flex shrink-0 items-center justify-between border-b border-app-border px-4 py-3">
@@ -698,6 +728,7 @@ export function PlaceField(props: {
                   <Button
                     type="button"
                     variant="secondary"
+                    data-place-commit=""
                     disabled={fieldsDisabled || blocked}
                     onClick={() => {
                       const label = labelDraft.trim();
