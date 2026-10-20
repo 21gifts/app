@@ -1455,7 +1455,6 @@ describe('PlaceField', () => {
     listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
     fillShopAddress();
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
-    const street = screen.getByLabelText('Street');
     const houseNumber = screen.getByLabelText('House number');
     houseNumber.setAttribute('aria-invalid', 'true');
     await act(async () => {
