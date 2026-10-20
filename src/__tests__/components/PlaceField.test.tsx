@@ -1532,6 +1532,35 @@ describe('PlaceField', () => {
     });
   });
 
+  it('keeps Street unfocused after a rejection that is not about the address', async () => {
+    const onCommit = vi.fn().mockRejectedValue(new Error('denied'));
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={onCommit}
+        shopDetails
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
+    fillShopAddress();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    expect((await screen.findByRole('alert')).textContent).toContain(
+      'The place could not be saved. Please try again.',
+    );
+    const commit = screen.getByRole('button', { name: 'Use this place' });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(commit);
+    });
+    expect(document.activeElement).not.toBe(screen.getByLabelText('Street'));
+  });
+
   it('keeps a while-typing footer reason out of the alert live region', async () => {
     stubMaps();
     renderWithLocale(

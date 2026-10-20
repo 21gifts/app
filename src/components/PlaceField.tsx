@@ -410,12 +410,16 @@ export function PlaceField(props: {
         ? dialog.querySelector<HTMLElement>(`[id="${shopNameId}"]`)
         : null;
     // An address the client accepted but the API rejected marks no field; start at Street.
+    const addressRejected =
+      saveError === SHOP_API_MESSAGE.shopAddress || saveError === SHOP_API_MESSAGE.placeAddress;
     const invalidAddress =
       saveError !== null && nameInput === null
         ? (dialog.querySelector<HTMLElement>('[aria-invalid="true"]') ??
-          dialog.querySelector<HTMLElement>(
-            '[data-testid="shop-address-fields"] input:not([disabled])',
-          ))
+          (addressRejected
+            ? dialog.querySelector<HTMLElement>(
+                '[data-testid="shop-address-fields"] input:not([disabled])',
+              )
+            : null))
         : null;
     const commitButton = dialog.querySelector<HTMLElement>('[data-place-commit]:not([disabled])');
     const firstFocusable = dialog.querySelector<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR);
