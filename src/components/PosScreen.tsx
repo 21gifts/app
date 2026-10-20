@@ -143,6 +143,8 @@ type WalletSettled = {
   closed: Set<string>;
   /** Payments heard that no known open charge took (a till still loading its charge), newest last. */
   early: Array<{ amountSats: number; feesSats: number; at: number }>;
+  /** A charge the api reported paid before this wallet heard its payment, which is still to come. */
+  owed: PosCharge | null;
 };
 
 /** How many payments no known open charge took are kept for the next one. */
@@ -156,7 +158,14 @@ const walletSettledListeners = new Set<() => void>();
 /** The settled memory of `session`; another session starts it over. */
 function settledFor(session: string | null): WalletSettled {
   if (walletSettled === null || walletSettled.session !== session) {
-    walletSettled = { session, open: null, paid: new Map(), closed: new Set(), early: [] };
+    walletSettled = {
+      session,
+      open: null,
+      paid: new Map(),
+      closed: new Set(),
+      early: [],
+      owed: null,
+    };
   }
   return walletSettled;
 }
@@ -169,13 +178,31 @@ function settledChanged(): void {
 }
 
 /**
+ * Whether `payment`, heard at `heardAt`, pays `charge`: its amount, or its
+ * amount after the fee, and heard no later than {@link POS_LATE_PAID_MS}
+ * after the charge's end.
+ */
+function pays(
+  charge: PosCharge,
+  payment: Pick<WalletPayment, 'amountSats' | 'feesSats'>,
+  heardAt: number,
+): boolean {
+  return (
+    (payment.amountSats === charge.amountSats ||
+      payment.amountSats + payment.feesSats === charge.amountSats) &&
+    heardAt <= Date.parse(charge.expiresAt) + POS_LATE_PAID_MS
+  );
+}
+
+/**
  * The open charge of `session` is paid the moment this tab's wallet receives
  * its amount (or the amount after its fee): while it is open the receiving
  * address takes no other amount. Up to {@link POS_LATE_PAID_MS} after its end
  * (by the time it was heard) still counts. No reading of the api in between. A payment no known open
  * charge takes (the till is still reading the next one) is kept with the
  * time it was first heard, and tried again once the next open charge is
- * known, unless it was heard before that charge was created.
+ * known, unless it was heard before that charge was created. The payment of a
+ * charge the api already reported paid is its own, not the next charge's.
  */
 function settleOpen(
   session: string | null,
@@ -183,13 +210,12 @@ function settleOpen(
   heardAt: number = Date.now(),
 ): void {
   const memory = settledFor(session);
+  if (memory.owed !== null && pays(memory.owed, payment, heardAt)) {
+    memory.owed = null;
+    return;
+  }
   const open = memory.open;
-  if (
-    open === null ||
-    (payment.amountSats !== open.amountSats &&
-      payment.amountSats + payment.feesSats !== open.amountSats) ||
-    heardAt > Date.parse(open.expiresAt) + POS_LATE_PAID_MS
-  ) {
+  if (open === null || !pays(open, payment, heardAt)) {
     // Not this charge's: it may be the next one's, which the till has not read yet.
     memory.early = [
       ...memory.early,
@@ -200,6 +226,20 @@ function settleOpen(
   memory.open = null;
   memory.paid.set(open.id, { ...open, status: 'paid', paidAt: new Date().toISOString() });
   settledChanged();
+}
+
+/**
+ * Make `charge` the open charge of `session` and try again the parked
+ * payments heard at or after it was created.
+ */
+function armOpen(session: string | null, charge: PosCharge): void {
+  const memory = settledFor(session);
+  memory.open = charge;
+  const early = memory.early.filter((heard) => heard.at >= Date.parse(charge.createdAt));
+  memory.early = [];
+  for (const heard of early) {
+    settleOpen(session, heard, heard.at);
+  }
 }
 
 /**
@@ -384,6 +424,7 @@ function usePosTillState(): PosTillState {
   }, [charge]);
 
   const tillSession = till.session;
+  const serverPaidId = serverPaid?.id ?? null;
   useEffect(() => {
     // Only a till this session read says which charge is open, not one left from the session before.
     if (tillSession !== session) {
@@ -391,19 +432,18 @@ function usePosTillState(): PosTillState {
     }
     const memory = settledFor(session);
     if (charge !== null) {
-      memory.open = charge;
-      // A payment the wallet reported while this charge was still being read, never an older one.
-      const early = memory.early.filter((heard) => heard.at >= Date.parse(charge.createdAt));
-      memory.early = [];
-      for (const heard of early) {
-        settleOpen(session, heard, heard.at);
-      }
+      // A payment the wallet reported while this charge was still being read counts for it.
+      armOpen(session, charge);
     } else if (memory.open !== null && Date.now() < Date.parse(memory.open.expiresAt)) {
-      // Gone before its end (cancelled elsewhere): no payment belongs to it any more. One that ran
-      // out stays, so a payment just after its end still counts.
+      // Gone before its end: cancelled elsewhere, then no payment belongs to it any more; or paid
+      // per the api before this wallet heard it, then the payment still to come is its own. One
+      // that ran out stays, so a payment just after its end still counts.
+      if (serverPaidId === memory.open.id) {
+        memory.owed = memory.open;
+      }
       memory.open = null;
     }
-  }, [charge, session, tillSession]);
+  }, [charge, serverPaidId, session, tillSession]);
 
   useEffect(() => {
     if (session === null) {
@@ -515,7 +555,10 @@ function usePosTillState(): PosTillState {
           setAmount('');
         });
       } catch (err) {
-        creating.open = before;
+        if (before !== null) {
+          // Back to the charge before, with any payment heard while the create was on its way.
+          armOpen(session, before);
+        }
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- createPosCharge only rejects with Error */
           const message = err instanceof Error ? err.message : t('pos.error');
@@ -796,7 +839,7 @@ export function PosAmount(): ReactElement {
       {till.state === null && till.error === null ? (
         <Loader2 aria-hidden="true" className="mx-auto h-8 w-8 animate-spin text-app-subtle" />
       ) : null}
-      {till.state !== null && till.charge === null && till.canCharge ? (
+      {till.state !== null && till.charge === null && !till.paidByWallet && till.canCharge ? (
         <form
           className="flex w-full flex-col gap-3"
           noValidate

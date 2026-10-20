@@ -1631,6 +1631,8 @@ describe('PosScreen', () => {
       await waitFor(() => {
         expect(replace).toHaveBeenCalledWith('/pos');
       });
+      // Leaving to show the payment, the page no longer takes a new charge.
+      expect(screen.queryByRole('button', { name: 'Create payment' })).toBeNull();
     });
 
     it('does not count a payment for a charge a read no longer has before its end', async () => {
@@ -1848,6 +1850,68 @@ describe('PosScreen', () => {
       });
       expect(await confirmation()).toBeTruthy();
       clock.mockRestore();
+    });
+
+    it('counts a payment heard while a failing create was on its way for the charge before', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let failPost: ((value: Response) => void) | undefined;
+      let first = true;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return new Promise<Response>((resolve) => {
+              failPost = resolve;
+            });
+          }
+          const charge = first ? ended : null;
+          first = false;
+          return Promise.resolve(jsonResponse({ charge, history: [ended] }));
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      renderWithLocale(<PosAmount />);
+      await pressAmount('5');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(failPost).toBeDefined();
+      });
+      receive(21);
+      expect(replace).not.toHaveBeenCalled();
+      await act(async () => {
+        failPost?.(jsonResponse({ error: 'down' }, 502));
+      });
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/pos');
+      });
+    });
+
+    it('lets the late wallet report of a charge the api already paid pay nothing else', async () => {
+      const next = { ...OPEN, id: 'c2', createdAt: new Date().toISOString() };
+      let charge: Record<string, unknown> = OPEN;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(async () => jsonResponse({ charge, history: [charge] })),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      // The api saw the payment first, while this tab was in the background.
+      charge = PAID;
+      showTab();
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      // A new charge of the same amount is open when the wallet finally reports the first payment.
+      charge = next;
+      showTab();
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+      // The next payment of that amount is the new charge's.
+      receive(21);
+      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
     });
 
     it('never asks the api on a timer while a charge is open', async () => {
