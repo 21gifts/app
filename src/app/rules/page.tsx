@@ -1,9 +1,26 @@
+import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { RulesDocument } from '@/components/RulesDocument';
 import { RulesPageChrome } from '@/components/RulesPageChrome';
 import { getCatalog } from '@/lib/messages';
 import { getRequestLocale } from '@/lib/request-locale';
+import { marketingMetadata } from '@/lib/marketing-metadata';
 import { translate } from '@/lib/translate';
+
+/**
+ * English metadata for `/rules`. Canonical and hreflang follow the language URL.
+ *
+ * @returns Next.js metadata for this page.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getRequestLocale();
+  return marketingMetadata(
+    '/rules',
+    'Living room rules | 21.gifts',
+    'You are a guest in a living room with the windows open. Everything you write here is public, and anyone walking past can read along.',
+    locale,
+  );
+}
 
 /**
  * `/rules` — public living-room rules (app chrome, like `/donate`).

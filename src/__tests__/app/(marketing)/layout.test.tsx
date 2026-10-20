@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MarketingLayout from '@/app/(marketing)/layout';
@@ -102,7 +102,8 @@ describe('MarketingLayout', () => {
 
   it('renders MarketingHeader without an outer LocaleProvider', async () => {
     render(await MarketingLayout({ children: 'content' }));
-    expect(screen.getByRole('link', { name: '21.gifts' })).toBeTruthy();
+    const header = within(screen.getByRole('banner'));
+    expect(header.getByRole('link', { name: '21.gifts' })).toBeTruthy();
     expect(screen.getByText('content')).toBeTruthy();
   });
 });
