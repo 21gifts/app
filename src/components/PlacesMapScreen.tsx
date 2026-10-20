@@ -10,6 +10,7 @@ import { Button, Card, IconButton } from '@/components/ui';
 import { fetchForumMessage, fetchPlaces } from '@/lib/api';
 import type { ForumMessage, ForumPlaceRow } from '@/lib/api-types';
 import { isShopNote } from '@/lib/forum-shop';
+import { fetchMapsKey } from '@/lib/maps-key';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -99,21 +100,7 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
     }
     let cancelled = false;
     const run = async (): Promise<void> => {
-      const keyPromise = fetch('/maps/key')
-        .then(async (response) => {
-          const keyBody: unknown = await response.json();
-          if (
-            typeof keyBody === 'object' &&
-            keyBody !== null &&
-            'key' in keyBody &&
-            typeof keyBody.key === 'string'
-          ) {
-            const trimmed = keyBody.key.trim();
-            return trimmed === '' ? null : trimmed;
-          }
-          return null;
-        })
-        .catch(() => null);
+      const keyPromise = fetchMapsKey();
       try {
         const [rows, key] = await Promise.all([fetchPlaces(session), keyPromise]);
         if (cancelled) {

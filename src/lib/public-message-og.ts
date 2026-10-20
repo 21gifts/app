@@ -6,21 +6,24 @@ import { shortResourceUrl } from '@/lib/short-link';
 /** Same regex as PublicMessageLoader. Not exported (keep Function count down). */
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const DEFAULT_OG_ALT = '21.gifts — peer-to-peer Bitcoin gifts';
+/** Alt text of the default `/og.png` preview image, shared by note and shop metadata. */
+export const DEFAULT_OG_ALT = '21.gifts — peer-to-peer Bitcoin gifts';
 const EXTERNAL_OG_TITLE = 'External author on 21.gifts';
 const EXTERNAL_OG_DESCRIPTION = 'A reply from someone outside 21.gifts who sent bitcoin to a post.';
 const DESCRIPTION_MAX = 300;
 
 /**
- * Description for a found note: trimmed text, or a name fallback — never the
- * marketing layout copy. Truncates above 300 UTF-16 code units with `…`.
+ * Link-preview description for a public note or shop: trimmed text, or a name
+ * fallback — never the marketing layout copy. Truncates above 300 UTF-16 code
+ * units with `…`.
  *
- * @param note - Loaded public forum note.
+ * @param text - Note text or shop description.
+ * @param name - Author or shop name used when `text` is blank.
  * @returns Open Graph / Twitter description string.
  */
-function ogDescription(note: ForumMessage): string {
-  const trimmed = note.text.trim();
-  const chosen = trimmed === '' ? `${note.name} on 21.gifts` : trimmed;
+export function ogDescriptionText(text: string, name: string): string {
+  const trimmed = text.trim();
+  const chosen = trimmed === '' ? `${name} on 21.gifts` : trimmed;
   if (chosen.length > DESCRIPTION_MAX) {
     return `${chosen.slice(0, DESCRIPTION_MAX - 1)}…`;
   }
@@ -94,7 +97,7 @@ export function publicMessageOgMetadata(id: string, note: ForumMessage | null): 
     };
   }
   const title = note.name;
-  const description = ogDescription(note);
+  const description = ogDescriptionText(note.text, note.name);
   const photoAlt = note.text.trim() || note.name;
   const photoImage = { url: `/messages/${id}/photo`, alt: photoAlt };
   return {

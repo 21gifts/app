@@ -132,6 +132,28 @@ describe('ShopPage', () => {
     }
   });
 
+  it('limits the page fetch to 2.5 seconds and shows the retryable error on timeout', async () => {
+    const timeout = vi
+      .spyOn(AbortSignal, 'timeout')
+      .mockImplementation(() =>
+        AbortSignal.abort(new DOMException('The operation timed out.', 'TimeoutError')),
+      );
+    const fetchMock = vi.fn((_url: string, init: RequestInit) =>
+      init.signal?.aborted === true
+        ? Promise.reject(init.signal.reason)
+        : Promise.resolve(response(200, { shop: SHOP })),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    render(await ShopPage({ params: Promise.resolve({ npub: NPUB }) }));
+    expect(screen.getByTestId('shop-screen').getAttribute('data-state')).toBe('unavailable');
+    expect(timeout).toHaveBeenCalledWith(2500);
+    expect(fetchMock).toHaveBeenCalledWith(
+      `https://api.test/shops/${NPUB}`,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    timeout.mockRestore();
+  });
+
   it('turns the api hex redirect into a permanent root redirect', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response(301, undefined, `/shops/${NPUB}`)));
     await expect(ShopPage({ params: Promise.resolve({ npub: HEX }) })).rejects.toThrow(
@@ -229,6 +251,23 @@ describe('shop generateMetadata', () => {
     expect(unknownSize.openGraph).toMatchObject({
       images: [{ url: '/photo.jpg', alt: 'Cafe Luna' }],
     });
+  });
+
+  it('uses the public-note description rules: trimmed, name fallback, 300-unit cut', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(response(200, { shop: { ...SHOP, description: 'z'.repeat(301) } }))
+      .mockResolvedValueOnce(response(200, { shop: { ...SHOP, description: '  ' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    const long = await generateMetadata({ params: Promise.resolve({ npub: NPUB }) });
+    const cut = `${'z'.repeat(299)}…`;
+    expect(long.description).toBe(cut);
+    expect(long.openGraph).toMatchObject({ description: cut });
+    expect(long.twitter).toMatchObject({ description: cut });
+    const blank = await generateMetadata({ params: Promise.resolve({ npub: NPUB }) });
+    expect(blank.description).toBe('Cafe Luna on 21.gifts');
+    expect(blank.openGraph).toMatchObject({ description: 'Cafe Luna on 21.gifts' });
+    expect(blank.twitter).toMatchObject({ description: 'Cafe Luna on 21.gifts' });
   });
 
   it('inherits root metadata when the shop is not ready', async () => {

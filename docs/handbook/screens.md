@@ -1751,13 +1751,13 @@ The same moderator pressed **Next**. Step **2 / 5 · Place** is open. **History*
 ## Screen: /[npub]
 
 - **URL:** `/{npub}` — public shop identity. The one root segment must be a Nostr npub matching `^npub1[02-9ac-hj-np-z]{58}$` or 64 lowercase hex. Static routes such as `/shops`, `/messages`, and `/about` keep their App Router precedence. Invalid or unknown values render the existing `/404` screen. A known hex key follows api `GET /shops/:hex` and the app answers 308 to the canonical `/{npub}`.
-- **What the user sees:** `PublicMessageChrome`, so the frame has the one shared top-left history arrow and an unsigned language switcher or the signed-in Menu. A listed shop shows its name, description, `ForumPhotoGallery`, postal address as text, optional one-marker Google map, link **View forum note**, optional verified Nostr address, full npub with icon-only **Copy**, and an Open CryptoPay QR when `payUsername` is not null. Without a Google Maps key there is no map frame; the address remains. The QR stays visible on smartphone. API 410 shows only **This shop is no longer listed.**, never the hidden name. API 503 or an unusable response shows `forum.error` plus **Try again**.
-- **Inputs / metadata:** Server `GET /shops/:npub` without a session. `generateMetadata` uses the same 2.5-second abort as a public note, with shop name, description, first photo or `/og.png`, and canonical `/{npub}` relative to root `metadataBase`. The client asks same-origin `GET /maps/key`; a non-empty key draws only this shop at zoom 14. Payment encodes `openCryptoPayQrValue(payUsername, window.location.hostname)`, with `21.gifts` during SSR.
-- **Actions / calls:** Open `/messages/{messageId}`, copy the npub (`NpubCopyButton`), scan the `QrCode`, change language or use the signed-in Menu, retry via `router.refresh`, and use the one header back arrow. Calls `ShopPage`, `ShopScreen`, `PublicMessageChrome`, `ForumPhotoGallery`, `GoogleMapCanvas`, `NpubCopyButton`, `QrCode`, and `openCryptoPayQrValue`.
+- **What the user sees:** `PublicMessageChrome`, so the frame has the one shared top-left history arrow and an unsigned language switcher or the signed-in Menu. A listed shop shows its name, description, `ForumPhotoGallery`, postal address as text, optional one-marker Google map, link **View forum note**, optional verified Nostr address, full npub with icon-only **Copy**, and, when `payUsername` is not null, a payment block like the profile cards: heading **21.gifts address**, the `username@domain` address line, then the Open CryptoPay QR with the 21.gifts logo. Without a Google Maps key there is no map frame; the address remains. The QR stays visible on smartphone. API 410 shows only **This shop is no longer listed.**, never the hidden name. API 503 or an unusable response shows `forum.error` plus **Try again**.
+- **Inputs / metadata:** Server `GET /shops/:npub` without a session, limited to 2.5 seconds; a timeout shows the retryable error. `generateMetadata` uses the same 2.5-second abort as a public note, with shop name, description cut like a public note (`ogDescriptionText`: trimmed, name fallback, 300 code units), first photo or `/og.png`, and canonical `/{npub}` relative to root `metadataBase`. The client asks same-origin `GET /maps/key` through `fetchMapsKey`; a non-empty key draws only this shop at zoom 14. Payment shows `giftsLightningAddress(payUsername, window.location.hostname)` and encodes `openCryptoPayQrValue(payUsername, window.location.hostname)`, with `21.gifts` during SSR.
+- **Actions / calls:** Open `/messages/{messageId}`, copy the npub (`NpubCopyButton`), scan the `QrCode`, change language or use the signed-in Menu, retry via `router.refresh`, and use the one header back arrow. Calls `ShopPage`, `ShopScreen`, `PublicMessageChrome`, `ForumPhotoGallery`, `GoogleMapCanvas`, `fetchMapsKey`, `NpubCopyButton`, `QrCode`, `giftsLightningAddress`, and `openCryptoPayQrValue`.
 
 ### Variant: default
 
-Listed **Cafe Luna** with description, one photo, full address, forum-note link, NIP-05, npub copy control, and Open CryptoPay QR. No maps key, so no map frame. The address remains visible.
+Listed **Cafe Luna** with description, one photo, full address, forum-note link, NIP-05, npub copy control, and the payment block (`luna@21.gifts` plus Open CryptoPay QR with logo). No maps key, so no map frame. The address remains visible.
 
 ![21.gifts public shop](images/npub.png)
 
@@ -1775,7 +1775,7 @@ After pressing the icon-only **Copy** control, its check icon has the accessible
 
 ### Variant: no-payment
 
-Listed **Quiet Shop** with `payUsername: null` and `nip05: null`. Address, forum link, and npub remain; the verified-address section and payment QR are absent.
+Listed **Quiet Shop** with `payUsername: null` and `nip05: null`. Address, forum link, and npub remain; the verified-address section and the whole payment block (heading, address, QR) are absent.
 
 ![21.gifts public shop without payment](images/npub-no-payment.png)
 

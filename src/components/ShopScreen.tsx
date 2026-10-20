@@ -10,7 +10,9 @@ import { NpubCopyButton } from '@/components/NpubCopyButton';
 import { QrCode } from '@/components/QrCode';
 import { Button, Card } from '@/components/ui';
 import type { Shop } from '@/lib/api-types';
-import { openCryptoPayQrValue } from '@/lib/gifts-address';
+import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { fetchMapsKey } from '@/lib/maps-key';
+import { profileQrLogo } from '@/lib/profile-qr-logo';
 
 /** Visible state of the public shop screen. */
 export type ShopScreenProps = { state: 'ready'; shop: Shop } | { state: 'gone' | 'unavailable' };
@@ -29,6 +31,7 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
   const [showQr, setShowQr] = useState(false);
   /* v8 ignore next -- SSR: no window */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
+  const payAddress = giftsLightningAddress(shop?.payUsername, host);
   const qr = openCryptoPayQrValue(shop?.payUsername, host);
   const photos = useMemo(
     () => shop?.photos.map((photo, index) => ({ index, url: photo.url })) ?? [],
@@ -48,26 +51,11 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
       return;
     }
     let cancelled = false;
-    void fetch('/maps/key')
-      .then(async (response) => {
-        const body: unknown = await response.json();
-        if (
-          typeof body === 'object' &&
-          body !== null &&
-          'key' in body &&
-          typeof body.key === 'string'
-        ) {
-          const trimmed = body.key.trim();
-          return trimmed === '' ? null : trimmed;
-        }
-        return null;
-      })
-      .catch(() => null)
-      .then((key) => {
-        if (!cancelled) {
-          setMapsKey(key);
-        }
-      });
+    void fetchMapsKey().then((key) => {
+      if (!cancelled) {
+        setMapsKey(key);
+      }
+    });
     return () => {
       cancelled = true;
     };
@@ -152,12 +140,17 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
           <NpubCopyButton key={props.shop.npub} npub={props.shop.npub} />
         </div>
       </section>
-      {showQr && qr !== null ? (
-        <section className="flex w-full flex-col items-center gap-3 border-t border-app-border pt-6">
+      {payAddress !== null ? (
+        <section className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
           <h2 className="text-center text-xs tracking-widest text-app-subtle uppercase">
             {t('profile.giftsHeading')}
           </h2>
-          <QrCode value={qr} label={t('profile.giftsQr')} />
+          <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">{payAddress}</p>
+          {showQr && qr !== null ? (
+            <div className="flex justify-center">
+              <QrCode value={qr} label={t('profile.giftsQr')} logo={profileQrLogo} />
+            </div>
+          ) : null}
         </section>
       ) : null}
     </Card>

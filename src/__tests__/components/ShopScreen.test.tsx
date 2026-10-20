@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { ShopScreen } from '@/components/ShopScreen';
 import type { Shop } from '@/lib/api-types';
+import { profileQrLogo } from '@/lib/profile-qr-logo';
 
 const refresh = vi.fn();
 
@@ -16,6 +17,12 @@ vi.mock('next/link', () => ({
     <a href={href} {...rest}>
       {children}
     </a>
+  ),
+}));
+
+vi.mock('@/components/QrCode', () => ({
+  QrCode: ({ label, logo }: { label: string; logo?: string }) => (
+    <div role="img" aria-label={label} data-logo={logo ?? ''} />
   ),
 }));
 
@@ -72,9 +79,19 @@ describe('ShopScreen', () => {
     expect(screen.getByRole('link', { name: 'View forum note' }).getAttribute('href')).toBe(
       `/messages/${SHOP.messageId}`,
     );
-    expect(screen.getByText('luna@21.gifts')).toBeTruthy();
+    expect(screen.getByText('luna@21.gifts', { selector: 'p.break-all' })).toBeTruthy();
     expect(screen.getByText(NPUB)).toBeTruthy();
     expect(await screen.findByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
+  });
+
+  it('shows the payment address under the heading and the profile QR logo', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    renderWithLocale(<ShopScreen state="ready" shop={SHOP} />);
+    const heading = screen.getByRole('heading', { name: '21.gifts address' });
+    const address = screen.getByText('luna@21.gifts', { selector: 'p.font-mono' });
+    expect(heading.nextElementSibling).toBe(address);
+    const qr = await screen.findByRole('img', { name: 'Open CryptoPay QR code' });
+    expect(qr.getAttribute('data-logo')).toBe(profileQrLogo);
   });
 
   it('draws the one-shop map only after a non-empty maps key loads', async () => {
@@ -142,6 +159,7 @@ describe('ShopScreen', () => {
     expect(screen.getByText('Zurich')).toBeTruthy();
     expect(screen.queryByText('Verified Nostr address')).toBeNull();
     expect(screen.queryByRole('img', { name: 'Open CryptoPay QR code' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: '21.gifts address' })).toBeNull();
     expect(screen.queryByTestId('shop-map')).toBeNull();
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith('/maps/key');

@@ -1047,14 +1047,14 @@
 ## Function: ShopPage
 
 - **Purpose:** Next.js page for `/{npub}`. Rejects every segment except a valid npub or 64 lowercase hex; api 404 uses `notFound`, 410 renders the anonymous unlisted state, and 503/unusable data renders the retryable state.
-- **Inputs:** Dynamic `npub` route segment. Calls public api `GET /shops/:npub` with manual redirect handling and no session.
+- **Inputs:** Dynamic `npub` route segment. Calls public api `GET /shops/:npub` with manual redirect handling, no session, and `AbortSignal.timeout(2500)` — the same limit as metadata; a timeout or abort renders the retryable `unavailable` state.
 - **Returns / side effects:** `ShopScreen` inside `PublicMessageChrome`, or a 308 `permanentRedirect` from a known hex key to `/{npub}` after the api's 301. Also exports shop `generateMetadata`.
 - **Used by:** Route `/[npub]`.
 
 ## Function: ShopScreen
 
-- **Purpose:** Public shop identity body: name, description, `ForumPhotoGallery`, text address, optional one-marker map, forum-note link, optional NIP-05, npub copy control, and optional Open CryptoPay QR.
-- **Inputs:** Discriminated `state`: `ready` with a parsed `Shop`, `gone`, or `unavailable`. Uses translations and browser hostname; asks `/maps/key` only while ready.
+- **Purpose:** Public shop identity body: name, description, `ForumPhotoGallery`, text address, optional one-marker map, forum-note link, optional NIP-05, npub copy control, and an optional payment block like the profile cards: heading **21.gifts address**, the `giftsLightningAddress(payUsername, host)` line, then the Open CryptoPay QR with `profileQrLogo`.
+- **Inputs:** Discriminated `state`: `ready` with a parsed `Shop`, `gone`, or `unavailable`. Uses translations and browser hostname; asks `fetchMapsKey` only while ready.
 - **Returns / side effects:** Ready card, anonymous unlisted heading, or `forum.error` plus `view.retry`. Retry calls `router.refresh`; a non-empty maps key mounts `GoogleMapCanvas` for one point.
 - **Used by:** `ShopPage`.
 
@@ -1081,9 +1081,9 @@
 
 ## Function: generateMetadata
 
-- **Purpose:** Next.js App Router metadata for `/messages/[id]` and `/{npub}`. A message loads through `loadPublicMessageForOg`; a shop loads api `GET /shops/:npub` directly. Both use `AbortSignal.timeout(2500)` and inherit root metadata on missing, invalid, timed-out, or unusable responses.
+- **Purpose:** Next.js App Router metadata for `/messages/[id]` and `/{npub}`. A message loads through `loadPublicMessageForOg`; a shop loads api `GET /shops/:npub` directly. Both use `AbortSignal.timeout(2500)` and inherit root metadata on missing, invalid, timed-out, or unusable responses. Both build description, `og:description`, and `twitter:description` with `ogDescriptionText` and the default image alt `DEFAULT_OG_ALT`.
 - **Inputs:** Dynamic route params: `{ id }` for a public message or `{ npub }` for a public shop.
-- **Returns / side effects:** `Promise<Metadata>`. Notes use author/text and note photo rules. Shops use the shop name, description, first photo (or `/og.png`), and relative canonical/open-graph URL `/{npub}` resolved by root `metadataBase`.
+- **Returns / side effects:** `Promise<Metadata>`. Notes use author/text and note photo rules. Shops use the shop name, `ogDescriptionText(description, name)` (trimmed, `{name} on 21.gifts` when blank, cut above 300 code units with `…`), first photo (or `/og.png`), and relative canonical/open-graph URL `/{npub}` resolved by root `metadataBase`.
 - **Used by:** Routes `/messages/[id]` (`PublicMessagePage`) and `/[npub]` (`ShopPage`).
 
 ## Function: loadPublicMessageForOg
@@ -1092,6 +1092,13 @@
 - **Inputs:** `id` string from the route (forum message UUID).
 - **Returns / side effects:** `ForumMessage` or `null`. Uses `cache: 'no-store'`, `Accept: application/json`, and `AbortSignal.timeout(2500)`.
 - **Used by:** `generateMetadata` on `/messages/[id]`.
+
+## Function: ogDescriptionText
+
+- **Purpose:** Shared link-preview description for a public note and a public shop: trimmed text, or `` `${name} on 21.gifts` `` when the text is blank — never the marketing layout copy. Text longer than 300 UTF-16 code units is cut to 299 plus `…`. The same module exports `DEFAULT_OG_ALT`, the alt text of the default `/og.png` image.
+- **Inputs:** `text` (note text or shop description) and `name` (author or shop name).
+- **Returns / side effects:** Description string of at most 300 code units. No I/O.
+- **Used by:** `publicMessageOgMetadata`, shop `generateMetadata` on `/[npub]`.
 
 ## Function: publicMessageOgMetadata
 
@@ -1404,8 +1411,15 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key `GoogleMapCanvas` draws the same pins as markers. A pin label opens `/{shopNpub}` when the row carries a listed-shop identity; null or omitted stays `/messages/:id`. A 21.gifts author name links to `/members/:accountId`; an external name stays text. A moderator sees the shop pencil on a pin with `shop: true`; it loads that note and opens the same steps as editing a shop post. A failed load shows `forum.editShopNoteLoadFailed`, not the save-failure sentence. `embedded` returns that body without the heading or card. A long pin name or label wraps inside the row. With a key, one pin, or a `?pin=` that matches a pin, centers that pin at zoom 14. Several pins and no matching `?pin=` frame every pin (`fitBounds`, padding 32). A fitted zoom above 14 is set back to 14.
 - **Inputs:** Optional `embedded` (default false). Catalog via `useTranslations`. Session from `useAuthStore`. Optional `?pin=` id.
-- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`, or only the body when `embedded`. Fetches places and `/maps/key`.
+- **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`, or only the body when `embedded`. Fetches places and the browser key via `fetchMapsKey`.
 - **Used by:** `ShopsScreen`.
+
+## Function: fetchMapsKey
+
+- **Purpose:** One shared loader for the browser Google Maps key from same-origin `GET /maps/key`, used by the places map and the public shop page instead of two copies of the same fetch and parse.
+- **Inputs:** None. Reads the JSON body's `key`.
+- **Returns / side effects:** `Promise<string | null>`: the trimmed key, or `null` for a missing, non-string, or blank key and for any network or JSON failure. Never rejects.
+- **Used by:** `PlacesMapScreen`, `ShopScreen`.
 
 ## Function: fetchPlaces
 
@@ -2717,7 +2731,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Build the public `username@21.gifts` address shown on profiles. Loopback hosts fall back to `21.gifts`.
 - **Inputs:** `username` (nullable), optional `hostname`.
 - **Returns / side effects:** `local@domain` or `null`. No I/O.
-- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `openCryptoPayQrValue`.
+- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopScreen`, `openCryptoPayQrValue`.
 
 ## Function: encodeLnurl
 

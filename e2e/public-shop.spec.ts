@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ogDescriptionText } from '../src/lib/public-message-og';
 
 const LISTED_NPUB = `npub1${'2'.repeat(58)}`;
 const GONE_NPUB = `npub1${'3'.repeat(58)}`;
@@ -17,13 +18,56 @@ test('Function: ShopPage renders the public shop identity', async ({ page }) => 
   await expect(page.getByText('Coffee, gifts, and moonlight.')).toBeVisible();
   await expect(page.getByText('Moon Street 21')).toBeVisible();
   await expect(page.getByText('8001 Zurich')).toBeVisible();
-  await expect(page.getByText('luna@21.gifts')).toBeVisible();
+  await expect(
+    page
+      .getByRole('heading', { name: 'Verified Nostr address' })
+      .locator('xpath=..')
+      .getByText('luna@21.gifts'),
+  ).toBeVisible();
   await expect(page.getByText(LISTED_NPUB)).toBeVisible();
   await expect(page.getByRole('link', { name: 'View forum note' })).toHaveAttribute(
     'href',
     '/messages/11111111-1111-4111-8111-111111111111',
   );
   await expect(page.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+  await expect(page.getByTestId('shop-map')).toHaveCount(0);
+});
+
+test('ShopScreen shows the payment address under the heading with the logo QR', async ({
+  page,
+}) => {
+  await page.goto(`/${LISTED_NPUB}`);
+  const payment = page.getByRole('heading', { name: '21.gifts address' }).locator('xpath=..');
+  await expect(payment.getByText('luna@21.gifts')).toBeVisible();
+  await expect(payment.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeVisible();
+  await expect(payment.locator('svg image')).toHaveCount(1);
+});
+
+test('Function: ogDescriptionText — shop HTML carries the public-note description rules', async ({
+  request,
+}) => {
+  const html = await (await request.get(`/${LISTED_NPUB}`)).text();
+  expect(html).toContain('<meta property="og:description" content="Coffee, gifts, and moonlight."');
+  expect(html).toContain(
+    '<meta name="twitter:description" content="Coffee, gifts, and moonlight."',
+  );
+  expect(ogDescriptionText(' ', 'Cafe Luna')).toBe('Cafe Luna on 21.gifts');
+  expect(ogDescriptionText('x'.repeat(301), 'Cafe Luna')).toBe(`${'x'.repeat(299)}…`);
+});
+
+test('Function: fetchMapsKey — a blank key keeps the shop map hidden', async ({ page }) => {
+  let asked = 0;
+  await page.route('**/maps/key', async (route) => {
+    asked += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ key: '   ' }),
+    });
+  });
+  await page.goto(`/${LISTED_NPUB}`);
+  await expect(page.getByRole('heading', { name: 'Cafe Luna' })).toBeVisible();
+  await expect.poll(() => asked).toBeGreaterThan(0);
   await expect(page.getByTestId('shop-map')).toHaveCount(0);
 });
 

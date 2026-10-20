@@ -5,9 +5,11 @@ import { PublicMessageChrome } from '@/components/PublicMessageChrome';
 import { ShopScreen } from '@/components/ShopScreen';
 import { SHOP_NPUB_RE, shopResponseSchema, type Shop } from '@/lib/api-types';
 import { getApiUrl } from '@/lib/config';
+import { DEFAULT_OG_ALT, ogDescriptionText } from '@/lib/public-message-og';
 
 const HEX_PUBKEY_RE = /^[0-9a-f]{64}$/;
-const DEFAULT_OG_ALT = '21.gifts — peer-to-peer Bitcoin gifts';
+/** Same 2.5-second limit as the other server-side api fetches (public note, short link). */
+const SHOP_FETCH_TIMEOUT_MS = 2500;
 
 type ShopLoadResult =
   | { kind: 'ready'; shop: Shop }
@@ -37,17 +39,18 @@ function redirectNpub(response: Response): string | null {
 /**
  * Load one public shop and reduce api statuses to page-safe states.
  *
+ * A timeout or abort after {@link SHOP_FETCH_TIMEOUT_MS} becomes `unavailable`.
+ *
  * @param segment - Validated npub or lowercase hex public key.
- * @param signal - Optional metadata timeout signal.
  * @returns Parsed shop, canonical npub, or a display state.
  */
-async function loadShop(segment: string, signal?: AbortSignal): Promise<ShopLoadResult> {
+async function loadShop(segment: string): Promise<ShopLoadResult> {
   try {
     const response = await fetch(`${getApiUrl()}/shops/${encodeURIComponent(segment)}`, {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
       redirect: 'manual',
-      ...(signal === undefined ? {} : { signal }),
+      signal: AbortSignal.timeout(SHOP_FETCH_TIMEOUT_MS),
     });
     if (response.status === 301) {
       const npub = redirectNpub(response);
@@ -84,7 +87,7 @@ export async function generateMetadata({
   if (!SHOP_NPUB_RE.test(npub) && !HEX_PUBKEY_RE.test(npub)) {
     return {};
   }
-  const result = await loadShop(npub, AbortSignal.timeout(2500));
+  const result = await loadShop(npub);
   if (result.kind !== 'ready') {
     return {};
   }
@@ -105,22 +108,23 @@ export async function generateMetadata({
           ...(firstPhoto.height === null ? {} : { height: firstPhoto.height }),
         };
   const canonical = `/${result.shop.npub}`;
+  const description = ogDescriptionText(result.shop.description, result.shop.name);
   return {
     title: result.shop.name,
-    description: result.shop.description,
+    description,
     alternates: { canonical },
     openGraph: {
       type: 'website',
       url: canonical,
       siteName: '21.gifts',
       title: result.shop.name,
-      description: result.shop.description,
+      description,
       images: [photoImage],
     },
     twitter: {
       card: 'summary_large_image',
       title: result.shop.name,
-      description: result.shop.description,
+      description,
       images: [{ url: photoImage.url, alt: photoImage.alt }],
     },
   };
