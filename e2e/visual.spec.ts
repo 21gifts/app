@@ -9720,7 +9720,9 @@ test.describe('onboarding screens', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify(
-          created === null ? { charge: null, history: [] } : { charge: created, history: [created] },
+          created === null
+            ? { charge: null, history: [] }
+            : { charge: created, history: [created] },
         ),
       });
     });
