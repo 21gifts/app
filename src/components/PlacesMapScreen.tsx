@@ -214,6 +214,8 @@ export function PlacesMapScreen({ embedded = false }: { embedded?: boolean } = {
                                 lat: pin.lat,
                                 lng: pin.lng,
                                 label: pin.label ?? null,
+                                shopNpub:
+                                  updated.shopNpub === undefined ? row.shopNpub : updated.shopNpub,
                               }
                             : row,
                         );

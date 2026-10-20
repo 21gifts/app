@@ -1416,7 +1416,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlacesMapScreen
 
-- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key `GoogleMapCanvas` draws the same pins as markers. A pin label opens `/{shopNpub}` when the row carries a listed-shop identity; null or omitted stays `/messages/:id`. A 21.gifts author name links to `/members/:accountId`; an external name stays text. A moderator sees the shop pencil on a pin with `shop: true`; it loads that note and opens the same steps as editing a shop post. A failed load shows `forum.editShopNoteLoadFailed`, not the save-failure sentence. `embedded` returns that body without the heading or card. A long pin name or label wraps inside the row. With a key, one pin, or a `?pin=` that matches a pin, centers that pin at zoom 14. Several pins and no matching `?pin=` frame every pin (`fitBounds`, padding 32). A fitted zoom above 14 is set back to 14.
+- **Purpose:** Presentational map card: heading **Map**, then every live forum pin from `fetchPlaces`. Without a Google key the pins are links. With a key `GoogleMapCanvas` draws the same pins as markers. A pin label opens `/{shopNpub}` when the row carries a listed-shop identity; null or omitted stays `/messages/:id`. After a pin edit saves, the row takes `lat`, `lng`, `label`, and `shopNpub` from the updated note, so listing switches the link to `/{shopNpub}` and unlisting back to `/messages/:id`; a response without `shopNpub` keeps the old value. A 21.gifts author name links to `/members/:accountId`; an external name stays text. A moderator sees the shop pencil on a pin with `shop: true`; it loads that note and opens the same steps as editing a shop post. A failed load shows `forum.editShopNoteLoadFailed`, not the save-failure sentence. `embedded` returns that body without the heading or card. A long pin name or label wraps inside the row. With a key, one pin, or a `?pin=` that matches a pin, centers that pin at zoom 14. Several pins and no matching `?pin=` frame every pin (`fitBounds`, padding 32). A fitted zoom above 14 is set back to 14.
 - **Inputs:** Optional `embedded` (default false). Catalog via `useTranslations`. Session from `useAuthStore`. Optional `?pin=` id.
 - **Returns / side effects:** `Card maxWidth="xl"` `surface={false}`, or only the body when `embedded`. Fetches places and the browser key via `fetchMapsKey`.
 - **Used by:** `ShopsScreen`.
@@ -2752,7 +2752,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Build the public `username@21.gifts` address shown on profiles. Loopback hosts fall back to `21.gifts`.
 - **Inputs:** `username` (nullable), optional `hostname`.
 - **Returns / side effects:** `local@domain` or `null`. No I/O.
-- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopScreen`, `PosScreen`, `WalletScreenView`, `openCryptoPayQrValue`.
+- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopScreen`, `PosTill` and `PosAmount` (via `usePosTillState`), `WalletScreenView`, `openCryptoPayQrValue`.
 
 ## Function: encodeLnurl
 
@@ -2766,7 +2766,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Build the Open CryptoPay QR payload for a profile handle. Null when `giftsLightningAddress` is null.
 - **Inputs:** `username` (nullable), optional `hostname`.
 - **Returns / side effects:** `https://<domain>/pl/?lightning=<LNURL>` or `null`. No I/O. The browser page for that URL is `/pl`.
-- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopScreen`, `PosScreen`, `WalletScreenView`, `ShopStickerOverlay` (sticker QR payload).
+- **Used by:** `MemberProfileScreen`, `ViewProfileScreen`, `ShopScreen`, `PosTill` and `PosAmount` (via `usePosTillState`), `WalletScreenView`, `ShopStickerOverlay` (sticker QR payload).
 
 ## Function: buildShopStickerSvg
 

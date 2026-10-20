@@ -639,4 +639,90 @@ describe('PlacesMapScreen', () => {
       expect(screen.queryAllByRole('button', { name: 'Edit shop note' })).toHaveLength(0);
     });
   });
+
+  it('takes the shop npub from a pin edit and keeps it when the field is absent', async () => {
+    const moderator = {
+      id: 'acc',
+      linkingKey: '02',
+      role: 'moderator',
+      name: 'Ada',
+      location: null,
+      lightningAddress: null,
+      lightningAddressVerified: false,
+      forumLawsDismissed: true,
+      createdAt: 1,
+      rulesAgreedAt: 1,
+      viewKey: 'a'.repeat(64),
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      setup: null,
+      missing: [],
+    } as Account;
+    const note: ForumMessage = {
+      id: 'm-pin',
+      name: 'Ada',
+      text: 'Cafe Luna\n\n#21GiftsShop',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 5,
+      payable: true,
+      hasPhoto: false,
+      photoCount: 0,
+      hasVideo: false,
+      videoContentType: null,
+      role: 'basis',
+      replyCount: 0,
+      place: { lat: 14.6, lng: 120.98, label: 'Happyland' },
+    };
+    const npub = `npub1${'3'.repeat(58)}`;
+    useAuthStore.setState({ session: 'tok', account: moderator });
+    fetchPlacesMock.mockResolvedValue([{ ...ROW, shop: true, shopNpub: null }]);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ key: null })));
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    vi.mocked(fetchForumMessage).mockResolvedValue(note);
+    renderWithLocale(<PlacesMapScreen />);
+    const pinHref = (): string | null =>
+      screen.getByRole('link', { name: 'Ada · Happyland' }).getAttribute('href');
+    expect(
+      (await screen.findByRole('link', { name: 'Ada · Happyland' })).getAttribute('href'),
+    ).toBe('/messages/m-pin');
+
+    const save = async (): Promise<void> => {
+      fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'Shop text' }), {
+        target: { value: 'Cafe Sol' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+      await waitFor(() => {
+        expect(vi.mocked(setMessageShopText)).toHaveBeenCalled();
+      });
+    };
+
+    vi.mocked(setMessageShopText).mockResolvedValue({ ...note, shopNpub: npub });
+    await save();
+    await waitFor(() => {
+      expect(pinHref()).toBe(`/${npub}`);
+    });
+
+    vi.mocked(setMessageShopText).mockClear();
+    vi.mocked(setMessageShopText).mockResolvedValue({
+      ...note,
+      place: { lat: 1, lng: 2, label: 'Happyland' },
+    });
+    await save();
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
+    });
+    expect(pinHref()).toBe(`/${npub}`);
+
+    vi.mocked(setMessageShopText).mockClear();
+    vi.mocked(setMessageShopText).mockResolvedValue({ ...note, shopNpub: null });
+    await save();
+    await waitFor(() => {
+      expect(pinHref()).toBe('/messages/m-pin');
+    });
+  });
 });
