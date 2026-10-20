@@ -6,7 +6,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { Button, IconButton } from '@/components/ui';
 import { setMessageShopAccount } from '@/lib/api';
 import type { ForumMessage } from '@/lib/api-types';
-import { isShopNote, shopUsernameProblem } from '@/lib/forum-shop';
+import { isShopNote, shopUsernameProblem, usernameLookupVerdict } from '@/lib/forum-shop';
 import { searchMentionAccounts } from '@/lib/mention-search';
 import { roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
@@ -146,7 +146,9 @@ export interface ShopAccountControlProps {
  *
  * The open field starts with `@`. Suggestions from the same account list as a
  * forum post appear immediately. A typed prefix keeps only usernames that
- * start with it, before the next page returns. Choosing one fills `@username`. Saving still
+ * start with it, before the next page returns. Choosing one fills `@username`.
+ * A debounced exact-account check blocks Save only while pending or proven
+ * missing; unknown and failed lookups leave the API to decide. Saving still
  * sends the username without `@`. The panel is fixed to the viewport so a
  * phone does not scroll sideways. Rows drop until the box fits under the
  * app chrome, and the list hides rather than covering that chrome.
@@ -165,6 +167,10 @@ export function ShopAccountControl({
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState(draftFor(message.shopAccount?.username));
   const [errorKey, setErrorKey] = useState<'format' | 'missing' | 'failed' | null>(null);
+  const [usernameLookup, setUsernameLookup] = useState<{
+    username: string;
+    verdict: 'checking' | 'found' | 'missing' | 'unknown' | 'failed';
+  } | null>(null);
   const [seed, setSeed] = useState<readonly ShopSuggestion[]>([]);
   const [remote, setRemote] = useState<{
     query: string;
@@ -176,6 +182,7 @@ export function ShopAccountControl({
   const panelRef = useRef<HTMLDivElement>(null);
   const listId = useId();
   const query = open && session !== null ? mentionQuery(draft) : null;
+  const normalizedUsername = draft.trim().replace(/^@/, '').toLowerCase();
   // A newly opened picker starts with `@` so the people list is useful before
   // typing. Once the visitor edits the field, a bare `@` is a live format error.
   const formatProblem = draft === '@' && errorKey === null ? null : shopUsernameProblem(draft);
@@ -217,6 +224,42 @@ export function ShopAccountControl({
       cancelled = true;
     };
   }, [open, query, session]);
+
+  useEffect(() => {
+    if (
+      session === null ||
+      !open ||
+      normalizedUsername === '' ||
+      shopUsernameProblem(draft) !== null
+    ) {
+      setUsernameLookup(null);
+      return;
+    }
+    const current = session;
+    const requested = normalizedUsername;
+    let cancelled = false;
+    setUsernameLookup({ username: requested, verdict: 'checking' });
+    const timer = window.setTimeout(() => {
+      void searchMentionAccounts(current, requested)
+        .then((rows) => {
+          if (!cancelled) {
+            setUsernameLookup({
+              username: requested,
+              verdict: usernameLookupVerdict(rows, requested),
+            });
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setUsernameLookup({ username: requested, verdict: 'failed' });
+          }
+        });
+    }, 150);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [draft, normalizedUsername, open, session]);
 
   useLayoutEffect(() => {
     setRowLimit(SUGGESTION_LIMIT);
@@ -281,6 +324,34 @@ export function ShopAccountControl({
           : seed.filter((row) => row.username.toLowerCase().startsWith(query))
   ).slice(0, rowLimit);
   const ariaLabel = hasAccount ? t('forum.editShopAccount') : t('forum.addShopAccount');
+  const usernameLookupCurrent = usernameLookup?.username === normalizedUsername;
+  const usernameMissing =
+    usernameLookupCurrent && usernameLookup?.verdict === 'missing' && formatProblem === null;
+  const usernamePending =
+    normalizedUsername !== '' &&
+    formatProblem === null &&
+    (!usernameLookupCurrent || usernameLookup?.verdict === 'checking');
+  const liveError =
+    formatProblem !== null
+      ? t('shops.problemUsernameFormat')
+      : usernameMissing
+        ? t('shops.problemUsernameMissing')
+        : undefined;
+  const savedError =
+    errorKey === 'format'
+      ? t('shops.problemUsernameFormat')
+      : errorKey === 'missing'
+        ? t('shops.problemUsernameMissing')
+        : errorKey === 'failed'
+          ? t('forum.shopAccountSaveFailed')
+          : undefined;
+  const shownError = savedError ?? liveError;
+  const usernameFeedbackId =
+    shownError !== undefined
+      ? `${listId}-error`
+      : usernamePending
+        ? `${listId}-checking`
+        : undefined;
 
   const saveUsername = async (): Promise<void> => {
     let trimmed = draft.trim();
@@ -301,6 +372,7 @@ export function ShopAccountControl({
       setErrorKey(null);
     } catch (err) {
       if (err instanceof Error && err.message === 'No account with that username') {
+        setUsernameLookup({ username: trimmed, verdict: 'missing' });
         setErrorKey('missing');
       } else if (err instanceof Error && err.message === 'Username is not valid') {
         setErrorKey('format');
@@ -346,6 +418,7 @@ export function ShopAccountControl({
           setOpen((current) => {
             if (!current) {
               setDraft(draftFor(message.shopAccount?.username));
+              setUsernameLookup(null);
               setSeed([]);
               setRemote(null);
               setErrorKey(null);
@@ -370,19 +443,31 @@ export function ShopAccountControl({
             type="text"
             aria-label={t('forum.shopAccountLabel')}
             aria-controls={shown.length > 0 ? listId : undefined}
-            aria-invalid={errorKey !== null || formatProblem !== null || undefined}
-            aria-describedby={
-              errorKey === null && formatProblem === null ? undefined : `${listId}-error`
-            }
+            aria-invalid={shownError === undefined ? undefined : true}
+            aria-describedby={usernameFeedbackId}
             value={draft}
             disabled={saving}
             onChange={(event) => {
               setDraft(event.target.value);
               setRemote(null);
-              setErrorKey(shopUsernameProblem(event.target.value) === null ? null : 'format');
+              setErrorKey(null);
             }}
             className="mt-0 w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
           />
+          {shownError === undefined ? null : (
+            <p
+              id={`${listId}-error`}
+              className="mt-3 text-sm text-app-danger"
+              role={savedError === undefined ? undefined : 'alert'}
+            >
+              {shownError}
+            </p>
+          )}
+          {shownError === undefined && usernamePending ? (
+            <p id={`${listId}-checking`} className="mt-3 text-sm text-app-muted">
+              {t('shops.usernameChecking')}
+            </p>
+          ) : null}
           {shown.length > 0 ? (
             <ul
               id={listId}
@@ -420,24 +505,11 @@ export function ShopAccountControl({
               ))}
             </ul>
           ) : null}
-          {errorKey !== null ? (
-            <p
-              id={`${listId}-error`}
-              className="mt-3 text-sm text-app-danger"
-              role={errorKey === 'missing' || errorKey === 'failed' ? 'alert' : undefined}
-            >
-              {errorKey === 'format'
-                ? t('shops.problemUsernameFormat')
-                : errorKey === 'missing'
-                  ? t('shops.problemUsernameMissing')
-                  : t('forum.shopAccountSaveFailed')}
-            </p>
-          ) : null}
           <Button
             type="button"
             variant="secondary"
             className="mt-3"
-            disabled={saving || formatProblem !== null}
+            disabled={saving || formatProblem !== null || usernameMissing || usernamePending}
             onClick={() => {
               void saveUsername();
             }}

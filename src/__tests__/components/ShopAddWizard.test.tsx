@@ -674,7 +674,7 @@ describe('ShopAddWizard', () => {
     ).toBeNull();
   });
 
-  it('keeps Next disabled when the username lookup fails', async () => {
+  it('allows Next without a message when the username lookup fails', async () => {
     useAuthStore.setState({ session: 'sess', account: null });
     searchPeople.mockRejectedValue(new Error('offline'));
     renderWizard(
@@ -686,10 +686,10 @@ describe('ShopAddWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect(
-      await screen.findByText('The account could not be checked. Please try again.'),
-    ).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+    });
+    expect(screen.queryByText('The account could not be checked. Please try again.')).toBeNull();
   });
 
   it.each([
@@ -726,8 +726,16 @@ describe('ShopAddWizard', () => {
       />,
     );
     expect(await screen.findByText(step)).toBeTruthy();
-    expect(screen.getAllByText(message).length).toBeGreaterThan(0);
-    expect(screen.getByRole('alert').textContent).toBe(message);
+    if (serverProblem === 'shopName') {
+      // The place dialog reopens and announces it at the name field; the wizard
+      // line behind the dialog repeats it as plain text for after the dialog closes.
+      const dialog = await screen.findByRole('dialog');
+      expect(within(dialog).getByRole('alert').textContent).toBe(message);
+      expect(screen.getAllByText(message)).toHaveLength(2);
+    } else {
+      expect(screen.getByText(message)).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toBe(message);
+    }
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
   });
 });

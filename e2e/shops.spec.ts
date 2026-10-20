@@ -372,6 +372,18 @@ async function seedAda(
   });
 }
 
+async function stubLunaMentionLookup(page: import('@playwright/test').Page): Promise<void> {
+  await page.route(/\/forum\/mentions(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        accounts: [{ id: 'acc-luna', username: 'luna', name: 'Luna' }],
+      }),
+    });
+  });
+}
+
 /**
  * Stable clickable map for the shops staff place control. Copied from the
  * visual shops helper: live tiles are not a baseline.
@@ -761,6 +773,7 @@ test('Function: ShopAccountControl — moderator saves a username; basis cannot 
   page,
 }) => {
   await seedAda(page, 'moderator');
+  await stubLunaMentionLookup(page);
   await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
   await page.route(
     (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/shop-account'),
@@ -790,7 +803,9 @@ test('Function: ShopAccountControl — moderator saves a username; basis cannot 
       req.method() === 'PATCH' &&
       new URL(req.url()).pathname.endsWith('/forum/messages/m-staff/shop-account'),
   );
-  await note.getByRole('button', { name: 'Save account' }).click();
+  const save = note.getByRole('button', { name: 'Save account' });
+  await expect(save).toBeEnabled();
+  await save.click();
   const accountReq = await patched;
   expect(accountReq.postDataJSON()).toEqual({ username: 'luna' });
   expect(new URL(accountReq.url()).pathname.endsWith('/forum/messages/m-staff/shop-account')).toBe(
@@ -813,6 +828,7 @@ test('Function: ShopAccountControl — moderator saves a username; basis cannot 
 
 test('Function: setMessageShopAccount — moderator save shows the account', async ({ page }) => {
   await seedAda(page, 'moderator');
+  await stubLunaMentionLookup(page);
   await fulfillForumMessages(page, [STAFF_SHOP_NOTE]);
   await page.route(
     (url) => new URL(url).pathname.endsWith('/forum/messages/m-staff/shop-account'),
@@ -837,7 +853,9 @@ test('Function: setMessageShopAccount — moderator save shows the account', asy
   const note = page.locator('[data-message-id="m-staff"]');
   await note.getByRole('button', { name: 'Add an account' }).click();
   await note.getByLabel('Username').fill('luna');
-  await note.getByRole('button', { name: 'Save account' }).click();
+  const save = note.getByRole('button', { name: 'Save account' });
+  await expect(save).toBeEnabled();
+  await save.click();
   await expect(note.getByRole('link', { name: '@luna' })).toBeVisible();
 });
 

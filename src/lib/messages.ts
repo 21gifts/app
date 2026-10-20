@@ -868,6 +868,10 @@ const en = {
   'shops.problemNameAddress': 'The shop name must not contain the street or the postal code.',
   'shops.problemNameLong': 'The shop name must be at most 80 characters.',
   'shops.problemNameControls': 'The shop name must not contain control characters.',
+  'shops.problemNameLongerThanText':
+    'The shop name must be shorter than the shop text. Shorten the name or edit the shop text first.',
+  'shops.problemShopTextLengthForName':
+    'The shop text must be 20 to 1000 characters before this place can be saved. Edit the shop text first.',
   'shops.problemAddress':
     'Enter the full address: street, house number, postal code, city and country.',
   'shops.problemStreetRequired': 'Enter the street (1–120 characters).',
@@ -905,7 +909,6 @@ const en = {
     'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
   'shops.problemUsernameMissing':
     'No account with that username. Check the spelling of the 21.gifts username.',
-  'shops.problemUsernameLookup': 'The account could not be checked. Please try again.',
 
   'inbox.heading': 'Messages',
   'inbox.listLabel': 'Conversations',
@@ -2041,6 +2044,10 @@ const de = {
     'Der Shopname darf die Strasse oder die Postleitzahl nicht enthalten.',
   'shops.problemNameLong': 'Der Shopname darf höchstens 80 Zeichen lang sein.',
   'shops.problemNameControls': 'Der Shopname darf keine Steuerzeichen enthalten.',
+  'shops.problemNameLongerThanText':
+    'Der Shopname muss kürzer sein als der Shoptext. Kürzen Sie den Namen oder bearbeiten Sie zuerst den Shoptext.',
+  'shops.problemShopTextLengthForName':
+    'Der Shoptext muss 20 bis 1000 Zeichen lang sein, bevor dieser Ort gespeichert werden kann. Bearbeiten Sie zuerst den Shoptext.',
   'shops.problemAddress':
     'Geben Sie die vollständige Adresse ein: Strasse, Hausnummer, Postleitzahl, Ort und Land.',
   'shops.problemStreetRequired': 'Geben Sie die Strasse ein (1–120 Zeichen).',
@@ -2078,8 +2085,6 @@ const de = {
     'Verwenden Sie 1–32 Kleinbuchstaben, Ziffern, Punkte, Bindestriche oder Unterstriche; beginnen Sie mit einem Buchstaben oder einer Ziffer.',
   'shops.problemUsernameMissing':
     'Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens.',
-  'shops.problemUsernameLookup':
-    'Das Konto konnte nicht geprüft werden. Bitte versuchen Sie es erneut.',
 
   'inbox.heading': 'Nachrichten',
   'inbox.listLabel': 'Unterhaltungen',
@@ -3220,6 +3225,10 @@ const es = {
     'El nombre de la tienda no debe contener la calle ni el código postal.',
   'shops.problemNameLong': 'El nombre de la tienda debe tener como máximo 80 caracteres.',
   'shops.problemNameControls': 'El nombre de la tienda no debe contener caracteres de control.',
+  'shops.problemNameLongerThanText':
+    'El nombre de la tienda debe ser más corto que el texto de la tienda. Acorta el nombre o edita primero el texto de la tienda.',
+  'shops.problemShopTextLengthForName':
+    'El texto de la tienda debe tener entre 20 y 1000 caracteres antes de poder guardar este lugar. Edita primero el texto de la tienda.',
   'shops.problemAddress':
     'Introduce la dirección completa: calle, número, código postal, ciudad y país.',
   'shops.problemStreetRequired': 'Introduce la calle (1–120 caracteres).',
@@ -3257,7 +3266,6 @@ const es = {
     'Usa de 1 a 32 letras minúsculas, dígitos, puntos, guiones o guiones bajos; empieza con una letra o un dígito.',
   'shops.problemUsernameMissing':
     'No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.',
-  'shops.problemUsernameLookup': 'No se pudo comprobar la cuenta. Inténtalo de nuevo.',
 
   'inbox.heading': 'Mensajes',
   'inbox.listLabel': 'Conversaciones',
@@ -4394,6 +4402,10 @@ const fil = {
   'shops.problemNameAddress': 'Hindi dapat kasama sa pangalan ng shop ang kalye o ang postal code.',
   'shops.problemNameLong': 'Hanggang 80 karakter ang pangalan ng shop.',
   'shops.problemNameControls': 'Hindi dapat may control character ang pangalan ng shop.',
+  'shops.problemNameLongerThanText':
+    'Dapat mas maikli ang pangalan ng shop kaysa sa teksto ng shop. Paikliin ang pangalan o i-edit muna ang teksto ng shop.',
+  'shops.problemShopTextLengthForName':
+    'Dapat 20 hanggang 1000 karakter ang teksto ng shop bago ma-save ang lugar na ito. I-edit muna ang teksto ng shop.',
   'shops.problemAddress':
     'Ilagay ang buong address: kalye, numero ng bahay, postal code, lungsod at bansa.',
   'shops.problemStreetRequired': 'Ilagay ang kalye (1–120 karakter).',
@@ -4431,7 +4443,6 @@ const fil = {
     'Gumamit ng 1–32 lowercase na titik, digit, tuldok, gitling, o underscore; magsimula sa titik o digit.',
   'shops.problemUsernameMissing':
     'Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts.',
-  'shops.problemUsernameLookup': 'Hindi masuri ang account. Pakisubukan muli.',
 
   'inbox.heading': 'Mga mensahe',
   'inbox.listLabel': 'Mga usapan',

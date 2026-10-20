@@ -72,6 +72,7 @@ import {
   isShopNote,
   shopApiProblem,
   shopDescriptionProblem,
+  shopNameProblem,
   shopPlaceComplete,
   shopUsernameProblem,
   usernameLookupVerdict,
@@ -120,6 +121,13 @@ function isRateLimitError(err: unknown): boolean {
 function isShopFormError(error: ForumFormError): error is ShopApiProblem {
   return error !== null && error in SHOP_API_MESSAGE;
 }
+
+const SHOP_NAME_FORM_ERROR = {
+  name: 'shopName',
+  nameAddress: 'shopNameAddress',
+  nameLong: 'shopNameLong',
+  nameControls: 'shopName',
+} as const satisfies Record<NonNullable<ReturnType<typeof shopNameProblem>>, ShopApiProblem>;
 
 /** Revokes a blob object URL when present; no-op for undefined or empty. */
 function revokeObjectUrlIfPresent(url: string | undefined): void {
@@ -1586,7 +1594,8 @@ export function ForumLoader({
                   pendingComposePlaceRef.current = null;
                   pendingComposeShopUsernameRef.current = null;
                 } catch (err) {
-                  const shopProblem = err instanceof Error ? shopApiProblem(err.message) : null;
+                  const shopProblem =
+                    err instanceof Error ? shopApiProblem(err.message, feed === 'shops') : null;
                   setFormError(shopProblem ?? (isRateLimitError(err) ? 'rateLimit' : 'request'));
                   composeFeePaidRef.current = true;
                   const keptCaption = pendingComposeTextRef.current;
@@ -1901,8 +1910,12 @@ export function ForumLoader({
     /* v8 ignore next -- the composer is hidden without a session */
     if (session === null) return;
     if (feed === 'shops') {
+      const nameProblem =
+        pendingPlace === null
+          ? null
+          : shopNameProblem(pendingPlace.label ?? null, pendingPlace.address ?? null);
       if (!shopPlaceComplete(pendingPlace)) {
-        setFormError('shopAddress');
+        setFormError(nameProblem === null ? 'shopAddress' : SHOP_NAME_FORM_ERROR[nameProblem]);
         notePostInFlightRef.current = false;
         return;
       }
@@ -2029,7 +2042,8 @@ export function ForumLoader({
       }
       pendingComposePlaceRef.current = null;
       pendingComposeShopUsernameRef.current = null;
-      const shopProblem = err instanceof Error ? shopApiProblem(err.message) : null;
+      const shopProblem =
+        err instanceof Error ? shopApiProblem(err.message, feed === 'shops') : null;
       if (shopProblem !== null) {
         setFormError(shopProblem);
         return;

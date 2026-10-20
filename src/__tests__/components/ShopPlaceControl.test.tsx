@@ -30,7 +30,7 @@ const account: Account = {
 const shopMessage: ForumMessage = {
   id: 'shop1',
   name: 'Ada',
-  text: 'Cafe Luna\n\n#21GiftsShop',
+  text: 'Fresh bread every morning.\n\n#21GiftsShop',
   createdAt: '2026-08-28T12:00:00.000Z',
   sats: 5,
   payable: true,
@@ -192,11 +192,47 @@ describe('ShopPlaceControl', () => {
     expect(onUpdated).not.toHaveBeenCalled();
   });
 
+  it('blocks a shop name that is not shorter than the stored shop text', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    stubMaps();
+    renderWithLocale(
+      <ShopPlaceControl
+        message={{
+          ...shopMessage,
+          text: 'Cafe Luna\n\n#21GiftsShop',
+          place: {
+            lat: 47.3769,
+            lng: 8.5417,
+            label: 'Cafe',
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          },
+        }}
+        onUpdated={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit place' }));
+    const name = await screen.findByLabelText('Shop name');
+    const message = screen.getByText(
+      'The shop text must be 20 to 1000 characters before this place can be saved. Edit the shop text first.',
+    );
+    expect(name.getAttribute('aria-invalid')).toBe('true');
+    expect(name.getAttribute('aria-describedby')).toContain(message.id);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty('disabled', true);
+    expect(setMessagePlace).not.toHaveBeenCalled();
+  });
+
   it('shows the description problem when the server rejects the pin', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     const apiMessage =
       'Shop description must be 20 to 1000 characters and longer than the shop name';
-    expect(shopApiProblem(apiMessage)).toBe('shopDescription');
+    expect(shopApiProblem(apiMessage, true)).toBe('shopDescription');
     vi.mocked(setMessagePlace).mockRejectedValue(new Error(apiMessage));
     const onUpdated = vi.fn();
     const listeners = stubMaps();

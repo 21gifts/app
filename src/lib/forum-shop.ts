@@ -83,10 +83,7 @@ const USERNAME_MISSING = 'No account with that username';
 const TEXT_RANGE = new Set([
   'Text must be 1–8000 characters',
   'Text must be 1–8000 characters or include a photo',
-]);
-const TEXT_CONTROLS = new Set([
-  'Text contains invalid control characters',
-  'Text must not contain control characters',
+  'Text must be 1–8000 characters or include a photo or video',
 ]);
 
 /**
@@ -131,7 +128,7 @@ export function ensureShopHashtag(text: string): string {
 /**
  * Reject C0 controls and DEL.
  *
- * @param value - Candidate string (trimmed or raw).
+ * @param value - Trimmed candidate string.
  * @returns `true` when every character is allowed.
  */
 function hasNoControls(value: string): boolean {
@@ -164,41 +161,32 @@ function normalizeCountry(raw: string): string | null {
 
 function normalizeStreet(raw: string): string | null {
   const street = raw.trim();
-  if (street.length < 1 || street.length > 120 || !hasNoControls(raw)) {
+  if (street.length < 1 || street.length > 120 || !hasNoControls(street)) {
     return null;
   }
   return street;
 }
 
 function normalizeHouseNumber(raw: string): string | null {
-  if (!hasNoControls(raw)) {
-    return null;
-  }
   const houseNumber = raw.trim();
-  if (!HOUSE_NUMBER.test(houseNumber)) {
+  if (!hasNoControls(houseNumber) || !HOUSE_NUMBER.test(houseNumber)) {
     return null;
   }
   return houseNumber;
 }
 
 function normalizePostalCode(raw: string, country: string): string | null {
-  if (!hasNoControls(raw)) {
-    return null;
-  }
   const postalCode = raw.trim();
   const pattern = country === 'CH' || country === 'LI' ? POSTAL_CH_LI : POSTAL_OTHER;
-  if (!pattern.test(postalCode)) {
+  if (!hasNoControls(postalCode) || !pattern.test(postalCode)) {
     return null;
   }
   return postalCode;
 }
 
 function normalizeCity(raw: string): string | null {
-  if (!hasNoControls(raw)) {
-    return null;
-  }
   const city = raw.trim();
-  if (city.length < 1 || city.length > 80 || !CITY_LETTER.test(city)) {
+  if (city.length < 1 || city.length > 80 || !hasNoControls(city) || !CITY_LETTER.test(city)) {
     return null;
   }
   return city;
@@ -247,11 +235,11 @@ export function shopAddressProblems(address: ForumPlaceAddress | null): ShopAddr
   const street = value.street.trim();
   if (street === '') problems.street = 'required';
   else if (street.length > 120) problems.street = 'length';
-  else if (!hasNoControls(value.street)) problems.street = 'controls';
+  else if (!hasNoControls(street)) problems.street = 'controls';
 
   const houseNumber = value.houseNumber.trim();
   if (houseNumber === '') problems.houseNumber = 'required';
-  else if (!hasNoControls(value.houseNumber)) problems.houseNumber = 'controls';
+  else if (!hasNoControls(houseNumber)) problems.houseNumber = 'controls';
   else if (!/^[0-9]/.test(houseNumber)) problems.houseNumber = 'format';
   else if (houseNumber.length > 32) problems.houseNumber = 'length';
   else if (!HOUSE_NUMBER.test(houseNumber)) problems.houseNumber = 'characters';
@@ -259,7 +247,7 @@ export function shopAddressProblems(address: ForumPlaceAddress | null): ShopAddr
   const country = normalizeCountry(value.country);
   const postalCode = value.postalCode.trim();
   if (postalCode === '') problems.postalCode = 'required';
-  else if (!hasNoControls(value.postalCode)) problems.postalCode = 'controls';
+  else if (!hasNoControls(postalCode)) problems.postalCode = 'controls';
   else if ((country === 'CH' || country === 'LI') && !POSTAL_CH_LI.test(postalCode)) {
     problems.postalCode = 'formatChLi';
   } else if (country !== 'CH' && country !== 'LI' && !POSTAL_OTHER.test(postalCode)) {
@@ -269,7 +257,7 @@ export function shopAddressProblems(address: ForumPlaceAddress | null): ShopAddr
   const city = value.city.trim();
   if (city === '') problems.city = 'required';
   else if (city.length > 80) problems.city = 'length';
-  else if (!hasNoControls(value.city)) problems.city = 'controls';
+  else if (!hasNoControls(city)) problems.city = 'controls';
   else if (!CITY_LETTER.test(city)) problems.city = 'letter';
 
   if (value.country.trim() === '') problems.country = 'required';
@@ -300,7 +288,7 @@ function containsStandaloneToken(name: string, token: string): boolean {
     return false;
   }
   const escaped = escapeRegex(trimmed);
-  const pattern = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu');
+  const pattern = new RegExp(`(?:^|[^\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu');
   return pattern.test(name);
 }
 
@@ -322,7 +310,7 @@ export function shopNameProblem(
   if (label.trim().length > 80) {
     return 'nameLong';
   }
-  if (!hasNoControls(label)) {
+  if (!hasNoControls(label.trim())) {
     return 'nameControls';
   }
   if (address === null) {
@@ -471,16 +459,17 @@ export function shopPlaceComplete(place: ForumPlacePin | null): place is ForumPl
  * Map an exact API 400 body to a shop form error, or null.
  *
  * @param message - `Error.message` from `postMessage` / `setMessagePlace`.
+ * @param shop - Whether the failing request belongs to a shop post or place.
  * @returns The matching problem, or `null` when the text is not a shop 400.
  */
-export function shopApiProblem(message: string): ShopApiProblem | null {
+export function shopApiProblem(message: string, shop: boolean): ShopApiProblem | null {
   if (message === SHOP_NAME_REQUIRED) {
     return 'shopName';
   }
   if (message === SHOP_NAME_CONTAINS_ADDRESS) {
     return 'shopNameAddress';
   }
-  if (message === PLACE_LABEL_LONG) {
+  if (shop && message === PLACE_LABEL_LONG) {
     return 'shopNameLong';
   }
   if (message === SHOP_ADDRESS_REQUIRED) {
@@ -489,11 +478,8 @@ export function shopApiProblem(message: string): ShopApiProblem | null {
   if (message === SHOP_DESCRIPTION_RANGE) {
     return 'shopDescription';
   }
-  if (TEXT_RANGE.has(message)) {
+  if (shop && TEXT_RANGE.has(message)) {
     return 'shopDescription';
-  }
-  if (TEXT_CONTROLS.has(message)) {
-    return 'shopDescriptionControls';
   }
   if (message === PLACE_ADDRESS_INVALID) {
     return 'placeAddress';

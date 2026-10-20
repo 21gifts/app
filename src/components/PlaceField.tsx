@@ -14,6 +14,7 @@ import {
   formatPlacePinText,
   shopAddressProblems,
   shopApiProblem,
+  shopDescriptionProblem,
   shopNameProblem,
   type ShopAddressField,
   type ShopAddressFieldProblem,
@@ -142,6 +143,8 @@ export function PlaceField(props: {
   ariaLabel?: string;
   onCommit?: (place: ForumPlacePin | null) => Promise<void>;
   shopDetails?: boolean;
+  /** Stored shop note text used to validate a changed shop name live. */
+  shopText?: string;
   problem?: ShopApiProblem | null;
   onAvailabilityChange?: (unavailable: boolean) => void;
 }): ReactElement {
@@ -149,6 +152,7 @@ export function PlaceField(props: {
   const sunday = useLocalSunday();
   const titleId = `${useId()}-title`;
   const shopNameId = `${useId()}-shop-name`;
+  const shopNameSaveErrorId = `${shopNameId}-save-error`;
   const shopDetails = props.shopDetails === true;
   const buttonSize = props.buttonSize ?? 'lg';
   const buttonVariant = props.buttonVariant ?? 'secondary';
@@ -157,6 +161,7 @@ export function PlaceField(props: {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<MessageKey | null>(null);
+  const [reportedProblem, setReportedProblem] = useState<ShopApiProblem | null>(null);
   const [unknownSaveError, setUnknownSaveError] = useState(false);
   const [unavailable, setUnavailable] = useState(false);
   const [scriptReady, setScriptReady] = useState(false);
@@ -183,6 +188,7 @@ export function PlaceField(props: {
     setNameTouched(false);
     setAddressTouched(new Set());
     setSaveError(null);
+    setReportedProblem(null);
     setUnknownSaveError(false);
   }, [props.place]);
 
@@ -202,6 +208,7 @@ export function PlaceField(props: {
         problem,
       )
     ) {
+      setReportedProblem(null);
       return;
     }
     resetDraft();
@@ -209,7 +216,7 @@ export function PlaceField(props: {
     if (problem === 'shopName' || problem === 'shopNameAddress' || problem === 'shopNameLong') {
       setNameTouched(true);
     }
-    setSaveError(SHOP_API_MESSAGE[problem]);
+    setReportedProblem(problem);
   }, [props.problem, resetDraft, shopDetails]);
 
   useEffect(() => {
@@ -403,6 +410,28 @@ export function PlaceField(props: {
   const addressValue = addressFromDraft(addressDraft);
   const addressProblems = shopDetails ? shopAddressProblems(addressValue) : {};
   const nameProblem = shopDetails ? shopNameProblem(labelDraft, addressValue) : null;
+  const shopTextProblem =
+    shopDetails && props.shopText !== undefined
+      ? shopDescriptionProblem(props.shopText, labelDraft)
+      : null;
+  const shopTextNameError =
+    shopTextProblem === 'notLonger'
+      ? t('shops.problemNameLongerThanText')
+      : shopTextProblem === 'short' || shopTextProblem === 'long'
+        ? t('shops.problemShopTextLengthForName')
+        : undefined;
+  const nameCommitError =
+    shopDetails &&
+    saveError !== null &&
+    ['shops.problemName', 'shops.problemNameAddress', 'shops.problemNameLong'].includes(saveError)
+      ? t(saveError)
+      : undefined;
+  const reportedNameError =
+    reportedProblem !== null &&
+    ['shopName', 'shopNameAddress', 'shopNameLong'].includes(reportedProblem)
+      ? t(SHOP_API_MESSAGE[reportedProblem])
+      : undefined;
+  const nameSaveError = nameCommitError ?? reportedNameError;
   const nameError = !shopDetails
     ? undefined
     : !nameTouched && labelDraft.trim() === '' && saveError === null
@@ -415,14 +444,11 @@ export function PlaceField(props: {
             ? t('shops.problemNameLong')
             : nameProblem === 'nameControls'
               ? t('shops.problemNameControls')
-              : saveError !== null &&
-                  [
-                    'shops.problemName',
-                    'shops.problemNameAddress',
-                    'shops.problemNameLong',
-                  ].includes(saveError)
-                ? t(saveError)
-                : undefined;
+              : shopTextNameError !== undefined
+                ? shopTextNameError
+                : nameSaveError !== undefined
+                  ? nameSaveError
+                  : undefined;
   const shownAddressErrors: Partial<Record<ShopAddressField, string>> = {};
   for (const field of Object.keys(addressProblems) as ShopAddressField[]) {
     if (addressTouched.has(field) || addressDraft[field].trim() !== '') {
@@ -437,7 +463,9 @@ export function PlaceField(props: {
     markerPos === null ||
     unavailable ||
     saveError !== null ||
-    (shopDetails && (nameProblem !== null || invalidFields.length > 0));
+    reportedProblem !== null ||
+    (shopDetails &&
+      (nameProblem !== null || shopTextNameError !== undefined || invalidFields.length > 0));
   const fieldLabel: Record<ShopAddressField, string> = {
     street: t('shops.addressStreet'),
     houseNumber: t('shops.addressHouseNumber'),
@@ -452,10 +480,17 @@ export function PlaceField(props: {
       .filter((field) => addressDraft[field].trim() === '')
       .map((field) => fieldLabel[field]),
   ];
+  const reportedAddressError =
+    reportedProblem === 'shopAddress' || reportedProblem === 'placeAddress'
+      ? t(SHOP_API_MESSAGE[reportedProblem])
+      : null;
+  // Reasons from a save or from the server are announced; live reasons are not.
+  const actionReason =
+    saveError !== null && nameCommitError === undefined ? t(saveError) : reportedAddressError;
   // The unavailable map is already explained where the map would be.
   const footerReason =
-    saveError !== null && nameError === undefined
-      ? t(saveError)
+    actionReason !== null
+      ? actionReason
       : unavailable
         ? null
         : missing.length > 0
@@ -477,7 +512,7 @@ export function PlaceField(props: {
       await props.onCommit(next);
       setOpen(false);
     } catch (error) {
-      const problem = error instanceof Error ? shopApiProblem(error.message) : null;
+      const problem = error instanceof Error ? shopApiProblem(error.message, shopDetails) : null;
       if (problem === null) {
         setUnknownSaveError(true);
       } else {
@@ -538,7 +573,14 @@ export function PlaceField(props: {
                         value={labelDraft}
                         disabled={fieldsDisabled}
                         hint={t('shops.placeNameHint')}
-                        {...(nameError === undefined ? {} : { error: nameError })}
+                        {...(nameSaveError !== undefined
+                          ? {
+                              'aria-describedby': shopNameSaveErrorId,
+                              'aria-invalid': true as const,
+                            }
+                          : nameError === undefined
+                            ? {}
+                            : { error: nameError })}
                         onBlur={() => setNameTouched(true)}
                         onChange={(event) => {
                           const value = event.target.value;
@@ -547,9 +589,19 @@ export function PlaceField(props: {
                             setNameTouched(true);
                           }
                           setSaveError(null);
+                          setReportedProblem(null);
                           setUnknownSaveError(false);
                         }}
                       />
+                      {nameSaveError === undefined ? null : (
+                        <p
+                          id={shopNameSaveErrorId}
+                          role="alert"
+                          className="text-sm text-app-danger"
+                        >
+                          {nameSaveError}
+                        </p>
+                      )}
                       <ShopAddressFields
                         value={addressValue}
                         disabled={fieldsDisabled}
@@ -566,6 +618,7 @@ export function PlaceField(props: {
                             setAddressTouched((current) => new Set(current).add(changed));
                           }
                           setSaveError(null);
+                          setReportedProblem(null);
                           setUnknownSaveError(false);
                         }}
                       />
@@ -580,6 +633,7 @@ export function PlaceField(props: {
                       onChange={(event) => {
                         setLabelDraft(event.target.value);
                         setSaveError(null);
+                        setReportedProblem(null);
                         setUnknownSaveError(false);
                       }}
                       className="w-full rounded-2xl border border-app-border-strong px-4 py-2.5 text-base text-app-fg"
@@ -594,7 +648,12 @@ export function PlaceField(props: {
               </Scrollport>
               <div className="shrink-0 border-t border-app-border bg-app-card px-4 py-3">
                 {footerReason === null ? null : (
-                  <p className="mb-2 text-sm text-app-danger">{footerReason}</p>
+                  <p
+                    role={actionReason === null ? undefined : 'alert'}
+                    className="mb-2 text-sm text-app-danger"
+                  >
+                    {footerReason}
+                  </p>
                 )}
                 <div className="flex items-center gap-2">
                   <Button

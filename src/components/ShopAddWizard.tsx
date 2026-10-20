@@ -115,7 +115,8 @@ const STEP_KEY = {
  * Guided shop submission. Closed state is only **Add a shop**. Open steps
  * are photos, place, text, an optional 21.gifts username, then a summary
  * whose send control submits the note. The text step lists people as
- * soon as `@` is typed. Adding a shop shows Next on the photo step.
+ * soon as `@` is typed. A failed optional-account lookup does not block the
+ * API-validated submit. Adding a shop shows Next on the photo step.
  * Edit mode shows an icon-only Close (X) there. Its accessible name is Cancel.
  *
  * @param props - Draft fields and the send callback.
@@ -277,9 +278,7 @@ export function ShopAddWizard({
       ? 'format'
       : normalizedUsername !== '' && usernameLookup === 'missing'
         ? 'missing'
-        : normalizedUsername !== '' && usernameLookup === 'failed'
-          ? 'failed'
-          : null;
+        : null;
   const usernamePending = normalizedUsername !== '' && usernameLookup === 'checking';
   const placeServerProblem =
     serverProblem === 'shopName' ||
@@ -327,9 +326,7 @@ export function ShopAddWizard({
         ? t('shops.problemUsernameFormat')
         : usernameProblem === 'missing'
           ? t('shops.problemUsernameMissing')
-          : usernameProblem === 'failed'
-            ? t('shops.problemUsernameLookup')
-            : undefined;
+          : undefined;
   const usernameHint = usernamePending ? t('shops.usernameChecking') : t('shops.accountOptional');
   const summaryProblem =
     step !== 5
@@ -514,11 +511,10 @@ export function ShopAddWizard({
             problem={serverProblem}
             onAvailabilityChange={setMapsUnavailable}
           />
-          {!placeComplete || placeServerProblem ? (
-            <p
-              role={placeServerMessage === null ? undefined : 'alert'}
-              className="text-sm text-app-danger"
-            >
+          {!placeComplete || placeServerMessage !== null ? (
+            // The open place dialog announces a server place problem; this
+            // line keeps the reason visible after the dialog is closed.
+            <p className="text-sm text-app-danger">
               {placeServerMessage ??
                 (mapsUnavailable ? t('shops.placeUnavailableReason') : t('shops.placeRequired'))}
             </p>

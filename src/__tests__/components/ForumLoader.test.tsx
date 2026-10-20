@@ -479,26 +479,32 @@ async function openBasisShopWizardAtPlace(): Promise<ReturnType<typeof stubShopM
   return listeners;
 }
 
-function bypassDisabledShopNext(): void {
-  const next = screen.getByRole('button', { name: 'Next' });
-  expect(next).toHaveProperty('disabled', true);
-  const reactPropsKey = Object.getOwnPropertyNames(next).find((key) =>
+function invokeDisabledButton(button: HTMLElement, missingHandler: string): void {
+  expect(button).toHaveProperty('disabled', true);
+  const reactPropsKey = Object.getOwnPropertyNames(button).find((key) =>
     key.startsWith('__reactProps$'),
   );
   if (reactPropsKey === undefined) {
-    throw new Error('Could not find the disabled shop Next button handler');
+    throw new Error(missingHandler);
   }
-  const reactProps = (next as unknown as Record<string, { onClick?: () => void } | undefined>)[
+  const reactProps = (button as unknown as Record<string, { onClick?: () => void } | undefined>)[
     reactPropsKey
   ];
   const onClick = reactProps?.onClick;
   if (typeof onClick !== 'function') {
-    throw new Error('The disabled shop Next button has no click handler');
+    throw new Error(missingHandler);
   }
   // React suppresses delegated clicks while the button prop is disabled.
   act(() => {
     onClick();
   });
+}
+
+function bypassDisabledShopNext(): void {
+  invokeDisabledButton(
+    screen.getByRole('button', { name: 'Next' }),
+    'Could not find the disabled shop Next button handler',
+  );
 }
 
 function submitDisabledShopSummary(): void {
@@ -1420,6 +1426,24 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('button', { name: 'Add a shop' })).toBeTruthy();
   });
 
+  it('feed="shops" maps a generic text range rejection to the shop description', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockRejectedValue(new Error('Text must be 1–8000 characters'));
+    renderWithLocale(<ForumLoader feed="shops" />);
+    await waitFor(() => {
+      expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
+    });
+    await submitShopWizard(SHOP_DESCRIPTION);
+
+    const description = await screen.findByLabelText('Shop text');
+    const feedback = document.getElementById(description.getAttribute('aria-describedby')!);
+    expect(description.getAttribute('aria-invalid')).toBe('true');
+    expect(feedback?.textContent).toContain(
+      'The description must be 20 to 1000 characters and longer than the shop name.',
+    );
+    expect(screen.queryByText('Could not post your message')).toBeNull();
+  });
+
   it('feed="shops" sends an optional shop username', async () => {
     fetchMock.mockResolvedValue(forumPage([]));
     postMock.mockResolvedValue({
@@ -1717,11 +1741,10 @@ describe('ForumLoader', () => {
     submitDisabledShopSummary();
 
     expect(await screen.findByText('2 / 5 · Place')).toBeTruthy();
-    expect(
-      screen.getByText(
-        'Enter the full address: street, house number, postal code, city and country.',
-      ),
-    ).toBeTruthy();
+    // The reopened place dialog announces the reason; the wizard line behind it stays plain text.
+    expect(within(await screen.findByRole('dialog')).getByRole('alert').textContent).toBe(
+      'Enter the full address: street, house number, postal code, city and country.',
+    );
     expectNoShopComposeOrPost();
 
     listeners.clear();
@@ -1729,6 +1752,34 @@ describe('ForumLoader', () => {
     await fillCompleteShopPlace(listeners);
     await submitValidShopWizardFromCurrentStep();
     await expectShopComposeAfterRetry();
+  });
+
+  it('feed="shops" reports a name problem before the compose fee', async () => {
+    const listeners = await openBasisShopWizardAtPlace();
+    await fillCompleteShopPlace(listeners);
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    fireEvent.change(await screen.findByLabelText('Shop name'), {
+      target: { value: 'Bahnhofstrasse Bakery' },
+    });
+    invokeDisabledButton(
+      screen.getByRole('button', { name: 'Use this place' }),
+      'Could not find the disabled place commit handler',
+    );
+    bypassDisabledShopNext();
+    fireEvent.change(screen.getByLabelText('Shop text'), {
+      target: { value: SHOP_DESCRIPTION },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    submitDisabledShopSummary();
+
+    expect(await screen.findByText('2 / 5 · Place')).toBeTruthy();
+    const dialog = await screen.findByRole('dialog', { name: 'Shop place and address' });
+    expect(within(dialog).getByRole('alert').textContent).toBe(
+      'The shop name must not contain the street or the postal code.',
+    );
+    expectNoShopComposeOrPost();
   });
 
   it('feed="shops" guards an invalid description before the compose fee', async () => {
@@ -2001,7 +2052,12 @@ describe('ForumLoader', () => {
     const pin = { lat: 14.6, lng: 120.98, label: 'Happyland' };
     fetchMock.mockResolvedValue(
       forumPage([
-        { ...SAMPLE, id: 'shop1', text: 'Cafe Luna\n\n#21GiftsShop', sats: 5 },
+        {
+          ...SAMPLE,
+          id: 'shop1',
+          text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
+          sats: 5,
+        },
         {
           ...SAMPLE,
           id: 'shop2',
@@ -2014,7 +2070,7 @@ describe('ForumLoader', () => {
     vi.mocked(setMessagePlace).mockResolvedValue({
       ...SAMPLE,
       id: 'shop1',
-      text: 'Cafe Luna\n\n#21GiftsShop',
+      text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
       sats: 5,
       place: pin,
     });
@@ -2042,7 +2098,7 @@ describe('ForumLoader', () => {
     vi.stubGlobal('navigator', { ...navigator, geolocation: undefined });
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
-      expect(screen.getByText('Cafe Luna')).toBeTruthy();
+      expect(screen.getByText('Cafe Luna is open every morning.')).toBeTruthy();
     });
     const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
     fireEvent.click(within(card).getByRole('button', { name: 'Add a place' }));
@@ -2140,7 +2196,11 @@ describe('ForumLoader', () => {
     const card = document.querySelector('[data-message-id="shop1"]') as HTMLElement;
     fireEvent.click(within(card).getByRole('button', { name: 'Add an account' }));
     fireEvent.change(within(card).getByLabelText('Username'), { target: { value: 'luna' } });
-    fireEvent.click(within(card).getByRole('button', { name: 'Save account' }));
+    const save = within(card).getByRole('button', { name: 'Save account' });
+    await waitFor(() => {
+      expect(save).toHaveProperty('disabled', false);
+    });
+    fireEvent.click(save);
     await waitFor(() => {
       expect(within(card).getByRole('link', { name: '@luna' })).toBeTruthy();
     });
@@ -4394,9 +4454,7 @@ describe('ForumLoader', () => {
       role: 'basis',
       replyCount: 0,
     });
-    postMock.mockRejectedValue(
-      new Error('Shop description must be 20 to 1000 characters and longer than the shop name'),
-    );
+    postMock.mockRejectedValue(new Error('Text must be 1–8000 characters'));
     renderWithLocale(<ForumLoader feed="shops" />);
     await waitFor(() => {
       expect(screen.getByText('No shops yet — add the first one.')).toBeTruthy();
@@ -5047,6 +5105,25 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('alert').textContent).toBe('Could not post your message');
   });
 
+  it('shows the generic post error for a non-shop text range rejection', async () => {
+    fetchMock.mockResolvedValue(forumPage([]));
+    postMock.mockRejectedValue(new Error('Text must be 1–8000 characters'));
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText('Your message'), { target: { value: 'Hi' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Post$/ }));
+
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not post your message');
+    expect(
+      screen.queryByText(
+        'The description must be 20 to 1000 characters and longer than the shop name.',
+      ),
+    ).toBeNull();
+  });
+
   it.each([
     ['Shop name is required', 'Enter the shop name.'],
     [
@@ -5065,7 +5142,6 @@ describe('ForumLoader', () => {
       'Place address is invalid',
       'The address is invalid. The house number must start with a digit, the postal code must have 4 digits in Switzerland and Liechtenstein, the city must contain a letter, and the country must be chosen from the list.',
     ],
-    ['Place label must be at most 80 characters', 'The shop name must be at most 80 characters.'],
     [
       'Username is not valid',
       'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
@@ -5073,10 +5149,6 @@ describe('ForumLoader', () => {
     [
       'No account with that username',
       'No account with that username. Check the spelling of the 21.gifts username.',
-    ],
-    [
-      'Text contains invalid control characters',
-      'The description must not contain control characters other than line breaks.',
     ],
   ])('shows shop 400 %s when posting fails', async (apiMessage, localized) => {
     fetchMock.mockResolvedValue(forumPage([]));

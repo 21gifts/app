@@ -1151,6 +1151,83 @@ describe('PlaceField', () => {
     );
   });
 
+  it('links a live name-versus-text problem to the shop name and blocks confirmation', async () => {
+    stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={{
+          lat: 47.3769,
+          lng: 8.5417,
+          label: "Kiki's Bakery",
+          address: {
+            street: 'Bahnhofstrasse',
+            houseNumber: '12',
+            postalCode: '8001',
+            city: 'Zürich',
+            country: 'CH',
+          },
+        }}
+        disabled={false}
+        onChange={() => undefined}
+        shopDetails
+        shopText={'Fresh bread every morning.\n\n#21GiftsShop'}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    const name = await screen.findByLabelText('Shop name');
+    fireEvent.change(name, { target: { value: 'Fresh bread every morning.' } });
+    const message = screen.getByText(
+      'The shop name must be shorter than the shop text. Shorten the name or edit the shop text first.',
+    );
+    expect(name.getAttribute('aria-invalid')).toBe('true');
+    expect(name.getAttribute('aria-describedby')).toContain(message.id);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByText('Fix the fields marked above.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty('disabled', true);
+  });
+
+  it.each([
+    ['short', 'Too short'],
+    ['long', 'x'.repeat(1001)],
+  ])(
+    'requires editing shop text outside 20–1000 characters before changing the name: %s',
+    async (_case, shopText) => {
+      stubMaps();
+      renderWithLocale(
+        <PlaceField
+          place={{
+            lat: 47.3769,
+            lng: 8.5417,
+            label: "Kiki's Bakery",
+            address: {
+              street: 'Bahnhofstrasse',
+              houseNumber: '12',
+              postalCode: '8001',
+              city: 'Zürich',
+              country: 'CH',
+            },
+          }}
+          disabled={false}
+          onChange={() => undefined}
+          shopDetails
+          shopText={shopText}
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+      const name = await screen.findByLabelText('Shop name');
+      const message = screen.getByText(
+        'The shop text must be 20 to 1000 characters before this place can be saved. Edit the shop text first.',
+      );
+      expect(name.getAttribute('aria-invalid')).toBe('true');
+      expect(name.getAttribute('aria-describedby')).toContain(message.id);
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty(
+        'disabled',
+        true,
+      );
+    },
+  );
+
   it('reopens a known server name problem at the field and blocks confirmation', async () => {
     stubMaps();
     const pin = {
@@ -1219,7 +1296,20 @@ describe('PlaceField', () => {
     listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
     fillShopAddress();
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
-    expect(await screen.findByText(localized)).toBeTruthy();
+    expect((await screen.findByRole('alert')).textContent).toBe(localized);
+  });
+
+  it('keeps a while-typing footer reason out of the alert live region', async () => {
+    stubMaps();
+    renderWithLocale(
+      <PlaceField place={null} disabled={false} onChange={() => undefined} shopDetails />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Shop place and address' });
+    expect(within(dialog).getByText(/Fill in: Map pin, Shop name/).textContent).toContain(
+      'Fill in:',
+    );
+    expect(within(dialog).queryByRole('alert')).toBeNull();
   });
 
   it('maps a non-Error shop commit rejection to the generic save copy', async () => {

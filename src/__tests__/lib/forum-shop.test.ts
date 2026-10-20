@@ -90,8 +90,7 @@ describe('forum-shop', () => {
       expect(shopAddressProblem({ ...ADDRESS, street: '' })).toBe('street');
       expect(shopAddressProblem({ ...ADDRESS, street: 'x'.repeat(121) })).toBe('street');
       expect(shopAddressProblem({ ...ADDRESS, street: 'Main\u0001St' })).toBe('street');
-      expect(shopAddressProblem({ ...ADDRESS, street: '\tMain Street' })).toBe('street');
-      expect(shopAddressProblem({ ...ADDRESS, houseNumber: '12\n' })).toBe('houseNumber');
+      expect(shopAddressProblem({ ...ADDRESS, houseNumber: '12\n34' })).toBe('houseNumber');
       expect(shopAddressProblem({ ...ADDRESS, houseNumber: 'A12' })).toBe('houseNumber');
       expect(shopAddressProblem({ ...ADDRESS, postalCode: '800' })).toBe('postalCode');
       expect(shopAddressProblem({ ...ADDRESS, postalCode: '8001\u007f' })).toBe('postalCode');
@@ -101,6 +100,22 @@ describe('forum-shop', () => {
       expect(shopAddressProblem({ ...ADDRESS, city: 'Zürich\u0001' })).toBe('city');
       expect(shopAddressProblem({ ...ADDRESS, country: 'xx' })).toBe('country');
       expect(shopAddressProblem({ ...ADDRESS, country: 'CH ' })).toBe(null);
+    });
+
+    it('accepts edge tabs after trimming and rejects inner tabs in every text field', () => {
+      expect(
+        shopAddressProblem({
+          ...ADDRESS,
+          street: '\tBahnhofstrasse\t',
+          houseNumber: '\t12\t',
+          postalCode: '\t8001\t',
+          city: '\tZürich\t',
+        }),
+      ).toBe(null);
+      expect(shopAddressProblem({ ...ADDRESS, street: 'Bahnhof\tstrasse' })).toBe('street');
+      expect(shopAddressProblem({ ...ADDRESS, houseNumber: '1\t2' })).toBe('houseNumber');
+      expect(shopAddressProblem({ ...ADDRESS, postalCode: '80\t01' })).toBe('postalCode');
+      expect(shopAddressProblem({ ...ADDRESS, city: 'Zü\trich' })).toBe('city');
     });
 
     it('uses four-digit postal codes for CH and LI and a wider pattern elsewhere', () => {
@@ -187,6 +202,32 @@ describe('forum-shop', () => {
         houseNumber: 'characters',
       });
     });
+
+    it('checks control characters after trimming every address draft', () => {
+      expect(
+        shopAddressProblems({
+          ...ADDRESS,
+          street: '\tBahnhofstrasse\t',
+          houseNumber: '\t12\t',
+          postalCode: '\t8001\t',
+          city: '\tZürich\t',
+        }),
+      ).toEqual({});
+      expect(
+        shopAddressProblems({
+          ...ADDRESS,
+          street: 'Bahnhof\tstrasse',
+          houseNumber: '1\t2',
+          postalCode: '80\t01',
+          city: 'Zü\trich',
+        }),
+      ).toEqual({
+        street: 'controls',
+        houseNumber: 'controls',
+        postalCode: 'controls',
+        city: 'controls',
+      });
+    });
   });
 
   describe('shopNameProblem', () => {
@@ -201,6 +242,8 @@ describe('forum-shop', () => {
 
     it('returns nameAddress when the name embeds the street or postal code as a word', () => {
       expect(shopNameProblem('Bahnhofstrasse Bakery', ADDRESS)).toBe('nameAddress');
+      expect(shopNameProblem('Cafe Bahnhofstrasse', ADDRESS)).toBe('nameAddress');
+      expect(shopNameProblem('xBahnhofstrasse Bakery', ADDRESS)).toBe(null);
       expect(shopNameProblem('Cafe 8001', ADDRESS)).toBe('nameAddress');
       expect(shopNameProblem("Kiki's Bakery", ADDRESS)).toBe(null);
       expect(shopNameProblem('Bahnhofstrassenfest', ADDRESS)).toBe(null);
@@ -213,6 +256,11 @@ describe('forum-shop', () => {
     it('rejects names over 80 characters and control characters', () => {
       expect(shopNameProblem('x'.repeat(81), ADDRESS)).toBe('nameLong');
       expect(shopNameProblem('Cafe\u0001', ADDRESS)).toBe('nameControls');
+    });
+
+    it('checks shop-name controls after trimming', () => {
+      expect(shopNameProblem("\tKiki's Bakery\t", ADDRESS)).toBe(null);
+      expect(shopNameProblem("Kiki's\tBakery", ADDRESS)).toBe('nameControls');
     });
 
     it('trims street and postal-code tokens before matching', () => {
@@ -340,29 +388,40 @@ describe('forum-shop', () => {
 
   describe('shopApiProblem', () => {
     it('maps exact API 400 bodies and ignores other text', () => {
-      expect(shopApiProblem('Shop name is required')).toBe('shopName');
-      expect(shopApiProblem('Shop name must not contain the address')).toBe('shopNameAddress');
-      expect(shopApiProblem('Shop address is required')).toBe('shopAddress');
+      expect(shopApiProblem('Shop name is required', false)).toBe('shopName');
+      expect(shopApiProblem('Shop name must not contain the address', false)).toBe(
+        'shopNameAddress',
+      );
+      expect(shopApiProblem('Shop address is required', false)).toBe('shopAddress');
       expect(
         shopApiProblem(
           'Shop description must be 20 to 1000 characters and longer than the shop name',
+          false,
         ),
       ).toBe('shopDescription');
-      expect(shopApiProblem('Place address is invalid')).toBe('placeAddress');
-      expect(shopApiProblem('Place label must be at most 80 characters')).toBe('shopNameLong');
-      expect(shopApiProblem('Username is not valid')).toBe('usernameInvalid');
-      expect(shopApiProblem('No account with that username')).toBe('usernameMissing');
-      expect(shopApiProblem('Text must be 1–8000 characters')).toBe('shopDescription');
-      expect(shopApiProblem('Text must be 1–8000 characters or include a photo')).toBe(
+      expect(shopApiProblem('Place address is invalid', false)).toBe('placeAddress');
+      expect(shopApiProblem('Username is not valid', false)).toBe('usernameInvalid');
+      expect(shopApiProblem('No account with that username', false)).toBe('usernameMissing');
+      expect(shopApiProblem('Could not post your message', false)).toBe(null);
+    });
+
+    it('maps generic text and label errors only for shops', () => {
+      expect(shopApiProblem('Text must be 1–8000 characters', true)).toBe('shopDescription');
+      expect(shopApiProblem('Text must be 1–8000 characters', false)).toBe(null);
+      expect(shopApiProblem('Text must be 1–8000 characters or include a photo', true)).toBe(
         'shopDescription',
       );
-      expect(shopApiProblem('Text contains invalid control characters')).toBe(
-        'shopDescriptionControls',
+      expect(shopApiProblem('Text must be 1–8000 characters or include a photo', false)).toBe(null);
+      expect(
+        shopApiProblem('Text must be 1–8000 characters or include a photo or video', true),
+      ).toBe('shopDescription');
+      expect(
+        shopApiProblem('Text must be 1–8000 characters or include a photo or video', false),
+      ).toBe(null);
+      expect(shopApiProblem('Place label must be at most 80 characters', true)).toBe(
+        'shopNameLong',
       );
-      expect(shopApiProblem('Text must not contain control characters')).toBe(
-        'shopDescriptionControls',
-      );
-      expect(shopApiProblem('Could not post your message')).toBe(null);
+      expect(shopApiProblem('Place label must be at most 80 characters', false)).toBe(null);
     });
   });
 

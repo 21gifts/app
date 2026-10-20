@@ -702,18 +702,19 @@ async function chooseMentionAda(page: Page, field: Locator): Promise<void> {
   await expect(page.getByRole('listbox', { name: 'People' })).toHaveCount(0);
 }
 
-/** Signed-in composer suggestions: first page is Ada and Adam. */
-async function fulfillMentionPeople(page: Page): Promise<void> {
+/** Signed-in composer suggestions; the default first page is Ada and Adam. */
+async function fulfillMentionPeople(
+  page: Page,
+  accounts: unknown[] = [
+    { id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' },
+    { id: 'acc-adam', username: 'adam', name: 'Adam' },
+  ],
+): Promise<void> {
   await page.route('**/forum/mentions**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        accounts: [
-          { id: 'acc-ada', username: 'ada', name: 'Ada Lovelace' },
-          { id: 'acc-adam', username: 'adam', name: 'Adam' },
-        ],
-      }),
+      body: JSON.stringify({ accounts }),
     });
   });
 }
@@ -19383,7 +19384,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19417,7 +19418,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19473,7 +19474,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Fresh bread every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19496,7 +19497,7 @@ test.describe('shops screens', () => {
           status: 400,
           contentType: 'application/json',
           body: JSON.stringify({
-            error: 'Shop description must be 20 to 1000 characters and longer than the shop name',
+            error: 'Shop address is required',
           }),
         });
       },
@@ -19509,7 +19510,7 @@ test.describe('shops screens', () => {
     await expect(confirm).toBeEnabled();
     await confirm.click();
     const reason = page.getByText(
-      'The description must be 20 to 1000 characters and longer than the shop name.',
+      'Enter the full address: street, house number, postal code, city and country.',
     );
     await expect(reason).toBeVisible();
     await expect(confirm).toBeVisible();
@@ -19528,7 +19529,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19563,7 +19564,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19650,7 +19651,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19722,7 +19723,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19795,7 +19796,7 @@ test.describe('shops screens', () => {
             {
               id: 'm-staff',
               name: 'Ada',
-              text: 'Cafe Luna\n\n#21GiftsShop',
+              text: 'Cafe Luna is open every morning.\n\n#21GiftsShop',
               createdAt: '2026-08-28T12:00:00.000Z',
               sats: 0,
               payable: false,
@@ -19870,6 +19871,7 @@ test.describe('shops screens', () => {
     await expect(page.getByText('Ada Lovelace')).toBeVisible();
     const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeVisible();
+    await expect(save).toBeEnabled();
     await expect(note.getByRole('alert')).toHaveCount(0);
     await save.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-account');
@@ -19909,6 +19911,7 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('option', { name: '@adam', exact: true })).toBeVisible();
     const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeVisible();
+    await expect(save).toBeEnabled();
     await expect(note.getByRole('alert')).toHaveCount(0);
     await save.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-account-chosen');
@@ -19947,7 +19950,9 @@ test.describe('shops screens', () => {
 
   test('shops staff-account-error', async ({ page }) => {
     await seedAda(page, 'moderator');
-    await fulfillMentionPeople(page);
+    await fulfillMentionPeople(page, [
+      { id: 'acc-missing', username: 'missing', name: 'Missing account' },
+    ]);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -19987,12 +19992,14 @@ test.describe('shops screens', () => {
     await note.getByRole('button', { name: 'Add an account' }).click();
     await note.getByLabel('Username').fill('missing');
     await expect(page.getByRole('listbox', { name: 'People' })).toHaveCount(0);
-    await note.getByRole('button', { name: 'Save account' }).click();
+    const save = note.getByRole('button', { name: 'Save account' });
+    await expect(save).toBeEnabled();
+    await save.click();
     await expect(
       note.getByText('No account with that username. Check the spelling of the 21.gifts username.'),
     ).toBeVisible();
-    const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeVisible();
+    await expect(save).toBeDisabled();
     await save.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-account-error');
   });

@@ -477,8 +477,8 @@ describe('ShopNoteEditControl', () => {
       4,
     ],
     [
-      'Text contains invalid control characters',
-      'The description must not contain control characters other than line breaks.',
+      'Text must be 1–8000 characters',
+      'The description must be 20 to 1000 characters and longer than the shop name.',
       3,
     ],
   ];

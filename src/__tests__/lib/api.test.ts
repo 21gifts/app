@@ -5881,8 +5881,7 @@ describe('setMessageShopText', () => {
     'Shop description must be 20 to 1000 characters and longer than the shop name',
     'Text must be 1–8000 characters',
     'Text must be 1–8000 characters or include a photo',
-    'Text contains invalid control characters',
-    'Text must not contain control characters',
+    'Text must be 1–8000 characters or include a photo or video',
     'Place address is invalid',
   ])('throws the shop 400 body %s unchanged', async (error) => {
     stubFetch({ ok: false, status: 400, body: { error } });

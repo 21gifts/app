@@ -473,7 +473,7 @@ export function ShopNoteEditControl({
       setOpen(false);
     } catch (error) {
       setSaveError(true);
-      const problem = error instanceof Error ? shopApiProblem(error.message) : null;
+      const problem = error instanceof Error ? shopApiProblem(error.message, true) : null;
       setSaveProblem(problem);
     } finally {
       setSaving(false);

@@ -1201,11 +1201,11 @@
 
 ## Function: ShopAddWizard
 
-Guided shop submission on `/shops`. Closed state is only **Add a shop**. The open steps are photos, a map place with shop name and structured address, text, an optional 21.gifts username, then a summary. Every disabled Next/Post has a visible field error or step reason. Photo errors stay under the picker with the `n / 10` count. Place uses a dialog/sheet, text has the live 1000-character counter and control-character rule, and a non-empty username must match the API format and an account lookup before Next enables. A short suggestion page without an exact match proves the account is missing; a full 20-row page is inconclusive and does not block the wizard.
+Guided shop submission on `/shops`. Closed state is only **Add a shop**. The open steps are photos, a map place with shop name and structured address, text, an optional 21.gifts username, then a summary. Every disabled Next/Post has a visible field error or step reason. Photo errors stay under the picker with the `n / 10` count. Place uses a dialog/sheet, text has the live 1000-character counter and control-character rule, and a non-empty username must match the API format and waits for an account lookup before Next enables. A short suggestion page without an exact match proves the account is missing; a full 20-row page or a failed lookup is inconclusive and does not block the wizard because the posting API still validates the account.
 
 - **Purpose:** Replace the living-room composer on the shops feed. The shop tag is added when the note is sent, not typed in the text step. That text step lists people as soon as `@` is typed, the same way a post does. The summary shows the photo count (stills plus a video), the shop name, the formatted address line, the text, and `@username`, or **None** when photos or the user were skipped.
 - **Inputs:** Existing wizard props plus optional `photoError` and `serverProblem`; known server fallbacks move back to the owning step and field.
-- **Returns / side effects:** React tree. A non-empty username is checked with `searchMentionAccounts` and interpreted by `usernameLookupVerdict`; file selection calls `onPickFiles`. Photo-pick errors and known server errors are announced as alerts, while live validation during typing remains linked field feedback without an alert. The summary button calls `onSubmit` (**Post**, or `submitLabel` such as **Save changes**). In edit mode, the icon-only Close (X) on the photo step calls `onCancel`. Its accessible name is Cancel, and there is no visible Cancel word. From the place step on, the top-left arrow returns to the previous step and is disabled while `posting` is true. The card does not draw **Back**.
+- **Returns / side effects:** React tree. A non-empty username is checked with `searchMentionAccounts` and interpreted by `usernameLookupVerdict`; a missing result blocks, while an inconclusive or failed lookup does not. File selection calls `onPickFiles`. Photo-pick errors and known server errors are announced as alerts, while live validation during typing remains linked field feedback without an alert. The summary button calls `onSubmit` (**Post**, or `submitLabel` such as **Save changes**). In edit mode, the icon-only Close (X) on the photo step calls `onCancel`. Its accessible name is Cancel, and there is no visible Cancel word. From the place step on, the top-left arrow returns to the previous step and is disabled while `posting` is true. The card does not draw **Back**.
 - **Used by:** `ForumBoard` when `shopComposer` is set, and `ShopNoteEditControl` in edit mode.
 
 ## Function: ForumAskWizard
@@ -1395,8 +1395,8 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlaceField
 
-- **Purpose:** Optional place control and staff editor. It opens a centered desktop dialog or full-screen mobile sheet. The body is the only active scroll surface and the confirm row stays visible. Shop mode orders map, shop name, street/house, postal/city, and country; touched fields show concrete live errors while the footer always explains why confirm is disabled.
-- **Inputs:** Existing place/control/commit props, optional `problem` for a known API fallback, and `onAvailabilityChange` for the closed wizard step.
+- **Purpose:** Optional place control and staff editor. It opens a centered desktop dialog or full-screen mobile sheet. The body is the only active scroll surface and the confirm row stays visible. Shop mode orders map, shop name, street/house, postal/city, and country; touched fields show concrete live errors while the footer always explains why confirm is disabled. With stored shop text, the shop name is also checked live against the API's 20–1000-character and strictly-shorter-than-text rule.
+- **Inputs:** Existing place/control/commit props, optional `shopText` for stored-note name validation, optional `problem` for a known API fallback, and `onAvailabilityChange` for the closed wizard step.
 - **Returns / side effects:** Attach button, optional preview, and accessible modal dialog. Fetches `/maps/key`; a known server problem reopens the dialog at its field.
 - **Used by:** `ForumBoard` (top-level composer, no `shopDetails`), `ShopAddWizard` (`shopDetails`), and `ShopPlaceControl` (`shopDetails`).
 
@@ -1418,7 +1418,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Moderator-only place editor on a listed shop note. Hidden on replies, hidden notes, non-shop text, unsigned sessions, and ranks below moderator.
 - **Inputs:** `message` (top-level shop note) and `onUpdated` (message id plus the saved pin, or `null` when cleared).
-- **Returns / side effects:** Compact `PlaceField` (`showPreview` false, small ghost **Add a place** / **Edit place**). `onCommit` calls `setMessagePlace`; a failed save keeps the panel open and shows `forum.placeSaveFailed`.
+- **Returns / side effects:** Compact `PlaceField` (`showPreview` false, small ghost **Add a place** / **Edit place**) with `message.text`, so invalid name/text combinations are linked under **Shop name** and block **Use this place** before the request. `onCommit` calls `setMessagePlace`; a failed save keeps the panel open and maps known API reasons back to their owning field or footer.
 - **Used by:** `ForumBoard` when `shopPlaceEdit` and `onShopPlaceUpdated` are set (`ForumLoader` `feed="shops"`).
 
 ## Function: ShopNoteEditControl
@@ -1432,7 +1432,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Moderator-only shop-account editor on a listed shop note. Hidden on replies, hidden notes, non-shop text, unsigned sessions, and ranks below moderator.
 - **Inputs:** `message` (top-level shop note) and `onUpdated` (message id plus the saved `{ id, username, name }`, or `null` when cleared).
-- **Returns / side effects:** Small ghost account editor with the People suggestions. Invalid format is reported and linked under the field while typing and disables Save without an alert role. Unknown-account and request-failure messages stay adjacent and use `role="alert"` after Save so assistive technology announces them. Success calls `setMessageShopAccount` then `onUpdated` and closes.
+- **Returns / side effects:** Small ghost account editor with the People suggestions. A valid non-empty username starts a 150 ms debounced `searchMentionAccounts` check interpreted by `usernameLookupVerdict`. Save is disabled while that current value is pending or proven missing; pending shows the linked muted **Checking that account…** reason, and the linked missing message is live without an alert. A full result page, an unknown verdict, or a failed lookup does not block because `setMessageShopAccount` validates again. Invalid format is also linked live. Only errors returned after Save use `role="alert"`; success calls `onUpdated` and closes.
 - **Used by:** `ForumBoard` when `shopAccountEdit` and `onShopAccountUpdated` are set (`ForumLoader` `feed="shops"`).
 
 ## Function: ShopsPage
@@ -1521,21 +1521,21 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: shopAddressProblem
 
-- **Purpose:** First invalid address field on a shop pin, or null when the address matches the API rules. Empty address is `'missing'`. Field order is street, house number, postal code, city, country.
+- **Purpose:** First invalid address field on a shop pin, or null when the address matches the API rules. Empty address is `'missing'`. Field order is street, house number, postal code, city, country. Each value is trimmed before its control-character rule, so pasted edge tabs are ignored while an inner tab is rejected.
 - **Inputs:** Structured `ForumPlaceAddress`, or `null` when every field is empty.
 - **Returns / side effects:** `'missing'`, `'street'`, `'houseNumber'`, `'postalCode'`, `'city'`, `'country'`, or `null`. No network.
 - **Used by:** `PlaceField`, `shopPlaceComplete`.
 
 ## Function: shopAddressProblems
 
-- **Purpose:** Reports every broken API address rule at its own field instead of reducing the address to one generic error.
+- **Purpose:** Reports every broken API address rule at its own field instead of reducing the address to one generic error. Control-character checks use each trimmed draft, accepting pasted edge tabs but rejecting inner tabs.
 - **Inputs:** Structured `ForumPlaceAddress`, or `null` when every field is empty.
 - **Returns / side effects:** Sparse field-to-rule map for street, house number, postal code, city, and country. No network.
 - **Used by:** `PlaceField` for live adjacent errors and its visible disabled-button reason.
 
 ## Function: shopNameProblem
 
-- **Purpose:** Name problem of a shop pin. Blank label is `'name'`; over 80 characters is `'nameLong'`; control characters are `'nameControls'`; a standalone street or postal-code token in the name is `'nameAddress'`.
+- **Purpose:** Name problem of a shop pin. Blank label is `'name'`; over 80 characters is `'nameLong'`; control characters inside the trimmed name are `'nameControls'`; a standalone street or postal-code token in the name is `'nameAddress'`. Pasted edge tabs are ignored because the API stores the trimmed name.
 - **Inputs:** Pin label (shop name) and the structured address, or `null` when unset.
 - **Returns / side effects:** `'name'`, `'nameAddress'`, `'nameLong'`, `'nameControls'`, or `null`. No network.
 - **Used by:** `PlaceField`, `shopPlaceComplete`.
@@ -1592,8 +1592,8 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 ## Function: shopApiProblem
 
 - **Purpose:** Map an exact API 400 body to a shop form error. Unknown text returns null so the generic save copy stays.
-- **Inputs:** `Error.message` from `postMessage`, `setMessagePlace`, or `setMessageShopText`.
-- **Returns / side effects:** A field/step-specific shop problem for name, address, description, or username, or `null`. No network.
+- **Inputs:** `Error.message` from `postMessage`, `setMessagePlace`, or `setMessageShopText`, plus whether that request belongs to a shop post or place.
+- **Returns / side effects:** A field/step-specific shop problem for name, address, description, or username, or `null`. Generic forum text-range and place-label-length bodies map only for shop requests. No network.
 - **Used by:** `ForumLoader`, `PlaceField`, `ShopNoteEditControl`.
 
 ## Function: ShopAddressFields

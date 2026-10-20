@@ -2288,11 +2288,11 @@ A moderator session. **Edit place** is open on the Cafe Luna note, the map is vi
 
 ### Variant: staff-place-edit-rejected
 
-A moderator session. **Edit place** is open on the Cafe Luna note (text **Cafe Luna**).
+A moderator session. **Edit place** is open on a shop note (text **Fresh bread every morning.**).
 **Shop name** is **Happyland**, the full address is filled, and **Use this place** was pressed. The
-server rejected the place because the stored description is too short for it, so the alert
-**The description must be 20 to 1000 characters and longer than the shop name.** is visible. The
-dialog stays open with **Use this place**.
+server rejected the place with **Shop address is required** after a concurrent change, so the
+fallback alert **Enter the full address: street, house number, postal code, city and country.** is
+visible. The dialog stays open with **Use this place**.
 
 ![21.gifts shops staff place edit rejected](images/shops-staff-place-edit-rejected.png)
 
@@ -2377,7 +2377,7 @@ A moderator session. The Cafe Luna note includes `shopAccount: { id: 'acc-luna',
 
 ### Variant: staff-account-error
 
-A moderator session. **Add an account** is open on the Cafe Luna note. Username **missing** was saved. The save returned 404, so the alert **No account with that username. Check the spelling of the 21.gifts username.** is visible. **Save account** stays.
+A moderator session. **Add an account** is open on the Cafe Luna note. The live lookup found username **missing**, but the account was removed concurrently before Save. The save returned 404, so the fallback alert **No account with that username. Check the spelling of the 21.gifts username.** is visible. **Save account** stays disabled, matching the live missing-account state.
 
 ![21.gifts shops staff account error](images/shops-staff-account-error.png)
 

@@ -47,6 +47,18 @@ const shopMessage: ForumMessage = {
 
 const lunaAccount = { id: 'acc-luna', username: 'luna', name: 'Luna' };
 
+function mockLunaLookup(): void {
+  vi.mocked(searchMentionAccounts).mockResolvedValue([lunaAccount]);
+}
+
+async function enabledSaveButton(): Promise<HTMLElement> {
+  const button = screen.getByRole('button', { name: 'Save account' });
+  await waitFor(() => {
+    expect(button).toHaveProperty('disabled', false);
+  });
+  return button;
+}
+
 afterEach(() => {
   cleanup();
   useAuthStore.getState().clearAuth();
@@ -121,6 +133,7 @@ describe('ShopAccountControl', () => {
 
   it('saves a username and calls onUpdated with the returned account', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    mockLunaLookup();
     vi.mocked(setMessageShopAccount).mockResolvedValue({
       ...shopMessage,
       shopAccount: lunaAccount,
@@ -129,7 +142,7 @@ describe('ShopAccountControl', () => {
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={onUpdated} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
+    fireEvent.click(await enabledSaveButton());
     await waitFor(() => {
       expect(setMessageShopAccount).toHaveBeenCalledWith('token', 'shop1', 'luna');
     });
@@ -138,27 +151,30 @@ describe('ShopAccountControl', () => {
 
   it('shows the missing-username alert and keeps the panel open', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    mockLunaLookup();
     vi.mocked(setMessageShopAccount).mockRejectedValue(new Error('No account with that username'));
     const onUpdated = vi.fn();
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={onUpdated} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
+    fireEvent.click(await enabledSaveButton());
     expect((await screen.findByRole('alert')).textContent).toBe(
       'No account with that username. Check the spelling of the 21.gifts username.',
     );
     expect(screen.getByRole('button', { name: 'Save account' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
     expect(onUpdated).not.toHaveBeenCalled();
   });
 
   it('does not call onUpdated and shows the alert when save fails', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    mockLunaLookup();
     vi.mocked(setMessageShopAccount).mockRejectedValue(new Error('Could not save account'));
     const onUpdated = vi.fn();
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={onUpdated} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
+    fireEvent.click(await enabledSaveButton());
     expect((await screen.findByRole('alert')).textContent).toBe(
       'The account could not be saved. Please try again.',
     );
@@ -168,19 +184,20 @@ describe('ShopAccountControl', () => {
 
   it('maps a server username-format fallback back to the field', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    mockLunaLookup();
     vi.mocked(setMessageShopAccount).mockRejectedValue(new Error('Username is not valid'));
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     const input = screen.getByLabelText('Username');
     fireEvent.change(input, { target: { value: 'luna' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
+    fireEvent.click(await enabledSaveButton());
     expect(
       await screen.findByText(
         'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
       ),
     ).toBeTruthy();
     expect(input.getAttribute('aria-invalid')).toBe('true');
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('alert').textContent).toContain('Use 1–32 lowercase letters');
   });
 
   it('removes the account with a null username', async () => {
@@ -204,6 +221,7 @@ describe('ShopAccountControl', () => {
 
   it('strips one leading @ before save', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    mockLunaLookup();
     vi.mocked(setMessageShopAccount).mockResolvedValue({
       ...shopMessage,
       shopAccount: lunaAccount,
@@ -211,7 +229,7 @@ describe('ShopAccountControl', () => {
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: '  @luna' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
+    fireEvent.click(await enabledSaveButton());
     await waitFor(() => {
       expect(setMessageShopAccount).toHaveBeenCalledWith('token', 'shop1', 'luna');
     });
@@ -247,6 +265,110 @@ describe('ShopAccountControl', () => {
     expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
   });
 
+  it('disables Save while checking and shows a linked missing account problem live', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue([]);
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    const input = screen.getByLabelText('Username');
+    fireEvent.change(input, { target: { value: 'missing' } });
+    const save = screen.getByRole('button', { name: 'Save account' });
+    expect(save).toHaveProperty('disabled', true);
+    const checking = screen.getByText('Checking that account…');
+    expect(input.getAttribute('aria-describedby')).toBe(checking.id);
+    const message = await screen.findByText(
+      'No account with that username. Check the spelling of the 21.gifts username.',
+    );
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')).toBe(message.id);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(save).toHaveProperty('disabled', true);
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
+  });
+
+  it('allows Save when a full lookup page is inconclusive', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockResolvedValue(
+      Array.from({ length: 20 }, (_, index) => ({
+        id: `acc-${String(index)}`,
+        username: `other-${String(index)}`,
+        name: `Other ${String(index)}`,
+      })),
+    );
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
+    await enabledSaveButton();
+    expect(
+      screen.queryByText(
+        'No account with that username. Check the spelling of the 21.gifts username.',
+      ),
+    ).toBeNull();
+  });
+
+  it('allows Save without a message when the lookup fails', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    vi.mocked(searchMentionAccounts).mockRejectedValue(new Error('offline'));
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
+    await enabledSaveButton();
+    expect(screen.getByLabelText('Username').getAttribute('aria-invalid')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('ignores a successful lookup for an older username', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    let resolveAda: ((rows: (typeof lunaAccount)[]) => void) | undefined;
+    vi.mocked(searchMentionAccounts).mockImplementation((_token, query) => {
+      if (query === 'ada') {
+        return new Promise<(typeof lunaAccount)[]>((resolve) => {
+          resolveAda = resolve;
+        });
+      }
+      return Promise.resolve(query === 'luna' ? [lunaAccount] : []);
+    });
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    const input = screen.getByLabelText('Username');
+    fireEvent.change(input, { target: { value: 'ada' } });
+    await waitFor(() => {
+      expect(resolveAda).toBeTypeOf('function');
+    });
+    fireEvent.change(input, { target: { value: 'luna' } });
+    const save = await enabledSaveButton();
+    await act(async () => {
+      resolveAda?.([]);
+    });
+    expect(save).toHaveProperty('disabled', false);
+  });
+
+  it('ignores a failed lookup for an older username', async () => {
+    useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    let rejectAda: ((error: Error) => void) | undefined;
+    vi.mocked(searchMentionAccounts).mockImplementation((_token, query) => {
+      if (query === 'ada') {
+        return new Promise<(typeof lunaAccount)[]>((_resolve, reject) => {
+          rejectAda = reject;
+        });
+      }
+      return Promise.resolve(query === 'luna' ? [lunaAccount] : []);
+    });
+    renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
+    const input = screen.getByLabelText('Username');
+    fireEvent.change(input, { target: { value: 'ada' } });
+    await waitFor(() => {
+      expect(rejectAda).toBeTypeOf('function');
+    });
+    fireEvent.change(input, { target: { value: 'luna' } });
+    const save = await enabledSaveButton();
+    await act(async () => {
+      rejectAda?.(new Error('late'));
+    });
+    expect(save).toHaveProperty('disabled', false);
+  });
+
   it('shows the save-failed alert when remove throws', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     vi.mocked(setMessageShopAccount).mockRejectedValue(new Error('Could not save account'));
@@ -268,12 +390,13 @@ describe('ShopAccountControl', () => {
 
   it('passes null when the saved message omits shopAccount', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    mockLunaLookup();
     vi.mocked(setMessageShopAccount).mockResolvedValue(shopMessage);
     const onUpdated = vi.fn();
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={onUpdated} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
+    fireEvent.click(await enabledSaveButton());
     await waitFor(() => {
       expect(onUpdated).toHaveBeenCalledWith('shop1', null);
     });
@@ -281,11 +404,12 @@ describe('ShopAccountControl', () => {
 
   it('shows the save-failed alert when save rejects a non-Error', async () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
+    mockLunaLookup();
     vi.mocked(setMessageShopAccount).mockRejectedValue('nope');
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'luna' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save account' }));
+    fireEvent.click(await enabledSaveButton());
     expect(
       await screen.findByText('The account could not be saved. Please try again.'),
     ).toBeTruthy();
