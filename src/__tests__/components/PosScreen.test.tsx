@@ -57,7 +57,11 @@ vi.mock('@/lib/wallet/wallet-service', async () => {
     },
     // The real one checks the Playwright build itself (wallet-service tests); here it reaches the
     // same listeners the mocked onPaymentReceived keeps.
-    announceReceivedForE2e: (payment: { amountSats: number; feesSats: number; timestamp: number }) => {
+    announceReceivedForE2e: (payment: {
+      amountSats: number;
+      feesSats: number;
+      timestamp: number;
+    }) => {
       for (const listener of [...received.listeners]) {
         listener(payment);
       }
