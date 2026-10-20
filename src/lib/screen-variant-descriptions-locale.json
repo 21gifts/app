@@ -2720,9 +2720,9 @@
     "fil": "Baligtad na hanay ng ranggo (Hunyo mataas sa ₿ / maikli sa USD, Hulyo ang kabaligtaran). Ang Posts ay parehong kabuuan ng mga tala at sagot. Lumipat ang sukat sa USD sa Total spend over time, By person, at By month."
   },
   "/shops:staff-account": {
-    "de": "Eine Moderationssitzung. Eine Ladennotiz Cafe Luna. Konto hinzufügen ist geöffnet. Das Benutzername-Feld ist @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Konto speichern ist sichtbar. Es gibt keinen Hinweis.",
-    "es": "Una sesión de moderador. Una nota de tienda Cafe Luna. Añadir una cuenta está abierto. El campo de nombre de usuario es @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Guardar cuenta es visible. No hay alerta.",
-    "fil": "Isang sesyon ng tagapamagitan. Isang tala ng tindahan na Cafe Luna. Bukas ang Magdagdag ng account. Ang hanay ng username ay @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Nakikita ang I-save ang account. Walang alerto."
+    "de": "Eine Moderationssitzung. Eine Ladennotiz Cafe Luna. Konto hinzufügen ist geöffnet. Das Benutzername-Feld ist @. Die Personenliste zeigt @ada Ada Lovelace und @adam Adam. Konto speichern ist sichtbar und deaktiviert, und unter dem Feld steht der Hinweis Geben Sie den 21.gifts-Benutzernamen ein oder wählen Sie ihn aus, um zu speichern. Es gibt keinen Alarm.",
+    "es": "Una sesión de moderador. Una nota de tienda Cafe Luna. Añadir una cuenta está abierto. El campo de nombre de usuario es @. La lista Personas muestra @ada Ada Lovelace y @adam Adam. Guardar cuenta es visible y está desactivado, y bajo el campo aparece la indicación Escribe o elige el nombre de usuario de 21.gifts para guardar. No hay alerta.",
+    "fil": "Isang sesyon ng tagapamagitan. Isang tala ng tindahan na Cafe Luna. Bukas ang Magdagdag ng account. Ang hanay ng username ay @. Ipinapakita ng listahan ng Mga tao ang @ada Ada Lovelace at @adam Adam. Nakikita at naka-disable ang I-save ang account, at nasa ilalim ng hanay ang paalala I-type o piliin ang username sa 21.gifts para ma-save. Walang alerto."
   },
   "/statistics:both-error": {
     "de": "Mitarbeiterseite (Moderator). Im Personenbereich steht Auszahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut. und im Shop-Bereich Die Shop-Aktivität konnte nicht geladen werden. Bitte erneut versuchen. Moderatorenfunktionen wird nicht angezeigt.",

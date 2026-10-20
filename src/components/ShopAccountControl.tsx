@@ -352,12 +352,16 @@ export function ShopAccountControl({
           ? t('forum.shopAccountSaveFailed')
           : undefined;
   const shownError = savedError ?? liveError;
+  // The untouched `@` keeps Save disabled, so the reason is shown as a hint.
+  const untouched = !edited && draft === '@';
   const usernameFeedbackId =
     shownError !== undefined
       ? `${listId}-error`
       : usernamePending
         ? `${listId}-checking`
-        : undefined;
+        : untouched
+          ? `${listId}-hint`
+          : undefined;
 
   const saveUsername = async (): Promise<void> => {
     let trimmed = draft.trim();
@@ -467,6 +471,11 @@ export function ShopAccountControl({
               {shownError}
             </p>
           )}
+          {shownError === undefined && !usernamePending && untouched ? (
+            <p id={`${listId}-hint`} className="mt-3 text-sm text-app-muted">
+              {t('forum.shopAccountHint')}
+            </p>
+          ) : null}
           {shownError === undefined && usernamePending ? (
             <p id={`${listId}-checking`} className="mt-3 text-sm text-app-muted">
               {t('shops.usernameChecking')}

@@ -41,7 +41,10 @@ export type ShopAddressFieldProblem =
 /** All invalid address fields, so the form can report each one in place. */
 export type ShopAddressProblems = Partial<Record<ShopAddressField, ShopAddressFieldProblem>>;
 
-/** Exact API 400 bodies mapped to a shop form error. */
+/**
+ * Shop form errors: exact API 400 bodies, plus `shopNameControls`, which only the
+ * client pre-fee guard sets (the API reports it as a label length error).
+ */
 export type ShopApiProblem =
   | 'shopName'
   | 'shopNameAddress'

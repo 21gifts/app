@@ -19871,7 +19871,8 @@ test.describe('shops screens', () => {
     await expect(page.getByText('Ada Lovelace')).toBeVisible();
     const save = note.getByRole('button', { name: 'Save account' });
     await expect(save).toBeVisible();
-    await expect(save).toBeEnabled();
+    await expect(save).toBeDisabled();
+    await expect(note.getByText('Type or pick the 21.gifts username to save.')).toBeVisible();
     await expect(note.getByRole('alert')).toHaveCount(0);
     await save.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-staff-account');

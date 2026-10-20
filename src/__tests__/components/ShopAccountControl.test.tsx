@@ -118,7 +118,7 @@ describe('ShopAccountControl', () => {
     expect(button).toBeTruthy();
   });
 
-  it('keeps the untouched initial @ quiet but disables Save', () => {
+  it('explains the disabled Save on the untouched initial @ without an error', () => {
     useAuthStore.setState({ session: 'token', account: { ...account, role: 'moderator' } });
     renderWithLocale(<ShopAccountControl message={shopMessage} onUpdated={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add an account' }));
@@ -127,6 +127,10 @@ describe('ShopAccountControl', () => {
     expect(input.getAttribute('aria-invalid')).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
+    const hint = screen.getByText('Type or pick the 21.gifts username to save.');
+    expect(input.getAttribute('aria-describedby')).toBe(hint.id);
+    fireEvent.change(input, { target: { value: '@l' } });
+    expect(screen.queryByText('Type or pick the 21.gifts username to save.')).toBeNull();
     expect(setMessageShopAccount).not.toHaveBeenCalled();
   });
 

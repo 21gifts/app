@@ -1432,7 +1432,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 - **Purpose:** Moderator-only shop-account editor on a listed shop note. Hidden on replies, hidden notes, non-shop text, unsigned sessions, and ranks below moderator.
 - **Inputs:** `message` (top-level shop note) and `onUpdated` (message id plus the saved `{ id, username, name }`, or `null` when cleared).
-- **Returns / side effects:** Small ghost account editor with the People suggestions. A valid non-empty username starts a 150 ms debounced `searchMentionAccounts` check interpreted by `usernameLookupVerdict`. The untouched initial `@` stays quiet but Save is disabled; after an edit, an empty value or bare `@` is a linked live format error and Save stays disabled. Save is also disabled while the current non-empty value is pending or proven missing; pending shows the linked muted **Checking that account…** reason, and the linked missing message is live without an alert. A full result page, an unknown verdict, or a failed lookup does not block because `setMessageShopAccount` validates again. Only errors returned after Save use `role="alert"`; success calls `onUpdated` and closes. Account removal remains its separate icon control.
+- **Returns / side effects:** Small ghost account editor with the People suggestions. A valid non-empty username starts a 150 ms debounced `searchMentionAccounts` check interpreted by `usernameLookupVerdict`. The untouched initial `@` keeps Save disabled and shows the linked muted hint **Type or pick the 21.gifts username to save.**; after an edit, an empty value or bare `@` is a linked live format error and Save stays disabled. Save is also disabled while the current non-empty value is pending or proven missing; pending shows the linked muted **Checking that account…** reason, and the linked missing message is live without an alert. A full result page, an unknown verdict, or a failed lookup does not block because `setMessageShopAccount` validates again. Only errors returned after Save use `role="alert"`; success calls `onUpdated` and closes. Account removal remains its separate icon control.
 - **Used by:** `ForumBoard` when `shopAccountEdit` and `onShopAccountUpdated` are set (`ForumLoader` `feed="shops"`).
 
 ## Function: ShopsPage
@@ -1536,9 +1536,9 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 ## Function: shopNameProblem
 
 - **Purpose:** Name problem of a shop pin. Blank label is `'name'`; over 80 characters is `'nameLong'`; control characters inside the trimmed name are `'nameControls'`; a standalone street or postal-code token in the name is `'nameAddress'`. Pasted edge tabs are ignored because the API stores the trimmed name.
-- **Inputs:** Pin label (shop name) and the structured address, or `null` when unset.
+- **Inputs:** Pin label (shop name) and the structured address, each `null` or `undefined` when unset.
 - **Returns / side effects:** `'name'`, `'nameAddress'`, `'nameLong'`, `'nameControls'`, or `null`. No network.
-- **Used by:** `PlaceField`, `shopPlaceComplete`.
+- **Used by:** `PlaceField`, `shopPlaceComplete`, `ForumLoader` (pre-fee guard).
 
 ## Function: shopDescriptionProblem
 
