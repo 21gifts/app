@@ -149,9 +149,9 @@ type WalletSettled = {
 };
 
 /**
- * The currency figure of a charge, fixed when it was created: the digits the
- * operator typed, or, when bitcoin was typed, the figure at that moment. Never
- * priced again later (docs/fiat-amounts.md).
+ * The currency figure of a charge: the digits the operator typed in that
+ * currency when the charge was created. A charge typed in bitcoin has none.
+ * Never priced from a rate (docs/fiat-amounts.md).
  */
 type PosFigure = { amount: string; code: FiatCode };
 
@@ -243,6 +243,18 @@ function armOpen(memory: WalletSettled, charge: PosCharge): void {
     // One this charge does not take stays kept: `pays` never lets it pay a charge made after it.
     settleOpen(memory, payment);
   }
+}
+
+/** Every charge a till answer names: its current charge and its history. */
+function tillCharges(state: PosState): PosCharge[] {
+  return state.charge === null ? state.history : [state.charge, ...state.history];
+}
+
+/** Whether a till answer shows charge `id` paid or cancelled: no further payment is its. */
+function finishedIn(state: PosState, id: string): boolean {
+  return tillCharges(state).some(
+    (row) => row.id === id && (row.status === 'paid' || row.status === 'cancelled'),
+  );
 }
 
 /** Remember `figure` as the currency figure of charge `id`, when there is one. */
@@ -465,12 +477,18 @@ function usePosTillState(): PosTillState {
     if (charge !== null) {
       // A payment the wallet reported while this charge was still being read counts for it.
       armOpen(memory, charge);
-    } else if (memory.open !== null && Date.now() < Date.parse(memory.open.expiresAt)) {
-      // Gone before its end (cancelled elsewhere, or paid per the api): no further payment belongs
-      // to it. One that ran out stays, so a payment just after its end still counts.
+    } else if (
+      memory.open !== null &&
+      (Date.now() < Date.parse(memory.open.expiresAt) ||
+        /* v8 ignore next -- a till this session read always has an answer */
+        (state !== null && finishedIn(state, memory.open.id)))
+    ) {
+      // Gone before its end (cancelled elsewhere, or paid per the api), or read as paid or
+      // cancelled after it: no further payment belongs to it. One that only ran out stays, so a
+      // payment just after its end still counts.
       memory.open = null;
     }
-  }, [charge, session, tillSession]);
+  }, [charge, session, state, tillSession]);
 
   useEffect(() => {
     if (session === null) {
@@ -567,14 +585,16 @@ function usePosTillState(): PosTillState {
     const creating = settledFor(session);
     const before = creating.open;
     creating.open = null;
-    // The currency figure of the new charge, fixed now: the digits typed, or the figure of the
-    // bitcoin typed at this moment's rate.
-    const typed =
+    // The currency figure of the new charge: the digits typed in a currency. Bitcoin typed has
+    // none, and none is made by converting the sats (docs/fiat-amounts.md).
+    const figure =
       shownUnit === 'fiat'
-        ? amount.trim().replace(',', '.').replace(/\.$/, '')
-        : satsToFiatAmount(amountSats, rateDay, fiat);
-    const figure = typed === null ? null : { amount: typed, code: fiat };
+        ? { amount: amount.trim().replace(',', '.').replace(/\.$/, ''), code: fiat }
+        : null;
     const startedAt = Date.now();
+    // The charges this till already knows: a lost create never takes one of them for its own.
+    /* v8 ignore next -- the form is only shown once the till has an answer */
+    const known = new Set((state === null ? [] : tillCharges(state)).map((row) => row.id));
     const work = (async (): Promise<void> => {
       try {
         const created = await createPosCharge(session, amountSats);
@@ -597,11 +617,13 @@ function usePosTillState(): PosTillState {
           try {
             const seq = startRead(reads);
             const next = await fetchPosState(session);
-            // This create's charge: the amount requested, made during this create and after the one
-            // before. Any other charge the read finds still shows, but is not taken for this create.
+            // This create's charge: the amount requested, made no earlier than 30 s before the click
+            // (the api's clock may lag) and after the one before. Any other charge the read finds is
+            // set as the till's answer without this create's figure, and the error shows.
             const found = next.charge;
             const made =
               found !== null &&
+              !known.has(found.id) &&
               found.amountSats === amountSats &&
               Date.parse(found.createdAt) >= startedAt - POS_CREATE_SKEW_MS &&
               (before === null || Date.parse(found.createdAt) > Date.parse(before.createdAt))
@@ -675,10 +697,30 @@ function usePosTillState(): PosTillState {
       try {
         await cancelPosCharge(session);
       } catch {
-        rearm(cancelling, cancelled);
-        whenCurrent(generation, mine, () => {
-          setError(t('pos.error'));
-        });
+        // The answer may be lost although the api cancelled: read once, and make the charge
+        // payable again only while it is still open (or when that read fails too).
+        let stillOpen = true;
+        try {
+          const seq = startRead(reads);
+          const next = await fetchPosState(session);
+          stillOpen =
+            next.charge !== null &&
+            next.charge.status === 'pending' &&
+            next.charge.id === cancelled?.id;
+          whenCurrent(generation, mine, () => {
+            applyRead(reads, seq, () => {
+              setTill({ state: next, session });
+            });
+          });
+        } catch {
+          // Unknown: keep it payable.
+        }
+        if (stillOpen) {
+          rearm(cancelling, cancelled);
+          whenCurrent(generation, mine, () => {
+            setError(t('pos.error'));
+          });
+        }
         return;
       }
       try {
@@ -754,7 +796,7 @@ function usePosTillState(): PosTillState {
  * charge's fixed currency figure when this tab has one.
  * The till reads the api only on open, when the session or the language
  * changes, when a charge runs out, when the tab becomes visible again, after
- * Cancel, once after a create whose answer was lost, and when the
+ * Cancel, once after a create or cancel whose answer was lost, and when the
  * confirmation is closed. A paid charge
  * the api returns also opens the confirmation. Under the till, once it has
  * loaded, {@link PosHistory} lists the past charges, a charge the wallet saw

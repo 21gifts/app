@@ -2228,7 +2228,8 @@ describe('PosScreen', () => {
       receive(21);
       fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
       await waitFor(() => {
-        expect(reads).toBe(2);
+        // The read after the failed cancel, then the read after Done.
+        expect(reads).toBe(3);
       });
       await act(async () => undefined);
       expect(screen.queryByRole('alert')).toBeNull();
@@ -2277,26 +2278,9 @@ describe('PosScreen', () => {
       vi.mocked(fetchFxSpot).mockResolvedValue({ asOf: SPOT.asOf, source: 'test', rates: {} });
     });
 
-    it('fixes the figure of bitcoin typed at the rate of the moment the charge is made', async () => {
+    it('shows bitcoin only for a charge typed in bitcoin, even with a spot rate', async () => {
       vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT).mockResolvedValueOnce(SPOT);
       const created = { ...OPEN, id: 'c8', amountSats: 2_100, createdAt: new Date().toISOString() };
-      await createOnAmountPage('2100', created);
-      vi.stubGlobal(
-        'fetch',
-        vi
-          .fn()
-          .mockImplementation(async () => jsonResponse({ charge: created, history: [created] })),
-      );
-      // No spot any more when it is paid: the fixed figure still shows.
-      renderWithLocale(<PosScreen />, 'en', 'ch', 'CHF');
-      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
-      receive(2_100);
-      const dialog = await confirmation();
-      expect(within(dialog).getByText('CHF 1.68')).toBeTruthy();
-    });
-
-    it('shows bitcoin only when no figure could be fixed for the charge', async () => {
-      const created = { ...OPEN, id: 'c9', amountSats: 2_100, createdAt: new Date().toISOString() };
       await createOnAmountPage('2100', created);
       vi.stubGlobal(
         'fetch',
@@ -2309,7 +2293,18 @@ describe('PosScreen', () => {
       receive(2_100);
       const dialog = await confirmation();
       expect(within(dialog).getByText("₿2'100")).toBeTruthy();
+      // No currency was typed, and none is made by converting the sats.
       expect(within(dialog).queryByText(/CHF/)).toBeNull();
+    });
+
+    it('gives a charge found after a lost create answer the typed figure when it is that create', async () => {
+      await loseCreateAnswer({
+        ...OPEN,
+        id: 'c5',
+        amountSats: 85_000,
+        createdAt: new Date().toISOString(),
+      });
+      expect(within(await confirmation()).getByText('CHF 68.00')).toBeTruthy();
     });
 
     /** Types CHF 68 on the amount page; the create's answer is lost and the till then reads `found`. */
@@ -2341,16 +2336,6 @@ describe('PosScreen', () => {
       receive(Number(found['amountSats']));
       vi.mocked(fetchFxSpot).mockResolvedValue({ asOf: SPOT.asOf, source: 'test', rates: {} });
     }
-
-    it('gives a charge found after a lost create answer the typed figure when it is that create', async () => {
-      await loseCreateAnswer({
-        ...OPEN,
-        id: 'c5',
-        amountSats: 85_000,
-        createdAt: new Date().toISOString(),
-      });
-      expect(within(await confirmation()).getByText('CHF 68.00')).toBeTruthy();
-    });
 
     it('confirms at once a charge the lost create made that is already paid', async () => {
       vi.mocked(fetchFxSpot).mockResolvedValue(SPOT);
@@ -2402,6 +2387,73 @@ describe('PosScreen', () => {
         createdAt: new Date(Date.now() - 60_000).toISOString(),
       });
       expect(within(await confirmation()).queryByText(/CHF/)).toBeNull();
+    });
+
+    it('does not take a charge the till already knows for a create whose answer was lost', async () => {
+      const paidJustNow = {
+        ...PAID,
+        createdAt: new Date().toISOString(),
+        paidAt: new Date().toISOString(),
+      };
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
+          init?.method === 'POST'
+            ? jsonResponse({ error: 'Bad gateway' }, 502)
+            : jsonResponse({ charge: paidJustNow, history: [paidJustNow] }),
+        ),
+      );
+      renderWithLocale(<PosAmount />);
+      await pressAmount('21');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      expect(replace).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: 'Create payment' })).toBeTruthy();
+    });
+
+    it('keeps a charge cancelled when the cancel answer is lost but the api cancelled it', async () => {
+      let cancelledOnApi = false;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            cancelledOnApi = true;
+            throw new TypeError('Failed to fetch');
+          }
+          return cancelledOnApi
+            ? jsonResponse({ charge: null, history: [{ ...OPEN, status: 'cancelled' }] })
+            : jsonResponse({ charge: OPEN, history: [OPEN] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      expect(screen.queryByRole('alert')).toBeNull();
+      receive(21);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
+    it('stops a charge read as paid after its end from taking another payment', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockImplementationOnce(async () => jsonResponse({ charge: ended, history: [ended] }))
+          // The read at 0:00 finds it paid (over a minute ago, so no longer the till's charge).
+          .mockImplementation(async () =>
+            jsonResponse({
+              charge: null,
+              history: [{ ...ended, status: 'paid', paidAt: new Date().toISOString() }],
+            }),
+          ),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      await act(async () => undefined);
+      receive(21);
+      await act(async () => undefined);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
     it('never asks the api on a timer while a charge is open', async () => {
