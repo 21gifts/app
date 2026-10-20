@@ -3904,6 +3904,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pos',
+    id: 'cancelled',
+    image: 'pos-cancelled.png',
+    visual: 'state-pos-cancelled',
+    needle: "shotScreen(page, 'state-pos-cancelled')",
+  },
+  {
+    route: '/pos',
     id: 'open-elsewhere',
     image: 'pos-open-elsewhere.png',
     visual: 'state-pos-open-elsewhere',

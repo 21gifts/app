@@ -5032,6 +5032,12 @@ Signed-in Ada who typed $5.00 on **Set an amount** in this tab and pressed **Cre
 
 ![21.gifts point of sale open](images/pos-open.png)
 
+### Variant: cancelled
+
+The charge of **open** after **Cancel**. The countdown and **Cancel** are gone and **Set an amount** is back. **History** lists the charge as **Cancelled** with ₿5’000 · **$5.00**, the figure the operator typed, and the date and time it was created.
+
+![21.gifts point of sale cancelled](images/pos-cancelled.png)
+
 ### Variant: open-elsewhere
 
 Signed-in Ada with a pending charge of ₿5’000 and 5:00 left that this tab did not create (another tab, or the page was reloaded). Countdown, the sat amount and **Cancel**; no currency figure, because none was typed in this tab, and none is priced from the current spot. **History** says **No payments yet.**

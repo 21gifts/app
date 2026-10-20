@@ -3282,6 +3282,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pos:cancelled",
+    "label": "/pos cancelled",
+    "visual": "state-pos-cancelled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos:open-elsewhere",
     "label": "/pos open-elsewhere",
     "visual": "state-pos-open-elsewhere",
