@@ -1312,6 +1312,22 @@ test('Function: shopDescriptionProblem — short shop text keeps Next off', asyn
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
 });
 
+test('Function: shopDescriptionText — the counter leaves out the shop tag', async ({ page }) => {
+  await stubPlaceMap(page);
+  await seedSignedIn(page);
+  await fulfillForumMessages(page, []);
+  await page.goto('/shops');
+  await page.getByRole('button', { name: 'Add a shop' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  await fillShopAddress(page);
+  await page.getByRole('button', { name: 'Use this place' }).click();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByLabel('Shop text').fill('Fresh bread every morning.\n\n#21GiftsShop');
+  await expect(page.getByText('26 / 1000')).toBeVisible();
+});
+
 test('Function: shopDescriptionRemaining — remaining characters are shown', async ({ page }) => {
   await stubPlaceMap(page);
   await seedSignedIn(page);

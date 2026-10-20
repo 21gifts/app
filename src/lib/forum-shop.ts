@@ -376,9 +376,20 @@ export function shopNameProblem(
 }
 
 /**
+ * Shop text as the description rule measures it.
+ *
+ * @param text - Composer or stored note text.
+ * @returns The text with CRLF and lone CR folded to LF, then passed through
+ * {@link stripShopHashtag}.
+ */
+export function shopDescriptionText(text: string): string {
+  return stripShopHashtag(text.replace(/\r\n/g, '\n').replace(/\r/g, '\n'));
+}
+
+/**
  * Description problem of a shop note, or null when it is complete.
  *
- * Uses {@link stripShopHashtag} after CRLF is folded to LF. The description
+ * Measures {@link shopDescriptionText}. The description
  * must be 20–1000 characters and strictly longer than the pin label. Control
  * characters are checked on the trimmed text, like the API.
  *
@@ -391,7 +402,7 @@ export function shopDescriptionProblem(
   label: string | null | undefined,
 ): 'short' | 'long' | 'notLonger' | 'controls' | null {
   const lf = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const description = stripShopHashtag(lf);
+  const description = shopDescriptionText(text);
   const name = label ?? '';
   // The API trims before it checks, so a pasted edge tab is fine.
   if (!hasNoForumControls(lf.trim())) {
@@ -453,8 +464,7 @@ export function usernameLookupVerdict(
  * @returns Non-negative count.
  */
 export function shopDescriptionRemaining(text: string): number {
-  const lf = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const description = stripShopHashtag(lf);
+  const description = shopDescriptionText(text);
   return Math.max(0, SHOP_DESCRIPTION_MIN - description.length);
 }
 

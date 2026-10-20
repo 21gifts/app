@@ -16,6 +16,7 @@ import {
   shopApiProblem,
   shopDescriptionProblem,
   shopDescriptionRemaining,
+  shopDescriptionText,
   shopNameProblem,
   shopPlaceComplete,
   shopProblemField,
@@ -352,6 +353,15 @@ describe('forum-shop', () => {
           'ada',
         ),
       ).toBe('unknown');
+    });
+  });
+
+  describe('shopDescriptionText', () => {
+    it('folds line breaks before it strips the shop tag', () => {
+      expect(shopDescriptionText('Fresh bread\r\nevery morning.\r\n\r\n#21GiftsShop')).toBe(
+        'Fresh bread\nevery morning.',
+      );
+      expect(shopDescriptionText('Fresh\rbread')).toBe('Fresh\nbread');
     });
   });
 

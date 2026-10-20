@@ -1554,6 +1554,13 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Returns / side effects:** `'short'`, `'long'`, `'notLonger'`, `'controls'`, or `null`. No network.
 - **Used by:** `ShopAddWizard`, `PlaceField`, `ForumLoader`, `ShopNoteEditControl`.
 
+## Function: shopDescriptionText
+
+- **Purpose:** The shop text as the 20–1000 character rule measures it: CRLF and lone CR are folded to LF, then the shop tag is stripped.
+- **Inputs:** Composer or stored note `text`.
+- **Returns / side effects:** The measured text. No network.
+- **Used by:** `shopDescriptionProblem`, `shopDescriptionRemaining`, and the `ShopAddWizard` text counter.
+
 ## Function: shopDescriptionRemaining
 
 - **Purpose:** Remaining characters needed to reach the 20-character shop-text minimum after the shop tag is stripped.

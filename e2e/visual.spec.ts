@@ -19451,6 +19451,7 @@ test.describe('shops screens', () => {
   });
 
   test('shops map-edit-place-name-address', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'map', true);
     await openShopEditorPlaceDialog(page);
     await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
@@ -19461,6 +19462,7 @@ test.describe('shops screens', () => {
   });
 
   test('shops map-edit-place-field-invalid', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'map', true);
     await openShopEditorPlaceDialog(page);
     await enterShopPlaceFieldErrors(page);
@@ -19884,6 +19886,7 @@ test.describe('shops screens', () => {
   });
 
   test('shops table-edit-place-name-address', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'table');
     await openShopEditorPlaceDialog(page);
     await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
@@ -19894,6 +19897,7 @@ test.describe('shops screens', () => {
   });
 
   test('shops table-edit-place-field-invalid', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'table');
     await openShopEditorPlaceDialog(page);
     await enterShopPlaceFieldErrors(page);
@@ -20530,6 +20534,7 @@ test.describe('shops screens', () => {
   });
 
   test('shops edit-place-name-address', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'post');
     await openShopEditorPlaceDialog(page);
     await page.getByLabel('Shop name', { exact: true }).fill('Bahnhofstrasse Bakery');
@@ -20540,6 +20545,7 @@ test.describe('shops screens', () => {
   });
 
   test('shops edit-place-field-invalid', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
     await openShopsEditor(page, 'post');
     await openShopEditorPlaceDialog(page);
     await enterShopPlaceFieldErrors(page);

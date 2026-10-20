@@ -19,7 +19,7 @@ import {
   shopPlaceComplete,
   shopProblemField,
   shopUsernameProblem,
-  stripShopHashtag,
+  shopDescriptionText,
   usernameLookupVerdict,
   type ShopApiProblem,
 } from '@/lib/forum-shop';
@@ -564,7 +564,7 @@ export function ShopAddWizard({
             ) : null}
             <p className="text-sm text-app-muted">
               {t('shops.descriptionCount', {
-                n: stripShopHashtag(draft).length,
+                n: shopDescriptionText(draft).length,
                 max: SHOP_DESCRIPTION_MAX,
               })}
             </p>
