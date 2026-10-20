@@ -1061,7 +1061,7 @@
 ## Function: resolveShopPhotoUrl
 
 - **Purpose:** Make one public shop photo URL safe to render and to publish as `og:image`.
-- **Inputs:** The photo `url` from `GET /shops/:npub` and an optional api base. With the base (trailing slashes trimmed), a root-relative `/path` is appended after the base including its path, like the same-origin proxies (`https://x/v1` + `/a` → `https://x/v1/a`); any other relative path resolves against the base plus `/`, and a protocol-relative `//host/…` stays a host, not a path. Without it, only an absolute URL is accepted.
+- **Inputs:** The photo `url` from `GET /shops/:npub` and an optional api base. With the base (trailing slashes trimmed), a root-relative `/path` is appended after the full base, path included (`https://x/v1` + `/a` → `https://x/v1/a`), so an api behind a path prefix still serves its photos; any other relative path resolves against the base plus `/`, and a protocol-relative `//host/…` stays a host, not a path. Without it, only an absolute URL is accepted.
 - **Returns / side effects:** The absolute `http:` or `https:` URL, or null for every other scheme (`javascript:`, `data:`, …) and for an unparsable value. No side effects.
 - **Used by:** `ShopPage` (with `getApiUrl()`), `ShopScreen` (without a base).
 
@@ -2556,7 +2556,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads `NEXT_PUBLIC_API_URL` via the typed config accessor.
 - **Inputs:** None.
 - **Returns / side effects:** Origin string. Throws if unset/empty (entrypoint must substitute).
-- **Used by:** `proxyApiRequest` (server-side upstream origin).
+- **Used by:** `proxyApiRequest` (server-side upstream origin), `ShopPage` (api base for `GET /shops/:npub` and for the shop photo URLs), `loadPublicMessageForOg` (api base for `GET /messages/:id`), and the `GET /l/[code]` route handler (api base for `GET /links/:code`).
 
 ## Function: getAppVersion
 

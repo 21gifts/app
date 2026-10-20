@@ -2,12 +2,13 @@
  * Make one shop photo URL safe to render.
  *
  * The api may send a photo path relative to itself. With `apiBase`, such a
- * path resolves against the api base URL (`getApiUrl()`), the same way the
- * same-origin proxies build upstream URLs: a root-relative `/path` is appended
- * to the base including its path (`https://x/v1` + `/a` → `https://x/v1/a`),
- * and any other value (relative path, `//host`, absolute URL) resolves with
- * standard URL rules against the base plus `/`. Without `apiBase`, only an absolute
- * URL is accepted. Either way the result must be `http:` or `https:`; every
+ * path resolves against the api base URL (`getApiUrl()`), trailing slashes
+ * trimmed. A root-relative `/path` is appended after the full base, path
+ * included (`https://x/v1` + `/a` → `https://x/v1/a`), so an api behind a path
+ * prefix still serves its photos. Any other value (relative path, `//host`,
+ * absolute URL) resolves with standard URL rules against the base plus `/`, so
+ * `//host/…` stays a host, not a path. Without `apiBase`, only an absolute URL
+ * is accepted. Either way the result must be `http:` or `https:`; every
  * other scheme (`javascript:`, `data:`, …) and an unparsable value is dropped.
  *
  * @param url - Photo URL from `GET /shops/:npub`.

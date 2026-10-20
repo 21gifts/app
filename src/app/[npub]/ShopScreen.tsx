@@ -128,7 +128,10 @@ export function ShopScreen(props: ShopScreenProps): ReactElement {
         ) : null}
       </section>
       <section className="flex w-full flex-col items-center gap-3 border-t border-app-border pt-6">
-        <Link href={`/messages/${props.shop.messageId}`} className="text-sm underline">
+        <Link
+          href={`/messages/${props.shop.messageId}`}
+          className="text-sm font-medium text-app-fg underline underline-offset-2"
+        >
           {t('shop.forumNote')}
         </Link>
       </section>
