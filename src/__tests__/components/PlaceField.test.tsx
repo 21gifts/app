@@ -1424,7 +1424,48 @@ describe('PlaceField', () => {
       expect(alert.tagName).toBe('SPAN');
       expect(alert.id).toBe(`${name.id}-error`);
       expect(name.getAttribute('aria-describedby')).toContain(alert.id);
+      await waitFor(() => {
+        expect(document.activeElement).toBe(name);
+      });
     }
+  });
+
+  it('focuses the first invalid address field after a mapped address rejection', async () => {
+    let rejectCommit!: (reason?: unknown) => void;
+    const onCommit = vi.fn(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectCommit = reject;
+        }),
+    );
+    const listeners = stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={onCommit}
+        shopDetails
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    await waitFor(() => {
+      expect(listeners.has('click')).toBe(true);
+    });
+    listeners.get('click')?.({ latLng: { lat: () => 47.3769, lng: () => 8.5417 } });
+    fillShopAddress();
+    fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
+    const street = screen.getByLabelText('Street');
+    const houseNumber = screen.getByLabelText('House number');
+    street.setAttribute('aria-invalid', 'true');
+    houseNumber.setAttribute('aria-invalid', 'true');
+    await act(async () => {
+      rejectCommit(new Error('Place address is invalid'));
+    });
+    expect((await screen.findByRole('alert')).textContent).toContain('The address is invalid.');
+    await waitFor(() => {
+      expect(document.activeElement).toBe(street);
+    });
   });
 
   it('keeps a while-typing footer reason out of the alert live region', async () => {
@@ -1572,7 +1613,10 @@ describe('PlaceField', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit place' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Remove place' }));
     expect(await screen.findByText('Enter the shop name.')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Remove place' })).toBeTruthy();
+    const remove = screen.getByRole('button', { name: 'Remove place' });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(remove);
+    });
     expect(screen.getByText('The map is not available.')).toBeTruthy();
   });
 

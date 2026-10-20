@@ -146,6 +146,8 @@ export function PlaceField(props: {
   /** Stored shop note text used to validate a changed shop name live. */
   shopText?: string;
   problem?: ShopApiProblem | null;
+  /** Whether this mounted field may open and announce its current server problem. Default true. */
+  autoOpenProblem?: boolean;
   onAvailabilityChange?: (unavailable: boolean) => void;
 }): ReactElement {
   const { t } = useTranslations();
@@ -177,7 +179,7 @@ export function PlaceField(props: {
   const markerRef = useRef<GoogleMarker | null>(null);
   const authFailedRef = useRef(false);
   const savingRef = useRef(false);
-  const restoreFocusAfterFailedSaveRef = useRef(false);
+  const failedSaveActionRef = useRef<'commit' | 'remove' | null>(null);
   savingRef.current = saving;
   const fieldsDisabled = props.disabled || saving;
 
@@ -216,6 +218,10 @@ export function PlaceField(props: {
       setReportedProblem(null);
       return;
     }
+    if (props.autoOpenProblem === false) {
+      setReportedProblem((current) => (current === problem ? current : null));
+      return;
+    }
     resetDraft();
     setOpen(true);
     if (
@@ -227,7 +233,7 @@ export function PlaceField(props: {
       setNameTouched(true);
     }
     setReportedProblem(problem);
-  }, [props.problem, resetDraft, shopDetails]);
+  }, [props.autoOpenProblem, props.problem, resetDraft, shopDetails]);
 
   useEffect(() => {
     props.onAvailabilityChange?.(unavailable);
@@ -384,18 +390,32 @@ export function PlaceField(props: {
   }, [open]);
 
   useEffect(() => {
-    if (saving || !restoreFocusAfterFailedSaveRef.current) {
+    const failedAction = failedSaveActionRef.current;
+    if (saving || failedAction === null) {
       return;
     }
-    restoreFocusAfterFailedSaveRef.current = false;
+    failedSaveActionRef.current = null;
     const dialog = dialogRef.current;
     /* v8 ignore next 3 -- a failed commit keeps the open dialog mounted */
     if (dialog === null) {
       return;
     }
+    const removeButton =
+      failedAction === 'remove'
+        ? dialog.querySelector<HTMLElement>('[data-place-remove]:not([disabled])')
+        : null;
+    const nameInput =
+      saveError?.startsWith('shops.problemName') === true
+        ? dialog.querySelector<HTMLElement>(`[id="${shopNameId}"]`)
+        : null;
+    const invalidAddress =
+      saveError !== null && nameInput === null
+        ? dialog.querySelector<HTMLElement>('[aria-invalid="true"]')
+        : null;
     const commitButton = dialog.querySelector<HTMLElement>('[data-place-commit]:not([disabled])');
     const firstFocusable = dialog.querySelector<HTMLElement>(DIALOG_FOCUSABLE_SELECTOR);
-    const focusTarget = commitButton ?? firstFocusable;
+    const focusTarget =
+      removeButton ?? nameInput ?? invalidAddress ?? commitButton ?? firstFocusable;
     /* v8 ignore next 4 -- Close is enabled again after every failed save */
     if (focusTarget === null) {
       dialog.focus();
@@ -582,7 +602,7 @@ export function PlaceField(props: {
       return;
     }
     dialogRef.current!.focus();
-    restoreFocusAfterFailedSaveRef.current = false;
+    failedSaveActionRef.current = null;
     setSaving(true);
     setSaveError(null);
     setUnknownSaveError(false);
@@ -590,7 +610,7 @@ export function PlaceField(props: {
       await props.onCommit(next);
       setOpen(false);
     } catch (error) {
-      restoreFocusAfterFailedSaveRef.current = true;
+      failedSaveActionRef.current = next === null ? 'remove' : 'commit';
       const problem = error instanceof Error ? shopApiProblem(error.message, shopDetails) : null;
       if (problem === null) {
         setUnknownSaveError(true);
@@ -757,6 +777,7 @@ export function PlaceField(props: {
                       type="button"
                       size="sm"
                       variant="secondary"
+                      data-place-remove=""
                       aria-label={t('forum.placeRemove')}
                       disabled={fieldsDisabled}
                       onClick={() => void commit(null)}

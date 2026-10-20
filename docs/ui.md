@@ -905,7 +905,7 @@ the ₿ text plus fiat suffix text when present. `data-message-id` stays the gif
 - Media preview row: `rounded-2xl border bg-app-card-muted p-3` + 80×80 thumb + remove `IconButton`.
 - Goal bar lives on the note card and on Ask preview, not on the Post messenger (see Note card).
 
-**States.** Default, disabled (`posting`), validation `role="alert"` under the row (`text-sm text-app-danger`) including empty-post. Invalid Ask keeps Continue disabled on step 1.
+**States.** Default, disabled (`posting`), validation `role="alert"` under the row (`text-sm text-app-danger`) including empty-post. Invalid Ask keeps Continue disabled on step 1. Outside Shops, a draft with the shop tag shows the live `forum.shopPostUseShops` line under the composer (no `role="alert"`, linked through `aria-describedby` and `aria-invalid`) and keeps Post, and Ask Continue and Post, disabled.
 
 ### Pay sheet
 

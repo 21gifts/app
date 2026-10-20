@@ -6,6 +6,7 @@ import { ShopAddWizard, type ShopAddWizardProps } from '@/components/ShopAddWiza
 import { ChromeBackProvider } from '@/components/ViewHistoryRoot';
 import type { ForumPlacePin } from '@/lib/api-types';
 import type { ForumPhotoPayload } from '@/lib/forum-photo';
+import type { ShopApiProblem } from '@/lib/forum-shop';
 import type { ForumVideoPayload } from '@/lib/forum-video';
 import { searchMentionAccounts } from '@/lib/mention-search';
 import { useAuthStore } from '@/stores/auth-store';
@@ -816,5 +817,42 @@ describe('ShopAddWizard', () => {
       }
     }
     expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', true);
+  });
+
+  it('auto-opens each server place problem only once', async () => {
+    function ServerProblemHost(): ReactElement {
+      const [serverProblem, setServerProblem] = useState<ShopApiProblem>('shopName');
+      return (
+        <>
+          <button type="button" onClick={() => setServerProblem('shopNameAddress')}>
+            Report another place problem
+          </button>
+          <ShopAddWizard
+            {...props({
+              draft: SHOP_DESCRIPTION,
+              place: COMPLETE_PLACE,
+              serverProblem,
+            })}
+          />
+        </>
+      );
+    }
+
+    renderWizard(<ServerProblemHost />);
+    const firstDialog = await screen.findByRole('dialog');
+    expect(within(firstDialog).getByRole('alert').textContent).toBe('Enter the shop name.');
+    fireEvent.click(within(firstDialog).getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByText('2 / 5 · Place')).toBeTruthy();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByText('Enter the shop name.')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Report another place problem' }));
+    const nextDialog = await screen.findByRole('dialog');
+    expect(within(nextDialog).getByRole('alert').textContent).toBe(
+      'The shop name must not contain the street or the postal code.',
+    );
   });
 });

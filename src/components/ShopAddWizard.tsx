@@ -163,6 +163,7 @@ export function ShopAddWizard({
   // repeating it undoes a Next click from the same turn the editor opened.
   const appliedReset = useRef(`${mode}:${String(resetToken)}`);
   const initialUsername = useRef(username);
+  const lastAutoOpenedPlaceProblem = useRef<ShopApiProblem | null>(null);
   const [mapsUnavailable, setMapsUnavailable] = useState(false);
   const [usernameLookup, setUsernameLookup] = useState<
     'idle' | 'checking' | 'found' | 'missing' | 'unknown' | 'failed'
@@ -194,6 +195,20 @@ export function ShopAddWizard({
     }
     setStep(4);
   }, [serverProblem]);
+
+  const serverProblemField = serverProblem === null ? null : shopProblemField(serverProblem);
+  const placeServerProblem = serverProblemField === 'place';
+  const autoOpenPlaceProblem =
+    step === 2 &&
+    serverProblem !== null &&
+    placeServerProblem &&
+    serverProblem !== lastAutoOpenedPlaceProblem.current;
+
+  useEffect(() => {
+    if (autoOpenPlaceProblem) {
+      lastAutoOpenedPlaceProblem.current = serverProblem;
+    }
+  }, [autoOpenPlaceProblem, serverProblem]);
 
   useEffect(() => {
     // A photo reason from the server returns an open wizard to the photos step.
@@ -282,8 +297,6 @@ export function ShopAddWizard({
         ? 'missing'
         : null;
   const usernamePending = normalizedUsername !== '' && usernameLookup === 'checking';
-  const serverProblemField = serverProblem === null ? null : shopProblemField(serverProblem);
-  const placeServerProblem = serverProblemField === 'place';
   const descriptionServerProblem = serverProblemField === 'text';
   const usernameServerProblem = serverProblemField === 'username';
   const placeServerMessage =
@@ -509,6 +522,7 @@ export function ShopAddWizard({
             onChange={onPlaceChange}
             shopDetails
             problem={serverProblem}
+            autoOpenProblem={autoOpenPlaceProblem}
             onAvailabilityChange={setMapsUnavailable}
           />
           {!placeComplete || placeServerMessage !== null ? (
