@@ -1088,6 +1088,7 @@ test('Function: isShopApiProblem — a living-room address rejection points to S
   page,
 }) => {
   // A verified member posts without the compose fee, so the post reaches the API.
+  await stubPlaceMap(page);
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -1114,6 +1115,10 @@ test('Function: isShopApiProblem — a living-room address rejection points to S
     },
   );
   await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Add a place' }).click();
+  await page.locator('.h-64').click();
+  await page.getByLabel('Place name').fill('Cafe Luna');
+  await page.getByRole('button', { name: 'Use this place' }).click();
   await page.getByLabel('Your message').fill('A shop note #21GiftsShop');
   await page.getByRole('button', { name: 'Post', exact: true }).click();
   await expect(

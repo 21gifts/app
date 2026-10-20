@@ -5203,10 +5203,13 @@ describe('ForumLoader', () => {
   });
 
   it.each([
-    ['Shop name is required', 'Enter the shop name.'],
+    [
+      'Shop name is required',
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
+    ],
     [
       'Shop name must not contain the address',
-      'The shop name must not contain the street or the postal code.',
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
     ],
     [
       'Shop address is required',

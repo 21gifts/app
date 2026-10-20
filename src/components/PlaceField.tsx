@@ -11,7 +11,6 @@ import { Scrollport } from '@/components/ui/Scrollport';
 import type { ForumPlaceAddress, ForumPlacePin } from '@/lib/api-types';
 import {
   SHOP_API_MESSAGE,
-  formatPlacePinText,
   shopAddressProblems,
   shopApiProblem,
   shopDescriptionProblem,
@@ -131,7 +130,7 @@ const ADDRESS_ERROR_KEY: Record<ShopAddressField, Record<ShopAddressFieldProblem
  * Optional place pin control for a forum composer or staff editor.
  *
  * @param props - Current pin, change handler, optional staff commit, and shop validation state.
- * @returns Attach button, optional preview, and the place dialog.
+ * @returns Attach button and the place dialog.
  */
 export function PlaceField(props: {
   place: ForumPlacePin | null;
@@ -139,7 +138,6 @@ export function PlaceField(props: {
   onChange: (place: ForumPlacePin | null) => void;
   buttonSize?: 'lg' | 'sm';
   buttonVariant?: 'secondary' | 'ghost';
-  showPreview?: boolean;
   ariaLabel?: string;
   onCommit?: (place: ForumPlacePin | null) => Promise<void>;
   shopDetails?: boolean;
@@ -148,14 +146,13 @@ export function PlaceField(props: {
   problem?: ShopApiProblem | null;
   onAvailabilityChange?: (unavailable: boolean) => void;
 }): ReactElement {
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
   const sunday = useLocalSunday();
   const titleId = `${useId()}-title`;
   const shopNameId = `${useId()}-shop-name`;
   const shopDetails = props.shopDetails === true;
   const buttonSize = props.buttonSize ?? 'lg';
   const buttonVariant = props.buttonVariant ?? 'secondary';
-  const showPreview = props.showPreview ?? true;
   const ariaLabel = props.ariaLabel ?? t('forum.addPlace');
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -531,7 +528,6 @@ export function PlaceField(props: {
     }
   }
 
-  const previewText = props.place === null ? '' : formatPlacePinText(props.place, locale);
   const dialog =
     !sunday && open && !props.disabled
       ? createPortal(
@@ -681,7 +677,7 @@ export function PlaceField(props: {
                   >
                     {t('forum.placeDone')}
                   </Button>
-                  {!showPreview && props.place !== null ? (
+                  {props.place !== null ? (
                     <IconButton
                       type="button"
                       size="sm"
@@ -703,7 +699,7 @@ export function PlaceField(props: {
 
   return (
     <SundayWritingGate>
-      <div className="relative shrink-0">
+      <div className="shrink-0">
         <IconButton
           type="button"
           size={buttonSize}
@@ -721,22 +717,6 @@ export function PlaceField(props: {
         >
           <MapPin aria-hidden="true" className={buttonSize === 'sm' ? 'h-4 w-4' : 'h-5 w-5'} />
         </IconButton>
-        {!sunday && showPreview && props.place !== null && !open ? (
-          <div className="absolute left-0 top-full z-20 mt-2 flex w-64 items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
-            <MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
-            <span className="min-w-0 flex-1 text-sm text-app-fg">{previewText}</span>
-            <IconButton
-              type="button"
-              size="sm"
-              variant="secondary"
-              aria-label={t('forum.placeRemove')}
-              disabled={fieldsDisabled}
-              onClick={() => void commit(null)}
-            >
-              <X aria-hidden="true" className="h-4 w-4" />
-            </IconButton>
-          </div>
-        ) : null}
         {dialog}
       </div>
     </SundayWritingGate>

@@ -1200,6 +1200,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:error-shop-elsewhere",
+    "label": "/welcome error-shop-elsewhere",
+    "visual": "state-welcome-error-shop-elsewhere",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:menu-open",
     "label": "/welcome menu-open",
     "visual": "state-welcome-menu",

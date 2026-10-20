@@ -1473,6 +1473,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'error-shop-elsewhere',
+    image: 'welcome-error-shop-elsewhere.png',
+    visual: 'state-welcome-error-shop-elsewhere',
+    needle: 'welcome error-shop-elsewhere',
+  },
+  {
+    route: '/welcome',
     id: 'menu-open',
     image: 'welcome-menu.png',
     visual: 'state-welcome-menu',

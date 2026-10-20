@@ -17439,6 +17439,42 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-error-request-photo-and-text');
   });
 
+  test('welcome error-shop-elsewhere', async ({ page }) => {
+    await installBaselineMap(page, { click: true });
+    await seedAda(page, 'verified');
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Shop address is required' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.goto('/welcome');
+    await expect(page.getByText('No messages yet — be the first to write one.')).toBeVisible();
+    await page.getByRole('button', { name: 'Add a place' }).click();
+    await page.locator('.h-64').click();
+    await page.getByLabel('Place name').fill('Cafe Luna');
+    await page.getByRole('button', { name: 'Use this place' }).click();
+    await page.getByLabel('Your message').fill('Cafe Luna is open every day. #21GiftsShop');
+    await page.getByRole('button', { name: 'Post', exact: true }).click();
+    await expect(
+      page.getByText('Shop notes need the shop name and full address. Post this shop from Shops.'),
+    ).toBeVisible();
+    await expect(page.getByText('Cafe Luna', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Your message')).toHaveValue(
+      'Cafe Luna is open every day. #21GiftsShop',
+    );
+    await shotScreen(page, 'state-welcome-error-shop-elsewhere');
+  });
+
   test('welcome menu-open', async ({ page }) => {
     await seedAda(page);
     await emptyForum(page);

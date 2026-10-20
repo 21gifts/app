@@ -507,7 +507,6 @@ export function ShopAddWizard({
             place={place}
             disabled={posting}
             onChange={onPlaceChange}
-            showPreview={false}
             shopDetails
             problem={serverProblem}
             onAvailabilityChange={setMapsUnavailable}

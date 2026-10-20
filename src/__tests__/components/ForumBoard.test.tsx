@@ -626,6 +626,39 @@ describe('ForumBoard', () => {
     expect(screen.queryByLabelText('Add a place')).toBeNull();
   });
 
+  it('shows the confirmed place below the composer row and above feedback', () => {
+    const onPlaceDraftChange = vi.fn();
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft="Cafe Luna #21GiftsShop"
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="shopElsewhere"
+        placeDraft={{ lat: 14.6, lng: 120.98, label: 'Cafe Luna' }}
+        {...idleProps}
+        onPlaceDraftChange={onPlaceDraftChange}
+        {...modeProps('active')}
+      />,
+    );
+    const composerRow = screen.getByLabelText('Your message').closest('.flex.items-center');
+    const chipText = screen.getByText('Cafe Luna');
+    const alert = screen.getByRole('alert');
+    expect(composerRow).not.toBeNull();
+    expect(composerRow!.compareDocumentPosition(chipText) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(chipText.compareDocumentPosition(alert) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
+    expect(onPlaceDraftChange).toHaveBeenCalledWith(null);
+  });
+
   it('sets the new-post textarea maxLength from composerMaxLength', () => {
     renderWithLocale(
       <ForumBoard
@@ -2782,8 +2815,6 @@ describe('ForumBoard', () => {
   });
 
   it.each([
-    ['shopName', 'Enter the shop name.'],
-    ['shopNameAddress', 'The shop name must not contain the street or the postal code.'],
     [
       'shopDescription',
       'The shop text must be 20 to 1000 characters and longer than the shop name.',
@@ -2807,29 +2838,34 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('alert').textContent).toBe(copy);
   });
 
-  it.each(['shopElsewhere', 'shopAddress', 'placeAddress'] as const)(
-    'points formError %s to Shops outside the shop composer',
-    (formError) => {
-      renderWithLocale(
-        <ForumBoard
-          messages={[]}
-          error={false}
-          loading={false}
-          posting={false}
-          draft=""
-          onDraftChange={() => undefined}
-          onPost={() => undefined}
-          onRetry={() => undefined}
-          formError={formError}
-          {...idleProps}
-          {...modeProps('active')}
-        />,
-      );
-      expect(screen.getByRole('alert').textContent).toBe(
-        'Shop notes need the shop name and full address. Post this shop from Shops.',
-      );
-    },
-  );
+  it.each([
+    'shopElsewhere',
+    'shopName',
+    'shopNameAddress',
+    'shopNameLong',
+    'shopNameControls',
+    'shopAddress',
+    'placeAddress',
+  ] as const)('points formError %s to Shops outside the shop composer', (formError) => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={formError}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
+    );
+  });
 
   it('shows a shop address on a labeled pin', () => {
     renderWithLocale(

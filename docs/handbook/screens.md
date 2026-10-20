@@ -1474,8 +1474,8 @@ and **Use this place** is visible and enabled. The pin is not confirmed yet.
 
 ### Variant: composer-place-set
 
-A confirmed pin **Stall** sits under **Add a place** as a preview with **Remove place**. The dialog
-is closed.
+A confirmed pin **Stall** sits in a normal-flow chip directly below the composer row, before any
+feedback, with **Remove place**. The dialog is closed.
 
 ![21.gifts welcome composer place set](images/welcome-composer-place-set.png)
 
@@ -1496,8 +1496,8 @@ empty. **Use this place** is visible and enabled.
 
 ### Variant: composer-place-set-coords
 
-A confirmed pin with no name sits under **Add a place** as **14.50000, 120.90000** with
-**Remove place**. The dialog is closed.
+A confirmed pin with no name sits in a normal-flow chip directly below the composer row, before
+any feedback, as **14.50000, 120.90000** with **Remove place**. The dialog is closed.
 
 ![21.gifts welcome composer place set coordinates](images/welcome-composer-place-set-coords.png)
 
@@ -1602,6 +1602,15 @@ Same 11-file tooMany alert with caption **Caption with too many photos.** still 
 POST fails after caption+JPEG → **Could not post your message**; preview and caption remain.
 
 ![21.gifts welcome error request photo and text](images/welcome-error-request-photo-and-text.png)
+
+### Variant: error-shop-elsewhere
+
+A verified member adds a living-room pin named **Cafe Luna** and posts a shop note. The API rejects
+the missing shop address with **Shop notes need the shop name and full address. Post this shop from
+Shops.** The named pin remains in a normal-flow chip between the composer row and that alert, and
+the draft remains so the member can move the post to Shops.
+
+![21.gifts welcome shop elsewhere error](images/welcome-error-shop-elsewhere.png)
 
 ### Variant: menu-open
 
@@ -2166,24 +2175,24 @@ One shop note whose place has no label. The card shows a MapPin link **14.60000,
 
 ### Variant: composer-place
 
-**Add a shop**, then **Next**, opens step **2 / 5 · Place**. **Add a place** is open as a dialog on
-an empty shop list and the map key is empty, so it says **The map is not available.** The pinned
-confirm control is disabled.
+**Add a shop**, then **Next**, opens step **2 / 5 · Place**. **Shop place and address** is open as a
+dialog on an empty shop list and the map key is empty, so it says **The map is not available.** The
+pinned confirm control is disabled.
 
 ![21.gifts shops composer place](images/shops-composer-place.png)
 
 ### Variant: composer-place-map
 
-**Add a place** is open as a dialog on an empty shop list with a map key. The map frame is visible
-and **Use this place** is pinned and disabled because the map has not been clicked yet.
+**Shop place and address** is open as a dialog on an empty shop list with a map key. The map frame
+is visible and **Use this place** is pinned and disabled because the map has not been clicked yet.
 
 ![21.gifts shops composer place map](images/shops-composer-place-map.png)
 
 ### Variant: composer-place-confirm
 
-**Add a place** is open as a dialog with a map. A click has set a pin, **Shop name** is **Stall**,
-and the full address is filled. **Use this place** is visible and enabled. The pin is not confirmed
-yet.
+**Shop place and address** is open as a dialog with a map. A click has set a pin, **Shop name** is
+**Stall**, and the full address is filled. **Use this place** is visible and enabled. The pin is not
+confirmed yet.
 
 ![21.gifts shops composer place confirm](images/shops-composer-place-confirm.png)
 
@@ -2197,17 +2206,17 @@ The shop list is still empty.
 
 ### Variant: composer-place-pending
 
-**Add a place** is open as a dialog on an empty shop list, the key has arrived, and the map script
-has not loaded. The **Shop name** field and disabled **Use this place** control are visible while
-the frame is empty. A failed script or rejected key shows the unavailable state.
+**Shop place and address** is open as a dialog on an empty shop list, the key has arrived, and the
+map script has not loaded. The **Shop name** field and disabled **Use this place** control are
+visible while the frame is empty. A failed script or rejected key shows the unavailable state.
 
 ![21.gifts shops composer place pending](images/shops-composer-place-pending.png)
 
 ### Variant: composer-place-unlabeled
 
-**Add a place** is open as a dialog with a map. A click has set a pin and **Shop name** is still
-empty. The footer lists the fields that remain to fill. **Use this place** is visible and disabled.
-The shop list is still empty.
+**Shop place and address** is open as a dialog with a map. A click has set a pin and **Shop name**
+is still empty. The footer lists the fields that remain to fill. **Use this place** is visible and
+disabled. The shop list is still empty.
 
 ![21.gifts shops composer place unlabeled](images/shops-composer-place-unlabeled.png)
 

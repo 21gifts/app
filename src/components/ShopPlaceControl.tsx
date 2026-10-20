@@ -54,7 +54,6 @@ export function ShopPlaceControl({
       <PlaceField
         place={message.place ?? null}
         disabled={false}
-        showPreview={false}
         buttonSize="sm"
         buttonVariant="ghost"
         shopDetails

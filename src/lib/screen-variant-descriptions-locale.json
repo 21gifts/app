@@ -874,6 +874,11 @@
     "es": "POST falla después de pie+JPEG → No se pudo publicar el mensaje; la vista previa y el pie permanecen.",
     "fil": "Nabigo ang POST pagkatapos ng paliwanag+JPEG → Hindi ma-post ang mensahe; nananatili ang paunang tingin at paliwanag."
   },
+  "/welcome:error-shop-elsewhere": {
+    "de": "Ein verifiziertes Mitglied fügt im Wohnzimmer eine Stecknadel namens Cafe Luna hinzu und veröffentlicht eine Shop-Notiz. Die API weist die fehlende Shop-Adresse mit Shop-Notizen brauchen den Shopnamen und die vollständige Adresse. Veröffentlichen Sie diesen Shop unter Shops. zurück. Die benannte Stecknadel bleibt in einem Chip im normalen Fluss zwischen der Verfasserzeile und diesem Hinweis; der Entwurf bleibt ebenfalls erhalten.",
+    "es": "Un miembro verificado añade en el salón un marcador llamado Cafe Luna y publica una nota de tienda. La API rechaza la dirección ausente con Las notas de tienda necesitan el nombre de la tienda y la dirección completa. Publica esta tienda desde Tiendas. El marcador permanece en un chip del flujo normal entre la fila del redactor y ese aviso; el borrador también se conserva.",
+    "fil": "Nagdagdag ang isang beripikadong miyembro ng pin na Cafe Luna sa sala at nag-post ng tala ng shop. Tinanggihan ng API ang nawawalang address gamit ang Kailangan ng mga tala ng shop ang pangalan ng shop at kumpletong address. I-post ang shop na ito mula sa Mga Shop. Nananatili ang pin sa isang chip sa normal na daloy sa pagitan ng hilera ng pambuo at ng alertong iyon; nananatili rin ang burador."
+  },
   "/moderate/hidden:translate": {
     "de": "Mitarbeitende /moderate/hidden mit einer versteckten deutschen Notiz. Übersetzen ist unter dem Textkörper sichtbar.",
     "es": "Personal /moderate/hidden con una nota oculta en alemán. Traducir está visible debajo del cuerpo del texto.",
@@ -1135,9 +1140,9 @@
     "fil": "Wala pang mensaheng nakatanggap ng Bitcoin. Napili ang Aktibo, nakatago ang hindi pa bayad na tala, nakikita ang pambubuo."
   },
   "/welcome:composer-place-set": {
-    "de": "Eine bestätigte Stecknadel Stall sitzt unter Ort hinzufügen als Vorschau mit Ort entfernen. Der Dialog ist geschlossen.",
-    "es": "Un pin confirmado Stall aparece bajo Añadir un lugar como vista previa con Quitar lugar. El diálogo está cerrado.",
-    "fil": "Ang kumpirmadong pin na Stall ay nasa ilalim ng Magdagdag ng lugar bilang preview na may Alisin ang lugar. Sarado ang dialog."
+    "de": "Eine bestätigte Stecknadel Stall sitzt in einem Chip im normalen Fluss direkt unter der Verfasserzeile, vor möglichen Rückmeldungen, mit Ort entfernen. Der Dialog ist geschlossen.",
+    "es": "Un pin confirmado Stall aparece en un chip del flujo normal directamente debajo de la fila del redactor, antes de cualquier aviso, con Quitar lugar. El diálogo está cerrado.",
+    "fil": "Ang kumpirmadong pin na Stall ay nasa chip sa normal na daloy, direkta sa ilalim ng hilera ng pambuo at bago ang anumang feedback, kasama ang Alisin ang lugar. Sarado ang dialog."
   },
   "/shops:table-more": {
     "de": "Tabelle ist ausgewählt. Eine Zeile Cafe Luna wird angezeigt, und Mehr anzeigen steht unter der Tabelle. Der Eingabebereich ist weg.",
@@ -1480,9 +1485,9 @@
     "fil": "Pagkatapos ng Ipakita ang orihinal: nakatago ang isinaling katawan ng teksto, ang icon na Mga wika ay pinangalanang Ipakita ang pagsasalin at walang nakikitang teksto."
   },
   "/welcome:composer-place-set-coords": {
-    "de": "Eine bestätigte Stecknadel ohne Namen sitzt unter Ort hinzufügen als 14.50000, 120.90000 mit Ort entfernen. Der Dialog ist geschlossen.",
-    "es": "Un pin confirmado sin nombre queda bajo Añadir un lugar como 14.50000, 120.90000 con Quitar lugar. El diálogo está cerrado.",
-    "fil": "Ang kumpirmadong pin na walang pangalan ay nasa ilalim ng Magdagdag ng lugar bilang 14.50000, 120.90000 na may Alisin ang lugar. Sarado ang dialog."
+    "de": "Eine bestätigte Stecknadel ohne Namen sitzt in einem Chip im normalen Fluss direkt unter der Verfasserzeile, vor möglichen Rückmeldungen, als 14.50000, 120.90000 mit Ort entfernen. Der Dialog ist geschlossen.",
+    "es": "Un pin confirmado sin nombre aparece en un chip del flujo normal directamente debajo de la fila del redactor, antes de cualquier aviso, como 14.50000, 120.90000 con Quitar lugar. El diálogo está cerrado.",
+    "fil": "Ang kumpirmadong pin na walang pangalan ay nasa chip sa normal na daloy, direkta sa ilalim ng hilera ng pambuo at bago ang anumang feedback, bilang 14.50000, 120.90000 na may Alisin ang lugar. Sarado ang dialog."
   },
   "/members/[accountId]:translate-hidden": {
     "de": "Nach Original anzeigen: übersetzter Textkörper ausgeblendet, das Sprachen-Symbol heisst Übersetzung anzeigen und hat keinen sichtbaren Text.",
@@ -2075,9 +2080,9 @@
     "fil": "Bukas bilang dialog na may mapa ang Magdagdag ng lugar. Nagtakda ng pin ang isang click, Stall ang Pangalan ng lugar, at nakikita at naka-enable ang Gamitin ang lugar na ito. Hindi pa kumpirmado ang pin."
   },
   "/shops:composer-place-confirm": {
-    "de": "Ort hinzufügen ist geöffnet mit einer Karte. Ein Klick hat eine Stecknadel gesetzt, Shopname ist Stall, und die vollständige Adresse ist ausgefüllt. Diesen Ort verwenden ist sichtbar und aktiviert. Die Stecknadel ist noch nicht bestätigt.",
-    "es": "Añadir un lugar está abierto con un mapa. Un clic ha colocado un marcador, Nombre de la tienda es Stall, y la dirección completa está rellena. Usar este lugar está visible y activado. El marcador aún no está confirmado.",
-    "fil": "Bukas ang Magdagdag ng lugar na may mapa. May klik na naglagay ng pananda, Pangalan ng shop ay Stall, at napunan ang buong address. Nakikita at naka-enable ang Gamitin ang lugar na ito. Hindi pa kumpirmado ang pananda."
+    "de": "Der Dialog Ort und Adresse des Shops ist mit einer Karte geöffnet. Ein Klick hat eine Stecknadel gesetzt, Shopname ist Stall, und die vollständige Adresse ist ausgefüllt. Diesen Ort verwenden ist sichtbar und aktiviert. Die Stecknadel ist noch nicht bestätigt.",
+    "es": "El diálogo Lugar y dirección de la tienda está abierto con un mapa. Un clic ha colocado un marcador, Nombre de la tienda es Stall, y la dirección completa está rellena. Usar este lugar está visible y activado. El marcador aún no está confirmado.",
+    "fil": "Bukas ang Lugar at address ng shop na may mapa. May klik na naglagay ng pananda, Pangalan ng shop ay Stall, at napunan ang buong address. Nakikita at naka-enable ang Gamitin ang lugar na ito. Hindi pa kumpirmado ang pananda."
   },
   "/shops:edit-place": {
     "de": "Dieselbe Moderation hat Weiter gedrückt. Schritt 2 von 5 · Ort ist geöffnet. Das Schließen (X) des Fotoschritts ist verschwunden. Der Pfeil oben links kehrt zum Fotoschritt zurück.",
@@ -2150,9 +2155,9 @@
     "fil": "Utang, hakbang 1 sa 9, na naka-pindot ang Araw-araw at naka-pindot ang Utang. 21000 ay naka-type sa bitcoin. Naka-enable ang Magpatuloy. Hindi pa naka-imbak ang Isang beses / Araw-araw."
   },
   "/shops:composer-place-unlabeled": {
-    "de": "Ort hinzufügen ist geöffnet mit einer Karte. Ein Klick hat eine Stecknadel gesetzt und Shopname ist noch leer. Der Hinweis Geben Sie den Shopnamen ein. ist sichtbar. Diesen Ort verwenden ist sichtbar und deaktiviert. Die Ladenliste ist noch leer.",
-    "es": "Añadir un lugar está abierto con un mapa. Un clic ha colocado un marcador y Nombre de la tienda sigue vacío. El aviso Introduce el nombre de la tienda. es visible. Usar este lugar está visible y desactivado. La lista de tiendas sigue vacía.",
-    "fil": "Bukas ang Magdagdag ng lugar na may mapa. May klik na naglagay ng pananda at walang laman pa ang Pangalan ng shop. Nakikita ang palatandaan Ilagay ang pangalan ng shop. Nakikita at naka-disable ang Gamitin ang lugar na ito. Walang laman pa ang listahan ng mga tindahan."
+    "de": "Der Dialog Ort und Adresse des Shops ist mit einer Karte geöffnet. Ein Klick hat eine Stecknadel gesetzt und Shopname ist noch leer. Der Hinweis Geben Sie den Shopnamen ein. ist sichtbar. Diesen Ort verwenden ist sichtbar und deaktiviert. Die Ladenliste ist noch leer.",
+    "es": "El diálogo Lugar y dirección de la tienda está abierto con un mapa. Un clic ha colocado un marcador y Nombre de la tienda sigue vacío. El aviso Introduce el nombre de la tienda. es visible. Usar este lugar está visible y desactivado. La lista de tiendas sigue vacía.",
+    "fil": "Bukas ang Lugar at address ng shop na may mapa. May klik na naglagay ng pananda at walang laman pa ang Pangalan ng shop. Nakikita ang palatandaan Ilagay ang pangalan ng shop. Nakikita at naka-disable ang Gamitin ang lugar na ito. Walang laman pa ang listahan ng mga tindahan."
   },
   "/pos/amount:create-outside": {
     "de": "Zahlung mit 21 anlegen. Die Kasse antwortet, dass der Betrag außerhalb der Wallet liegt. Hinweis Der Betrag liegt außerhalb der Wallet. Die Tastatur bleibt. Kein QR.",
@@ -2220,9 +2225,9 @@
     "fil": "Isang tala ng tindahan na walang etiketa ang lugar. Ipinapakita ng talaan ang isang MapPin na kawing 14.60000, 120.98000 papunta sa /map?pin=m-place. Nakatago pa rin ang hilaw na token na #21GiftsShop."
   },
   "/shops:composer-place-map": {
-    "de": "Ort hinzufügen ist als Dialog auf einer leeren Ladenliste geöffnet. Der Kartenrahmen ist sichtbar; Diesen Ort verwenden ist angeheftet und bis zum Kartenklick deaktiviert.",
-    "es": "Añadir un lugar está abierto como diálogo en una lista de tiendas vacía. El mapa está visible; Usar este lugar está fijado y desactivado hasta pulsar el mapa.",
-    "fil": "Bukas bilang dialog ang Magdagdag ng lugar sa walang lamang listahan ng shop. Nakikita ang mapa; naka-pin at naka-disable ang Gamitin ang lugar na ito hanggang ma-click ang mapa."
+    "de": "Der Dialog Ort und Adresse des Shops ist auf einer leeren Ladenliste geöffnet. Der Kartenrahmen ist sichtbar; Diesen Ort verwenden ist angeheftet und bis zum Kartenklick deaktiviert.",
+    "es": "El diálogo Lugar y dirección de la tienda está abierto en una lista de tiendas vacía. El mapa está visible; Usar este lugar está fijado y desactivado hasta pulsar el mapa.",
+    "fil": "Bukas bilang dialog ang Lugar at address ng shop sa walang lamang listahan ng shop. Nakikita ang mapa; naka-pin at naka-disable ang Gamitin ang lugar na ito hanggang ma-click ang mapa."
   },
   "/messages/[id]:note-video-paused": {
     "de": "Ungesignierter Permalink der Notiz von Ada A clip. Das Bild ist ein Video. Die Wiedergabe-Schaltfläche und die Vollbild-Schaltfläche sitzen auf diesem Bild. Das Bild ist zentriert.",
@@ -2680,9 +2685,9 @@
     "fil": "Ang Burahin ang reaksyon ay nagbubukas ng kumpirmasyong nakasama: Burahin ang reaksyon na ito sa 21.gifts? Kumpirmahin ang pagbura (tsek) at Kanselahin ang pagbura (X) ay icon lamang. Ang kansela ay walang ipinapadalang kahilingan. Nanatili ang magulang na post."
   },
   "/shops:composer-place": {
-    "de": "Shop hinzufügen, dann Weiter, öffnet Schritt 2 von 5 · Ort. Ort hinzufügen ist als Dialog geöffnet, die Karte ist nicht verfügbar und Diesen Ort verwenden ist deaktiviert.",
-    "es": "Añadir una tienda, luego Siguiente, abre el paso 2 de 5 · Lugar. Añadir un lugar está abierto como diálogo, el mapa no está disponible y Usar este lugar está desactivado.",
-    "fil": "Binubuksan ng Magdagdag ng shop at Susunod ang hakbang 2 sa 5 · Lugar. Bukas bilang dialog ang Magdagdag ng lugar, hindi available ang mapa, at naka-disable ang Gamitin ang lugar na ito."
+    "de": "Shop hinzufügen, dann Weiter, öffnet Schritt 2 von 5 · Ort. Der Dialog Ort und Adresse des Shops ist geöffnet, die Karte ist nicht verfügbar und Diesen Ort verwenden ist deaktiviert.",
+    "es": "Añadir una tienda, luego Siguiente, abre el paso 2 de 5 · Lugar. El diálogo Lugar y dirección de la tienda está abierto, el mapa no está disponible y Usar este lugar está desactivado.",
+    "fil": "Binubuksan ng Magdagdag ng shop at Susunod ang hakbang 2 sa 5 · Lugar. Bukas bilang dialog ang Lugar at address ng shop, hindi available ang mapa, at naka-disable ang Gamitin ang lugar na ito."
   },
   "/shops:composer-place-set": {
     "de": "Eine Stecknadel namens Stall mit vollständiger Adresse wurde bestätigt, dann schloss sich Ort hinzufügen. Dieser Name wird nicht angezeigt. Ort entfernen erscheint erst, nachdem die Stecknadel erneut geöffnet wurde. Weiter bleibt aktiviert. Die Ladenliste ist weiterhin leer.",
@@ -3245,9 +3250,9 @@
     "fil": "Ulo Piliin ang pangalan mo. Ang pangalang ito ang ise-save sa passkey. Ito rin ang pangalan ng account mo at ang username mo sa 21.gifts. 1–32 character: letra, numero, hyphen, underscore, o tuldok. Naka-lowercase ito. Etiketa Pangalan, pindutan Magpatuloy. Hindi ipinapakita ang mapurol na linya ng iOS o Android."
   },
   "/shops:composer-place-pending": {
-    "de": "Ort hinzufügen ist als Dialog auf einer leeren Ladenliste geöffnet, der Schlüssel ist angekommen und das Kartenskript lädt. Shopname und das deaktivierte Diesen Ort verwenden sind sichtbar; der Rahmen ist leer.",
-    "es": "Añadir un lugar está abierto como diálogo en una lista de tiendas vacía, la clave ha llegado y el script carga. Nombre de la tienda y Usar este lugar desactivado están visibles; el marco está vacío.",
-    "fil": "Bukas bilang dialog ang Magdagdag ng lugar sa walang lamang listahan ng shop, dumating ang susi, at nilo-load ang script. Nakikita ang Pangalan ng shop at naka-disable na Gamitin ang lugar na ito; walang laman ang frame."
+    "de": "Der Dialog Ort und Adresse des Shops ist auf einer leeren Ladenliste geöffnet, der Schlüssel ist angekommen und das Kartenskript lädt. Shopname und das deaktivierte Diesen Ort verwenden sind sichtbar; der Rahmen ist leer.",
+    "es": "El diálogo Lugar y dirección de la tienda está abierto en una lista de tiendas vacía, la clave ha llegado y el script carga. Nombre de la tienda y Usar este lugar desactivado están visibles; el marco está vacío.",
+    "fil": "Bukas bilang dialog ang Lugar at address ng shop sa walang lamang listahan ng shop, dumating ang susi, at nilo-load ang script. Nakikita ang Pangalan ng shop at naka-disable na Gamitin ang lugar na ito; walang laman ang frame."
   },
   "/statistics:shop-error": {
     "de": "Mitarbeiterseite (Moderator). Das Personendiagramm bleibt sichtbar (Personen je UTC-Tag). Die geschlossenen Moderatorenfunktionen sitzen zwischen dem Personendiagramm und dem Shop-Bereich; Auszahlung pro Person anzeigen ist noch nicht sichtbar. Der Shop-Bereich darunter zeigt Die Shop-Aktivität konnte nicht geladen werden. Bitte erneut versuchen. und Erneut versuchen.",

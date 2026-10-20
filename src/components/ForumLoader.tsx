@@ -112,10 +112,18 @@ function isRateLimitError(err: unknown): boolean {
   return /too many (messages|payments)/i.test(err.message);
 }
 
-/** Whether media changes should preserve the current shop-related composer error. */
+const SHOP_ELSEWHERE_PROBLEMS = new Set<ShopApiProblem>([
+  'shopName',
+  'shopNameAddress',
+  'shopNameLong',
+  'shopNameControls',
+  'shopAddress',
+  'placeAddress',
+]);
+
 /**
  * Composer error for an API 400: the shop problem, or `shopElsewhere` when a
- * non-shop composer cannot fix a missing or invalid shop address.
+ * non-shop composer cannot fix shop-only name or address details.
  *
  * @param err - Rejection from posting.
  * @param shop - Whether the composer is the shop composer.
@@ -123,11 +131,12 @@ function isRateLimitError(err: unknown): boolean {
  */
 function composerShopError(err: unknown, shop: boolean): ShopApiProblem | 'shopElsewhere' | null {
   const problem = err instanceof Error ? shopApiProblem(err.message, shop) : null;
-  return !shop && (problem === 'shopAddress' || problem === 'placeAddress')
+  return !shop && problem !== null && SHOP_ELSEWHERE_PROBLEMS.has(problem)
     ? 'shopElsewhere'
     : problem;
 }
 
+/** Whether media changes should preserve the current shop-related composer error. */
 function isShopComposerError(error: ForumFormError): error is ShopApiProblem | 'shopElsewhere' {
   return error === 'shopElsewhere' || isShopApiProblem(error);
 }

@@ -43,33 +43,6 @@ describe('PlaceField', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
-  it('shows a label preview and removes the pin', () => {
-    const onChange = vi.fn();
-    renderWithLocale(
-      <PlaceField
-        place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
-        disabled={false}
-        onChange={onChange}
-      />,
-    );
-    expect(screen.getByText('Happyland')).toBeTruthy();
-    expect(screen.queryByText('Add a place')).toBeNull();
-    expect(screen.queryByText('Remove place')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Remove place' }));
-    expect(onChange).toHaveBeenCalledWith(null);
-  });
-
-  it('shows coordinates when the label is null', () => {
-    renderWithLocale(
-      <PlaceField
-        place={{ lat: 1, lng: 2, label: null }}
-        disabled={false}
-        onChange={() => undefined}
-      />,
-    );
-    expect(screen.getByText('1.00000, 2.00000')).toBeTruthy();
-  });
-
   it('says the map is unavailable when the key request fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('down')));
     const onAvailabilityChange = vi.fn();
@@ -232,7 +205,6 @@ describe('PlaceField', () => {
       <PlaceField
         place={{ lat: 1, lng: 2, label: 'Stall' }}
         disabled={false}
-        showPreview={false}
         ariaLabel="Edit place"
         onChange={() => undefined}
         onCommit={onCommit}
@@ -252,7 +224,6 @@ describe('PlaceField', () => {
       <PlaceField
         place={{ lat: 1, lng: 2, label: 'Stall' }}
         disabled={false}
-        showPreview={false}
         onChange={onChange}
       />,
     );
@@ -272,7 +243,6 @@ describe('PlaceField', () => {
       <PlaceField
         place={{ lat: 1, lng: 2, label: 'Stall' }}
         disabled={false}
-        showPreview={false}
         ariaLabel="Edit place"
         onChange={() => undefined}
         onCommit={onCommit}
@@ -671,7 +641,6 @@ describe('PlaceField', () => {
         disabled={false}
         onChange={() => undefined}
         onCommit={onCommit}
-        showPreview={false}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
@@ -848,20 +817,7 @@ describe('PlaceField', () => {
     expect(screen.queryByRole('button', { name: 'Add a place' })).toBeNull();
   });
 
-  it('hides the floating chip when showPreview is false', () => {
-    renderWithLocale(
-      <PlaceField
-        place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
-        disabled={false}
-        onChange={() => undefined}
-        showPreview={false}
-      />,
-    );
-    expect(screen.queryByText('Happyland')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Add a place' })).toBeTruthy();
-  });
-
-  it('hides the preview and panel on the local Sunday', () => {
+  it('hides the panel on the local Sunday', () => {
     document.documentElement.dataset['localSunday'] = '1';
     try {
       renderWithLocale(
@@ -871,7 +827,6 @@ describe('PlaceField', () => {
           onChange={() => undefined}
         />,
       );
-      expect(screen.queryByText('Happyland')).toBeNull();
       fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
       expect(screen.queryByLabelText('Place name')).toBeNull();
     } finally {
@@ -906,19 +861,6 @@ describe('PlaceField', () => {
     }
   });
 
-  it('shows a saved place preview inside the app frame', () => {
-    renderWithLocale(
-      <div data-app-frame>
-        <PlaceField
-          place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
-          disabled={false}
-          onChange={() => undefined}
-        />
-      </div>,
-    );
-    expect(screen.getByText('Happyland')).toBeTruthy();
-  });
-
   it('removes a saved place from the open map panel', async () => {
     const onChange = vi.fn();
     stubMaps();
@@ -926,7 +868,6 @@ describe('PlaceField', () => {
       <PlaceField
         place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
         disabled={false}
-        showPreview={false}
         onChange={onChange}
       />,
     );
@@ -1139,9 +1080,6 @@ describe('PlaceField', () => {
         shopDetails
       />,
     );
-    expect(
-      screen.getByText("Kiki's Bakery · Bahnhofstrasse 12, 8001 Zürich, Switzerland"),
-    ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     expect(await screen.findByLabelText('Shop name')).toHaveProperty('value', "Kiki's Bakery");
     expect(screen.getByLabelText('Street')).toHaveProperty('value', 'Bahnhofstrasse');
@@ -1514,7 +1452,6 @@ describe('PlaceField', () => {
       <PlaceField
         place={{ lat: 1, lng: 2, label: 'Stall' }}
         disabled={false}
-        showPreview={false}
         ariaLabel="Edit place"
         onChange={() => undefined}
         onCommit={onCommit}

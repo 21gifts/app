@@ -46,6 +46,7 @@ import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
 import { ForumVideo } from '@/components/ForumVideo';
 import { useTranslations } from '@/components/LocaleProvider';
 import { PlaceField } from '@/components/PlaceField';
+import { PlacePinChip } from '@/components/PlacePinChip';
 import { TranslatableNoteBody } from '@/components/TranslatableNoteBody';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ForumQuotedBody } from '@/components/QuotedForumNote';
@@ -111,6 +112,16 @@ export type ForumFormError =
   | 'shopElsewhere'
   | ShopApiProblem
   | null;
+
+const SHOP_ELSEWHERE_FORM_ERRORS = new Set<ForumFormError>([
+  'shopElsewhere',
+  'shopName',
+  'shopNameAddress',
+  'shopNameLong',
+  'shopNameControls',
+  'shopAddress',
+  'placeAddress',
+]);
 
 /** Reply composer validation; `amount` is the paid-reply sats field. */
 export type ForumReplyFormError = ForumFormError | 'amount' | 'deleted';
@@ -1948,6 +1959,13 @@ export function ForumBoard({
                 )}
               </IconButton>
             </div>
+            {placeDraft !== null && onPlaceDraftChange !== undefined ? (
+              <PlacePinChip
+                place={placeDraft}
+                disabled={posting}
+                onRemove={() => onPlaceDraftChange(null)}
+              />
+            ) : null}
             {videoDraft !== null ? (
               <div className="flex items-start gap-3 rounded-2xl border border-app-border bg-app-card-muted p-3">
                 <video
@@ -2088,11 +2106,7 @@ export function ForumBoard({
             {t('forum.errorAskAmount')}
           </p>
         ) : null}
-        {!hideCompose &&
-        !shopComposer &&
-        (formError === 'shopElsewhere' ||
-          formError === 'shopAddress' ||
-          formError === 'placeAddress') ? (
+        {!hideCompose && !shopComposer && SHOP_ELSEWHERE_FORM_ERRORS.has(formError) ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.shopPostUseShops')}
           </p>
@@ -2100,8 +2114,7 @@ export function ForumBoard({
         {!hideCompose &&
         !shopComposer &&
         isShopApiProblem(formError) &&
-        formError !== 'shopAddress' &&
-        formError !== 'placeAddress' ? (
+        !SHOP_ELSEWHERE_FORM_ERRORS.has(formError) ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t(SHOP_API_MESSAGE[formError])}
           </p>

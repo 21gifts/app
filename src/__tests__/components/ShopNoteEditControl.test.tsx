@@ -411,6 +411,39 @@ describe('ShopNoteEditControl', () => {
     expect(screen.queryByRole('textbox', { name: 'Shop text' })).toBeNull();
   });
 
+  it('does not patch an unchanged account with whitespace after the at sign', async () => {
+    signIn();
+    vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
+    renderEdit(
+      <ShopNoteEditControl
+        message={{
+          ...shopMessage,
+          shopAccount: { id: 'acc-ada', username: 'ada', name: 'Ada' },
+        }}
+        onUpdated={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit shop note' }));
+    expect(await screen.findByText('1 / 5 · Photos')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(screen.getByLabelText('21.gifts username'), {
+      target: { value: '@ ada' },
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Next' })).toHaveProperty('disabled', false);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => {
+      expect(screen.queryByText('5 / 5 · Summary')).toBeNull();
+    });
+    expect(setMessageShopAccount).not.toHaveBeenCalled();
+  });
+
   it('keeps the panel open when the save fails and shows an empty or failed history', async () => {
     signIn('founder');
     vi.mocked(fetchShopNoteEdits).mockResolvedValueOnce([]);

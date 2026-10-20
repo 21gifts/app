@@ -138,7 +138,7 @@ function placesEqual(left: ForumPlacePin | null, right: ForumPlacePin | null): b
 }
 
 function usernameOf(value: string): string {
-  return value.trim().replace(/^@/, '').toLowerCase();
+  return value.trim().replace(/^@/, '').trim().toLowerCase();
 }
 
 const KEPT_STILL_TYPES = new Set(['image/png', 'image/webp']);
