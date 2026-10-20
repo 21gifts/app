@@ -172,7 +172,7 @@ function settledChanged(): void {
  * The open charge of `session` is paid the moment this tab's wallet receives
  * its amount (or the amount after its fee): while it is open the receiving
  * address takes no other amount. Up to {@link POS_LATE_PAID_MS} after its end
- * still counts. No reading of the api in between. A payment no known open
+ * (by the time it was heard) still counts. No reading of the api in between. A payment no known open
  * charge takes (the till is still reading the next one) is kept with the
  * time it was first heard, and tried again once the next open charge is
  * known, unless it was heard before that charge was created.
@@ -188,7 +188,7 @@ function settleOpen(
     open === null ||
     (payment.amountSats !== open.amountSats &&
       payment.amountSats + payment.feesSats !== open.amountSats) ||
-    Date.now() > Date.parse(open.expiresAt) + POS_LATE_PAID_MS
+    heardAt > Date.parse(open.expiresAt) + POS_LATE_PAID_MS
   ) {
     // Not this charge's: it may be the next one's, which the till has not read yet.
     memory.early = [
@@ -490,6 +490,12 @@ function usePosTillState(): PosTillState {
     setBusy(true);
     const mine = ++generation.current;
     setError(null);
+    // A new charge ends the late minute of the one before: a payment heard while it is being
+    // created is parked and counted for the new charge once it is read. A failed create gives the
+    // late minute back.
+    const creating = settledFor(session);
+    const before = creating.open;
+    creating.open = null;
     const work = (async (): Promise<void> => {
       try {
         const created = await createPosCharge(
@@ -509,6 +515,7 @@ function usePosTillState(): PosTillState {
           setAmount('');
         });
       } catch (err) {
+        creating.open = before;
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- createPosCharge only rejects with Error */
           const message = err instanceof Error ? err.message : t('pos.error');

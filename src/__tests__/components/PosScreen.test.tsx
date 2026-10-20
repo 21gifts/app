@@ -1753,6 +1753,103 @@ describe('PosScreen', () => {
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
     });
 
+    it('counts a payment heard while a new charge of the same amount is created for the new one', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      const fresh = { ...OPEN, id: 'c2', createdAt: new Date(Date.now() - 1).toISOString() };
+      let releasePost: ((value: Response) => void) | undefined;
+      let serverCharge: typeof OPEN | null = ended;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return new Promise<Response>((resolve) => {
+              releasePost = resolve;
+            });
+          }
+          const charge = serverCharge;
+          serverCharge = charge === ended ? null : charge;
+          return Promise.resolve(
+            jsonResponse({ charge, history: charge === null ? [] : [charge] }),
+          );
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      const amountPage = renderWithLocale(<PosAmount />);
+      await pressAmount('21');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(releasePost).toBeDefined();
+      });
+      // The payer pays the new pin before the create answer is in.
+      receive(21);
+      await act(async () => {
+        releasePost?.(jsonResponse({ charge: fresh }, 201));
+      });
+      amountPage.unmount();
+      serverCharge = fresh;
+      renderWithLocale(<PosScreen />);
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('₿21')).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
+    });
+
+    it('gives the late minute back when creating a new charge fails', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let first = true;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return jsonResponse({ error: 'down' }, 502);
+          }
+          const charge = first ? ended : null;
+          first = false;
+          return jsonResponse({ charge, history: [ended] });
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      renderWithLocale(<PosAmount />);
+      await pressAmount('5');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      expect(replace).not.toHaveBeenCalled();
+      receive(21);
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/pos');
+      });
+    });
+
+    it('judges the late minute of a parked payment by the time it was heard', async () => {
+      const heard = Date.now();
+      const open = { ...OPEN, expiresAt: new Date(heard + 1_000).toISOString() };
+      let answer: (response: Response) => void = () => undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(
+          () =>
+            new Promise<Response>((resolve) => {
+              answer = resolve;
+            }),
+        ),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(received.listeners.size).toBe(1);
+      });
+      receive(21);
+      // The read that names the charge is applied long after its late minute.
+      const clock = vi.spyOn(Date, 'now').mockReturnValue(heard + 120_000);
+      await act(async () => {
+        answer(jsonResponse({ charge: open, history: [open] }));
+      });
+      expect(await confirmation()).toBeTruthy();
+      clock.mockRestore();
+    });
+
     it('never asks the api on a timer while a charge is open', async () => {
       vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'] });
       const fetchMock = vi
