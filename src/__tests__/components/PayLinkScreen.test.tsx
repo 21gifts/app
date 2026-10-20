@@ -1664,9 +1664,14 @@ describe('PayLinkScreen shop payment', () => {
 
   /**
    * A shop payment of the pay link with a USD spot rate; `starts` holds each start body, and
-   * `linkSats` is the payment's sats on the pay link.
+   * `linkSats` is the payment's sats on the pay link (by default the sats of the last start, as
+   * the api names the payer's amount, or 21 before any start).
    */
-  function mockPricedShop(starts: string[], profileBody: object = profile, linkSats = 21): void {
+  function mockPricedShop(
+    starts: string[],
+    profileBody: object = profile,
+    linkSats?: number,
+  ): void {
     mockShopFetch(async (input, init) => {
       const url = String(input);
       if (url.includes('/fx/spot')) {
@@ -1684,7 +1689,10 @@ describe('PayLinkScreen shop payment', () => {
         return Response.json({ payment: 'p1', expiresAt: new Date(FIXED + 300_000).toISOString() });
       }
       if (url === '/.well-known/lnurlp/ada') {
-        return Response.json(shopPayLink({ sats: linkSats }));
+        const last = starts.at(-1);
+        const started =
+          last === undefined ? 21 : (JSON.parse(last) as { amountSats: number }).amountSats;
+        return Response.json(shopPayLink({ sats: linkSats ?? started }));
       }
       if (url === DETAIL) {
         return Response.json({ pr: 'lnbc210n1shop' });
@@ -1801,6 +1809,37 @@ describe('PayLinkScreen shop payment', () => {
     );
     expect(screen.getByLabelText('Amount')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+  });
+
+  it('asks again when the pay link names the opened payment for other sats', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        return Response.json({
+          payment: 'p1',
+          expiresAt: new Date(FIXED + 300_000).toISOString(),
+        });
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        // The same payment id, but 50 sats instead of the 21 entered.
+        return Response.json(shopPayLink({ sats: 50 }));
+      }
+      if (url.endsWith('/invoice') || url.startsWith(CALLBACK) || url.startsWith('/lnurlp/')) {
+        throw new Error(`unexpected ${url}`);
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Another payer entered an amount first. Enter yours again.',
+    );
+    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    expect(screen.queryByText('₿50')).toBeNull();
+    expect(fetchedUrls().some((url) => url.startsWith(CALLBACK))).toBe(false);
+    expect(postedInvoice()).toBe(false);
   });
 
   it('asks again when the pay link is already plain right after opening', async () => {
@@ -1987,6 +2026,40 @@ describe('PayLinkScreen shop payment', () => {
     );
     expect(screen.getByLabelText('Amount')).toBeTruthy();
     expect(screen.queryByText('Waiting for payment…')).toBeNull();
+  }, 10_000);
+
+  it('returns to the amount field when the pay link read again names the payment for other sats', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(FIXED);
+    let links = 0;
+    mockShopFetch(async (input) => {
+      const url = String(input);
+      if (url === '/pay/ada/payment') {
+        return Response.json({ payment: 'p1' });
+      }
+      if (url === '/.well-known/lnurlp/ada') {
+        links += 1;
+        return links === 1
+          ? new Response('busy', { status: 503 })
+          : Response.json(shopPayLink({ sats: 50 }));
+      }
+      if (url.startsWith('/lnurlp/wait/')) {
+        return pending();
+      }
+      if (url.endsWith('/invoice') || url.startsWith(CALLBACK)) {
+        throw new Error(`unexpected ${url}`);
+      }
+      return Response.json(profile);
+    });
+    renderWithLocale(<PayLinkScreen lightning={ADA} />);
+    await enterAmount();
+    expect(await screen.findByText('Waiting for payment…')).toBeTruthy();
+    expect((await screen.findByRole('alert', undefined, { timeout: 4000 })).textContent).toBe(
+      'Another payer entered an amount first. Enter yours again.',
+    );
+    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    expect(screen.queryByText('Waiting for payment…')).toBeNull();
+    expect(screen.queryByText('₿50')).toBeNull();
+    expect(links).toBe(2);
   }, 10_000);
 
   it('stops reading the pay link of an opened payment after unmount', async () => {

@@ -7790,6 +7790,7 @@ test("Function: fetchShopInvoice — Pay opens the callback's invoice, never a m
 test('Function: openShopPayment — Continue opens a shop payment, a repeat failure mints nothing', async ({
   page,
 }) => {
+  await stubWalletLocationAssign(page);
   await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
   await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
   const bodies: string[] = [];
@@ -7811,7 +7812,13 @@ test('Function: openShopPayment — Continue opens a shop payment, a repeat fail
   await stubShopPayment(page, {});
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('Waiting for payment…')).toBeVisible();
-  await expect(page.getByText('238.19 USDT')).toBeVisible();
+  // The pay link names the 21 sats posted: 0.021 USD at 100'000.00 USD per bitcoin.
+  await expect(page.getByText('0.021 USDT')).toHaveCount(2);
+  // Pay opens the BOLT11 of the 21 sats the payer entered.
+  const pay = page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' });
+  await expect(pay).toBeEnabled();
+  await pay.click();
+  await expect.poll(() => recordedWalletAssign(page)).toBe('lightning:lnbc210n1shop');
   expect(bodies).toEqual([posted, posted, posted]);
   expect(minted).toEqual([]);
 });
@@ -7862,6 +7869,11 @@ test('Function: PayLinkScreen — a shop payment shows the fiat typed on the pag
   await expect(page.getByText("₿12'500")).toBeVisible();
   await expect(page.getByText('$12.50', { exact: true })).toBeVisible();
   await expect(page.getByText(/\$/)).toHaveCount(1);
+  // The pay link carries the posted sats, so the page shows the payment and its lines.
+  await expect(page.getByText('12.5 USDT')).toHaveCount(2);
+  await expect(
+    page.getByText('Another payer entered an amount first. Enter yours again.'),
+  ).toHaveCount(0);
 });
 
 test("Function: PayLinkScreen — a till's shop payment stays bitcoin with a spot rate", async ({

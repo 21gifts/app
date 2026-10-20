@@ -17,7 +17,10 @@ export async function fulfillStablecoinUnavailable(route: Route): Promise<void> 
   });
 }
 
-/** The stablecoin entries of the quote's `transferAmounts`. */
+/** Sats of the till's charge on `GET /pay/ada`. */
+const TILL_SATS = 238_093;
+
+/** The stablecoin entries of the till's quote (`TILL_SATS`) in `transferAmounts`. */
 const STABLECOIN_AMOUNTS = [
   {
     method: 'Polygon',
@@ -35,6 +38,35 @@ const STABLECOIN_AMOUNTS = [
     available: true,
   },
 ];
+
+/** The stub's price of one bitcoin in USD, the suite's spot rate (`100000.00`). */
+const USD_PER_BTC = 100_000;
+
+/**
+ * A whole-sat amount in BTC as the api writes it: eight decimals, then trailing zeros and a
+ * trailing point dropped (`21` → `0.00000021`, `100000000` → `1`).
+ */
+function btcAmount(sats: number): string {
+  return (sats / 100_000_000).toFixed(8).replace(/\.?0+$/, '');
+}
+
+/**
+ * The stablecoin entries of a payer's amount: every method and asset of `STABLECOIN_AMOUNTS`
+ * for the sats' USD value at `USD_PER_BTC`, with six decimals at most and no trailing zero
+ * (`12500` → `12.5`, `21` → `0.021`).
+ */
+function stablecoinAmounts(sats: number): typeof STABLECOIN_AMOUNTS {
+  const usd = ((sats * USD_PER_BTC) / 100_000_000).toFixed(6).replace(/\.?0+$/, '');
+  return STABLECOIN_AMOUNTS.map((entry) => ({
+    ...entry,
+    assets: entry.assets.map((asset) => ({ ...asset, amount: usd })),
+  }));
+}
+
+/** The BOLT11 of a shop payment for `sats`, its amount in nano-bitcoin as BOLT11 writes it. */
+function shopInvoice(sats: number): string {
+  return `lnbc${sats * 10}n1shop`;
+}
 
 /** One answer of `GET /lnurlp/wait/:payment`. */
 export interface ShopWaitAnswer {
@@ -113,13 +145,19 @@ async function pageNow(page: Page): Promise<number> {
  *   `opened` is `{ payment: 'p1', expiresAt }`; 409 `payment_open` is the
  *   default with `charge`, and it opens the till for the next `GET /pay/ada`.
  * - The pay link is the OpenCryptoPay pay request (with stablecoin lines, or
- *   Lightning only). Its quote stays the same until its expiration on the
+ *   Lightning only) for the till's 238'093 sats, or, once an `opened` answer
+ *   came, for the `amountSats` of that post, as the api builds it: the
+ *   Lightning entry and `requestedAmount` are those sats in BTC,
+ *   `minSendable` and `maxSendable` those sats times 1000, and every
+ *   stablecoin line their USD value at 100'000 USD per bitcoin (12'500 sats
+ *   are `12.5`). Its quote stays the same until its expiration on the
  *   page's clock, then one new quote id with the same `quote.payment` lasts
  *   another 90 s. After a 503 `stablecoin_unavailable` or another non-409 4xx
  *   it is the plain Lightning request, and the mint answers today's invoice.
  * - The callback answers `{ pr }` only for `method=Lightning&asset=BTC` and the
  *   current or previous quote whose expiration has not passed, 404 for any
- *   other quote, and 400 otherwise.
+ *   other quote, and 400 otherwise. `pr` names the pay link's sats
+ *   (`lnbc2380930n1shop` for the till, `lnbc210n1shop` for 21 sats).
  * - `GET /lnurlp/wait/p1` answers the current entry of `waits`; a `since` equal
  *   to its `paymentStatus` moves to the next entry, held until the page's clock
  *   reaches that entry's `at`.
@@ -156,6 +194,8 @@ export async function stubShopPayment(
   const posts = options.posts ?? [options.charge === true ? 409 : 'opened'];
   let post = 0;
   let till = options.charge === true;
+  // The sats of the most recent `opened` post: from then on the pay link is that payer's amount.
+  let openedSats: number | null = null;
   // A 503 `stablecoin_unavailable` or another non-409 4xx opens no shop payment: the pay
   // link stays the plain Lightning request and the page mints as today.
   let plain = false;
@@ -171,6 +211,8 @@ export async function stubShopPayment(
           return;
         }
         if (answer === 'opened') {
+          const posted = JSON.parse(route.request().postData() ?? '{}') as { amountSats?: number };
+          openedSats = posted.amountSats ?? null;
           await route.fulfill({
             status: 200,
             contentType: 'application/json',
@@ -215,9 +257,9 @@ export async function stubShopPayment(
         body: JSON.stringify({
           name: 'Ada Lovelace',
           username: 'ada',
-          minSats: till ? 238093 : 1,
-          maxSats: till ? 238093 : 100000000,
-          charge: till ? { amountSats: 238093, expiresAt: '2026-09-24T12:05:00.000Z' } : null,
+          minSats: till ? TILL_SATS : 1,
+          maxSats: till ? TILL_SATS : 100000000,
+          charge: till ? { amountSats: TILL_SATS, expiresAt: '2026-09-24T12:05:00.000Z' } : null,
         }),
       });
     },
@@ -258,29 +300,36 @@ export async function stubShopPayment(
       issued.push({ id: `q${issued.length + 1}`, expiration: now + QUOTE_LIFETIME_MS });
     }
     const quote = issued.at(-1) ?? { id: 'q1', expiration: 0 };
+    const sats = openedSats ?? TILL_SATS;
+    const stablecoins = openedSats === null ? STABLECOIN_AMOUNTS : stablecoinAmounts(openedSats);
+    const body = JSON.stringify({
+      tag: 'payRequest',
+      callback: 'https://21.gifts/lnurlp/cb/ada',
+      minSendable: sats * 1000,
+      maxSendable: sats * 1000,
+      standard: 'OpenCryptoPay',
+      possibleStandards: ['OpenCryptoPay'],
+      quote: {
+        id: quote.id,
+        expiration: new Date(quote.expiration).toISOString(),
+        payment: options.payLinkPayment ?? 'p1',
+      },
+      requestedAmount: { asset: 'BTC', amount: '<requested>' },
+      transferAmounts: [
+        {
+          method: 'Lightning',
+          minFee: 0,
+          assets: [{ asset: 'BTC', amount: btcAmount(sats) }],
+          available: true,
+        },
+        ...(options.lightningOnly === true ? [] : stablecoins),
+      ],
+    });
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        tag: 'payRequest',
-        callback: 'https://21.gifts/lnurlp/cb/ada',
-        standard: 'OpenCryptoPay',
-        possibleStandards: ['OpenCryptoPay'],
-        quote: {
-          id: quote.id,
-          expiration: new Date(quote.expiration).toISOString(),
-          payment: options.payLinkPayment ?? 'p1',
-        },
-        transferAmounts: [
-          {
-            method: 'Lightning',
-            minFee: 0,
-            assets: [{ asset: 'BTC', amount: '0.00238093' }],
-            available: true,
-          },
-          ...(options.lightningOnly === true ? [] : STABLECOIN_AMOUNTS),
-        ],
-      }),
+      // `requestedAmount.amount` is a JSON number in plain notation, never `2.1e-7`.
+      body: body.replace('"<requested>"', btcAmount(sats)),
     });
   });
   await page.route(
@@ -304,7 +353,7 @@ export async function stubShopPayment(
         headers: { 'access-control-allow-origin': '*' },
         body: JSON.stringify(
           status === 200
-            ? { pr: 'lnbc2380930n1shop' }
+            ? { pr: shopInvoice(openedSats ?? TILL_SATS) }
             : {
                 status: 'ERROR',
                 reason: status === 404 ? 'Quote expired' : 'That payment is not offered',

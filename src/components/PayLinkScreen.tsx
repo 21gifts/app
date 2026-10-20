@@ -268,7 +268,7 @@ function ShopStickerIcon(): ReactElement {
  * Public LNURL payment page for one shop or member.
  *
  * @param props - Encoded LNURL from the `lightning` query parameter.
- * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's bitcoin amount (plus the fiat amount exactly as the payer typed it here, when it was typed in fiat; the pay link stores no fiat figure, so a till charge or an amount typed in bitcoin shows bitcoin only), its invoice, one line per stablecoin method and asset with the quote's time left, and its status; an open till's pay request whose sats differ from the charge (the till replaced it after the profile was read) loads the pay profile again once per payment instead of showing that pair, and shows the invoice error when it still differs; once that payment closed without being paid, the page returns to the amount form, or reads the pay link of a till that is still open again; otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
+ * @returns Public payment chrome. A valid link shows the shop sticker, then the amount form or the active payment (locked sats, default fiat, and Pay). A shop payment of the pay link (an open till, or an entered amount through `POST /pay/:username/payment`) shows that payment's bitcoin amount (plus the fiat amount exactly as the payer typed it here, when it was typed in fiat; the pay link stores no fiat figure, so a till charge or an amount typed in bitcoin shows bitcoin only), its invoice, one line per stablecoin method and asset with the quote's time left, and its status; an open till's pay request whose sats differ from the charge (the till replaced it after the profile was read) loads the pay profile again once per payment instead of showing that pair, and shows the invoice error when it still differs; an entered amount whose pay request names another payment or other sats than the payer entered returns to the amount field and asks for the amount again; once that payment closed without being paid, the page returns to the amount form, or reads the pay link of a till that is still open again; otherwise the page mints with `POST /pay/:username/invoice`. Pay hands the invoice to the device's Bitcoin wallet app through a generic `lightning:` link. The invoice QR mounts only when one exists and the visitor is not a smartphone. An invalid link shows the gift glyph.
  */
 export function PayLinkScreen({ lightning }: { lightning: string }): ReactElement {
   const { t } = useTranslations();
@@ -377,6 +377,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
   const mintedRemaining = mintedExpiresAt === null ? 0 : Date.parse(mintedExpiresAt) - now;
   const mintedLive = invoice !== null && mintedExpiresAt !== null && mintedRemaining > 0;
   const shopId = shop?.id ?? null;
+  const shopSats = shop?.sats ?? null;
   const quoteExpiresAt =
     shop !== null && shop.paymentStatus === 'open' && shop.quoteLive && shop.request !== null
       ? shop.request.quoteExpiresAt
@@ -517,6 +518,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
           return;
         }
         if (link.kind === 'payment') {
+          // The window is the charge's `expiresAt`: no answer the page reads carries the payment's
+          // own window end, and the charge has no id to compare, so a charge the till replaced
+          // with one for the same sats after the profile was read keeps the old time left.
           showShopPayment(
             link.request.payment,
             charge.amountSats,
@@ -586,8 +590,9 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
           timer = setTimeout(read, PAY_POLL_MS);
           return;
         }
-        if (link.request.payment !== shopId) {
-          // Another payer's amount replaced this one: back to the amount field.
+        if (link.request.payment !== shopId || link.request.amountSats !== shopSats) {
+          // Another payer's amount replaced this one, or the pay request names other sats than
+          // the payer entered: back to the amount field.
           setShop(null);
           setFormError('replaced');
           return;
@@ -601,7 +606,7 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
       active = false;
       clearTimeout(timer);
     };
-  }, [shopId, awaitingRequest, profile, patchShop, loadShopInvoice]);
+  }, [shopId, shopSats, awaitingRequest, profile, patchShop, loadShopInvoice]);
 
   useEffect(() => {
     if (shopId === null || quoteExpiresAt === null || profile === null) {
@@ -771,9 +776,12 @@ export function PayLinkScreen({ lightning }: { lightning: string }): ReactElemen
         }
         // Read right after opening, a plain request cannot be this payment accepted or its window
         // passed: something else ended it, so it counts as replaced like another payment's quote.
+        // A pay request for other sats is not the amount this payer entered either: never show
+        // the entered sats beside its invoice, and count it as replaced too.
         if (
           link.kind === 'plain' ||
-          (link.kind === 'payment' && link.request.payment !== start.payment)
+          (link.kind === 'payment' &&
+            (link.request.payment !== start.payment || link.request.amountSats !== amountSats))
         ) {
           setFormError('replaced');
           return;

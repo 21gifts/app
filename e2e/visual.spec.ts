@@ -1746,7 +1746,10 @@ test.describe('screen baselines', () => {
     await page.getByLabel('Amount').fill('21');
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(page.getByText('Waiting for payment…')).toBeVisible();
-    await expect(page.getByText('238.21 USDT')).toBeVisible();
+    // The pay link names the 21 sats the payer entered: 0.021 USD at 100'000.00 USD per bitcoin.
+    await expect(page.getByText('0.021 USDT')).toHaveCount(2);
+    await expect(page.getByText('0.021 USDC')).toBeVisible();
+    await expect(page.getByText(/238\./)).toHaveCount(0);
     await expect(page.getByText('₿21', { exact: true })).toBeVisible();
     await expect(page.getByText(/\$/)).toHaveCount(0);
     await expect(page.getByText('1:30 left')).toBeVisible();
@@ -1782,7 +1785,10 @@ test.describe('screen baselines', () => {
     // The payer typed fiat: that typed figure shows under the bitcoin, as typed.
     await expect(page.getByText('$12.50', { exact: true })).toBeVisible();
     await expect(page.getByText(/\$/)).toHaveCount(1);
-    await expect(page.getByText('238.21 USDT')).toBeVisible();
+    // The pay link names the entered 12'500 sats, so the lines carry the same 12.50 USD.
+    await expect(page.getByText('12.5 USDT')).toHaveCount(2);
+    await expect(page.getByText('12.5 USDC')).toBeVisible();
+    await expect(page.getByText(/238\./)).toHaveCount(0);
     await expect(page.getByLabel('Amount')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Pay with a Bitcoin wallet app' })).toBeEnabled();
     if (isMobileProject(testInfo)) {
