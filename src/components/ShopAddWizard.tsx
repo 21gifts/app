@@ -319,7 +319,7 @@ export function ShopAddWizard({
     usernameServerProblem && serverProblem !== null
       ? t(SHOP_API_MESSAGE[serverProblem])
       : usernameProblem === 'format'
-        ? t('shops.problemUsernameFormat')
+        ? t('login.nameInvalid')
         : usernameProblem === 'missing'
           ? t('shops.problemUsernameMissing')
           : undefined;

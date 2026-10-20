@@ -174,7 +174,8 @@ export const SCREEN_VARIANTS = [
     id: 'name-invalid',
     image: 'login-name-invalid.png',
     visual: 'state-login-name-invalid',
-    needle: 'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.',
+    needle:
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
   },
   {
     route: '/login',

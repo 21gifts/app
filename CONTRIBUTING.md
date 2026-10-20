@@ -244,6 +244,8 @@ app/
 │   │   ├── ShopsViewSwitch.tsx  # Post / Map / Table pill on /shops
 │   │   ├── ShopTable.tsx        # Shop name, place, and operator table
 │   │   ├── PlaceField.tsx       # Optional place pin on the top-level forum composer
+│   │   ├── ShopAddressFields.tsx # Five localized shop-address fields
+│   │   ├── PlacePinChip.tsx      # Confirmed composer place with remove control
 │   │   ├── PlacesMapScreen.tsx  # Place list embedded on the shops map tab
 │   │   ├── HandbookImageViewer.tsx # handbook chapter/screen/variant gallery (viewport/theme switches)
 │   │   ├── InboxLoader.tsx      # fetch/open/`?c=`/photo pick/post/fetch/revoke/open-thread showAttach state for `/messages` inbox
@@ -277,6 +279,7 @@ app/
 │   │   └── useWalletPhrase.ts   # In-tab PRF recovery phrase
 │   ├── lib/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (throw on missing)
+│   │   ├── countries.ts         # ISO country codes + localized country option labels
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
 │   │   ├── request-locale.ts    # Cookie/Accept-Language for the current request
@@ -303,7 +306,7 @@ app/
 │   │   ├── forum-time.ts        # local display timestamps for forum rows
 │   │   ├── forum-feed.ts        # Client-side Active/All/Most popular forum filter and unpaid new-count
 │   │   ├── forum-goal.ts        # parseForumAskAmount and forumGoalPercent for top-level Asks
-│   │   ├── forum-shop.ts        # #21GiftsShop token helpers (isShopNote, stripShopHashtag, ensureShopHashtag)
+│   │   ├── forum-shop.ts        # API-matching shop validation rules, error mapping, and #21GiftsShop helpers
 │   │   ├── forum-unpaid-seen.ts # Last No gifts yet visit stamp in localStorage
 │   │   ├── forum-photo.ts       # Client resize/JPEG encode for forum photos
 │   │   ├── forum-video.ts       # Client size/MIME check + poster capture for forum videos

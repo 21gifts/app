@@ -175,6 +175,7 @@ describe('catalogs', () => {
       expect.arrayContaining([
         'shops.placeName',
         'shops.placeNameHint',
+        'shops.fixFieldsNamed',
         'shops.addressStreet',
         'shops.addressHouseNumber',
         'shops.addressPostalCode',
@@ -199,7 +200,6 @@ describe('catalogs', () => {
         'shops.problemDescriptionLong',
         'shops.problemDescriptionNotLonger',
         'shops.problemDescriptionControls',
-        'shops.problemUsernameFormat',
         'shops.problemUsernameMissing',
         'shops.problemDescription',
         'shops.problemAddressInvalid',

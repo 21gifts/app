@@ -264,7 +264,8 @@ const en = {
     'This name is saved in the passkey. It is also your account name and your 21.gifts username. Use 1–32 characters: letters, digits, hyphen, underscore, or dot. It is stored in lowercase.',
   'login.nameLabel': 'Name',
   'login.nameSubmit': 'Continue',
-  'login.nameInvalid': 'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.',
+  'login.nameInvalid':
+    'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
   'login.nameTaken': 'That username is already in use.',
   'login.unknownHeading': 'This passkey is not an account',
   'login.unknownBody':
@@ -856,9 +857,9 @@ const en = {
   'shops.placeName': 'Shop name',
   'shops.placeDialogTitle': 'Shop place and address',
   'shops.placeMapHint': 'Tap the map to set the pin.',
-  'shops.mapPin': 'Map pin',
+  'shops.setPinAbove': 'Set the pin on the map above.',
   'shops.fillIn': 'Fill in: {fields}.',
-  'shops.fixFields': 'Fix the fields marked above.',
+  'shops.fixFieldsNamed': 'Fix: {fields}.',
   'shops.placeRequired': "Add the shop's place and address.",
   'shops.placeUnavailableReason': 'The map is unavailable, so a shop place cannot be added.',
   'shops.placeNameHint': "A short name, for example “Kiki's Bakery”. Not the address.",
@@ -911,8 +912,6 @@ const en = {
     'The shop text must be 20 to 1000 characters and longer than the shop name.',
   'shops.problemAddressInvalid':
     'The address is invalid. The house number must start with a digit, the postal code must have 4 digits in Switzerland and Liechtenstein, the city must contain a letter, and the country must be chosen from the list.',
-  'shops.problemUsernameFormat':
-    'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
   'shops.problemUsernameMissing':
     'No account with that username. Check the spelling of the 21.gifts username.',
 
@@ -1436,7 +1435,8 @@ const de = {
     'Dieser Name wird im Passkey gespeichert. Er ist auch Ihr Kontoname und Ihr 21.gifts-Benutzername. 1–32 Zeichen: Buchstaben, Ziffern, Bindestrich, Unterstrich oder Punkt. Er wird in Kleinbuchstaben gespeichert.',
   'login.nameLabel': 'Name',
   'login.nameSubmit': 'Weiter',
-  'login.nameInvalid': '1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt.',
+  'login.nameInvalid':
+    'Verwenden Sie 1–32 Zeichen: a–z, 0–9, Bindestrich, Unterstrich oder Punkt, beginnend mit einem Buchstaben oder einer Ziffer.',
   'login.nameTaken': 'Dieser Benutzername ist schon vergeben.',
   'login.unknownHeading': 'Dieser Passkey ist kein Konto',
   'login.unknownBody':
@@ -2038,9 +2038,9 @@ const de = {
   'shops.placeName': 'Shopname',
   'shops.placeDialogTitle': 'Ort und Adresse des Shops',
   'shops.placeMapHint': 'Tippen Sie auf die Karte, um die Markierung zu setzen.',
-  'shops.mapPin': 'Kartenmarkierung',
+  'shops.setPinAbove': 'Setzen Sie die Markierung auf der Karte oben.',
   'shops.fillIn': 'Ausfüllen: {fields}.',
-  'shops.fixFields': 'Korrigieren Sie die oben markierten Felder.',
+  'shops.fixFieldsNamed': 'Korrigieren Sie: {fields}.',
   'shops.placeRequired': 'Fügen Sie Ort und Adresse des Shops hinzu.',
   'shops.placeUnavailableReason':
     'Die Karte ist nicht verfügbar; ein Shop-Ort kann nicht hinzugefügt werden.',
@@ -2095,8 +2095,6 @@ const de = {
     'Der Shop-Text muss 20 bis 1000 Zeichen lang und länger als der Shopname sein.',
   'shops.problemAddressInvalid':
     'Die Adresse ist ungültig. Die Hausnummer muss mit einer Ziffer beginnen, die Postleitzahl muss in der Schweiz und in Liechtenstein 4 Ziffern haben, der Ort muss einen Buchstaben enthalten und das Land muss aus der Liste ausgewählt werden.',
-  'shops.problemUsernameFormat':
-    'Verwenden Sie 1–32 Kleinbuchstaben, Ziffern, Punkte, Bindestriche oder Unterstriche; beginnen Sie mit einem Buchstaben oder einer Ziffer.',
   'shops.problemUsernameMissing':
     'Kein Konto mit diesem Benutzernamen. Prüfen Sie die Schreibweise des 21.gifts-Benutzernamens.',
 
@@ -2634,7 +2632,8 @@ const es = {
     'Este nombre se guarda en la llave de acceso. También es el nombre de tu cuenta y tu usuario de 21.gifts. De 1 a 32 caracteres: letras, dígitos, guion, guion bajo o punto. Se guarda en minúsculas.',
   'login.nameLabel': 'Nombre',
   'login.nameSubmit': 'Continuar',
-  'login.nameInvalid': 'De 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto.',
+  'login.nameInvalid':
+    'Usa de 1 a 32 caracteres: a-z, 0-9, guion, guion bajo o punto, empezando por una letra o un dígito.',
   'login.nameTaken': 'Ese usuario ya está en uso.',
   'login.unknownHeading': 'Esta llave de acceso no es una cuenta',
   'login.unknownBody':
@@ -3226,9 +3225,9 @@ const es = {
   'shops.placeName': 'Nombre de la tienda',
   'shops.placeDialogTitle': 'Lugar y dirección de la tienda',
   'shops.placeMapHint': 'Toca el mapa para colocar el marcador.',
-  'shops.mapPin': 'Marcador del mapa',
+  'shops.setPinAbove': 'Pon el marcador en el mapa de arriba.',
   'shops.fillIn': 'Completa: {fields}.',
-  'shops.fixFields': 'Corrige los campos marcados arriba.',
+  'shops.fixFieldsNamed': 'Corrige: {fields}.',
   'shops.placeRequired': 'Añade el lugar y la dirección de la tienda.',
   'shops.placeUnavailableReason':
     'El mapa no está disponible, por lo que no se puede añadir el lugar.',
@@ -3283,8 +3282,6 @@ const es = {
     'El texto de la tienda debe tener entre 20 y 1000 caracteres y ser más largo que el nombre de la tienda.',
   'shops.problemAddressInvalid':
     'La dirección no es válida. El número debe empezar con un dígito, el código postal debe tener 4 dígitos en Suiza y Liechtenstein, la ciudad debe contener una letra y el país debe elegirse de la lista.',
-  'shops.problemUsernameFormat':
-    'Usa de 1 a 32 letras minúsculas, dígitos, puntos, guiones o guiones bajos; empieza con una letra o un dígito.',
   'shops.problemUsernameMissing':
     'No hay ninguna cuenta con ese nombre de usuario. Comprueba la ortografía del nombre de usuario de 21.gifts.',
 
@@ -3811,7 +3808,8 @@ const fil = {
     'Ang pangalang ito ang ise-save sa passkey. Ito rin ang pangalan ng account mo at ang username mo sa 21.gifts. 1–32 character: letra, numero, hyphen, underscore, o tuldok. Naka-lowercase ito.',
   'login.nameLabel': 'Pangalan',
   'login.nameSubmit': 'Magpatuloy',
-  'login.nameInvalid': '1–32 character: a-z, 0-9, hyphen, underscore, o tuldok.',
+  'login.nameInvalid':
+    'Gumamit ng 1–32 character: a-z, 0-9, hyphen, underscore, o tuldok, na nagsisimula sa titik o digit.',
   'login.nameTaken': 'Ginagamit na ang username na iyan.',
   'login.unknownHeading': 'Hindi account ang passkey na ito',
   'login.unknownBody':
@@ -4411,9 +4409,9 @@ const fil = {
   'shops.placeName': 'Pangalan ng shop',
   'shops.placeDialogTitle': 'Lugar at address ng shop',
   'shops.placeMapHint': 'I-tap ang mapa para ilagay ang pin.',
-  'shops.mapPin': 'Pin sa mapa',
+  'shops.setPinAbove': 'Ilagay ang pin sa mapa sa itaas.',
   'shops.fillIn': 'Punan: {fields}.',
-  'shops.fixFields': 'Ayusin ang mga field na minarkahan sa itaas.',
+  'shops.fixFieldsNamed': 'Ayusin: {fields}.',
   'shops.placeRequired': 'Idagdag ang lugar at address ng shop.',
   'shops.placeUnavailableReason':
     'Hindi available ang mapa kaya hindi maidagdag ang lugar ng shop.',
@@ -4468,8 +4466,6 @@ const fil = {
     'Dapat 20 hanggang 1000 karakter ang teksto ng shop at mas mahaba kaysa sa pangalan ng shop.',
   'shops.problemAddressInvalid':
     'Hindi wasto ang address. Dapat magsimula sa digit ang numero ng bahay, dapat may 4 na digit ang postal code sa Switzerland at Liechtenstein, dapat may titik ang lungsod, at dapat piliin ang bansa mula sa listahan.',
-  'shops.problemUsernameFormat':
-    'Gumamit ng 1–32 lowercase na titik, digit, tuldok, gitling, o underscore; magsimula sa titik o digit.',
   'shops.problemUsernameMissing':
     'Walang account na may ganitong username. Suriin ang spelling ng username sa 21.gifts.',
 

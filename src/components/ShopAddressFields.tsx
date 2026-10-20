@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, type ReactElement } from 'react';
+import { useId, useMemo, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Field } from '@/components/ui';
 import type { ForumPlaceAddress } from '@/lib/api-types';
@@ -54,7 +54,7 @@ export function ShopAddressFields(props: {
 }): ReactElement {
   const { t, locale } = useTranslations();
   const draft = draftFrom(props.value);
-  const options = countryOptions(locale);
+  const options = useMemo(() => countryOptions(locale), [locale]);
   const idPrefix = useId();
   const fieldId = (key: keyof ForumPlaceAddressDraft): string => `${idPrefix}-${key}`;
   const countryId = fieldId('country');

@@ -2202,9 +2202,12 @@ test.describe('login variant baselines', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(
       page.getByRole('alert').filter({
-        hasText: 'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.',
+        hasText:
+          'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
       }),
-    ).toHaveText('Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.');
+    ).toHaveText(
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
+    );
     await shotScreen(page, 'state-login-name-invalid');
   });
 
@@ -20328,7 +20331,9 @@ test.describe('shops screens', () => {
     await shotScreen(page, 'state-shops-add-user');
     await page.getByLabel('21.gifts username').fill('_');
     await expect(
-      page.getByText(/Use 1–32 lowercase letters, digits, dots, hyphens, or underscores/),
+      page.getByText(
+        /Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit/,
+      ),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
     await shotScreen(page, 'state-shops-add-user-invalid');

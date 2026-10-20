@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const NAME_INVALID = 'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot.';
+const NAME_INVALID =
+  'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.';
 
 type FakeWebAuthnOptions = {
   createThrows?: boolean;

@@ -484,11 +484,18 @@ export function PlaceField(props: {
     city: t('shops.addressCity'),
     country: t('shops.addressCountry'),
   };
-  const missing = [
-    ...(markerPos === null ? [t('shops.mapPin')] : []),
+  const missingFields = [
     ...(shopDetails && labelDraft.trim() === '' ? [t('shops.placeName')] : []),
     ...invalidFields
       .filter((field) => addressDraft[field].trim() === '')
+      .map((field) => fieldLabel[field]),
+  ];
+  const fieldsToFix = [
+    ...(shopDetails && labelDraft.trim() !== '' && nameError !== undefined
+      ? [t('shops.placeName')]
+      : []),
+    ...invalidFields
+      .filter((field) => addressDraft[field].trim() !== '')
       .map((field) => fieldLabel[field]),
   ];
   const reportedAddressError =
@@ -499,16 +506,22 @@ export function PlaceField(props: {
   const actionReason =
     saveError !== null && nameCommitError === undefined ? t(saveError) : reportedAddressError;
   // The unavailable map is already explained where the map would be.
+  const liveFooterReasons = [
+    // The hint under the map says how; the footer only summarises it.
+    ...(markerPos === null ? [t('shops.setPinAbove')] : []),
+    ...(missingFields.length > 0 ? [t('shops.fillIn', { fields: missingFields.join(', ') })] : []),
+    ...(fieldsToFix.length > 0
+      ? [t('shops.fixFieldsNamed', { fields: fieldsToFix.join(', ') })]
+      : []),
+  ];
   const footerReason =
     actionReason !== null
       ? actionReason
       : unavailable
         ? null
-        : missing.length > 0
-          ? t('shops.fillIn', { fields: missing.join(', ') })
-          : blocked
-            ? t('shops.fixFields')
-            : null;
+        : liveFooterReasons.length > 0
+          ? liveFooterReasons.join(' ')
+          : null;
 
   async function commit(next: ForumPlacePin | null): Promise<void> {
     if (props.onCommit === undefined) {
@@ -549,6 +562,10 @@ export function PlaceField(props: {
               const focusable = event.currentTarget.querySelectorAll<HTMLElement>(
                 'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
               );
+              if (focusable.length === 0) {
+                event.preventDefault();
+                return;
+              }
               const first = focusable.item(0);
               const last = focusable.item(focusable.length - 1);
               if (

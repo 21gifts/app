@@ -92,6 +92,30 @@ describe('PlaceField', () => {
     expect(document.activeElement).toBe(last);
   });
 
+  it('keeps Tab in the dialog while an async save disables every control', async () => {
+    stubMaps();
+    const onCommit = vi.fn(() => new Promise<void>(() => undefined));
+    renderWithLocale(
+      <PlaceField
+        place={{ lat: 14.6, lng: 120.98, label: 'Happyland' }}
+        disabled={false}
+        onChange={() => undefined}
+        onCommit={onCommit}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Add a place' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Use this place' }));
+    await waitFor(() => {
+      expect(
+        dialog.querySelectorAll(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+        ),
+      ).toHaveLength(0);
+    });
+    expect(fireEvent.keyDown(dialog, { key: 'Tab' })).toBe(false);
+  });
+
   it('says the map is unavailable when the key request fails', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('down')));
     const onAvailabilityChange = vi.fn();
@@ -998,7 +1022,7 @@ describe('PlaceField', () => {
     expect(await screen.findByRole('dialog', { name: 'Ort und Adresse des Shops' })).toBeTruthy();
     expect(
       screen.getByText(
-        'Ausfüllen: Kartenmarkierung, Shopname, Strasse, Hausnummer, Postleitzahl, Ort, Land.',
+        'Setzen Sie die Markierung auf der Karte oben. Ausfüllen: Shopname, Strasse, Hausnummer, Postleitzahl, Ort, Land.',
       ),
     ).toBeTruthy();
   });
@@ -1102,6 +1126,7 @@ describe('PlaceField', () => {
       screen.getByText('The postal code must have 4 digits for Switzerland and Liechtenstein.'),
     ).toBeTruthy();
     expect(screen.getByText('The city must contain a letter.')).toBeTruthy();
+    expect(screen.getByText('Fix: House number, Postal code, City.')).toBeTruthy();
     expect(house.getAttribute('aria-invalid')).toBe('true');
     expect(postal.getAttribute('aria-invalid')).toBe('true');
     expect(city.getAttribute('aria-invalid')).toBe('true');
@@ -1169,7 +1194,7 @@ describe('PlaceField', () => {
     expect(name.getAttribute('aria-invalid')).toBe('true');
     expect(name.getAttribute('aria-describedby')).toContain(message.id);
     expect(screen.queryByRole('alert')).toBeNull();
-    expect(screen.getByText('Fix the fields marked above.')).toBeTruthy();
+    expect(screen.getByText('Fix: Shop name.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Use this place' })).toHaveProperty('disabled', true);
   });
 
@@ -1390,9 +1415,9 @@ describe('PlaceField', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Add a place' }));
     const dialog = await screen.findByRole('dialog', { name: 'Shop place and address' });
-    expect(within(dialog).getByText(/Fill in: Map pin, Shop name/).textContent).toContain(
-      'Fill in:',
-    );
+    const reason = within(dialog).getByText(/Fill in: Shop name/).textContent;
+    expect(reason).toContain('Set the pin on the map above.');
+    expect(reason).not.toContain('Map pin');
     expect(within(dialog).queryByRole('alert')).toBeNull();
   });
 

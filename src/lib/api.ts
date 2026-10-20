@@ -3782,9 +3782,10 @@ export async function setMessagePlace(
  * @param messageId - Forum message UUID.
  * @param username - 21.gifts username to attach, or `null` to clear.
  * @returns The updated {@link ForumMessage}. Cleared accounts are omitted.
- * @throws Error `No account with that username` on HTTP 404.
- * @throws The API reason on HTTP 400, or `Could not save account` on any other
- * non-2xx status or a body that fails {@link forumMessageSchema}.
+ * @throws Error `No account with that username` when an HTTP 404 carries that
+ * exact API reason. Throws the API reason on HTTP 400, or
+ * `Could not save account` on any other non-2xx status or a body that fails
+ * {@link forumMessageSchema}.
  */
 export async function setMessageShopAccount(
   sessionToken: string,
@@ -3801,7 +3802,8 @@ export async function setMessageShopAccount(
     body: JSON.stringify({ username }),
   });
   if (response.status === 404) {
-    throw new Error('No account with that username');
+    const raw = await readApiError(response);
+    throw new Error(raw === 'No account with that username' ? raw : 'Could not save account');
   }
   if (!response.ok) {
     if (response.status === 400) {

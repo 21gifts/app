@@ -4770,7 +4770,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 - **Purpose:** Set or clear the shop account on a forum message for a moderator session.
 - **Inputs:** sessionToken, messageId, and `username` (string, or `null` to clear).
-- **Returns / side effects:** PATCH `/forum/messages/:id/shop-account` with JSON `{ username }`. Resolves to the public message JSON (`shopAccount` omitted when cleared). A 400 preserves its API reason, 404 throws `No account with that username`, and other failures throw `Could not save account`.
+- **Returns / side effects:** PATCH `/forum/messages/:id/shop-account` with JSON `{ username }`. Resolves to the public message JSON (`shopAccount` omitted when cleared). A 400 preserves its API reason. A 404 throws `No account with that username` only when that is the API reason; another 404 and other failures throw `Could not save account`.
 - **Used by:** `ShopAccountControl`.
 
 ## Function: proxyForumMessageGet

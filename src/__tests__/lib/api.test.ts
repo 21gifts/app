@@ -5824,6 +5824,13 @@ describe('setMessageShopAccount', () => {
     );
   });
 
+  it('uses the generic account-save error for a deleted-note 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(setMessageShopAccount('token', 'm1', 'luna')).rejects.toThrow(
+      'Could not save account',
+    );
+  });
+
   it('throws the username reason from a 400 unchanged', async () => {
     stubFetch({ ok: false, status: 400, body: { error: 'Username is not valid' } });
     await expect(setMessageShopAccount('token', 'm1', '_')).rejects.toThrow(

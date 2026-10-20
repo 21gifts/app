@@ -501,7 +501,7 @@ describe('ShopNoteEditControl', () => {
     ],
     [
       'Username is not valid',
-      'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
       4,
     ],
     [

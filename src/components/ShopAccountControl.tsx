@@ -339,13 +339,13 @@ export function ShopAccountControl({
     (!usernameLookupCurrent || usernameLookup?.verdict === 'checking');
   const liveError =
     formatProblem !== null
-      ? t('shops.problemUsernameFormat')
+      ? t('login.nameInvalid')
       : usernameMissing
         ? t('shops.problemUsernameMissing')
         : undefined;
   const savedError =
     errorKey === 'format'
-      ? t('shops.problemUsernameFormat')
+      ? t('login.nameInvalid')
       : errorKey === 'missing'
         ? t('shops.problemUsernameMissing')
         : errorKey === 'failed'

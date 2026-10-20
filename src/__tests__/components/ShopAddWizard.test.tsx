@@ -649,7 +649,7 @@ describe('ShopAddWizard', () => {
     expect(account.getAttribute('aria-invalid')).toBe('true');
     expect(
       screen.getByText(
-        'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+        'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
       ),
     ).toBeTruthy();
     expect(screen.queryByRole('alert')).toBeNull();
@@ -779,7 +779,7 @@ describe('ShopAddWizard', () => {
     [
       'usernameInvalid' as const,
       '4 / 5 · 21.gifts user',
-      'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
     ],
     [
       'usernameMissing' as const,

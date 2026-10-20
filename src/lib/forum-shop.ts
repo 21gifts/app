@@ -68,7 +68,7 @@ export const SHOP_API_MESSAGE: Record<ShopApiProblem, MessageKey> = {
   shopDescription: 'shops.problemDescription',
   shopDescriptionControls: 'shops.problemDescriptionControls',
   placeAddress: 'shops.problemAddressInvalid',
-  usernameInvalid: 'shops.problemUsernameFormat',
+  usernameInvalid: 'login.nameInvalid',
   usernameMissing: 'shops.problemUsernameMissing',
 };
 

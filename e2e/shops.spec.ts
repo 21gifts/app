@@ -1014,7 +1014,9 @@ test('Function: shopUsernameProblem — format errors appear while typing before
   const username = page.getByLabel('21.gifts username');
   await username.fill('_');
   await expect(
-    page.getByText(/Use 1–32 lowercase letters, digits, dots, hyphens, or underscores/),
+    page.getByText(
+      /Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit/,
+    ),
   ).toBeVisible();
   await expect(username).toHaveAttribute('aria-invalid', 'true');
   await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();

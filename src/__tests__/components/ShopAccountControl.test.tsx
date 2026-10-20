@@ -196,11 +196,11 @@ describe('ShopAccountControl', () => {
     fireEvent.click(await enabledSaveButton());
     expect(
       await screen.findByText(
-        'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+        'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
       ),
     ).toBeTruthy();
     expect(input.getAttribute('aria-invalid')).toBe('true');
-    expect(screen.getByRole('alert').textContent).toContain('Use 1–32 lowercase letters');
+    expect(screen.getByRole('alert').textContent).toContain('Use 1–32 characters');
   });
 
   it('removes the account with a null username', async () => {
@@ -245,7 +245,7 @@ describe('ShopAccountControl', () => {
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: '   @' } });
     expect(
       screen.getByText(
-        'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+        'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
       ),
     ).toBeTruthy();
     expect(screen.getByLabelText('Username').getAttribute('aria-invalid')).toBe('true');
@@ -263,7 +263,7 @@ describe('ShopAccountControl', () => {
     expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(
       screen.getByText(
-        'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+        'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
       ),
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
@@ -278,7 +278,7 @@ describe('ShopAccountControl', () => {
     expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(
       screen.getByText(
-        'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+        'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
       ),
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save account' })).toHaveProperty('disabled', true);
@@ -292,7 +292,7 @@ describe('ShopAccountControl', () => {
     const input = screen.getByLabelText('Username');
     fireEvent.change(input, { target: { value: '_' } });
     const message = screen.getByText(
-      'Use 1–32 lowercase letters, digits, dots, hyphens, or underscores, starting with a letter or digit.',
+      'Use 1–32 characters: a-z, 0-9, hyphen, underscore, or dot, starting with a letter or digit.',
     );
     expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(input.getAttribute('aria-describedby')).toBe(message.id);
