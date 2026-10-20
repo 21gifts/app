@@ -1399,20 +1399,78 @@ describe('PosScreen', () => {
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
     });
 
-    it('does not listen to the wallet without a session or after the till unmounts', async () => {
+    it('does not listen to the wallet before a signed-in till page opens', async () => {
+      useAuthStore.setState({ session: null });
+      renderWithLocale(<PosScreen />);
+      await act(async () => undefined);
+      expect(received.listeners.size).toBe(0);
+    });
+
+    it('keeps listening after the till unmounts, so a payment made meanwhile counts', async () => {
       vi.stubGlobal(
         'fetch',
         vi.fn().mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] })),
       );
       const { unmount } = renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
-      expect(received.listeners.size).toBe(1);
       unmount();
-      expect(received.listeners.size).toBe(0);
-      useAuthStore.setState({ session: null });
+      expect(received.listeners.size).toBe(1);
+      // The member is on another page when the payment lands; the api still has it open.
+      receive(21);
       renderWithLocale(<PosScreen />);
+      expect(await confirmation()).toBeTruthy();
+      expect(received.listeners.size).toBe(1);
+    });
+
+    it('ignores a payment reported after sign-out', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] })),
+      );
+      const first = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      first.unmount();
+      act(() => {
+        useAuthStore.setState({ session: null });
+      });
+      receive(21);
+      act(() => {
+        useAuthStore.setState({ session: 'tok' });
+      });
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
+    it('shows the till error when the read after Done fails before the first answer', async () => {
+      let answer: (response: Response) => void = () => undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockImplementationOnce(async () => jsonResponse({ charge: OPEN, history: [OPEN] }))
+          .mockImplementationOnce(
+            () =>
+              new Promise<Response>((resolve) => {
+                answer = resolve;
+              }),
+          )
+          .mockImplementation(async () => {
+            throw new TypeError('Failed to fetch');
+          }),
+      );
+      // The wallet pays the charge while the amount page is up; the till opens before its read.
+      const amountPage = renderWithLocale(<PosAmount />);
+      await waitFor(() => {
+        expect(received.listeners.size).toBe(1);
+      });
       await act(async () => undefined);
-      expect(received.listeners.size).toBe(0);
+      receive(21);
+      amountPage.unmount();
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      answer(jsonResponse({ charge: OPEN, history: [OPEN] }));
     });
 
     it('counts a payment that lands within a minute after the charge ran out', async () => {

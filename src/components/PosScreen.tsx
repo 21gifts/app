@@ -290,6 +290,28 @@ export function resetPosTillWriteForTests(): void {
   tillWrite = null;
   paidSeen.clear();
   walletSettled = null;
+  walletListening?.();
+  walletListening = null;
+}
+
+/** Stops listening to this tab's wallet; set once a till page has listened. */
+let walletListening: (() => void) | null = null;
+
+/**
+ * Listen to this tab's wallet for good once a signed-in till page opened, so a
+ * payment that lands while the member is on another page still pays (or is
+ * kept for) the open charge of the signed-in session.
+ */
+function listenToWallet(): void {
+  if (walletListening !== null) {
+    return;
+  }
+  walletListening = onPaymentReceived((payment) => {
+    const session = useAuthStore.getState().session;
+    if (session !== null) {
+      settleOpen(settledFor(session), payment);
+    }
+  });
 }
 
 /** Remember `work` until it settles so a later till load does not race it. */
@@ -491,12 +513,9 @@ function usePosTillState(): PosTillState {
   }, [charge, session, state, tillSession]);
 
   useEffect(() => {
-    if (session === null) {
-      return;
+    if (session !== null) {
+      listenToWallet();
     }
-    return onPaymentReceived((payment) => {
-      settleOpen(settledFor(session), payment);
-    });
   }, [session]);
 
   useEffect(() => {
@@ -787,7 +806,8 @@ function usePosTillState(): PosTillState {
       settledFor(session).closed.add(id);
       settledChanged();
       setError(null);
-      quietReload.current = true;
+      // Quiet only when the till already shows an answer: before the first one, a failure must show.
+      quietReload.current = state !== null;
       setReload((n) => n + 1);
     },
   };
