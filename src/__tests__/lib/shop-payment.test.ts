@@ -351,8 +351,10 @@ describe('openShopPayment', () => {
       unavailable(),
       Response.json({ error: 'Enter a whole number of sats' }, { status: 400 }),
       Response.json({ error: 'Not found' }, { status: 404 }),
+      new Response('not json', { status: 404 }),
+      // A readable 409 with another code is "another 4xx".
       Response.json({ error: 'Conflict', code: 'other' }, { status: 409 }),
-      new Response('not json', { status: 409 }),
+      Response.json({ error: 'Conflict' }, { status: 409 }),
     ];
     for (const answer of answers) {
       const mock = stubFetch(async () => answer);
@@ -360,6 +362,42 @@ describe('openShopPayment', () => {
       expect(mock).toHaveBeenCalledTimes(1);
       expect(linkReads(mock)).toBe(0);
     }
+  });
+
+  it('repeats a 409 whose body cannot be read as an unknown outcome and never mints', async () => {
+    vi.useFakeTimers({ now: T0 });
+    // Each could be a till's `payment_open`: minting beside it could be paid twice.
+    const unreadable: (() => Response)[] = [
+      () => new Response('not json', { status: 409 }),
+      () => new Response(null, { status: 409 }),
+      () => Response.json(null, { status: 409 }),
+      () => Response.json('payment_open', { status: 409 }),
+    ];
+    for (const answer of unreadable) {
+      const mock = stubFetch(async () => answer());
+      expect(await open()).toEqual({ start: { kind: 'failed' }, ambiguousAtMs: T0 });
+      expect(mock.mock.calls).toEqual([
+        ['/pay/ada/payment', call],
+        ['/pay/ada/payment', call],
+      ]);
+      expect(linkReads(mock)).toBe(0);
+    }
+  });
+
+  it('reloads the till when the repeat of an unreadable 409 answers payment_open', async () => {
+    vi.useFakeTimers({ now: T0 });
+    const mock = stubStarts([
+      async () => new Response('<html>conflict</html>', { status: 409 }),
+      async () =>
+        Response.json(
+          { error: 'A payment is already open', code: 'payment_open' },
+          { status: 409 },
+        ),
+    ]);
+    expect(await open()).toEqual({ start: { kind: 'charge' }, ambiguousAtMs: T0 });
+    expect(mock).toHaveBeenCalledTimes(2);
+    expect(linkReads(mock)).toBe(0);
+    expect(mock.mock.calls.some(([input]) => String(input).includes('/invoice'))).toBe(false);
   });
 
   it('repeats an unknown outcome once and then reports failed from the end of the repeat', async () => {

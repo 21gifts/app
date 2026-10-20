@@ -300,18 +300,23 @@ export async function fetchShopInvoice(request: ShopPayRequest): Promise<string 
   }
 }
 
-async function errorCode(response: Response): Promise<unknown> {
+/**
+ * The fields of an error body, or `null` when the body cannot be read: it is
+ * not JSON or not a JSON object.
+ */
+async function errorBody(response: Response): Promise<{ code?: unknown } | null> {
   try {
-    return fields<'code'>(await response.json())?.code;
+    return fields<'code'>(await response.json());
   } catch {
-    return undefined;
+    return null;
   }
 }
 
 /**
  * One answer of `POST /pay/:username/payment`: a payment, a pending till charge,
- * `refused` (503 `stablecoin_unavailable` or another 4xx: no payment was
- * opened), `unknown` when its outcome cannot be known, `aborted` when the
+ * `refused` (503 `stablecoin_unavailable` or another 4xx, a 409 only with a
+ * readable body of another code: no payment was opened), `unknown` when its
+ * outcome cannot be known, `aborted` when the
  * page had left before the call was sent, or `left` with the time the page left
  * while the call was running (a payment may have been opened).
  */
@@ -386,13 +391,19 @@ async function readShopPaymentStart(
     }
     return 'unknown';
   }
-  if (response.status === 409 && (await errorCode(response)) === 'payment_open') {
-    return { kind: 'charge' };
+  if (response.status === 409) {
+    const error = await errorBody(response);
+    if (error === null) {
+      // An unreadable 409 may be `payment_open`, a till's open payment: never mint beside it.
+      return 'unknown';
+    }
+    // A readable 409 with another code is "another 4xx".
+    return error.code === 'payment_open' ? { kind: 'charge' } : 'refused';
   }
   if (response.status >= 400 && response.status < 500) {
     return 'refused';
   }
-  if (response.status === 503 && (await errorCode(response)) === 'stablecoin_unavailable') {
+  if (response.status === 503 && (await errorBody(response))?.code === 'stablecoin_unavailable') {
     return 'refused';
   }
   return 'unknown';
@@ -416,7 +427,8 @@ function pause(ms: number, signal: AbortSignal): Promise<void> {
  * (`POST /pay/:username/payment`), as the contract's "Payment page" says.
  *
  * A failed request, a request that reaches `SHOP_PAYMENT_START_TIMEOUT_MS`, a
- * success without a usable payment id, or a 5xx other than
+ * success without a usable payment id, a 409 whose body is not a JSON object
+ * (it may be a till's `payment_open`), or a 5xx other than
  * `stablecoin_unavailable` leaves open whether a payment was opened. The first
  * such outcome is repeated once with the same body; a new payer amount
  * replaces any payment the lost answer opened. From then on, until a call

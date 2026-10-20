@@ -367,6 +367,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pl',
+    id: 'start-waiting',
+    image: 'pl-start-waiting.png',
+    visual: 'state-pl-start-waiting',
+    needle: "shotScreen(page, 'state-pl-start-waiting')",
+  },
+  {
+    route: '/pl',
     id: 'replaced',
     image: 'pl-replaced.png',
     visual: 'state-pl-replaced',

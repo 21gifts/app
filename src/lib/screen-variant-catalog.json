@@ -252,6 +252,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pl:start-waiting",
+    "label": "/pl start-waiting",
+    "visual": "state-pl-start-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pl:replaced",
     "label": "/pl replaced",
     "visual": "state-pl-replaced",

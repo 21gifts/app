@@ -1873,6 +1873,46 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-pl-start-failed');
   });
 
+  test('screen /pl start-waiting', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.clock.install({ time: new Date('2026-09-24T11:59:00.000Z') });
+    const posts: string[] = [];
+    const payLinkReads: string[] = [];
+    page.on('request', (request) => {
+      const { pathname } = new URL(request.url());
+      if (pathname === '/pay/ada/payment') {
+        posts.push(pathname);
+      }
+      if (pathname === '/.well-known/lnurlp/ada') {
+        payLinkReads.push(pathname);
+      }
+    });
+    // A 502 leaves the outcome unknown; the repeat's 503 `stablecoin_unavailable` then waits.
+    await stubShopPayment(page, { posts: [502, 503] });
+    await page.goto(
+      `/pl?lightning=${'LNURL1DP68GURN8GHJ7V339ENKJEN5WVHJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9ASKGCGMXDMGQ'}`,
+    );
+    await page.getByLabel('Amount').fill('21');
+    await expect(page.getByText('$0.02')).toBeVisible();
+    await motionSettled(page);
+    // The clock stops before Continue, so it stays inside the 20 s after the lost call and the
+    // wait is held; the form has settled first, so no glide waits on the stopped clock.
+    await page.clock.pauseAt(new Date('2026-09-24T12:00:00.000Z'));
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect.poll(() => posts.length).toBe(2);
+    await expect(page.getByLabel('Amount')).toBeDisabled();
+    await expect(page.getByLabel('Amount')).toHaveValue('21');
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await expect(page.getByText('$0.02')).toBeVisible();
+    // Neither the start error nor any other line of the form shows while it waits.
+    await expect(page.getByText('This payment could not be started. Try again.')).toHaveCount(0);
+    await expect(page.getByText('Could not create the invoice.')).toHaveCount(0);
+    expect(payLinkReads).toHaveLength(0);
+    await shotScreen(page, 'state-pl-start-waiting');
+    expect(posts).toHaveLength(2);
+    expect(payLinkReads).toHaveLength(0);
+  });
+
   test('screen /pl replaced', async ({ page }) => {
     await fulfillRateDay(page);
     await stubShopPayment(page, { payLinkPayment: 'p2' });
