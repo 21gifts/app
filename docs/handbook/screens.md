@@ -7132,6 +7132,12 @@ Unsigned. The ledger loaded with no givers and no repayment rows. **Given** show
 
 ![21.gifts repayment list empty](images/messages-id-repayment-list-empty.png)
 
+### Variant: overview
+
+Unsigned. A fully given plan of eight dated days for one person. Bea @bea is shown at ₿81 · $0.08. **Paid back** shows **Each share is one bitcoin payment to that person.** and **First repayment day: November 1, 2026.** The chart runs from 1 Nov 2026 to 8 Nov 2026. **Still owed** is ₿81 · $0.08, then **Nov 1, 2026 – Nov 8, 2026** and **0 of 8 days paid.** **Next repayment** is 1 Nov 2026 with Bea's ₿10 · $0.01 **Scheduled**. **Each day** lists Bea @bea at ₿10 · $0.01 · 8 days · ₿81 · $0.08, then **Together** at that same daily amount over 8 days. **November 2026** says **8 days · Scheduled**, **7 days at ₿10 · $0.01 a day.**, and **Bea @bea ₿10 · $0.01.** The different day is 8 Nov 2026 with Bea's ₿11 · $0.01 **Scheduled**. The note reads **Nov 8, 2026: Bea @bea ₿11 · $0.01 ₿11 · $0.01. All other days are ₿10 · $0.01.** This page has no **Repayment list** link.
+
+![21.gifts repayment list overview](images/messages-id-repayment-list-overview.png)
+
 ## Screen: /messages/[id]/author
 
 - **Purpose:** External author profile card for a forum note whose author has no 21.gifts account. Not a member page and not a dialog. Heading is `profile.title` (**Profile** / **Profil** / **Perfil** / **Profile**), not the person's name. Name section always: heading `name.heading`, truncated name, **External** span (not a button). Optional checked Nostr address (`forum.externalProfileNip05`) when published. Payment address (`forum.externalProfileLud16`) only when it differs ignoring case. Nostr key (`forum.externalProfileNpub`) with the centered secondary IconButton copy control when a profile has loaded; addresses and the key are `break-all`, the name truncates. No photo, pay, outbound link, location, chart, about, message, hint paragraph, or close control. Count buttons appear when both `postCount` and `replyCount` are numbers; the feed is read-only under the card (no pay, no composer, no react); a post opens `/messages/{id}`; a reply opens `/messages/{parentId}`; a shorter list shows `profile.activityLatest`; loading uses `forum.loading`; failure uses `forum.error` and `view.retry`. If either count is absent, no buttons. Loading and a null fetch show the title, the fallback name (or Unnamed), and the External span, and omit the address sections. Body is `ExternalAuthorProfile` inside `PublicMessageChrome`.

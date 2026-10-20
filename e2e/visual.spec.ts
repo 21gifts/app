@@ -16673,6 +16673,81 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-repayment-list-empty');
   });
 
+  test('state /messages/[id]/repayment-list overview', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    const repayments: {
+      dayIndex: number;
+      dueOn: string;
+      accountId: string;
+      name: string;
+      username: string;
+      amount: null;
+      sats: number;
+      status: 'scheduled';
+      via: 'lightning';
+    }[] = [];
+    for (let day = 0; day < 8; day += 1) {
+      const due = new Date(Date.UTC(2026, 10, 1 + day)).toISOString().slice(0, 10);
+      repayments.push({
+        dayIndex: day,
+        dueOn: due,
+        accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        name: 'Bea',
+        username: 'bea',
+        amount: null,
+        sats: day === 7 ? 11 : 10,
+        status: 'scheduled',
+        via: 'lightning',
+      });
+    }
+    await fulfillRateDay(page);
+    await page.route(`**/messages/${id}/repayment`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          currency: 'BTC',
+          fundedAt: '2026-10-09T12:00:00.000Z',
+          startsOn: '2026-11-01',
+          termDays: 8,
+          daysDue: 0,
+          daysPaid: 0,
+          unassignedSats: 0,
+          givers: [
+            {
+              accountId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+              name: 'Bea',
+              username: 'bea',
+              givenSats: 81,
+              givenAmount: null,
+            },
+          ],
+          repayments,
+          next: null,
+        }),
+      });
+    });
+    await page.goto(`/messages/${id}/repayment-list`);
+    await expect(page.getByText('Next repayment')).toBeVisible();
+    await expect(page.getByText(/7 days at/)).toBeVisible();
+    await expect(page.getByText('All other days are')).toBeVisible();
+    await expect(page.getByText('₿10 · $0.01').first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repayment list' })).toHaveCount(0);
+    const month = page.getByRole('heading', { name: 'November 2026' });
+    const footnote = page.getByText('All other days are');
+    await footnote.evaluate((node) => {
+      const scroller = node.closest('[data-scrollport]');
+      if (!(scroller instanceof HTMLElement)) {
+        return;
+      }
+      scroller.scrollTop +=
+        node.getBoundingClientRect().bottom - scroller.getBoundingClientRect().bottom + 16;
+    });
+    await expect(month).toBeInViewport();
+    await expect(footnote).toBeInViewport();
+    await shotScreen(page, 'state-messages-id-repayment-list-overview');
+  });
+
   test('state /messages/[id] photos', async ({ page }) => {
     const id = '11111111-1111-4111-8111-111111111112';
     const jpeg = Buffer.from(
