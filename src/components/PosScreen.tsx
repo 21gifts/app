@@ -141,14 +141,15 @@ type WalletSettled = {
   open: PosCharge | null;
   paid: Map<string, PosCharge>;
   closed: Set<string>;
-  /** Payments heard that no known open charge took (a till still loading its charge), newest last. */
-  early: Array<{ amountSats: number; feesSats: number; at: number }>;
-  /** A charge the api reported paid before this wallet heard its payment, which is still to come. */
-  owed: PosCharge | null;
+  /** Payments no known open charge took (a till still reading the next one), newest last. */
+  early: Array<Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>>;
 };
 
 /** How many payments no known open charge took are kept for the next one. */
 const POS_EARLY_PAYMENTS = 20;
+
+/** The wallet states when a payment was made in whole seconds; this much before creation counts. */
+const POS_PAID_TIME_GRAIN_MS = 1_000;
 
 let walletSettled: WalletSettled | null = null;
 
@@ -158,14 +159,7 @@ const walletSettledListeners = new Set<() => void>();
 /** The settled memory of `session`; another session starts it over. */
 function settledFor(session: string | null): WalletSettled {
   if (walletSettled === null || walletSettled.session !== session) {
-    walletSettled = {
-      session,
-      open: null,
-      paid: new Map(),
-      closed: new Set(),
-      early: [],
-      owed: null,
-    };
+    walletSettled = { session, open: null, paid: new Map(), closed: new Set(), early: [] };
   }
   return walletSettled;
 }
@@ -178,48 +172,41 @@ function settledChanged(): void {
 }
 
 /**
- * Whether `payment`, heard at `heardAt`, pays `charge`: its amount, or its
- * amount after the fee, and heard no later than {@link POS_LATE_PAID_MS}
- * after the charge's end.
+ * Whether `payment` pays `charge`: its amount, or its amount after the fee,
+ * made (by the wallet's own payment time) from the moment the charge was
+ * created up to {@link POS_LATE_PAID_MS} after its end. While a charge is open
+ * the receiving address takes no other amount, so the time tells a payment of
+ * this charge from one of the charge before, however late the wallet reports it.
  */
 function pays(
   charge: PosCharge,
-  payment: Pick<WalletPayment, 'amountSats' | 'feesSats'>,
-  heardAt: number,
+  payment: Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>,
 ): boolean {
   return (
     (payment.amountSats === charge.amountSats ||
       payment.amountSats + payment.feesSats === charge.amountSats) &&
-    heardAt <= Date.parse(charge.expiresAt) + POS_LATE_PAID_MS
+    payment.timestamp + POS_PAID_TIME_GRAIN_MS >= Date.parse(charge.createdAt) &&
+    payment.timestamp <= Date.parse(charge.expiresAt) + POS_LATE_PAID_MS
   );
 }
 
 /**
- * The open charge of `session` is paid the moment this tab's wallet receives
- * its amount (or the amount after its fee): while it is open the receiving
- * address takes no other amount. Up to {@link POS_LATE_PAID_MS} after its end
- * (by the time it was heard) still counts. No reading of the api in between. A payment no known open
- * charge takes (the till is still reading the next one) is kept with the
- * time it was first heard, and tried again once the next open charge is
- * known, unless it was heard before that charge was created. The payment of a
- * charge the api already reported paid is its own, not the next charge's.
+ * The open charge of `session` is paid the moment this tab's wallet reports
+ * a payment that {@link pays} it. No reading of the api in between. A payment
+ * the known open charge does not take (the till is still reading the next
+ * one) is kept and tried again once the next open charge is known.
  */
 function settleOpen(
   session: string | null,
-  payment: Pick<WalletPayment, 'amountSats' | 'feesSats'>,
-  heardAt: number = Date.now(),
+  payment: Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>,
 ): void {
   const memory = settledFor(session);
-  if (memory.owed !== null && pays(memory.owed, payment, heardAt)) {
-    memory.owed = null;
-    return;
-  }
   const open = memory.open;
-  if (open === null || !pays(open, payment, heardAt)) {
+  if (open === null || !pays(open, payment)) {
     // Not this charge's: it may be the next one's, which the till has not read yet.
     memory.early = [
       ...memory.early,
-      { amountSats: payment.amountSats, feesSats: payment.feesSats, at: heardAt },
+      { amountSats: payment.amountSats, feesSats: payment.feesSats, timestamp: payment.timestamp },
     ].slice(-POS_EARLY_PAYMENTS);
     return;
   }
@@ -228,17 +215,16 @@ function settleOpen(
   settledChanged();
 }
 
-/**
- * Make `charge` the open charge of `session` and try again the parked
- * payments heard at or after it was created.
- */
+/** Make `charge` the open charge of `session` and try the kept payments on it again. */
 function armOpen(session: string | null, charge: PosCharge): void {
   const memory = settledFor(session);
   memory.open = charge;
-  const early = memory.early.filter((heard) => heard.at >= Date.parse(charge.createdAt));
+  const early = memory.early;
   memory.early = [];
-  for (const heard of early) {
-    settleOpen(session, heard, heard.at);
+  for (const payment of early) {
+    if (pays(charge, payment)) {
+      settleOpen(session, payment);
+    }
   }
 }
 
@@ -424,7 +410,6 @@ function usePosTillState(): PosTillState {
   }, [charge]);
 
   const tillSession = till.session;
-  const serverPaidId = serverPaid?.id ?? null;
   useEffect(() => {
     // Only a till this session read says which charge is open, not one left from the session before.
     if (tillSession !== session) {
@@ -435,15 +420,11 @@ function usePosTillState(): PosTillState {
       // A payment the wallet reported while this charge was still being read counts for it.
       armOpen(session, charge);
     } else if (memory.open !== null && Date.now() < Date.parse(memory.open.expiresAt)) {
-      // Gone before its end: cancelled elsewhere, then no payment belongs to it any more; or paid
-      // per the api before this wallet heard it, then the payment still to come is its own. One
-      // that ran out stays, so a payment just after its end still counts.
-      if (serverPaidId === memory.open.id) {
-        memory.owed = memory.open;
-      }
+      // Gone before its end (cancelled elsewhere, or paid per the api): no further payment belongs
+      // to it. One that ran out stays, so a payment just after its end still counts.
       memory.open = null;
     }
-  }, [charge, serverPaidId, session, tillSession]);
+  }, [charge, session, tillSession]);
 
   useEffect(() => {
     if (session === null) {
@@ -456,7 +437,7 @@ function usePosTillState(): PosTillState {
 
   useEffect(() => {
     if (charge !== null && visualPin() === POS_RECEIVED_VISUAL_PIN) {
-      settleOpen(session, { amountSats: charge.amountSats, feesSats: 0 });
+      settleOpen(session, { amountSats: charge.amountSats, feesSats: 0, timestamp: Date.now() });
     }
   }, [charge, session]);
 
@@ -556,7 +537,7 @@ function usePosTillState(): PosTillState {
         });
       } catch (err) {
         if (before !== null) {
-          // Back to the charge before, with any payment heard while the create was on its way.
+          // Back to the charge before, with any payment reported while the create was on its way.
           armOpen(session, before);
         }
         whenCurrent(generation, mine, () => {

@@ -37,7 +37,9 @@ vi.mock('next/navigation', () => ({
 
 // The till hears this tab's wallet through onPaymentReceived; the tests play the wallet.
 const received = vi.hoisted(() => ({
-  listeners: new Set<(payment: { amountSats: number; feesSats: number }) => void>(),
+  listeners: new Set<
+    (payment: { amountSats: number; feesSats: number; timestamp: number }) => void
+  >(),
 }));
 vi.mock('@/lib/wallet/wallet-service', async () => {
   const actual = await vi.importActual<typeof import('@/lib/wallet/wallet-service')>(
@@ -45,7 +47,9 @@ vi.mock('@/lib/wallet/wallet-service', async () => {
   );
   return {
     ...actual,
-    onPaymentReceived: (listener: (payment: { amountSats: number; feesSats: number }) => void) => {
+    onPaymentReceived: (
+      listener: (payment: { amountSats: number; feesSats: number; timestamp: number }) => void,
+    ) => {
       received.listeners.add(listener);
       return () => {
         received.listeners.delete(listener);
@@ -54,11 +58,11 @@ vi.mock('@/lib/wallet/wallet-service', async () => {
   };
 });
 
-/** This tab's wallet receives a completed payment of `amountSats` (after `feesSats`). */
-function receive(amountSats: number, feesSats = 0): void {
+/** This tab's wallet reports a completed payment of `amountSats` (after `feesSats`) made at `timestamp`. */
+function receive(amountSats: number, feesSats = 0, timestamp = Date.now()): void {
   act(() => {
     for (const listener of [...received.listeners]) {
-      listener({ amountSats, feesSats });
+      listener({ amountSats, feesSats, timestamp });
     }
   });
 }
@@ -1719,7 +1723,7 @@ describe('PosScreen', () => {
       expect(within(dialog).getByText('₿42')).toBeTruthy();
     });
 
-    it('keeps the time a parked payment was first heard when it is tried again', async () => {
+    it('does not count a kept payment for a charge created after the wallet made it', async () => {
       const heard = Date.now();
       // Read in between: created before the payment, another amount, so the payment stays parked.
       const between = {
@@ -1728,12 +1732,12 @@ describe('PosScreen', () => {
         amountSats: 30,
         createdAt: new Date(heard - 1_000).toISOString(),
       };
-      // Created after the payment was heard: the payment is not its.
+      // Created after the payment was made: the payment is not its.
       const later = {
         ...OPEN,
         id: 'c3',
         amountSats: 42,
-        createdAt: new Date(heard + 1_000).toISOString(),
+        createdAt: new Date(heard + 2_000).toISOString(),
       };
       let charge: typeof OPEN = OPEN;
       vi.stubGlobal(
@@ -1742,15 +1746,13 @@ describe('PosScreen', () => {
       );
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
-      receive(42);
-      const clock = vi.spyOn(Date, 'now').mockReturnValue(heard + 2_000);
+      receive(42, 0, heard);
       charge = between;
       showTab();
       expect(await screen.findByText('₿30')).toBeTruthy();
       charge = later;
       showTab();
       expect(await screen.findByText('₿42')).toBeTruthy();
-      clock.mockRestore();
       expect(screen.queryByRole('alertdialog')).toBeNull();
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
     });
@@ -1825,7 +1827,7 @@ describe('PosScreen', () => {
       });
     });
 
-    it('judges the late minute of a parked payment by the time it was heard', async () => {
+    it('judges the late minute of a kept payment by the time the wallet made it', async () => {
       const heard = Date.now();
       const open = { ...OPEN, expiresAt: new Date(heard + 1_000).toISOString() };
       let answer: (response: Response) => void = () => undefined;
@@ -1888,7 +1890,7 @@ describe('PosScreen', () => {
       });
     });
 
-    it('lets the late wallet report of a charge the api already paid pay nothing else', async () => {
+    it('lets the late wallet report of a charge before pay nothing on the next one', async () => {
       const next = { ...OPEN, id: 'c2', createdAt: new Date().toISOString() };
       let charge: Record<string, unknown> = OPEN;
       vi.stubGlobal(
@@ -1897,6 +1899,7 @@ describe('PosScreen', () => {
       );
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      const paidAt = Date.now();
       // The api saw the payment first, while this tab was in the background.
       charge = PAID;
       showTab();
@@ -1906,12 +1909,34 @@ describe('PosScreen', () => {
       charge = next;
       showTab();
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
-      receive(21);
+      // Made before the new charge was created: the report of the first payment.
+      receive(21, 0, Math.min(paidAt, Date.parse(next.createdAt)) - 5_000);
       expect(screen.queryByRole('alertdialog')).toBeNull();
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
       // The next payment of that amount is the new charge's.
       receive(21);
       expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+    });
+
+    it('counts the payment of a new charge reported before the late report of the one before', async () => {
+      const next = { ...OPEN, id: 'c2', createdAt: new Date().toISOString() };
+      let charge: Record<string, unknown> = PAID;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockImplementation(async () => jsonResponse({ charge, history: [charge] })),
+      );
+      renderWithLocale(<PosScreen />);
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      charge = next;
+      showTab();
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      expect(screen.getByRole('alertdialog', { name: 'Paid' })).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+      // The first charge's own report, made before the new charge, arrives last and pays nothing.
+      receive(21, 0, Date.parse(next.createdAt) - 5_000);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
     it('never asks the api on a timer while a charge is open', async () => {
