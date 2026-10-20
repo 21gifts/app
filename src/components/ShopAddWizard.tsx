@@ -401,7 +401,9 @@ export function ShopAddWizard({
                   photoError === 'tooMany'
                     ? 'forum.errorTooMany'
                     : photoError === 'tooLarge'
-                      ? 'forum.errorTooLarge'
+                      ? imagesOnly
+                        ? 'inbox.errorTooLarge'
+                        : 'forum.errorTooLarge'
                       : imagesOnly
                         ? 'inbox.errorUnsupported'
                         : 'forum.errorUnsupported',

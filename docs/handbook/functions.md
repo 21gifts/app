@@ -1395,7 +1395,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 
 ## Function: PlaceField
 
-- **Purpose:** Optional place control and staff editor. It opens a centered desktop dialog or full-screen mobile sheet. The body is the only active scroll surface and the confirm row stays visible. Shop mode orders map, shop name, street/house, postal/city, and country; touched fields show concrete live errors while the footer always explains why confirm is disabled. With stored shop text, the trimmed shop name that will be committed is also checked live against the API's 20–1000-character and strictly-shorter-than-text rule. A current live name error wins over an older reported server name error.
+- **Purpose:** Optional place control and staff editor. It opens a centered desktop dialog or full-screen mobile sheet. The body is the only active scroll surface and the confirm row stays visible. Shop mode orders map, shop name, street/house, postal/city, and country; touched fields show concrete live errors while the footer explains why confirm is disabled; when the map is unavailable, the message where the map would be is that reason and the footer does not repeat it. With stored shop text, the trimmed shop name that will be committed is also checked live against the API's 20–1000-character and strictly-shorter-than-text rule. A current live name error wins over an older reported server name error.
 - **Inputs:** Existing place/control/commit props, optional `shopText` for stored-note name validation, optional `problem` for a known API fallback, and `onAvailabilityChange` for the closed wizard step.
 - **Returns / side effects:** Attach button and accessible modal dialog. A stored place can be removed from the dialog. Fetches `/maps/key`; a known server problem reopens the dialog at its field.
 - **Used by:** `ForumBoard` (top-level composer, no `shopDetails`), `ShopAddWizard` (`shopDetails`), and `ShopPlaceControl` (`shopDetails`).
@@ -1405,7 +1405,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** Shows a confirmed forum-composer place in normal document flow so it cannot cover validation or request feedback below the composer.
 - **Inputs:** `place` (`ForumPlacePin`), optional `disabled`, and `onRemove`.
 - **Returns / side effects:** A full-width, content-capped muted chip with MapPin, localized label or coordinates, and an icon-only **Remove place** control. Removal calls `onRemove`; disabled state reaches the control. On the device's local Sunday the chip content is removed by the same writing gate as the place field.
-- **Used by:** `ForumBoard`, directly below the top-level composer row and before media previews and feedback lines.
+- **Used by:** `ForumBoard`, below the top-level composer row after the live composer hint, before media previews and request feedback.
 
 ## Function: fitBoxInFrame
 

@@ -551,10 +551,7 @@ describe('ShopNoteEditControl', () => {
 
   it.each([
     ['At most 10 photos', 'You can add up to 10 photos'],
-    [
-      'Photo must be a JPEG, PNG, or WebP under 1 MiB',
-      'Keep photos under 1 MB and videos under 32 MB',
-    ],
+    ['Photo must be a JPEG, PNG, or WebP under 1 MiB', 'Keep photos under 1 MB'],
   ])('maps photo 400 %s to announced picker feedback', async (apiMessage, localized) => {
     signIn('founder');
     vi.mocked(fetchShopNoteEdits).mockResolvedValue([]);
@@ -904,7 +901,7 @@ describe('ShopNoteEditControl', () => {
     fireEvent.change(input, {
       target: { files: [new File(['large'], 'large.jpg', { type: 'image/jpeg' })] },
     });
-    expect(await screen.findByText('Keep photos under 1 MB and videos under 32 MB')).toBeTruthy();
+    expect(await screen.findByText('Keep photos under 1 MB')).toBeTruthy();
   });
 
   it('removes the last photo reason while a new pick prepares', async () => {
@@ -924,13 +921,13 @@ describe('ShopNoteEditControl', () => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     const large = (): File[] => [new File(['large'], 'large.jpg', { type: 'image/jpeg' })];
     fireEvent.change(input, { target: { files: large() } });
-    expect(await screen.findByText('Keep photos under 1 MB and videos under 32 MB')).toBeTruthy();
+    expect(await screen.findByText('Keep photos under 1 MB')).toBeTruthy();
     fireEvent.change(input, { target: { files: large() } });
     await waitFor(() => {
-      expect(screen.queryByText('Keep photos under 1 MB and videos under 32 MB')).toBeNull();
+      expect(screen.queryByText('Keep photos under 1 MB')).toBeNull();
     });
     finishSecond({ ok: false, error: 'tooLarge' });
-    expect(await screen.findByText('Keep photos under 1 MB and videos under 32 MB')).toBeTruthy();
+    expect(await screen.findByText('Keep photos under 1 MB')).toBeTruthy();
   });
 
   it('shows a fallback photo reason when preparation throws', async () => {
@@ -1114,9 +1111,9 @@ describe('ShopNoteEditControl', () => {
     fireEvent.change(input, {
       target: { files: [new File(['large'], 'large.jpg', { type: 'image/jpeg' })] },
     });
-    expect(await screen.findByText('Keep photos under 1 MB and videos under 32 MB')).toBeTruthy();
+    expect(await screen.findByText('Keep photos under 1 MB')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
-    expect(screen.queryByText('Keep photos under 1 MB and videos under 32 MB')).toBeNull();
+    expect(screen.queryByText('Keep photos under 1 MB')).toBeNull();
   });
 
   it('loads stills that are not already shown and drops them on failure', async () => {

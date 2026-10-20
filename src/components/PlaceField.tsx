@@ -171,6 +171,7 @@ export function PlaceField(props: {
   );
   const mapElRef = useRef<HTMLDivElement | null>(null);
   const dialogRef = useRef<HTMLDivElement | null>(null);
+  const triggerWrapRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<GoogleMarker | null>(null);
   const authFailedRef = useRef(false);
   const savingRef = useRef(false);
@@ -342,7 +343,12 @@ export function PlaceField(props: {
     document.addEventListener('keydown', closeOnEscape, true);
     return () => {
       document.removeEventListener('keydown', closeOnEscape, true);
-      opener?.focus();
+      // A dialog opened by a server problem has no live opener; return to the place button.
+      if (opener !== null && opener !== document.body && opener.isConnected) {
+        opener.focus();
+      } else {
+        triggerWrapRef.current?.querySelector('button')?.focus();
+      }
     };
   }, [open]);
 
@@ -699,7 +705,7 @@ export function PlaceField(props: {
 
   return (
     <SundayWritingGate>
-      <div className="shrink-0">
+      <div ref={triggerWrapRef} className="shrink-0">
         <IconButton
           type="button"
           size={buttonSize}

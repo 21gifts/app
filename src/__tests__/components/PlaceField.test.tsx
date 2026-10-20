@@ -1195,6 +1195,25 @@ describe('PlaceField', () => {
     ).toBeNull();
   });
 
+  it('returns focus to the place button after a dialog opened by a server problem', async () => {
+    stubMaps();
+    renderWithLocale(
+      <PlaceField
+        place={null}
+        disabled={false}
+        onChange={() => undefined}
+        shopDetails
+        problem="shopAddress"
+      />,
+    );
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Add a place' }));
+  });
+
   it.each([
     ['short', 'Too short'],
     ['long', 'x'.repeat(1001)],

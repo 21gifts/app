@@ -2650,13 +2650,9 @@ export function ForumLoader({
               shopUsername,
               onShopUsernameChange: (value: string) => {
                 setShopUsername(value);
-                setFormError((current) =>
-                  current !== null &&
-                  isShopApiProblem(current) &&
-                  shopProblemField(current) === 'username'
-                    ? null
-                    : current,
-                );
+                // The username step is reachable only once the place and text are valid,
+                // so any error left here belongs to the username or the last request.
+                setFormError(null);
               },
               shopResetToken,
             }

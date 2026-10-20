@@ -1480,8 +1480,8 @@ and **Use this place** is visible and enabled. The pin is not confirmed yet.
 
 ### Variant: composer-place-set
 
-A confirmed pin **Stall** sits in a normal-flow chip directly below the composer row, before any
-feedback, with **Remove place**. The dialog is closed.
+A confirmed pin **Stall** sits in a normal-flow chip below the composer row, before media previews and
+request feedback, with **Remove place**. The dialog is closed.
 
 ![21.gifts welcome composer place set](images/welcome-composer-place-set.png)
 
@@ -1509,8 +1509,8 @@ empty. **Use this place** is visible and enabled.
 
 ### Variant: composer-place-set-coords
 
-A confirmed pin with no name sits in a normal-flow chip directly below the composer row, before
-any feedback, as **14.50000, 120.90000** with **Remove place**. The dialog is closed.
+A confirmed pin with no name sits in a normal-flow chip below the composer row, before media previews
+and request feedback, as **14.50000, 120.90000** with **Remove place**. The dialog is closed.
 
 ![21.gifts welcome composer place set coordinates](images/welcome-composer-place-set-coords.png)
 
