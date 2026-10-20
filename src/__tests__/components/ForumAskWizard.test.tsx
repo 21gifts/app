@@ -171,6 +171,52 @@ describe('ForumAskWizard', () => {
     expect(onStepChange).toHaveBeenCalledWith(4);
   });
 
+  it('shows shop guidance under Ask text and disables Continue and preview Post', () => {
+    const onStepChange = vi.fn();
+    const onPost = vi.fn();
+    const { rerender } = renderWithLocale(
+      <ForumAskWizard
+        step={3}
+        onStepChange={onStepChange}
+        {...idle}
+        draft="Cafe Luna #21GiftsShop"
+        shopElsewhere
+      />,
+    );
+    const composer = screen.getByLabelText('Your message');
+    const feedback = screen.getByText(
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
+    );
+    const next = screen.getByRole('button', { name: 'Continue' });
+    expect(feedback.getAttribute('role')).toBeNull();
+    expect(composer.getAttribute('aria-invalid')).toBe('true');
+    expect(composer.getAttribute('aria-describedby')).toBe(feedback.id);
+    expect(next).toHaveProperty('disabled', true);
+    fireEvent.click(next);
+    expect(onStepChange).not.toHaveBeenCalled();
+
+    rerender(
+      <ForumAskWizard
+        step={4}
+        onStepChange={onStepChange}
+        {...idle}
+        askDraft="21000"
+        draft="Cafe Luna #21GiftsShop"
+        shopElsewhere
+        onPost={onPost}
+      />,
+    );
+    const post = screen.getByRole('button', { name: /^Post$/ });
+    expect(
+      screen
+        .getByText('Shop notes need the shop name and full address. Post this shop from Shops.')
+        .getAttribute('role'),
+    ).toBeNull();
+    expect(post).toHaveProperty('disabled', true);
+    fireEvent.click(post);
+    expect(onPost).not.toHaveBeenCalled();
+  });
+
   it('disables preview Post without text or media', () => {
     renderWithLocale(<ForumAskWizard step={4} onStepChange={() => undefined} {...idle} />);
     expect((screen.getByRole('button', { name: /^Post$/ }) as HTMLButtonElement).disabled).toBe(

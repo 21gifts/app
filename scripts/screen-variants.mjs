@@ -1004,6 +1004,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'ask-shop-elsewhere',
+    image: 'welcome-ask-shop-elsewhere.png',
+    visual: 'state-welcome-ask-shop-elsewhere',
+    needle: 'state /welcome ask-shop-elsewhere',
+  },
+  {
+    route: '/welcome',
     id: 'ask-preview-fiat',
     image: 'welcome-ask-preview-fiat.png',
     visual: 'state-welcome-ask-preview-fiat',

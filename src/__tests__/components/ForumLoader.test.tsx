@@ -4039,6 +4039,32 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('guards a bypassed Ask shop note and reveals the alert when its live hint is off-step', async () => {
+    renderForumWithChrome();
+    await waitFor(() => {
+      expect(screen.getByText('No messages yet — be the first to write one.')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Ask for money' }));
+    fireEvent.change(screen.getByLabelText('Ask'), { target: { value: '21000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.change(screen.getByLabelText('Your message'), {
+      target: { value: 'Cafe Luna #21GiftsShop' },
+    });
+    const shopGuidance =
+      'Shop notes need the shop name and full address. Post this shop from Shops.';
+    expect(screen.getByText(shopGuidance).getAttribute('role')).toBeNull();
+    const next = screen.getByRole('button', { name: 'Continue' });
+    invokeDisabledButton(next, 'Could not find the disabled Ask Continue button handler');
+    const post = screen.getByRole('button', { name: /^Post$/ });
+    expect(screen.getByText(shopGuidance).getAttribute('role')).toBeNull();
+    invokeDisabledButton(post, 'Could not find the disabled Ask Post button handler');
+    expectNoShopComposeOrPost();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByRole('alert').textContent).toBe(shopGuidance);
+  });
+
   it('restores the caption when compose-pay is cancelled', async () => {
     useAuthStore.setState({
       session: 'sess',

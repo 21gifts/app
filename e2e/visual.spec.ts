@@ -16120,6 +16120,24 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-ask-text-filled');
   });
 
+  test('state /welcome ask-shop-elsewhere', async ({ page }) => {
+    await seedAda(page);
+    await emptyForum(page);
+    await page.goto('/welcome');
+    await beginAsk(page);
+    await askAmount(page, '21000');
+    await page.getByRole('button', { name: 'Continue' }).click();
+    const composer = page.getByLabel('Your message');
+    await composer.fill('Need help at #21GiftsShop');
+    await expect(
+      page.getByText('Shop notes need the shop name and full address. Post this shop from Shops.'),
+    ).toBeVisible();
+    await expect(composer).toHaveAttribute('aria-invalid', 'true');
+    await expect(composer).toHaveAttribute('aria-describedby', /shop-elsewhere/);
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeDisabled();
+    await shotScreen(page, 'state-welcome-ask-shop-elsewhere');
+  });
+
   async function openAskPreview(
     page: Page,
     options: {

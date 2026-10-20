@@ -630,6 +630,12 @@ export function ForumBoard({
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
   const shopElsewhereLive = !shopComposer && isShopNote(draft);
+  const shopElsewhereHintVisible =
+    !hideCompose &&
+    shopElsewhereLive &&
+    (!allowAsk ||
+      composeIntent === 'post' ||
+      (allowAsk && composeIntent === 'ask' && (askStep === 3 || askStep === 4)));
   const shopElsewhereFeedbackId = `${useId()}-shop-elsewhere`;
   const router = useRouter();
   const scroller = useAppShellScroller();
@@ -1867,6 +1873,7 @@ export function ForumBoard({
             onAskDraftChange={onAskDraftChange}
             draft={draft}
             onDraftChange={onDraftChange}
+            shopElsewhere={shopElsewhereLive}
             posting={posting}
             photoDrafts={photoDrafts}
             videoDraft={videoDraft}
@@ -2119,7 +2126,7 @@ export function ForumBoard({
         ) : null}
         {!hideCompose &&
         !shopComposer &&
-        !shopElsewhereLive &&
+        !shopElsewhereHintVisible &&
         SHOP_ELSEWHERE_FORM_ERRORS.has(formError) ? (
           <p role="alert" className="text-center text-sm text-app-danger">
             {t('forum.shopPostUseShops')}

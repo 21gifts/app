@@ -1274,6 +1274,11 @@
     "es": "Pedir, paso 3 de 4, con Need help with a train ticket escrito en el campo de mensaje. Continuar sigue habilitado.",
     "fil": "Hiling, hakbang 3 sa 4, na may Need help with a train ticket na nakasulat sa patlang ng mensahe. Magpatuloy ay nananatiling gumagana."
   },
+  "/welcome:ask-shop-elsewhere": {
+    "de": "Anfragen, Schritt 3 von 4, mit #21GiftsShop im Nachrichtenfeld. Der Live-Hinweis zum Erstellen des Ladeneintrags unter Shops steht direkt unter dem Feld; Weiter ist deaktiviert.",
+    "es": "Pedir, paso 3 de 4, con #21GiftsShop en el campo de mensaje. La indicación en directo para crear la tienda desde Tiendas aparece justo debajo del campo; Continuar está deshabilitado.",
+    "fil": "Hiling, hakbang 3 sa 4, na may #21GiftsShop sa patlang ng mensahe. Nasa ilalim mismo ng patlang ang live na paalala na gawin ang tala ng tindahan mula sa Mga Tindahan; hindi gumagana ang Magpatuloy."
+  },
   "/pos:need-username": {
     "de": "Die Einrichtung ist abgeschlossen und der Benutzername ist leer. Link Zuerst einen Benutzernamen setzen. Kein Adress- und kein Betragsformular.",
     "es": "La configuración ha terminado y el nombre de usuario está vacío. Enlace Primero elige un nombre de usuario. Sin formulario de dirección ni de importe.",

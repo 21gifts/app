@@ -1003,6 +1003,12 @@ Ask step 3 of 4 with **Need help with a train ticket** typed in the message fiel
 
 ![21.gifts welcome ask text filled](images/welcome-ask-text-filled.png)
 
+### Variant: ask-shop-elsewhere
+
+Ask step 3 of 4 with **Need help at #21GiftsShop** in the message field. The live shop guidance sits directly below the field, which is linked to it with `aria-describedby` and marked `aria-invalid`; **Continue** stays disabled. The same visible reason disables **Post** on the preview step.
+
+![21.gifts welcome ask shop elsewhere](images/welcome-ask-shop-elsewhere.png)
+
 ### Variant: ask-preview
 
 Ask step 4 of 4: the **One-time** / **Daily** pill (**One-time** pressed), the **Donation** / **Credit** pill under it (**Donation** pressed by default), then a preview card with photo, caption, a **Donation** tag, `ForumGoalBar` at 0 collected versus **₿1'000** (fiat **$1.00**), labeled **Post**. This is the only Ask submit. The step label **4 of 4** sits on the right of the **Preview** heading. Only **Credit** is posted as `goalRepayable` true.

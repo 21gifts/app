@@ -671,6 +671,56 @@ describe('ForumBoard', () => {
     expect(onPlaceDraftChange).toHaveBeenCalledWith(null);
   });
 
+  it('passes live shop guidance into the Ask text step', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft="Cafe Luna #21GiftsShop"
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        composeIntent="ask"
+        askStep={3}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    const composer = screen.getByLabelText('Your message');
+    const feedback = screen.getByText(
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
+    );
+    expect(composer.getAttribute('aria-invalid')).toBe('true');
+    expect(composer.getAttribute('aria-describedby')).toBe(feedback.id);
+    expect(screen.getByRole('button', { name: 'Continue' })).toHaveProperty('disabled', true);
+  });
+
+  it('shows the shop guard alert on an Ask step without the live hint', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft="Cafe Luna #21GiftsShop"
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError="shopElsewhere"
+        composeIntent="ask"
+        askStep={2}
+        {...idleProps}
+        {...modeProps('active')}
+      />,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Shop notes need the shop name and full address. Post this shop from Shops.',
+    );
+  });
+
   it('sets the new-post textarea maxLength from composerMaxLength', () => {
     renderWithLocale(
       <ForumBoard
