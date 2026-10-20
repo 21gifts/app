@@ -26,6 +26,26 @@ Later screens show those frozen strings. They do not recompute them.
 A missing frozen string stays missing. It is not filled from the current spot,
 and it is not filled later from a daily close. The amount stays bitcoin.
 
+## A till charge shows the typed figure to the shop and to the payer
+
+The shop operator types the till amount on `/pos`. When that amount is typed
+in one currency, that exact figure is the amount of that charge in that
+currency. It is stored when the charge is created. The shop and the person
+who pays that charge both show that same figure for that charge. The payer
+pays in bitcoin. That payment does not change the figure.
+
+Typing 12.00 pesos stores 12.00. The shop's till shows 12.00, including the
+open charge, the paid charge, and the history. The payer's payment of that
+charge shows 12.00, including the confirmation and the record kept
+afterwards. Neither side shows 12.01 or 11.99. The same holds when the typed
+currency is the dollar, the franc, or the euro. No currency is special.
+
+Neither side derives that figure from the sats, from the rate that turned the
+typed digits into sats, from a later spot, or from a daily close. The payer's
+own display currency does not replace it. A sentence that prices this charge
+from the current spot, or that puts another currency under it by converting
+the sats, describes code that breaks this rule.
+
 ## What may use the rate of now
 
 What a holding is worth right now, such as the wallet balance, may use the
