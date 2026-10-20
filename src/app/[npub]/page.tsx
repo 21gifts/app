@@ -1,15 +1,14 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
-import type { ReactElement } from 'react';
+import { cache, type ReactElement } from 'react';
 import { PublicMessageChrome } from '@/components/PublicMessageChrome';
-import { ShopScreen } from '@/components/ShopScreen';
+import { ShopScreen } from '@/app/[npub]/ShopScreen';
+import { API_FETCH_TIMEOUT_MS } from '@/lib/api-timeout';
 import { SHOP_NPUB_RE, shopResponseSchema, type Shop } from '@/lib/api-types';
 import { getApiUrl } from '@/lib/config';
 import { DEFAULT_OG_ALT, ogDescriptionText } from '@/lib/public-message-og';
 
 const HEX_PUBKEY_RE = /^[0-9a-f]{64}$/;
-/** Same 2.5-second limit as the other server-side api fetches (public note, short link). */
-const SHOP_FETCH_TIMEOUT_MS = 2500;
 
 type ShopLoadResult =
   | { kind: 'ready'; shop: Shop }
@@ -39,18 +38,25 @@ function redirectNpub(response: Response): string | null {
 /**
  * Load one public shop and reduce api statuses to page-safe states.
  *
- * A timeout or abort after {@link SHOP_FETCH_TIMEOUT_MS} becomes `unavailable`.
+ * Only an exact answer counts. A hex segment is usable only as a 301 to a
+ * valid npub. An npub segment is usable only as a 200 whose `shop.npub` is
+ * that same npub. Every other status, a 200 for a hex segment, and a timeout
+ * or abort after {@link API_FETCH_TIMEOUT_MS} become `unavailable`; 404 and 410
+ * stay `missing` and `gone`.
+ *
+ * Wrapped in React `cache`, so `generateMetadata` and `ShopPage` share one api
+ * call and one answer per request.
  *
  * @param segment - Validated npub or lowercase hex public key.
  * @returns Parsed shop, canonical npub, or a display state.
  */
-async function loadShop(segment: string): Promise<ShopLoadResult> {
+const loadShop = cache(async (segment: string): Promise<ShopLoadResult> => {
   try {
     const response = await fetch(`${getApiUrl()}/shops/${encodeURIComponent(segment)}`, {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
       redirect: 'manual',
-      signal: AbortSignal.timeout(SHOP_FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(API_FETCH_TIMEOUT_MS),
     });
     if (response.status === 301) {
       const npub = redirectNpub(response);
@@ -62,15 +68,17 @@ async function loadShop(segment: string): Promise<ShopLoadResult> {
     if (response.status === 410) {
       return { kind: 'gone' };
     }
-    if (!response.ok) {
+    if (response.status !== 200 || !SHOP_NPUB_RE.test(segment)) {
       return { kind: 'unavailable' };
     }
     const parsed = shopResponseSchema.safeParse(await response.json());
-    return parsed.success ? { kind: 'ready', shop: parsed.data.shop } : { kind: 'unavailable' };
+    return parsed.success && parsed.data.shop.npub === segment
+      ? { kind: 'ready', shop: parsed.data.shop }
+      : { kind: 'unavailable' };
   } catch {
     return { kind: 'unavailable' };
   }
-}
+});
 
 /**
  * Per-shop Open Graph, Twitter, and canonical metadata for `/{npub}`.

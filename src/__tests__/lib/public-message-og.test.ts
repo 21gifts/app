@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { API_FETCH_TIMEOUT_MS } from '@/lib/api-timeout';
 import type { ForumMessage } from '@/lib/api-types';
 import {
   DEFAULT_OG_ALT,
@@ -88,7 +89,7 @@ describe('loadPublicMessageForOg', () => {
     );
 
     await expect(loadPublicMessageForOg(MESSAGE_ID)).resolves.toBeNull();
-    expect(timeoutSpy).toHaveBeenCalledWith(2500);
+    expect(timeoutSpy).toHaveBeenCalledWith(API_FETCH_TIMEOUT_MS);
     timeoutSpy.mockRestore();
   });
 

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { API_FETCH_TIMEOUT_MS } from '@/lib/api-timeout';
 import { forumMessageSchema, type ForumMessage } from '@/lib/api-types';
 import { getApiUrl } from '@/lib/config';
 import { shortResourceUrl } from '@/lib/short-link';
@@ -47,7 +48,7 @@ export async function loadPublicMessageForOg(id: string): Promise<ForumMessage |
     const response = await fetch(`${getApiUrl()}/messages/${encodeURIComponent(id)}`, {
       cache: 'no-store',
       headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(2500),
+      signal: AbortSignal.timeout(API_FETCH_TIMEOUT_MS),
     });
     if (!response.ok) {
       return null;

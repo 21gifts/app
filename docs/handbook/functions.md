@@ -1046,8 +1046,8 @@
 
 ## Function: ShopPage
 
-- **Purpose:** Next.js page for `/{npub}`. Rejects every segment except a valid npub or 64 lowercase hex; api 404 uses `notFound`, 410 renders the anonymous unlisted state, and 503/unusable data renders the retryable state.
-- **Inputs:** Dynamic `npub` route segment. Calls public api `GET /shops/:npub` with manual redirect handling, no session, and `AbortSignal.timeout(2500)` — the same limit as metadata; a timeout or abort renders the retryable `unavailable` state.
+- **Purpose:** Next.js page for `/{npub}`. Rejects every segment except a valid npub or 64 lowercase hex; api 404 uses `notFound` and 410 renders the anonymous unlisted state. Only an exact answer renders the shop: status 200 (not any 2xx) for an npub whose `shop.npub` equals the segment, or a 301 to a valid npub for a hex key. Any other status, a 200 for a hex key, a 200 for a different npub, and unusable data render the retryable state.
+- **Inputs:** Dynamic `npub` route segment. Calls public api `GET /shops/:npub` with manual redirect handling, no session, and `AbortSignal.timeout(API_FETCH_TIMEOUT_MS)` (2500 ms, from `src/lib/api-timeout.ts`) — the same limit as metadata; a timeout or abort renders the retryable `unavailable` state. The loader is wrapped in React `cache`, so `generateMetadata` and the page share one api call and one answer per request.
 - **Returns / side effects:** `ShopScreen` inside `PublicMessageChrome`, or a 308 `permanentRedirect` from a known hex key to `/{npub}` after the api's 301. Also exports shop `generateMetadata`.
 - **Used by:** Route `/[npub]`.
 
@@ -1081,7 +1081,7 @@
 
 ## Function: generateMetadata
 
-- **Purpose:** Next.js App Router metadata for `/messages/[id]` and `/{npub}`. A message loads through `loadPublicMessageForOg`; a shop loads api `GET /shops/:npub` directly. Both use `AbortSignal.timeout(2500)` and inherit root metadata on missing, invalid, timed-out, or unusable responses. Both build description, `og:description`, and `twitter:description` with `ogDescriptionText` and the default image alt `DEFAULT_OG_ALT`.
+- **Purpose:** Next.js App Router metadata for `/messages/[id]` and `/{npub}`. A message loads through `loadPublicMessageForOg`; a shop loads api `GET /shops/:npub` through the same request-cached loader as `ShopPage`. Both use `AbortSignal.timeout(API_FETCH_TIMEOUT_MS)` (2500 ms) and inherit root metadata on missing, invalid, timed-out, or unusable responses. Both build description, `og:description`, and `twitter:description` with `ogDescriptionText` and the default image alt `DEFAULT_OG_ALT`.
 - **Inputs:** Dynamic route params: `{ id }` for a public message or `{ npub }` for a public shop.
 - **Returns / side effects:** `Promise<Metadata>`. Notes use author/text and note photo rules. Shops use the shop name, `ogDescriptionText(description, name)` (trimmed, `{name} on 21.gifts` when blank, cut above 300 code units with `…`), first photo (or `/og.png`), and relative canonical/open-graph URL `/{npub}` resolved by root `metadataBase`.
 - **Used by:** Routes `/messages/[id]` (`PublicMessagePage`) and `/[npub]` (`ShopPage`).
@@ -1090,7 +1090,7 @@
 
 - **Purpose:** Server fetch of api `GET /messages/:id` for Open Graph. Invalid UUIDs skip the network. Timeouts, non-OK responses, JSON/schema failures, and thrown errors (`getApiUrl`, network, abort) all return `null` and never throw.
 - **Inputs:** `id` string from the route (forum message UUID).
-- **Returns / side effects:** `ForumMessage` or `null`. Uses `cache: 'no-store'`, `Accept: application/json`, and `AbortSignal.timeout(2500)`.
+- **Returns / side effects:** `ForumMessage` or `null`. Uses `cache: 'no-store'`, `Accept: application/json`, and `AbortSignal.timeout(API_FETCH_TIMEOUT_MS)` (2500 ms; the constant lives in `src/lib/api-timeout.ts` and also bounds `ShopPage` and the `/l/[code]` lookup).
 - **Used by:** `generateMetadata` on `/messages/[id]`.
 
 ## Function: ogDescriptionText
