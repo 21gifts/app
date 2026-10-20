@@ -500,7 +500,7 @@
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /me/activity` for given and received sat totals plus both cumulative day series (house gifts and forum zaps).
 - **Errors:** Upstream 401, 503 `{ error: "Gift stats are unavailable" }`, or 502 if the api is unreachable.
-- **Used by:** `fetchAccountActivity` via `useAccountTotals` on `/profile`.
+- **Used by:** `fetchAccountActivity` via `useAccountTotals`. The profile chart uses `fetchMemberActivity`.
 - **Auth:** Bearer.
 
 ## Endpoint: GET /view-key/[viewKey]
@@ -514,7 +514,35 @@
 
 - **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/activity` for the public profile given and received series.
 - **Errors:** Upstream 404, 503 `{ error: "Gift stats are unavailable" }`, or 502 if the api is unreachable.
-- **Used by:** `fetchViewActivity` via `ViewProfileLoader`.
+- **Used by:** `fetchViewActivity` via `ViewProfileLoader` when the card stays public.
+- **Auth:** Public.
+
+## Endpoint: GET /view-key/[viewKey]/posts
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/posts`. The body is `{ messages }`, the same list as the member posts route.
+- **Errors:** Upstream 404, 503, or 502 if the api is unreachable.
+- **Used by:** `fetchViewForumList` via `ViewProfileLoader`.
+- **Auth:** Public.
+
+## Endpoint: GET /view-key/[viewKey]/shops
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/shops`. The body is `{ messages }`.
+- **Errors:** Upstream 404, 503, or 502 if the api is unreachable.
+- **Used by:** `fetchViewForumList` via `ViewProfileLoader`.
+- **Auth:** Public.
+
+## Endpoint: GET /view-key/[viewKey]/credits
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/credits`. The body is `{ messages }`.
+- **Errors:** Upstream 404, 503, or 502 if the api is unreachable.
+- **Used by:** `fetchViewForumList` via `ViewProfileLoader`.
+- **Auth:** Public.
+
+## Endpoint: GET /view-key/[viewKey]/replies
+
+- **Purpose:** Same-origin public proxy of api `GET /view/:viewKey/replies`. The body is `{ messages }`.
+- **Errors:** Upstream 404, 503, or 502 if the api is unreachable.
+- **Used by:** `fetchViewForumList` via `ViewProfileLoader`.
 - **Auth:** Public.
 
 ## Endpoint: GET /forum/messages

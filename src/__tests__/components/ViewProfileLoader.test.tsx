@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ViewProfileLoader } from '@/components/ViewProfileLoader';
-import type { AccountActivity, ViewProfile } from '@/lib/api-types';
+import type { AccountActivity, MemberProfile, ViewProfile } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -41,19 +41,45 @@ const EMPTY_ACTIVITY: AccountActivity = {
   fx: EMPTY_FX,
 };
 
-vi.mock('@/lib/api', () => ({
-  fetchViewProfile: vi.fn(),
-  fetchViewActivity: vi.fn(),
-  markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
-}));
+vi.mock('@/lib/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/api')>();
+  return {
+    ...actual,
+    fetchViewProfile: vi.fn(),
+    fetchViewActivity: vi.fn(),
+    fetchMember: vi.fn(),
+    fetchMemberActivity: vi.fn(),
+    fetchViewForumList: vi.fn(),
+    fetchFxSpot: vi.fn().mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: {},
+    }),
+    markNotificationsReadForMessage: vi.fn().mockResolvedValue({ ok: true, tags: [] }),
+  };
+});
 
-import { fetchViewActivity, fetchViewProfile } from '@/lib/api';
+import {
+  fetchMember,
+  fetchMemberActivity,
+  fetchViewActivity,
+  fetchViewForumList,
+  fetchViewProfile,
+} from '@/lib/api';
 
 const fetchProfile = vi.mocked(fetchViewProfile);
 const fetchActivity = vi.mocked(fetchViewActivity);
+const fetchSignedInMember = vi.mocked(fetchMember);
+const fetchSignedInActivity = vi.mocked(fetchMemberActivity);
+const fetchPublicList = vi.mocked(fetchViewForumList);
 
 beforeEach(() => {
   useAuthStore.setState({ session: null, account: null });
+  fetchProfile.mockReset();
+  fetchSignedInMember.mockReset();
+  fetchSignedInActivity.mockReset();
+  fetchPublicList.mockReset();
+  fetchActivity.mockReset();
   fetchActivity.mockResolvedValue(EMPTY_ACTIVITY);
 });
 
@@ -311,5 +337,408 @@ describe('ViewProfileLoader', () => {
     expect(screen.getByText('Debt')).toBeTruthy();
     expect(screen.getByText('Credit')).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Debt and credit in ₿' })).toBeTruthy();
+  });
+
+  it('keeps the public card when a session cannot refetch the member', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_other',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: VIEW_KEY,
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchProfile.mockResolvedValue({ ...profile, id: 'acc_1' });
+    fetchSignedInMember.mockRejectedValue(new Error('down'));
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Ada')).toBeTruthy();
+    });
+    expect(fetchActivity).toHaveBeenCalledWith(VIEW_KEY);
+    expect(fetchSignedInActivity).not.toHaveBeenCalled();
+  });
+
+  it('uses the member series when the signed-in refetch succeeds', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_other',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: VIEW_KEY,
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchProfile.mockResolvedValue({ ...profile, id: 'acc_1', postCount: 3 });
+    fetchSignedInMember.mockResolvedValue({
+      id: 'acc_1',
+      name: 'Ada',
+      username: 'alice',
+      location: null,
+      role: 'basis',
+      lightningAddress: 'alice@21.gifts',
+      createdAt: '1970-01-01T00:00:00.001Z',
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      profileMessage: null,
+      postCount: 3,
+      replyCount: 0,
+      trust: {
+        verifiedBy: null,
+        proposedBy: null,
+        confirmedBy: null,
+        appointedBy: null,
+      },
+    });
+    fetchSignedInActivity.mockResolvedValue(EMPTY_ACTIVITY);
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Ada')).toBeTruthy();
+    });
+    expect(fetchSignedInMember).toHaveBeenCalledWith('tok', 'acc_1');
+    expect(fetchSignedInActivity).toHaveBeenCalledWith('tok', 'acc_1');
+    expect(fetchActivity).not.toHaveBeenCalled();
+  });
+
+  it('loads a public post list from the view key', async () => {
+    fetchProfile.mockResolvedValue({ ...profile, postCount: 1 });
+    fetchActivity.mockResolvedValue(EMPTY_ACTIVITY);
+    fetchPublicList.mockResolvedValue([]);
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Ada')).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    await waitFor(() => {
+      expect(fetchPublicList).toHaveBeenCalledWith(VIEW_KEY, 'posts');
+    });
+  });
+
+  it('keeps the public card when the signed-in refetch returns null', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_other',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: VIEW_KEY,
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchProfile.mockResolvedValue({ ...profile, id: 'acc_1' });
+    fetchSignedInMember.mockResolvedValue(null);
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Ada')).toBeTruthy();
+    });
+    expect(fetchActivity).toHaveBeenCalledWith(VIEW_KEY);
+    expect(fetchSignedInActivity).not.toHaveBeenCalled();
+  });
+
+  it('does not refetch a member when the public payload has no id', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_other',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: VIEW_KEY,
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchProfile.mockResolvedValue(profile);
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Ada')).toBeTruthy();
+    });
+    expect(fetchSignedInMember).not.toHaveBeenCalled();
+    expect(fetchActivity).toHaveBeenCalledWith(VIEW_KEY);
+  });
+
+  it('keeps the public card when member activity fails after a refetch', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_other',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: VIEW_KEY,
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchProfile.mockResolvedValue({ ...profile, id: 'acc_1' });
+    fetchSignedInMember.mockResolvedValue({
+      id: 'acc_1',
+      name: 'Ada',
+      username: 'alice',
+      location: null,
+      role: 'basis',
+      lightningAddress: 'alice@21.gifts',
+      createdAt: '1970-01-01T00:00:00.001Z',
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
+      trust: {
+        verifiedBy: null,
+        proposedBy: null,
+        confirmedBy: null,
+        appointedBy: null,
+      },
+    });
+    fetchSignedInActivity.mockRejectedValue(new Error('down'));
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Could not load gifts.')).toBeTruthy();
+    });
+    expect(fetchActivity).not.toHaveBeenCalled();
+  });
+
+  it('ignores a member resolve after unmount', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_other',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: VIEW_KEY,
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchProfile.mockResolvedValue({ ...profile, id: 'acc_1' });
+    let resolveMember: ((value: null) => void) | undefined;
+    fetchSignedInMember.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveMember = resolve;
+        }),
+    );
+    const view = renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(fetchSignedInMember).toHaveBeenCalled();
+    });
+    view.unmount();
+    resolveMember?.(null);
+    await Promise.resolve();
+    expect(fetchSignedInActivity).not.toHaveBeenCalled();
+  });
+
+  it('ignores a loaded member after unmount', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_other',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: VIEW_KEY,
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchProfile.mockResolvedValue({ ...profile, id: 'acc_1' });
+    let resolveMember: ((value: MemberProfile) => void) | undefined;
+    fetchSignedInMember.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveMember = resolve;
+        }),
+    );
+    const view = renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(fetchSignedInMember).toHaveBeenCalled();
+    });
+    view.unmount();
+    resolveMember?.({
+      id: 'acc_1',
+      name: 'Ada',
+      username: 'alice',
+      location: null,
+      role: 'basis',
+      lightningAddress: null,
+      createdAt: '1970-01-01T00:00:00.001Z',
+      aboutMe: null,
+      aboutMeHasPhoto: false,
+      profileMessage: null,
+      postCount: 0,
+      replyCount: 0,
+      trust: {
+        verifiedBy: null,
+        proposedBy: null,
+        confirmedBy: null,
+        appointedBy: null,
+      },
+    });
+    await Promise.resolve();
+    expect(fetchSignedInActivity).not.toHaveBeenCalled();
+  });
+
+  it('does not refetch a member when the public id is empty', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_other',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: VIEW_KEY,
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchProfile.mockResolvedValue({ ...profile, id: '' });
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(screen.getByText('Ada')).toBeTruthy();
+    });
+    expect(fetchSignedInMember).not.toHaveBeenCalled();
+  });
+
+  it('maps an unverified public card with counts and a staff tag', async () => {
+    const { username, ...withoutUsername } = profile;
+    void username;
+    fetchProfile.mockResolvedValue({
+      ...withoutUsername,
+      lightningAddressVerified: false,
+      shopCount: 1,
+      creditCount: 1,
+      staffTag: 'software_developer',
+    });
+    fetchActivity.mockResolvedValue(EMPTY_ACTIVITY);
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    expect(await screen.findByText("Can't receive yet")).toBeTruthy();
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.getByRole('button', { name: '1 shop' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: '1 credit' })).toBeTruthy();
+    expect(screen.queryByText('alice@21.gifts')).toBeNull();
+  });
+
+  it('shows the funding reviewer from the public card', async () => {
+    const admittedAt = Date.parse('2026-08-28T12:00:00.000Z');
+    fetchProfile.mockResolvedValue({
+      ...profile,
+      fundingReviewedAt: admittedAt,
+      fundingReviewedByName: 'Ada',
+    });
+    fetchActivity.mockResolvedValue(EMPTY_ACTIVITY);
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    expect(await screen.findByRole('button', { name: /reviewed by Ada/ })).toBeTruthy();
+  });
+
+  it('ignores a member reject after unmount', async () => {
+    useAuthStore.setState({
+      session: 'tok',
+      account: {
+        id: 'acc_other',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: VIEW_KEY,
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+      },
+    });
+    fetchProfile.mockResolvedValue({ ...profile, id: 'acc_1' });
+    let rejectMember: ((reason: Error) => void) | undefined;
+    fetchSignedInMember.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectMember = reject;
+        }),
+    );
+    const view = renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    await waitFor(() => {
+      expect(fetchSignedInMember).toHaveBeenCalled();
+    });
+    view.unmount();
+    rejectMember?.(new Error('gone'));
+    await Promise.resolve();
   });
 });

@@ -7,7 +7,10 @@ import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
 import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
 import { LoanBalanceChart } from '@/components/LoanBalanceChart';
+import { LocationForm } from '@/components/LocationForm';
 import { MemberTrustActions } from '@/components/MemberTrustActions';
+import { NameForm } from '@/components/NameForm';
+import { ProfileImages } from '@/components/ProfileImages';
 import {
   ForumBoard,
   type ForumFormError,
@@ -22,15 +25,21 @@ import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
 import { Button, Card, IconButton } from '@/components/ui';
 import {
   CannotReceiveError,
+  fetchAboutMePhoto,
   fetchComposeTarget,
   fetchMemberPosts,
   fetchMemberReplies,
   fetchMemberShops,
   fetchMemberCredits,
   fetchMessagePhoto,
+  fetchProfilePhoto,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchReplies,
+  fetchWideBanner,
+  putAboutMe,
+  putProfilePhoto,
+  putWideBanner,
   markNotificationsReadForMessage,
   NoteDeletedError,
   openConversation,
@@ -425,10 +434,14 @@ function FundingProgramMark({
  * @param props - Member profile and gift/loan activity series for the charts.
  *   `factsOnly` (default false) keeps every hook and returns only the public
  *   pills, gifts block, post/reaction/shop/credit counts, and activity feed.
- *   `omitPills` (default false) hides those pills because the owner page
- *   places the same marks beside the name. Visitor images load only when
- *   `factsOnly` is false. A missing public photo or wide image draws nothing.
- *   `activityFailed` (default false) is passed to both charts as `failed`.
+ *   `omitPills` (default false) hides those pills. The routed pages do not
+ *   use either flag. When the signed-in account id equals this profile, the
+ *   full card shows the owner photo, About me, name, and location editors.
+ *   The role, staff, and funding marks stay beside the name. Visitor images
+ *   load only when `factsOnly` is false and the viewer is not the owner. A
+ *   missing public photo or wide image draws nothing. `activityFailed`
+ *   (default false) is passed to both charts as `failed`. `loadPublicList`
+ *   loads the four feeds without a session (the share link).
  * @returns The presentational member profile.
  */
 export function MemberProfileScreen({
@@ -440,6 +453,7 @@ export function MemberProfileScreen({
   factsOnly = false,
   omitPills = false,
   activityFailed = false,
+  loadPublicList,
 }: {
   profile: MemberProfile;
   received: AccountActivity['receivedOverTime'];
@@ -449,13 +463,20 @@ export function MemberProfileScreen({
   factsOnly?: boolean;
   omitPills?: boolean;
   activityFailed?: boolean;
+  loadPublicList?: (kind: 'posts' | 'replies' | 'shops' | 'credits') => Promise<ForumMessage[]>;
 }): ReactElement {
   const { t } = useTranslations();
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const owner =
+    session !== null && account !== null && account.id === profile.id ? { session, account } : null;
   const { fiat } = useFiatPreference();
-  const visitorImages = useVisitorProfileImages(profile.id, !factsOnly);
+  const visitorImages = useVisitorProfileImages(
+    profile.id,
+    !factsOnly && owner === null && profile.id !== '',
+  );
+  const [imageEpoch, setImageEpoch] = useState(0);
   const amountUnit = account?.amountUnit ?? 'btc';
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
   const [replyShownUnit, setReplyShownUnit] = useState<AmountUnit>(amountUnit);
@@ -489,6 +510,9 @@ export function MemberProfileScreen({
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
   const pendingComposeTextRef = useRef<string | null>(null);
   const [listedProfile, setListedProfile] = useState(profile);
+  useEffect(() => {
+    setListedProfile(profile);
+  }, [profile]);
   const [activity, setActivity] = useState<null | 'posts' | 'replies' | 'shops' | 'credits'>(null);
   const [posts, setPosts] = useState<ForumMessage[] | null>(null);
   const [postsLoading, setPostsLoading] = useState(false);
@@ -619,13 +643,17 @@ export function MemberProfileScreen({
     const gen = ++loadGen.current;
     setLoading(true);
     setError(false);
-    if (session === null) {
-      setLoading(false);
-      setError(true);
-      return;
-    }
+    const token = session;
     try {
-      const next = await fetchFn(session, profile.id);
+      let next: ForumMessage[];
+      if (loadPublicList !== undefined) {
+        next = await loadPublicList(kind);
+      } else if (token === null) {
+        setError(true);
+        return;
+      } else {
+        next = await fetchFn(token, profile.id);
+      }
       if (loadGen.current === gen) {
         setList(next);
       }
@@ -1244,8 +1272,15 @@ export function MemberProfileScreen({
   const showMessage =
     session !== null && account?.id !== profile.id && profile.profileMessage !== null;
   const memberPath = `/members/${profile.id}`;
-  /* v8 ignore next -- SSR first paint: origin empty until client */
-  const profileUrl = origin !== '' ? shortResourceUrl(origin, profile.id, memberPath) : '';
+  const ownerViewKey = owner?.account.viewKey;
+  let profileUrl =
+    ownerViewKey !== undefined
+      ? `${origin}/view/${ownerViewKey}`
+      : shortResourceUrl(origin, profile.id, memberPath);
+  /* v8 ignore next 3 -- SSR first paint: origin is empty until the client effect */
+  if (origin === '') {
+    profileUrl = '';
+  }
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -1844,36 +1879,118 @@ export function MemberProfileScreen({
       {requirementOverlay}
       <div className="flex w-full max-w-sm flex-col items-center gap-6">
         <Card surface={false}>
-          <PublicProfileHeader
-            pictureUrl={visitorImages.pictureUrl}
-            bannerUrl={visitorImages.bannerUrl}
-          />
+          {owner !== null ? (
+            <ProfileImages
+              key={owner.session}
+              imageEpoch={imageEpoch}
+              loadPicture={() => fetchProfilePhoto(owner.session)}
+              loadBanner={() => fetchWideBanner(owner.session)}
+              onSavePicture={async (photo) => {
+                await putProfilePhoto(owner.session, photo);
+                setImageEpoch((epoch) => epoch + 1);
+              }}
+              onSaveBanner={async (photo) => {
+                await putWideBanner(owner.session, photo);
+                setImageEpoch((epoch) => epoch + 1);
+              }}
+            />
+          ) : (
+            <PublicProfileHeader
+              pictureUrl={visitorImages.pictureUrl}
+              bannerUrl={visitorImages.bannerUrl}
+            />
+          )}
           <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
             {t('profile.title')}
           </h1>
           <AccountActivityChart received={received} donated={donated} failed={activityFailed} />
           <LoanBalanceChart owed={owed} credit={credit} failed={activityFailed} />
-          <AboutMeSection
-            mode="public"
-            aboutMe={profile.aboutMe}
-            name={profile.name}
-            {...(profile.aboutMe !== null &&
-            profile.profileMessage !== null &&
-            profile.profileMessage.id !== ''
-              ? { messageId: profile.profileMessage.id }
-              : {})}
-            hasPhoto={profile.aboutMeHasPhoto === true || profile.profileMessage?.hasPhoto === true}
-            {...(profileMessagePhotoId !== undefined
-              ? {
-                  loadPhoto: () =>
-                    session !== null
-                      ? fetchMessagePhoto(session, profileMessagePhotoId)
-                      : fetchPublicMessagePhoto(profileMessagePhotoId),
+          {owner !== null ? (
+            <AboutMeSection
+              mode="owner"
+              aboutMe={owner.account.aboutMe}
+              name={owner.account.name}
+              {...(typeof owner.account.aboutMessageId === 'string' &&
+              owner.account.aboutMessageId !== ''
+                ? { messageId: owner.account.aboutMessageId }
+                : {})}
+              hasPhoto={owner.account.aboutMeHasPhoto === true}
+              loadPhoto={() => fetchAboutMePhoto(owner.session)}
+              loadPicture={() => fetchProfilePhoto(owner.session)}
+              onSavePicture={async (photo) => {
+                await putProfilePhoto(owner.session, photo);
+                setImageEpoch((epoch) => epoch + 1);
+              }}
+              loadBanner={() => fetchWideBanner(owner.session)}
+              onSaveBanner={async (photo) => {
+                await putWideBanner(owner.session, photo);
+                setImageEpoch((epoch) => epoch + 1);
+              }}
+              /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
+              {...(profileUrl !== '' ? { profileUrl } : {})}
+              onSave={async (text, photo) => {
+                const token = owner.session;
+                try {
+                  const updated =
+                    photo === undefined
+                      ? await putAboutMe(token, text)
+                      : await putAboutMe(token, text, photo);
+                  if (useAuthStore.getState().session !== token) {
+                    return false;
+                  }
+                  const current = useAuthStore.getState().account;
+                  if (current === null) {
+                    return false;
+                  }
+                  const nextAboutId = updated.aboutMessageId;
+                  setAccount({
+                    ...current,
+                    aboutMe: updated.aboutMe,
+                    aboutMeHasPhoto: updated.aboutMeHasPhoto,
+                    ...(nextAboutId === undefined || nextAboutId === ''
+                      ? {}
+                      : { aboutMessageId: nextAboutId }),
+                  });
+                } catch (err) {
+                  if (useAuthStore.getState().session !== token) {
+                    return false;
+                  }
+                  if (err instanceof MissingRequirementsError) {
+                    if (err.missing.includes('rules')) {
+                      returnToView('/setup/rules', router);
+                      return;
+                    }
+                    throw err;
+                  }
+                  throw err;
                 }
-              : {})}
-            /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
-            {...(profileUrl !== '' ? { profileUrl } : {})}
-          />
+              }}
+            />
+          ) : (
+            <AboutMeSection
+              mode="public"
+              aboutMe={profile.aboutMe}
+              name={profile.name}
+              {...(profile.aboutMe !== null &&
+              profile.profileMessage !== null &&
+              profile.profileMessage.id !== ''
+                ? { messageId: profile.profileMessage.id }
+                : {})}
+              hasPhoto={
+                profile.aboutMeHasPhoto === true || profile.profileMessage?.hasPhoto === true
+              }
+              {...(profileMessagePhotoId !== undefined
+                ? {
+                    loadPhoto: () =>
+                      session !== null
+                        ? fetchMessagePhoto(session, profileMessagePhotoId)
+                        : fetchPublicMessagePhoto(profileMessagePhotoId),
+                  }
+                : {})}
+              /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
+              {...(profileUrl !== '' ? { profileUrl } : {})}
+            />
+          )}
           {showMessage ? (
             <Button
               type="button"
@@ -1892,32 +2009,45 @@ export function MemberProfileScreen({
               {t('profile.message')}
             </Button>
           ) : null}
-          <MemberIdentityPills profile={listedProfile}>
-            {(marks, hints) => (
+          {owner !== null ? (
+            <MemberIdentityPills profile={listedProfile}>
+              {(marks, hints) => (
+                <>
+                  <NameForm variant="profile" besideName={marks} belowName={hints} />
+                  <LocationForm />
+                </>
+              )}
+            </MemberIdentityPills>
+          ) : (
+            <>
+              <MemberIdentityPills profile={listedProfile}>
+                {(marks, hints) => (
+                  <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+                    <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+                      {t('name.heading')}
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <p className="min-w-0 truncate text-sm text-app-fg">
+                        {listedProfile.name ?? t('view.unnamed')}
+                      </p>
+                      {marks}
+                    </div>
+                    {hints}
+                  </div>
+                )}
+              </MemberIdentityPills>
               <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
                 <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-                  {t('name.heading')}
+                  {t('location.heading')}
                 </p>
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  <p className="min-w-0 truncate text-sm text-app-fg">
-                    {listedProfile.name ?? t('view.unnamed')}
-                  </p>
-                  {marks}
-                </div>
-                {hints}
+                <p className="min-w-0 truncate text-center text-sm text-app-fg">
+                  {profile.location !== null && profile.location.trim() !== ''
+                    ? profile.location
+                    : t('location.unset')}
+                </p>
               </div>
-            )}
-          </MemberIdentityPills>
-          <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
-            <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-              {t('location.heading')}
-            </p>
-            <p className="min-w-0 truncate text-center text-sm text-app-fg">
-              {profile.location !== null && profile.location.trim() !== ''
-                ? profile.location
-                : t('location.unset')}
-            </p>
-          </div>
+            </>
+          )}
           {giftsBlock}
           {countButtons}
           {account !== null &&

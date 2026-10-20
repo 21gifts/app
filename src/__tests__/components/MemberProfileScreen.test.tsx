@@ -113,6 +113,12 @@ vi.mock('@/lib/api', () => ({
   fetchMemberPosts: vi.fn(),
   fetchMemberShops: vi.fn(),
   fetchMemberCredits: vi.fn(),
+  fetchAboutMePhoto: vi.fn(),
+  fetchProfilePhoto: vi.fn().mockRejectedValue(new Error('none')),
+  fetchWideBanner: vi.fn().mockRejectedValue(new Error('none')),
+  putAboutMe: vi.fn(),
+  putProfilePhoto: vi.fn(),
+  putWideBanner: vi.fn(),
   fetchMemberReplies: vi.fn(),
   fetchReplies: vi.fn(),
   openConversation: vi.fn(),
@@ -5251,5 +5257,48 @@ describe('MemberProfileScreen in-app wallet pay', () => {
       NO_RATE_SHOWN,
     );
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
+  });
+});
+
+describe('MemberProfileScreen public lists', () => {
+  it('loads the public list instead of the member route', async () => {
+    const loadPublicList = vi.fn().mockResolvedValue([]);
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, postCount: 1 }}
+        received={[]}
+        donated={[]}
+        loadPublicList={loadPublicList}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    await waitFor(() => {
+      expect(loadPublicList).toHaveBeenCalledWith('posts');
+    });
+    expect(fetchMemberPosts).not.toHaveBeenCalled();
+  });
+
+  it('shows the feed error when the public list fails', async () => {
+    const loadPublicList = vi.fn().mockRejectedValue(new Error('down'));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, postCount: 1 }}
+        received={[]}
+        donated={[]}
+        loadPublicList={loadPublicList}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+  });
+
+  it('shows the feed error when there is no session and no public list', async () => {
+    useAuthStore.setState({ session: null, account: null });
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, postCount: 1 }} received={[]} donated={[]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: '1 post' }));
+    expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
+    expect(fetchMemberPosts).not.toHaveBeenCalled();
   });
 });

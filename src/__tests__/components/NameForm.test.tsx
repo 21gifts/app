@@ -97,6 +97,19 @@ describe('NameForm', () => {
     expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
   });
 
+  it('keeps the public marks beside the field while the name is unset', () => {
+    renderWithLocale(
+      <NameForm
+        variant="profile"
+        besideName={<span>Verified</span>}
+        belowName={<span>People see this name.</span>}
+      />,
+    );
+    expect(screen.getByText('Verified')).toBeTruthy();
+    expect(screen.getByText('People see this name.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Save name' })).toBeTruthy();
+  });
+
   it('shows the prompt for a whitespace-only name instead of display/edit', () => {
     useAuthStore.setState({
       session: 'sess',

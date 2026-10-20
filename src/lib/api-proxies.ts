@@ -1570,6 +1570,22 @@ export async function proxyViewActivityGet(request: Request, viewKey: string): P
 }
 
 /**
+ * Proxies GET /view/:viewKey/posts|shops|credits|replies (public; no auth).
+ *
+ * @param request - Incoming App Router request.
+ * @param viewKey - 64-hex view key from the URL.
+ * @param kind - Which public list to load.
+ * @returns The upstream response.
+ */
+export async function proxyViewListGet(
+  request: Request,
+  viewKey: string,
+  kind: 'posts' | 'shops' | 'credits' | 'replies',
+): Promise<Response> {
+  return proxyApiRequest(request, `/view/${encodeURIComponent(viewKey)}/${kind}`);
+}
+
+/**
  * Proxies GET /view/:viewKey/about/photo to the 21.gifts api (public; no auth).
  *
  * App path is `/view-key/:viewKey/about/photo`.

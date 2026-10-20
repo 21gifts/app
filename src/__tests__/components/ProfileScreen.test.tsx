@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileScreen } from '@/components/ProfileScreen';
 import {
   fetchAboutMePhoto,
-  fetchAccountActivity,
+  fetchMemberActivity,
   fetchMember,
   fetchProfilePhoto,
   fetchWideBanner,
@@ -59,7 +59,7 @@ const EMPTY_ACTIVITY: AccountActivity = {
 };
 
 vi.mock('@/lib/api', () => ({
-  fetchAccountActivity: vi.fn().mockResolvedValue({
+  fetchMemberActivity: vi.fn().mockResolvedValue({
     donatedSats: 0,
     receivedSats: 0,
     donatedOverTime: [],
@@ -90,7 +90,27 @@ vi.mock('@/lib/api', () => ({
     .mockResolvedValue({ asOf: '2026-10-07T00:00:00.000Z', source: 'test', rates: {} }),
   fetchMemberPosts: vi.fn().mockResolvedValue([]),
   fetchMemberShops: vi.fn().mockResolvedValue([]),
+  fetchMemberCredits: vi.fn().mockResolvedValue([]),
   fetchMemberReplies: vi.fn().mockResolvedValue([]),
+  skipSetup: vi.fn(),
+  CannotReceiveError: class CannotReceiveError extends Error {
+    constructor() {
+      super('cannot_receive');
+      this.name = 'CannotReceiveError';
+    }
+  },
+  NoteDeletedError: class NoteDeletedError extends Error {
+    constructor() {
+      super('This note was deleted');
+      this.name = 'NoteDeletedError';
+    }
+  },
+  WalletRequiredError: class WalletRequiredError extends Error {
+    constructor() {
+      super('wallet_required');
+      this.name = 'WalletRequiredError';
+    }
+  },
   fetchMessagePhoto: vi.fn(),
   fetchPublicMessage: vi.fn(),
   fetchPublicMessagePhoto: vi.fn(),
@@ -210,8 +230,8 @@ const OWN_MEMBER: MemberProfile = {
 beforeEach(() => {
   hydrateReady = true;
   replace.mockReset();
-  vi.mocked(fetchAccountActivity).mockReset();
-  vi.mocked(fetchAccountActivity).mockResolvedValue(EMPTY_ACTIVITY);
+  vi.mocked(fetchMemberActivity).mockReset();
+  vi.mocked(fetchMemberActivity).mockResolvedValue(EMPTY_ACTIVITY);
   vi.mocked(putAboutMe).mockReset();
   vi.mocked(fetchMember).mockReset();
   vi.mocked(fetchMember).mockReturnValue(new Promise(() => undefined));
@@ -288,12 +308,12 @@ describe('ProfileScreen', () => {
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
     await waitFor(() => {
-      expect(vi.mocked(fetchAccountActivity)).toHaveBeenCalledWith('tok');
+      expect(vi.mocked(fetchMemberActivity)).toHaveBeenCalledWith('tok', 'acc_1');
     });
   });
 
   it('keeps the chart mounted with no Loading… while fetch is pending', () => {
-    vi.mocked(fetchAccountActivity).mockReturnValue(new Promise<AccountActivity>(() => undefined));
+    vi.mocked(fetchMemberActivity).mockReturnValue(new Promise<AccountActivity>(() => undefined));
     renderWithLocale(<ProfileScreen />);
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
@@ -305,12 +325,20 @@ describe('ProfileScreen', () => {
   });
 
   it('says the gifts could not be loaded when activity fails', async () => {
-    vi.mocked(fetchAccountActivity).mockRejectedValue(new Error('down'));
+    vi.mocked(fetchMemberActivity).mockRejectedValue(new Error('down'));
     renderWithLocale(<ProfileScreen />);
     expect(await screen.findByText('Could not load gifts.')).toBeTruthy();
     expect(screen.queryByText('No gifts yet.')).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+  });
+
+  it('redirects to setup/rules when member activity is missing requirements', async () => {
+    vi.mocked(fetchMemberActivity).mockRejectedValue(new MissingRequirementsError(['rules']));
+    renderWithLocale(<ProfileScreen />);
+    await waitFor(() => {
+      expect(replace).toHaveBeenCalledWith('/setup/rules');
+    });
   });
 
   it('shows a series day tick after activity loads', async () => {
@@ -367,7 +395,7 @@ describe('ProfileScreen', () => {
       ],
       fx: FX_ALL,
     };
-    vi.mocked(fetchAccountActivity).mockResolvedValue(seriesActivity);
+    vi.mocked(fetchMemberActivity).mockResolvedValue(seriesActivity);
     renderWithLocale(<ProfileScreen />);
     await waitFor(() => {
       expect(screen.getByText('2026-06-01')).toBeTruthy();
@@ -1439,6 +1467,20 @@ describe('ProfileScreen', () => {
     view.unmount();
     await act(async () => {
       rejectMember(new Error('late'));
+    });
+  });
+
+  it('ignores member activity that fails after unmount', async () => {
+    let rejectActivity: (err: Error) => void = () => undefined;
+    vi.mocked(fetchMemberActivity).mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectActivity = reject;
+      }),
+    );
+    const view = renderWithLocale(<ProfileScreen />);
+    view.unmount();
+    await act(async () => {
+      rejectActivity(new Error('late'));
     });
   });
 });

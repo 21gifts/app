@@ -961,13 +961,16 @@ async function seedProfilePage(page: Page): Promise<void> {
       }),
     });
   });
-  await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(EMPTY_ACTIVITY),
-    });
-  });
+  await page.route(
+    /\/(?:me\/activity|forum\/members\/acc_e2e\/activity)(?:\?|$)/,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    },
+  );
 }
 
 test.beforeEach(async ({ page }) => {
@@ -9246,13 +9249,16 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EMPTY_ACTIVITY),
-      });
-    });
+    await page.route(
+      /\/(?:me\/activity|forum\/members\/acc_e2e\/activity)(?:\?|$)/,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(EMPTY_ACTIVITY),
+        });
+      },
+    );
     await stubOwnMember(page);
     await openProfile(page);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
@@ -9287,13 +9293,16 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EMPTY_ACTIVITY),
-      });
-    });
+    await page.route(
+      /\/(?:me\/activity|forum\/members\/acc_e2e\/activity)(?:\?|$)/,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(EMPTY_ACTIVITY),
+        });
+      },
+    );
     await stubOwnMember(page, { staffTag: 'software_developer' });
     await openProfile(page);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
@@ -9325,13 +9334,16 @@ test.describe('onboarding screens', () => {
         }),
       });
     });
-    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EMPTY_ACTIVITY),
-      });
-    });
+    await page.route(
+      /\/(?:me\/activity|forum\/members\/acc_e2e\/activity)(?:\?|$)/,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(EMPTY_ACTIVITY),
+        });
+      },
+    );
     await stubOwnMember(page);
     await openProfile(page);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
@@ -20206,13 +20218,16 @@ test.describe('profile activity chart variants', () => {
   }
 
   async function stubProfileStats(page: Page, body: unknown): Promise<void> {
-    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(body),
-      });
-    });
+    await page.route(
+      /\/(?:me\/activity|forum\/members\/acc_e2e\/activity)(?:\?|$)/,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(body),
+        });
+      },
+    );
   }
 
   /**
@@ -20860,13 +20875,16 @@ test.describe('profile funding states', () => {
         }),
       });
     });
-    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EMPTY_ACTIVITY),
-      });
-    });
+    await page.route(
+      /\/(?:me\/activity|forum\/members\/acc_e2e\/activity)(?:\?|$)/,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(EMPTY_ACTIVITY),
+        });
+      },
+    );
   }
 
   test('profile funding not-verified', async ({ page }) => {
@@ -21281,13 +21299,16 @@ test.describe('profile apply screens', () => {
         }),
       });
     });
-    await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(EMPTY_ACTIVITY),
-      });
-    });
+    await page.route(
+      /\/(?:me\/activity|forum\/members\/acc_e2e\/activity)(?:\?|$)/,
+      async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(EMPTY_ACTIVITY),
+        });
+      },
+    );
   }
 
   async function stubPosts(

@@ -28,8 +28,12 @@ const EMPTY_ACTIVITY = {
   },
 };
 
-test('e2e:check dynamic path token for /view/[viewKey]', async ({ page }) => {
+test('e2e:check dynamic path token for /view/[viewKey]', async ({ page, request }) => {
   await page.goto('/view/[viewKey]');
+  expect((await request.get('/view-key/[viewKey]/posts')).status()).toBe(200);
+  expect((await request.get('/view-key/[viewKey]/shops')).status()).toBe(200);
+  expect((await request.get('/view-key/[viewKey]/credits')).status()).toBe(200);
+  expect((await request.get('/view-key/[viewKey]/replies')).status()).toBe(200);
 });
 
 test('public view profile default shows name and address', async ({ page }) => {
@@ -268,13 +272,16 @@ test('signed-in profile shows the unlabeled profile copy control without exposin
       }),
     });
   });
-  await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(EMPTY_ACTIVITY),
-    });
-  });
+  await page.route(
+    /\/(?:me\/activity|forum\/members\/acc_e2e\/activity)(?:\?|$)/,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    },
+  );
   await page.goto('/profile');
   await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
   await expect(page.getByText('Copy link to this profile')).toHaveCount(0);

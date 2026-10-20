@@ -453,13 +453,16 @@ const EMPTY_ACTIVITY = {
   fx: FX_USD,
 };
 async function stubAccountActivity(page: Page, body: unknown): Promise<void> {
-  await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(body),
-    });
-  });
+  await page.route(
+    /\/(?:me\/activity|forum\/members\/acc_e2e\/activity)(?:\?|$)/,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(body),
+      });
+    },
+  );
 }
 
 async function openSignedInMenu(page: Page): Promise<void> {
@@ -12210,7 +12213,73 @@ test('Function: proxyViewActivityGet — GET /view-key/[viewKey]/activity is rea
   expect((await request.get('/view-key/[viewKey]/activity')).status()).toBe(200);
 });
 
-test('Function: useAccountTotals — profile chart reads /me/activity and the menu hides amounts', async ({
+test('Function: proxyViewListGet — GET /view-key/[viewKey]/posts is reachable', async ({
+  request,
+}) => {
+  expect((await request.get('/view-key/[viewKey]/posts')).status()).toBe(200);
+});
+
+test('Function: fetchViewForumList — a public profile post count loads the share-link list', async ({
+  page,
+}) => {
+  const key = 'c'.repeat(64);
+  await page.route(new RegExp(`/view-key/${key}$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        name: 'Ada',
+        location: null,
+        lightningAddress: 'member@21.gifts',
+        lightningAddressVerified: true,
+        createdAt: 1,
+        hasPasskey: false,
+        aboutMe: null,
+        postCount: 1,
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.route('**/view-key/**/activity**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
+  await page.route(new RegExp(`/view-key/${key}/posts$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: '22222222-2222-4222-8222-222222222222',
+            name: 'Ada',
+            text: 'Hello from the share link',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis',
+            replyCount: 0,
+            heartCount: 0,
+            hearted: false,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto(`/view/${key}`);
+  await page.getByRole('button', { name: '1 post' }).click();
+  await expect(page.getByText('Hello from the share link')).toBeVisible();
+});
+
+test('Function: useAccountTotals — the menu hides amounts while the profile chart reads the member series', async ({
   page,
 }) => {
   await seedAdaSession(page);
@@ -12219,8 +12288,22 @@ test('Function: useAccountTotals — profile chart reads /me/activity and the me
     receivedSats: 1500,
     receivedOverTime: POPULATED_STATS.spendOverTime,
   });
+  await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...EMPTY_ACTIVITY,
+        receivedSats: 9_999_999,
+        receivedOverTime: POPULATED_STATS.spendOverTime.map((day) =>
+          day.cumulativeSats === 1500 ? { ...day, cumulativeSats: 9_999_999 } : day,
+        ),
+      }),
+    });
+  });
   await page.goto('/profile');
   await expect(page.getByLabel('Given and received in ₿').getByText("₿1'500")).toBeVisible();
+  await expect(page.getByText("₿9'999'999")).toHaveCount(0);
   await openSignedInMenu(page);
   await expect(page.getByRole('link', { name: 'Profile', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: /Received ₿/ })).toHaveCount(0);
@@ -15342,24 +15425,27 @@ async function openEmptyProfileImages(page: Page, picturePuts: unknown[]): Promi
       }),
     });
   });
-  await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        donatedSats: 0,
-        receivedSats: 0,
-        donatedOverTime: [],
-        receivedOverTime: [],
-        fx: {
-          quote: 'BTC-USD',
-          dayBasis: 'utc',
-          source: 'coinbase-exchange-daily-close',
-          quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
-        },
-      }),
-    });
-  });
+  await page.route(
+    /\/(?:me\/activity|forum\/members\/acc_e2e\/activity)(?:\?|$)/,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          donatedSats: 0,
+          receivedSats: 0,
+          donatedOverTime: [],
+          receivedOverTime: [],
+          fx: {
+            quote: 'BTC-USD',
+            dayBasis: 'utc',
+            source: 'coinbase-exchange-daily-close',
+            quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+          },
+        }),
+      });
+    },
+  );
   await page.route(/\/pictures\/me$/, async (route) => {
     if (route.request().method() === 'PUT') {
       picturePuts.push(route.request().postDataJSON());
@@ -15375,6 +15461,14 @@ async function openEmptyProfileImages(page: Page, picturePuts: unknown[]): Promi
   await expect(page.getByText('alice@21.gifts')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
 }
+
+test('Function: ProfileImages — the signed-in profile header offers a profile photo and a wide image', async ({
+  page,
+}) => {
+  await openEmptyProfileImages(page, []);
+  await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add a wide image' })).toBeVisible();
+});
 
 test('Function: CameraPhotoButton — the profile photo uses the front camera and saves like a picked photo', async ({
   page,
@@ -15451,24 +15545,27 @@ async function openWideImageCrop(page: Page, puts: unknown[]): Promise<void> {
       }),
     });
   });
-  await page.route(/\/me\/activity(?:\?|$)/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        donatedSats: 0,
-        receivedSats: 0,
-        donatedOverTime: [],
-        receivedOverTime: [],
-        fx: {
-          quote: 'BTC-USD',
-          dayBasis: 'utc',
-          source: 'coinbase-exchange-daily-close',
-          quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
-        },
-      }),
-    });
-  });
+  await page.route(
+    /\/(?:me\/activity|forum\/members\/acc_e2e\/activity)(?:\?|$)/,
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          donatedSats: 0,
+          receivedSats: 0,
+          donatedOverTime: [],
+          receivedOverTime: [],
+          fx: {
+            quote: 'BTC-USD',
+            dayBasis: 'utc',
+            source: 'coinbase-exchange-daily-close',
+            quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+          },
+        }),
+      });
+    },
+  );
   await page.route(/\/pictures\/me$/, async (route) => {
     await route.fulfill({ status: 404, body: '' });
   });

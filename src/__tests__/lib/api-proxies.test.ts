@@ -99,6 +99,7 @@ import {
   proxyTranslateConversationMessagePost,
   proxyTranslateNotePost,
   proxyViewActivityGet,
+  proxyViewListGet,
   proxyTrustAppointModeratorPost,
   proxyTrustChainGet,
   proxyTrustConfirmModeratorPost,
@@ -1080,6 +1081,17 @@ describe('api proxy wrappers', () => {
       viewKey,
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(`/view/${viewKey}/activity`);
+  });
+
+  it('proxyViewListGet hits /view/:viewKey/posts', async () => {
+    const fetchMock = stubApi();
+    const viewKey = 'a'.repeat(64);
+    await proxyViewListGet(
+      new Request(`http://localhost/view-key/${viewKey}/posts`),
+      viewKey,
+      'posts',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe(`/view/${viewKey}/posts`);
   });
 
   it('proxyPushVapidPublicGet hits /push/vapid-public', async () => {
