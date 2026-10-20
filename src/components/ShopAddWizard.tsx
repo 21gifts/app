@@ -16,10 +16,10 @@ import {
   formatShopAddressLine,
   shopDescriptionProblem,
   shopDescriptionRemaining,
+  shopDescriptionText,
   shopPlaceComplete,
   shopProblemField,
   shopUsernameProblem,
-  shopDescriptionText,
   usernameLookupVerdict,
   type ShopApiProblem,
 } from '@/lib/forum-shop';

@@ -4240,9 +4240,9 @@
     "fil": "Bukas sa Mapa ang form ng lugar na Bahnhofstrasse Bakery ang Pangalan ng shop at Bahnhofstrasse 12, 8001 Zürich, Switzerland ang address. Nakikita ang error na Hindi dapat kasama sa pangalan ng shop ang kalye o ang postal code. at disabled ang Gamitin ang lugar na ito."
   },
   "/shops:map-edit-place-field-invalid": {
-    "de": "Das Ortsformular ist auf Karte mit Hausnummer abc, Postleitzahl 80 und Ort 1234 geöffnet. Die drei Live-Fehler sind zusammen sichtbar; Diesen Ort verwenden ist deaktiviert.",
-    "es": "El formulario está abierto en Mapa con número abc, código postal 80 y ciudad 1234. Los tres errores están visibles juntos; Usar este lugar está deshabilitado.",
-    "fil": "Bukas sa Mapa ang form na abc ang numero ng bahay, 80 ang postal code, at 1234 ang lungsod. Sabay na nakikita ang tatlong error at disabled ang Gamitin ang lugar na ito."
+    "de": "Das Ortsformular ist auf Karte mit Hausnummer abc, Postleitzahl 80 und Ort 1234 geöffnet. Die Live-Fehler für Hausnummer, Postleitzahl und Ort sind zusammen sichtbar; Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario de lugar está abierto en Mapa con número abc, código postal 80 y ciudad 1234. Los errores en vivo de número, código postal y ciudad están visibles juntos; Usar este lugar está deshabilitado.",
+    "fil": "Bukas sa Mapa ang form ng lugar na abc ang numero ng bahay, 80 ang postal code, at 1234 ang lungsod. Sabay na nakikita ang mga live na error para sa numero ng bahay, postal code, at lungsod at disabled ang Gamitin ang lugar na ito."
   },
   "/shops:map-edit-text-error": {
     "de": "Schritt 3 von 5 · Text ist auf Karte mit Fresh bread every morning. und einem unzulässigen Steuerzeichen geöffnet. Der Live-Fehler Der Shop-Text darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten. ist sichtbar und Weiter ist deaktiviert.",
@@ -4250,9 +4250,9 @@
     "fil": "Bukas sa Mapa ang hakbang 3 sa 5 · Teksto na may Fresh bread every morning. at bawal na control character. Nakikita ang error na Hindi dapat may control character ang teksto ng shop maliban sa line break. at disabled ang Susunod."
   },
   "/shops:map-edit-text-not-longer": {
-    "de": "Schritt 3 von 5 · Text ist auf Karte mit dem Ort Kiki's Bakery and Coffee House Zurich und Fresh bread every morning. geöffnet. Der Live-Fehler Der Shop-Text muss länger sein als der Shopname. ist sichtbar und Weiter deaktiviert.",
-    "es": "El paso 3 de 5 · Texto está abierto en Mapa con Kiki's Bakery and Coffee House Zurich y Fresh bread every morning. El error El texto de la tienda debe ser más largo que el nombre de la tienda. está visible y Siguiente deshabilitado.",
-    "fil": "Bukas sa Mapa ang hakbang 3 sa 5 · Teksto na may Kiki's Bakery and Coffee House Zurich at Fresh bread every morning. Nakikita ang error na Dapat mas mahaba ang teksto ng shop kaysa sa pangalan ng shop. at disabled ang Susunod."
+    "de": "Schritt 3 von 5 · Text ist auf Karte mit einem Ort namens Kiki's Bakery and Coffee House Zurich und dem Text Fresh bread every morning. geöffnet. Der Live-Fehler Der Shop-Text muss länger sein als der Shopname. ist sichtbar und Weiter ist deaktiviert.",
+    "es": "El paso 3 de 5 · Texto está abierto en Mapa con un lugar llamado Kiki's Bakery and Coffee House Zurich y el texto Fresh bread every morning. El error en vivo El texto de la tienda debe ser más largo que el nombre de la tienda. está visible y Siguiente está deshabilitado.",
+    "fil": "Bukas sa Mapa ang hakbang 3 sa 5 · Teksto na may lugar na Kiki's Bakery and Coffee House Zurich at tekstong Fresh bread every morning. Nakikita ang live na error na Dapat mas mahaba ang teksto ng shop kaysa sa pangalan ng shop. at disabled ang Susunod."
   },
   "/shops:table-edit-photos-unsupported": {
     "de": "Schritt 1 von 5 · Bilder ist auf Tabelle nach einer nicht unterstützten Datei geöffnet. JPEG, PNG oder WebP verwenden ist sichtbar; es gibt keine neue Vorschau.",
@@ -4280,9 +4280,9 @@
     "fil": "Bukas sa Talahanayan ang form ng lugar na Bahnhofstrasse Bakery ang Pangalan ng shop at Bahnhofstrasse 12, 8001 Zürich, Switzerland ang address. Nakikita ang error na Hindi dapat kasama sa pangalan ng shop ang kalye o ang postal code. at disabled ang Gamitin ang lugar na ito."
   },
   "/shops:table-edit-place-field-invalid": {
-    "de": "Das Ortsformular ist auf Tabelle mit Hausnummer abc, Postleitzahl 80 und Ort 1234 geöffnet. Die drei Live-Fehler sind zusammen sichtbar; Diesen Ort verwenden ist deaktiviert.",
-    "es": "El formulario está abierto en Tabla con número abc, código postal 80 y ciudad 1234. Los tres errores están visibles juntos; Usar este lugar está deshabilitado.",
-    "fil": "Bukas sa Talahanayan ang form na abc ang numero ng bahay, 80 ang postal code, at 1234 ang lungsod. Sabay na nakikita ang tatlong error at disabled ang Gamitin ang lugar na ito."
+    "de": "Das Ortsformular ist auf Tabelle mit Hausnummer abc, Postleitzahl 80 und Ort 1234 geöffnet. Die Live-Fehler für Hausnummer, Postleitzahl und Ort sind zusammen sichtbar; Diesen Ort verwenden ist deaktiviert.",
+    "es": "El formulario de lugar está abierto en Tabla con número abc, código postal 80 y ciudad 1234. Los errores en vivo de número, código postal y ciudad están visibles juntos; Usar este lugar está deshabilitado.",
+    "fil": "Bukas sa Talahanayan ang form ng lugar na abc ang numero ng bahay, 80 ang postal code, at 1234 ang lungsod. Sabay na nakikita ang mga live na error para sa numero ng bahay, postal code, at lungsod at disabled ang Gamitin ang lugar na ito."
   },
   "/shops:table-edit-text-error": {
     "de": "Schritt 3 von 5 · Text ist auf Tabelle mit Fresh bread every morning. und einem unzulässigen Steuerzeichen geöffnet. Der Live-Fehler Der Shop-Text darf ausser Zeilenumbrüchen keine Steuerzeichen enthalten. ist sichtbar und Weiter ist deaktiviert.",
@@ -4290,9 +4290,9 @@
     "fil": "Bukas sa Talahanayan ang hakbang 3 sa 5 · Teksto na may Fresh bread every morning. at bawal na control character. Nakikita ang error na Hindi dapat may control character ang teksto ng shop maliban sa line break. at disabled ang Susunod."
   },
   "/shops:table-edit-text-not-longer": {
-    "de": "Schritt 3 von 5 · Text ist auf Tabelle mit dem Ort Kiki's Bakery and Coffee House Zurich und Fresh bread every morning. geöffnet. Der Live-Fehler Der Shop-Text muss länger sein als der Shopname. ist sichtbar und Weiter deaktiviert.",
-    "es": "El paso 3 de 5 · Texto está abierto en Tabla con Kiki's Bakery and Coffee House Zurich y Fresh bread every morning. El error El texto de la tienda debe ser más largo que el nombre de la tienda. está visible y Siguiente deshabilitado.",
-    "fil": "Bukas sa Talahanayan ang hakbang 3 sa 5 · Teksto na may Kiki's Bakery and Coffee House Zurich at Fresh bread every morning. Nakikita ang error na Dapat mas mahaba ang teksto ng shop kaysa sa pangalan ng shop. at disabled ang Susunod."
+    "de": "Schritt 3 von 5 · Text ist auf Tabelle mit einem Ort namens Kiki's Bakery and Coffee House Zurich und dem Text Fresh bread every morning. geöffnet. Der Live-Fehler Der Shop-Text muss länger sein als der Shopname. ist sichtbar und Weiter ist deaktiviert.",
+    "es": "El paso 3 de 5 · Texto está abierto en Tabla con un lugar llamado Kiki's Bakery and Coffee House Zurich y el texto Fresh bread every morning. El error en vivo El texto de la tienda debe ser más largo que el nombre de la tienda. está visible y Siguiente está deshabilitado.",
+    "fil": "Bukas sa Talahanayan ang hakbang 3 sa 5 · Teksto na may lugar na Kiki's Bakery and Coffee House Zurich at tekstong Fresh bread every morning. Nakikita ang live na error na Dapat mas mahaba ang teksto ng shop kaysa sa pangalan ng shop. at disabled ang Susunod."
   },
   "/shops:add-photos-unsupported": {
     "de": "Shop hinzufügen ist bei Schritt 1 von 5 · Bilder nach einer nicht unterstützten Datei geöffnet. Bitte verwenden Sie ein Foto im JPEG-, PNG- oder WebP-Format oder ein Video im MP4-, WebM- oder MOV-Format ist sichtbar; es gibt keine Vorschau.",

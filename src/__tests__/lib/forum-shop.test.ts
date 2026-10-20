@@ -362,6 +362,8 @@ describe('forum-shop', () => {
         'Fresh bread\nevery morning.',
       );
       expect(shopDescriptionText('Fresh\rbread')).toBe('Fresh\nbread');
+      expect(shopDescriptionText('Fresh #21GiftsShop bread #21GiftsShop')).toBe('Fresh  bread');
+      expect(shopDescriptionText('Fresh\r\n\r\n\r\n\r\nbread')).toBe('Fresh\n\nbread');
     });
   });
 
