@@ -1,12 +1,10 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
-import { FiatPicker } from '@/components/FiatPicker';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { SegmentedControl } from '@/components/ui';
-import { useHydrateSession } from '@/hooks/useHydrateSession';
 import {
   activityMaxY,
   activityValue,
@@ -15,7 +13,6 @@ import {
 } from '@/lib/account-activity';
 import type { AccountActivity } from '@/lib/api-types';
 import { formatBitcoin, formatFiatTick, formatUsdTick, type FiatCode } from '@/lib/stats-money';
-import { useAuthStore } from '@/stores/auth-store';
 
 /** Props for {@link AccountActivityChart}. */
 export interface AccountActivityChartProps {
@@ -78,20 +75,17 @@ function selectedFiatUnsummable(
 }
 
 /**
- * Compact dual-line cumulative chart of Given and Received. FiatPicker only
- * when hydration is ready AND session is null (unsigned public view).
- * Signed-in mounts omit it.
- * Fiat code comes from {@link useFiatPreference}. Populated series still get
- * a ₿ | selected-fiat scale. A null `usd` / `cumulativeUsd` still draws the
- * satoshi chart; the USD scale uses an em dash when `cumulativeUsd` is null.
+ * Compact dual-line cumulative chart of Given and Received. Does not mount
+ * FiatPicker. The preferred code comes from {@link useFiatPreference}: the
+ * Settings Display row when signed in, otherwise the cookie or the locale
+ * default. Populated series get a ₿ | selected-fiat scale. A null `usd` /
+ * `cumulativeUsd` still draws the satoshi chart; the USD scale uses an em
+ * dash when `cumulativeUsd` is null.
  *
  * @param props - Receive series, optional donate series, and optional `failed`.
- * @returns When unsigned, FiatPicker then empty `profile.chartEmpty` status,
- *   failed-empty `profile.chartError` alert, or FiatPicker plus legend,
- *   selected-fiat chrome, and reserved-height SVG. Signed-in empty is
- *   `profile.chartEmpty` alone (or `profile.chartError` when `failed`);
- *   populated signed-in starts at legend + ₿\|selected fiat scale (no title
- *   heading), including when USD is null.
+ * @returns Empty `profile.chartEmpty` status, failed-empty
+ *   `profile.chartError` alert, or legend, selected-fiat chrome, and
+ *   reserved-height SVG. No title heading. Signed-in and unsigned match.
  */
 export function AccountActivityChart({
   received,
@@ -100,10 +94,7 @@ export function AccountActivityChart({
 }: AccountActivityChartProps): ReactElement {
   const { t } = useTranslations();
   const { numberFormat } = useNumberFormat();
-  const { fiat, setFiat } = useFiatPreference();
-  const { ready } = useHydrateSession();
-  const session = useAuthStore((state) => state.session);
-  const showFiatSwitcher = ready && session === null;
+  const { fiat } = useFiatPreference();
   const [scale, setScale] = useState<ActivityScale>('sat');
   const points = alignActivitySeries(received, donated);
   const emptySats =
@@ -112,14 +103,9 @@ export function AccountActivityChart({
       (point) => point.cumulativeDonatedSats === 0 && point.cumulativeReceivedSats === 0,
     );
 
-  const picker = showFiatSwitcher ? (
-    <FiatPicker value={fiat} onChange={setFiat} shell="app" ariaLabel={t('profile.fiatCurrency')} />
-  ) : null;
-
   if (emptySats) {
     return (
       <div className="flex w-full flex-col gap-2">
-        {picker}
         {failed ? (
           <p className="text-center text-sm text-app-danger" role="alert">
             {t('profile.chartError')}
@@ -197,7 +183,6 @@ export function AccountActivityChart({
 
   return (
     <div className="flex w-full flex-col gap-2">
-      {picker}
       <div role="group" aria-label={t('profile.chartTitle')} className="flex w-full flex-col gap-2">
         <div className="flex items-center justify-between gap-3 text-xs text-app-muted">
           <div className="flex flex-wrap items-center gap-3">

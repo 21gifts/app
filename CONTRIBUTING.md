@@ -218,7 +218,7 @@ app/
 │   │   ├── LanguageSwitcher.tsx # Cookie locale override + refresh
 │   │   ├── LanguagePreferenceSwitcher.tsx # Settings locale SegmentedControl (endonyms)
 │   │   ├── NumberFormatSwitcher.tsx # Cookie numberFormat override (ch/us/de)
-│   │   ├── FiatPicker.tsx       # CHF|EUR|USD|PHP control (settings; unsigned chart/stats/day)
+│   │   ├── FiatPicker.tsx       # CHF|EUR|USD|PHP control (settings; unsigned stats/day)
 │   │   ├── FiatPreferenceSwitcher.tsx # Settings cookie fiat override (CHF|EUR|USD|PHP)
 │   │   ├── LocaleProvider.tsx   # Client catalog + useTranslations
 │   │   ├── NumberFormatProvider.tsx # Client number-format context + cookie write
