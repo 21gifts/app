@@ -10648,6 +10648,62 @@ test('Function: PosHistory — the till list gains the charge once it is paid', 
   await expect(history.getByRole('listitem').first()).toContainText('₿21');
 });
 
+test('Function: fiatSuffix — the till lists a charge it created with the figure typed for it', async ({
+  page,
+}) => {
+  await fulfillSpot(page, SPOT_RATES);
+  await seedChfTill(page);
+  let charge: Record<string, unknown> | null = null;
+  let cancelled = false;
+  // Registered after seedChfTill, so this handler answers the till.
+  await page.route(/\/pos\/charge$/, async (route) => {
+    const method = route.request().method();
+    if (method === 'POST') {
+      const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+      charge = {
+        id: 'pos-chf',
+        amountSats,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+        paidAt: null,
+      };
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge }),
+      });
+      return;
+    }
+    if (method === 'DELETE') {
+      cancelled = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+      return;
+    }
+    const body =
+      charge === null
+        ? { charge: null, history: [] }
+        : cancelled
+          ? { charge: null, history: [{ ...charge, status: 'cancelled' }] }
+          : { charge, history: [charge] };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+  await page.goto('/pos/amount');
+  await page.getByRole('button', { name: '6', exact: true }).click();
+  await page.getByRole('button', { name: '8', exact: true }).click();
+  await page.getByRole('button', { name: 'Create payment' }).click();
+  await expect(page).toHaveURL(/\/pos$/);
+  await expect(page.getByText('CHF 68.00')).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel' }).click();
+  const row = page.getByRole('region', { name: 'History' }).getByRole('listitem');
+  await expect(row.getByText('Cancelled')).toBeVisible();
+  await expect(row).toContainText("₿85'000 · CHF 68.00");
+});
+
 test('Function: PosHistory — Cancel puts the charge in the list as Cancelled', async ({ page }) => {
   await seedAdaSession(page);
   await page.route(/\/me$/, async (route) => {

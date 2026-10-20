@@ -22,6 +22,7 @@ import {
   cancelPosCharge,
   createPosCharge,
   fetchPosState,
+  type PosFigure,
   type PosCharge,
   type PosState,
 } from '@/lib/pos';
@@ -36,8 +37,6 @@ import {
   formatBitcoin,
   formatFiatDisplay,
   parseAmountDraft,
-  satsToFiatAmount,
-  type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
 
@@ -163,13 +162,6 @@ type WalletSettled = {
   /** The currency figure of each charge this tab created in a currency, by charge id. */
   figures: Map<string, PosFigure>;
 };
-
-/**
- * The currency figure of a charge: the digits the operator typed in that
- * currency when the charge was created. A charge typed in bitcoin has none.
- * Never priced from a rate (docs/fiat-amounts.md).
- */
-type PosFigure = { amount: string; code: FiatCode };
 
 /** How many payments no known open charge took are kept for the next one. */
 const POS_EARLY_PAYMENTS = 20;
@@ -357,7 +349,10 @@ type PosTillState = {
   /** Past charges, with a charge the wallet saw paid already shown as paid. */
   history: PosState['history'];
   remaining: number;
-  chargeFiat: string | null;
+  /** The currency figure of the open charge when this tab created it in a currency, otherwise `null`. */
+  chargeFigure: PosFigure | null;
+  /** The currency figure of each charge this tab created in a currency, by charge id. */
+  figures: ReadonlyMap<string, PosFigure>;
   /** The currency figure of `paid` when this tab created it in a currency, otherwise `null`. */
   paidFigure: PosFigure | null;
   amount: string;
@@ -486,7 +481,8 @@ function usePosTillState(): PosTillState {
       ? []
       : state.history.map((row) => (row.status === 'paid' ? row : (walletPaid.get(row.id) ?? row)));
   const remaining = charge === null ? 0 : Date.parse(charge.expiresAt) - now;
-  const chargeFiat = charge === null ? null : satsToFiatAmount(charge.amountSats, rateDay, fiat);
+  // Only the figure typed for the charge, never one priced from a rate (docs/fiat-amounts.md).
+  const chargeFigure = charge === null ? null : (memory.figures.get(charge.id) ?? null);
   const paidFigure = paid === null ? null : (memory.figures.get(paid.id) ?? null);
   const needsUsername = account !== null && (account.username ?? '') === '';
   const needsWallet =
@@ -810,7 +806,8 @@ function usePosTillState(): PosTillState {
     paidByWallet: paid !== null && walletPaid.has(paid.id),
     history,
     remaining,
-    chargeFiat,
+    chargeFigure,
+    figures: memory.figures,
     paidFigure,
     amount,
     setAmount,
@@ -943,8 +940,10 @@ export function PosTill(): ReactElement {
           <p className="text-center text-2xl font-semibold tabular-nums lining-nums text-app-fg">
             {formatBitcoin(till.charge.amountSats, numberFormat)}
           </p>
-          {chargeText === null ? null : (
-            <p className="text-center text-sm text-app-subtle">{chargeText}</p>
+          {till.chargeFigure === null ? null : (
+            <p className="text-center text-sm text-app-subtle">
+              {formatFiatDisplay(till.chargeFigure.amount, till.chargeFigure.code, numberFormat)}
+            </p>
           )}
           <Button
             type="button"
@@ -981,7 +980,7 @@ export function PosTill(): ReactElement {
         <PosHistory
           history={till.history}
           openChargeId={till.charge?.id ?? null}
-          rateDay={till.rateDay}
+          figures={till.figures}
         />
       ) : null}
     </Card>

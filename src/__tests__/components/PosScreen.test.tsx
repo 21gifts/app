@@ -153,7 +153,7 @@ afterEach(() => {
 });
 
 describe('PosScreen', () => {
-  it('shows the spot beside bitcoin when an open charge stored no fiat', async () => {
+  it('never prices an open charge this tab did not create from the spot rate', async () => {
     vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
     vi.stubGlobal(
       'fetch',
@@ -176,42 +176,13 @@ describe('PosScreen', () => {
         }),
       ),
     );
-    renderWithLocale(<PosScreen />, 'en', 'ch', 'USD');
+    renderWithLocale(<PosScreen />);
     expect(await screen.findByText('₿21')).toBeTruthy();
     await waitFor(() => {
-      expect(vi.mocked(fetchFxSpot)).toHaveBeenCalled();
+      expect(fetchFxSpot).toHaveBeenCalled();
     });
-    expect(screen.getByText('$0.02')).toBeTruthy();
-  });
-
-  it('shows 12.00 PHP on an open charge to a viewer whose currency is USD', async () => {
-    vi.mocked(fetchFxSpot).mockResolvedValueOnce(SPOT);
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        jsonResponse({
-          charge: {
-            id: 'c1',
-            amountSats: 21,
-            status: 'pending',
-            createdAt: new Date().toISOString(),
-            expiresAt: new Date(Date.now() + 60_000).toISOString(),
-            amountCurrency: 'PHP',
-            amount: '12.00',
-            amountUsd: '1.00',
-            amountChf: null,
-            amountEur: null,
-            amountPhp: null,
-          },
-          history: [],
-        }),
-      ),
-    );
-    renderWithLocale(<PosScreen />, 'en', 'ch', 'USD');
-    expect(await screen.findByText('₱12.00')).toBeTruthy();
-    expect(screen.getByText('₿21')).toBeTruthy();
-    expect(screen.queryByText('$1.00')).toBeNull();
-    expect(screen.queryByText('$0.02')).toBeNull();
+    // No typed figure: bitcoin only (docs/fiat-amounts.md).
+    expect(screen.queryByText(/\$/)).toBeNull();
   });
 
   it('shows the amount form when nothing is open', async () => {
@@ -1239,9 +1210,9 @@ describe('PosScreen', () => {
       expect(within(dialog).getByText('The amount has arrived in your wallet.')).toBeTruthy();
       const history = screen.getByRole('region', { name: 'History' });
       expect(within(history).getByText(/^Paid ✓ /)).toBeTruthy();
-      expect(await within(history).findByText('$0.02')).toBeTruthy();
       // This till did not create the charge, so it has no fixed figure; none is priced from the spot.
       expect(within(dialog).queryByText(/\$/)).toBeNull();
+      expect(within(history).queryByText(/\$/)).toBeNull();
       expect(within(dialog).getByRole('link', { name: 'New payment' }).getAttribute('href')).toBe(
         '/pos/amount',
       );
@@ -2338,9 +2309,14 @@ describe('PosScreen', () => {
       );
       renderWithLocale(<PosScreen />, 'en', 'ch', 'CHF');
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      // The countdown shows the typed figure too.
+      expect(screen.getByText('CHF 68.00')).toBeTruthy();
       receive(21);
       const dialog = await confirmation();
       expect(within(dialog).getByText('CHF 68.00')).toBeTruthy();
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Done' }));
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(await within(history).findByText('CHF 68.00')).toBeTruthy();
       vi.mocked(fetchFxSpot).mockResolvedValue({ asOf: SPOT.asOf, source: 'test', rates: {} });
     });
 
@@ -2356,11 +2332,15 @@ describe('PosScreen', () => {
       );
       renderWithLocale(<PosScreen />, 'en', 'ch', 'CHF');
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await waitFor(() => {
+        expect(fetchFxSpot).toHaveBeenCalled();
+      });
+      // No currency was typed, and none is made by converting the sats.
+      expect(screen.queryByText(/CHF/)).toBeNull();
       receive(2_100);
       const dialog = await confirmation();
       expect(within(dialog).getByText("₿2'100")).toBeTruthy();
-      // No currency was typed, and none is made by converting the sats.
-      expect(within(dialog).queryByText(/CHF/)).toBeNull();
+      expect(screen.queryByText(/CHF/)).toBeNull();
     });
 
     it('gives a charge found after a lost create answer the typed figure when it is that create', async () => {

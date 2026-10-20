@@ -5028,7 +5028,7 @@ Signed-in Ada with a username and a verified wallet, no open charge and no past 
 
 ### Variant: open
 
-Signed-in Ada with a pending charge of ₿21 and 5:00 left. Countdown, the sat amount, the currency figure the operator typed under it, and **Cancel** stay up. The amount form is gone. The open charge is not in **History**, which says **No payments yet.** Desktop, iPad, and smartphone all show the Open CryptoPay QR.
+Signed-in Ada who typed $5.00 on **Set an amount** in this tab and pressed **Create payment**: a pending charge of ₿5’000 with 5:00 left. Countdown, the sat amount, **$5.00** (the figure the operator typed, not a spot price) under it, and **Cancel** stay up. The amount form is gone. The open charge is not in **History**, which says **No payments yet.** Desktop, iPad, and smartphone all show the Open CryptoPay QR.
 
 ![21.gifts point of sale open](images/pos-open.png)
 
@@ -5040,7 +5040,7 @@ Signed-in Ada whose charge of ₿21 the api has marked paid. The whole window is
 
 ### Variant: paid-closed
 
-The same paid charge after **Done**. The confirmation is gone. Heading **Point of sale**, the address, the Open CryptoPay QR, and **Set an amount**; no countdown and no **Cancel**. **History** lists the charge as **Paid ✓ 12:00 PM** with ₿21 and its fiat.
+The same paid charge after **Done**. The confirmation is gone. Heading **Point of sale**, the address, the Open CryptoPay QR, and **Set an amount**; no countdown and no **Cancel**. **History** lists the charge as **Paid ✓ 12:00 PM** with ₿21 and no currency figure, because this tab did not create it.
 
 ![21.gifts point of sale paid closed](images/pos-paid-closed.png)
 
@@ -5052,7 +5052,7 @@ Signed-in Ada who typed $5.00 on **Set an amount** in this tab and pressed **Cre
 
 ### Variant: history
 
-Signed-in Ada with no open charge and three past charges, scrolled to **History**: **Paid ✓ 12:00 PM** in green with ₿2’100 and the currency figure stored on that charge, then **Expired** with ₿500, then **Cancelled** with ₿42, each with the currency figure stored on that charge and the date and time it was created, newest first. That figure is not a price taken from the current spot. **Set an amount** stays above.
+Signed-in Ada with no open charge and three past charges, scrolled to **History**: **Paid ✓ 12:00 PM** in green with ₿2’100, then **Expired** with ₿500, then **Cancelled** with ₿42, each with the date and time it was created, newest first. This tab did not create these charges, so none has a typed currency figure, and none is priced from the current spot. **Set an amount** stays above.
 
 ![21.gifts point of sale history](images/pos-history.png)
 

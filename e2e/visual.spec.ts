@@ -9692,38 +9692,44 @@ test.describe('onboarding screens', () => {
           aboutMe: null,
           setup: null,
           missing: [],
+          fiat: 'USD',
+          amountUnit: 'fiat',
         }),
       });
     });
     await page.route(/\/pos\/charge$/, async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          charge: {
-            id: 'pos-e2e',
-            amountSats: 21,
-            status: 'pending',
-            createdAt: '2026-09-20T12:00:00.000Z',
-            expiresAt: '2026-09-20T12:05:00.000Z',
-          },
-          history: [
-            {
+      if (route.request().method() === 'POST') {
+        const { amountSats } = route.request().postDataJSON() as { amountSats: number };
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            charge: {
               id: 'pos-e2e',
-              amountSats: 21,
+              amountSats,
               status: 'pending',
               createdAt: '2026-09-20T12:00:00.000Z',
               expiresAt: '2026-09-20T12:05:00.000Z',
             },
-          ],
-        }),
+          }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ charge: null, history: [] }),
       });
     });
-    await page.goto('/pos');
+    // The operator types $5.00 on this till: the open charge shows that typed figure.
+    await page.goto('/pos/amount');
+    await page.getByRole('button', { name: '5', exact: true }).click();
+    await page.getByRole('button', { name: 'Create payment' }).click();
     await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
     await expect(page.getByText('5:00 left')).toBeVisible();
-    await expect(page.getByText('₿21', { exact: true })).toBeVisible();
+    await expect(page.getByText("₿5'000")).toBeVisible();
+    await expect(page.getByText('$5.00')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create payment' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'History' })).toBeVisible();
     await expect(page.getByText('No payments yet.')).toBeVisible();
@@ -9970,8 +9976,8 @@ test.describe('onboarding screens', () => {
     const history = page.getByRole('region', { name: 'History' });
     await expect(history.getByRole('listitem')).toHaveCount(3);
     await expect(history.getByText('Paid ✓ 12:00 PM')).toBeVisible();
-    await expect(history.getByText("₿2'100")).toBeVisible();
-    await expect(history.getByText('$2.10')).toBeVisible();
+    // Charges this tab did not create have no typed figure: bitcoin only, never a spot price.
+    await expect(history.getByText(/\$/)).toHaveCount(0);
     await expect(history.getByText('Expired')).toBeVisible();
     await expect(history.getByText('Cancelled')).toBeVisible();
     await expect(history.getByText('Sep 18, 2026, 5:45 PM')).toBeVisible();
