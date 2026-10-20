@@ -1533,7 +1533,11 @@ describe('PlaceField', () => {
   });
 
   it('keeps Street unfocused after a rejection that is not about the address', async () => {
-    const onCommit = vi.fn().mockRejectedValue(new Error('denied'));
+    const onCommit = vi
+      .fn()
+      .mockRejectedValue(
+        new Error('Shop description must be 20 to 1000 characters and longer than the shop name'),
+      );
     const listeners = stubMaps();
     renderWithLocale(
       <PlaceField
@@ -1552,11 +1556,11 @@ describe('PlaceField', () => {
     fillShopAddress();
     fireEvent.click(screen.getByRole('button', { name: 'Use this place' }));
     expect((await screen.findByRole('alert')).textContent).toContain(
-      'The place could not be saved. Please try again.',
+      'The shop text must be 20 to 1000 characters and longer than the shop name.',
     );
-    const commit = screen.getByRole('button', { name: 'Use this place' });
+    const dialog = screen.getByRole('dialog');
     await waitFor(() => {
-      expect(document.activeElement).toBe(commit);
+      expect(document.activeElement).toBe(within(dialog).getByRole('button', { name: 'Close' }));
     });
     expect(document.activeElement).not.toBe(screen.getByLabelText('Street'));
   });
